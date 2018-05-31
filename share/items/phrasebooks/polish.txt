@@ -1,0 +1,75 @@
+# Polish phrasebook (from https://pl.wikipedia.org/wiki/Strony_%C5%9Bwiata)
+# Accented characters converted so that entry boxes will show them
+#
+# English name for language (lower-case)
+polish
+# Native name for language (capitalise)
+Polski
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+adj
+# Primary directions (NNE etc very long, so left out)
+polnoc
+northnortheast
+polnocnowschodni
+eastnortheast
+wschod
+eastsoutheast
+poludniowowschodni
+southsoutheast
+poludnie
+southsouthwest
+poludniowozachodni
+westsouthwest
+zachod
+westnorthwest
+polnocnozachodni
+northnorthwest
+gore
+dol
+# Primary abbreviated directions (same as English)
+n
+nne
+ne
+ene
+e
+ese
+se
+sse
+s
+ssw
+sw
+wsw
+w
+wnw
+nw
+nnw
+g
+d
+# Number of definite articles
+0
+# Definite articles
+# Number of indefinite articles
+0
+# Indefinite articles
+# Number of 'and' words
+3
+# 'and' words
+i
+a
+z
+# Number of 'or' words
+2
+# 'or' words
+lub
+albo
+# Number words
+jeden
+dwa
+trzy
+cztery
+piec
+szesc
+siedem
+osiem
+dziewiec
+dziesiec

@@ -1,0 +1,8 @@
+ISWIN ()
+
+   Synopsis:
+      Tests whether there is a task window open
+      
+   Notes:
+      Returns 1 if the script is running from within a task and if that task has
+         a window open. Returns 0 otherwise.

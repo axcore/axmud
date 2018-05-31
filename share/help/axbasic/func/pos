@@ -1,0 +1,20 @@
+POS (string, substring)
+POS (string, substring, n)
+
+   Synopsis:
+      Returns the position in the string of the first occurence of the whole
+         substring
+
+   Notes:
+      Specifically, returns the position of the first character of the first
+         occurence of the substring in the string. (Axbasic labels the first
+         character in the string as 1, the second as 2, and so on.)
+      If the substring doesn't occur in the string, 0 is returned. If a null
+         substring is specified, 1 is returned. If the string is null but the
+         substring is not null, 0 is returned.
+      If the third argument is specified, the search begins at the nth character
+         in the string and proceeds to the right. POS(string, substring, 1) is
+         interchangeable with POS(string, substring). If the substring is empty,
+         the starting position is returned.
+      If n is not an integer, it is rounded off. An error occurs if n is zero
+         or a negative number.

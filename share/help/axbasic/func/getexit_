@@ -1,0 +1,13 @@
+GETEXIT$ (number)
+        
+   Synopsis:
+      Returns the name of an exit in the automapper's current room
+
+   Notes:
+      'number' is the position of the exit in the room's ordered list of exits
+         (the first exit is numbered 1).
+      If the automapper window isn't open, if there is no current room or if the
+         numbered exit doesn't exist, returns an empty string.
+      To get the current room's number of exits, see the GETROOMEXITS function
+         (which gets the exit's actual direction). To get the direction in which
+         the exit is actually drawn on the map, see the GETEXITDRAWN$ function.

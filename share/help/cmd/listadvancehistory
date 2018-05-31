@@ -1,0 +1,12 @@
+lah / listadvancehistory      Lists the character's advance history
+ 
+   Format:
+      ;lah                    Displays the list
+ 
+   Notes:
+      Shows a history of all guild skill advances by the current character.
+      See the help for the ';advance' command for more information about guild 
+         skills.
+ 
+   User commands:
+      lah / listah / listadvancehistory

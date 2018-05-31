@@ -1,0 +1,19 @@
+lim / listinterfacemodel      Lists default interface settings
+ 
+   Format:
+      ;lim                    Lists all five interface models
+      ;lim -t                 Shows the trigger interface model
+      ;lim -a                 Shows the alias interface model
+      ;lim -m                 Shows the macro interface model
+      ;lim -i                 Shows the timer interface model
+      ;lim -h                 Shows the hook interface model
+ 
+   Notes:
+      Axmud interfaces are triggers, aliases, macros, timers and hooks. 
+      Interface models contain default settings for interfaces; this command
+         lists some of those settings.
+      As well as the switches above, the words 'trig', 'trigger', 'alias',
+         'macro', 'timer' and 'hook' can be used.
+ 
+   User commands:
+      lim / listinterfacemodel

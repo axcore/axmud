@@ -1,0 +1,24 @@
+HELP
+HELP expression
+
+   Synopsis:
+      Displays Axbasic help in the 'main' window
+
+   Notes:
+      If an expression is specified, help for that topic is displayed. Help is
+         available for all Axbasic keywords and intrinsic (built-in) functions.
+      If no expression is specified, a list of Axbasic keywords and functions is
+         displayed instead.
+      The following Axbasic statements are therefore interchangeable:
+      
+         HELP "print"
+         CLIENT "axbasichelp print"
+
+   Examples:
+      HELP "print"
+      HELP "chr$"
+      HELP date
+      HELP
+
+      LET keyword$ = "print"
+      HELP keyword$

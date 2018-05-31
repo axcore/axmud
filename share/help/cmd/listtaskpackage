@@ -1,0 +1,13 @@
+ltp / listtaskpackage         Lists task package names
+ 
+   Format:
+      ;ltp                    Lists current task package names
+      ;ltp -d                 Lists default task package names
+ 
+   Notes:
+      A task package name is the name of the Perl package that handles a task:
+       
+         e.g. 'Axmud::Task::Status' for the Status task.
+ 
+   User commands:
+      ltp / listtp / listtaskpackage

@@ -1,0 +1,15 @@
+lpn / listpanel               Lists workspace panel (taskbar) sizes
+ 
+   Format:
+      ;lpn                    List panel sizes
+ 
+   Notes:
+      Panels are the areas at the edge of the desktop (workspace) that aren't
+         available to any window. Often, at least one panel has some kind of
+         'start' menu, a list of windows and several other icons, such as one
+         displaying the date and time.
+      Custom panel sizes can be set with the ';setpanel' command. See also the
+         help for ';testpanel'.
+
+   User commands:
+      lpn / listpn / listpanel

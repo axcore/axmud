@@ -1,0 +1,15 @@
+upr / unprotectobject         Removes an object's semi-protection
+ 
+   Format:
+      ;upr <number>           Removes protected object <number>
+ 
+   Notes:
+      'Protected' objects enjoy semi-protection against being sold, dropped or
+         used collectively in other ways while the Inventory task is running
+         (see the help for the ';protectobject' command).
+      This command removes an object from the current character's list of
+         protected objects. Use the ';listprotectobject' command to get a 
+         numbered list of protected objects.
+ 
+   User commands:
+      upr / unprotectobj / unprotectobject

@@ -1,0 +1,18 @@
+RESTORE
+
+   Synopsis:
+      Resets the global data list, as if no READ statements had been executed
+
+   Notes:
+      After a RESTORE statement, the next READ statement will start reading from
+         the first constant in the first DATA statement in the Axbasic script.
+
+   Examples:
+      DATA 5, 10, 20, 50, 100
+      READ num1, num2, num3
+      PRINT num1, num2, num3
+
+      RESTORE
+      READ num4
+      ! The next line displays the number 5
+      PRINT num4

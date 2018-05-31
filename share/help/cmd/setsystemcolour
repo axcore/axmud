@@ -1,0 +1,27 @@
+ssy / setsystemcolour         Sets colours of Axmud system messages
+ 
+   Format:
+      ;ssy <switch> <colour>  Sets a system message colour
+      ;ssy <switch>           Resets a system message colour
+
+   Notes:
+      Sets (or resets) the colours of various system messages, as well as the
+         colour used to displayed world commands (commands sent to the world).
+      <colour>, if specified, should be a standard Axmud colour tag like blue',
+         'green' or 'RED'.
+      <switch> determines which kind of system message colour to set:
+
+         -c   Sets/resets world command colours
+         -m   System message colours
+         -e   System error message colours
+         -w   System warning message colours
+         -d   System debug message colours
+         -i   System improper arguments message colours (used to show an Axmud
+                 internal error of some kind)
+ 
+      Use the ';listsystemcolour' command for a current list of system colours. 
+         Use the ';setcolour' command to change the colours of Axmud standard 
+         colour tags.
+
+   User commands:
+      ssy / setsyscol / setsystemcolor / setsystemcolour

@@ -1,0 +1,15 @@
+spc / speedwalkcommand        Adds a speedwalk command to the current recording
+ 
+   Format:
+      ;spc <cmd>              Adds a speedwalk command
+ 
+   Notes:
+      Adds a speedwalk command to the current recording, which will be 
+         automically removed later (unless the recording is saved as a mission).
+      (If you need to preserve spacing, enclose the command with diamond
+          brackets <...>)
+      See the help for the ';record' command for more information about
+         recordings.
+ 
+   User commands:
+      spc / speedcmd / speedcommand / speedwalkcommand

@@ -1,0 +1,29 @@
+lrm / locateroom              Locates the current room in the world model
+ 
+   Format:
+      ;lrm                    Locates the current room
+      ;lrm <mode>             Locates the room & sets the automapper window mode
+ 
+   Notes:
+      This command searches the world model, looking for a room that matches the
+         Locator task's current room. Any matching rooms are displayed as a 
+         list. In addition, if exactly one matching room is found, that room is 
+         set as the automapper's current room. 
+      If the automapper window isn't open, the automapper automatically begins
+         tracking the character's location in the world model. If the window is
+         open, you can change the operating <mode> at by specifying one of the 
+         following switches:
+
+         -w   - automapper window switches to 'wait' mode
+         -f   - switches to 'follow' mode
+         -u   - switches to 'update' mode
+
+      Note that if 'update' mode is disabled, the automapper window switches to
+         'follow' mode instead.
+
+      The automapper window also has a room location function. It differs from 
+         this command, in that all matching rooms are selected.
+      See also the help for ';setroom'.
+
+   User commands:
+      lrm / locateroom

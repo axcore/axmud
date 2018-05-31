@@ -1,0 +1,194 @@
+AXMUD INSTALLATION
+==================
+
+To get the most recent version of Axmud, visit:
+
+	https://axmud.sourceforge.net	
+	
+Axmud is known to work on MS Windows and Linux. It might be possible to install
+Axmud on other systems, such as macOS and *BSD, but the authors have not been
+able to confirm this yet.
+
+1 Installation on MS Windows
+
+The easiest way to use Axmud on Windows is to download and run the Windows
+installer from the Axmud website.
+
+The installer contains everything you need to run Axmud, including a copy of 
+Strawberry Perl and all the required modules and libraries.
+
+Users who already have Strawberry Perl and/or ActivePerl installed on their
+system can install Axmud manually using any of the following methods. 
+
+1.1 Installation using Strawberry Perl
+
+Axmud requires the 32-bit edition of Strawberry Perl, even on a 64-bit computer.
+If you have the 64-bit edition of Strawberry Perl installed on your system,
+either replace it with the 32-bit edition, or use the installer described above
+(which contains a copy of the portable 32-bit edition).
+
+First, open a command prompt and get some modules from CPAN:
+
+	cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Regexp::IPv6
+	
+Then get the following module:
+
+	cpan File::ShareDir::Install
+
+If the line above generates an error, try this line instead:
+
+	cpanm --force --build-args SHELL=cmd.exe --install-args SHELL=cmd.exe File::ShareDir::Install
+	
+Now we need some modules from the Sisyphusion repo. 
+
+(If you reading this document some time in the distant future and find the repo 
+is no longer available, you can either search around for a replacement, or you
+can use the installer.)
+
+	ppm set repository sisyphusion http://sisyphusion.tk/ppm
+	ppm set save
+	ppm install Cairo Glib Pango Gtk2 Gnome2::Canvas
+	
+Now install Axmud. It might possible to install it directly from CPAN but, if 
+not, download the source code from the Axmud website and extract the .tar.gz
+file.
+
+Open a command prompt and navigate into the extracted folder. From there,
+installation is standard.
+
+	perl Makefile.PL
+	gmake
+	gmake install
+	axmud.pl
+
+1.2 Installation using ActivePerl
+
+Axmud is known to work with both 32-bit and 64-bit editions of ActivePerl.
+
+First, open a command prompt and get some modules from CPAN:
+
+	ppm install dmake
+	ppm install Archive::Extract File::ShareDir::Install IO::Socket::INET6 IPC::Run Net::OpenSSH Regexp::IPv6
+	
+Now we need some modules from the Sisyphusion repo. 
+
+(If you reading this document some time in the distant future and find the repo 
+is no longer available, you can either search around for a replacement, or you
+can use the installer.)
+
+	ppm repo add http://www.sisyphusion.tk/ppm 
+	ppm install Glib Gtk2 Cairo Pango Gnome2::Canvas
+	
+Now install Axmud. It might possible to install it directly from CPAN but, if 
+not, download the source code from the Axmud website and extract the .tar.gz
+file.
+
+Open a command prompt and navigate into the extracted folder. From there,
+installation is standard.
+
+	perl Makefile.PL
+	dmake
+	dmake install
+	axmud.pl
+
+1.3 Creating your own MS Windows installer
+
+The installer described above was created using a script you can find in:
+
+	.../nsis/axmud_install.nsi
+
+The script contains instructions for building your own installer.
+
+2 Installation on Linux
+
+There are four methods of installation on Linux - install using the .deb 
+package, install from CPAN, install using git, or install from source.
+
+2.1 Install using the .deb package
+
+The quickest method, if your system supports it, is to download the .deb package
+from the Axmud website.
+
+On many modern systems, a .deb package will install itself if you double-click
+on it. 
+
+2.2 Install from CPAN
+
+Axmud can be downloaded and installed directly from the Perl archive site, CPAN.
+
+First, make sure you have the right dependencies. Open a terminal window and 
+type:
+
+	sudo apt-get update
+	sudo apt-get install build-essential libcanberra-gtk-module libgnomecanvas2-dev libwnck-dev
+
+If you want to use sound effects and/or text-to-speech, you should also type:
+
+	sudo apt-get install libsox-fmt-mp3 timidity
+	
+Then you can download and install Axmud itself:
+
+	sudo cpan install Games::Axmud
+	
+When installation is complete, start Axmud by typing:
+
+	/usr/local/bin/axmud.pl
+	
+2.3 Install using git
+
+Unstable (development) versions of Axmud are available from github. 
+
+First, make sure you have the right dependencies. Open a terminal window and 
+type:
+
+	sudo apt-get update
+	sudo apt-get install build-essential libcanberra-gtk-module libgnomecanvas2-dev libwnck-dev
+	sudo cpan install Archive::Extract File::HomeDir File::ShareDir File::ShareDir::Install Gnome2::Canvas Gnome2::Wnck JSON Net::OpenSSH
+
+If you want to use sound effects and/or text-to-speech, you should also type:
+
+	sudo apt-get install libsox-fmt-mp3 timidity
+
+Then you can download and install Axmud itself:
+
+	git clone git://github.com/axcore/axmud
+	cd axmud
+	perl Makefile.PL
+	make
+	sudo make install
+	
+When installation is complete, start Axmud by typing:
+
+	axmud.pl
+	
+2.4 Install from source
+
+Manual installation is quite simple. First, download the source code from the
+Axmud website (the most recent file ending .tar.gz).
+
+Open a terminal window and navigate to the directory containing the downloaded
+file, for example:
+
+	cd Downloads
+	
+Then make sure you have the right dependencies:
+
+	sudo apt-get update
+	sudo apt-get install build-essential libcanberra-gtk-module libgnomecanvas2-dev libwnck-dev
+	sudo cpan install Archive::Extract File::HomeDir File::ShareDir File::ShareDir::Install Gnome2::Canvas Gnome2::Wnck JSON Net::OpenSSH
+
+If you want to use sound effects and/or text-to-speech, you should also type:
+
+	sudo apt-get install libsox-fmt-mp3 timidity
+
+Then install Axmud itself:
+
+	perl Makefile.PL
+	make
+	sudo make install
+
+When installation is complete, start Axmud by typing:
+
+	axmud.pl	
+
+

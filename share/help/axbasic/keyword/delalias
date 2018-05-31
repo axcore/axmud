@@ -1,0 +1,21 @@
+DELALIAS expression
+
+   Synopsis:
+      Deletes an independent alias
+
+   Notes:
+      A convenient way to delete aliases created with the ADDALIAS statement.
+         The expression is the name of the alias to delete.
+      DELALIAS assumes that the alias is assigned to a cage belonging to the
+         current world (unless an earlier PROFILE statement specified a
+         different profile).
+      The following Axbasic statements are therefore interchangeable:
+      
+         DELALIAS "name"
+         CLIENT "deletealias name"
+         
+      If Axmud can't delete the alias, execution of the Axbasic script continues
+         as normal. No error message is generated.
+
+   Examples:
+      DELALIAS "sailalias"

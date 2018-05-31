@@ -1,0 +1,7 @@
+TIME ()
+
+   Synopsis:
+      Returns the number of seconds since midnight
+
+   Notes:
+      At midnight, returns 0.

@@ -1,0 +1,26 @@
+WAITXP expression [ , expression ]
+
+   Synopsis:
+      Pauses execution until the character's experience points (XP) increase
+
+   Notes:
+      The first expression is a number matching the 'current' experience points
+         the character has, which is usually different from their 'total' XP
+         (depending on the world).
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting after that period and resumes execution.
+      If the Axbasic script isn't being run from within a task, the WAITXP
+         statement is ignored (and no error message is generated). Execution
+         continues immediately with the next statement.
+      WAITXP relies on the Status task to supply the character's current XP. If
+         the Status task is not running (or if it doesn't know anything about
+         the character's XP), the Axbasic script pauses briefly and resumes
+         execution on the next task loop.
+      See also the help for WAITEP, WAITGP, WAITHP, WAITMP, WAITSP and for 
+         WAITNEXTXP and WAITTOTALXP.
+
+   Examples:
+      ! Wait for XP to reach 50000
+      WAITXP 50000
+      ! Wait for no longer than five minutes (300 seconds)
+      WAITXP 50000, 300

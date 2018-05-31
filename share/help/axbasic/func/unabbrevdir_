@@ -1,0 +1,10 @@
+UNABBREVDIR$ (string)
+        
+   Synopsis:
+      Returns the unabbreviated form of a direction
+
+   Notes:
+      The current dictionary stores a number of custom primary and secondary
+         directions, in both abbreviated and unabbreviated forms. 
+      If 'string' is stored there as an abbreviated direction, returns the
+         unabbreviated form; otherwise, returns 'string' unmodified.

@@ -1,0 +1,17 @@
+lqs / listquest               Lists all quests
+ 
+   Format:
+      ;lqs                    Lists all quests
+      ;lqs <switch>           Lists all quests in a particular order
+      ;lqs <name>             Lists information about the quest <name>
+ 
+   Notes:
+      Axmud is able to store information about the current world's quests. This
+         command lists all the quests stored in the current world profile. 
+      If specified, <switch> can be any of the following:
+         -q   - lists quests in order of quest points
+         -x   - lists quests in order of XP
+         -c   - lists quests in order of cash
+ 
+   User commands:
+      lqs / listqs / listquest

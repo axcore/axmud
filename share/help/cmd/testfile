@@ -1,0 +1,17 @@
+tf / testfile                 Tests a data file
+ 
+   Format:
+      ;tf -i                  Identifies a data file's type
+      ;tf -h                  Displays a data file's header
+      ;tf -c                  Displays the contents of data file
+ 
+   Notes:
+      This is a debug command. It can be used to check whether a file is a valid
+         Axmud data file, or not; but its primary purpose is to test a data file
+         created by a different version of Axmud that cannot be loaded/imported,
+         in an effort to find out what the problem might be.
+      This command doesn't work with Axmud config files, which can be examined
+         in a normal text editor.
+ 
+   User commands:
+      tf / testfile

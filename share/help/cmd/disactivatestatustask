@@ -1,0 +1,17 @@
+dst / disactivatestatustask   Disactivates the Status task
+ 
+   Format:
+      ;dst                    Disactivates the Status task
+ 
+   Notes:
+      In 'active' mode, the Status task sends commands to the world every few
+         seconds (usually commands like 'score', 'sc' and 'time') to keep the
+         task's statistics up to date.
+      In 'disactived' mode, those commands are suspended, and won't be sent to
+         the world until the task is activated again.
+      The commands sent are taken from the current character profile (which in
+         turn inherits them from the current world profile).
+      Use ';activatestatustask' to activate the Status task.
+ 
+   User commands:
+      dst / disactivatestatustask

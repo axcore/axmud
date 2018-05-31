@@ -1,0 +1,33 @@
+slf / setlife                 Sets the Status task's current life status
+ 
+   Format:
+      ;slf <switch>           Sets character's life status
+      ;slf <status>           Sets character's life status
+
+   Notes:
+      This command updates the current character's life status, as displayed by
+         the current Status task. (Updating the task also updates the life
+         status stored in the current character profile.)
+      Your character's life status - 'alive', 'sleep', 'passout' or 'dead' - is
+         normally set automatically by triggers. If the Status task is showing 
+         the wrong life status, it's possible to edit the current character 
+         profile manually (before resetting the Status task), but it's usually 
+         quicker to use this command.
+
+      <switch> can be any of the following:
+         -a   - character is alive
+         -s   - character is asleep
+         -p   - character is passed out
+         -d   - character is dead
+      Alternatively, you can use any of the following <status> strings:
+         'alive', 'sleep', 'passout', 'dead'.
+
+      Note that, when the current character's life status is updated because of
+         one of the Status task's triggers (for example, when the trigger reacts 
+         to a pattern that means your character has died), certain events happen 
+         (such as writing special log files). Those events don't take place if
+         you change the character's life status with this command (or if you 
+         edit the current character profile manually.)
+
+   User commands:
+      slf / setlife

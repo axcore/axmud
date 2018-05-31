@@ -1,0 +1,25 @@
+RESET #channel: BEGIN
+RESET #channel: END
+
+   Synopsis:
+      Moves the pointer to the beginning or end of an open file
+
+   Notes:
+      The pointer is the position in a file at which Axbasic reads or write 
+         data.
+      When a file is opened for reading only, the pointer is initially at the
+         beginning of the file; the first item of data read is the first line in
+         the file. When a file is opened for writing only, or for both reading 
+         and writing, the first item of data written is added to the end of the
+         file. The RESET statement moves the pointer to the beginning or end of
+         the file.
+
+   Examples:
+      ! Open a file for writing, appending new data to the end of the file
+      OPEN #1: NAME "output.txt", CREATE NEWOLD, ACCESS OUTPUT
+      PRINT #1: "This text is added to the end of the file"
+      ! Now write some data at the beginning of the file
+      RESET #1: BEGIN
+      PRINT #1: "This text is added at the beginning of the file"
+      CLOSE #1
+      END

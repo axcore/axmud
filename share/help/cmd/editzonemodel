@@ -1,0 +1,14 @@
+ezl / editzonemodel           Opens an 'edit' window for a zone model
+ 
+   Format:
+      ;ezl <name> <number>
+               Edits the zone model <number> from the zonemap <name>
+
+   Notes:
+      Zonemaps are a plan for arranging windows on a workspace grid. Zonemaps
+         contain one or more zone models, describing a region of the workspace 
+         and the kinds of window that region is allowed to contain.
+      For a list of zonemaps, use the ';listzonemap' command.
+ 
+   User commands:
+      ezl / editzl / editzonemodel

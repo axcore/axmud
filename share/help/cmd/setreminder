@@ -1,0 +1,29 @@
+rmd / setreminder             Sets an alert for some time in the future
+ 
+   Format:
+      ;rmd <minutes>          Sets a visual and sound alert
+      
+      ;rmd -v <minutes>       Sets a visual alert only
+      ;rmd <minutes> -v
+      
+      ;rmd -s <minutes>       Sets a sound alert only
+      ;rmd <minutes> -s      
+
+   Notes:
+      This command sets an alert to go off some <minutes> from now. It creates a
+         temporary timer. When the timer fires, either a visual or sound alert
+         (or both) goes off; the timer then deletes itself.
+      For visual alerts, the urgency hint for the session's 'main' window is 
+         set. The effect of this varies depending on the desktop environment  
+         you're using. Often, if cases the window to flash in the panel at the 
+         bottom (or top) of the screen.
+      For sound alerts, a standard sound effect is played. You will only be 
+         able to heard it if sound has been turned on (see the help for
+         ';sound').
+      If you specify both the '-v' and '-s' switches, the command behaves as 
+         though you had specified no switches (and both a visual and sound alert
+         is set).
+      See also the help for ';awayfromkeys'.
+
+   User commands:
+      rmd / remind / setremind / setreminder

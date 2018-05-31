@@ -1,0 +1,55 @@
+ADDCONGAUGE expression , expression [ , expression ] [ , expression ] 
+   [ , expression ]
+    
+   Synopsis:
+      Adds a 'main' window gauge
+    
+   Notes:
+      Adds a gauge to the 'main' window. This gauge displays two numerical 
+         values, such as your character's current XP and the amount of XP 
+         required to reach the next level. 
+      It's expected (but not required) that the sum of these two values is
+         constant, at least in the short term. In other words, when one value
+         falls by some amount, the other value is expected to rise by the same
+         ammount. (The "CON" in ADDCONGAUGE stands for "constant".)
+
+      The first expression is a unique gauge number. You can specify any
+         integer, zero or above. If a gauge with this number already exists, it
+         is replaced with a new one. It's up to the script to keep track of the
+         unique numbers of any gauges it has created. (Gauge numbers are 
+         independent of the numbers used with ADDSTATUS, ADDCONSTATUS and so
+         on.)
+      The second expression is the label drawn above the gauge, for example 
+         "HP". If it's an empty string, Axbasic will assign its own label.
+      The remaining optional expressions specify which colours to use. If 
+         they're not specified, default colours are used. The first one is the
+         colour of the full portion of the gauge; the second is the colour of 
+         the empty portion of the gauge; the third is the colour of the label.
+      Colours must be valid Axmud colour tags (standard tags such as "RED" or
+         "blue", xterm tags such as "x0" or "x255", or RGB tags such as 
+         "#000000" or "#FFFFFF"). Any invalid colour tags are ignored and
+         default colours are used instead.
+
+      An ADDGAUGE statement is usually followed by a SETGAUGE statement, which
+         sets the numerical values displayed by the gauge. A DELGAUGE statement
+         removes the gauge entirely. Gauges are automatically removed when the
+         script terminates.
+      Often, these statements are used in some kind of loop, which updates the
+         gauges periodically. See the code below for an example.
+
+      See also the help for the ADDGAUGE, ADDSTATUS and ADDCONSTATUS statements.
+
+   Examples:
+      OPTION NEEDTASK
+      OPTION NOLET
+
+      ADDCONGAUGE 1, "TEST", "RED", "red", "WHITE"
+
+      FOR a = 0 to 10
+         SETGAUGE 1, a, (10 - a)
+         PAUSE 1
+      NEXT a
+
+      DELGAUGE 1
+
+      END

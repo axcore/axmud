@@ -1,0 +1,37 @@
+srl / setrunlist              Sets one of the task runlists
+ 
+   Format:
+      ;srl                    Shows task runlists
+      ;srl -d                 Restores runlists to their defaults
+      ;srl -f <list>          Sets the <list> of tasks to be run first
+      ;srl -l <list>          Sets the <list> of tasks to be run last
+ 
+   Notes:
+      Some kinds of task may run more efficiently if they know that, on each
+         task loop, they will be run before other types of task. Some kinds of
+         task work best when they are run last.
+      Task runlists are a shorts list of tasks that are run before or after all
+         the others.
+      ';setrunlist -f <list>' defines a list of tasks to be run first. The first
+         task in the list is run first.
+      ';setrunlist -l <list>' defines a list of tasks to be run last. The list
+         is run in reverse order, so the first task in the list is run LAST.
+      Each entry on a runlist is a type of task. You can specify a task label
+         (e.g. 'status') or its formal name (e.g. 'status_task'). Task labels 
+         are automatically converted into a task's formal name.
+      If there are multiple copies of one type of task, and if that task type
+         appears on the runlist, all the copies will be run together (one at a
+         time), before (or after) other types on the list.
+      Types of task which don't appear on either list are run (in a non-
+         predictable order) after the 'first' runlist, but before the 'last'
+         runlist.
+      On each task loop, every task can be run only once, so putting a task type
+         on both lists won't cause it to be run twice per task loop.
+      ';setrunlist -d' restores the default runlists. If you create your own
+         customised runlists, they are saved in Axmud's 'config' file: the list
+         doesn't change when you switch to another world.
+      If you use the switches -f or -l without a <list>, the runlists are
+         emptied.
+ 
+   User commands:
+      srl / setrl / setrunlist

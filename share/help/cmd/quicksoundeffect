@@ -1,0 +1,26 @@
+qse / quicksoundeffect        Plays a sound effect without a system message
+ 
+   Format:
+      ;qse <name>             Plays the sound effect <name>
+      
+      ;qse <name> -f          Plays <name> and flashes the session 'main' window
+      ;qse -f <name>
+ 
+   Notes:
+      Axmud's sound effects bank contains a list of named sound effects, each of 
+         which corresponds to a sound file. This command can be used to play 
+         sound effects in the bank.
+      ';playsoundeffect' shows a system message when it plays a sound effect, 
+         and a system error message when it's unable to play a sound effect. You 
+         might prefer to avoid cluttering up the window with system messages,
+         for example when you're creating a trigger whose response to a stimulus
+         is to play a sound effect, in which case you can use this command
+         instead.
+      If you also specify the '-f' switch, the urgency hint for the session's 
+         'main' window is also set. The effect of this varies depending on the
+         desktop environment you're using. Often, if cases the window to flash
+         in the panel at the bottom (or top) of the screen.
+      See also the help for ';beep'.
+          
+   User commands:
+      qse / quickse / quicksound / quicksoundeffect

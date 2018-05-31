@@ -1,0 +1,12 @@
+lct / listcustomtask          Lists custom tasks
+ 
+   Format:
+      ;lct                    Lists custom tasks
+ 
+   Notes:
+      Custom tasks are created by the user, given a handy name (like 'mytask'
+         or 'fast_escape') and then started by the user whenever needed.
+      See the help for ';addcustomtask' for more information about custom tasks. 
+
+   User commands:
+      lct / listcustomtask

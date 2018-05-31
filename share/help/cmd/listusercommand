@@ -1,0 +1,18 @@
+luc / listusercommand         Lists user commands
+ 
+   Format:
+      ;luc                    Lists current user commands
+      ;luc -d                 Lists the default set of user commands
+ 
+   Notes:
+      All client commands have a single standard form (for example, this 
+         command's standard form is 'addusercommand').
+      Some of the standard forms for client commands are quite long, so Axmud
+          allows the user to create abbreviated versions called 'user commands'.
+      This command lists all user commands, including built-in user commands and
+         any user commands you created yourself by using ';addusercommand'.
+      (See the help for ';addusercommand' for more information about user
+         commmands.)
+ 
+   User commands:
+      luc / listuc / listusercmd / listusercommand

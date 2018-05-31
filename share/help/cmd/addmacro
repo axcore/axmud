@@ -1,0 +1,87 @@
+ama / addmacro                Adds a macro
+ 
+   Format:
+      ;ama <switches>         Adds a macro
+ 
+   Notes:
+      Macros are one of five types of Axmud interface (the others being 
+         triggers, aliases, timers and hooks).
+      Macros allow you to specify instructions to be executed automatically when
+         a certain key (or combination of keys) is pressed.
+      This command creates a macro interface that's 'inactive' - it's associated 
+         with a particular profile (actually, stored in a 'cage' object 
+         associated with that profile). When that profile becomes a current 
+         profile - and only if there isn't another macro with the same name, 
+         attached to a higher-priority profile - then an 'active' macro is 
+         created with the same attributes.
+      The macro created is also 'independent', meaning that it doesn't call some
+         part of the Axmud code directly.
+
+      All interfaces have four standard attributes:
+         'name'      - A name for the macro
+         'stimulus'  - What causes the macro to 'fire'. The stimulus is one of 
+                          Axmud's standard keycodes (like 'f5' or 'page_up') or 
+                          a keycode string (like 'shift up' or 
+                          'ctrl alt insert'). When the keys matching the keycode 
+                          string are pressed (and assuming that the 'main' 
+                          window is the one in focus), the macro fires. (See the 
+                          help for ';setkeycode' for more information about 
+                          Axmud standard keycodes.)
+         'response'  - The instruction to execute when the macro fires. Includes
+                          world commands, forced world commands (starting with
+                          ',,'), client commands (starting ';'), echo commands
+                          (starting '"'), Perl commands (starting '/'), script
+                          commands (starting '&') and multi commands (starting
+                          ':')
+         'enabled'   - A flag set to 1 (default) or 0. When set to 1, the active
+                          macro is enabled (does something). When set to 0, it 
+                          is disabled (temporarily does nothing)
+      Macros also have the following non-standard attributes:
+         'temporary' - A flag set to 1 or 0 (default). When set to 1, the active
+                          interface is destroyed after the macro fires for the
+                          first time. When set to 0, the interface can fire
+                          indefinitely
+                      
+      <switches> allows you to define which attributes the macro will have and
+         with which profile it will be associated.
+
+      Group 1 switch options: one of the following options must be used:
+         -no option-          - Adds a macro belonging to the current world
+         -w                   - Adds a macro belonging to the current world
+         -g                   - Adds a macro belonging to the current guild
+         -r                   - Adds a macro belonging to the current race
+         -c                   - Adds a macro belonging to the current char
+         -x <category>        - Adds a macro belonging to the current custom
+                                   profile <category>
+         -d <prof>            - Adds a macro belonging to profile <prof>
+
+      Group 2 switch options: both of the following options must be used:
+         -s <keycode>         - Sets the 'stimulus' attribute (a keycode like 
+                                   'f5', or a keycode string which must be 
+                                    enclosed in diamond brackets, e.g.
+                                    '<ctrl shift f5>')
+         -p <instruction>     - Sets the 'response' attribute (the instruction  
+                                   to execute)
+      Group 3 switch options: 0, 1 or more of the following options can be used:
+         -n <string>          - Sets the 'name' attribute (a string). If not
+                                   specified, a name is generated for you
+         -e <boolean>         - Sets the 'enabled' attribute (1 or 0; default is
+                                   1)
+         -t <boolean>         - Sets the 'temporary' attribute (1 or 0; default
+                                   is 0)
+      Group 4 switch options: 0, 1 or more of the following options can be used:
+         -b <name>            - This macro is checked before macros called
+                                   <name> (when they both become active)
+         -f <name>            - This macro is checked after macros called <name>
+                                   (when they both become active)
+
+   General interface notes:
+      If <instruction>, <pattern>, <string> or <substitution> contain 
+         whitespace, they must be enclosed by diamond brackets
+         
+            e.g. <You see (.*) exits>
+            
+      <boolean> can be typed as 1 or 0, or any word beginning with t, T, f or F
+ 
+   User commands:
+      ama / addma / addmacro

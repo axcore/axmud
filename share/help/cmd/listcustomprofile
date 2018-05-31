@@ -1,0 +1,8 @@
+lcp / listcustomprofile       Lists custom profiles
+ 
+   Format:
+      ;lcp                    Lists all custom profiles
+      ;lcp <template>         Lists custom profiles based on <template>
+ 
+   User commands:
+      lcp / listcustom / listcustomprof / listcustomprofile

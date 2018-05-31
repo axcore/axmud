@@ -1,0 +1,11 @@
+IFACETIME ()
+
+   Synopsis:
+      Returns the time at which the current interface notification was received
+
+   Notes:
+      The interface notification list contains all the notifications received,
+         and not yet processed, as the result of an earlier SETTRIG statement.
+      The time it was received is the number of seconds since the current
+         session started.
+      If the list is empty, -1 is returned.

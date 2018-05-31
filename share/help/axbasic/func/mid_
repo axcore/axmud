@@ -1,0 +1,14 @@
+MID$ (string, offset)
+MID$ (string, offset, length)
+
+   Synopsis:
+      Returns a string within a string
+
+   Examples:
+      To return everything in the string from the 10th character onwards:
+      
+         MID$ ("To be or not to be", 10)     >> "not to be"
+         
+      To return 5 characters in a string, starting from the 10th character:
+      
+         MID$ ("To be or not to be", 10, 5)  >> "not t"

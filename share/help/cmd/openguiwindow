@@ -1,0 +1,7 @@
+ogw / openguiwindow           Opens the GUI window
+ 
+   Format:
+      ;ogw                    Opens the window
+
+   User commands:
+      ogw / gui / opengui / openguiwindow

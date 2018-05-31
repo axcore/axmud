@@ -1,0 +1,31 @@
+spp / setprofilepriority      Sets the profile priority list
+ 
+   Format:
+      ;spp <list>             Sets the profile priority list to <list>
+      ;spp                    Resets the list to the default list
+ 
+   Notes:
+      Profiles are collections of data about worlds, guilds, races, characters
+         and so on. Every Axmud session (every open tab in the 'main' window) 
+         always uses at least one profile - the 'current' world profile.
+      Profiles are also essential for Axmud's advanced handling of interfaces
+         (triggers, aliases, macros, timers and hooks).
+      All interfaces can have an associated profile - a trigger can be attached
+         to a particular race, a macro attached to a particular character, and 
+         so on. Profiles have a priority order, so that if there are two 
+         triggers with the same name, the one associated with the character 
+         profile trumps the one associated with the race profile. (The priority 
+         order can be changed, if this isn't what you want.)
+
+      This command changes the profile priority list for the current world. 
+         <list> should be a list of profile categories - including the standard 
+         ones ('world', 'guild', 'race' and 'char') and any custom categories 
+         created by profile templates. 
+      The highest priority category is the first in the list. The last category
+         in the list is always 'world', and the list must always contain 'char'.
+         The remaining standard categories are optional (but recommended).
+      The default priority list is 'char', 'race', 'guild', 'world'. 
+      (See the help for ';listprofile' for more information about profiles.)
+ 
+   User commands:
+      spp / setpriority / setprofilepriority

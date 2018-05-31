@@ -1,0 +1,14 @@
+The Compass task opens a window with buttons that can be clicked in order to
+   move around and attack things (for players who are allergic to keyboards).
+The window also enables and disables a series of macros which allow you to
+   send common commands using the keys on your keypad. The number keys are
+   used to move around. The '+' key is used to go up and the '-' key is used
+   to go down. The remaining keys are assigned to useful world commands like
+   'inventory' and 'kill all'.
+Let your mouse hover over the window buttons to see which command has been
+   assigned to which key. You can't change the keys assigned to directions
+   but you can easily change the commands assigned to the other keys.
+
+Client commands used with this task are:
+   ;compass                   Modifies the (current) Compass task
+   ;permcompass               Modifies the current and initial Compass tasks

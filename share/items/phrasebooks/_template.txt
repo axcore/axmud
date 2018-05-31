@@ -1,0 +1,73 @@
+# English name for language (lower-case)
+english
+# Native name for language (capitalise)
+English
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+adj
+# Primary directions
+north
+northnortheast
+northeast
+eastnortheast
+east
+eastsoutheast
+southeast
+southsoutheast
+south
+southsouthwest
+southwest
+westsouthwest
+west
+westnorthwest
+northwest
+northnorthwest
+up
+down
+# Primary abbreviated directions
+n
+nne
+ne
+ene
+e
+ese
+se
+sse
+s
+ssw
+sw
+wsw
+w
+wnw
+nw
+nnw
+u
+d
+# Number of definite articles
+1
+# Definite articles
+the
+# Number of indefinite articles
+2
+# Indefinite articles
+a
+an
+# Number of 'and' words
+2
+# 'and' words
+and
+also
+# Number of 'or' words
+1
+# 'or' words
+or
+# Number words
+one
+two
+three
+four
+five
+six
+seven
+eight
+nine
+ten

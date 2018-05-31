@@ -1,0 +1,21 @@
+PAUSE expression
+
+   Synopsis:
+      Pauses execution of the Axbasic script
+
+   Notes:
+      When the Axbasic script is being run from within an Axmud task, execution 
+         can be suspended with statements such as PAUSE, SLEEP, BREAK and 
+         WAITTRIG.
+      PAUSE causes execution of the script to halt for the specified number of
+         seconds. Execution resumes when the parent task unpauses itself.
+      The expression must evaluate to a positive integer.
+      If the Axbasic script isn't being run from within an Axmud task, there is 
+         no pause (and no error message is generated). Execution continues
+         immediately with the next statement.
+      The PAUSE and SLEEP statements behave in exactly the same way.
+
+   Examples:
+      SEND "drop treasure"
+      PAUSE 3
+      SEND "bury treasure"

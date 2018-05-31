@@ -1,0 +1,8 @@
+CLOSEMAP ()
+
+   Synopsis:
+      Attempts to close the automapper window
+
+   Notes:
+      Returns 1 if the window is successfully closed (or if it was already
+         closed), 0 if the window could not be closed.

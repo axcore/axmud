@@ -1,0 +1,30 @@
+dma / deletemacro             Deletes a macro
+ 
+   Format:
+      ;dma <switches>         Deletes a macro
+ 
+   Notes:
+      Macros are one of five types of Axmud interface (the others being 
+         triggers, aliases, timers and hooks).
+      Macros allow you to specify instructions to be executed automatically when
+         a certain key (or combination of keys) is pressed.
+      This command deletes an existing 'inactive' macro (one associated with a 
+         particular profile) and its corresponding 'active' macro, if there is
+         one.
+      It's not possible to delete an active macro directly; enable or disable 
+         the hook using ';modifymacro' to set its 'enabled' attribute instead.
+
+      To delete the inactive macro (and the active macro based on it, if there 
+         is one), one of the following (group 1) switch options must be used:
+         <name>               - Deletes macro belonging to the current world
+         <name> -w            - Deletes macro belonging to the current world
+         <name> -g            - Deletes macro belonging to the current guild
+         <name> -r            - Deletes macro belonging to the current race
+         <name> -c            - Deletes macro belonging to the current char
+         <name> -x <category> - Deletes macro belonging to the current custom
+                                   profile <category>
+         <name> -d <prof>     - Deletes macro belonging to the profile named
+                                   <prof>
+ 
+   User commands:
+      dma / delma / delmacro / deletema / deletemacro

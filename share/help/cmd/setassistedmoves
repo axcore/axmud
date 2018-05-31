@@ -1,0 +1,19 @@
+sam / setassistedmoves        Turns assisted moves on/off
+
+   Format:
+      ;sam on                 Turns assisted moves on
+      ;sam off                Turns assisted moves off
+      ;sam                    Shows whether assisted moves are on or off
+ 
+   Notes:
+      If the automapper knows the character's current location, you can use 
+         assisted moves to move through one of the room exit's using a single
+         command (e.g. 'east') rather than a sequence of commands (e.g. 'knock 
+         on door', 'ring bell', 'open door', 'enter').
+      Assisted moves can be turned on and off from the automapper window's menu 
+         or by using this command.
+      Assisted moves are not available when 'redirect mode' is turned on (see
+         the help for ';redirectmode').
+
+   User commands:
+      sam / setam / setassistedmove / setassistedmoves

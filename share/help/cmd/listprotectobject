@@ -1,0 +1,14 @@
+lpo / listprotectobject       Lists objects enjoying semi-protection
+ 
+   Format:
+      ;lpo                    Displays the list
+ 
+   Notes:
+      'Protected' objects enjoy semi-protection against being sold, dropped or
+         used collectively in other ways while the Inventory task is running
+         (see the help for the ';protectobject' command).
+      This command lists the protected objects stored in the current character
+         profile.
+ 
+   User commands:
+      lpo / listprotect / listprotectobject

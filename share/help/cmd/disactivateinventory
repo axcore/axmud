@@ -1,0 +1,23 @@
+div / disactivateinventory    Disactivates the Inventory/Condition tasks
+ 
+   Format:
+      ;div                    Disactivate the tasks
+ 
+   Notes:
+      When the Inventory task is in 'active' mode, it sends commands such as
+         'inventory' to the world at regular intervals, waits for the response 
+         and then displays a list of objects from the character's inventory in 
+         the task window.
+      When the Condition task is in 'active' mode, it sends commands such as
+         'examine axe' to the world at regular intervals, waits for the response
+         and then updates the Inventory task's list of objects (the Condition
+         task won't run without the Inventory task).
+      If the Inventory and Condition tasks are both running, this command
+         disactivates them both. If only the Inventory task is running, it
+         disactivates just that task. 
+      Both the Inventory and Condition tasks are in 'active' mode when they 
+         start (by default). After using this command to disactivate them, use
+         the ';activateinventory' command to re-activate them.
+ 
+   User commands:
+      div / disinv / disactivateinventory

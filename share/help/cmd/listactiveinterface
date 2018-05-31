@@ -1,0 +1,27 @@
+lai / listactiveinterface     Lists active interfaces
+ 
+   Format:
+      ;lai                    Lists interfaces (in order of checking)
+      ;lai -o                 Lists interfaces (in order of checking)
+      ;lai -a                 Lists interfaces (alphabetically)
+      ;lai -n                 Lists interfaces (in ascending order numerically)
+      ;lai -d                 Lists dependent interfaces
+      ;lai -i                 Lists indepedent interfaces
+      ;lai -v                 Verbose list of interfaces (alphabetically)
+      ;lai -c <category>      List interfaces of <category>
+ 
+   Notes:
+      Axmud interfaces are triggers, aliases, macros, timers and hooks. 
+      Most interfaces are associated with a particular profile and are called
+         'inactive' interfaces. When the profile becomes a current profile, its
+         interfaces become 'active' (except those whose name is the same as an
+         existing active interface associated with a higher-priority profile). 
+         This command lists active interfaces.
+      'Dependent' interfaces cause some task or script to be executed, whereas
+         'independent' interfaces don't. 
+      Switches can be combined, e.g. ';lai -d -i' has the same effect as ';lai'. 
+         However, the switches -o, -a and -n can't be combined.
+      <category> can be 'trigger', 'alias', 'macro', 'timer' or 'hook'.
+ 
+   User commands:
+      lai / listactive / listinterface / listactiveinterface

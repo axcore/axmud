@@ -1,0 +1,13 @@
+wc / worldcommand             Adds a world command to the current recording
+ 
+   Format:
+      ;wc <cmd>               Adds a world command
+ 
+   Notes:
+      Adds a world command to the current recording, as if it had been sent to 
+         the world at this point in the recording.
+      See the help for the ';record' command for more information about
+         recordings.
+ 
+   User commands:
+      wc / worldcmd / worldcommand

@@ -1,0 +1,56 @@
+mrp / modelreport             Compiles a report on the world model
+ 
+   Format:
+      ;mrp                    Shows a general report
+      ;mrp <switch options>   Shows a more detailed report
+ 
+   Notes:
+      The world model stores information about the regions, rooms, characters
+         and objects in the game world. The automapper window uses the model to
+         display its maps.
+      This command generates a statistical report on the world model, helping 
+         you to keep track of various kinds of things, as well as checking for 
+         things that still need to be done while compiling your maps.
+
+      <switch options> can be used as follows:
+         ;mrp                    - General report
+         ;mrp -r <region>        - Report on <region>
+ 
+         ;mrp -v                 - Report on visits in all regions
+         ;mrp -v -r <region>     - Report on visits in <region>
+         ;mrp -v -c <character>  - Report on <character> visits in all regions
+         ;mrp -v -c <character> -r <region>
+                                 - Report on <character> visits in <region>
+ 
+         ;mrp -g                 - Report on guilds in all regions
+         ;mrp -g -r <region>     - Report on guilds in <region>
+         ;mrp -g -n <guild>      - Report on <guild>s in all regions
+         ;mrp -g -r <region> -n <guild>
+                                 - Report on <guild>s in <region>
+ 
+         ;mrp -f                 - Report on room flags in all regions
+         ;mrp -f -r <region>     - Report on room flags in <region>
+         ;mrp -f -l <flag>       - Report on <flag>s in all regions
+         ;mrp -f -r <region> -l <flag>
+                                 - Report on <flag>s in <region>
+
+         ;mrp -m                 - Report on room titles/descrips in all regions
+         ;mrp -m -r <region>     - Report on rooms in <region> 
+ 
+         ;mrp -x                 - Report on exits in all regions
+         ;mrp -x -r <region>     - Report on exits in <region>    
+
+         ;mrp -q                 - Quick report on the current region
+ 
+      Switches can't be combined except in these formats above. However, the 
+         switches -r, -c, -n and -l can be used multiple times in the same 
+         command, so both of the following commands are valid:
+ 
+         ';mrp -v -c gandalf -r forest'
+         ';mrp -v -c gandalf -c bilbo -r forest -r mountains -r desert'
+ 
+      If region names contain spaces, they should be enclosed by diamond
+         brackets <...>.
+ 
+   User commands:
+      mrp / modelreport

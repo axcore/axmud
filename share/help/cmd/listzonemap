@@ -1,0 +1,22 @@
+lzm / listzonemap             Lists all zonemaps
+ 
+   Format:
+      ;lzm                    Lists zonemaps
+      ;lzm -s                 Lists only standard zonemaps
+ 
+   Notes:
+      Zonemaps are a plan for arranging windows on a workspace grid. Zonemaps
+         contain one or more zone models, describing a region of the workspace 
+         and the kinds of window that region is allowed to contain.
+      Axmud provides a number of standard zonemaps, but you can create a new
+         zonemap with the ';addzonemap' command.
+      This list shows how many zone models each zonemap contains, and whether
+         the zonemap is full, or not. Zonemaps which are the default zonemap for
+         a particular workspace are marked with a 'D'. Zonemaps which are
+         currently in use by a workspace grid are marked with with an asterisk. 
+      Axmud occasionally creates temporary zonemaps (for example, when handling
+         certain MXP requests); these zonemaps are automatically deleted when 
+         the session terminates.
+ 
+   User commands:
+      lzm / listzm / listzonemap

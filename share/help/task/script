@@ -1,0 +1,13 @@
+The Script task launches an Axbasic script, and continues to run for as long
+   as the script runs.
+Running an Axbasic script from within a task increases the range of Axbasic
+   statements and functions available to it; in particular, it enables the
+   script to open its own window, to create its own interfaces and to pause
+   periodically.
+
+Client commands used with Axbasic are:
+   ;runscript                 Runs an Axbasic script
+   ;runscripttask             Runs an Axbasic script as a task
+   ;checkscript               Checks an Axbasic script
+   ;editscript                Opens an Axbasic script for editing
+   ;axbasichelp               Shows help for Axbasic scripts

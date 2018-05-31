@@ -1,0 +1,13 @@
+GETEXITDEST (number)
+        
+   Synopsis:
+      Returns the destination of an exit in the automapper's current room
+
+   Notes:
+      'number' is the position of the exit in the room's ordered list of exits
+         (the first exit is numbered 1).
+      The return value is the world model number of the destination room. If 
+         there is no current room, if the numbered exit doesn't exist or if the 
+         exit doesn't have a destination, returns 0.
+      To get the number of exits in the current room, see the GETROOMEXITS
+         function.

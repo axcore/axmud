@@ -1,0 +1,14 @@
+lwc / listwindowcontrols      Lists window controls sizes
+ 
+   Format:
+      ;lwc                    Lists custom window controls sizes
+ 
+   Notes:
+      Window controls are the borders around the edges of all windows on the
+         desktop. Axmud needs to know their sizes to get its window positioning
+         right.
+      Custom window controls sizes can be set with the ';setwindowcontrols'
+         command. See also the help for ';testwindowcontrols'.
+
+   User commands:
+      lwc / listwc / listcontrols / listwindowcontrols

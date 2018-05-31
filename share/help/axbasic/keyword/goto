@@ -1,0 +1,24 @@
+GOTO expression
+
+   Synopsis:
+      Causes execution of the script to jump to the specified line number
+
+   Notes:
+      The expression must evaluate to a line number or an error will occur. 
+         Complex expressions like '(x + 10) / 2' can be used as well as simple 
+         line numbers like 100.
+      The use of GOTO statements in your Axbasic scripts is strongly 
+         discouraged.
+      In the example below, the lines are executed in the order 10, 20, 100,
+         110.
+      See also the help for IF and ON.
+
+   Availability:
+      GOTO is only available in scripts with primitive line numbers.
+
+   Examples:
+      10 PRINT "Hello world!"
+      20 GOTO 100
+      30 PRINT "This line is never executed"
+      100 PRINT "Goodbye cruel world!"
+      110 END

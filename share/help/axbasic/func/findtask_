@@ -1,0 +1,12 @@
+FINDTASK$ (string)
+        
+   Synopsis:
+      Returns the (unique) name of the first currently-running task matching the
+         specified string
+         
+   Notes:
+      'string' can be a task's label (e.g. "status" or "stat"), its formal name
+         (e.g. "status_task") or the unique name of a particular task in the
+         current tasklist (e.g. "status_task_17").
+      If no matching tasks are found, returns an empty string.
+      See also the COUNTTASK function.

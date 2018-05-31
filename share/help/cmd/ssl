@@ -1,0 +1,19 @@
+ssl / ssl                     Connects to an unnamed world via SSL
+ 
+   Format:
+      ;ssh <host> <port>      Connects to the world
+      ;ssh <host>             Connects to the world using the generic port
+
+   Notes:
+      Axmud offers three types of connection to a world - ordinary telnet, SSH 
+         (Secure Shell) and SSL (Secure Sockets Layer).    
+      This command first creates a temporary world profile - which isn't saved,
+         even if you use the ';save -f' command - and then connects to the 
+         specified world using the SSL protocol. The connection opens in a new 
+         'main' window (or in a new tab in a shared 'main' window).
+      Most worlds won't accept connections using SSL, and some of those that do
+         won't accept them from ordinary players. For those worlds, see the help
+         for ';telnet' and ';ssh'.
+
+   User commands:
+      ssl

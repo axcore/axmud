@@ -1,0 +1,84 @@
+tts / speech                  Modifies text-to-speech (TTS) general settings
+ 
+   Format:
+      ;speech                 Shows current text-to-speech settings
+      ;speech <options>       Modifies text-to-speech settings
+
+   Warning:
+      Axmud's text-to-speech features haven't been implemented on MS Windows
+         yet (but you can still use your screenreader with its default
+         settings).
+
+   Notes:
+      If you have one or more of the text-to-speech engines installed on your
+         system, Axmud can use them to convert text to speech. The engines 
+         currently supported are eSpeak, Flite, Festival and Swift. (Axmud also 
+         uses a dummy engine, called 'none'. If Axmud tries to convert text to 
+         speech using the dummy engine, you'll hear nothing.)
+      This command can be used to modify general text-to-speech settings.
+         (Individual text-to-speech configurations can be modified with the 
+         ';editconfig' command.)
+
+      If specified, <options> should be one of the following:
+
+         ;speech on           Enables text-to-speech for all users
+         ;speech off          Disables text-to-speech for all users (however, 
+                                 the ';speak' command will still work)
+         ;speech toggle       Enables or disables text-to-speech
+
+      (Note that text-to-speech is always active when Axmud is running in 
+         'blind' mode. You can still enable/disable text-to-speech for all 
+         users, and that setting will be applied when Axmud is not running in 
+         'blind' mode.)
+
+      If specified, <options> could also be one of the following:
+
+         ;speech receive on
+         ;speech receive off  Turns conversion of received text to speech on/off
+         ;speech login on
+         ;speech login off    Turns on login protection. When on, received text 
+                                 isn't converted to speech before the automatic
+                                 login is processed, unless it's a prompt.
+         ;speech system on
+         ;speech system off   Turns conversion of system messages to speech 
+                                 on/off
+         ;speech error on
+         ;speech error off    Turns conversion of system error messages on/off
+         ;speech command on
+         ;speech command off  Turns conversion of world commands on/off
+         ;speech dialogue on
+         ;speech dialogue off Turns conversion of (most) dialogue windows on/off
+         ;speech task on
+         ;speech task off     Turns on/off the ability of some tasks (such as 
+                                 the Status and Divert tasks) to convert certain 
+                                 items of text to speech
+
+         ;speech smooth on
+         ;speech smooth off   Turns on/off TTS smoothing, which tries to read 
+                                 sentences split over several lines more
+                                 smoothly (the 'on' setting is recommended)
+
+         ;speech auto on 
+         ;speech auto off     Turns on/off the automatic starting of the 
+                                 Festival engine server, the first time the 
+                                 engine is used (in case it's not already 
+                                 running)
+         ;speech port <port>  Sets the port used by the Festival engine server
+         ;speech port         Resets the port used by the Festival engine server
+                                 to the default 1314   
+         ;speech reconnect    Reconnects to the Festival engine server. This 
+                                 happens automatically if you change the port, 
+                                 and Axmud connects to the server when it starts 
+                                 (unless you have done ';speech auto off'), so 
+                                 you only need this command if you manually 
+                                 start the server after you start Axmud.
+         ;speech restart      Starts the Festival engine server on your system,
+                                 if it's not already running.
+ 
+      Normal Axmud switches can be used, if you prefer: -o for on, -f for off, 
+         -g for toggle, -r for receive, -l for login, -s for system, -e for 
+         error, -c for command, -d for dialogue, -t for task, -m for smooth, -a 
+         for auto, -p for port, -n for reconnect and -z for start.     
+
+   User commands:
+      tts / speech

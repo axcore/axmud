@@ -1,0 +1,26 @@
+quick / quick                 Moves the character using pre-defined quick routes
+ 
+   Format:
+      ;quick <start> <stop>   Moves from the room <start> to the room <stop>
+      ;quick <stop>           Moves from the current room to the room <stop>
+ 
+   Notes:
+      Axmud pre-defined routes are an easy way to move between rooms in the game
+         world (see the help for ';addroute' for information about routes).
+      This command moves the character between two rooms - whose room tags are
+         <start> and <stop> - using only pre-defined 'quick' routes. 
+      If the Locator task already knows the current room's tag (i.e. if you can 
+         see the tag in the task window), you can omit <start>.
+      If there is no pre-defined route between <start> and <stop>, Axmud will 
+         try to work out the shortest path between the rooms by combining other
+         pre-defined routes.
+
+      This command uses only quick routes. You can use the ';road' command to 
+         move using only road routes, or you can use the ';drive' command to 
+         move using both road and quick routes. The ';circuit' command can be
+         used to move along a circuit route.
+      You can also use the ';go' command to move around the world using the 
+         automapper and the world model.
+
+   User commands:
+      quick

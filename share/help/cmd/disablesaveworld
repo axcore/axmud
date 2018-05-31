@@ -1,0 +1,21 @@
+dsw / disablesaveworld        Disables saving files associated with a world
+ 
+   Format:
+      ;dsw <world>            Disables saving files for the <world>
+      ;dsw                    Disables saving files for the current world
+ 
+   Notes:
+      A single world is saved in three data files (the file types 'worldprof',
+         'otherprof' and 'worldmodel'). 
+      You can use this command to prevent data currently stored in memory from
+         being saved to these files. Other profiles and other types of file are
+         not affected.
+      Once saving has been disabled, it will not be re-enabled until you load
+         the files (or until you restart Axmud.)
+      The ';disablesaveload' command can be used to disable file saving/loading 
+         in all sessions. 
+      Even after using this command, the ';emergencysave' command will still be
+         available.
+ 
+   User commands:
+      dsw / disablesaveworld

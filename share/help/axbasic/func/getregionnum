@@ -1,0 +1,9 @@
+GETREGIONNUM ()
+
+   Synopsis:
+      Returns the world model number of the automapper's current region
+
+   Notes:
+      If the automapper window isn't open or if there is no current region,
+         returns 0.
+      To get the name of the current region, see the GETREGION$ function.

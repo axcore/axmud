@@ -1,0 +1,38 @@
+aqs / addquest                Adds a new quest
+ 
+   Format:
+      ;aqs <name>
+               Adds a new quest named <name>
+      ;aqs <name> <switches>
+               Adds a new quest and sets its contents
+ 
+   Notes:
+      Axmud is able to store information about the current world's quests. 
+         Quests created with this command are stored in the current world 
+         profile.
+      Quest names must be no longer than 16 characters, contain only A-Z, a-z, 
+         underlines and 0-9 (not the first character) and not be one of Axmud's 
+         reserved names (see the ';listreserved' command).
+      It's possible to link a quest to a mission (see the help for  
+         ';startmission' for more information about missions).
+
+      If you don't specify <switches>, an empty quest will be created; you can
+         sets its contents later with the ';modifyquest' command.
+      Otherwise, <switches> can include any of the following switch options:
+         -m <mission>   - Sets the corresponding mission
+         -p <number>    - Sets how many quest points are earned from this quest
+         -x <number>    - ...and how much XP (if applicable)
+         -c <number>    - ...and how much cash (if applicable)
+      <number> can be any number, including negative numbers (in case there is 
+         some kind of penalty associated with completing the quest). The default 
+         value is 0, meaning that no quest points/XP/cash are earned.
+
+      <switches> can also include any of these switch options, repeated as often
+         as you like:
+         -s <line>      - Adds a line to the quest's solution list. The whole 
+                             line must be enclosed by diamond brackets <...>
+         -t <comment>   - Adds a comment to the quest's comment list. The whole
+                             comment must be enclosed by diamond brackets <...>
+ 
+   User commands:
+      aqs / addqs / addquest

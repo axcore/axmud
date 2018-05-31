@@ -1,0 +1,23 @@
+WAITTRIG expression [ , expression ]
+
+   Synopsis:
+      Creates a temporary trigger and pauses until the trigger fires
+
+   Notes:
+      The first expression is the trigger pattern (a pattern). The Axbasic 
+         script will pause until the trigger fires, at which point the trigger
+         is destroyed and execution of the Axbasic script resumes.
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting for the trigger after that period. The trigger
+         is destroyed and execution of the script resumes.
+
+      If Axmud can't create the trigger, execution of the script continues as
+         normal (with no error message and no pause).
+      If the Axbasic script isn't being run from within an Axmud task, the 
+         WAITTRIG statement is ignored (and no error message is generated). 
+         Execution continues immediately with the next statement.
+      Also see the help for SETTRIG.
+
+   Examples:
+      WAITTRIG "The orc kills you"
+      WAITTRIG "You kill the orc", 100

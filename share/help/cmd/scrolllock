@@ -1,0 +1,21 @@
+scr / scrolllock              Toggles scroll lock mode in the 'main' window
+ 
+   Format:
+      ;scr                    Toggles scroll lock mode
+ 
+   Notes:
+      Scroll lock mode is on by default, and causes the 'main' window to scroll 
+         to the bottom whenever new text is received from the world (or whenever
+         a system message is displayed).
+      If you're trying to read a help file, it might be convenient to turn off
+         scroll lock mode for a while, so that you don't lose your place every
+         time the world sends some text.
+
+      The 'main' window typically includes some buttons next to the command
+         entry box. The padlock button toggles scroll lock mode. If the window
+         has multiple panes, the 'switch active pane' button next can switch 
+         between them; the scroll lock is then toggled on the active pane.
+      See also the help for the ';splitscreen' command.
+
+   User commands:
+      scr / lock / scrolllock

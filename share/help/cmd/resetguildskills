@@ -1,0 +1,13 @@
+rgs / resetguildskills        Resets the character's guild skills
+ 
+   Format:
+      ;rgs                    Resets skills
+ 
+   Notes:
+      Resets the character's list of guild skills to the standard list specified
+         by the current guild profile.
+      See the help for the ';advance' command for more information about guild 
+         skills.
+ 
+   User commands:
+      rgs / resetgs / resetguildskills

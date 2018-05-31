@@ -1,0 +1,27 @@
+lso / listsourcecode          Displays mudlib file paths for world model objects
+ 
+   Format:
+      ;lso <regions> 
+      ;lso <regions> <switches>
+               Displays mudlib file paths for the specified <regions>
+
+      ;lso 
+      ;lso <switches>
+               Displays paths for the automapper window's current region
+ 
+   Notes:
+      If you have administrative access to the world's filesystem (also called
+         its 'mudlib'), you can store file paths for each of the world's rooms
+         in your world model. (Every world model object can store a file path, 
+         but usually only rooms have their file paths stored.)
+      This command lists the file paths stored for objects in one or more 
+         regions.       
+      <regions> is a list of region names. If you don't specify any regions, the
+         region currently displayed in the automapper window (if any) will be
+         used.
+      <switches>, if specified, can be one or both of the following:
+         -n   Lists objects sorted numerically, rather than by file path
+         -a   Lists all objects in the region, not just rooms
+ 
+   User commands:
+      lso / listsource / listsourcecode

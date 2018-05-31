@@ -1,0 +1,7 @@
+edw / emptydivertwindow       Empties the Divert task window
+ 
+   Format:
+      ;edw                    Empties the window
+ 
+   User commands:
+      edw / emptydivert / emptydivertwindow

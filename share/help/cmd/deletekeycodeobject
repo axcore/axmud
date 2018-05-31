@@ -1,0 +1,13 @@
+dko / deletekeycodeobject     Deletes a keycode object
+ 
+   Format:
+      ;dko <name>             Deletes the keycode object <name>
+ 
+   Notes:
+      This command deletes a keycode object. The current keycode object can't be
+         deleted, however.
+      (See the help for ';addkeycodeobject' for more information about keycodes
+         and keycode objects.)
+ 
+   User commands:
+      dko / delko / deletekeycodeobject

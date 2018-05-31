@@ -1,0 +1,29 @@
+ctm / clonetemplate           Clones an existing profile template
+ 
+   Format:
+      ;ctm <original> <copy>
+               Clones a profile template <original> to one named <copy>
+ 
+   Notes:
+      The blueprint for a new category of profile is called a profile template. 
+         Several custom profiles can be based on a single template.
+      Standard profiles have the category 'world', 'guild', 'race' or 'char'.
+         Custom profiles have the category of the template on which they're
+         based. As soon as a template is used to create a custom profile, it is
+         marked as 'fixed', meaning that no further changes can be made to its
+         properties.
+      However, it's possible to clone a template. The original will have the
+         category <original> and the clone will have the category <copy>. The
+         clone will get the same set of properties as the original has.
+      The clone will not be marked as 'fixed' - regardless of whether the 
+         original was marked as fixed, or not - so you can modify its properties
+         (right up until the moment it is used to create its first custom 
+         profile, at which point the cloned template will also be marked as 
+         'fixed'.)
+      Category names must be no longer than 16 characters, contain only A-Z, 
+         a-z, underlines and 0-9 (not the first character) and not be one of 
+         Axmud's reserved names (see the ';listreserved' command).
+      (See the help for ';listprofile' for more information about profiles.)
+ 
+   User commands:
+      ctm / clonetm / clonetemplate

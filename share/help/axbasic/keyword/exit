@@ -1,0 +1,13 @@
+EXIT DO
+EXIT SUB
+EXIT WHILE
+
+   Synopsis:
+      Terminates the current DO..UNTIL, SUB..END SUB or WHILE..LOOP code block
+
+   Notes:
+      See the help for DO, SUB or WHILE for a full explanation.
+
+   Availability:
+      EXIT DO, EXIT SUB and EXIT WHILE are not available in scripts with
+          primitive line numbers.

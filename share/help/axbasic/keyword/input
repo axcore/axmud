@@ -1,0 +1,36 @@
+INPUT [ constant ; ] variable-name [ , variable-name ... ]
+INPUT #channel: variable-name [ , variable-name ... ]
+
+   Synopsis:
+      Prompts the user to input data or reads data from a file
+
+   Notes:
+      The first form of the INPUT statement prompts the user to enter one or 
+         more items of data, which are stored in the specified variables.
+      The string constant, if specified, is displayed as a prompt to the user;
+         otherwise no prompt is displayed.
+      If the script is being run from within a task, and if a task window with
+         its own entry box is open, the user's response can be typed there.
+         Otherwise, Axmud will open a popup window for each value expected. The
+         values are stored in the specified variable(s).
+      If you type nothing in the entry box, string variables are given the value
+         "" (an empty string) and numeric variables are given the value 0.
+
+      The second form of the INPUT statement reads data from a file channel
+         created with an earlier OPEN statement. If the file channel is closed, 
+         if it was opened in write-only mode or if the end-of-file has already
+         been reached, an error is generated. 
+
+   Examples:
+      ! Prompt the user for input
+      INPUT name$
+      INPUT "Enter your name"; name$
+      INPUT "Enter your date of birth DD MM YYYY"; day, month, year
+      END
+
+      ! Read data from a file
+      OPEN #1: NAME "myfile.txt"
+      INPUT #1: title$
+      INPUT #1: question$, answer$
+      CLOSE #1
+      END

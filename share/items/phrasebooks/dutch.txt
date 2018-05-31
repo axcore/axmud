@@ -1,0 +1,77 @@
+# Dutch phrasebook (from https://nl.wikipedia.org/wiki/Windstreek; checked at UtopiaMOO,
+#	utopiamoo.net 1111)
+#
+# English name for language (lower-case)
+dutch
+# Native name for language (capitalise)
+Nederlands
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+adj
+# Primary directions (up/down not seen at UtopiaMOO)
+noord
+noordnoordoost
+noordoost
+oostnoordoost
+oost
+oostzuidoost
+zuidoost
+zuidzuidoost
+zuid
+zuidzuidwest
+zuidwest
+westzuidwest
+west
+westnoordwest
+noordwest
+noordnoordwest
+op
+afdalen
+# Primary abbreviated directions
+n
+nno
+no
+ono
+o
+ozo
+zo
+zzo
+z
+zzw
+zw
+wzw
+w
+wnw
+nw
+nnw
+op
+a
+# Number of definite articles
+4
+# Definite articles
+de
+het
+des
+der
+# Number of indefinite articles
+1
+# Indefinite articles
+een
+# Number of 'and' words
+1
+# 'and' words
+en
+# Number of 'or' words
+1
+# 'or' words
+of
+# Number words
+een
+twee
+drie
+vier
+vijf
+zes
+zeven
+acht
+negen
+tien

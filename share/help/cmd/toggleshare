@@ -1,0 +1,28 @@
+tsh / toggleshare             Toggles sharing of 'main' windows on or off
+
+   Format:
+      ;tsh                    Toggles sharing of 'main' windows on or off
+ 
+   Notes:
+      When Axmud connects to multiple worlds at the same time. Each connection
+         (even in 'connect offline' mode) is handled by an Axmud session. This
+         command sets whether sessions should share a single 'main' window, or
+         not.
+
+      When session share a single 'main' window, each session is displayed in 
+         its own tab. 
+      Sessions often open additional windows. Those windows are arranged on a
+         'workspace grid', which stops windows from overlapping each other (as
+         (far as possible). When sessions share a single 'main' window, they 
+         each have their own workspace grid that other sessions are not allowed
+         to use. The session's windows are arrange on this grid, and are only 
+         visible when the session's tab is the visible one.
+
+      When sessions each have their own 'main' window, additional windows are
+         placed on a single workspace grid shared between them.
+
+      This command switches between the two state of affairs. The change is not
+         applied until the next time Axmud starts.
+
+   User commands:
+      tsh / togglesh / toggleshare

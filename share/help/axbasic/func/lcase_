@@ -1,0 +1,4 @@
+LCASE$ (string)
+
+   Synopsis:
+      Converts the specified string into lower-case characters

@@ -1,0 +1,15 @@
+lav / listadvance             Lists the skill order/cycle for current character
+ 
+   Format:
+      ;lav                    Lists character's skill/order cycle
+      ;lav -c                 Lists character's skill/order cycle
+      ;lav -g                 Lists guild's skill/order cycle
+ 
+   Notes:
+      Displays the current character's list of guild skills which can be
+         advanced (improved) with the Advance task.
+      See the help for the ';advance' command for more information about guild 
+         skills.
+ 
+   User commands:
+      lav / listadv / listadvance

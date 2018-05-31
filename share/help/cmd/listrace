@@ -1,0 +1,12 @@
+lr / listrace                 Lists race profiles
+ 
+   Format:
+      ;lr                     Lists race profiles
+
+   Notes:
+      This commands lists all the race profiles for this session (in other
+         words, all the race profiles associated with the session's current
+         world profile).
+ 
+   User commands:
+      lr / listrace

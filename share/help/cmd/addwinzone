@@ -1,0 +1,51 @@
+awz / addwinzone              Adds a new winzone
+ 
+   Format:
+      ;awz <name> <switches>  Adds a zone model to the winmap <name>
+ 
+   Notes:
+      Winmaps are a plan for arranging the layout of 'internal' windows 
+         (consisting of all 'main' windows, 'protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows).
+      See the help for ';addwinmap' for more information about winmaps.
+
+      The winmap consists of two parts: a list of strip objects, and a list of
+         table objects. 
+      Table objects are arranged on a 60x60 table. The table is divided up into
+        'winzones', with each winzone containing information about the type of
+        table object that should be created there.
+      
+      This command adds a new winzone to the winmap called <name>, and 
+         optionally sets the information stored there. Existing winzones can be
+         modified with the ';modifywinzone' command.
+
+      <switches> consist of some compulsory and some optional switch options.
+      Compulsory switch options:
+        -p <x coord> <y coord>  - Winzone's position (in blocks) on the table
+        -s <width> <height>     - Winzone's size (in blocks) on the table
+        -n <package>            - The package name of the table object to be
+                                     created in this winzone, for example
+                                     'Games::Axmud::Table::Pane'. The initial 
+                                     'Games::Axmud::Table::' part can be 
+                                     omitted, for example 'Pane'; note that 
+                                     capitalisation must be preserved)
+      Optional switch options:
+        -o <name>               - A name to give to the table object, when it is
+                                     created. Can be any string. If not
+                                     specified, the table object's name is the 
+                                     same as its number, so avoid using numbers.
+                                     Max 16 characters
+        -i <key>
+        -i <key> <value>        - Adds an initialisation property, <key>, set to
+                                     <value> (if specified). Initialisation 
+                                     properties are passed to the table object
+                                     when it is created. Any property not 
+                                     specified here takes itse default value.
+        -r <key>                - Removes the initialisation property <key>. 
+                                     Notes that all -i switches are processed 
+                                     before any -r switch is processed. The -i
+                                     and -r switches can be used multiple times
+                                     in one command
+
+   User commands:
+      awz / addwz / addwinzone

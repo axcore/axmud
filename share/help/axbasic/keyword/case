@@ -1,0 +1,12 @@
+CASE constant [ , constant ... ]
+CASE ELSE
+
+   Synopsis:
+      Tests the value of the variable specified in an earlier SELECT CASE
+         statement against the constant(s)
+
+   Notes:
+      See the help for SELECT for a full explanation.
+
+   Availability:
+      CASE is not available in scripts with primitive line numbers.

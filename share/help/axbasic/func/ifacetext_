@@ -1,0 +1,10 @@
+IFACETEXT$ ()
+
+   Synopsis:
+      Returns the line of text that caused the current interface notification
+
+   Notes:
+      The interface notification list contains all the notifications received,
+         and not yet processed, as the result of an earlier SETTRIG statement.
+      Returns the line of text that caused the trigger to fire. If there is no
+         current notification, returns an empty string.

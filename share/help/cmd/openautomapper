@@ -1,0 +1,7 @@
+oam / openautomapper          Opens the Automapper window
+ 
+   Format:
+      ;oam                    Opens the window
+ 
+   User commands:
+      oam / map / openmap / openautomapper

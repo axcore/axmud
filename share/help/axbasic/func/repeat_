@@ -1,0 +1,8 @@
+REPEAT$ (string, n)
+
+   Synopsis:
+      Returns n copies of the specified string as a single return value
+
+   Notes:
+      If n is not an integer, it is rounded up (or down). An error occurs if n
+        is a negative number.

@@ -1,0 +1,24 @@
+ilk / insertlook              Inserts fake 'look' into the Locator movement list
+ 
+   Format:
+      ;ilk                    Insert the fake look
+ 
+   Notes:
+      The Locator task keeps track of the number of look, glance and movement
+         commands sent to the world, so it knows how many room statements to
+         expect. Any part of the code can then check the character is where they
+         are supposed to be, by checking whether the Locator task is not
+         expecting any more room statement.
+      Unfortunately, some worlds send an unsolicited room statement for certain
+         events, and this disrupts the Locator task's operations.
+      This command inserts an artificial 'look' command into the Locator task,
+         which causes it to expect an extra room statement. The command is
+         normally used with a trigger, whose stimulus is a pattern like
+
+            The sun has risen on a beautiful new day
+
+         ...and whose response is this client command. Hopefully, the artificial
+         look is inserted before the Locator task interprets the room statement.
+ 
+   User commands:
+      ilk / ilook / insertlook

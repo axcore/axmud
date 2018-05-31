@@ -1,0 +1,15 @@
+ecs / editcolourscheme        Opens an 'edit' window for a colour scheme
+ 
+   Format:
+      ;ecs <name>             Edits the colour scheme <name>
+ 
+   Notes:
+      A textview is a scrolling area of a window where text is displayed. A
+         colour scheme determines the colours and font used in the textview.
+      The colour scheme used in windows normally depends on the winmap (see the
+         help for ';addwinmap'). The winmap is applied when a window is created, 
+         but then ignored. If you modify an existing colour scheme, the changes 
+         won't be applied to all windows automatically.
+
+   User commands:
+      ecs / editscheme / editcolorscheme / editcolourscheme

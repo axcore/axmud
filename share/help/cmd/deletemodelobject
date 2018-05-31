@@ -1,0 +1,15 @@
+dmo / deletemodelobject       Deletes an object from the world model
+ 
+   Format:
+      ;dmo <number>           Deletes the object <number>
+
+   Notes:
+      The world model stores information about the regions, rooms, characters
+         and objects in the game world. The automapper window uses the 
+         information stored in the world model to draw its maps.
+      This command deletes the object along with any child objects. It cannot
+         be used to delete regions, rooms or exits - use ';deleteregion',
+         ';deleteroom' or ';deleteexit' instead.
+
+   User commands:
+      dmo / delmo / delmodel / deletemodelobject

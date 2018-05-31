@@ -1,0 +1,25 @@
+lws / listworkspace           Lists all workspaces
+ 
+   Format:
+      ;lws                    Lists all workspaces
+
+   Notes:
+      Axmud supports multiple desktops or 'workspaces'. Workspaces can be both
+         real and virtual. If you have multiple physical monitors, each one is a
+         workspace. If your computer has a workspace switcher, allowing you to 
+         switch between virtual desktops, each one is a workspace too.
+      This command lists workspaces, both those which Axmud is using, and those
+         Axmud is not currently using (but are available). 
+      The workspace in which Axmud starts is the default workspace. Axmud uses 
+         its own numbering system for workspaces, which might not match the 
+         system's numbering system. In Axmud's numbering system, the default
+         workspace is #0.
+      Use the ';useworkspace' and ';removeworkspace' commands to change the 
+         workspaces that Axmud is using right now. The default workspace cannot
+         be removed.
+
+      To modify which workspaces Axmud uses when it starts, see the help for
+         ';addinitialworkspace'.
+ 
+   User commands:
+      lws / listws / listworkspace

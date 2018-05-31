@@ -1,0 +1,10 @@
+LOOP
+
+   Synopsis:
+      Terminates a WHILE..LOOP loop.
+
+   Notes:
+      See the help for WHILE for a full explanation.
+
+   Availability:
+      LOOP is not available in scripts with primitive line numbers.

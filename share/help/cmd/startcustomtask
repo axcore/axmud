@@ -1,0 +1,22 @@
+sct / startcustomtask         Starts a custom task
+ 
+   Format:
+      ;sct <name>             Starts the custom task called <name>
+
+   Notes:
+      Custom tasks are created by the user, given a handy name (like 'mytask' or
+         'fast_escape') and then started by the user whenever needed.
+      In addition, some of the custom task's default settings can be modified.
+         For example, if you create a custom Divert task, you can change the
+         colours it uses; these colours will then apply every time you start the
+         custom task using the ';startcustomtask' command (but the default 
+         colours will apply if you use ';starttask divert' instead).
+      Custom tasks are not associated with any particular world; if you like,
+         you can give your custom tasks names like 'deathmud_escape' to remind
+         yourself about when to use them.
+
+      This command starts one of the custom tasks created by an earlier
+         ';addcustomtask' command.
+ 
+   User commands:
+      sct / startcustomtask

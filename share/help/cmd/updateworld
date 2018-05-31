@@ -1,0 +1,42 @@
+uw / updateworld              Updates the current world profile
+ 
+   Format:
+      ;uw                     Updates the profile
+      ;uw <file>              Updates the profile using <file>
+ 
+   Notes:
+      This command can be used when you want to update the current world profile
+         with properties from a better world profile, without destroying any 
+         changes you've already made. (This is usually better than importing the 
+         other profile directly, because all of the guilds, races, characters, 
+         cages, interfaces and maps stored with your current world profile won't 
+         be destroyed.)
+      ';updateworld' is useful in two situations. Firstly, every version of 
+         Axmud comes with a number of pre-configured worlds. If you've just 
+         installed a new version of Axmud, you might want to update your world 
+         profile with properties from the new pre-configured world.
+      Secondly, if someone else creates a better world profile and offers to
+         share it with you, you can use ';updateworld' to import its properties.
+         (As always, you should only ever import data from someone you know and
+         trust.)
+
+      ';updateworld' can be used with any file created with the ';exportfiles'
+         command, including the pre-configured world files stored in Axmud's
+         install directory (folder), in the /items/worlds sub-directory.
+      <file> is the full file path. If you don't specify <file>, you'll be
+         prompted to select the file you want.
+      If you're using a new version of Axmud and want to update an existing
+         world definition, the prompt window is already open in the directory
+         where pre-configured worlds are stored (you need the file ending .tgz).
+
+      You should definitely CREATE A BACK UP OF THE ENTIRE AXMUD DATA DIRECTORY
+         before you start, in case anything goes wrong.
+      Occasionally it might be better to use the ';restoreworld' command, which
+         completely replaces the current world (and its associated guilds,
+         races, characters, cages, interfaces and maps) with a pre-configured
+         world. However, ';restoreworld' can not be used while actually 
+         connected to a world, nor can it be used to import a world profile that 
+         someone has offered to share.
+
+   User commands:
+      uw / updateworld

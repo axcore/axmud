@@ -1,0 +1,41 @@
+ON expression GOTO expression [ , expression ... ]
+ON expression GOSUB expression [ , expression ... ]
+
+   Synopsis:
+      Selects a line number for the trailing GOTO or GOSUB statement
+
+   Notes:
+      The first expression should evaluate to a positive integer. The remaining
+         expression(s) must evaluate to a line number. Complex expressions like
+         '(x + 10) / 2' can be used as well as simple line numbers like 100.
+      The use of ON-GOTO statements in your Axbasic scripts is strongly
+         discouraged.
+      In the first example below, the END statement is never executed. In the
+         second example, it is the last statement to be executed.
+
+   Availability:
+      ON-GOTO and ON-GOSUB are only available in scripts with primitive line
+          numbers.
+
+   Examples:
+      10 REM Generate a random number between 1 and 3
+      20 LET num = int (rnd (3) + 1)
+      30 ON num GOTO 100, 200, 300
+      100 PRINT "Number 1!"
+      110 STOP
+      200 PRINT "Number 2!"
+      210 STOP
+      300 PRINT "Number 3!"
+      310 STOP
+      400 END
+
+      10 REM Generate a random number between 1 and 3
+      20 LET num = int (rnd (3) + 1)
+      30 ON num GOSUB 100, 200, 300
+      40 END
+      100 PRINT "Number 1!"
+      110 RETURN
+      200 PRINT "Number 2!"
+      210 RETURN
+      300 PRINT "Number 3!"
+      310 RETURN

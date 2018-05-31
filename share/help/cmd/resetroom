@@ -1,0 +1,19 @@
+rrm / resetroom               Resets the automapper's current room
+ 
+   Format:
+      ;rrm                    Resets the current room
+ 
+   Notes:
+      Axmud's automapper is capable of tracking the character's current location
+         even when the automapper window isn't open. It's the equivalent of
+         using the automapper window in 'follow' mode - no new rooms or exits 
+         are added to the world model, but certain statistics, such as the 
+         number of visits per room, are still updated.
+      This command resets the current room, which stops Axmud from tracking the
+         character's location (regardless of whether the automapper window is
+         open, or not). When you're ready, use the ';setroom' command to set the 
+         new current room. 
+      See also the help for ';go'.
+
+   User commands:
+      rrm / resetroom

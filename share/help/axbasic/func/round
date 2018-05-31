@@ -1,0 +1,8 @@
+ROUND (x, n)
+
+   Synopsis:
+      Returns the value of x rounded to n decimal places
+
+   Notes:
+      If n is not specified, a default of 0 decimal places is used.
+      The ROUND function uses the 'round half to even' rule.

@@ -1,0 +1,13 @@
+stc / stopclient              Stops the client and saves files
+ 
+   Format:
+      ;stc                    Stops the client
+ 
+   Notes:
+      Use this command to stop the client quickly. If there are any unsaved
+         files, you'll be asked whether you want to save them first.
+      To stop the client immediately, without saving files, use the ';panic'
+         command.
+ 
+   User commands:
+      stc / stopclient

@@ -1,0 +1,15 @@
+REM [ ... ]
+
+   Synopsis:
+      Marks the rest of the line as a comment
+
+   Notes:
+      Everything after the REM keyword is ignored. The '!' character can be used
+         interchangeably with REM.
+
+   Examples:
+      REM This whole line is a comment
+      ! This whole line is a comment
+
+      PRINT "Hello!" : REM  Only the word 'Hello' is displayed
+      PRINT "Hello!"   !    Only the word 'Hello' is displayed

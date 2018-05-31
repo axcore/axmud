@@ -1,0 +1,7 @@
+emo / editmodelobject         Opens an 'edit' window for a world model object
+ 
+   Format:
+      ;emo <number>           Edits the object <number>
+  
+   User commands:
+      emo / editmo / editmodelobject

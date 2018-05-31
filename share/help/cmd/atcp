@@ -1,0 +1,27 @@
+atcp / atcp                   Shows ATCP data reported by the current world
+ 
+   Format:
+      ;atcp                   Shows all ATCP packages
+      ;atcp <name>            Shows the package called or starting with <name>
+ 
+   Notes:
+      The world can use the ATCP protocol to send extra information about the 
+         game state. This information is normally invisible to the user when it
+         is received by Axmud, but it is available for use with your tasks and 
+         scripts, and can also be viewed using this command.
+      An ATCP package contains one or more pieces of data. Typical package 
+         <name>s include 'char.stats', 'char.items.inv' and 'room.info'. Names
+         are case-insensitive.
+      If you don't specify a <name>, all ATCP packages are shown. 
+      If a package called <name> doesn't exist, a list of ATCP packages that 
+         start with the <name> (if any) are shown. For example, you can use the
+         <name> 'char' to show the packages 'char.stats' and 'char.items.inv'.
+
+      Some ATCP packages are not sent to the client unless the client requests
+         it in some way. For details about which ATCP packages you can request
+         (if any), consult the world's own documentation and then use the Axmud 
+         client command ';sendatcp'.
+      The GMCP protocol is very similar (see the help for ';gmcp').
+
+   User commands:
+      atcp

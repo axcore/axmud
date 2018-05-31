@@ -1,0 +1,7 @@
+CHR$ (number)
+
+   Synopsis:
+      Returns the character with the specified ASCII value
+
+   Notes:
+      ASCII values in the range 0-127 can be specified.

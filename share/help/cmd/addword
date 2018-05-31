@@ -1,0 +1,152 @@
+adw / addword                 Adds words or terms to the current dictionary
+ 
+   Format:
+      ;adw <switches>         Adds words or terms
+ 
+   Notes:
+      Dictionaries help Axmud to interpret the text it receives from the world.
+      An Axmud dictionary stores groups of words. It contains a group of weapon
+         words ('sword', 'mace', etc), a group of words for living beings
+         ('orc', 'dwarf', etc), and several more besides.
+      It also contains several useful terms, such as phrases for times of the
+         day.
+
+      This command adds new words and terms to the current dictionary. 
+         <switches> should be one or more of the following switch options:
+ 
+      -g <guild>        - Adds a new guild word (e.g. 'assassin')
+      -r <race>         - Adds a new race (species) word (e.g. 'orc')
+      -w <weapon>       - Adds a new weapon word (e.g. 'club')
+      -a <armour>       - Adds a new armour word (e.g. 'helmet')
+      -e <garment>      - Adds a new garment word (e.g. 'jacket')
+      -s <being>        - Adds a new sentient being word (e.g. 'guard')
+      -k <creature>     - Adds a new creature (e.g. 'tiger')
+ 
+      -p <portable>
+      -p <portable> <type>
+          - Adds a new portable word. Portable objects are things that can
+               (usually) be picked up by the character.
+            <type> should be one of the standard portable types ('torch', 'key', 
+               'map' etc) or a brand new portable <type>. If <type> is not 
+                specified, the portable object is given the type 'other'.
+      -d <decoration>
+      -d <decoration> <type>
+          - Adds a new decoration word. Decorations are things in rooms that
+               (usually) can't be picked up by the character.
+            <type> should be one of the standard portable types ('door', 'bed', 
+               'lever' etc) or a brand new decoration <type>. If <type> is not 
+                specified, the decoration is given the type 'other'.
+ 
+      -l <word> <plural>
+          - Defines the plural of a known word. Axmud already knows that, in 
+               English, the plural of 'cat' is 'cats', but it doesn't know the 
+               plural of 'stadium' is 'stadia'. Use this switch options to 
+               define unusual plurals.
+      -x <word> <pseudo_noun>
+          - A pseudo-noun is a group of words treated by Axmud as a single word.
+               For example, you could pair the <word> 'corpse' with the
+               <pseudo_noun> 'gruesome remains of a corpse'; then Axmud won't
+               have to tear its hair out trying to work out which word in the
+               phrase 'gruesome remains of a corpse' is the main noun.
+ 
+      -j <adjective>
+          - Adds a new adjective word.
+      -c <adjective> <declined_form>
+          - Defines the declined form of a known adjective. English does not
+               decline adjectives but, using a French dictionary, Axmud would
+               already know that 'grand' and 'grande' both mean 'big'. However,
+               it wouldn't know that 'vieux' and 'vieille' both mean 'old'. Use
+               this command to define unusual declensions like 'vieille'.
+      -y <adjective> <pseudo_adjective>
+          - A pseudo-adjective is a group of words treated by Axmud as a single
+               adjective. For example, you could pair the <adjective> 'big' with
+               the <pseudo_adjective> 'quite stupendously big'; then Axmud won't
+               tear its hair out trying to work out which word in the phrase 
+               'quite stupendously big' is the adjective, and which words are 
+               adverbs, prepositions, and so on.
+
+      -v <substitution> <pseudo_object>
+          - Defines a <pseudo_object> string like 'He-Man, Master of the
+               Universe' which would be difficult for Axmud to parse (because a
+               comma normally indicates the phrase contains two separate
+               objects). When a list of objects is parsed, the first thing done 
+               is to replace any <pseudo_object> strings found with a 
+               <substitution> string like 'He-Man'.
+ 
+      -i <word>
+          - Defines a <word> which should be ignored (because it is definitely
+               not a noun or adjective, nor is it a pseudo-nouns or pseudo-
+               adjective), and should therefore never be collected as an unknown
+               word. These words should be mostly prepositions, adverbs and
+               articles.
+ 
+      -n <numeral> <word>
+          - Defines a <word> like 'eight' to mean a <numeral> like '8'. Any
+               indeterminate term (like 'part of' or 'some of') should be given
+               the <numeral> -1. Fractions can be given a <numeral> like '0.5'
+               or '0.333'.
+ 
+      -t <unit> <singular>
+      -t <unit> <singular> <plural>
+          - Defines a time word. <unit> must be one of 'second', 'minute', 
+                'hour', 'day', 'week', 'month', 'year', 'decade', 'century' or
+                'millennium'. <singular> should be the equivalent word used in 
+                the world (for example, on a French-language mud you might 
+                specify <singular> terms like 'jour', 'semaine' and 'an'). If
+                <plural> is not specified, Axmud will try to guess the plural 
+                form.
+ 
+      -b <value> <time_of_day>
+          - Defines a time expression. <value> must be 0 for a.m., 1 for p.m. -
+               <time_of_day> can be a phrase like 'in the morning' or 
+               'midnight'.
+      -f <value> <hours>
+          - Defines the hour component of a time, e.g. if <value> is 4, <hours>
+               could be the phrase 'four o'clock'.
+      -m <value> <minutes>
+          - Defines the minute component of a time, e.g. if <value> is 10,
+               <minutes> could be the phrase 'ten past'; if <value> is -20,
+               <minutes> could be the phrase 'twenty to'.
+          - (Axmud usually extracts the minutes first so it can interpret 
+               phrases like 'ten past ten' - 'ten past' is extracted first.)
+
+      -u <word>
+          - Adds a new 'unknown' word (usually added to the dictionary by the
+               Locator task when it analyses a contents line containing words
+               it doesn't recognise; but you can add unknown words artificially
+               using this option, if you need to)
+      -o <line>
+          - Adds a new contents line (usually added to the dictionary by the 
+               Locator task, when it analyses any contents line, but you can add
+               a contents line artificially using this option, if you need to)
+ 
+      The default dictionary - the one which is created when a new world profile
+         is created - contains examples of most of these words and terms; use 
+         the ';listword' command to see them.
+      Any component which contains spaces - for example, a <pseudo_adjective>
+         like 'quite stupendously big' - should be enclosed with diamond
+         brackets <...>
+      Switch options can be combined in a single command:
+         e.g. ';addword -r orc -r troll -w sword -k butterfly'
+
+      Words can be added to more than one group. If the new word is already in 
+         the dictionary (but in a different group), Axmud uses only one of those
+         entries while parsing text.
+      For nouns, plural noun terms take priority, followed by sentient beings,
+         creatures, portables, decorations, races, guilds, weapons, armours,
+         garments and then pseudo-nouns.
+      For adjectives, declined adjective terms take priority, followed by normal
+         adjectives and then pseudo-adjectives.
+      So, if the word 'thingy' appears in both the 'creature' and 'weapon'
+         groups, Axmud will assume that it's a creature (because creatures take
+         priority over weapons).
+
+      If the new word is in the dictionary's list of unknown words, it is
+         removed from that list.
+      Speedwalk characters, which are also stored in Axmud dictionaries, can be
+         added and modified with the ';addspeedwalk' and ';addmodifierchar'
+         commands.         
+      See also the help for ';quickaddword'.
+ 
+   User commands:
+      adw / addword

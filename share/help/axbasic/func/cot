@@ -1,0 +1,9 @@
+COT (x)
+
+   Synopsis:
+      Returns the cotangent (inverse tangent) of the angle x
+
+   Notes:
+      x is measured in radians by default. If OPTION ANGLE DEGREES has been
+         specified, x is measured in degrees.
+      The value of x must not be 0.

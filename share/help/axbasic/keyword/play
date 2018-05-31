@@ -1,0 +1,13 @@
+PLAY expression
+
+   Synopsis:
+      Plays an Axmud sound effect
+
+   Notes:
+      The expression must evaluate to one of the sound effects Axmud recognises.
+         If it does not, an error will occur.
+      See also the help for BEEP.
+
+   Examples:
+      PLAY "alarm"
+      PLAY sound$

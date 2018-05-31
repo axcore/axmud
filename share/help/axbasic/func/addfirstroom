@@ -1,0 +1,16 @@
+ADDFIRSTROOM ()
+        
+   Synopsis:
+      Adds the first room to the automapper window's current region
+
+   Notes:
+      The request is performed by the automapper window, which sets the new room 
+         as the current room and switches to 'update' mode.
+      If the Locator task is running and knows about the current location, the
+         new room will be created with matching properties (descriptions, exits
+         and so on); otherwise a blank room will be created.
+      If the operation is successful, the new room's world model number is
+         returned. If the automapper window isn't open, if there is no current
+         region, if the current region isn't empty or if the operation fails, 0
+         is returned.
+      See also the ADDROOM function.

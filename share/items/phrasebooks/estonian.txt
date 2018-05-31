@@ -1,0 +1,73 @@
+# Estonian phrasebook (from https://et.wikipedia.org/wiki/Ilmakaared)
+# Accented characters converted so that entry boxes will show them
+# No idea how to translate 'northnortheast' - but 'ne' and 'nne' are the correct abbreviations
+#
+# English name for language (lower-case)
+estonian
+# Native name for language (capitalise)
+Eesti keel
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+adj
+# Primary directions
+pohi
+northnortheast
+kirre
+eastnortheast
+ida
+eastsoutheast
+kagu
+southsoutheast
+louna
+southsouthwest
+edel
+westsouthwest
+laas
+westnorthwest
+loe
+northnorthwest
+ules
+alla
+# Primary abbreviated directions
+n
+nne
+ne
+ene
+e
+ese
+se
+sse
+s
+ssw
+sw
+wsw
+w
+wnw
+nw
+nnw
+u
+d
+# Number of definite articles
+0
+# Definite articles
+# Number of indefinite articles
+0
+# Indefinite articles
+# Number of 'and' words
+1
+# 'and' words
+ja
+# Number of 'or' words
+1
+# 'or' words
+voi
+# Number words
+uks
+kaks
+kolm
+neli
+viis
+kuus
+seitse
+kaheksa
+uheksa
+kumme

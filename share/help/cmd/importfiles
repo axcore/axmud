@@ -1,0 +1,22 @@
+imf / importfiles             Imports a file (or files)
+ 
+   Format:
+      ;imf                    Imports file(s)
+      ;imf <path>             Imports the specified file archive
+ 
+   Notes:
+      Axmud uses a fixed directory structure for its data files. Sometimes it's
+         convenient to move data files somewhere else - for backup purposes, or
+         to transfer them to another computer.
+      ';importfiles' imports an archive file previously created with the
+         ';exportfiles' command. An archive file consists of one or more Axmud
+         files compressed into a single .tgz archive. <path>, if specified, 
+         should be the full path to the archive file.
+      Data from imported archive files is incorporated into Axmud's data files,
+         but not loaded into memory. (The data in memory is not modified.) If
+         the data files already exist, they are replaced.
+      The config file is never exported or imported (because it contains data
+         mostly relevant only to your current computer).
+ 
+   User commands:
+      imf / importfile / importfiles

@@ -1,0 +1,8 @@
+TRUNC (x)
+TRUNC (x, n)
+
+   Synopsis:
+      Returns the value of x truncated to n decimal places
+
+   Notes:
+      If n is not specified, a default of 0 decimal places is used.

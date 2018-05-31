@@ -1,0 +1,14 @@
+GETOBJECTALIVE (number)
+        
+   Synopsis:
+      Tests whether an object is considered alive
+
+   Notes:
+      The Locator task's current room has a numbered list of objects; 'number' 
+         is the position of an object in that list (the first object is numbered 
+         1).
+      This function returns 1 if the object is considered alive, 0 if it is not.
+      If the Locator task isn't running, if it doesn't know about the current
+         location or if the numbered object doesn't exist, 0 is returned.
+      To get the number of objects in the curent location, see the
+         GETROOMOBJECTS function.

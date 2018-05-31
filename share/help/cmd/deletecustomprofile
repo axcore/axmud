@@ -1,0 +1,14 @@
+dcp / deletecustomprofile     Deletes a custom profile
+ 
+   Format:
+      ;dcp <name>             Deletes the custom profile <name>
+ 
+   Notes:
+      Besides having a guild profile and a race profile, characters can have any 
+         number of custom profiles marked as a current profile.
+      If <name> is the current custom profile based on a particular profile 
+         template, there will be no current profile for that template after 
+         using this command.
+ 
+   User commands:
+      dcp / delcustom / delcustomprof / deletecustomprofile

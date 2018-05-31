@@ -1,0 +1,37 @@
+CALL subroutine-name ( [ expression [ , expression ... ] ] )
+
+   Synopsis:
+      Calls a subroutine with the specified arguments
+
+   Notes:
+      The arguments, if any, must match those in the SUB statement at the
+         beginning of the subroutine profile, both in type and number.
+
+      In a statement like:
+      
+         CALL mysub (...)
+         
+      ...the subroutine's return value, if any, is ignored.
+      
+      However, CALL can also be used in LET statements to capture return values:
+      
+         LET result$ = CALL mysub (...)
+         result$ = CALL mysub (...)
+         
+      Note that CALL is a statement, not a function, so it cannot be used thus:
+      
+         PRINT 10 * (CALL mysub (...))
+
+   Availability:
+      CALL is not available in scripts with primitive line numbers.
+
+   Examples:
+      LET number1 = 2
+      LET number2 = 5
+      LET result = CALL multiply (number1, number2)
+      PRINT result
+      END
+
+      SUB NUMERIC multiply (val1, val2)
+         RETURN (val1 * val2)
+      END SUB

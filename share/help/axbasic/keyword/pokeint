@@ -1,0 +1,31 @@
+POKEINT axmud-object-property
+
+   Synopsis:
+      Sets the value of an Axmud internal scalar property to an integer
+
+   Notes:
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
+         the help for the POKE statement for a full explanation). 
+      POKEINT is similar to POKE, but it only sets the value of scalar 
+         properties such as "world.current.remoteWimpyMax". It cannot be used to 
+         set a list property such as "world.current.doorPatternList", a hash 
+         property such as "world.current.currencyHash" or a Perl object such as
+         "world.current".
+      POKEINT modifies the value of the scalar property - a value which must be 
+         numeric - by removing its fractional part, converting 3.1415 to 3 and 
+         converting -2.7182 to -2. POKEINT is most useful after a POKEDIVIDE
+         statement acts on scalar property that needs to be an integer.
+      Much of Axmud's internal data is read-only, and cannot be modified with
+         POKE or with this statement. If you try to modify a read-only property
+         you will get an 'operation failure' error.
+
+   Warning: 
+      Do not try to modify Axmud's internal data unless you know what you are 
+         doing. Read the Axmud manual before you try to POKE anything. (The
+         examples below are safe, but backup your data first.)
+
+   Examples:
+      ! Halve the number of consecutive empty lines that are suppressed
+      POKEDIVIDE "world.current.suppressEmptyLineCount", 2
+      ! The value must be an integer!
+      POKEINT "world.current.suppressEmptyLineCount"

@@ -1,0 +1,32 @@
+ib / instructionbuffer        Shows the status of an instruction buffer
+ 
+   Format:
+      ;ib -s                  Shows session's buffer status
+      ;ib                     
+
+      ;ib -c                  Shows status of client's combined buffer 
+
+   Notes:
+      Instruction buffers are Axmud's records of processed instructions. An
+         instruction includes everything you type in the 'main' window - a 
+         client command like ';setworld deathmud' is an instruction, as is a 
+         world  command such as 'north'.
+      Several world commands typed together such as 'north;kill orc;eat corpse'
+         also count as a single instruction (but they are stored as three
+         separate commands in the world command buffers.)
+      Various parts of the code can generate their own world commands and their
+         own client commands, which are again stored as instructions in these 
+         buffers.
+
+      Every session has its own instruction buffer, storing instructions 
+         processed by that session. There is also a combined instruction buffer
+         storing instructions processed by all sessions.
+
+      Each instruction has its own entry, or 'item', in the buffer. The number 
+         of the items in the combined buffer and session buffers won't match if
+         there is more than one session open.
+      This command shows basic information about one of the buffers. To show the
+         buffer's contents, use the ';dumpinstructionbuffer' command.
+
+   User commands:
+      ib / instructbuff / instructionbuffer

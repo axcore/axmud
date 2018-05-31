@@ -1,0 +1,15 @@
+dem / dumpexitmodel           Lists all exit model objects
+ 
+   Format:
+      ;dem                    Shows all exit objects
+ 
+   Notes:
+      The world model stores information about the regions, rooms, characters
+         and objects in the game world. The automapper window uses the model to
+         display its maps.
+      This command dumps the list of exit model objects to the 'main' window. It 
+         should be used cautiously (because a large exit model will take a very 
+         long time to be displayed).
+ 
+   User commands:
+      dem / dumpexit / dumpexitmodel

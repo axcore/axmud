@@ -1,0 +1,7 @@
+eex / editexit                Opens an 'edit' window for an exit model object
+ 
+   Format:
+      ;eex <number>           Edits the exit <number>
+  
+   User commands:
+      eex / editexit

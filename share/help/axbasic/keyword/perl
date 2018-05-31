@@ -1,0 +1,23 @@
+PERL expression
+
+   Synopsis:
+      Executes a mini-Perl programme
+      
+   Notes:
+      This is the equivalent of a Perl command typed in the 'main' window's
+         command entry box.
+      The expression is run as a mini-Perl programme. The programme's return 
+         value (if any) is executed as an instruction. If the Perl programme
+         generates an error, no instruction is executed.
+      The instruction is typically a world command that's sent straight to the
+         world, but it can be any kind of Axmud instruction except another Perl
+         command.
+      If the Perl command produces any kind of error, the Axbasic script 
+         continues as normal. No Axbasic error message is generated.
+         
+      Extensive help for Perl commands is available by typing ';help perl'.
+      See also the help for MULTI, SPEED and BYPASS.
+
+   Examples:
+      ! Run a quick Perl programme
+      PERL " $a = 'hello'; $b = 'world'; $a . $b; "

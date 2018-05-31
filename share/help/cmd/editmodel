@@ -1,0 +1,7 @@
+emd / editmodel               Opens an 'edit' window for the world model
+ 
+   Format:
+      ;emd                    Edits the world model
+  
+   User commands:
+      emd / editmd / editmodel

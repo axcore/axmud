@@ -1,0 +1,33 @@
+SETGAUGE expression , expression , expression
+    
+   Synopsis:
+      Updates a 'main' window gauge
+    
+   Notes:
+      Updates a gauge that was added to the 'main' window with an ADDGAUGE or
+         ADDCONGAUGE statement.
+      The first expression is the gauge's unique number. If the gauge doesn't 
+         exist, the SETGAUGE statement is ignored, but the number isn't an 
+         integer, 0 or above, you'll see an error message.
+      The second and third expressions should evaluate to numbers used to set
+         the length of the "full" and "empty" portions of the gauge. Any decimal 
+         number is acceptable, even negative numbers. If these expressions don't 
+         evaluate to a number, the gauge is blanked.
+      After an ADDGAUGE statement, the first number is expected (but not
+         required) to be less than or equal to the second one. After an 
+         ADDCONGAUGE statement, the sum of the two numbers is expected (but not
+         required) to be constant, at least in the short term.
+
+   Examples:
+      REM Character's health points are at 50%
+      ADDGAUGE 1, "HP", "RED", "red", "WHITE"
+      SETGAUGE 1, 50, 100
+
+      REM Character's energy points are very low
+      ADDGAUGE 2, "EP", "GREEN", "green", "black"
+      SETGAUGE 2, 0.017, 1
+
+      REM Show a gauge where the two numbers are added
+      REM Character has 900xp, and needs 100 more to level up
+      ADDCONGAUGE 3, "XP", "MAGENTA", "magenta", "WHITE"
+      SETGAUGE 3, 900, 100

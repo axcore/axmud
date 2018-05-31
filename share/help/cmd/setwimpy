@@ -1,0 +1,21 @@
+wmp / setwimpy                Sets local/remote wimpy level
+ 
+   Format:
+      ;wmp <number>           Sets local wimpy to <number> (0-100)
+      ;wmp -r <number>        Sets remote wimpy to <number>
+      ;wmp                    Shows current local/remote wimpy setting
+
+   Notes:
+      The local and remote wimpy levels are stored in the current character
+         profile.
+      The local wimpy level is always in the range 0-100, where 0 means 'brave',
+         50 means 'run away when the character's health points reach 50%', and
+         100 means 'run away at the first sign of trouble'.
+      The remote wimpy level is identical to that used by the current world.
+      
+      The Status task can be set up to monitor changes to the character's wimpy
+         levels, but no part of the Axmud code will make the character run away;
+         it's up to you to write own tasks or Axbasic scripts to do that.
+  
+   User commands:
+      wmp / wimpy / setwimpy

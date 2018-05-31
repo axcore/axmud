@@ -1,0 +1,19 @@
+dsl / disablesaveload         Disables saving/loading of all files
+ 
+   Format:
+      ;dsl                    Disables saving/loading
+ 
+   Notes:
+      If Axmud encounters a serious error while saving or loading a file, it
+         automatically disables the saving and loading of files across all
+         sessions. This should prevent your saved data from getting corrupted.
+      For this reason, once all file saving/loading has been disabled, it will 
+         not be re-enabled until you restart Axmud.
+      You can use this command to manually disable file saving/loading. You can
+         also use ';disablesaveworld' to disable saving files associated with a
+         particular world.
+      Even after using this command, the ';emergencysave' command will still be
+         available.
+ 
+   User commands:
+      dsl / disablesaveload

@@ -1,0 +1,31 @@
+DO
+
+   Synopsis:
+      Initiates a DO..UNTIL loop
+
+   Notes:
+      Every DO statement must have a corresponding UNTIL statement.
+      The loop continues until the condition is evaluated as 'false'.
+      Unlike a WHILE..LOOP loop, a DO..UNTIL loop will be executed at least
+         once.
+      Following an EXIT DO statement, the loop terminates immediately. Execution
+         resumes after the next UNTIL statement.
+
+   Availability:
+      DO is not available in scripts with primitive line numbers.
+
+   Examples:
+      ! Print the numbers 1 to 10 in sequence
+      LET count = 0
+      DO
+         LET count = count + 1
+         PRINT count
+      UNTIL count >= 10
+
+      ! Keep rolling the dice until we get a 3 or a 6
+      DO
+         LET dice = int (rnd (6) + 1)
+         PRINT dice
+         IF dice = 3 THEN EXIT DO
+         PRINT "Phew! We didn't roll a 3"
+      UNTIL dice = 6

@@ -1,0 +1,12 @@
+lg / listguild                Lists guild profiles
+ 
+   Format:
+      ;lg                     Lists guild profiles
+
+   Notes:
+      This commands lists all the guild profiles for this session (in other
+         words, all the guild profiles associated with the session's current
+         world profile).
+ 
+   User commands:
+      lg / listguild

@@ -1,0 +1,7 @@
+DEG (x)
+
+   Synopsis:
+      Converts an expression in radians, x, into degrees
+
+   Notes:
+      Not affected by OPTION ANGLE.

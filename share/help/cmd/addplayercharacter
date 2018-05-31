@@ -1,0 +1,23 @@
+apc / addplayercharacter      Adds a player character (PC) to the world model
+ 
+   Format:
+      ;apc <name>             Adds a PC with <name> to the model
+      ;apc <name> <parent>    Adds a PC with <name> and parent <parent>
+ 
+   Notes:
+      The world model stores information about the regions, rooms, characters
+         and objects in the game world. The automapper window uses the model to
+         display its maps.
+      Most model objects can be added with ';addmodelobject', including player
+         characters (model objects which represent a character in the world). 
+         Player characters can also be added to the model using command.
+      The world model can only contain one object for each character, so you 
+         can't add two characters called 'Bilbo'. (All categories of model 
+         object except regions and characters can have duplicate names.)
+      If <name> is longer than 32 characters, it will be abbreviated.
+      <parent>, if specified, is the number of the parent model object. You 
+         might possibly want to set the parent to a region or a room but, in 
+         most cases, character model objects don't need a parent.
+ 
+   User commands:
+      apc / addpc / addplayerchar / addplayercharacter

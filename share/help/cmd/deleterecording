@@ -1,0 +1,19 @@
+drc / deleterecording         Deletes line(s) from the current recording
+ 
+   Format:
+      ;drc <line>             Deletes line <number>
+      ;drc <start> <stop>     Deletes line number <start> to line number <stop>
+      ;drc                    Deletes the last line
+ 
+   Notes:
+      If you don't specify a line number, the last line in the recording is
+         deleted. If you're using an insertion point (specified with the
+         ';insertrecording' command), that line won't necessarily be the most 
+         recently-added one.
+      Starting a new recording automatically overwrites the previous one, so it
+         might be easier to just use the ';record' command.
+      See the help for the ';record' command for more information about
+         recordings.
+ 
+   User commands:
+      drc / deleterc / deleterecording

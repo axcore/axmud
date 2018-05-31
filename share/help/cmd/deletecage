@@ -1,0 +1,20 @@
+dcg / deletecage              Removes all instances of an obsolete cage type
+ 
+   Format:
+      ;dcg <type>             Removes all instances of cage <type>
+      ;dcg                    Removes all instances of obsolete cage types
+
+   Notes:
+      Axmud can load plugins which add new types of cage. If the plugin fails to
+         load for some reason, cages of that type are not destroyed; however, if 
+         you no longer want to use cages of a particular type, you can use this 
+         command to remove them.
+      This command removes cages of the specified type(s) from every open
+         session. If you don't specify a <type>, all cages whose type isn't
+         recognised are removed.
+      In order to eradicate all traces of a particular cage type, you might
+         want to open every world in 'offline' mode before using this command
+         and saving all files.
+
+   User commands:
+      dcg / delcage / deletecage

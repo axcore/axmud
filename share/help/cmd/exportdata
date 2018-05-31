@@ -1,0 +1,45 @@
+exd / exportdata              Exports an object (or objects)
+ 
+   Format:
+      ;exd <switch> <name>    Exports a partial data file
+ 
+   Notes:
+      Axmud uses a fixed directory structure for its datafiles. Sometimes it's
+         convenient to move data files somewhere else - for backup purposes, or
+         to transfer them to another computer.
+      ';exportfiles' can export a whole file (or files), but sometimes you'll
+         only want to export a single thing - a single dictionary, or a single
+         zonemap. You can do it using this command.
+ 
+      <switch> specifies what kind of object you want to export, and <name> is
+         the object's name:
+         -d <prof>  Exports the non-world profile <prof>. If it's a custom
+                       profile, the profile template is also exported. All of
+                       the profile's cages are also exported. (World profiles 
+                       can't be exported using this command - use ';exportfile' 
+                       instead.)
+         -t <cage>  Exports the single cage named <cage>
+         -f <prof>  Exports all the cages belonging to the profile <prof>, but 
+                       not the profile itself
+         -s <templ> Exports the profile template named <templ>
+         -i <task>  Exports the (global) initial task named <task>. (Initial 
+                       tasks belonging to a profile can't be exported - you must
+                       export the whole profile.)
+         -c <task>  Exports the custom task named <task>
+         -k <obj>   Exports the keycode object named <obj>
+         -y <dict>  Exports the dictionary named <dict>
+         -z <map>   Exports the zonemap named <map>, including all of its zone
+                       models
+         -p <map>   Exports the winmap named <map>, including all of its 
+                       winzones
+         -o <col>   Exports the colour scheme <col>
+         -x <obj>   Exports the text-to-speech object name <obj>
+      The world model can be exported with the ';exportfiles' command 
+         (individual model objects can't be exported at the moment).
+      Use ';importdata', not ';importfiles', to re-import the data exported with
+         this command. ';importdata' integrates the data into your existing
+         data; if you use ';importfiles', all of your existing data will be
+         lost.
+ 
+   User commands:
+      exd / exportdata

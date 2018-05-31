@@ -1,0 +1,16 @@
+lpc / listplayercharacter     Lists player characters (PCs) in the world model
+ 
+   Format:
+      ;lpc                    Lists all character objects
+      ;lpc -a                 Lists all character objects alphabetically
+
+   Notes:
+      The world model stores information about the regions, rooms, characters
+         and objects in the game world. The automapper window uses the model to
+         display its maps.
+      Most model objects can be listed with ';listmodelobject', including 
+         player characters (model objects which represent a character in the 
+         world). Player characters can also be listed using this command.
+
+   User commands:
+      lpc / listpc / listplayerchar / listplayercharacter

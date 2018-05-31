@@ -1,0 +1,22 @@
+RETURN expression
+RETURN
+
+   Synopsis:
+      Returns from a subroutine
+
+   Notes:
+      In scripts without line numbers, the expression is evaluated and used as 
+         the subroutine's return value.
+      In scripts with line numbers, RETURN is used without an expression (and
+         there is no return value).
+      See the help for SUB for a full explanation.
+
+   Examples:
+      RETURN 10
+      RETURN number
+
+      10 GOSUB 100
+      20 PRINT "Goodbye cruel world!"
+      30 END
+      100 PRINT "Hello world!"
+      110 RETURN

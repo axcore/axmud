@@ -1,0 +1,14 @@
+th / taskhelp                 Shows help for a task
+ 
+   Format:
+      ;th <task>              Shows help for the <task>
+ 
+   Notes:
+      <task> can be any Axmud built-in or external task.
+      <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
+         formal name (e.g. 'status_task') or the unique name of a currently-
+         running task (e.g. 'status_task_4').
+      (Use the ';listtasklabel' command to list all task labels.)
+ 
+   User commands:
+      th / thelp / taskhelp

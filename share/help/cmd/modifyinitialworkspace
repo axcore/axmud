@@ -1,0 +1,19 @@
+miw / modifyinitialworkspace  Modifies an initial workspace
+ 
+   Format:
+      ;miw <num> <zonemap>    Modifies workspace <num> to use default <zonemap>
+      ;miw <num>              Resets the zonemap on workspace <num>
+
+   Notes:
+      Axmud supports multiple desktops or 'workspaces'. Workspaces can be both
+         real and virtual. If you have multiple physical monitors, each one is a
+         workspace. If your computer has a workspace switcher, allowing you to 
+         switch between virtual desktops, each one is a workspace.
+      Use the ';listinitialworkspace' command to get a list of initial 
+         workspace <num>bers.
+      If you specify a <zonemap>, that zonemap is used as the default zonemap
+         for the workspace. If not, Axmud selects a default zonemap.
+      See also the help for ';addinitialworkspace'.
+
+   User commands:
+      miw / modiw / modifyinitialworkspace

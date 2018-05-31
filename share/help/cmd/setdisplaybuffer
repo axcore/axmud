@@ -1,0 +1,20 @@
+sdb / setdisplaybuffer        Sets the size of display buffers
+ 
+   Format:
+      ;sdb <size>             Sets the buffer <size>
+      ;sdb                    Sets the buffer size to 10000
+ 
+   Notes:
+      The display buffer is Axmud's record of any text received from the world 
+         which was displayed in the session's default tab (see the help for 
+         ';displaybuffer').
+
+      All display buffers have the same size, which can be changed with this
+         command. If specified, <size> must be an integer in the range 
+         10-1000000.
+      The buffer size is not related to the number of lines that can be 
+         displayed in a textview (this is a change from earlier versions of 
+         Axmud). See the help for ';settextview'.
+ 
+   User commands:
+      sdb / setdispbuff / setdisplaybuffer

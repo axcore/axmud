@@ -1,0 +1,34 @@
+st / starttask                Starts a task
+ 
+   Format:
+      ;st <task>              Starts a task with default settings & parameters
+      ;st <task> <switches>   Starts a task with specified settings
+ 
+   Notes:
+      <task> can be any Axmud built-in or external task.
+      <task> can be in the form of a task's label (e.g. 'stat', 'status') or its
+          formal name (e.g. 'status_task').
+      (Use the ';listtasklabel' command to list all task labels.)
+ 
+      Group 1 <switches>: 0 or 1 switch from:
+         -i               - Start <task> immediately (default setting)
+         -e <other_task>  - Wait for <other_task> to exist, before starting
+                               <task>
+         -n <other_task>  - Wait for <other_task> to not exist, before starting
+                               <task>
+         -s <other_task>  - Wait for <other_task> to start, then stop, before
+                               starting <task>
+         -t <minutes>     - Start <task> <minutes> from now
+ 
+      Group 2 <switches>: 0 or 1 switch from:
+         -d               - Run <task> for an unlimited amount of time (default)
+         -f <minutes>     - Run the task for <minutes>
+         -u <timer>       - Run the task until the task loop reaches <timer>
+                               (seconds since the session began) 
+ 
+      Group 3 <switches>: 0 or 1 switch from: 
+         -w               - Run the task without opening its own window (if it
+                               usually opens one when it starts)
+ 
+   User commands:
+      st / starttask

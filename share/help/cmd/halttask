@@ -1,0 +1,21 @@
+ht / halttask                 Halts a task (gracefully)
+ 
+   Format:
+      ;ht <task>              Halts <task>
+      ;ht -a                  Halts all current tasks
+ 
+   Notes:
+      <task> can be any Axmud built-in or external task that's currently 
+         running.
+      <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
+         formal name (e.g. 'status_task') or the task's unique name (e.g. 
+         'status_task_4').
+      (Use the ';listtasklabel' command to list all task labels.)
+      If there is more than one task matching <task>, they will all be halted.
+ 
+      ';halttask' asks the task to shutdown gracefully. The task may comply
+         immediately, or it may need to do some housekeeping first.
+      Use ';killtask' to kill a task immediately or ';pausetask' to pause it.
+ 
+   User commands:
+      ht / halttask

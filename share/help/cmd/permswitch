@@ -1,0 +1,42 @@
+pswi / permswitch             Tells an initial task to automatically read aloud
+ 
+   Format:
+      ;pswi <attribute>       Toggles the automatic reading of something
+      ;pswi                   Get a list of available <attribute>s
+ 
+   Notes:
+      Tasks have various text-to-speech (TTS) capabilities, but some tasks don't
+         use TTS at all. The ';read', ';switch' and ';alert' commands allow you 
+         to interact with the TTS capabilities of currently-running tasks. 
+      The ';permread', ';permswitch' and ';permalert' commands allow you to 
+         interact with the TTS capabilities of tasks in the global initial
+         tasklist - the tasks which start, every time you connect to a world - 
+         as well as any currently-running tasks.
+      To modify the way that tasks process speech in general, use the ';speech'
+         and ';editconfig' commands. TTS for tasks is turned off, by default, so
+         you won't hear anything until you turn it on with the ';speech' 
+         command.
+
+      The ';switch' and ';permswitch' commands are both in the same format:
+ 
+         ;switch <attribute>
+         ;permswitch <attribute>
+
+      For example, both ';switch tell' and ';permswitch tell' will instruct the
+         the current Divert task to read aloud 'tell' messages, or to stop 
+         reading them aloud if you use the command a second time.
+      If you want this on/off setting to last for the rest of the session, you
+         should use the ';switch' command. However, if you want the setting to
+         be used for this and all future sessions, you should use the 
+         ';permswitch' command, which stores the setting in both the current 
+         Divert task, and in the Divert task stored in the global initial
+         tasklist (if any).
+      If you use ';permswitch' and never use ';switch', you can be sure that 
+         both the current and initial tasks have the same TTS settings.
+ 
+      If you don't specify an <attribute> at all, a list of available attributes
+         will be displayed. See the help for ';switch' for a full list of 
+         attributes used with Axmud's built-in tasks.
+
+   User commands:
+      pswi / permswitch

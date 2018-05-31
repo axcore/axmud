@@ -1,0 +1,27 @@
+tpl / testplugin              Tests an Axmud plugin
+ 
+   Format:
+      ;tpl <path>             Tests a plugin in the file <path>
+      ;tpl                    Tests a plugin stored in Axmud's data directory
+      ;tpl -s                 Tests a standard plugin
+ 
+   Notes:
+      Axmud plugins are Perl modules which allow you to extend Axmud's core 
+         functionality with new tasks, client commands, cages, 'edit' windows 
+         and menu items, all of them integrating seemlessly with the existing 
+         Axmud code.
+         
+      This command tests an Axmud plugin without loading it. (A plugin will not 
+         load at all if it contains an incorrect header or if there are errors 
+         in the Perl code).
+      If you specify <path>, it should be the full file path to the plugin.
+         Otherwise, you will be prompted to choose a plugin to load.
+      Axmud provides a number of standard plugins, and if you specify the '-s'
+         switch you'll see the directory (folder) where standard plugins are
+         stored. Otherwise you'll see the directory where plugins you write
+         youself can be stored.
+
+      See the help for ';loadplugin' for more information about Axmud plugins.  
+
+   User commands:
+      tpl / testplugin

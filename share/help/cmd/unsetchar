@@ -1,0 +1,15 @@
+uch / unsetchar               Unsets the current character
+ 
+   Format:
+      ;uch                    Unsets the current character profile
+ 
+   Notes:
+      After using this command, there will be no current character profile. All
+         interfaces used by the character will become unavailable. (They will be
+         restored the next time this character is made current.)
+      If the character has been assigned a current guild, current race or any
+         current custom profiles, they too will be unset.
+      You can select the next current character with the ';setchar' command.
+
+   User commands:
+      uch / unsetchar

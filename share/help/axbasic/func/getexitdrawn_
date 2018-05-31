@@ -1,0 +1,16 @@
+GETEXITDRAWN$ (number)
+        
+   Synopsis:
+      Returns the direction in which an exit is drawn on the map
+
+   Notes:
+      Exits are drawn in one of eighteen primary directions - the sixteen 
+         cardinal directions plus 'up' and 'down'.
+      'number' is the position of the exit in the current room's ordered list of 
+         exits (the first exit is numbered 1).
+      If there is no current room, if the numbered exit doesn't exist or if it 
+         hasn't been allocated a primary direction (not even a temporary one),
+         returns an empty string.
+      To get the number of exits in the current room, see the GETROOMEXITS
+         function.
+      To get the exit's actual direction, see the GETEXIT$ function.

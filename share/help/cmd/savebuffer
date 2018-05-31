@@ -1,0 +1,33 @@
+svb / savebuffer              Saves display/command buffers to file
+ 
+   Format:
+      ;svb                    Saves the whole of both buffers
+      ;svb <switches>         Saves part of the buffers
+ 
+   Notes:
+      The display buffer is Axmud's record of any text received from the world 
+         which was displayed in the session's default tab (see the help for 
+         ';displaybuffer'). The world command buffer is Axmud's record of
+         individual commands sent to the world. (See the help for
+         ';displaybuffer' and ';commandbuffer').
+      This command saves the contents of one or both buffers, in whole or in 
+         part, to a buffer file. Later, when connected in 'offline' mode, the 
+         buffer file can be loaded with the ';loadbuffer' command and replayed, 
+         as if still connected to the world, with the ';replaybuffer' command.
+      (A replay can be halted with the ';replaybuffer' command.)
+
+      If specified, <switches> can be one or more of the following switch
+         options, in any order:
+            -d          Save the display buffer
+            -c          Save the world command buffer
+            -b <time>   Save the buffer(s), beginning at the <time>
+            -e <time>   Save the buffer(s), ending at the <time>
+      If neither -d nor -c are specified, both buffers are saved. If neither -b
+         or -e are specified, the whole buffer is saved.
+      You can use the ';dumpdisplaybuffer' and ';dumpcommmandbuffer' commands to
+         get the <time>s you need.
+      Buffer files are saved in the 'buffers' data sub-directory. It's safe to
+         edit buffer files manually to remove any lines you don't want.
+
+   User commands:
+      svb / savebuff / savebuffer

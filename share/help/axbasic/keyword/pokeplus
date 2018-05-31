@@ -1,0 +1,27 @@
+POKEPLUS axmud-object-property, expression
+
+   Synopsis:
+      Adds a number to the value of an Axmud internal scalar property
+
+   Notes:
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
+         the help for the POKE statement for a full explanation). 
+      POKEPLUS is similar to POKE, but it only sets the value of scalar 
+         properties such as "world.current.remoteWimpyMax". It cannot be used to 
+         set a list property such as "world.current.doorPatternList", a hash 
+         property such as "world.current.currencyHash" or a Perl object such as
+         "world.current".
+      POKEPLUS modifies the value of the scalar property by adding the value of
+         the expression. Both values must be numeric.
+      Much of Axmud's internal data is read-only, and cannot be modified with
+         POKE or with this statement. If you try to modify a read-only property
+         you will get an 'operation failure' error.
+
+   Warning: 
+      Do not try to modify Axmud's internal data unless you know what you are 
+         doing. Read the Axmud manual before you try to POKE anything. (The
+         examples below are safe, but backup your data first.)
+
+   Examples:
+      ! Increase the number of consecutive empty lines that are suppressed
+      POKEPLUS "world.current.suppressEmptyLineCount", 2

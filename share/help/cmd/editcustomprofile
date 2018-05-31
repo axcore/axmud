@@ -1,0 +1,7 @@
+ecp / editcustomprofile       Opens an 'edit' window for a custom profile
+ 
+   Format:
+      ;ecp <name>             Edits the custom profile <name>
+
+   User commands:
+      ecp / editcustom / editcustomprof / editcustomprofile

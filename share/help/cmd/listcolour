@@ -1,0 +1,17 @@
+lco / listcolour              Lists Axmud standard colour tags
+ 
+   Format:
+      ;sco <tag> <colour>     Sets standard <tag> to <colour>
+      ;sco <tag>              Resets standard <tag> to its default colour
+ 
+   Notes:
+      Axmud's standard colour tags are 'black', 'red', 'green', 'yellow', 
+         'blue', 'magenta', 'cyan' and 'white'. The equivalent bold colours are 
+         'BLACK', 'RED', 'GREEN', 'YELLOW', 'BLUE', 'MAGENTA', 'CYAN' and 
+         'WHITE'.
+      This command displays these tags and their colours, which can be modified 
+         using the ';setcolour' command.
+      See also the help for ';testcolour' and ';addcolourscheme'.
+
+   User commands:
+      lco / listcol / listcolor / listcolour

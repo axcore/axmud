@@ -1,0 +1,42 @@
+mwn / movewindow              Moves a window into a new zone
+ 
+   Format:
+      ;mwn <window> <workspace>
+               Moves <window> to <workspace>
+      ;mwn <window> <workspace> <zone>
+               Moves <window> to <zone> in <workspace>
+
+      ;mwn -r <window> <workspace>
+               Moves <window> to <workspace> and resizes it
+      ;mwn -r <window> <workspace> <zone>
+               Moves <window> to <zone> in <workspace> and resizes it
+ 
+   Notes:
+      The workspace grid is an invisible grid, spanning the whole available
+         workspace, on which Axmud tries to arrange its windows so that they 
+         don't overlap (as far as possible). The grid is divided into zones 
+         within which one or more windows are arranged. The 'blueprint' for 
+         zones on a desktop is called a 'zonemap'. 
+      Only 'grid' windows (including the 'main' window, task windows and the 
+         automapper window) are arranged on the workspace grid. Temporary
+         windows, including the GUI window and all edit, preference, wizard and
+         dialogue windows, are not affected.
+
+      This command moves a window to a specified zone on a specified workspace,
+         or to the first available zone on a specified workspace (if no zone is
+         specified.)
+      <window> is the 'grid' window's number, which can be obtained from 
+         ';listwindow'.
+      <workspace> is the workspace number, which can be obtained from 
+         ';listworkspace' (the workspace in which Axmud opens is #0).
+      If specified, <zone> is the number of a zone in the workspace, 
+         specifically a zone on a workspace grid used by the window's session.
+         A list of zone numbers can be obtained from ';listgrid'.
+
+      If the '-r' switch is specified, the window will be resized to match the 
+         zone's default window size. Otherwise, the window will stay the same 
+         size (subject to minor adjustments to fill small gaps in the grid).
+      '-r' can occur anywhere in the command, e.g. ';mwn 2 3 -r'
+
+   User commands:
+      mwn / movewin / movewindow

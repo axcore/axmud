@@ -1,0 +1,10 @@
+test / test                   General debugging command
+
+   Format:
+      ;test                   Perform a test
+
+   Notes:
+      Insert your test code into the Axmud::Cmd::Test->do method
+ 
+   User commands:
+      test

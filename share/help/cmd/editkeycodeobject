@@ -1,0 +1,8 @@
+eko / editkeycodeobject       Opens an 'edit' window for a keycode object
+ 
+   Format:
+      ;eko <name>             Edits the keycode object <name>
+      ;eko                    Edits the current keycode object
+  
+   User commands:
+      eko / editko / editkeycodeobject

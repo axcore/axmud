@@ -1,0 +1,21 @@
+DELTRIG expression
+
+   Synopsis:
+      Deletes an independent trigger
+
+   Notes:
+      A convenient way to delete triggers created with the ADDTRIG statement.
+         The expression is the name of the trigger to delete.
+      DELTRIG assumes that the trigger is assigned to a cage belonging to the
+         current world (unless an earlier PROFILE statement specified a 
+         different profile).
+      The following Axbasic statements are therefore interchangeable:
+      
+         DELTRIG "name"
+         CLIENT "deletetrigger name"
+         
+      If Axmud can't delete the trigger, execution of the Axbasic script 
+         continues as normal. No error message is generated.
+
+   Examples:
+      DELTRIG "deadtrig"

@@ -1,0 +1,33 @@
+GOSUB expression
+
+   Synopsis:
+      Calls a pseudo-subroutine
+
+   Notes:
+      A pseudo-subroutine is one called by a GOSUB statement in an Axbasic
+         script with primitive line numbers. (A 'real' subroutine is one in an
+         Axbasic script without line numbers, which is declared with a SUB
+         statement.)
+      The expression must evaluate to a line number or an error will occur. 
+         Complex expressions like '(x + 10) / 2' can be used as well as simple 
+         line numbers like 100.
+      Execution jumps to the specified line number, but when the first RETURN
+         statement is encountered, execution returns to the first statement
+         after the initial GOSUB statement.
+      In the example below, the lines are executed in the order 10, 20, 30, 100,
+         110, 120, 40, 50, 60.
+      See also the help for IF and ON.
+
+   Availability:
+      GOSUB is only available in scripts with primitive line numbers.
+
+   Examples:
+      10 PRINT "Hello world!"
+      20 PRINT "We will now jump into the pseudo-subroutine at line 100"
+      30 GOSUB 100
+      40 PRINT "We have left the pseudo-subroutine"
+      50 PRINT "Goodbye cruel world!"
+      60 END
+      100 PRINT "You called the pseudo-subroutine"
+      110 PRINT "Now we will go back to line 40"
+      120 RETURN

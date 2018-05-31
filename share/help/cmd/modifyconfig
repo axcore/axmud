@@ -1,0 +1,89 @@
+mcf / modifyconfig            Modifies text-to-speech configurations
+ 
+   Format:
+      ;mcf                    Shows a list of text-to-speech configurations
+      ;mcf <name>             Shows settings stored in the configuration <name>
+      ;mcf <name> <options>   Modifies the text-to-speech configuration <name>
+
+   Notes:
+      If you have one or more of the text-to-speech engines installed on your
+         system, Axmud can use them to convert text to speech. The engines 
+         currently supported are eSpeak, Flite, Festival and Swift. (Axmud also 
+         uses a dummy engine, called 'none'. If Axmud tries to convert text to 
+         speech using the dummy engine, you'll hear nothing.)
+      Axmud stores a number of TTS configurations. Each configuration stores an 
+         engine, voice, word speed, word rate, word pitch and volume setting, 
+         among others. Text received from the world uses one configuration, 
+         system messages use another, so it's easy to customise the 
+         configurations so that they read aloud in different voices.
+      You can use this command to modify the settings stored in the 
+         configuration called <name>. You can then use the ';speak' command to 
+         test the new configuration, if you want. (See also the help for 
+         ';addconfig', ';cloneconfig', ';deleteconfig' and ';listconfig'. The 
+         command ';editconfig' opens a GUI window, from which you can also 
+         modify the configuration.)
+      Note that the configurations called 'espeak', 'flite', 'festival', 'swift' 
+         and 'none' can't be modified (but other configurations using these 
+         engines can be modified.)
+
+      Unfortunately, some engines don't allow us to modify some <options> (for
+         example, you can't use this command to change the word speed used with
+         Flite; eSpeak uses a word speed, whereas Festival uses a word rate.)
+      If you specify an invalid <option>, it is ignored (and text-to-speech
+         conversion happens using default values).
+      See the documentation for your preferred text-to-speech engine to find out
+         which voices are available on your system.   
+
+      If specified, <options> should be one of the following:
+
+         engine <string>      Sets the TTS engine to <string>, which must be one 
+                                 of the following strings: 'espeak', 'flite', 
+                                 'festival', 'swift' or 'none'.
+
+         voice <string>       Sets the voice to <string> (eSpeak, Festival and 
+                                 Swift only). You can use any <voice> available
+                                 on your system. See the documentation for your 
+                                 preferred text-to-speech engine to find out 
+                                 which voices are available on your system. 
+         voice                Resets the voice (a default value is used).
+
+         speed <num>          Sets the word speed to <num> (eSpeak only). Must 
+                                 be in the range 10 - 200.
+         speed                Resets the word speed (a default value of 150 
+                                 words per minute is used).
+
+         rate <num>           Sets the word rate to <num> (Festival and Swift 
+                                 only). Must be in the range 0.5 - 2.
+         rate                 Resets the word rate (a default value of 1 is 
+                                 used).
+
+         pitch <num>          Sets the word pitch to <num> (eSpeak and Swift 
+                                 only). For eSpeak, must be in the range 0 - 99.
+                                 For Swift, must be in the range 0.1 - 5.
+         pitch                Resets the pitch (a default value is used, 50 for
+                                 eSpeak, 1 for Swift).
+
+         volume <num>         Sets the volume to <num> (Swift only). Must be in
+                                 the range 0.33 - 6.
+         volume               Resets the volume (a default value of 1 is used).
+
+         use <pattern>        Adds an exclusive pattern. If one or more 
+                                 exclusive patterns have been added, only lines 
+                                 which match one of those patterns are converted 
+                                 to speech; otherwise, all received lines are 
+                                 converted to speech
+         use                  Resets the list of exclusive patterns
+
+         exclude <pattern>    Adds an excluded pattern. If a line matches an 
+                                 excluded pattern, it is not converted to speech 
+                                 (but otherwise, it is.) Excluded patterns are 
+                                 ignored completely if you have added one or 
+                                 more exclusive patterns
+         exclude              Resets the list of excluded patterns
+ 
+      Normal Axmud switches can be used, if you prefer: -e for engine, -v for 
+         voice, -s for speed, -r for rate, -p for pitch, -l for volume, -u for 
+         use and -x for exclude.
+
+   User commands:
+      mcf / modconfig / modifyconfig

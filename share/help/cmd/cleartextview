@@ -1,0 +1,19 @@
+ctv / cleartextview           Removes all text from textview(s)
+ 
+   Format:
+      ;ctv                    Remove text from the session's default tab
+      ;ctv -m                 Removes text from the session's 'main' window
+      ;ctv -s                 Removes text from all the session's windows
+      ;ctv -w <number>        Removes text from window <number>
+      ;ctv -t <number>        Removes text from textview object <number>
+ 
+   Notes:
+      A textview is a scrolling area of a window where text is displayed. A
+         textview object is an Axmud component which handles these areas
+         intelligently.
+      This command empties text from one or more textviews.
+      Use the ';listwindow' command to get a list of window numbers, and use the
+         ';listtextview' command to get a list of textview numbers
+ 
+   User commands:
+      ctv / cls / cleartextview

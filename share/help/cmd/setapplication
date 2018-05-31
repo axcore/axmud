@@ -1,0 +1,36 @@
+sap / setapplication          Sets external application commands
+ 
+   Format:
+      ;sap -b <cmd>           Sets the web browser command
+      ;sap -b                 Resets the web browser command
+      ;sap -e <cmd>           Sets the email application command
+      ;sap -e                 Resets the email application command
+      ;sap -a <cmd>           Sets the audio player command
+      ;sap -a                 Resets the audio player command
+      ;sap -t <cmd>           Sets the text editor command
+      ;sap -t                 Resets the text editor command
+
+      ;sap                    Lists commands to start external applicatons
+ 
+   Notes:
+      When you click on a website link or an email address, and when you want to
+         play a sound effect or view a file, Axmud launches an external 
+         application.
+      <cmd> is the command used to start the external application. It should 
+         contain '%s', which is substituted for the website to view, the email
+         address to contact, the sound file to play or the text file to edit. 
+         The <cmd> used will depend both on your operating system and on the 
+         external application you prefer to use.
+      ';sap -b' will reset the web browser command, meaning that Axmud won't be
+         able to open a web browser at all. Similarly, ';sap -e' will reset the
+         command used to send email.
+      ';sap -a' will reset the audio player command, meaning that Axmud won't be 
+         able to play any sound effects at all. (A better way to disable sound 
+         effects is with the ';sound off' command.) 
+      ';sap -t' will reset the text editor command. You won't be able to open
+         source code files in an editor, but you can still view them in Axmud's
+         native file viewer.
+      See also the help for the ';resetapplication' command.
+
+   User commands:
+      sap / setapp / setapplication

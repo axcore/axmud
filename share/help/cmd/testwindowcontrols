@@ -1,0 +1,29 @@
+twc / testwindowcontrols      Finds the size of window controls
+ 
+   Format:
+      ;twc                    Tests window controls on the default workspace
+      ;twc <number>           Tests window controls on workspace <number>
+ 
+   Notes:
+      Window controls are the borders around the edges of all windows on the
+         desktop. Axmud needs to know their sizes to get its window positioning
+         right.
+      This command tries to detect the size of window controls. If a workspace
+         <number> isn't specified, the test is performed on the default
+         workspace (the one in which Axmud opened - use ';listworkspace' to get
+         a list of workspaces.)
+      If the test is successful, those details are used when positioning windows
+         on that workspace. (If you prefer, you can specify fixes window 
+         controls sizes using the ';setwindowcontrols' command; these sizes 
+         override the sizes detected by any test.)
+      If the test fails, Axmud will use a set of default window controls sizes.
+
+      Window controls sizes are tested automatically when Axmud first runs, and
+         whenever Axmud starts using a new workspace (see the help for
+         ';useworkspace'), so you'll probably only need to use this command if 
+         you change your desktop theme (or if you use the ;setwindowcontrols'
+         command).
+      See also the help for ';listwindowcontrols'.
+
+   User commands:
+      twc / testwc / testcontrols / testwindowcontrols

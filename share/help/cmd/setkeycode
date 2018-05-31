@@ -1,0 +1,44 @@
+skc / setkeycode              Sets an individual keycode
+ 
+   Format:
+      ;skc <standard> <system>     
+               Sets the <standard> keycode <system>
+      ;skc <standard> <keycode_string>     
+               Sets the <standard> keycode to a keycode string
+ 
+   Notes:
+      Keycodes are used by the system to recognise the keys on your keyboard.
+         For example, the F5 key usually has the keycode 'F5', and the two SHIFT 
+         keys often have the keycodes 'Shift_L' and 'Shift_R'.
+      Keycodes vary between systems, so Axmud offers a set of standard keycodes
+         (for example 'f5' and 'shift'). Axmud represents two keys pressed down
+         together as a keycode string like 'shift f5' or 'ctrl c'. 
+      Axmud's standard keycodes are mostly used with macros; they allow you to 
+         design macros that will work on all systems, not just the one you're 
+         using right now.
+      Keycodes (and keycode strings) are stored in a keycode object. You might
+         have one called 'linux' and another one called 'windows', one of which
+         would be set as the 'current' keycode object. 
+
+      This command sets the system keycode that's used with an Axmud standard
+         keycode in the current keycode object.
+      <standard> is the Axmud standard keycode, for example 'f5' or 'backspace'. 
+         <system> is the system keycode, for example 'F5' or 'BackSpace'.
+      Some standard keycodes (for example those representing the SHIFT and CTRL
+         keys) can be used with more than one system keycode. In that case, the
+         system keycodes should be enclosed with diamond brackets <...>, e.g.
+         
+            ;setkeycode shift <Shift_L Shift_R>
+            
+      You can view your system's keycodes using the ';getkeycode' command.
+
+      Some Axmud standard keycodes have alternative names that you can use 
+         freely in your macros (and with this command); for example, 'page_up' 
+         can also be called 'pageup'.
+      A few American English forms are also recognised; for example, 'full_stop'
+         and 'period' are equivalent.
+      Use ';listkeycodealternative' to get a list of alternative forms for 
+         Axmud's standard keycodes.
+ 
+   User commands:
+      skc / setkc / setkeycode

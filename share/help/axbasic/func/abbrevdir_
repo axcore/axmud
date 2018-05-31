@@ -1,0 +1,10 @@
+ABBREVDIR$ (string)
+        
+   Synopsis:
+      Returns the abbreviated form of a direction
+
+   Notes:
+      The current dictionary stores a number of custom primary and secondary
+         directions. If 'string' is stored there, returns the abbreviated form
+         of the direction; otherwise, returns 'string' unmodified.
+      See also the UNABBREVDIR$ function.

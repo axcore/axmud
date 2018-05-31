@@ -1,0 +1,27 @@
+WAITGP expression [ , expression ]
+
+   Synopsis:
+      Pauses execution until the character's guild points increase
+
+   Notes:
+      The first expression is a percentage, written as a number in the range 0
+         to 100, where 100 is the maximum guild points (GP) the character can
+         have, and 0 means no GP left at all. If you specify a value outside of
+         this range (e.g. 1000), Axbasic will use a default value of 100.
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting after that period and resumes execution.
+      If the Axbasic script isn't being run from within a task, the WAITGP
+         statement is ignored (and no error message is generated). Execution
+         continues immediately with the next statement.
+      WAITGP relies on the Status task to supply the character's current GP. If
+         the Status task is not running (or if it doesn't know anything about
+         the character's GP), the Axbasic script pauses briefly and resumes
+         execution on the next task loop.
+      See also the help for WAITEP, WAITHP, WAITMP, WAITSP, WAITTOTALXP and 
+         WAITXP.
+
+   Examples:
+      ! Wait for GP to recover to at least 50% of maximum
+      WAITGP 50
+      ! Wait for no longer than five minutes (300 seconds)
+      WAITGP 50, 300

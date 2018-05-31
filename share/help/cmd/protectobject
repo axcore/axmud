@@ -1,0 +1,72 @@
+prt / protectobject           Grants an object semi-protection
+ 
+   Format:
+      ;prt <list>
+               Protects all items in current inventory matching words in <list>
+      ;prt <switch options>
+               Creates a protected object matching <switch options>
+ 
+   Notes:
+      'Protected' objects enjoy semi-protection against being sold (with the 
+         ';sellall' command), dropped (with ';dropall') or used collectively in
+         other ways (with ';useall <command>').
+      By defining protected objects, you can sell everything in the character's
+         inventory (except the protected objects) using a single ';sellall' 
+         command, rather than by typing 'sell <object>' many times.
+      Protected objects are stored in the current character profile, so they
+         are also available to any tasks or Axbasic scripts you write yourself.
+
+      Actually, protected objects can be used in two ways. Firstly, you can
+         define a protected object based on an actual object in the world
+         (usually one that's currently in your character's inventory) by 
+         creating a protected object with nouns and adjectives that will only
+         match one actual world object. So, to protect the real 'the Sword of
+         Excalibur', you could create a protected object with the words 'sword'
+         and 'excalibur':
+         
+            e.g. ';prt sword excalibur'
+            
+      Note that the words in <list> are case-insensitive.
+
+      Alternatively, you can give a protected object one or more nouns and
+         adjectives that match a wide range of actual world objects. A single 
+         protected object can then confer protection on many actual world
+         objects.
+      Protected objects are independent of any real objects from which they were
+         created. If you protect your Sword of Excalibur which is then stolen by
+         a thief, the protected object still exists - even though the real sword
+         is no longer in the character's inventory.
+      You can do this by specifying <switch options>, which can be any of the
+         following:
+         -c category     - The object's category - should be one of 'weapon',
+                              'armour', 'garment', 'portable', or 'custom'
+                         - Other categories of model object such as 'region' or
+                              'decoration' can also be specified, although 
+                              (logically) they make no sense with this command 
+         -n <noun>       - The object's main noun, e.g. 'sword'
+         -o <other noun> - Any other nouns that can be used for the object - for
+                              example, 'sharp' or 'sabre'
+         -a <adjective>  - Any adjective that can be used for the object
+         -p <pseudo-adj> - Pseudo-adjectives are terms like 'odd-looking' which
+                              Axmud normally reduces to a single word 
+                         - The replacement word (e.g. 'odd') for a pseudo-
+                              adjective is stored in the current dictinoary
+         -u <unknown>    - Any other descriptive word which isn't stored in the
+                              current dictionary as a noun or adjective
+
+      All <switch options> are optional, but they cannot be combined with a
+         <list> of words - use one, or the other.
+      Any term consisting of multiple words (such as the pseudo-adjective
+         'heavily built') should be enclosed by diamond brackets <...>
+      Only the first <noun> is used as the protected object's main noun; any
+         other nouns you specify will be used as an <other noun>.
+      In <switch options> you may specify multiple categories. If you specify a
+         a <list> instead, that list can contain categories, and all objects in
+         the character's inventory matching that category will be protected:
+         
+            e.g. ';prt weapon'    - protects all weapons (but not garments)
+            
+      See also the help for ';monitorobject'.
+ 
+   User commands:
+      prt / protectobj / protectobject

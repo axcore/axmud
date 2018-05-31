@@ -1,0 +1,18 @@
+rsc / resetcounter            Resets the Status task's counters
+ 
+   Format:
+      ;rsc                    Resets all the counters
+      ;rsc -a                 Resets all the counters
+      ;rsc -f                 Resets just the fight counter
+      ;rsc -i                 Resets just the interaction counter
+      ;rsc -x                 Resets the xp counter
+      ;rsc -q                 Resets the quest counter
+      ;rsc -m                 Resets the bank and purse counters
+      ;rsc -b                 Resets the bank counter
+      ;rsc -p                 Resets the purse counter
+ 
+   Notes:
+      Multiple switches are allowed, e.g. ';rsc -f -x -q'
+ 
+   User commands:
+      rsc / resetcounter

@@ -1,0 +1,17 @@
+lcl / listcontentslines       Lists the collection of contentslines
+ 
+   Format:
+      ;lcl                    Lists unrecognised words
+ 
+   Notes:
+      The Locator task analyses room statements as they are received, and if it
+         finds any unrecognised words in the line(s) containing the room's
+         contents, it can store them in the current dictionary (see the help for 
+         ';collectunknownwords').
+      The Locator task can also store the whole line(s), if that is more 
+         convenient.
+      This command displays the collection of contents lines. See also the help 
+         for ';collectcontentslines' and ';emptycontentslines''.
+ 
+   User commands:
+      lcl / listcl / listcontents / listcontentslines

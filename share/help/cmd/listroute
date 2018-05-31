@@ -1,0 +1,29 @@
+lrt / listroute               Lists pre-defined routes
+ 
+   Format:
+      ;lrt <start> <switches> 
+                              Lists routes
+ 
+   Notes:
+      Axmud pre-defined routes are an easy way to move between rooms in the game
+         world (see the help for ';addroute' for information about routes).
+
+      Both <start> and <switches> are optional.
+      If <start> is specified, only routes starting from the room with the tag
+         <start> are listed.
+      If <switches> are specified, only those routes associated with a 
+         particular profile will be listed. <switches> can be any one of the
+         following switch options:
+         -no pattern-         - Lists routes associated with all current 
+                                   profiles
+         -w                   - Lists routes associated with the current world
+         -g                   - Lists routes associated with the current guild
+         -r                   - Lists routes associated with the current race
+         -c                   - Lists routes associated with the current 
+                                   character
+         -x <category>        - Lists routes associated with the current custom
+                                   profile <category>
+         -d <prof>            - Lists routes associated with profile <prof>
+ 
+   User commands:
+      lrt / listroute

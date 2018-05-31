@@ -1,0 +1,23 @@
+lma / listmacro               Lists macros
+ 
+   Format:
+      ;lma
+               Lists all macros belonging to current profiles
+      ;lma -w
+               Lists all macros associated with the current world 
+      ;lma -g
+               Lists all macros associated with the current guild
+      ;lma -r
+               Lists all macros associated with the current race
+      ;lma -c
+               Lists all macros associated with the current character
+      ;lma -x <category>
+               Lists all macros belonging to the current custom profile derived
+                  from the category (template) <category>
+      ;lma -d <prof>
+               Lists all macros belonging to the profile <prof>
+      ;lma -i
+               Lists all active macro interfaces
+
+   User commands:
+      lma / listma / listmacro

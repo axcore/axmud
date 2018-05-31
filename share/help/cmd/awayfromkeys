@@ -1,0 +1,17 @@
+afk / awayfromkeys            Sets an alert for when the world sends text
+ 
+   Format:
+      ;afk                    Sets a visual and sound alert
+      ;afk -v                 Sets a visual alert only
+      ;afk -s                 Sets a sound alert only
+
+   Notes:
+      This command sets an alert which notifies you the next time text is
+         received from the world. The alert can consist of a visual hint, or the
+         playing of a sound effect, or both.
+      You will only be able to hear sound if sound has been turned on (see the 
+         help for ';sound').
+      See also the help for ';setreminder'.
+
+   User commands:
+      afk / awayfromkeys

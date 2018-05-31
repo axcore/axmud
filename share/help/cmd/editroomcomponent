@@ -1,0 +1,24 @@
+ecm / editroomcomponent       Opens an 'edit' window for the room component
+ 
+   Format:
+      ;ecm <name>             Edits the room component <name>
+
+   Notes:
+      A room statement is a complete description of a room - typically including
+         a room title, a verbose description, a list of exits and/or the 
+         contents of the room.
+      When a room statement is received from the world, the Locator task 
+         attempts to extract those components. If it succeeds, the contents of
+         each component are available to any code that needs it.
+
+      The current world profile stores the settings needed to extract each
+         component. If you're using a pre-configured world, the settings have
+         already been set up for you.
+      If not, you can use the locator wizard (see the help for ';locatorwizard')
+         or you can change the settings yourself - either use the world's 'edit'
+         window (see the help for ';editworld') or by using this command.
+      Use the ';listroomcomponent' command for a list of the current world's
+         room components.
+
+   User commands:
+      ecm / editcomponent / editroomcomponent

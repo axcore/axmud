@@ -1,0 +1,35 @@
+acn / addcontact              Adds someone to your contacts list
+ 
+   Format:
+      ;acn <name> <ip> <port> <protocol>
+      ;acn <name> <ip> <port>
+               Adds a new contact
+
+      ;acn <name> <ip> <protocol>
+      ;acn <name> <ip>
+               Adds a new contact using the default port
+ 
+   Notes:
+      The Chat task is used to chat with other players directly via telnet. 
+         Calls can be placed (or accepted) with any player whose MUD client uses
+         the zChat or MudMaster protocols.
+      This command adds a contact to your contacts list, so you can call them
+         using a command like:
+            ';call fred'
+         instead of having to remember their IP address in a command like:
+            ';zcall 140.195.35.201 4050'
+
+      <name> must be a unique name for the chat contact; ideally, you should use
+         the same nickname the contact is using for themselves. <name> must be
+         between 3 and 16 characters long.
+      If you omit <port>, the default port used for chat sessions by most MUD 
+         clients (port 4050) will be used.
+      <protocol> defines which chat protocol to use for outgoing calls:
+         -m    Use the MudMaster protocol
+         -z    Use the zChat protocol
+      If you don't specify a <protocol>, the zChat protocol is used. It doesn't
+         matter if your chat contact calls you using the other protocol; the 
+         Chat task can handle either one.
+ 
+   User commands:
+      acn / addcontact

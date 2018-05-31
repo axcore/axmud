@@ -1,0 +1,20 @@
+atp / addtaskpackage          Adds a task package name
+ 
+   Format:
+      ;atp <task_name> <package_name>
+               Adds a task <package_name> for the task <task_name>
+ 
+   Notes:
+      <package_name> is the name of the Perl package that handles a task, e.g.
+         'Games::Axmud::Task::Status' for the Status task.
+      <task_name> matches the task's formal name, e.g. 'status_task',
+         'locator_task', etc.    
+      If, for any reason, you remove a task package name (probably with the
+         ';deletetaskpackage' or ';resettaskpackage' commands), you can use this
+         command to replace it. If a task package name already exists for this
+         <task_name>, it is replaced with the new <package_name>. 
+      The operation will fail if the specified task is currently running or if
+         <task_name> is longer than 16 characters.
+ 
+   User commands:
+      atp / addtp / addtaskpackage

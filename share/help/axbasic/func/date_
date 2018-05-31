@@ -1,0 +1,4 @@
+DATE$ ()
+
+   Synopsis:
+      Returns the date, as a string, in the form "YYYYMMDD"

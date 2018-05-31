@@ -1,0 +1,23 @@
+csf / chatsendfile            Sends a file to chat contacts
+ 
+   Format:
+      ;csf -n <name> <file>   Sends the <file> to chat contacts called <name>
+      ;csf -g <group> <file>  Sends the <file> to everyone in the <group>
+      ;csf <file>             Sends the <file> to everyone
+
+      ;csf -n <name>          Sends a file to chat contacts called <name> 
+      ;csf -g <group>         Sends a file to everyone in the <group>
+      ;csf                    Sends a file to everyone
+
+   Notes:
+      The Chat task is used to chat with other players directly via telnet.
+         Calls can be placed (or accepted) with any user whose MUD client uses
+         the zChat or MudMaster protocols.
+      This command is the equivalent of typing ';sendfile' in the relevant Chat
+         task windows.
+      <file> is the full path to the file, e.g. '/home/myname/myfiles/pic.jpg'.
+         If you don't specify a <file> you will be prompted to choose one.
+      The switches -n and -g can't be combined.
+ 
+   User commands:
+      csf / sendfile / chatsendfile

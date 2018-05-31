@@ -1,0 +1,16 @@
+mxs / maxsession              Sets the maximum number of concurrent sessions
+ 
+   Format:
+      ;mxs <number>           Sets the maximum sessions to <number>
+ 
+   Notes:
+      Axmud limits the maximum number of sessions (separate tabs in the 'main'
+         window) to a sensible number. 
+      The absolute maximum is 1024, but the normal maximum is 16. If you are 
+         running the version of Axmud that's optimised for visually-impaired
+         users, the maximum is 1. In either case, you can change the maximum
+         number, if you want to. <number> should be an integer in the range
+         1-1024.
+
+   User commands:
+      mxs / mxsession / maxsession

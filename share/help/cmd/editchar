@@ -1,0 +1,8 @@
+ech / editchar                Opens an 'edit' window for a character profile
+ 
+   Format:
+      ;ech <name>             Edits the character profile <name>
+      ;ech                    Edits the current character profile
+  
+   User commands:
+      ech / editchar

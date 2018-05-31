@@ -1,0 +1,8 @@
+DELTEMPREGIONS ()
+        
+   Synopsis:
+      Deletes all temporary regions
+
+   Notes:
+      Returns 1 if one or more temporary regions are deleted, 0 if there are no
+         temporary regions to delete.

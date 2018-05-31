@@ -1,0 +1,7 @@
+VAL (string)
+
+   Synopsis:
+      Converts a numeric variable into a string variable
+
+   Examples:
+      VAL ("65") returns 65.

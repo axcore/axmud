@@ -1,0 +1,7 @@
+GETROOMNUM ()
+ 
+   Synopsis:
+      Returns the world model number of the automapper's current room
+
+   Notes:
+      If there is no current room, returns 0.

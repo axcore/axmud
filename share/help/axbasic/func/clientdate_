@@ -1,0 +1,7 @@
+CLIENTDATE$ ()
+
+   Synopsis:
+      Returns the date of the current version of the Axmud client
+
+   Examples:
+      Returns a string in the form "1 May 2018".

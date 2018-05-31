@@ -1,0 +1,9 @@
+IFACE$ ()
+
+   Synopsis:
+      Returns the name of the active interface created as a result of the most
+         recent SETTRIG statement
+
+   Notes:
+      If no such interface has been created, or if the most recent statement
+         didn't succeed in creating an interface, returns an empty string.

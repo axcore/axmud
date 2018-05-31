@@ -1,0 +1,26 @@
+rbu / retainbackups           Retains backup files after file-save operations
+ 
+   Format:
+      ;rbu on                 Turns backup retention on
+      ;rbu off                Turns backup retention off
+ 
+   Notes:
+      Whenever Axmud saves a config file or a data file, it first creates a 
+         temporary backup copy of the existing file (if there is one). If 
+         something goes wrong with the save operation, the original file is 
+         restored from the backup copy. 
+      When backup retention turned off, the backup file is deleted as soon as 
+         the save operation is complete. When it is turned on, the backup file
+         is retained until the next save operation.
+      Backup retention is turned on by default. Because Axmud is still in the 
+         beta-testing phase, it is recommended that you leave it on. If your
+         saved data becomes corrupted and Axmud refuses to load a particular 
+         file, you may be able to manually restore the previous copy of the  
+         corrupted file. 
+      Relying on this functionality is not a good idea. You should still create 
+         your own backup copy of the whole Axmud data directory (folder) on a
+         regular basis, either by using client commands like ';exportfiles' or 
+         by copying the directory manually.
+ 
+   User commands:
+      rbu / retainbackups

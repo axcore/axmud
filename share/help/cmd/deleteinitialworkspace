@@ -1,0 +1,19 @@
+diw / deleteinitialworkspace  Deletes an initial workspace
+ 
+   Format:
+      ;diw <num>              Deletes the initial workspace <num>
+
+   Notes:
+      Axmud supports multiple desktops or 'workspaces'. Workspaces can be both
+         real and virtual. If you have multiple physical monitors, each one is a
+         workspace. If your computer has a workspace switcher, allowing you to 
+         switch between virtual desktops, each one is a workspace.
+      This command removes a workspace from the list of workspaces Axmud uses
+         when it starts. The workspace in which Axmud starts is its 'default
+         workspace', which cannot be removed. 
+      Use the ';listinitialworkspace' command to get a list of initial 
+         workspace numbers.
+      See also the help for ';addinitialworkspace'.
+
+   User commands:
+      diw / deliw / deleteinitialworkspace

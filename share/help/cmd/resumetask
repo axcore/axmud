@@ -1,0 +1,23 @@
+rt / resumetask               Resumes a paused task
+ 
+   Format:
+      ;rt <task>              Resumes <task>
+      ;rt -a                  Resumes all currently paused tasks
+      ;rt                     Resumes all tasks paused with the ';pausetask'
+ 
+   Notes:
+      <task> can be any Axmud built-in or external task that's currently 
+         running.
+      <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
+         formal name (e.g. 'status_task') or the task's unique name (e.g. 
+         'status_task_4').
+      (Use the ';listtasklabel' command to list all task labels.)
+      If there is more than one task matching <task>, they will all be resumed.
+ 
+      ';rt <task>' and ';rt all' are debugging commands. It's not recommended to
+         force all your paused tasks to resume, as they may have been paused for
+         a good reason. Stick to ';rt' (without any arguments) and you'll avoid
+         unexpected problems.
+ 
+   User commands:
+      rt / resumetask

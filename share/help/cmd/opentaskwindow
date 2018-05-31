@@ -1,0 +1,20 @@
+otw / opentaskwindow          Opens a task's own window
+ 
+   Format:
+      ;otw <task>             Opens a task window for <task>
+      ;otw -a                 Opens windows for all current tasks (if possible)
+ 
+   Notes:
+      ';opentaskwindow -a' opens a task window for all tasks that don't have one 
+         open (but which are allowed to have one open). Depending on the task's 
+         requirements, a task window can be either a separate 'grid' window, or
+         it can be a window pane within the session's 'main' window.
+      <task> can be any Axmud built-in or external task that's currently 
+         running.
+      <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
+         formal name (e.g. 'status_task') or the task's unique name (e.g. 
+         'status_task_4').
+      (Use the ';listtasklabel' command to list all task labels.)
+
+   User commands:
+      otw / opentaskwin / opentaskwindow

@@ -1,0 +1,13 @@
+prc / pauserecording          Pauses or resumes the current recording
+ 
+   Format:
+      ;prc                    Pauses/resumes recording
+ 
+   Notes:
+      If a recording is in progress, pauses it; if a recording is paused,
+         resumes recording.
+      See the help for the ';record' command for more information about
+         recordings.
+ 
+   User commands:
+      prc / pauserc / pauserecording

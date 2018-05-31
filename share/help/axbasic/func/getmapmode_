@@ -1,0 +1,8 @@
+GETMAPMODE$ ()
+        
+   Synopsis:
+      Returns the automapper's current mode
+
+   Notes:
+      The return value will be one of the strings "wait", "follow" or "update".
+         If the automapper window isn't open, returns an empty string.

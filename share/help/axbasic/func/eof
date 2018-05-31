@@ -1,0 +1,24 @@
+EOF (channel)
+
+   Synopsis:
+      Tests whether a file channel has reached the end of its file
+
+   Notes:
+      Tests the file channel created with an earlier OPEN statement. Returns 1
+         if the file channel is open, and has reached the end-of-file. Returns 0
+         if the the file channel is open, but has not reached the end-of-file
+         (or if the file channel is closed).
+
+   Examples:
+      ! Read all the data in the file
+      OPEN #5: NAME "data.txt", CREATE OLD, ACCESS INPUT
+      IF EOF(5) = 1 THEN
+         PRINT "File is empty!"
+      ELSE
+         ! Read data until EOF() returns 1
+         DO
+            INPUT #5: a$
+            PRINT a$
+         UNTIL EOF(5) = 1
+      END IF
+      END

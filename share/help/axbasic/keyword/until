@@ -1,0 +1,11 @@
+UNTIL condition
+
+   Synopsis:
+      Terminates a DO..UNTIL loop
+
+   Notes:
+      See the help for WHILE for a full explanation. The conditional expression
+         causes the loop to terminate (if true) or to repeat (if false).
+
+   Availability:
+      UNTIL is not available in scripts with primitive line numbers.

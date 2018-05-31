@@ -1,0 +1,13 @@
+ur / unsetrace                Unsets the current race
+ 
+   Format:
+      ;ur                     Unsets the current race profile
+ 
+   Notes:
+      After using this command, there will be no current race profile. All
+         interfaces used by the race will become unavailable. (They will be
+         restored the next time this race is made current.)
+      You can select the next current race with the ';setrace' command.
+ 
+   User commands:
+      ur / unsetrace

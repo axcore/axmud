@@ -1,0 +1,41 @@
+load / load                   Loads a file (or files)
+ 
+   Format:
+      ;load                   Loads files for this session
+      ;load <options>         Loads specific file(s) for this session
+      
+   Notes:
+      Axmud stores its data across a number of files (use ';showfile' for a list
+         of them). This command loads data from those files, overwriting any
+         data stored in memory.
+
+      If you want to load specific files, you can use <options>.
+      <options> should consist of a list of switch options and/or file names. 
+      The switch options used are:
+         -m   Loads the world model data file, 'worldmodel'
+         -t   Loads the task data file, 'tasks'
+         -s   Loads the script data file, 'scripts'
+         -n   Loads the contacts data file, 'contacts'
+         -k   Loads the keycode data file, 'keycodes'
+         -y   Loads the dictionary data file, 'dicts'
+         -b   Loads the toolbar button data file, 'toolbar'
+         -u   Loads the user command data file, 'usercmds'
+         -z   Loads the zonemaps data file, 'zonemaps'
+         -p   Loads the winmaps data file, 'winmaps'
+         -x   Loads the text-to-speech data file, 'tts'
+      File names used are: 'worldmodel', 'tasks', 'contacts', 'keycodes', 
+         'dicts', 'usercmds', 'zonemaps', 'winmaps', 'tts'.
+
+      <options> can be specified in any order:
+      
+         ';load -k tasks -z dicts'
+         
+      Each file is only loaded once, so duplicate <options> won't cause an
+         error.
+      The config file can't be loaded with this command; it is only ever loaded
+         when the Axmud client starts.
+      Profile data files can't be loaded with this command. You can load a world
+         profile and all its associated data with the ';setworld' command.
+
+   User commands:
+      load

@@ -1,0 +1,10 @@
+ldy / listdictionary          Lists dictionaries
+ 
+   Format:
+      ;ldy                    Lists all dictionaries
+ 
+   Notes:
+      See the help for ';adddictionary' for more information about dictionaries.
+ 
+   User commands:
+      ldy / listdict / listdictionary

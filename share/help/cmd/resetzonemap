@@ -1,0 +1,17 @@
+rzm / resetzonemap            Resets a zonemap
+ 
+   Format:
+      ;rzm <name>             Resets the zonemap <name>
+ 
+   Notes:      
+      Zonemaps are a plan for arranging windows on a workspace grid. Zonemaps
+         contain one or more zone models, describing a region of the workspace 
+         and the kinds of window that region is allowed to contain.
+      This command resets the zonemap by removing its zone models (to create new
+         zone models, see the for ';addzonemodel').
+      Axmud provides a number of standard zonemaps which can't be reset. In
+         addition, the zonemap can't be reset if it's in use by any workspace
+         grid.
+ 
+   User commands:
+      rzm / resetzm / resetzonemap

@@ -1,0 +1,16 @@
+ar / addrace                  Adds a race profile
+ 
+   Format:
+      ;ar <name>              Adds the race profile <name>
+ 
+   Notes:
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
+         underlines and 0-9 (not the first character) and not be one of Axmud's 
+         reserved names (see the ';listreserved' command).
+      The operation will fail if a profile called <name> already exists or if
+         <name> is invalid.
+      To create a race profile and set it as the current race profile, use the
+         ';setrace' command.
+ 
+   User commands:
+      ar / addrace

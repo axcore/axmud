@@ -1,0 +1,10 @@
+tco / testcolour              Tests display of Axmud colour tags
+
+   Format:
+      ;tco                    Tests colours
+
+   Notes:
+      See also the help for ';listcolour'.
+ 
+   User commands:
+      tco / testcolor / testcolour

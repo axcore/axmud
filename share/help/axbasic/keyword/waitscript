@@ -1,0 +1,14 @@
+WAITSCRIPT expression
+
+   Synopsis:
+      Starts an Axbasic script and waits for it to terminate
+
+   Notes:
+      Starts a new Axbasic script (run from within a new Script task). The
+         current script waits until the new script has terminated, before
+         resuming execution.
+      Arith-Exp is the name of the new script.
+               
+   Examples:
+      WAITSCRIPT "otherscript"
+      PRINT "I'm back, baby!"

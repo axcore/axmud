@@ -1,0 +1,84 @@
+shk / simulatehook            Simulates an Axmud hook event
+ 
+   Format:
+      ;shk -c                 Simulates the 'connect' hook event
+      ;shk -d                 Simulates the 'disconnect' hook event
+      ;shk -l                 Simulates the 'login' hook event
+      ;shk -p <prompt>        Simulates the 'prompt' hook event
+      ;shk -r <text>          Simulates the 'receive_text' hook event
+      ;shk -i <cmd>           Simulates the 'sending_cmd' hook event
+      ;shk -s <cmd>           Simulates the 'send_cmd' hook event
+      ;shk -m <var> <val>     Simulates the 'msdp' hook event
+      ;shk -n <var> <val>     Simulates the 'mssp' hook event
+      ;shk -a <pack> <data>   Simulates the 'atcp' hook event
+      ;shk -y <pack> <data>   Simulates the 'gmcp' hook event
+      ;shk -u                 Simulates the 'current_session' hook event
+      ;shk -o <num>           Simulates the 'not_current' hook event
+      ;shk -h <num>           Simulates the 'change_current' hook event
+      ;shk -v                 Simulates the 'visible_session' hook event
+      ;shk -j <num>           Simulates the 'not_visible' hook event
+      ;shk -k <num>           Simulates the 'change_visible' hook event
+      ;shk -e <time>          Simulates the 'user_idle' hook event
+      ;shk -w <time>          Simulates the 'world_idle' hook event
+      ;shk -g                 Simualtes the 'get_focus' hook event
+      ;shk -f                 Simulates the 'lose_focus' hook event
+      ;shk -x                 Simulates the 'close_disconnect' hook event
+
+      ;shk <event> <var>      Simulates the specified hook <event>
+      ;shk <event> <var> <val>
+                              Simulates the specified hook <event>
+ 
+   Notes:
+      This command allows you to simulate a hook event, which causes any active
+         hook interfaces using that event to fire (happen). It's a convenient 
+         way to test tasks, Axbasic scripts, missions and hooks without 
+         interrupting the world itself.
+
+      The 'connect' and 'disconnect' events fire whenever you connect to a
+         world, or disconnect from it. The 'close_disconnect' event fires just
+         before the Axmud client shuts down.
+      The 'login' event fires when an automatic login is completed, or when you
+         use the ';login' command successfully.
+      The 'prompt' event fires whenever the world sends a prompt, and the
+         'receive_text' event fires whenever the world sends a normal packet of
+         text (consisting of one or more lines, the last one ending with a
+         newline character). <prompt> and <text> specifies the simulated text
+         that would have been received.
+      The 'sending_cmd' event fires whenever Axmud wants to send a world 
+         command, but before any aliases are tested. The 'send_cmd' event fires 
+         when the world command is about to be sent, after aliases have been 
+         tested. <cmd> specifies the command that would have been sent.
+      The 'msdp', 'mssp' events fire when the world sends MSDP or MSSP data.
+         <var> and <val> specify the variable/value pair that would have been
+         received.
+      The 'atcp' and 'gmcp' events fire when the world sends ATCP or GMCP data.
+         <pack> is the package name, in the form PACKAGE[.SUBPACKAGE][.MESSAGE].
+         <data>, if specified, is the json data in a string format.
+      The 'current_session' event fires when this session becomes the current 
+         session. 'not_current' fires when this session is replaced as the 
+         current session; the new current session's number is <num>. 
+         'change_session' fires in every session when the current session 
+         changes, the new current session's number is <num>.
+      The 'user_idle' event fires when the user has been idle for a certain 
+         period of time. The 'world_idle' event fires when no text has been
+         received from the world for a certain period of time. Currently, both
+         events fire after 60 seconds. <time> is the system time at which the
+         user last sent a world command, or text was last received from the 
+         world.  
+      The 'get_focus' event fires when this session becomes the current session
+         and the 'lose_focus' event fires when another session becomes the 
+         current session.
+
+      Instead of specifying a switch, you can specify the hook event itself. The
+         following commands are interchangeable:
+         
+            ;simulatehook -s jump
+            ;simulatehook send_cmd jump
+            
+      If <prompt>, <text>, <cmd>, <var>, <val>, <data> or <num> contain spaces, 
+         you must surround the with diamond brackets <...>, e.g.
+         
+            ;simulatehook -s <kill orc>
+ 
+   User commands:
+      shk / simhook / simulatehook

@@ -1,0 +1,12 @@
+edb / editdisplaybuffer       Opens an 'edit' window for a display buffer line
+ 
+   Format:
+      ;edb <number>           Edits the buffer line <number>
+      ;edb                    Edits the most recent buffer line
+   
+   Notes:
+      The display buffer is Axmud's record of text received from the world and
+         displayed in its default tab (see the help for ';displaybuffer').
+
+   User commands:
+      edb / editdispbuff / editdisplaybuffer

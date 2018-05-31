@@ -1,0 +1,23 @@
+lal / listalias               Lists aliases
+ 
+   Format:
+      ;lal
+               Lists all aliases belonging to current profiles
+      ;lal -w
+               Lists all aliases associated with the current world 
+      ;lal -g
+               Lists all aliases associated with the current guild
+      ;lal -r
+               Lists all aliases associated with the current race
+      ;lal -c
+               Lists all aliases associated with the current character
+      ;lal -x <category>
+               Lists all aliases belonging to the current custom profile derived
+                  from the category (template) <category>
+      ;lal -d <prof>
+               Lists all aliases belonging to the profile <prof>
+      ;lal -i
+               Lists all active alias interfaces
+ 
+   User commands:
+      lal / listal / listalias

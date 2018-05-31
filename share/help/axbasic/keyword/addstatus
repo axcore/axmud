@@ -1,0 +1,46 @@
+ADDSTATUS expression , expression
+    
+   Synopsis:
+      Adds a 'main' window status bar
+    
+   Notes:
+      Adds a status bar to the 'main' window, in the same area that gauges are
+         displayed.
+      Unlike graphical gauges, status bars display two numbers as simple text.
+         For example, your character's health points and maximum health points
+         might be displayed as "HP: 33/100". The first value is expected (but 
+         not required) to be less than or equal to the second.
+
+      The first expression is a unique status bar number. You can specify any
+         integer, zero or above. If a status bar with this number already 
+         exists, it is replaced with a new one. It's up to the script to keep 
+         track of the unique numbers of any status bars it has created. (Status 
+         bar numbers are independent of the numbers used with ADDGAUGE, 
+         ADDCONGAUGE and so on.)
+      The second expression is the label displayed with the numbers, for example
+         "HP". If it's an empty string, Axbasic will assign its own label.
+
+      An ADDSTATUS statement is usually followed by a SETSTATUS statement, which
+         sets the numerical values displayed by the status bar. A DELSTATUS
+         statement removes the status bar entirely. Status bars are  
+         automatically removed when the script terminates.
+      Often, these statements are used in some kind of loop, which updates the
+         status bars periodically. See the code below for an example.
+
+      See also the help for the ADDCONSTATUS, ADDGAUGE and ADDCONGAUGE 
+         statements.
+
+   Examples:
+      OPTION NEEDTASK
+      OPTION NOLET
+
+      ADDSTATUS 1, "TEST"
+
+      FOR a = 0 to 10
+         SETSTATUS 1, a, 10
+         PAUSE 1
+      NEXT a
+
+      DELSTATUS 1
+
+      END

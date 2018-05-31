@@ -1,0 +1,30 @@
+sdw / setdefaultwinmap        Sets default winmap for 'main'/'internal' windows
+ 
+   Format:
+      ;sdw                    Shows current default winmaps
+      ;sdw -a <name>          Sets default winmap for 'main' windows
+      ;sdw -d <name>          Sets default winmap for 'main' windows
+      ;sdw -g <name>          Sets default winmap for other 'internal' windows
+      ;sdw -r                 Resets default winmaps
+ 
+   Notes:
+      Winmaps are a plan for arranging the layout of 'internal' windows 
+         (consisting of all 'main' windows, 'protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows).
+      See the help for ';addwinmap' for more information about winmaps.
+
+      When windows are arranged on a workspace grid (see the help for 
+         ';activategrid'), they are arranged according to a plan called a 
+         zonemap (see the help for ';addzonemap'). Zones within the zonemap are 
+         able to specify which winmaps should be used for windows opened in that
+         zone. If not, you can use this command to set a default winmap.
+      There are three default winmaps: one for 'main' windows when workspace
+         grids are activated (use the -a switch), another for 'main' windows
+         when workspace grids are not activated (use the -d switch), and one for 
+         other kinds of 'internal' window ('protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows - use the -g
+         switch).
+      <name>, if specified, is the name of the winmap to use. 
+ 
+   User commands:
+      sdw / setdw / setwinmap / setdefaultwinmap

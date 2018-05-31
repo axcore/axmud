@@ -1,0 +1,23 @@
+sfw / setfavouriteworld       Sets the list of favourite worlds
+ 
+   Format:
+      ;sfw <list>             Sets the list
+      ;sfw                    Resets the list
+
+   Notes:
+      Axmud's connections window displays a list of world profiles, sorted in
+         order of frequency, with the most-visited world highest on the list.
+      However, you can specify one or more 'favourite worlds' which are
+         automatically promoted to the top of the list. The first world in the
+         list is automatically selected, which means you can connect to the 
+         world with a single keypress.
+      The worlds in <list> don't actually have to exist; you can specify
+         'deathmud' even if you haven't created a world profile with that name
+         yet. If you later create a world profile called 'deathmud', it will
+         automatically appear near the top of the connection window's list.
+         However, any items in <list> which aren't valid world names (or which 
+         are duplicates) will be ignored.
+      If you omit <list>, the list of favourite worlds is emptied.
+ 
+   User commands:
+      sfw / setfaveworld / setfavoriteworld / setfavouriteworld

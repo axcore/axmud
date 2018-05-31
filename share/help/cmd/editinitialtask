@@ -1,0 +1,27 @@
+eit / editinitialtask         Opens an 'edit' window for an initial task
+ 
+   Format:
+      ;eit <task>
+               Edits the <task> in the global initial tasklist
+      ;eit <task> <profile>
+               Edits the <task> in the <profile>'s initial tasklist
+
+   Notes:
+      Initial tasks are started when Axmud marks the current character as logged 
+         in (you can use the ';login' command to override the automatic process, 
+         if necessary), or when the user changes a current profile with commands
+         like ';setworld' and ';setchar'.
+      There are two types of initial tasklist - one 'global' list which contains
+         a list of tasks which apply to every world, and a separate set of 
+         initial tasklists stored in each profile.
+      When a current profile changes, any tasks that were created from the old
+         profile's initial tasklist are halted before the new current profile's 
+         initial tasks are started.
+
+      <task> can be any Axmud built-in or external task.
+      <task> can be in the form of a task's label (e.g. 'stat', 'status') or its
+          formal name (e.g. 'status_task').
+      (Use the ';listtasklabel' command to list all task labels.)
+  
+   User commands:
+      eit / editinittask / editinitialtask

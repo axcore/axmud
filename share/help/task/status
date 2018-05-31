@@ -1,0 +1,22 @@
+The Status task monitors all text received from the world, looking for
+   updates on your character's current status. It keeps track of statistics
+   such as XP, hit points, lives left and so on. Much of the data collected
+   is stored in the current world or character profile. If the task window is
+   open, the data will be displayed in a format you can specify for yourself.
+When the task window is open, certain events - such as when your character is
+   running low on health points, is killed or falls asleep - will cause the
+   window's colour to change. Some events will also cause one of Axmud's
+   sound effects to be played (if sound has been turned on).
+If you make the task 'active', every few seconds it will send a series of
+   world commands ('score' is the most common command sent). Otherwise, the
+   task's data will only be updated when you type world commands like 'score'
+   yourself.
+
+Client commands used with this task are:
+   ;resetcounter              Resets the Status task's counters
+   ;activatestatustask        Puts the task in 'active' mode
+   ;disactivatestatustask     Puts the task in 'disactivated' mode
+   ;addstatuscommand          Adds a command to those sent by the task
+   ;deletestatuscommand       Deletes a command from those sent by the task
+   ;liststatuscommand         Lists commands sent to the world by the task
+   ;setwimpy                  Sets the local/remote wimpy level

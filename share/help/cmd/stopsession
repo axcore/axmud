@@ -1,0 +1,16 @@
+ssn / stopsession             Stops a session and closes its tab
+ 
+   Format:
+      ;ssn                    Stops the session that processes this command
+      ;ssn <number>           Stops session <number>
+ 
+   Notes:
+      Use this command to stop the session. If there are any unsaved files, 
+         you'll be asked whether you want to save them first.
+      This command is most useful for closing a session tab after disconnecting
+         from a world. (You can also close the tab by clicking on its 'x' icon
+         just underneath the 'main' window's menu.)
+      For a list of session numbers, use the ';listsession' command.
+ 
+   User commands:
+      ssn / closetab / stopsession

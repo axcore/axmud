@@ -1,0 +1,9 @@
+TAN (x)
+
+   Synopsis:
+      Returns the tangent of the angle x
+
+   Notes:
+      x is measured in radians by default. If OPTION ANGLE DEGREES has been
+         specified, is measured in degrees.
+      x must not be (pi / 2) + (k * p), where k is any integer.

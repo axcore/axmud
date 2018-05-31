@@ -1,0 +1,14 @@
+lwz / listwinzone             Lists winzones
+ 
+   Format:
+      ;lwz <name>             Lists winzones in the winmap <name>
+
+   Notes:
+      Winmaps are a plan for arranging the layout of 'internal' windows 
+         (consisting of all 'main' windows, 'protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows).
+      See the help for ';addwinmap' for more information about winmaps, and see
+         the help for ';addwinzone' for more information about winzones.
+ 
+   User commands:
+      lwz / listwz / listwinzone

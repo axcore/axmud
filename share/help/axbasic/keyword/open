@@ -1,0 +1,82 @@
+OPEN #channel: NAME expression [, ORGANIZATION TEXT ] [, CREATE NEW|OLD|NEWOLD ] 
+      [, ACCESS OUTIN|INPUT|OUTPUT ]
+OPEN #channel: NAME expression [, ORGANIZATION expression ] 
+      [, CREATE expression ] [, ACCESS expression ]
+
+   Synopsis:
+      Opens a file channel to read/write data from a text file
+
+   Notes:
+      Before reading or writing to a file, you must first open a channel to the
+         file using an OPEN statement. The simplest OPEN statement is in the 
+         form:
+
+         OPEN #1: NAME "myfile.txt"
+
+      1 is the channel number, which can be any integer in the range 1-999. 
+         Axbasic can open a maximum of 25 channels simultaneously. Using a 
+         channel outside this range, or trying to open more channels than the
+         maximum, will generate an error.
+      The expression "myfile.txt" is the file's path, relative to the Axbasic
+         script's own directory (folder).
+ 
+      By default, OPEN statements expect that the file already exists, and that
+         you are going to both read and write to the file. In most situations
+         you will want to be more specific, and you can do so with the 
+         ORGANIZATION, CREATE and ACCESS keywords.
+
+      CREATE specifies what happens when the file already exists (or not). 
+         CREATE NEW specifies that a new file should be created; if it already
+         exists, an error is generated. CREATE OLD specifies that the file
+         should already exist; if it does not, an error is generated. 
+      CREATE NEWOLD specifies that a file should be opened, if it already 
+         exists, or that a new file should be created, if it doesn't. If you 
+         omit CREATE altogether, Axbasic will behave as if you had specified 
+         CREATE OLD.
+
+      ACCESS specifies whether you want to read from or write to the file (or 
+         both). ACCESS INPUT means that you can read from the file with INPUT
+         statements, but not write to it. ACCESS OUTPUT means that you can write
+         to the file with PRINT statements, but not read from it.
+      ACCESS OUTIN allows you to both read and write to the file simultaneously.
+      When the file is opened, Axbasic will start reading from the beginning of
+         the file if ACCESS INPUT was specified; otherwise it will start 
+         reading/writing at the end of the file. You can use the ERASE and 
+         RESET statements for more control over the read/write position, and you
+         can use the EOF() function to test whether the end of the file has been
+         reached.
+      If you omit ACCESS altogether, Axbasic will behave as if you had specified
+         ACCESS OUTIN.
+ 
+      ORGANIZATION TEXT (which can abbreviated to ORG TEXT) is included for 
+         compatibility with True BASIC; Axbasic can only read/write to text 
+         files. ORGANIZATION, CREATE and ACCESS can be specified in any order 
+         (but NAME must be specified first).
+      The keywords TEXT, NEW/OLD/NEWOLD and OUTIN/INPUT/OUTPUT can be replaced
+         by expressions.
+      When the Axbasic script halts, all file channels are automatically closed, 
+         but it's good practice to close a channel (using a CLOSE statement) as 
+         soon as you no longer need it.
+
+   Examples:
+      ! Read from a file
+      OPEN #1: NAME "myfile.txt"
+      INPUT #1: question$
+      INPUT #1: answer$
+      CLOSE #1
+      PRINT $question, $answer
+      END
+
+      ! Write to a file, erasing any previous contents
+      OPEN #5: NAME "output.txt", CREATE NEWOLD, ACCESS OUTPUT
+      ERASE #5
+      FOR i = 1 TO 10
+         PRINT #5: i
+      NEXT i
+      CLOSE #5
+      END
+
+      ! A subroutine that opens a channel using expressions, not keywords
+      SUB OpenFile($file$, cr$, acc$) 
+         OPEN #1: NAME file$, CREATE cr$, ACCESS acc$
+      END SUB 

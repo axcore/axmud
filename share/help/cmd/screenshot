@@ -1,0 +1,12 @@
+shot / screenshot             Takes a screenshot of the current session
+ 
+   Format:
+      ;shot                   Takes a screenshot
+ 
+   Notes:
+      Capture your greatest moments of triumph for posterity! This command takes
+         a screenshot of the current session's default tab and saves it in the
+         data sub-directory '/screenshots'.
+
+   User commands:
+      shot / screenshot

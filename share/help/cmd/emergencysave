@@ -1,0 +1,24 @@
+ems / emergencysave           Performs an emergency save
+ 
+   Format:
+      ;ems                    Performs an emergency save
+ 
+   Notes:
+      If a normal save operation fails, Axmud usually disables file access, but
+         allows you to perform an 'emergency save'.
+      During an emergency save, all data in memory is save to a temporary 
+         directory (folder) that you specify. You should NOT specify Axmud's 
+         normal data directory.
+      If even the emergency save fails, you can use this command to try again.
+         A USB drive would be an ideal location to save files, as it hopefully
+         won't be affected by any problems that your hard drive is experiencing.
+      If the emergency save succeeds, you should shut down Axmud. Having made a
+         backup copy of the normal Axmud data directory, you can then 
+         copy-and-paste any files that you want to keep from the emergency 
+         directory into the normal Axmud data directory.
+
+      This command works even when normal file access has been disabled by the 
+         ;disablesaveload or ;disablesaveworld commands.
+
+   User commands:
+      ems / emsave / emergencysave

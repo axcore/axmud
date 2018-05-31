@@ -1,0 +1,23 @@
+rel / relaydirection          Sends a non-movement command to the world
+ 
+   Format:
+      ;rel <direction>        Move the character in <direction>
+ 
+   Notes:
+      Some world commands should cause the world to send a room statement in 
+         response. (A room statement is the complete room description, including 
+         any exits and the room's contents.)
+      This generally includes the commands for 'look', 'glance', 'go', 'sail', 
+         'fly' (and so on). Axmud stores world commands that have been sent, and
+         marks any that it thinks will cause a room statement to be received.
+      When the Locator task is running, it works out how many room statements to 
+         expect by counting how many of these commands have been sent.
+
+      In some situations it might be desirable to inform Axmud that the 
+         direction to be sent is definitely not a movement command - for 
+         example, when answering an NPC's question by typing a command like 
+         'north' directly. You can use ';relaydirection' in this situation.
+      ';movedirection' can be used to send a movement command. 
+ 
+   User commands:
+      rel / relay / relaydir / relaydirection

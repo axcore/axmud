@@ -1,0 +1,21 @@
+DELMACRO expression
+
+   Synopsis:
+      Deletes an independent macro
+
+   Notes:
+      A convenient way to delete macros created with the ADDMACRO statement. The
+         expression is the name of the macro to delete.
+      DELMACRO assumes that the macro is assigned to a cage belonging to the
+         current world (unless an earlier PROFILE statement specified a
+         different profile).
+      The following Axbasic statements are therefore interchangeable:
+      
+         DELMACRO "name"
+         CLIENT "deletemacro name"
+         
+      If Axmud can't delete the macro, execution of the Axbasic script continues
+         as normal. No error message is generated.
+         
+   Examples:
+      DELMACRO "attackmacro"

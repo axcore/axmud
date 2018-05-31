@@ -1,0 +1,84 @@
+# Italian phrasebook (from https://it.wikipedia.org/wiki/Punto_cardinale; checked at Silmarillia
+#	MUD, mud.silmarillia.com 4000)
+#
+# English name for language (lower-case)
+italian
+# Native name for language (capitalise)
+Italiano
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+noun
+# Primary directions
+nord
+nordnordest
+nordest
+estnordest
+est
+estsudest
+sudest
+sudsudest
+sud
+sudsudovest
+sudovest
+ovestsudovest
+ovest
+ovestnordovest
+nordovest
+nordnordovest
+alto
+basso
+# Primary abbreviated directions
+nord
+nordnordest
+nordest
+estnordest
+est
+estsudest
+sudest
+sudsudest
+sud
+sudsudovest
+sudovest
+ovestsudovest
+ovest
+ovestnordovest
+nordovest
+nordnordovest
+alto
+basso
+# Number of definite articles
+7
+# Definite articles
+lo
+li
+la
+l'
+gli
+le
+i
+# Number of indefinite articles
+4
+# Indefinite articles
+uno
+un
+una
+un'
+# Number of 'and' words
+1
+# 'and' words
+e
+# Number of 'or' words
+2
+# 'or' words
+o
+ne
+# Number words
+uno
+due
+tre
+quattro
+cinque
+sei
+sette
+otto
+nove
+dieci

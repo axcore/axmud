@@ -1,0 +1,108 @@
+ati / addtimer                Adds a timer
+ 
+   Format:
+      ;ati <switches>         Adds a timer
+ 
+   Notes:
+      Timers are one of five types of Axmud interface (the others being 
+         triggers, aliases, macros and hooks).
+      Timers allow you to execute an instruction repeatedly at fixed intervals, 
+         and also to specify an instruction to be executed later.
+      This command creates a timer interface that's 'inactive' - it's associated 
+         with a particular profile (actually, stored in a 'cage' object
+         associated with that profile). When that profile becomes a current 
+         profile - and only if there isn't another timer with the same name, 
+         attached to a higher-priority profile - then an 'active' timer is 
+         created with the same attributes.
+      The timer created is also 'independent', meaning that it doesn't call some
+         part of the Axmud code directly.
+
+      All interfaces have four standard attributes:
+         'name'      - A name for the timer
+         'stimulus'  - What causes the timer to 'fire'. The stimulus is a time 
+                          interval in seconds, after which the timer fires. A
+                          timer can't fire more often than ten times a second
+         'response'  - The instruction to execute when the timer fires. Includes
+                          world commands, forced world commands (starting with
+                          ',,'), client commands (starting ';'), echo commands
+                          (starting '"'), Perl commands (starting '/'), script
+                          commands (starting '&') and multi commands (starting
+                          ':')
+         'enabled'   - A flag set to 1 (default) or 0. When set to 1, the active
+                          timer is enabled (does something). When set to 0, it 
+                          is disabled (temporarily does nothing)
+      Timers also have the following non-standard attributes:
+         'count'     - How many times the timer should fire. If set to -1, the
+                          timer fires indefinitely
+         'initial_delay'
+                     - How long to wait, before the timer fires for the first
+                          time. If set to 0, no initial delay
+         'random_delay'
+                     - A flag set to 1 or 0 (default). When set to 1, the timer
+                          fires after a random interval between 0 and the 
+                          interval stored in the 'stimulus' attribute. When set
+                          to 0, always uses the interval stored in the 
+                          'stimulus' attribute
+         'random_min'
+                     - When the 'random_delay' attribute is 1, the minimum delay
+                          (can be 0 for no delay, or any positive number)
+         'wait_login' 
+                     - A flag set to 1 (default) or 0. When set to 1, the timer
+                          doesn't fire for the first time until the character is
+                          marked as logged in. When set to 0, can fire 
+                          immediately
+         'temporary' - A flag set to 1 or 0 (default). When set to 1, the active
+                          interface is destroyed when the timer finishes firing. 
+                          When set to 0, it is merely disabled. When re-enabled, 
+                          the 'count' attribute is reset to its original value
+                      
+      <switches> allows you to define which attributes the timer will have and
+         with which profile it will be associated.
+ 
+      Group 1 switch options: one of the following options must be used:
+         -no option-          - Adds a timer belonging to the current world
+         -w                   - Adds a timer belonging to the current world
+         -g                   - Adds a timer belonging to the current guild
+         -r                   - Adds a timer belonging to the current race
+         -c                   - Adds a timer belonging to the current char
+         -x <category>        - Adds a timer belonging to the current custom
+                                   profile <category>
+         -d <prof>            - Adds a timer belonging to profile <prof>
+
+      Group 2 switch options: both of the following options must be used:
+         -s <number>          - Sets the 'stimulus' attribute (a number)
+         -p <instruction>     - Sets the 'response' attribute (the instruction 
+                                   to execute)
+      Group 3 switch options: 0, 1 or more of the following options can be used:
+         -n <string>          - Sets the 'name' attribute (a string). If not
+                                   specified, a name is generated for you
+         -e <boolean>         - Sets the 'enabled' attribute (1 or 0; default is
+                                   1)
+         -o <repeat_count>    - Sets the 'count' attribute (a positive integer
+                                   or -1; default is -1)
+         -i <number>          - Sets the 'initial_delay' attribute (a number, 0
+                                   or above; default is 0)
+         -r <boolean>         - Sets the 'random_delay' attribute (1 or 0, 
+                                   default is 0)
+         -m <number>          - Sets the 'random_min' attribute (a number, 0 or
+                                   above; default is 0)
+         -w <boolean>         - Sets the 'wait_login' attribute (1 or 0, default
+                                   is 1)
+         -t <boolean>         - Sets the 'temporary' attribute (1 or 0; default
+                                   is 0)
+      Group 4 switch options: 0, 1 or more of the following options can be used:
+         -b <name>            - This timer is checked before timers called
+                                   <name> (when they both become active)
+         -f <name>            - This timer is checked after timers called
+                                   <name> (when they both become active)
+
+   General interface notes:
+      If <instruction>, <pattern>, <string> or <substitution> contain 
+         whitespace, they must be enclosed by diamond brackets
+         
+            e.g. <You see (.*) exits>
+            
+      <boolean> can be typed as 1 or 0, or any word beginning with t, T, f or F
+ 
+   User commands:
+      ati / addti / addtimer

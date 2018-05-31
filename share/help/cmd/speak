@@ -1,0 +1,69 @@
+spk / speak                   Uses a text-to-speech engine to read out a message
+ 
+   Format:
+      ;spk                    Reads out a test message using default settings
+      ;spk <config>           Reads out a test message using TTS <configuration>
+
+      ;spk <options>          Reads out a test message using specified settings
+      ;spk <text>             Reads out <text> using default settings
+      ;spk <text> <options>   Reads out <text> using specified settings
+
+   Notes:
+      If you have one or more of the text-to-speech engines installed on your
+         system, Axmud can use them to convert text to speech. The engines 
+         currently supported are eSpeak, Flite, Festival and Swift. (Axmud also 
+         uses a dummy engine, called 'none'. If Axmud tries to convert text to 
+         speech using the dummy engine, you'll hear nothing.)
+      Axmud stores a number of TTS configurations. Each configuration stores an 
+         engine, voice, word speed, word rate, word pitch and volume setting, 
+         among others. Text received from the world uses one configuration, 
+         system messages use another, so it's easy to customise the 
+         configurations so that they read aloud in different voices.
+      You can use this command to see what each configuration sounds like, or to 
+         test new combinations of settings. Since this command works even when
+         text-to-speech is disabled, you can use it to test whether 
+         text-to-speech is working is working at all on your system.
+
+      If you don't specify some <text>, Axmud will read out a test message.
+         Alternatively, you can use ';speak <configuration>' to test a 
+         particular TTS configuration
+
+      You can use <options> to test different configurations, engines, voices, 
+         word speeds, word rates, word pitches and volumes. If you specify both  
+         a configuration and one or more other <options>, the settings for that 
+         configuration will be temporarily overridden.
+      Unfortunately, some engines don't allow us to modify some <options> (for
+         example, you can't use this command to change the word speed used with
+         Flite; eSpeak uses a word speed, whereas Festival uses a word rate.)
+      If you specify an invalid <option>, it is ignored (and text-to-speech
+         conversion happens using default values).
+
+      <text> and <options> can be specified in any order. <options> can be any 
+         of the following:
+
+         -n <configuration>   Specifies which text-to-speech <configuration>  
+                                 name to use.
+         -e <engine>          Specifies which engine to use. <engine> must be 
+                                 one of the following: 'espeak', 'flite',
+                                 'festival', 'swift' or 'none'.
+         -v <voice>           Specifies which voice to use (eSpeak, Festival and 
+                                 Swift only). You can use any <voice> available
+                                 on your system. See the documentation for your 
+                                 preferred text-to-speech engine to find out 
+                                 which voices are available on your system. 
+         -s <speed>           Specifies the word speed (eSpeak only). Must be in 
+                                 the range 10 - 200, default is 150 words per
+                                 minute. 
+         -r <rate>            Specifies the word rate (Festival and Swift only).
+                                 Must be in the range 0.5 - 2, default is 1.
+         -p <pitch>           Specifies the word pitch (eSpeak and Swift only). 
+                                 For eSpeak, must be in the range 0 - 99, 
+                                 default is 50. For Swift, must be in the range 
+                                 0.1 - 5, default is 1.
+         -l <volume>          Specifies the volume (Festival and Swift only).
+                                 Must be in the range 0.33 - 6, default is 1.
+ 
+       See also the help for ';speech'.
+ 
+   User commands:
+      spk / speak

@@ -1,0 +1,4 @@
+TIME$ ()
+
+   Synopsis:
+      Returns the 24-hour-clock time, as a string, in the form "HH:MM:SS"

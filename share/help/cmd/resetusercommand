@@ -1,0 +1,17 @@
+ruc / resetusercommand        Resets the user command list
+ 
+   Format:
+      ;ruc                    Resets user commands to the default list
+ 
+   Notes:
+      All client commands have a single standard form (for example, this 
+         command's standard form is 'resetusercommand').
+      Some of the standard forms for client commands are quite long, so Axmud
+          allows the user to create abbreviated versions called 'user commands'.
+      This command resets the user commands, removing any changes you have made 
+          using ';addusercommand' and ';deleteusercommand'
+      (See the help for ';addusercommand' for more information about user
+         commmands.)
+ 
+   User commands:
+      ruc / resetuc / resetusercmd / resetusercommand

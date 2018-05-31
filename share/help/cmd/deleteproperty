@@ -1,0 +1,17 @@
+dp / deleteproperty           Deletes a profile template property
+ 
+   Format:
+      ;dp <template> <property>
+               Deletes the template <property>
+ 
+   Notes:
+      The blueprint for a new category of profile is called a profile template. 
+         Several custom profiles can be based on a single template.
+      This command removes a property from the blueprint (a property can be used
+         interchangeably with the terms 'instance variable' and 'IV').
+      The operation will fail if a property named <property> doesn't exist, or
+         if <property> is one of a small number of reserved property names.
+      (See the help for ';listprofile' for more information about profiles.)
+ 
+   User commands:
+      dp / delprop / deleteprop / deleteproperty

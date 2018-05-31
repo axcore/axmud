@@ -1,0 +1,82 @@
+# Spanish phrasebook 
+#   tested at Reinos de Leyenda, rlmud.org 5001
+#
+# English name for language (lower-case)
+spanish
+# Native name for language (capitalise)
+Espanol
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+noun
+# Primary directions
+norte
+nortnoreste
+noreste
+estenoreste
+este
+estesureste
+sudeste
+sursureste
+sur
+sursuroeste
+sudoeste
+oestesuroeste
+oeste
+oestenoroeste
+noroeste
+nortenoroeste
+arriba
+abajo
+# Primary abbreviated directions
+n
+nne
+ne
+ene
+e
+ese
+se
+sse
+s
+sso
+so
+oso
+o
+ono
+no
+nno
+ar
+ab
+# Number of definite articles
+5
+# Definite articles
+el
+la
+lo
+los
+las
+# Number of indefinite articles
+4
+# Indefinite articles
+un
+una
+unos
+unas
+# Number of 'and' words
+1
+# 'and' words
+y
+# Number of 'or' words
+2
+# 'or' words
+o
+u
+# Number words
+uno
+dos
+tres
+cuatro
+cinco
+seis
+siete
+ocho
+nueve
+diez

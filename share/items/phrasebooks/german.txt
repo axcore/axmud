@@ -1,0 +1,78 @@
+# German phrasebook 
+#   tested at Morgengrauen, mg.mud.de 23
+#
+# English name for language (lower-case)
+german
+# Native name for language (capitalise)
+Deutsch
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+adj
+# Primary directions (up/down not seen at Avalon)
+norden
+nordnordosten
+nordosten
+ostnordosten
+osten
+ostsuedosten
+suedosten
+suedsuedosten
+sueden
+suedsuedwesten
+suedwesten
+westsuedwesten
+westen
+westnordwesten
+nordwesten
+nordnordwesten
+oben
+unten
+# Primary abbreviated directions
+n
+nno
+no
+ono
+o
+oso
+so
+sso
+s
+ssw
+sw
+wsw
+w
+wnw
+nw
+nnw
+ob
+u
+# Number of definite articles
+3
+# Definite articles
+der
+die
+das
+# Number of indefinite articles
+3
+# Indefinite articles
+ein
+eine
+einen
+# Number of 'and' words
+1
+# 'and' words
+und
+# Number of 'or' words
+1
+# 'or' words
+oder
+# Number words
+eins
+zwei
+drei
+vier
+fuenf
+sechs
+sieben
+acht
+neun
+zehn

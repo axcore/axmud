@@ -1,0 +1,12 @@
+im / interactmall             Interacts with all NPC target(s) in the room
+ 
+   Format:
+      ;im                     Interacts with all NPCs
+ 
+   Notes:
+      ';interactmall' has the same effect as ';interact mall' (or whatever the
+          the word for 'mall' is in the current world).
+      See also the help for ';interact'.
+ 
+   User commands:
+      im / intmall / interactmall

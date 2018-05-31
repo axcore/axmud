@@ -1,0 +1,12 @@
+ka / killall                  Attacks all target(s) in the current room
+ 
+   Format:
+      ;ka                     Attacks all PCs and NPCs
+ 
+   Notes:
+      ';killall' has the same effect as ';kill all' (or whatever the word for
+         'all' is in the current world).
+      See also the help for ';kill'.
+ 
+   User commands:
+      ka / killall

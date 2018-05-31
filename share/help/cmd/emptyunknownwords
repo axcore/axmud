@@ -1,0 +1,16 @@
+euw / emptyunknownwords       Empties the collection of unrecognised words
+ 
+   Format:
+      ;euw                    Empty the list
+ 
+   Notes:
+      Axmud dictionaries contain lists of words, classified according to their
+         type; this helps Axmud to interpret text received from the world.
+      Whenever a line containing a list of objects is parsed, any words which
+         aren't recognised by the current dictionary can be stored there in a
+         special collection. 
+      This command empties the collection, discarding all the words Axmud hasn't 
+         been able to parse.
+ 
+   User commands:
+      euw / emptyuw / emptyunknown / emptyunknownwords

@@ -1,0 +1,22 @@
+amn / addmission              Adds a new mission using the current recording
+ 
+   Format:
+      ;amn <name>             Adds a new mission called <name>
+      ;amn <name> <descrip>   Adds mission <name> with description <descrip>
+ 
+   Notes:
+      New missions can be created by using recordings. See the help for the
+         ';record' command for information about making recordings.
+      This command adds a new mission using the contents of the current
+         recording. If the recording is still in progress, the mission is still
+         created (and the recording will continue as normal).
+      Missions are stored in the current world profile. Mission names must be no
+         longer than 16 characters, contain only A-Z, a-z, underlines and 0-9 
+         (not the first character) and not be one of Axmud's reserved names (see 
+         the ';listreserved' command).
+      If you specify <descrip>, make sure you enclose it with diamond brackets
+         e.g. ';addmission test <Just a little test mission>'
+      See the help for ';startmission' for more information about missions.
+ 
+   User commands:
+      amn / addmn / addmission

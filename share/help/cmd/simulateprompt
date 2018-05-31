@@ -1,0 +1,26 @@
+spr / simulateprompt          Simulates a prompt received from the world
+ 
+   Format:
+      ;spr <prompt>           Simulates the <prompt>
+ 
+   Notes:
+      This command allows you to simulate the current world by 'inserting' a
+         prompt; Axmud will behave exactly as if the prompt had been received 
+         from the world. It's a convenient way to test tasks, Axbasic scripts, 
+         missions and triggers without interrupting the world itself.
+
+      To preserve spacing, enclose the prompt in diamond brackets <...>
+      
+         e.g. ;simulateworld <Tell me your    name>
+         
+      To simulate a multi-line prompt, use '\n' for each newline character
+      
+         e.g. ;simulateworld <Listen!\nTell me your name>
+         
+      If your <prompt> ends with a newline character, it is removed.
+
+      See also the help for ';simulateworld', which inserts some text that isn't
+         a prompt, adding a newline character automatically.
+ 
+   User commands:
+      spr / simpr / simprompt / simulateprompt

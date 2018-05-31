@@ -1,0 +1,49 @@
+The Chat task is an instant messenger service. It allows you to chat with
+   other people using either the MudMaster of zChat protocols, both of which
+   are widely used on other MUD clients.
+The task is almost feature-complete, but note that encryption in zChat
+   sessions has not yet been implemented.
+The commands below can be entered in the 'main' window. A separate list of
+   commands can be used in the task's own window, once it is open. Type 
+   ';help' in that window to get a list of commands available there.
+Some commands are available in MudMaster sessions or in zChat sessions, but
+   not both. In general, zChat sessions offer a larger range of features.
+If you experience problems connecting or receiving calls, you will probably
+   need to adjust your firewall settings (which frequently interfere with
+   instant messenger applications of this sort).
+The Chat task cannot be started with ';starttask' - instead, use one of the
+   commands below (such as ';listen' or ';chatcall'). In addition, the Chat
+   task can't be used as an initial or custom task.
+ 
+Client commands used with this task are:
+   ;chatlisten                Listens out for incoming calls
+   ;chatignore                Stops listening out for for incoming calls
+   ;addcontact                Adds someone to your contacts list
+   ;deletecontact             Deletes someone from your contacts list
+   ;listcontact               Displays your contacts list
+   ;chatcall                  Calls one of your contacts
+   ;chatmcall                 Calls someone using the MudMaster protocol
+   ;chatzcall                 Calls someone using the zChat protocol
+   ;chat                      Sends a message to a chat contact
+   ;emote                     Sends an emote to a chat contact
+   ;chatgroup                 Sends a message to a group of chat contacts
+   ;emotegroup                Sends an emote to a group of chat contacts
+   ;chatall                   Sends a message to all chat contacts
+   ;emoteall                  Sends an emote to all chat contacts
+   ;chatping                  Sends a ping to chat contacts
+   ;chatdnd                   Sends a 'do not disturb' to chat contacts
+   ;chatsubmit                Allows chat contacts to send remote commands
+   ;chatescape                Forbids chat contacts to send remote commands
+   ;chatcommand               Sends a remote command to chat contacts
+   ;chatsendfile              Sends a file to chat contacts
+   ;chatstopfile              Stops files transfers with chat contacts
+   ;chatsnoop                 Asks to start/stop snooping on chat contacts
+   ;chathangup                Hangs up on chat contacts
+   ;chatpeek                  Shows chat contact's own public connections
+   ;chatrequest               Sets up a conference call
+   ;chatinfo                  Shows information about chat sessions
+   ;chatset                   Sets various chat session settings
+   ;chatsetname               Sets your chat nickname
+   ;chatsetgroup              Sets the members of a chat group
+   ;chatsetemail              Sets your chat email 
+   ;chatseticon               Sets the icon used in chat sessions

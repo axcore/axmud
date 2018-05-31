@@ -1,0 +1,19 @@
+ssg / showstatusgauge         Enables/disables the Status task's gauges
+ 
+   Format:
+      ;ssg                    Enables/disables gauges
+      ;ssg                    Enables/disables gauge labels
+ 
+   Notes:
+      Using the data it collects, the Status task can display gauges in the 
+         'main' window, as well as in its own task window.
+      This command enables the gauges if they're not currently visible, or 
+         disables them if they are visible. If the '-l' switch is specified,
+         this command enables or disables drawing labels over the gauges,
+         showing the actual numerical values being displayed.
+
+      Other parts of the Axmud code can also create gauges. If you want to 
+         disable gauges completely, use the ';togglemainwindow -g' command.
+
+   User commands:
+      ssg / showstatusgauge

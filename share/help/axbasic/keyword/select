@@ -1,0 +1,26 @@
+SELECT CASE variable-name
+
+   Synopsis:
+      Initiates a SELECT CASE code block
+
+   Notes:
+      A compact way of writing code that would otherwise have to be written as a
+         series of IF, ELSE IF and ELSE statements.
+      Only constants (and not variables) can be used in the subsequent CASE
+         statements.
+
+   Availability:
+      SELECT is not available in scripts with primitive line numbers.
+
+   Examples:
+      SELECT CASE dice
+         CASE 1
+            PRINT "The lowest number!"
+         CASE 3, 4
+            PRINT "Somewhere in the middle!"
+         CASE 6
+            PRINT "The highest number!"
+         CASE ELSE
+            PRINT "Some other number!"
+            IF dice = 5 THEN PRINT "It's a five!" ELSE PRINT "It's a two!"
+      END SELECT

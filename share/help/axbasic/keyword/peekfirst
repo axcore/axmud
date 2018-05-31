@@ -1,0 +1,32 @@
+PEEKFIRST variable-name = axmud-object-property
+PEEKFIRST ARRAY variable-name = axmud-object-property
+
+   Synopsis:
+      Stores the value of the first element in an Axmud internal list property
+
+   Notes:
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+         the help for the PEEK statement for a full explanation).
+      PEEKFIRST can only be used with list properties such as 
+         "world.current.doorPatternList". It cannot be used with a scalar 
+         property such as "world.current.name", a hash property such as 
+         "world.current.currencyHash" or a Perl object such as "world.current".
+      'variable-name' is set to the value of the first element of the list 
+         property. If the list is empty, then a string variable will be set to 
+         an empty string and a numeric variable will be set to 0. If the value 
+         of the first element is the Perl special value 'undef', a string 
+         variable will be set to "<<undef>>" and a numeric variable will be set 
+         to 0.
+                  
+   Examples:
+      ! Get the first pattern stored in the current world's door pattern list
+      ! and store it in an Axbasic global scalar variable
+      PEEKFIRST pattern$ = "world.current.doorPatternList"
+      PRINT pattern$
+      
+      ! Store the first pattern in an Axbasic global array
+      PEEKFIRST ARRAY patterns$ = "world.current.doorPatternList"
+ 
+      ! Store the first pattern in an Axbasic local scalar variable 
+      LOCAL pattern$
+      PEEKFIRST pattern$ = "world.current.doorPatternList"

@@ -1,0 +1,32 @@
+PAINTWIN [ expression ]
+
+   Synopsis:
+      Changes the task window's colour scheme
+
+   Notes:
+      Some task windows (such as the one used by the Locator task) use a variety
+         of colours on a black background. Other task windows (such as the one
+         used by the Status task) use several different background colours, with
+         the text colour automatically set to match.
+      The Script task window behaves like the Locator task window, by default.
+         However, this statement changes the window's background colour so that
+         it behaves more like the Status task window.
+      If specified, the expression must be one of Axmud's standard text colour 
+         tags, namely "black", "red", "green", "yellow", "blue", "magenta", 
+         "cyan", "white". Any of these colours can be specified IN CAPITALS to 
+         make them bolder (e.g. "RED", "GREEN").
+      The text colours is automatically changed to match the background colour.
+         Any colours specified by earlier WRITEWIN statements are lost.
+      If no colour is specified, the default colour scheme is used.
+      
+      If the Axbasic script isn't being run from within a task, or if the task
+         window is not open, the PAINTWIN statement is ignored (and no error
+         message is generated). Execution continues immediately with the next
+         statement.
+      Axmud underlay colours such as "ul_red" and "UL_BLUE" can also be
+         specified; the corresponding normal colour is used.
+         
+   Examples:
+      PAINTWIN "white"
+      PAINTWIN "CYAN"
+      PAINTWIN

@@ -1,0 +1,31 @@
+sto / settelnetoption         Enables/disables telnet negotiation options
+ 
+   Format:
+      ;sto                    Shows global telnet option settings
+      ;sto -l                 Shows session telnet option status
+
+      ;sto -e                 Enables/disables ECHO (hide passwords)
+      ;sto -s                 Enables/disables SGA (Suppress Go Ahead)
+      ;sto -t                 Enables/disables TTYPE (detect Terminal Type)
+      ;sto -r                 Enables/disables EOR (negotiate End Of Record)
+      ;sto -n                 Enables/disables NAWS (Negotatiate About Window
+                                 Size)
+ 
+   Notes:
+      Most worlds exchange (negotiate) information with the client that isn't 
+         usually visible to the user. Some common telnet options include ECHO,
+         SGA, TTYPE, EOR and NAWS. In Axmud, all telnet options are enabled by
+         default.
+      You can use this command to enable and disable telnet options. The action 
+         applies to every existing connection (and future ones). 
+      Since Axmud negotiates telnet options passively, if you re-enable a telnet
+         option after disabling it, the option will still be disabled in 
+         existing connections; the change will be applied to all future 
+         connections.
+         
+      Axmud's code uses variables for NEW-ENVIRON and CHARSET, but these telnet
+         options haven't been implemented yet.
+      See also the help for ';setmudprotocol'.
+
+   User commands:
+      sto / settelopt / settelnetoption

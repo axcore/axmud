@@ -1,0 +1,12 @@
+clpc / convertlpc             (convertlpc plugin) Converts world model to LPC
+ 
+   Format:
+      ;clpc                   Converts the world model to LPC
+      ;clpc -n                Simulates conversion of the world model to LPC
+ 
+   Notes:
+      This command uses the 'convertlpc.pm' plugin. Read the plugin file itself
+         for extensive notes about how to use it.
+
+   User commands:
+      clpc / convertlpc

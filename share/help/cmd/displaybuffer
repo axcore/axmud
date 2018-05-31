@@ -1,0 +1,18 @@
+db / displaybuffer            Shows the status of the session's display buffer
+ 
+   Format:
+      ;dbtb                     Shows buffer status
+ 
+   Notes:
+      The display buffer is Axmud's record of text received from the world and
+         displayed in its default tab. (Text received from the world but 
+         displayed in a different window pane, or a different window altogether,
+         is not stored in the buffer.) 
+      Every 'line' in the buffer corresponds to a single line of received text,
+         and each session has its own display buffer.
+
+      This command shows basic information about the buffer. To show the 
+         buffer's contents, use the ';dumpdisplaybuffer' command.
+ 
+   User commands:
+      db / dispbuff / displaybuffer

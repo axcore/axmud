@@ -1,0 +1,23 @@
+lhk / listhook                Lists hooks
+ 
+   Format:
+      ;lhk
+               Lists all hooks belonging to current profiles
+      ;lhk -w
+               Lists all hooks associated with the current world 
+      ;lhk -g
+               Lists all hooks associated with the current guild
+      ;lhk -r
+               Lists all hooks associated with the current race
+      ;lhk -c
+               Lists all hooks associated with the current character
+      ;lhk -x <category>
+               Lists all hooks belonging to the current custom profile derived
+                  from the category (template) <category>
+      ;lhk -d <prof>
+               Lists all hooks belonging to the profile <prof>
+      ;lhk -i
+               Lists all active hook interfaces
+ 
+   User commands:
+      lhk / listhk / listhook

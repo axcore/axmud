@@ -1,0 +1,24 @@
+ccm / chatcommand             Sends a remote command to chat contacts
+ 
+   Format:
+      ;ccm -n <name> <text>   Sends command to chat contacts called <name>
+      ;ccm -g <group> <text>  Sends command to everyone in the <group>
+      ;ccm <text>             Sends command to everyone
+ 
+   Notes:
+      The Chat task is used to chat with other players directly via telnet.
+         Calls can be placed (or accepted) with any user whose MUD client uses
+         the zChat or MudMaster protocols.
+      This command is the equivalent of typing ';ccm <text>' in the relevant
+         Chat task windows. Note that remote commands can only be sent in chat
+         sessions using the zChat protocol. You'll get an error message if you 
+         try to send them in a MudMaster session.
+      If you want to preserve spacing in <text>, surround it with diamond
+         brackets <...>, e.g.
+         
+         ';ccm <say hello       how  are  you>'
+         
+      The switches -n and -g can't be combined.
+ 
+   User commands:
+      ccm / chatcmd / chatcommand

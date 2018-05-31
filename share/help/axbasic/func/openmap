@@ -1,0 +1,8 @@
+OPENMAP ()
+
+   Synopsis:
+      Attempts to open the automapper window
+
+   Notes:
+      Returns 1 if the window is successfully opened (or if it was already
+         open), 0 if the window could not be opened.

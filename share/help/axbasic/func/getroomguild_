@@ -1,0 +1,8 @@
+GETROOMGUILD$ ()
+ 
+   Synopsis:
+      Returns the room guild of the automapper's current room
+
+   Notes:
+      If there is no current room or if the room doesn't have a room guild 
+         assigned to it, returns an empty string.   

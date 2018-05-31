@@ -1,0 +1,7 @@
+TANH (x)
+
+   Synopsis:
+      Returns the hyperbolic tangent of x
+
+   Notes:
+      x must not be (pi / 2) + (k * p), where k is any integer.

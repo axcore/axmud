@@ -1,0 +1,40 @@
+cw / cloneworld               Clones a world profile
+ 
+   Format:
+      ;cw <copy>
+      ;cw <copy> <switches>
+               Clones the current world profile into one named <copy>
+
+      ;cw <original> <copy>
+      ;cw <original> <copy> <switches>
+               Clones the world profile <original> into one named <copy>
+
+   Notes:
+      This operation clones not only the world, but all its associated guild,
+         race, character and custom profiles, their cages, any associated
+         profile templates, the world model and the current dictionary. However,
+         only the world profile is stored in memory; everything else is saved 
+         directly to a data file (and won't be loaded into memory until you 
+         change the current world profile).
+
+      If <original> is specified, it must be the current world profile for this
+         session. (This syntax has been made available for consistency with 
+         other client commands.)
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
+         underlines and 0-9 (not the first character) and not be one of Axmud's 
+         reserved names (see the ';listreserved' command).
+      The operation will fail if a profile called <copy> already exists or if
+         <copy> is an invalid name.
+
+      If <switches> are specified, some associated items are not cloned. 
+      <switches> can be one or more of the following:
+         -a   Clone the world profile, but not its associated profiles  
+         -t   ...but not any cages
+         -k   ...but not any profile templates
+         -m   ...but not the world model
+         -d   ...but not the dictionary
+         -e   Don't clone any of these items; just clone the world profile
+      Multiple switches (including -e) can be used together in the same command. 
+
+   User commands:
+      cw / copyworld / cloneworld

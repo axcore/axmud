@@ -1,0 +1,33 @@
+sac / setautocomplete         Sets auto-complete options
+ 
+   Format:
+      ;sac                    Shows current auto-complete options
+      ;sac <switches>         Sets auto-complete options
+ 
+   Notes:
+      When typing instructions/world commands in the 'main' window (and,
+         occasionally, in other windows), you can use the 'tab' key to 
+         auto-complete the text and the 'up'/'down' keys to navigate through
+         previous instructions/world commands.
+      <switches>, if specified, change the current auto-complete options and can 
+         occur in any order. There are three groups of switches; switches from 
+         any single group can't be combined.
+
+      Group 1: what happens when the user presses the tab/up/down
+         -x   - Nothing happens
+         -a   - Axmud auto-completes the instruction/world command or navigates
+                  through previous instructions/world commands
+
+      Group 2: which buffer is searched to provide the next item
+         -i   - The instruction buffer is used (see the help for 
+                  ';instructionbuffer')
+         -w   - The world command buffer is used (see the help for
+                  ';commandbuffer')
+
+      Group 3: which class of buffer is used
+         -s   - Use this session's instruct and world command buffers
+         -c   - Use the combined buffers, which include instructions/world
+                   commands from all sessions
+
+   User commands:
+      sac / setauto / setautocomplete

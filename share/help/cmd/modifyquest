@@ -1,0 +1,34 @@
+mqs / modifyquest             Modifies an existing quest
+ 
+   Format:
+      ;mqs <name> <switches>  Modifies the quest called <name>
+ 
+   Notes:
+      Axmud is able to store information about the current world's quests. You 
+         can use this command to modify the quest's contents.
+
+      <switches> can include any of the following switch options:
+         -m <mission>   - Sets the corresponding mission
+         -p <number>    - Sets how many quest points are earned from this quest
+         -x <number>    - ...and how much XP (if applicable)
+         -c <number>    - ...and how much cash (if applicable)
+      <number> can be any number, including negative numbers (in case there is 
+         some kind of penalty associated with completing the quest). The default 
+         value is 0, meaning that no quest points/XP/cash are earned.
+      If <mission> or <number> are omitted, those components are set to their
+         default values.
+
+      <switches> can also include any of these options, repeated as often as you
+         like:
+         -s <line>      - Adds a line to the quest's solution list. The whole 
+                             line must be enclosed by diamond brackets <...>
+         -t <comment>   - Adds a comment to the quest's comment list. The whole
+                             comment must be enclosed by diamond brackets <...>
+      If <line> is omitted, all lines in the solution list are deleted. If
+         <comment> is omitted, all lines in the comment list are deleted. Once
+         deleted, you can specify more lines, e.g.
+         
+            ';modifyquest -s -s <A brand new line to replace the old ones>'
+ 
+   User commands:
+      mqs / modqs / modifyquest

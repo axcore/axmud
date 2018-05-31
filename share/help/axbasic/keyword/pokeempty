@@ -1,0 +1,34 @@
+POKEEMPTY axmud-object-property
+
+   Synopsis:
+      Resets an Axmud internal scalar, list or hash property
+
+   Notes:
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
+         the help for the POKE statement for a full explanation). 
+      POKEEMPTY can be used with scalar properties such as 
+         "world.current.currencyHash", list properties such as 
+         "world.current.doorPatternList" and hash properties such as
+         "world.current.currencyHash". It cannot be used on Perl objects such as
+         "world.current".
+      POKEEMPTY resets the property. List properties are emptied so that they 
+         contain no values. Hash properties are emptied so that they contain
+         no key-value pairs. Scalar properties are set to the Perl special value
+         'undef'. Using POKEEMPTY with a scalar value is the same as using a
+         POKEUNDEF statement.
+      Much of Axmud's internal data is read-only, and cannot be modified with
+         POKE or with this statement. If you try to modify a read-only property
+         you will get an 'operation failure' error.
+
+   Warning: 
+      Do not try to modify Axmud's internal data unless you know what you are 
+         doing. Read the Axmud manual before you try to POKE anything. (The
+         examples below are safe, but backup your data first.)
+
+   Examples:
+      ! Reset the world's long name
+      POKEEMPTY "world.current.longName"
+      ! Empty the world's list of dark room patterns
+      POKEEMPTY "world.current.darkRoomPatternList"
+      ! Empty the world's currency conversion chart
+      POKEEMPTY "world.current.currencyHash"

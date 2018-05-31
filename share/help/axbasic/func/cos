@@ -1,0 +1,8 @@
+COS (x)
+
+   Synopsis:
+      Returns the cosine of the angle x
+
+   Notes:
+      x is measured in radians by default. If OPTION ANGLE DEGREES has been
+         specified, x is measured in degrees.

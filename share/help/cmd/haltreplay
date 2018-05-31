@@ -1,0 +1,15 @@
+hrp / haltreplay              Halts a buffer replay currently in progress
+ 
+   Format:
+      ;hrp                    Halts the current replay
+ 
+   Notes:
+      The display buffer is Axmud's record of text received from the world and
+         displayed in its default tab. The world command buffer is Axmud's 
+         record of individual commands sent to the world. (See the help for
+         ';displaybuffer' and ';commandbuffer').
+      This command halts any replay in progress (see the help for 
+         ';replaybuffer').
+
+   User commands:
+      hrp / haltrp / haltreplay

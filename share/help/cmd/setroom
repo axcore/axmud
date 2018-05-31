@@ -1,0 +1,43 @@
+srm / setroom                 Sets the automapper's current room
+ 
+   Format:
+      ;srm <tag>              Sets the current room 
+      ;srm <tag> <mode>
+
+      ;srm <number>           Sets the current room 
+      ;srm <number> <mode>           
+      ;srm -n <number> 
+      ;srm -n <number> <mode>
+ 
+   Notes:
+      Axmud's automapper is capable of tracking the character's current location
+         even when the automapper window isn't open. It's the equivalent of
+         using the automapper window in 'follow' mode - no new rooms or exits 
+         are added to the world model, but certain statistics, such as the 
+         number of visits per room, are still updated.
+      To track the character's location, either use this command or set the 
+         current location in the automapper window. Opening and closing the 
+         window does not affect tracking. (See also the help for ';locateroom'.)
+
+      You can specify <tag>, the room tag of the current room, or <number>, the
+         current room's unique number in the world model.
+      Room tags can be numerical, so if you want to specify room #100 - not the 
+         room whose room tag is 100 - use the optional '-n' switch.
+      You can stop the automapper from tracking the character's location with 
+         the ';resetroom' command (or by using the automapper window's 
+         functions). See also the help for ';go'.
+
+      If the automapper window isn't open, the automapper automatically begins
+         tracking the character's location in the world model. If the window is
+         open, you can change the operating <mode> at by specifying one of the 
+         following switches:
+
+         -w   automapper window switches to 'wait' mode
+         -f   switches to 'follow' mode
+         -u   switches to 'update' mode
+
+      Note that if 'update' mode is disabled, the automapper window switches to
+         'follow' mode instead.
+
+   User commands:
+      srm / setroom

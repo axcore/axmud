@@ -1,0 +1,8 @@
+SGN (x)
+
+   Synopsis:
+      Returns the sign of x
+
+   Notes:
+      Returns -1 if x is negative. Returns +1 if x is positive. Otherwise
+         returns 0.

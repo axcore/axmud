@@ -1,0 +1,27 @@
+echo / echo                   Displays an echo string as a system message
+ 
+   Format:
+      ;echo <string>          Displays the <string>
+      
+   Notes:
+      Echo commands can be typed in the 'main' window's command entry box. These
+         commands start with the echo sigil, a double quote character:
+      
+         "Hello world!
+         
+      Everything after the sigil is displayed as a system message in the 
+         session's default tab (in its 'main' window).
+
+      Echo sigils are turned off by default (use ';togglesigil -e' to turn them
+         on again). However, this client command is always available, and you
+         don't need to type the sigil:
+         
+         ;echo Hello world!
+         
+      If you want to preserve spacing between words, you can enclose the whole
+         <string> in diamond brackets <...>:
+         
+         ;echo <Hello...      world!>
+          
+   User commands:
+      echo

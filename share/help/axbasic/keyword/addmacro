@@ -1,0 +1,29 @@
+ADDMACRO expression , expression [ , expression ]
+
+   Synopsis:
+      Adds an independent macro
+
+   Notes:
+      A convenient way to create macros. The first expression is the stimulus
+         (an Axmud keycode), the second is the response (an instruction). If the
+         third expression is specified, it is used as the macro name; otherwise
+         Axmud assigns a name to the macro.
+      The following Axbasic statements are therefore interchangeable:
+      
+         ADDMACRO "stimulus", "response", "name"
+         CLIENT "addmacro -s stimulus -p response -n name"
+         
+      If Axmud can't create the new macro, execution of the Axbasic script
+         continues as normal. No error message is generated.
+      All macros created by this statement are 'inactive' timers, and are
+         assigned to a cage belonging to the current world (unless an earlier 
+         PROFILE statement specified a different profile). If there are no 
+         higher-priority macros with the same name, the corresponding 'active' 
+         macro will be created automatically.
+      Macros created with this statement are automatically deleted when the
+         script terminates (unless you use an OPTION PERSIST statement somewhere
+         in the code).
+
+   Examples:
+      ADDMACRO "f5", "kill orc", "attackmacro"
+      ADDMACRO "f10", "inventory"

@@ -1,0 +1,95 @@
+rd / read                     Tells a task to read something aloud
+ 
+   Format:
+      ;rd <attribute>
+      ;rd <attribute> <value>
+                              Tells a task to read something aloud
+
+      ;rd                     Get a list of available <attribute>s
+ 
+   Notes:
+      Tasks have various text-to-speech (TTS) capabilities, but some tasks don't
+         use TTS at all. The ';read', ';switch' and ';alert' commands allow you 
+         to interact with the TTS capabilities of individual tasks. 
+      To modify the way that tasks process speech in general, use the ';speech'
+         and ';editconfig' commands. TTS for tasks is turned off, by default, so
+         you won't hear anything until you turn it on with the ';speech' 
+         command.
+
+      This command is used to read something aloud; for example, it can be used 
+         to tell the Status task to read aloud your current character's health
+         points, or it can be used by the Locator task to read aloud the current 
+         room's list of exits.
+      <attribute> specifies what you would like the task to read. Some 
+         <attribute>s have a <value>. For example, you can use the <description>
+         attribute with a <value> of 100, to tell the Locator task to read aloud
+         the first 100 letters of the current room's description. 
+      <attributes> consist of one or more words. Actually, they are stored as a
+         single word, so the (imaginary) attribute 'big foot' can be typed as 
+         'bigfoot', if you prefer. 
+      If you don't specify an <attribute> at all, a list of available attributes
+         will be displayed.
+      In some cases, a task might store the <value> you specify, for later use
+         (you can use the ';permread' command to store the <value> in tasks 
+         which start automatically at the beginning of a session). However, none
+         of Axmud's built-in tasks behave in this way. 
+      A task must be running before you can use this command to tell it to read
+         something aloud.
+
+      This is a list of all the <attribute>s used by this command with Axmud's 
+         built-in tasks. (The ';switch' and ';alert' commands use different
+         attributes.)
+
+      (Locator task)
+         ;read title
+            Reads the current room's title
+         ;read descrip 
+         ;read description
+            Reads the current room's description
+         ;read descrip <chars>
+         ;read description <chars>
+            Reads the first <chars> characters of the current room's description
+         ;read exit
+         ;read exits
+            Reads the current room's exit list 
+         ;read content
+         ;read contents
+            Reads the current room's contents list
+
+      (Status task)
+         ;read status
+            Reads the current character's life status (alive, dead etc)
+         ;read life
+         ;read lives
+            Reads the current character's life and death counts
+         ;read health
+            Reads the current character's health points. Note that world
+               profiles are free to store anything in variables like these, so
+               you might be read something different altogether
+         ;read energy
+            Reads the current character's energy points
+         ;read magic
+            Reads the current character's magic points
+         ;read guild
+            Reads the current character's guild points
+         ;read social
+            Reads the current character's social points
+         ;read xp
+         ;read experience
+            Reads the current character's experience points
+         ;read level
+            Reads the current character's level
+         ;read align
+         ;read alignment
+            Reads the current character's alignment
+         ;read age
+            Reads the current character's age
+         ;read time
+            Reads the game time
+         ;read bank
+            Reads the current character's bank balance
+         ;read purse
+            Reads the contents of the current character's purse
+
+   User commands:
+      rd / read

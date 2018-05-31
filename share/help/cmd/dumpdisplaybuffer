@@ -1,0 +1,27 @@
+ddb / dumpdisplaybuffer       Displays contents of the session's display buffer
+ 
+   Format:
+      ;ddb                    Shows the most recently-received line
+      ;ddb <number>           Shows line <number>
+      ;ddb <start> <stop>     Shows lines between <start> and <stop>
+ 
+   Notes:
+      The display buffer is Axmud's record of any text received from the world 
+         which was displayed in the session's default tab (see the help for 
+         ';displaybuffer').
+
+      If specified, <number>, <start> and <stop> must be valid line numbers 
+         within the buffer. If the buffer is full, the earliest lines are 
+         deleted to make room for new ones. Use the ';displaybuffer' command to
+         get the current bounds of the buffer.
+      <number>, <start> and <stop> can be replaced by the words 'start'/'first'
+         (for the first line in the buffer) and 'stop'/'last' (for the last
+         line) - e.g. ';ddb start', ';ddb 34 stop', ';ddb first last'
+      <number> can be replaced with the word 'all' - e.g. ';ddb all' (which is
+         the same as ';ddb start stop').
+      If the line numbers are specified in the wrong order, e.g. ';ddb 40 30' or
+         ';ddb stop start', the contents of the buffer will be listed in reverse
+         order.
+ 
+   User commands:
+      ddb / dumpdispbuff / dumpdisplaybuffer

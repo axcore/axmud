@@ -1,0 +1,24 @@
+rdm / redirectmode            Turns redirect mode on/off
+ 
+   Format:
+      ;rdm <string>           Turns on redirect mode
+      ;rdm                    Turns off redirect mode
+ 
+   Notes:
+      You can use this command to turn on 'redirect mode', which automatically 
+         converts commands like 'north' into 'sail north', or 's' into 'sail s'.
+      <string> is a string in the form 'sail @'. Every occurence of the '@' 
+         character is replaced by the direction of the move. 
+      <string> can also be a sequence of commands such as '@;dig;get treasure'. 
+         If <string> contains any spaces, it should be enclosed within diamond 
+         brackets <..>
+
+      By default, redirect mode works on any world command that looks like a 
+         direction, including all the directions stored in the current 
+         dictionary as well as the names of any exits in the automapper's 
+         current room. The ';setredirectmode' command allows you to be more 
+         specific about which kinds of directions should be converted.
+      Redirect mode takes priority over assisted moves.
+
+   User commands:
+      rdm / redirect / redirectmode

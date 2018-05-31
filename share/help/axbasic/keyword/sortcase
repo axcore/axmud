@@ -1,0 +1,30 @@
+SORTCASE variable-name
+
+   Synopsis:
+      Sorts the cells in an array variable
+
+   Notes:
+      String arrays are sorted alphabetically. The sort operation is case-
+         insensitive, so 'aardvark' will come before 'Zoo'. (Use the SORT
+         statement if you want a case-sensitive sort opertion.)
+      Numeric arrays are sorted in order of ascending value. With numeric
+         arrays, SORT and SORTCASE produce the same output.
+      Only one-dimensional arrays can be sorted. SORTCASE assumes that the array
+         starts at element #1.
+      Also see the help for SORTCASER, which sorts arrays in reverse order.
+
+   Examples:
+      DATA 'ant', 'Bat', 'cat', 'Dog', 'eagle'
+      DIM myarray (5)
+
+      ! Display the unsorted array
+      FOR a = 1 TO 5
+         READ myarray (a)
+         PRINT myarray (a)
+      NEXT a
+
+      ! Display the sorted array
+      SORTCASE myarray
+      FOR a = 1 TO 5
+         PRINT myarray (a)
+      NEXT a

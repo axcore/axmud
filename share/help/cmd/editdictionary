@@ -1,0 +1,8 @@
+edy / editdictionary          Opens an 'edit' window for a dictionary
+ 
+   Format:
+      ;edy <name>             Edits the dictionary <name>
+      ;edy                    Edits the current dictionary
+  
+   User commands:
+      edy / editdict / editdictionary

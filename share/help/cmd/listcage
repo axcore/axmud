@@ -1,0 +1,23 @@
+lcg / listcage                Lists cages
+ 
+   Format:
+      ;lcg                    Lists all cages
+      ;lcg -c                 Lists command cages
+      ;lcg -t                 Lists trigger cages
+      ;lcg -a                 Lists alias cages
+      ;lcg -m                 Lists macro cages
+      ;lcg -i                 Lists timer cages
+      ;lcg -h                 Lists hook cages
+      ;lcg -r                 Lists route cages
+      ;lcg -x                 Lists non-standard cages
+ 
+   Notes:
+      Cages contain lists of all the things associated with a particular
+         profile. For example, there are command, trigger, alias, macro, timer 
+         and hook cages belonging to each world, and another set of cages 
+         belonging to each guild, race and character in the world.
+      Cages are automatically created, cloned and destroyed when the associated 
+         profiles are created, cloned and destroyed.
+ 
+   User commands:
+      lcg / listcage

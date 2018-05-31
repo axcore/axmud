@@ -1,0 +1,20 @@
+eib / editinstructionbuffer   Opens 'edit' window for an instruction buffer item
+ 
+   Format:
+      ;eib -s <number>        Edits the session buffer item <number>
+      ;eib <number>
+      ;eib -s                 Edits the most recent session buffer item
+      ;eib
+
+      ;eib -c <number>        Edits the combined buffer item <number>
+      ;eib -c                 Edits the most recent combined buffer item
+ 
+   Notes:
+      Instruction buffers are Axmud's records of processed instructions (see the
+         help for ';instructionbuffer').
+      Every session has its own instruction buffer, storing instructions 
+         processed by that session. There is also a combined instruction buffer
+         storing instructions processed by all sessions.
+  
+   User commands:
+      eib / editinstructbuff / editinstructionbuffer

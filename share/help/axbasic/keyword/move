@@ -1,0 +1,17 @@
+MOVE expression
+
+   Synopsis:
+      Sends a movement command to the world
+
+   Notes:
+      Axmud attempts to work out which world commands are movement commands, and
+         which are not.
+      MOVE statements specify that the command is definitely a movement command,
+         so the Locator task is told to expect a new room description regardless
+         of the contents of the expression.
+      See also the help for RELAY and SEND.
+
+   Examples:
+      MOVE "north"
+      MOVE $direction
+      MOVE "squeeze between curtains"

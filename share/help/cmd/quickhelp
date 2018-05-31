@@ -1,0 +1,7 @@
+qh / quickhelp                Shows short Axmud help document
+ 
+   Format:
+      ;qh                     Shows quick help
+   
+   User commands:
+      qh / quickhelp

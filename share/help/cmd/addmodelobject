@@ -1,0 +1,36 @@
+amo / addmodelobject          Adds an object to the world model
+ 
+   Format:
+      ;amo <type> <name>             
+               Adds an object called <name>
+      ;amo <type> <name> <num>       
+               Adds an object as a child of the existing object number <num>
+ 
+   Notes:
+      The world model stores information about the regions, rooms, characters
+         and objects in the game world. The automapper window uses the 
+         information stored in the world model to draw its maps.
+      Most model objects can be added with this command, but regions must be
+         added with ';addregion', rooms must be added with ';addroom' and exits 
+         can be added to the exit model with 'addexit'.
+
+      <type> must be one of the following switches:
+         -w weapon, -a armour, -g garment, -c character, -m minion, -s sentient, 
+         -k creature, -p portable, -d decoration, -u custom model object
+      <name> is the name assigned to the object. If it contains spaces, you can
+         enclose the name with diamond brackets, e.g. '<big axe>'
+      If <num> is specified, it must be the number of an existing model object.
+         <num> will be the 'parent' of the new object. 
+      If the parent is a room, the object will be considered as part of the 
+         room. If the parent is a different kind of object, the new object will 
+         be considered as 'inside' the parent. If the object has no specified 
+         location, it can be given a region object as a parent, or even have no
+         parent at all.
+
+      World model objects all have a unique number. They are identified by that
+         number, not by their name, so multiple objects can have the same 
+         <name>. However, all character objects (and regions) must have a unique
+         name. If <name> is longer than 32 characters, it will be abbreviated.
+
+   User commands:
+      amo / addmo / addmodel / addmodelobject

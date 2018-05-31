@@ -1,0 +1,11 @@
+dmn / deletemission           Deletes a mission
+ 
+   Format:
+      ;dmn <name>             Deletes the mission <name>
+ 
+   Notes:
+      The current mission can't be deleted (try ';haltmission' first).
+      See the help for ';startmission' for more information about missions.
+ 
+   User commands:
+      dmn / delmn / deletemn / deletemission

@@ -1,0 +1,12 @@
+ls / listsession              Lists sessions
+ 
+   Format:
+      ;ls                     Lists sessions
+ 
+   Notes:
+      A session is a single connection to a world (even if it's in offline mode
+         and after a disconnection.) Each session has its own tab in the main
+         window.
+
+   User commands:
+      ls / listsession

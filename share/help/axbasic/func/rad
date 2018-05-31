@@ -1,0 +1,7 @@
+RAD (x)
+
+   Synopsis:
+      Converts an expression in degrees, x, into radians
+
+   Notes:
+      Not affected by OPTION ANGLE.

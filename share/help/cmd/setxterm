@@ -1,0 +1,12 @@
+sxt / setxterm                Sets the colour cube used for xterm-256 colours
+
+   Format:
+      ;sxt                    Shows the current colour cube
+      ;sxt -x                 Starts using the xterm colour cube
+      ;sxt -n                 Starts using the netscape colour cube
+ 
+   Notes:
+      To test the current xterm colour cube, use ';testxterm'.
+
+   User commands:
+      sxt / setxterm

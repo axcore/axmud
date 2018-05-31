@@ -1,0 +1,15 @@
+exit / exit                   Terminates the connection and saves files
+ 
+   Format:
+      ;exit                   Terminates the connection immediately
+      ;exit <minutes>         Terminates the connection after a delay 
+
+   Notes:
+      Use this command to terminate the connection immediately, without waiting
+         for the world to respond.
+      This command automatically save data files. Use the ';xxit' command to
+         terminate the connection immediately without saving any files.
+      See also the help for ';abortselfdestruct'.
+ 
+   User commands:
+      exit

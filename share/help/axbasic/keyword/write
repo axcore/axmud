@@ -1,0 +1,14 @@
+WRITE expression
+
+   Synopsis:
+      Writes a system message to the 'main' window
+
+   Notes:
+      The message is preceded by the text "AXBASIC: " (in contrast, a PRINT
+         statement writes a message to the 'main' window without any such
+         identifier).
+      The message is also written to Axmud's logfiles (if logging is enabled).
+      See also the help for DEBUG, ERROR, PRINT and WARNING.
+
+   Examples:
+      WRITE "Hello world!"

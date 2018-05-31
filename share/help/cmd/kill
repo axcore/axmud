@@ -1,0 +1,45 @@
+k / kill                      Attacks target(s) in the current room
+ 
+   Format:
+      ;k                      Attacks the first NPC in the room
+      ;k <target>             Attack a single <target>
+      ;k <target_list>        Attacks the whole <target_list>
+ 
+   Notes:
+      ';kill' attacks the first non-player target in the room suggested by the 
+         Locator task. Axmud uses the 'kill' command specified by the current
+         world's command cages. If the world uses a verb other than 'kill', you
+         should update the command cages before using this command.
+ 
+      <target> must be a singular noun or adjective. To attack a 'big guard',
+         you can use the command ';kill guard' or ';kill big'; but you can't use
+         the command ';kill guards'.
+      However, <target> can be the words 'all' or 'mall' (or the equivalent in
+          the current world). 'all' normally means all creatures except your
+          character (and any minions your character controls). 'mall' normally
+          means every being that's not a player character (PC).
+ 
+      <target_list> should be a list of singular nouns and adjectives. To attack
+         'a big guard and a hairy orc', you could use the commands
+         ';kill guard orc', ';kill big hairy', ';kill guard hairy' or
+         ';kill big orc'.
+      One target will be attacked for every noun or adjective in <target_list>.
+         The commands ';kill guard guard orc' and ';kill big big hairy' will
+         both attack exactly two big guards and one hairy orc, regardless of how
+         many guards, orcs, big things or hairy things there are in the room.
+ 
+      'all' overrides every other <target>, and 'mall' overrides every target
+         except 'all'. So, the command ';kill gandalf mall' will attack all NPCs
+         in the room, but it won't attack a player-controlled character called
+         Gandalf.
+
+      ';kill' can only be used to attack things Axmud knows to be a character, 
+         minion, sentient or creature. You can't ';kill door', even if the world 
+         allows you to 'kill door' as a way of breaking down a door; you can't 
+         use ';kill bear' if Axmud doesn't know that 'bear' is a living being.
+       If you don't specify a <target> at all, this command will attack the 
+         first NPC, ignoring any player characters in the room. If you specify a 
+         target, it can be either a player or non-player character.
+ 
+   User commands:
+      k / kill

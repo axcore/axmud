@@ -1,0 +1,95 @@
+swi / switch                  Tells a task to automatically read something aloud
+ 
+   Format:
+      ;swi <attribute>        Toggles the automatic reading of something
+      ;swi                    Get a list of available <attribute>s
+ 
+   Notes:
+      Tasks have various text-to-speech (TTS) capabilities, but some tasks don't
+         use TTS at all. The ';read', ';switch' and ';alert' commands allow you 
+         to interact with the TTS capabilities of individual tasks. 
+      To modify the way that tasks process speech in general, use the ';speech'
+         and ';editconfig' commands. TTS for tasks is turned off, by default, so
+         you won't hear anything until you turn it on with the ';speech' 
+         command.
+
+      This command is used to tell the task to read something aloud 
+         automatically; for example, it can be used to tell the Divert task to
+         read 'tell' messages aloud, or it can be used by the Locator task to 
+         read aloud every room's list of contents, as it is received.
+      <attribute> specifies what you would like the task to read aloud
+         automatically. Using this command once turns automatic reading on; 
+         using it a second time turns reading off.
+      <attributes> consist of one or more words. Actually, they are stored as a
+         single word, so the attribute 'chat out' can be typed as 'chatout', if
+         you prefer. 
+      If you don't specify an <attribute> at all, a list of available attributes
+         will be displayed.
+      A task must be running before you can use this command to tell it to read
+         something aloud automatically.
+
+      This is a list of all the <attribute>s used by this command with Axmud's 
+         built-in tasks. (The ';read' and ';alert' commands use different
+         attributes.)
+
+      (Attack task)
+         ;switch fight
+            Toggles reading of results of fights
+         ;switch interact
+         ;switch interaction
+            Toggles reading of results of interactions
+      
+      (Chat task)        
+         ;switch chat
+            Toggles reading of all Chat task messages. When this is 'on', the
+               settings of the other Chat task attributes are ignored
+         ;switch chat out
+            Toggles reading of sent messages
+         ;switch chat in
+            Toggles reading of received messages
+         ;switch chat echo
+            Toggles reading of group messages
+         ;switch chat system
+            Toggles reading of local system messages
+         ;switch chat remote
+            Toggles reading of remote system messages
+         ;switch chat snoop
+            Toggles reading of chat snooping
+
+      (Divert task)
+         ;switch divert
+            Toggles reading of all Divert task messages. When this is 'on', the
+               settings of the other Divert task attributes are ignored
+         ;switch tell
+            Toggles reading of tell messages
+         ;switch social
+            Toggles reading of social messages
+         ;switch custom
+            Toggles reading of custom Divert task messages
+         ;switch warning
+            Toggles reading of warning messages
+
+      (Locator task)
+         ;switch title
+            Toggles reading of room titles, as they are received
+         ;switch descrip 
+         ;switch description
+            Toggles reading of room descriptions
+         ;switch exit
+         ;switch exits
+            Toggles reading of room exits
+         ;switch content
+         ;switch contents
+            Toggles reading of room contents
+
+      (Status task)
+         ;switch life
+            Toggles reading of changes to the current character's life status
+               (alive, dead etc)
+
+      (Watch task)
+         ;toggle watch
+            Toggles reading of all Watch task messages
+
+   User commands:
+      swi / switch

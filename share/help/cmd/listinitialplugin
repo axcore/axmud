@@ -1,0 +1,17 @@
+lip / listinitialplugin       Lists initial plugins
+ 
+   Format:
+      ;lip                    Lists plugins
+ 
+   Notes:
+      Axmud plugins are Perl modules which allow you to extend Axmud's core 
+         functionality with new tasks, client commands, cages, 'edit' windows 
+         and menu items, all of them integrating seemlessly with the existing 
+         Axmud code.
+      This command lists the Axmud plugins which are loaded automatically when
+         Axmud starts.
+      See the help for ';loadinitialplugin' for more information about Axmud 
+         plugins.  
+
+   User commands:
+      lip / listinitialplugin

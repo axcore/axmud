@@ -1,0 +1,15 @@
+etb / edittoolbar             Opens an 'edit' window for a toolbar button
+ 
+   Format:
+      ;etb <name>             View settings for the toolbar button <name>
+
+   Notes:
+      Toolbar buttons are used in many 'internal' windows, especially 'main'
+         windows. When used, the same set of buttons are used each time.
+      Use the ';listtoolbar' command to show the toolbar buttons used, or use
+         this command to view settings for a particular button.
+      Toolbar buttons can be added, deleted and modified in the client's
+         preference window (use the ';editclient' command).
+  
+   User commands:
+      etb / edittool / edittoolbar

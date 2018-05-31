@@ -1,0 +1,31 @@
+POPUP$ (type, text, button)
+
+   Synopsis:
+      Opens a dialogue window and returns the user's response
+
+   Notes: 
+      The POPUP$() function pauses execution to display a dialogue window, and
+         resumes execution once the user clicks one of the window's buttons or
+         closes the window manually.
+
+      'text' is the text to use in the window.
+      'type' specifies which icon is used in the window. It should be one of the  
+         following strings: "info", "warning", "error", "question".
+      'button' specifies which buttons are used. It should be one of the
+         following strings: "none", "ok", "close", "cancel", "yes-no", 
+         "ok-cancel". 
+      Underlines and spaces can be used instead of hyphens, so "ok-cancel", 
+         "ok_cancel" and "ok cancel" are all acceptable. However, the order of 
+         the words can't be changed (so the string "no-yes" won't be accepted).
+      If you use invalid values for the type and/or response, default values are
+         used instead, and no error is generated.
+
+      Returns the button the user clicks (e.g. "yes" or "cancel"). If the user
+         closed the dialogue window without clicking on a button, returns an
+         empty string.
+
+   Examples:
+      ! Ask a question
+      LET choice$ = POPUP$("question", "Are you ready?", "yes-no")
+      PRINT choice$
+      END

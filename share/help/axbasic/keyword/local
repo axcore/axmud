@@ -1,0 +1,27 @@
+LOCAL variable-name [ , variable-name ... ]
+
+   Synopsis:
+      Declares local variables
+
+   Notes:
+      Local variables are only available in the subroutine in which they are
+         declared, whereas global variables (declared with a GLOBAL statement)
+         are available to the whole Axbasic script.
+      Var-Names must be a scalar variable. Array variables can be declared as
+         local within a DIM LOCAL statement.
+
+   Availability:
+      LOCAL is not available in scripts with primitive line numbers.
+
+   Examples:
+      CALL mysub ()
+      ! string$ and other$ are not available here
+      END
+
+      SUB STRING mysub ()
+         LOCAL string$, other$
+         LET string$ = "Hello world!"
+         LET other$ = "Goodbye cruel world!"
+         PRINT string$
+         PRINT other$
+      END SUB

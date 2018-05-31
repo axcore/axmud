@@ -1,0 +1,12 @@
+SETLIGHT (string)
+
+   Synopsis:
+      Sets the world model's light status
+
+   Notes:
+      The rooms in the world model can have several stored descriptions, each
+         corresponding to a different light level (the default 'light status'
+         strings are "day", "night" and "dark".)
+      This function changes the current light status. To get the current light
+         status, see the GETLIGHT$ function.
+      Returns 1 if the light status is set, or 0 if the operation fails.

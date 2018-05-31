@@ -1,0 +1,12 @@
+BEEP
+
+   Synopsis:
+      Plays the Axmud 'beep' sound effect, if available
+
+   Notes:
+      BEEP is interchangeable with:
+      
+         PLAY "beep"
+
+   Examples:
+      BEEP

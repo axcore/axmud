@@ -1,0 +1,7 @@
+cam / closeautomapper         Closes the Automapper window
+ 
+   Format:
+      ;cam                    Closes the window
+ 
+   User commands:
+      cam / closemap / closeautomapper

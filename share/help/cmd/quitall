@@ -1,0 +1,19 @@
+qal / quitall                 Sends 'quit' to every world and saves files
+ 
+   Format:
+      ;qal                    Sends the 'quit' command to every world
+      ;qal <minutes>          Sends 'quit' commands after a delay
+ 
+   Notes:
+      Used to terminate the connection naturally in every world (it may take a 
+         few moments for the worlds to respond).
+      This command initiates the auto-quit sequence. The sequence depends on the
+         current world profile's auto-quit mode. The default mode, mode 0, just
+         sends a 'quit' command to the world. Other modes can send a sequence of
+         world commands, or start a task, Axbasic script or mission to terminate
+         the connection.
+      Use the ';quit' or ';qquit' commands to close an individual connection.
+      See also the help for ';abortselfdestruct'.
+ 
+   User commands:
+      qal / quitall

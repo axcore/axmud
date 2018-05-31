@@ -1,0 +1,18 @@
+stl / setlanguage             Sets a dictionary's language
+ 
+   Format:
+      ;stl <name> <language>  Sets the language of the dictionary <name>
+      ;stl <language>         Sets the current dictionary's language
+
+   Notes:
+      This command sets the name of the language used by the dictionary. It does
+        not modify the contents of the dictionary itself (for that, see the help 
+        for ';switchlanguage', or open an 'edit' window with the 
+        ';editdictionary' command, and make the changes yourself).
+      Dictionary names must be no longer than 16 characters, contain only A-Z, 
+         a-z, underlines and 0-9 (not the first character) and not be one of 
+         Axmud's reserved names (see the ';listreserved' command). The same
+         restriction applies to the language.
+ 
+   User commands:
+      stl / setlang / setlanguage

@@ -1,0 +1,20 @@
+cdy / clonedictionary         Clones a dictionary
+ 
+   Format:
+      ;cdy <original> <clone>
+               Clones the dictionary <original> into one called <copy>
+ 
+   Notes:
+      Dictionaries help Axmud to interpret the text it receives from the world.
+      An Axmud dictionary stores groups of words. It contains a group of weapon
+         words ('sword', 'mace', etc), a group of words for living beings
+         ('orc', 'dwarf', etc), and several more besides.
+      It also contains several useful terms, such as phrases for times of the
+         day.
+
+      Dictionary names must be no longer than 16 characters, contain only A-Z, 
+         a-z, underlines and 0-9 (not the first character) and not be one of 
+         Axmud's reserved names (see the ';listreserved' command).
+ 
+   User commands:
+      cdy / clonedict / clonedictionary

@@ -1,0 +1,72 @@
+rst / runscripttask           Runs an Axbasic script as a task
+ 
+   Format:
+      ;rst                    Runs the script in the file test.bas as a task
+      ;rst <switches>         Runs the script as a task with given settings
+
+      ;rst <script>           Runs the script in the file <script>.bas as a task
+      ;rst <script> <switches>  
+                              Runs the script as a task with given settings
+ 
+   Notes:
+      Axbasic is Axmud's own scripting language, based on the original Dartmouth
+         BASIC and the later implementation by the same authors, True BASIC.
+      As well as standard BASIC keywords and intrinsic (built-in) functions,
+         Axbasic provides a number of keywords and functions especially designed
+         to interact with the world and with Axmud's stored data. Use the 
+         ';axbasichelp' command for a list of keywords and functions.
+
+      The ';runscript' command runs an Axbasic script without first creating a 
+         task. The script starts immediately and runs from beginning to end, 
+         without pausing.
+      This command will run the script from inside an Axmud task. This provides 
+         the script with greater functionality (including the ability to pause); 
+         however, setting up the task requires a small fraction of a second, so 
+         the script itself won't start running immediately.
+      If the Script task is reset, the script will start running from the 
+         beginning.
+
+      When Axmud wants to load an Axbasic script, it checks a list of 
+         directories (called 'folders' on MS Windows systems), one at a time, 
+         until it finds a script with the right name. The first directory in the 
+         list is always the standard 'scripts' sub-directory, but the rest of 
+         the list is customisable (see the help for ';adddirectory'). 
+      <script> should match the name of at least one file in these directories
+         (without their .bas extensions).
+      <switches> are the same as those used by the ';starttask' command, with
+         one useful addition.
+ 
+      Group 1 <switches>: 0 or 1 switch from:
+         -i               - Start the Script task immediately (default setting)
+         -e <other_task>  - Wait for <other_task> to exist, before starting the
+                               task
+         -n <other_task>  - Wait for <other_task> to not exist, before starting
+                               the task
+         -s <other_task>  - Wait for <other_task> to start, then stop, before
+                               starting the task
+         -t <minutes>     - Start the task <minutes> from now
+ 
+      Group 2 <switches>: 0 or 1 switch from:
+         -d               - Run the Script task for an unlimited amount of time 
+                               (default)
+         -f <minutes>     - Run the task for <minutes>
+         -u <timer>       - Run the task until the task loop reaches <timer>
+                               (seconds since the session began)  
+ 
+      Group 3 <switches>: 0 or 1 switch from: 
+         -w               - Run the Script task in 'forced window' mode, which
+                               diverts most output into a task window, which is
+                               opened regardless of whether the script asks for
+                               one, or not. This is useful for running old BASIC
+                               programmes in their own window, even though they
+                               don't know how to create one
+ 
+      Group 4 <switches>: 0 or 1 switch from: 
+         -m <number>      - Specifies the maximum number of steps the script can
+                               execute before the Script task pauses until the
+                               next task loop. If not specified, the default 
+                               value of 100 is used. To turn off maximum steps, 
+                               use a value of 0.
+ 
+   User commands:
+      rst / runscripttask

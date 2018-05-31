@@ -1,0 +1,27 @@
+WAITHP expression [ , expression ]
+
+   Synopsis:
+      Pauses execution until the character's health points increase
+
+   Notes:
+      The first expression is a percentage, written as a number in the range 0
+         to 100, where 100 is the maximum health points (HP) the character can
+         have, and 0 means no HP left at all. If you specify a value outside of
+         this range (e.g. 1000), Axbasic will use a default value of 100.
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting after that period and resumes execution.
+      If the Axbasic script isn't being run from within a task, the WAITHP
+         statement is ignored (and no error message is generated). Execution
+         continues immediately with the next statement.
+      WAITHP relies on the Status task to supply the character's current HP. If
+         the Status task is not running (or if it doesn't know anything about
+         the character's HP), the Axbasic script pauses briefly and resumes
+         execution on the next task loop.
+      See also the help for WAITEP, WAITGP, WAITMP, WAITSP, WAITTOTALXP and 
+         WAITXP.
+
+   Examples:
+      ! Wait for HP to recover to at least 50% of maximum
+      WAITHP 50
+      ! Wait for no longer than five minutes (300 seconds)
+      WAITHP 50, 300

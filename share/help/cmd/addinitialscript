@@ -1,0 +1,36 @@
+ais / addinitialscript        Adds a script to an initial scriptlist
+ 
+   Format:
+      ;ais <script>
+      ;ais <script> <switch>
+               Adds the <script> to the global initial scriptlist
+               
+      ;ais <script> <profile>
+      ;ais <script> <profile> <switch>
+               Adds the <script> to the <profile>'s initial scriptlist
+ 
+   Notes:
+      Initial scripts are started when Axmud marks the current character as 
+         logged in (you can use the ';login' command to override the automatic 
+         process, if necessary), or when the user changes a current profile with
+         commands like ';setworld' and ';setchar'.
+      There are two types of initial scriptlist - one 'global' list which
+         contains a list of scripts which apply to every world, and a separate
+         set of initial scriptlists stored in each profile.
+      When a current profile changes, any Script tasks that were created from
+         the old profile's initial scriptlist are halted before the new current 
+         profile's initial scripts are started.
+
+      Axbasic scripts are stored as files in Axmud's data directory (in the 
+         'scripts' sub-directory). <script> matches the file name (without its
+         .bas extension).
+      <switch> specifies whether the script is run from within a task, or not.
+         If <switch> is not specified, no task is used; otherwise, <switch> can 
+         should be one of the following:
+            -r   Run the script without a task
+            -t   Run the script from within a Script task
+            -c   Run the script from within a Script task, in 'forced window'
+                    mode
+
+   User commands:
+      ais / addinitscript / addinitialscript

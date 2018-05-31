@@ -1,0 +1,60 @@
+exf / exportfiles             Exports a file (or files)
+ 
+   Format:
+      ;exf                    Exports entire Axmud data directory
+      ;exf <switches>         Exports specific file(s)
+ 
+   Notes:
+      Axmud uses a fixed directory structure for its data files. Sometimes it's
+         convenient to move data files somewhere else - for backup purposes, or
+         to transfer them to another computer.
+      ';exportfiles' creates a single compressed archive of all the files
+         selected for export (in .tgz format).
+      Use the ';importfiles' command to import the data back into Axmud's data
+         directories, ready for use.
+      The config file is never exported (because it contains data mostly
+         relevant only to your current computer).
+
+      If you want to export specific files, you can use <switches>.
+      <switches> should consist of a list of switch options and/or file names. 
+      The switch options used are:
+         -w <world>
+              Exports a single 'worldprof' file, plus its corresponding 
+                 'otherprof' and 'worldmodel' files (see warning below)
+         -m <world>
+              Exports the world model belonging to the <world> - a single
+                 'worldmodel' file
+         -t   Exports the task data file, 'tasks'
+         -s   Exports the script data file, 'scripts'
+         -n   Exports the contacts data file, 'contacts'
+         -k   Exports the keycode data file, 'keycodes'
+         -y   Exports the dictionary data file, 'dicts'
+         -b   Exports the toolbar button data file, 'toolbar'
+         -u   Exports the user command data file, 'usercmds'
+         -z   Exports the zonemaps data file, 'zonemaps'
+         -p   Exports the winmaps data file, 'winmaps'
+         -x   Exports the text-to-speech data file, 'tts'
+      File types used are: 'worldmodel', 'tasks', 'contacts', 'keycodes',     
+         'dicts', 'toolbar', 'usercmds', 'zonemaps', 'winmaps', 'tts'.
+
+      <options> can be specified in any order:
+         ';exportfiles -k tasks -z dicts'
+      Each file is added to the archive only once, so duplicate <options> won't 
+         cause an error.
+      You should usually ';save' data stored in memory before trying to export
+         files with this command.
+      
+      Warning - an exported world profile will contain all of the passwords
+         you've added. If you want to share a world profile with others, you
+         should first clone the profile (passwords are not copied):
+         
+            ;setmud deathmud
+            ;cloneworld -a deathmud clonemud
+            
+      After saving files, you can then export them:
+      
+            ;save
+            ;exportfiles -w clonemud
+ 
+   User commands:
+      exf / exportfile / exportfiles

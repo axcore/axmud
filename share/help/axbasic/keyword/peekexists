@@ -1,0 +1,39 @@
+PEEKEXISTS variable-name = axmud-object-property, expression
+PEEKEXISTS ARRAY variable-name = axmud-object-property, expression
+
+   Synopsis:
+      Checks an Axmud internal hash property for a key matching the expression
+
+   Notes:
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+         the help for the PEEK statement for a full explanation).
+      PEEKEXISTS can only be used with hash properties such as 
+         "world.current.currencyHash". It cannot be used with a scalar property
+         such as "world.current.name", a list property such as  
+         "world.current.doorPatternList" or a Perl object such as 
+         "world.current".
+      Hashes are a collection of key-value pairs, with each key being unique in 
+         the hash. (Some languages use the term 'associative array' instead.)
+      PEEKEXISTS searches the hash for a key that matches the value of the
+         expression and sets 'variable-name' accordingly. If the key is found, a
+         string variable is set to "true" and a numeric variable is set to 1. If 
+         the key is not found, a string variable is set to "undef" and a numeric 
+         variable is set to "false".
+
+   Examples:
+      ! Look for the key "gold", and store the result ("true" or "false") in an
+      ! Axbasic global string variable
+      PEEKEXISTS result$ = "world.current.currencyHash", "gold"
+
+      ! Look for the key "gold", and store the result (1 or 0) in an Axbasic
+      ! global numeric variable
+      PEEKEXISTS result = "world.current.currencyHash", "gold"
+
+      ! Look for the key "gold", and store the result ("true" or "false") in an
+      ! Axbasic global string array
+      PEEKEXISTS ARRAY result$ = "world.current.currencyHash", "gold"
+
+      ! Look for the key "gold", and store the result ("true" or "false") in an
+      ! Axbasic local string variable
+      LOCAL result$
+      PEEKEXISTS result$ = "world.current.currencyHash", "gold"

@@ -1,0 +1,7 @@
+SQR (x)
+
+   Synopsis:
+      Returns the square root of x
+
+   Notes:
+      An error is generated if x is not a positive number.

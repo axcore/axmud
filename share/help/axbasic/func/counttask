@@ -1,0 +1,11 @@
+COUNTTASK (string)
+
+   Synopsis:
+      Counts the number of currently-running tasks matching the specified string
+      
+   Notes:
+      'string' can be a task's label (e.g. "status" or "stat"), its formal name
+         (e.g. "status_task") or the unique name of a particular task in the
+         current tasklist (e.g. "status_task_17").
+      Returns 0 if no matching tasks are found. 
+      See also the FINDTASK$ function.

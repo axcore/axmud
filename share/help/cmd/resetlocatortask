@@ -1,0 +1,24 @@
+rlc / resetlocatortask        Resets the Locator task
+ 
+   Format:
+      ;rlc                    Resets the Locator task
+ 
+   Notes:
+      Some world commands should cause the world to send a room statement in 
+         response. (A room statement is the complete room description, including 
+         any exits and the room's contents.)
+      This generally includes the commands for 'look', 'glance', 'go', 'sail', 
+         'fly' (and so on). Axmud stores world commands that have been sent, and
+         marks any that it thinks will cause a room statement to be received.
+      When the Locator task is running, it works out how many room statements to 
+         expect by counting how many of these commands have been sent. However,
+         there is no way to guarantee that the Locator will correctly interpret
+         every command you send and all the text the world sends in response.
+      When your character is standing still but the Locator task reports that it
+         is still expecting more room statements, you can use this command to
+         reset it. The task searches back through the text received from the 
+         world, finds the most recent room statement, and uses it as the new 
+         current room.
+ 
+   User commands:
+      rlc / resetloc / resetlocator / resetlocatortask

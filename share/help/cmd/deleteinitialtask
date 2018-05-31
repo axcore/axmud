@@ -1,0 +1,25 @@
+dit / deleteinitialtask       Deletes a task from an initial tasklist
+ 
+   Format:
+      ;dit <task>
+               Deletes the <task> from the global initial tasklist
+      ;dit -a
+               Deletes everything in the global initial tasklist
+      ;dit <task> <profile>
+               Deletes the <task> from the <profile>'s initial tasklist
+      ;dit -a <profile>
+               Deletes everything in the <profile>'s initial tasklist
+ 
+   Notes:
+      Initial tasks are started when Axmud marks the current character as logged 
+         in (you can use the ';login' command to override the automatic process, 
+         if necessary), or when the user changes a current profile with commands 
+         like ';setworld' and ';setchar'.
+      See the help for ';addinitialtask' for more information about initial 
+         tasks.
+
+      <task> is the initial task's unique name e.g. 'status_task_16' (use
+         ;listinitialtask to list initial task names).
+ 
+   User commands:
+      dit / delinittask / deleteinittask / deleteinitialtask

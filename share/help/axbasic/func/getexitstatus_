@@ -1,0 +1,15 @@
+GETEXITSTATUS$ (number)
+        
+   Synopsis:
+      Returns the status of an exit in the automapper's current room
+
+   Notes:
+      'number' is the position of the exit in the room's ordered list of exits
+         (the first exit is numbered 1).
+      The return value is one of the strings "super" (for super-region exits),
+         "region" (for normal region exits), "broken" or "normal".
+      If there is no current room or if the numbered exit doesn't exist, returns 
+         an empty string.
+      To get the number of exits in the current room, see the GETROOMEXITS
+         function. The GETEXITTYPE$ function also provides information about how
+         the exit is drawn on the map.

@@ -1,0 +1,21 @@
+mai / moveactiveinterface     Moves active interfaces
+ 
+   Format:
+      ;mai <number> <posn>    Moves interface <number> to position <posn>
+ 
+   Notes:
+      Axmud interfaces are triggers, aliases, macros, timers and hooks. 
+      Most interfaces are associated with a particular profile and are called
+         'inactive' interfaces. When the profile becomes a current profile, its
+         interfaces become 'active' (except those whose name is the same as an 
+         existing active interface associated with a higher-priority profile). 
+      This command works on active interfaces, which are checked in a defined
+         order. The ';listactiveinterface' command shows the order in which 
+         interfaces are checked. 
+      <number> is the active interface's unique number (for this session), and
+         <posn> is a position in a list of triggers (or aliases, macros, timers
+         or hooks) which are checked, in order, from beginning to end. The
+         beginning of the list is position 1.
+ 
+   User commands:
+      mai / moveinterface / moveactiveinterface

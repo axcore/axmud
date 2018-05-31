@@ -1,0 +1,19 @@
+NCPOS (string, substring)
+NCPOS (string, substring, n)
+
+   Synopsis:
+      Returns the position in the string of the first occurence of any character
+         that is NOT in the substring
+
+   Notes:
+      (Axbasic labels the first character in the string as 1, the second as 2,
+         and so on.)
+      If all of the characters in the substring occur in the string, 0 is
+         returned. If the string is an empty string, 0 is returned. If the
+         substring is an empty string but the string isn't, 1 is returned.
+      If the third argument is specified, the search begins at the nth character
+         in the string and proceeds to the right. NCPOS(string, substring, 1) is
+         interchangeable with NCPOS(string, substring). If the substring is 
+         empty but the string isn't, the starting position is returned.
+      If n is not an integer, it is rounded off. An error occurs if n is zero or
+         a negative number.

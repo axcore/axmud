@@ -1,0 +1,7 @@
+ASC (string)
+
+   Synopsis:
+      Returns the ASCII value of the first character in the specified string
+
+   Notes:
+      ASCII characters with values between 0 and 127 can be specified.

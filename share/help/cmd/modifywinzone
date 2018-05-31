@@ -1,0 +1,41 @@
+mwz / modifywinzone           Modifies an existing winzone
+ 
+   Format:
+      ;mwz <name> <number> <switches>
+               Modifies a winzone <number> in the winmap <name>
+ 
+   Notes:
+      Winmaps are a plan for arranging the layout of 'internal' windows 
+         (consisting of all 'main' windows, 'protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows).
+      See the help for ';addwinmap' for more information about winmaps, and see
+         the help for ';addwinzone' for more information about winzones.
+
+      <switches> consist of the following optional switch options:
+        -p <x coord> <y coord>  - Winzone's position (in blocks) on the table
+        -s <width> <height>     - Winzone's size (in blocks) on the table
+        -n <package>            - The package name of the table object to be
+                                     created in this winzone, for example
+                                     'Games::Axmud::Table::Pane'. The initial 
+                                     'Games::Axmud::Table::' part can be 
+                                     omitted, for example just use 'Pane'; note 
+                                     that capitalisation must be preserved)
+        -o <name>               - A name to give to the table object, when it is
+                                     created. Can be any string. If not
+                                     specified, the table object's name is the 
+                                     same as its number, so avoid using numbers.
+                                     Max 16 characters
+        -i <key>
+        -i <key> <value>        - Adds an initialisation property, <key>, set to
+                                     <value> (if specified). Initialisation 
+                                     properties are passed to the table object
+                                     when it is created. Any property not 
+                                     specified here takes itse default value
+        -r <key>                - Removes the initialisation property <key>. 
+                                     Note that all -i switches are processed 
+                                     before any -r switch is processed. The -i
+                                     and -r switches can be used multiple times
+                                     in one command
+
+   User commands:
+      mwz / modwz / modifywinzone

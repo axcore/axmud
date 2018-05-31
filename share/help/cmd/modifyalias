@@ -1,0 +1,71 @@
+mal / modifyalias             Modifies an alias
+ 
+   Format:
+      ;mal <switches>         Modifies an alias
+ 
+   Notes:
+      Aliases are one of five types of Axmud interface (the others being 
+         triggers, macros, timers and hooks).
+      Aliases allow you to define shortcuts for world commands and to have those
+         commands modified before being sent to the world.
+      This command modifies the attributes of an existing 'inactive' alias (one
+         associated with a particular profile) and its corresponding 'active'
+         alias, if there is one. 
+      It's also possibly to modify the active alias directly, in which case, the
+         changes won't apply to the parent inactive alias (and will only last 
+         for the session, or until the active alias is deleted).
+
+      <switches> allows you to define which alias (and which of its attributes)
+         should be modified.
+
+      To modify the active alias directly, one of the following (group 0) switch 
+         options must be used:
+         -i <name>            - Modifies the active alias <name>
+         -i <number>          - Modifies the active alias <number>
+      However, to modify the inactive alias (and the active alias based on it, 
+         if there is one), one of the following (group 1) switch options must 
+         be used instead:
+         <name>               - Modifies alias belonging to the current world
+         <name> -w            - Modifies alias belonging to the current world
+         <name> -r            - Modifies alias belonging to the current race
+         <name> -g            - Modifies alias belonging to the current guild
+         <name> -c            - Modifies alias belonging to the current char
+         <name> -x <category> - Modifies alias belonging to the current custom
+                                   profile <category>
+         <name> -d <prof>     - Modifies alias belonging to the profile named
+                                   <prof>
+
+      One or more of the following group 2/3 switch options must be used.
+      Group 2 switch options: 
+         -s <pattern>         - Modifies the 'stimulus' attribute (a regex)
+         -p <substitution>    - Modifies the 'response' attribute (a Perl
+                                   substitution)   
+      Group 3 switch options: 
+         -e <boolean>         - Modifies the 'enabled' attribute (1 or 0) 
+         -o <boolean>         - Modifies the 'ignore_case' attribute (1 or 0)
+         -k <boolean>         - Modifies the 'keep_checking' attribute (1 or 0)
+         -t <boolean>         - Modifies the 'temporary' attribute (1 or 0, 
+                                   default is 0)
+      N.B. The 'name' attribute can't be modified.
+
+      Group 4 switch options (only modify the inactive alias, so can't be used
+         with the -i switch):
+         -b <name>            - This alias is checked before aliases called
+                                   <name> (when they both become active)
+         -y <name>            - This alias is not checked before aliases called 
+                                   <name> (when they both become active)
+         -f <name>            - This alias is checked after aliases called 
+                                   <name> (when they both become active)
+         -z <name>            - This alias is not checked after aliases called 
+                                   <name> (when they both become active)
+
+   General interface notes:
+      If <instruction>, <pattern>, <string> or <substitution> contain 
+         whitespace, they must be enclosed by diamond brackets
+         
+            e.g. <You see (.*) exits>
+            
+      <boolean> can be typed as 1 or 0, or any word beginning with t, T, f or F
+ 
+   User commands:
+      mal / modal / modalias / modifyal / modifyalias

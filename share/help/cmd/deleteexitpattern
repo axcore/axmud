@@ -1,0 +1,32 @@
+dep / deleteexitpattern       Deletes exit pattern from current world profile
+ 
+   Format:
+      ;dep <switch> <number>
+               Deletes the exit pattern <number> of type <switch>
+ 
+   Notes:
+      The Locator task uses exit patterns, defined by the current world profile, 
+         to spot when a character's attempts to move fail (or when the character 
+         is moved involuntarily). 
+      Because they also appear just after a character move, this command can 
+         also be used to delete a dark room pattern or an unspecified room 
+         pattern. (Unspecified room patterns match lines sent by the world when 
+         the character has arrived in a new room for which the world hasn't sent
+         a new room statement, as it normally would.)
+ 
+      <switch> must be one of the following:
+         -d   Deletes a door pattern, e.g. '^You bump into a door!'
+         -l   Deletes a locked door pattern, e.g. '^It's locked!'
+         -f   Deletes a failed exit pattern, e.g. '^You can't go that way!'
+         -r   Deletes a dark room pattern, e.g. '^You can't see a thing!'
+         -u   Deletes an unspecified room pattern, e.g. '^You land with a thump'
+         -i   Deletes involuntary exit pattern, e.g. '^You run for your life!'
+      <number> is the number of the pattern in the list displayed by the 
+         ';listexitpattern' command. Once you delete one pattern, any remaining
+         patterns are re-numbered.
+
+      The Locator task must be reset (usually with the ';resetlocatortask'
+          command) or restarted before your changes will take effect.
+  
+   User commands:
+      dep / delexitpattern / deleteexitpattern

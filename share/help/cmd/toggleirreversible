@@ -1,0 +1,23 @@
+tir / toggleirreversible      Toggles irreversible icons in 'edit' windows
+ 
+   Format:
+      ;tir                    Toggles irreversible icons      
+      ;tir -t                 Tests irreversible icons
+      
+   Notes:
+      When you make changes to Axmud's data using an 'edit' window, the changes
+         are not normally applied until you click 'Save' or 'OK' at the bottom
+         of the window.
+      However, some buttons apply a change immediately. Axmud provides a special
+         icon, a purple diamond, which is shown in all buttons which apply a
+         change immediately.
+      Unfortunately, many systems don't permit buttons to have both text and an
+         icon, so this feature is disabled by default, and a text replacement
+         in the form of (*) is used.
+      You can use the '-t' switch to test whether your system can display text
+         and icons in the same button. A 'dialogue' window appears; if you can
+         see the purple icon, it's safe to enable that icon in all 'edit'
+         windows.
+      
+   User commands:
+      tir / toggleir / toggleirreversible

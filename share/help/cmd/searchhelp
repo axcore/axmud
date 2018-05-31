@@ -1,0 +1,54 @@
+sh / searchhelp               Searches Axmud help
+ 
+   Format:
+      ;sh <terms>             Search client commands and descriptions only
+      ;sh -c <terms>          Search client command help files
+      ;sh -b <terms>          Search Axbasic help files
+      ;sh -t <terms>          Search task help files
+ 
+   Notes:
+      The commands ';help', ';axbasichelp' and ';taskhelp' show help on hundreds
+         of different topics. Axmud stores help for each topic in a separate 
+         file; this command searches the help files, looking for those which
+         mention the search terms you specify.
+
+      <terms> can be one or more words:
+      
+         ;searchhelp script
+         ;searchhelp chat email
+         
+      If two or more search terms are specified, this command looks for help 
+         files which matches any of them.
+      Each word is treated as a regular expression (regex), so you can use 
+         special characters like this:
+         
+         ;searchhelp scr.*
+         ;searchhelp tr+ll
+         
+      If you want to search for a phrase such as 'chat email', you can use 
+         diamond brackets to force Axmud to treat 'chat email' as a single 
+         search term (this is the equivalent of using "..." in search engines 
+         like Google):
+         
+         ;searchhelp <chat email> 
+         
+      You can also use diamond brackets in regular expressions which use spaces:
+      
+         ;searchhelp <you can .* an interface>
+      
+      If you specify the switch -c, the whole help file for the client command 
+         is searched; otherwise only the commands' descriptions are searched. 
+         (The descriptions are what you see when you use ';help' without 
+         specifying any topics.)
+      The switch -b searches the help files for both Axbasic keywords and
+         intrinsic (built-in) functions.
+      Search terms are case-insensitive, so these commands are interchangeable:
+      
+         ;searchhelp hobbit
+         ;searchhelp HoBBiT
+         
+      Depending on the speed of your computer, the search may take a few 
+         seconds.
+
+   User commands:
+      sh / shelp / searchhelp

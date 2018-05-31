@@ -1,0 +1,19 @@
+chp / chatpeek                Shows chat contact's own public connections
+ 
+   Format:
+      ;chp -n <name>          Makes request to chat contacts called <name>
+      ;chp -g <group>         Makes request to chat contacts in the <group>
+      ;chp                    Makes request to everyone
+ 
+   Notes:
+      The Chat task is used to chat with other players directly via telnet.
+         Calls can be placed (or accepted) with any user whose MUD client uses
+         the zChat or MudMaster protocols.
+      This command is the equivalent of typing ';peek' in the relevant Chat task
+         windows. It displays a list of the chat contact's own chat connections 
+         (but only those which have been marked as 'public'). See also the help
+         for the ';chatrequest' command.
+      The switches -n and -g can't be combined.
+ 
+   User commands:
+      chp / chatpeek

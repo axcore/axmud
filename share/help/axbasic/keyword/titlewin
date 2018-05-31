@@ -1,0 +1,24 @@
+TITLEWIN expression
+
+   Synopsis:
+      Changes the task window's title
+      Opens a task window
+
+   Notes:
+      If the script is being run from within a task, this statement asks the
+         task to change the title of its task window. If an expression is 
+         specified, it is used as the new title. If an empty string, zero or no 
+         expression at all is specified, the window is reset to use its default 
+         title.
+      If the Axbasic script isn't being run from within a task, or if the task
+         window is not open, the TITLEWIN statement is ignored (and no error
+         message is generated). Execution continues immediately with the next
+         statement.
+
+   Examples:
+      OPENWIN
+      WRITEWIN "Hello world!"
+      PAUSE 5
+      TITLEWIN "I am in charge now!"
+      PAUSE 5
+      CLOSEWIN

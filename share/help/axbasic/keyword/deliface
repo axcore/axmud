@@ -1,0 +1,21 @@
+DELIFACE expression
+
+   Synopsis:
+      Deletes an active interface
+
+   Notes:
+      DELIFACE can be used to delete any active interface - if you know its 
+         name. It should be only be used to delete the trigger interfaces
+         created with a SETTRIG or WAITTRIG statement.
+      To delete independent triggers (such as those created with an ADDTRIG
+         statement), you should use a DELTRIG statement instead. The same 
+         applies to independent aliases, macros, timers and hooks.
+
+      The expression is the name of the active interface to delete.
+      If Axmud can't delete the interface, execution of the Axbasic script
+         continues as normal by executing the next statement (and no error
+         message is generated).
+
+   Examples:
+      DELIFACE "status_task_trigger_11"
+      DELIFACE ifacename$()

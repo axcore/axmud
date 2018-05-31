@@ -1,0 +1,12 @@
+IFACENUM ()
+
+   Synopsis:
+      Returns the interface number corresponding to the current interface
+         notification
+
+   Notes:
+      The interface notification list contains all the notifications received,
+         and not yet processed, as the result of an earlier SETTRIG statement.
+      Each active interface has a unique number. This function returns the
+         number of the interface that caused the current interface notification.
+      If the list is empty, -1 is returned.

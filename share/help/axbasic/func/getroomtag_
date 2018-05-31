@@ -1,0 +1,8 @@
+GETROOMTAG$ ()
+ 
+   Synopsis:
+      Returns the room tag of the automapper's current room
+
+   Notes:
+      If there is no current room or if the room doesn't have a room tag, 
+         returns an empty string.  

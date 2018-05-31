@@ -1,0 +1,28 @@
+sim / simulateworld           Simulates text received from the world
+ 
+   Format:
+      ;sim <text>             Simulates <text>
+ 
+   Notes:
+      This command allows you to simulate the current world by 'inserting' one
+         or more lines of text; Axmud will behave exactly as if the text had 
+         been received from the world. It's a convenient way to test tasks, 
+         Axbasic scripts, missions and triggers without interrupting the world 
+         itself.
+
+      To preserve spacing, enclose the text in diamond brackets <...>
+      
+         e.g. ;simulateworld <You kill the     orc!>
+         
+      To simulate several lines at a time, use '\n' for each newline character
+      
+         e.g. ;simulateworld <You kill the orc!\nYou kill the troll!>
+         
+      If <text> does not end with a newline character, one is added for you
+         automatically.
+
+      See also the help for ';simulateprompt', which inserts some text without
+         adding a newline character.
+ 
+   User commands:
+      sim / simworld / simulateworld

@@ -1,0 +1,21 @@
+WARNING expression
+
+   Synopsis:
+      Writes an 'warning' message to the 'main' window
+
+   Notes:
+      The message is also written to Axmud's logfiles (if logging is enabled).
+      See also the help for DEBUG, ERROR, PRINT and WRITE.
+
+   Examples:
+      ! Get a number between 1 and 6
+      LET number = int (rnd (6) + 1)
+
+      ! The subroutine will never be called
+      IF number = 0 THEN CALL terminate()
+      END
+
+      SUB STRING terminate ()
+         WARNING "This subroutine should not have been called!"
+         STOP
+      END SUB

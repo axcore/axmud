@@ -1,0 +1,151 @@
+Axmud Quick Help
+
+   Don't have time read the Axmud Guide? Axmud is not like other MUD clients
+      you might have used, so you should read this (very) short document, which
+      discusses its most important features.
+
+   For help with installation, see the INSTALL file (or read the Guide). Axmud
+      is known to work on MS Windows and Linux. It might be possible to install
+      it on other systems, such as MacOS and *BSD, but the authors have not been
+      able to confirm this yet.
+
+Axmud is known to work on MS Windows and Linux. It might be possible to install
+it on other systems, such as MacOS and *BSD, but the authors have not been able
+to confirm this yet.
+
+   To start Axmud, run the axmud.pl file. Users with a visual impairment can run
+      the baxmud.pl file instead, which turns on screenreader support and turns
+      off multiple windows.
+
+   When Axmud starts, the 'Connections' window will appear. (Visually-impaired
+      users will get a series of talking 'dialogue' windows instead.)
+
+   Axmud comes with a number of pre-configured worlds. If you connect to one of
+      these worlds, you won't have to configure the automapper before using it.
+
+   Click on the world symbol to show a much longer list of worlds. If you
+      connect to one of those worlds, or if you create a new world profile, you
+      will have to configure the automapper for yourself.
+
+   After choosing a world, click on the 'Connect to world' button.
+
+   Commands can be typed at the bottom of the 'main' window. Commands beginning
+      with a semicolon (;) are client commands. There are nearly 600 client
+      commands available, some more useful than others:
+
+         ;about
+         ;addchar gandalf
+
+   Axmud comes with a number of built-in scripts, called 'tasks', and its own
+      scripting language, called Axbasic. All of these features are fully
+      documented. For a list of help topics, try these commands:
+
+         ;help
+         ;abasichelp
+         ;helptask
+
+   For help on a specific topic, try the following commands:
+
+         ;help addchar
+         ;axbasichelp play
+         ;taskhelp status
+
+   If you're not sure what you're looking for, you can search for the right
+      command:
+
+         ;searchhelp guild
+
+   Most client commands can be abbreviated:
+
+         ;ab                    (equivalent of ';about')
+         ;ach gandalf           (equivalent of ';addchar gandalf')
+         ;h ach                 (equivalent of ';help addchar')
+
+   (Visually-impaired users don't need to read the rest of this document.)
+
+   Axmud offers an extensive graphical user interface, including menus, toolbar
+      icons and edit/preference windows. Almost anything that can be done by
+      typing a command can also be done by clicking something (and vice-versa),
+      though in practice one method is usually more convenient than the other.
+
+   Axmud stores information about the world in a 'world profile'. You can use
+      the ';editworld' command to open an 'edit' window for the current world
+      profile.
+
+   Some windows have a single 'OK' button at the bottom. Any changes you make in
+      these windows are applied immediately. For example, Axmud's own settings
+      can be modified in the client preference window. You can open it by typing
+      either of these commands:
+
+         ;editclient
+         ;edc
+
+   ...or by using the 'main' window menu:
+
+         Edit > Axmud preferences...
+
+   However, most edit/preference windows have four buttons at the bottom. Any
+      changes you make are not applied until you click the 'Save' or 'OK'
+      buttons. (There are a few exceptions. Buttons marked with an asterisk (*)
+      are applied immediately.)
+
+   The world profile stores data about the world, but Axmud also uses guild,
+      race and character profiles. Axmud's GUI window lists all the profiles
+      currently in use, as well many other collections of data (each one called
+      an 'object').
+
+   You can open the GUI window using a client command, or from the 'main' window
+      menu, or by clicking on the 'main' window icon (the blue-green one next to
+      the icon that looks like a road sign).
+
+   Axmud offers triggers, aliases, macros, timers and hooks. Collectively, they
+      are called 'interfaces'.
+
+   Interfaces belong to a profile. Sometimes there are several interfaces with
+      the same name, each belonging to different profiles.
+
+   You could use this feature to create interfaces which change their behaviour
+      according to which character you're playing. If you have no need of this
+      capability then there's no need to worry about it. By default, the
+      interfaces you create belong to the current world profile and are
+      available whenever you connect to that world.
+
+   To create new triggers, click on the 'gun' icon in the 'main' window. Click
+      on the icons to the right of it to create new aliases, macros, timers and
+      hooks.
+
+   If you aren't using a pre-configured world, you should run the Locator task
+      wizard before trying to use the automapper. Click on the wizard's hat icon
+      in the 'main' window or type:
+
+         ;locatorwizard
+         ;lcw
+
+   The automapper only needs a list of exits to function properly, so we suggest
+      that you ignore everything except the exit list (pay no attention to the
+      room's title and description, for example).
+
+   Open the automapper using the compass icon in the 'main' window or type:
+
+         ;openautomapper
+         ;map
+
+   Start by adding a new region (called 'zone' on some other MUD clients). From
+      the automapper menu, click:
+
+         Regions > New region...
+
+   There is more than one way to add rooms to the map. The simplest is to right-
+      click the map and then select 'Add first room'.
+
+   Near the top-left of the automapper window are three important icons: 'W' for
+      'wait' mode, 'F' for 'follow' mode and 'U' for 'update' mode.
+
+   In 'update' mode, the automapper will follow the character around the world,
+      drawing new rooms as it goes. In 'follow' mode, the automapper will follow
+      the character but won't draw new rooms. In 'wait' mode the automapper will
+      ignore the character's movements.
+
+   To change the current room, right-click a room and select 'Set current room'.
+      If the automapper gets confused, you can reset it by clicking the brown
+      'RL' icon.

@@ -1,0 +1,19 @@
+cuw / collectunknownwords     Toggles collection of unrecognised words
+ 
+   Format:
+      ;cuw                    Toggles word collection on/off
+ 
+   Notes:
+      Axmud dictionaries contain lists of words, classified according to their
+         type; this helps Axmud to interpret text received from the world.
+      Whenever a line containing a list of objects is parsed, any words which
+         aren't recognised by the current dictionary can be stored there in a
+         special collection. 
+      When you're ready to start adding new words to the dictionary (using the 
+         ';addword' command), you can use the ';listunknownwords' command to 
+         display a convenient list of all the words Axmud hasn't been able to 
+         parse.
+      This command starts or stops the collection of unrecognised words.
+ 
+   User commands:
+      cuw / collectuw / collectunknown / collectunknownwords

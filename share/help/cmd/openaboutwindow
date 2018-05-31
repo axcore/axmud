@@ -1,0 +1,17 @@
+oaw / openaboutwindow         Opens the Axmud information window
+ 
+   Format:
+      ;oaw                    Opens the window
+
+      ;oaw -a                 Opens the window at the 'about' tab
+      ;oaw -c                 Opens the window at the 'credits' tab
+      ;oaw -h                 Opens the window at the 'quick help' tab
+      ;oaw -g                 Opens the window at the 'GPL license' tab
+      ;oaw -l                 Opens the window at the 'LGPL license' tab
+
+   Notes:
+      If the window is open, using this command with the switches -a, -c, -h, -g
+         or -l will switch the window's tab.
+
+   User commands:
+      oaw / aboutwin / openaboutwindow

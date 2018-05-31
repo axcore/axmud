@@ -1,0 +1,7 @@
+LTRIM$ (string)
+
+   Synopsis:
+      Removes leading whitespace from the beginning of the specified string
+
+   Notes:
+      Any trailing whitespace is retained.

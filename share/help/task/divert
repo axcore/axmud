@@ -1,0 +1,11 @@
+The Divert task intercepts text received from the world and diverts it to the
+   task's window.
+The window usually changes colour for a few seconds to alert you that some
+   text has been diverted. You'll also here one of Axmud's sound effects (if
+   sound is turned on).
+ 
+Client commands used with this task are:
+   ;adddivertpattern          Adds a pattern for Divert tasks
+   ;deletedivertpattern       Deletes a pattern for Divert tasks
+   ;listdivertpattern         Lists patterns for Divert tasks
+   ;emptydivertwindow         Empties the Divert task window

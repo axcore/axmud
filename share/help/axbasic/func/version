@@ -1,0 +1,9 @@
+VERSION ()
+
+   Synopsis:
+      Returns the current version of the Axbasic library
+
+   Notes:
+      Returns a number like '1.2'.
+      The Axbasic version number is not the same as the Axmud client's version 
+         number. To get the latter, use the CLIENTVERSION$() function.

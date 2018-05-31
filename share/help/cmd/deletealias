@@ -1,0 +1,30 @@
+dal / deletealias             Deletes an alias
+ 
+   Format:
+      ;dal <switches>         Deletes an alias
+ 
+   Notes:
+      Aliases are one of five types of Axmud interface (the others being  
+         triggers, macros, timers and hooks).
+      Aliases allow you to define shortcuts for world commands and to have those
+         commands modified before being sent to the world.
+      This command deletes an existing 'inactive' alias (one associated with a 
+         particular profile) and its corresponding 'active' alias, if there is
+         one.
+      It's not possible to delete an active alias directly; enable or disable 
+         the alias using ';modifyalias' to set its 'enabled' attribute instead.
+
+      To delete the inactive alias (and the active alias based on it, if there 
+         is one), one of the following (group 1) switch options must be used:
+         <name>               - Deletes alias belonging to the current world
+         <name> -w            - Deletes alias belonging to the current world
+         <name> -g            - Deletes alias belonging to the current guild
+         <name> -r            - Deletes alias belonging to the current race
+         <name> -c            - Deletes alias belonging to the current char
+         <name> -x <category> - Deletes alias belonging to the current custom
+                                   profile <category>
+         <name> -d <prof>     - Deletes alias belonging to the profile named
+                                   <prof>
+ 
+   User commands:
+      dal / delal / delalias / deleteal / deletealias

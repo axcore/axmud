@@ -1,0 +1,10 @@
+SETMAPMODE (string)
+
+   Synopsis:
+      Sets the automapper's current mode
+
+   Notes:
+      'string' must be one of values "wait", "follow" or "update".
+      Returns 1 if the mode is correctly set. Returns 0 if the mode is not set,
+         if an unrecognised 'string' is used or if the automapper window isn't
+         open.

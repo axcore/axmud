@@ -1,0 +1,8 @@
+DELREGION (string)
+       
+   Synopsis:
+      Deletes the world model region whose name is 'string'
+
+   Notes:
+      Returns 1 if the operation is successful, 0 if not.
+      To delete all temporary regions together, see the DELTEMPREGION function.

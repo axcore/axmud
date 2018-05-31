@@ -1,0 +1,22 @@
+lpt / listteleport            Lists teleport locations
+ 
+   Format:
+      ;lpt                    Lists teleport locations
+ 
+   Notes:
+      The ';teleport' command is a convenient way of jumping around any world
+         which implements some kind of teleportation system (in which you can 
+         jump to a destination room from many different departure rooms). 
+      The advantage of using that client command, rather than typing a world
+         command like 'portal tower', is that the automapper won't get lost when 
+         you use ';teleport'.
+
+      The ';addteleport' command is used to add a teleport destination to 
+         Axmud's world model. This command lists all teleport destinations that 
+         have been added.
+      A full explanation of how this works can be found in the help for the
+         ';teleport' command. See also the help for ';addteleport' and
+         ';deleteteleport'.
+
+   User commands:
+      lpt / listport / listteleport

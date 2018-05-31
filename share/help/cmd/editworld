@@ -1,0 +1,8 @@
+ew / editworld                Opens an 'edit' window for a world profile
+ 
+   Format:
+      ;ew <name>              Edits the world profile <name>
+      ;ew                     Edits the current world profile
+  
+   User commands:
+      ew / editworld

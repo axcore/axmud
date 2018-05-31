@@ -1,0 +1,12 @@
+lsy / listsystemcolour        Lists colours of Axmud system messages
+ 
+   Format:
+      ;lsy                    Lists system colours
+
+   Notes:
+      Lists the colours of various system messages, as well as the colour used 
+         to displayed world commands (commands sent to the world).
+      Use the ';setsystemcolour' command to modify these colours.
+ 
+   User commands:
+      lsy / listsyscol / listsystemcolor / listsystemcolour

@@ -1,0 +1,23 @@
+cwm / clonewinmap             Clones a winmap
+ 
+   Format:
+      ;cwm <old> <new>
+               Clones the winmap <old> into one named <new>
+ 
+   Notes:
+      Winmaps are a plan for arranging the layout of 'internal' windows 
+         (consisting of all 'main' windows, 'protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows).
+      See the help for ';addwinmap' for more information about winmaps.
+
+      Axmud provides a number of standard winmaps which can't be modified or
+         deleted. (This guarantees, for example, that task windows which want a
+         uniform layout can have one).
+      Although standard winmaps can't be modified, you can clone them using this
+         command, and then modify the clone using commands like ';modifywinmap',
+         ';addwinzone' and so on.
+      <new> must be no longer than 16 characters, and contain only A-Z, a-z, 
+         underlines and 0-9 (not the first character).
+
+   User commands:
+      cwm / clonewm / clonewinmap

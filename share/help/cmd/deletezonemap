@@ -1,0 +1,18 @@
+dzm / deletezonemap           Deletes a zonemap
+ 
+   Format:
+      ;dzm <name>             Deletes the zonemap <name>
+ 
+   Notes:
+      Zonemaps are a plan for arranging windows on a workspace grid. Zonemaps
+         contain one or more zone models, describing a region of the workspace 
+         and the kinds of window that region is allowed to contain.
+      Axmud provides a number of standard zonemaps which can't be deleted. In
+         addition, the zonemap can't be deleted if it's in use by any workspace 
+         grid.
+      The zonemap can be deleted if it is merely the default zonemap for one or
+         more workspaces, but is not use by a workspace grid. In that case,
+         Axmud selects a new default zonemap for the workspace(s).
+ 
+   User commands:
+      dzm / delzm / deletezm / deletezonemap

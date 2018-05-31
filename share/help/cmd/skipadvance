@@ -1,0 +1,16 @@
+ska / skipadvance             Skips skills in the character's advance list
+ 
+   Format:
+      ;ska <switch>           Skips the next skill a list
+      ;ska <switch> <number>  Skips <number> skills in a list
+ 
+   Notes:
+      Skips a <number> of skills in one of the character's guild skill lists. 
+         <switch> must be '-o' for the order list (a list of skills advanced
+         sequentially, until the list is empty) or '-c' for the cycle list (a
+         list of skills advanced in repeating cycles).
+      See the help for the ';advance' command for more information about guild 
+         skills.
+ 
+   User commands:
+      ska / skipadv / skipadvance

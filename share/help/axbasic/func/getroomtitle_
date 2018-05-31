@@ -1,0 +1,10 @@
+GETROOMTITLE$ ()
+ 
+   Synopsis:
+      Returns the title of the automapper's current room
+
+   Notes:
+      In some worlds, the room's title corresponds to its brief description.
+      If more than one room title is stored, returns the first one.
+      If there is no current room or if the room doesn't a title set, returns an
+         empty string.

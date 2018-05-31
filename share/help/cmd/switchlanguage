@@ -1,0 +1,24 @@
+swl / switchlanguage          Uploads a phrasebook to the current dictionary
+ 
+   Format:
+      ;swl                    Displays a list of available phrasebooks
+      ;swl <language>         Switches the current dictionary's language
+
+   Notes:
+      When Axmud dictionaries are created, their default contents are in
+         English. However, Axmud also provides a small selection of mini-
+         dictionaries (known internally as 'phrasebooks') which contain the 
+         bare minimum of words in some other languages.
+      You can use this command to update the contents of a phrasebook to the
+         current dictionary. 
+      The phrasebook contains primary directions (such as 'north', 'down' and
+         'southwest'), articles (such as 'the', 'an'), some conjunctions (such
+         as 'and', 'or') and number words from one to ten. These words are 
+         uploaded to the dictionary, replacing its previous contents. Other 
+         kinds of words (such as nouns, adjectives and time words) are not
+         replaced.
+      If you only want to change the current dictionary's named language 
+         ('English' by default), use the ';setlanguage' command.
+ 
+   User commands:
+      swl / switchlang / switchlanguage

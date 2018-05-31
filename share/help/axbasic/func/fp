@@ -1,0 +1,11 @@
+FP (x)
+
+   Synopsis:
+      Returns the floating part of x
+
+   Notes:
+      It is always true that IP(x) + FP(x) = x.
+
+   Examples:
+      FP (4.3)    >> 0.3
+      FP (-7.21)  >> -0.21

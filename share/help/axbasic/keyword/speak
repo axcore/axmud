@@ -1,0 +1,16 @@
+SPEAK expression [ , expression ]
+    
+   Synopsis:
+      Converts text to speech (TTS)
+    
+   Notes:
+      Equivalent to the Axmud client command ';speak'. The first expression is 
+         the text to read aloud. 
+      The second expression, if specified, is the text-to-speech configuration 
+         to use. If no configuration is specified or if the specified 
+         configuration doesn't exist, the default configuration for Axbasic 
+         ('script') is used.
+    
+   Examples:
+      SPEAK "Hello, world!"
+      SPEAK "Hello, world!", "flite"

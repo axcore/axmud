@@ -1,0 +1,17 @@
+shh / showhistory             Displays the current world's connection history
+ 
+   Format:
+      ;shh                    Shows connection history
+      ;shh <char>             Shows connection history for the <char>
+ 
+   Notes:
+      Axmud is able to store basic details about past connection to a world. 
+      This command shows the connection history for the current world. If you
+         specify a <char>, only connections using that character as the current
+         character profile are shown. 
+      Storage can be turned on or off with the ';togglehistory' command, and the
+         current world's entire connection can be erased with the 
+         ';clearhistory' command.
+       
+   User commands:
+      shh / showhis / showhistory

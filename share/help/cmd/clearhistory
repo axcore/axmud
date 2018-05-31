@@ -1,0 +1,12 @@
+clh / clearhistory            Clears the current world's connection history
+ 
+   Format:
+      ;clh                    Clears connection history
+ 
+   Notes:
+      Axmud is able to store basic details about past connection to a world. 
+      This command clears the current world's entire connection history. 
+      See also the help for 'togglehistory' and ';showhistory'.
+       
+   User commands:
+      clh / clearhis / clearhistory

@@ -1,0 +1,26 @@
+rcd / record                  Starts or stops a recording
+ 
+   Format:
+      ;rcd                    Starts or stops a recording
+ 
+   Notes:
+      You can use recordings to make a temporary copy of all commands sent to
+         the world, in the order in which they were sent. It's a convenient way 
+         to create new missions and routes. 
+      Only one recording can be made at a time and they are not stored when you 
+         terminate Axmud (but any missions or routes you create using a 
+         recording are saved as normal). When you start a new recording, the 
+         previous recording (if any) is destroyed.
+      Use ';record' to start a new recording, and then use ';record' again to 
+         stop recording.
+      Recordings only store commands sent to the world, by default. However, if 
+         you're planning to use the contents of a recording to create a mission, 
+         you can artificially insert client commands, comments and breaks (as 
+         well as world commands that haven't actually been sent to the world)
+         using the commands ';worldcommand', ';clientcommand', 
+         ';speedwalkcommand', ';comment' and ';break'.
+      See also the help for ';pauserecording', ';insertrecording', 
+         ';deleterecording', ';listrecording' and ';copyrecording'.
+ 
+   User commands:
+      rcd / record

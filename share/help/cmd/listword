@@ -1,0 +1,54 @@
+lwd / listword                Lists words and terms from the current dictionary
+ 
+   Format:
+      ;lwd <switches>         Lists words and terms
+ 
+   Notes:
+      Dictionaries help Axmud to interpret the text it receives from the world.
+      An Axmud dictionary stores groups of words. It contains a group of weapon
+         words ('sword', 'mace', etc), a group of words for living beings
+         ('orc', 'dwarf', etc), and several more besides.
+      It also contains several useful terms, such as phrases for times of the
+         day.
+
+      This command lists groups of words from the current dictionary. <switches> 
+         should be one or more of the following switch options:
+ 
+      -z     - Lists everything
+ 
+      -g     - Lists guilds
+      -r     - Lists races
+      -w     - Lists weapons
+      -a     - Lists armours
+      -e     - Lists garments
+      -s     - Lists sentient beings
+      -k     - Lists creatures
+ 
+      -p     - Lists portables
+      -q     - Lists portable types
+      -d     - Lists decorations
+      -u     - Lists decoration types
+      -l     - Lists plural words
+      -x     - Lists pseudo-nouns
+ 
+      -j     - Lists adjectives
+      -c     - Lists declined adjectives
+      -y     - Lists pseudo-adjectives
+      -v     - Lists pseudo-object strings
+      -i     - Lists ignore words (not nouns or adjectives)
+ 
+      -n     - Lists number words
+      -t     - Lists standard time words
+      -b     - Lists time of day phrases
+      -f     - Lists clock hour phrases
+      -m     - Lists clock minute phrases
+ 
+      Switch options can be combined in a single command:
+      
+         e.g. ';listword -j -c -y'
+         
+      This command can't display the current dictionary's list of unrecognised
+         words (use the ';listunknownwords' command for that).
+ 
+   User commands:
+      lwd / lword / listword

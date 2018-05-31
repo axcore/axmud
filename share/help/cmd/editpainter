@@ -1,0 +1,15 @@
+edp / editpainter             Opens an 'edit' window for the world model painter
+ 
+   Format:
+      ;edp                    Edits the world model painter
+  
+   Notes:
+      Rooms in the world model use 'room flags' to distinguish between different
+         types of rooms. In the automapper window, a room's colour depends on 
+         its room flags.
+      As the character moves around the world, the world model painter 
+         automatically sets room flags for the current room, which 'paints' that
+         room a certain colour.
+
+   User commands:
+      edp / editpaint / editpainter

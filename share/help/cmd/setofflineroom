@@ -1,0 +1,21 @@
+sor / setofflineroom          Sets the type of room statement in 'offline' mode
+ 
+   Format:
+      ;sor <switch>           Sets the type of room statement used
+      ;sor                    Shows the type of room statement used
+ 
+   Notes:
+      When the session has been started in 'connect offline' mode, it's possible
+         to set the automapper's current room and then to move around the map as
+         normal. Axmud generates a room statement every time you type a 'look', 
+         a 'glance' or a movement command. The text generated depends on the 
+         patterns stored in the current world profile.
+      This command specifies the type of room statement to generate. <switch>
+         can be '-v' for verbose, '-s' for short verbose or '-b' for brief. You
+         can also use the words 'verbose', 'short' and 'brief' in place of 
+         <switch>.
+      The commands will fail if the current world profile doesn't know how to
+         recognise room statements of the specified type.
+ 
+   User commands:
+      sor / setoffline / setofflineroom

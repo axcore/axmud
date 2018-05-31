@@ -1,0 +1,9 @@
+The RawToken task is a debugging task. It displays all text received from the 
+   world split into pieces, or 'tokens'. Newline characters and special 
+   'escape sequence' codes that are normally invisible to the user count as
+   single tokens, and are each displayed on a separate line.---
+Tokens are colour-coded: newline character tokens are blue, escape character
+   tokens (which don't start a recognised escape sequence) are yellow, escape
+   sequences are cyan, MXP tokens are green, MXP element tokens are magenta
+   and all other tokens (consisting of ordinary text) are white. Packet 
+   numbers are displayed in red.

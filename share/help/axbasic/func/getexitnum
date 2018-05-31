@@ -1,0 +1,12 @@
+GETEXITNUM (number)
+        
+   Synopsis:
+      Returns the exit model number of an exit in the automapper's current room
+
+   Notes:
+      'number' is the position of the exit in the room's ordered list of exits
+         (the first exit is numbered 1).
+      If there is no current room or if the numbered exit doesn't exist, returns 
+         0.
+      To get the number of exits in the current room, see the GETROOMEXITS
+         function.

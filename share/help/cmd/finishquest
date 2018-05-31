@@ -1,0 +1,15 @@
+fqs / finishquest             Marks a quest as completed
+ 
+   Format:
+      ;fqs <name>             Marks the quest called <name> as completed
+      ;fqs -d <name>          Marks the quest called <name> as not completed
+      ;fqs <name> -d          
+
+   Notes:
+      Axmud is able to store information about the current world's quests. 
+      Quests created with the ';addquest' command are stored in the current 
+         world profile. A subset of these are also stored in the current
+         character profile, being the quests that the character has completed.
+ 
+   User commands:
+      fqs / finqs / finishqs / finishquest

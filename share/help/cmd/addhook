@@ -1,0 +1,114 @@
+ahk / addhook                 Adds a hook
+ 
+   Format:
+      ;ahk <switches>         Adds a hook
+ 
+   Notes:
+      Hooks are one of five types of Axmud interface (the others being triggers, 
+         aliases, macros and timers).
+      Hooks allow you to specify instructions to be executed automatically when
+         certain events happen.
+      This command creates a hook interface that's 'inactive' - it's associated 
+         with a particular profile (actually, stored in a 'cage' object
+         associated with that profile). When that profile becomes a current 
+         profile - and only if there isn't another hook with the same name, 
+         attached to a higher-priority profile - then an 'active' hook is 
+         created with the same attributes.
+      The hook created is also 'independent', meaning that it doesn't call some
+         part of the Axmud code directly.
+
+      All interfaces have four standard attributes:
+         'name'      - A name for the hook
+         'stimulus'  - What causes the hook to 'fire'. The stimulus is one of 
+                          the following 'hook events':
+                     - 'connect' (fires when a session connects to a world)
+                     - 'disconnect' (fires when a session disconnects from its
+                          world)
+                     - 'login' (fires when a character login is detected)
+                     - 'prompt' (fires when the world sends a prompt)
+                     - 'receive_text' (fires when some text is received from the
+                          world. The text may contain 0, 1 or many complete
+                          lines)
+                     - 'sending_cmd' (fires when a world command is processed,
+                          before it is checked against any aliases)
+                     - 'send_cmd' (fires when a world command is sent)
+                     - 'msdp' (fires when MSDP data is received from the world)
+                     - 'mssp' (fires when MSSP data is received from the world)
+                     - 'atcp' (fires when ATCP data is received from the world)
+                     - 'gmcp' (fires when GMCP data is received from the world)
+                     - 'current_session' (fires when this session becomes the
+                          one visible in the 'main' window that has focus)
+                     - 'not_current' (fires when a different session becomes the
+                          one visible in the 'main' window that has focus)
+                     - 'change_current' (fires in every session when the 
+                          visible session in the 'main' window that has focus
+                          changes)
+                     - 'visible_session' (fires when this session becomes the 
+                          one visible in its 'main' window)
+                     - 'change_visible' (fires when a different session becomes 
+                          the one visible in this session's 'main' window)
+                     - 'not_visible' (fires in every session when a 'main'
+                          window's visible session changes)
+                     - 'user_idle' (fires when no world commands have been sent
+                          for 60 seconds)
+                     - 'world_idle' (fires when no text has been received from 
+                          the world for 60 seconds)
+                     - 'get_focus' (fires when the 'main' window gains focus)
+                     - 'lose_focus' (fires when the 'main' window loses focus)  
+                     - 'close_disconnect' (fires just before the Axmud client
+                           closes)
+         'response'  - The instruction to execute when the hook fires. Includes
+                          world commands, forced world commands (starting with
+                          ',,'), client commands (starting ';'), echo commands
+                          (starting '"'), Perl commands (starting '/'), script
+                          commands (starting '&') and multi commands (starting
+                          ':')
+         'enabled'   - A flag set to 1 (default) or 0. When set to 1, the active
+                          hook is enabled (does something). When set to 0, it is
+                          disabled (temporarily does nothing)
+      Hooks also have the following non-standard attributes:
+         'temporary' - A flag set to 1 or 0 (default). When set to 1, the active
+                          interface is destroyed after the hook fires for the
+                          first time. When set to 0, the interface can fire
+                          indefinitely
+                      
+      <switches> allows you to define which attributes the hook will have and
+         with which profile it will be associated.
+ 
+      Group 1 switch options: one of the following options must be used:
+         -no option-          - Adds a hook belonging to the current world
+         -w                   - Adds a hook belonging to the current world
+         -g                   - Adds a hook belonging to the current guild
+         -r                   - Adds a hook belonging to the current race
+         -c                   - Adds a hook belonging to the current char
+         -x <category>        - Adds a hook belonging to the current custom
+                                   profile <category>
+         -d <prof>            - Adds a hook belonging to profile <prof>
+
+      Group 2 switch options: both of the following options must be used:
+         -s <event>           - Sets the 'stimulus' attribute (a hook event)
+         -p <instruction>     - Sets the 'response' attribute (the instruction  
+                                   to execute)
+      Group 3 switch options: 0, 1 or more of the following options can be used:
+         -n <string>          - Sets the 'name' attribute (a string). If not
+                                   specified, a name is generated for you
+         -e <boolean>         - Sets the 'enabled' attribute (1 or 0; default is
+                                   1)
+         -t <boolean>         - Sets the 'temporary' attribute (1 or 0; default
+                                   is 0)
+      Group 4 switch options: 0, 1 or more of the following options can be used:
+         -b <name>            - This hook is checked before hooks called <name> 
+                                   (when they both become active)
+         -f <name>            - This hook is checked after hooks called <name> 
+                                   (when they both become active)
+
+   General interface notes:
+      If <instruction>, <pattern>, <string> or <substitution> contain 
+         whitespace, they must be enclosed by diamond brackets
+         
+            e.g. <You see (.*) exits>
+            
+      <boolean> can be typed as 1 or 0, or any word beginning with t, T, f or F
+ 
+   User commands:
+      ahk / addhk / addhook

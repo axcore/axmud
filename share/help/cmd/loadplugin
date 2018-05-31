@@ -1,0 +1,71 @@
+lpl / loadplugin              Loads an Axmud plugin
+ 
+   Format:
+      ;lpl <path>             Loads a plugin from the file <path>
+      ;lpl                    Loads a plugin stored in Axmud's data directory
+      ;lpl -s                 Loads a standard plugin
+ 
+   Notes:
+      Axmud plugins are Perl modules which allow you to extend Axmud's core 
+         functionality with new tasks, client commands, cages, 'edit' windows 
+         and menu items, all of them integrating seemlessly with the existing 
+         Axmud code.
+
+      This command loads an Axmud plugin immediately. If you want to load
+         plugins every time Axmud starts, use the ';addinitialplugin' command.
+      If you specify <path>, it should be the full file path to the plugin.
+         Otherwise, you will be prompted to choose a plugin to load.
+      Axmud provides a number of standard plugins, and if you specify the '-s'
+         switch you'll see the directory (folder) where standard plugins are
+         stored. Otherwise you'll see the directory where plugins you write
+         youself can be stored.
+
+      Axmud plugins must be .pm files which start with a header in a certain 
+         format. If the header is not in this format, the plugin is not loaded:
+
+            #!/usr/bin/perl
+            package <name>;
+            #: Version: <version>
+            #: Description: <description>
+            #: Author: <author>
+            #: Copyright: <copyright message>
+            #: Require: <Axmud version>
+            #: Init: <string>
+
+      The first line must contain a Perl shebang (#!/usr/bin/perl).
+      After the first line, the header may contain any number of empty lines or
+         lines containing whitespace followed by an ordinary Perl comment (both 
+         of which are ignored).
+      The second line (not counting any ignored lines) must contain the package 
+         name. <name> is both the name of the Perl package and the name of the 
+         plugin. If a plugin with that name has already been loaded, the new 
+         plugin is not loaded.
+    
+      The remaining lines may occur in any order. The 'Version' and 
+         'Description' lines are compulsory; the others are optional. Duplicate 
+         lines replace an earlier line, for example the following partial header 
+         sets the author to JRR Tolkien:
+
+            #: Author: JK Rowling
+            #: Author: JRR Tolkien
+
+      The Perl shebang and package name may occur only once, however.
+
+      If specified, <Axmud version> sets the minimum Axmud version. If an 
+         earlier version of Axmud is running, the plugin will not load. 
+         <Axmud version> can be in the form 'v1.0.0', 'V1.0.0' or '1.0.0'.
+      If specified, the 'Init' line sets whether the plugin starts enabled or
+         disabled. <string> can be any of the following strings: 'enable',
+         'enabled', 'disable' or 'disabled'. If any other string is used, or if
+         the line is not specified at all, the plugin starts enabled.
+      The whole header is case-sensitive (except for <string>, which is 
+         case-insensitive). The following line will not be recognised as part of
+         the header:
+
+            #: author: JRR Tolkien      
+
+      See also the help for ';enableplugin', ';disableplugin', ';testplugin' and
+         ';addinitialplugin'.
+
+   User commands:
+      lpl / loadplugin

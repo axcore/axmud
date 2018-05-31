@@ -1,0 +1,12 @@
+dqs / deletequest             Deletes a quest
+ 
+   Format:
+      ;dqs <name>             Deletes the quest called <name>
+
+   Notes: 
+      Axmud is able to store information about the current world's quests. 
+         Quests deleted with this command are removed from the current world 
+         profile.
+
+   User commands:
+      dqs / delqs / deleteqs / deletequest

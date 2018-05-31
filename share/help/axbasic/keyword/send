@@ -1,0 +1,35 @@
+SEND expression [ , expression [ , expression ... ] ]
+
+   Synopsis:
+      Sends an interpolated world command
+      
+   Notes:
+      Axmud has the ability to auto-interpolate commands so that a single 
+         Axbasic script (as well as any tasks you write) can be designed to work 
+         at more than one world.
+      The first expression can be one of the standard commands specified by the
+         command cages (such as "go", "throw_dir" or "wave_victim"). If so, it
+         is interpolated using the remaining expressions (if any). If not, it is
+         sent to the world, unaltered.
+      See also the help for MOVE and RELAY.
+
+   Examples:
+      SEND "kill orc"
+         In this case, the command is sent to the world unaltered.
+
+      SEND "kill", "victim", "orc"
+         "kill" is one of the standard commands specified by Axmud's command
+         cages. By default, the cage expects a command in the format
+         "kill victim". Here, the word-expression "victim" is replaced by the
+         replacement-expression "orc".
+
+         If the command cages for the current world have been modified to
+         expect a command in a different format - perhaps something like "sneak
+         up on victim" - the word "victim" is still interpolated, and the world
+         receives the command 'sneak up on orc'.
+
+      SEND "say_to", "victim", "orc", "text", "hello"
+         "say_to" is another of the standard commands. By default, the cage
+         expects a command in the format 'say text to victim'. The words "text"
+         and "victim" are interpolated, so the world receives the command 'say
+         hello to orc'.

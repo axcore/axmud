@@ -1,0 +1,23 @@
+ldb / loadbuffer              Loads display/command buffers from file
+ 
+   Format:
+      ;ldb <path>             Loads the specified buffer file
+      ;ldb                    Loads a buffer file
+ 
+   Notes:
+      The display buffer is Axmud's record of any text received from the world 
+         which was displayed in the session's default tab (see the help for 
+         ';displaybuffer'). The world command buffer is Axmud's record of
+         individual commands sent to the world. (See the help for
+         ';displaybuffer' and ';commandbuffer').
+      ';savebuffer' can save the contents of one or both buffers, in whole or in 
+         part, to a buffer file. Later, when connected in 'offline' mode, the 
+         buffer file can be loaded with this command and replayed, as if still
+         connected to the world, with the ';replaybuffer' command.
+
+      If specified, <path> should be the full path to the buffer file (which is 
+         normally stored in the 'buffers' data sub-directory). If you don't 
+         specify a <path>, you will be prompted to choose one.
+
+   User commands:
+      ldb / loadbuff / loadbuffer

@@ -1,0 +1,11 @@
+IP (x)
+
+   Synopsis:
+      Returns the integer part of x
+
+   Notes:
+      It is always true that IP(x) + FP(x) = x.
+      
+   Examples:
+      IP (4.3)   >> 4
+      IP (-7.2)  >> 7

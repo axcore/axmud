@@ -1,0 +1,9 @@
+IFACECOUNT ()
+
+   Synopsis:
+      Returns the number of interface notifications received
+
+   Notes:
+      The interface notification list contains all the notifications received,
+         and not yet processed, as the result of an earlier SETTRIG statement.
+      If the list is empty, 0 is returned.

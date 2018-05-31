@@ -1,0 +1,14 @@
+lcw / locatorwizard           Opens the Locator wizard window
+ 
+   Format:
+      ;lcw                    Starts the wizard
+ 
+   Notes:
+      The Locator wizard window configures the Locator task for the current 
+         world profile and current dictionary.
+      The automapper depends directly on the Locator task so, unless you are
+         using a pre-configured world, each new world profile must be set up
+         correctly before the automapper can be used.
+ 
+   User commands:
+      lcw / locwiz / locwizard / locatorwizard

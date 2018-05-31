@@ -1,0 +1,31 @@
+swc / setwindowcontrols       Sets custom window controls sizes
+ 
+   Format:
+      ;swc <switches>         Sets custom window controls sizes
+ 
+   Notes:
+      Window controls are the borders around the edges of all windows on the
+         desktop. Axmud needs to know their sizes to get its window positioning
+         right.
+      This command specifies custom sizes for window controls. Usually, Axmud
+         detects window controls sizes for every workspace it uses, so you'll
+         probably only need to use this command if detection fails. (Window
+         controls sizes specified with this command override detected sizes.)
+      After specifying window controls sizes, you can use the ';resetgrid' or
+         ';testwindowcontrols' commands to adjust the position of windows on the
+         desktop.
+         
+      <switches> consists of one or more of the following options, in any order:
+         -l <size>   - Sets the left controls size
+         -l          - Resets the left controls size
+         -r <size>   - Sets the right controls size
+         -r          - Resets the right controls size
+         -t <size>   - Sets the top controls size
+         -t          - Resets the top controls size
+         -b <size>   - Sets the bottom controls size
+         -b          - Resets the bottom controls size
+
+      See also the help for ';testwindowcontrols' and ';listwindowcontrols'.
+
+   User commands:
+      swc / setwc / setcontrols / setwindowcontrols

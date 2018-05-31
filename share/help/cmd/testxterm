@@ -1,0 +1,12 @@
+txt / testxterm               Tests display of Axmud xterm-256 colour tags
+
+   Format:
+      ;txt                    Tests colours (using the current colour cube)
+      ;txt -x                 Tests colours (using the xterm colour cube)
+      ;txt -n                 Tests colours (using the netscape colour cube)
+ 
+   Notes:
+      To change the xterm colour cube, use ';setxterm'.
+
+   User commands:
+      txt / testxterm

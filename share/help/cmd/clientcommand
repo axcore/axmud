@@ -1,0 +1,15 @@
+cc / clientcommand            Adds a client command to the current recording
+ 
+   Format:
+      ;cc <cmd>               Adds a client command
+ 
+   Notes:
+      Adds a client command to the current recording, which will be automically
+         removed later (unless the recording is saved as a mission).
+      (If you need to preserve spacing, enclose the command with diamond
+          brackets <...>)
+      See the help for the ';record' command for more information about
+         recordings.
+ 
+   User commands:
+      cc / clientcmd / clientcommand

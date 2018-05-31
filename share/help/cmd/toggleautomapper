@@ -1,0 +1,18 @@
+tam / toggleautomapper        Toggles various automapper settings
+ 
+   Format:
+      ;tam <switch>           Toggles a setting on or off
+
+   Notes:
+      <switch> can be any of the following:
+         -o   Automatically open the automapper window when Axmud starts
+         -s   Stop opening the automapper window when Axmud starts
+         -e   Shows/hides the menu bar
+         -t   Shows/hides the toolbar
+         -r   Shows/hides the region list
+         -m   Shows/hides the map
+      The changes will apply to all automapper windows using the same world
+         model.
+ 
+   User commands:
+      tam / toggleautomap / toggleautomapper

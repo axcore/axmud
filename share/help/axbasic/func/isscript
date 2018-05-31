@@ -1,0 +1,10 @@
+ISSCRIPT (string)
+
+   Synopsis:
+      Tests whether a script is being executed by any current Script task
+      
+   Notes:
+      'string' is the name of an Axbasic script (which matches the name of the
+         file from which it was loaded). 
+      Returns 1 if any currently-running Script task is running the script, 0
+         otherwise.

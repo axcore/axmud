@@ -1,0 +1,34 @@
+scs / setcharset              Specifies the character set to use
+ 
+   Format:
+      ;scs                    Shows current and available character sets
+      ;scs -d <charset>       Sets the default character set
+      ;scs -w <charset>       Sets the current world's character set
+      ;scs -w                 Resets the current world's character set 
+ 
+   Notes:
+      The most useful character sets for modern telnet clients are 
+         'iso-8859-1', 'utf8', 'utf-8-strict' and 'cp437'.          
+      Each session (connection) uses the character set specified by the current
+         world profile. 
+      If the world profile doesn't specify a character set, Axmud's default 
+         character set, 'iso-8859-1', is used.
+         
+      There are probably only two reasons why you might want to change the
+         character set:
+         
+         1. You're connecting to a world that uses graphical characters from the
+               Code page 437 ('cp437') set
+         2. You're connecting to a world using a different alphabet altogether
+         
+      If specified, <charset> must be typed exactly and with the correct 
+         capitalisation; for example, the first of these commands is correct, 
+         but the second will generate an error:
+         
+            ;setcharset -d iso-8859-1
+            ;setcharset -d ISO-8859-1 
+            
+      To see the current character set in action, use the ';dumpascii' command.
+        
+   User commands:
+      scs / setcharset

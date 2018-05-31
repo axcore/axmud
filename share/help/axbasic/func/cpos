@@ -1,0 +1,18 @@
+CPOS (string, substring)
+CPOS (string, substring, n)
+
+   Synopsis:
+      Returns the position in the string of the first occurence of any character
+         from the substring
+
+   Notes:
+      (Axbasic labels the first character in the string as 1, the second as 2,
+         and so on.)
+      If none of the characters in the substring occur in the string, 0 is
+         returned. If either the string or the substring are empty strings, 0 is
+         returned.
+      If the third argument is specified, the search begins at the nth character
+         in the string and proceeds to the right. CPOS(string, substring, 1) is
+         interchangeable with CPOS(string, substring).
+      If n is not an integer, it is rounded off. An error occurs if n is zero
+         or a negative number.

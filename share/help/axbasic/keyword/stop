@@ -1,0 +1,19 @@
+STOP
+
+   Synopsis:
+      Stops the Axbasic script
+
+   Notes:
+      Also see the help for END.
+      All Axbasic script must have one, and only one, END statement (but you can
+         use as many STOP statements as you like).
+
+   Examples:
+      CALL mysub()
+      PRINT "This line is never executed"
+      END
+
+      SUB STRING mysub ()
+         PRINT "Goodbye cruel world!"
+         STOP
+      END SUB

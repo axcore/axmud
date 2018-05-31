@@ -1,0 +1,8 @@
+er / editrace                 Opens an 'edit' window for a race profile
+ 
+   Format:
+      ;er <name>              Edits the race profile <name>
+      ;er                     Edits the current race profile
+  
+   User commands:
+      er / editrace

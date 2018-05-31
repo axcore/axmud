@@ -1,0 +1,104 @@
+PEEK variable-name = axmud-object
+PEEK variable-name = axmud-object-property
+PEEK ARRAY variable-name = axmud-object-property
+
+   Synopsis:
+      Imports data from an Axmud internal scalar, array or hash property, or 
+         imports a (stringified) Perl object 
+
+   Notes:
+      PEEK gives Axbasic scripts access to most of Axmud's internal data. It is
+         the equivalent of the client command ';peek'.
+      Axmud objects are represented by strings like "world.current". (In 
+         computer terminology, an object is a collection of data. Examples of 
+         objects include Axmud profiles, cages, the world model and also all of 
+         the rooms and exits in the world model.)
+      Objects have properties represented by strings like "world.current.name",
+         "world.current.doorPatternList" and "world.current.currencyHash". (See 
+         the Axmud manual for a full list of possible strings.)
+      Properties are (almost always) in the form of a Perl scalar, list or hash.
+         Perl scalars are a single value. Perl lists are groups of 0, 1 or more 
+         scalars. Hashes are a collection of key-value pairs, with each key 
+         being unique in the hash. (Some languages use the term 'associative
+         array' instead.)
+
+      PEEK statements import some of Axmud's internal data and store it in an
+         Axbasic scalar variable or array. 'variable-name' is the name of that
+         scalar variable or array.
+      If the script uses OPTION TYPO, then it's not necessary to use a GLOBAL /
+         LOCAL / DIM GLOBAL / DIM LOCAL statement before using a PEEK statement.
+         If the script doesn't use OPTION TYPO, it's not necessary to use a 
+         DIM statement before using a PEEK statement.
+      If no global or local variable called 'variable-name' has been declared, 
+         the PEEK statement will automatically create a global variable. If a 
+         global or local variable call 'variable-name' has already been 
+         declared, it is completely replaced with a new variable of the same 
+         name. The new size of an array will match the size of the imported 
+         data. (A multi-dimensional array will become a single-dimension array.)
+      If a variable called 'variable-name' does not exist and you want to store 
+         some of Axmud's internal data in a new local variable instead of in a 
+         new global variable, you should use a LOCAL or a DIM LOCAL statement 
+         before the PEEK statement. 
+
+      If you want to import a Perl list or a Perl hash, you must use PEEK ARRAY. 
+         Perl hashes are 'flattened' into a simple list (in the form key, value, 
+         key, value...) before being assigned to the Axbasic array. An Axbasic 
+         array can also be used to import a Perl scalar value, in which case it 
+         will be an array containing one value.
+      If you try to import a Perl list or Perl hash into an Axbasic scalar 
+         variable, or if you try to import an Axmud object (like 
+         "world.current") into an Axbasic array, you will get an error.
+
+      The Perl language includes a type of value called 'undef' - an undefined 
+         value. When importing object properties, Axbasic converts undefined 
+         values into either the number 0 or the string "<<undef>>" - depending 
+         on whether the variable stores numeric or string values.
+      Note that Axmud variable names are case sensitive, so the first of these
+         statements is valid, but the second will produce an error:
+         
+            PEEK patterns$ = "world.current.doorPatternList"
+            PEEK patterns$ = "world.current.doorpatternlist"
+
+      There are a number of statements besides PEEK (such as PEEKVALUES, 
+         PEEKNUMBER, and so on) that can be used to import Axmud's internal 
+         data. The same rules apply to all of them; for example, you can't 
+         import an Axmud list into an Axbasic scalar variable using PEEK, 
+         PEEKVALUES or PEEKNUMBER.
+      Note that only PEEK can be used to return the object itself.
+
+   Examples:
+      ! Import a Perl object
+      ! The value stored in object$ will be something like 
+      ! Games::Axmud::Defn::World=HASH(0xa579ea8)
+      PEEK object$ = "world.current"
+
+      ! Import a scalar property into an Axbasic global scalar variable
+      PEEK name$ = "world.current.name"
+
+      ! Import a scalar property into an Axbasic global array
+      PEEK ARRAY worlds$ = "world.current.name"
+
+      ! Import a list property into an Axbasic global array
+      PEEK ARRAY pattern$ = "world.current.doorPatternList"   
+
+      ! Import a hash property into an Axbasic global array
+      PEEK ARRAY string$ = "world.current.currencyHash"
+ 
+      ! Import a scalar property into an Axbasic local scalar variable
+      LOCAL name$
+      PEEK name$ = "world.current.name"
+
+      ! Import a list property into an Axbasic local array
+      ! The array will be re-sized, so its initial size doesn't matter
+      DIM LOCAL pattern$(1)
+      PEEK ARRAY pattern$ = "world.current.doorPatternList"    
+
+      ! Import and then display a list property
+      ! First get the size of the Perl list 
+      PEEKNUMBER size = "world.current.doorPatternList"
+      ! Then import the Perl list into an Axbasic array
+      PEEK data$ = "world.current.doorPatternList"
+      ! Display each member of the list
+      FOR a = 1 to size
+         PRINT data$(a)
+      NEXT a

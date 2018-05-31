@@ -1,0 +1,18 @@
+smo / setcustommonth          Sets customised months of the year
+ 
+   Format:
+      ;smo                    Shows current list of customised months
+      ;smo <months>           Sets a new list
+      ;smo -r                 Resets the list
+      
+   Notes:  
+      Axmud doesn't offer a generalised locale setting (converting everything 
+         into your preferred language), but you can at least change the months
+         of the year used in logfiles with this command.
+      If you specify <months>, you must specify exactly twelve words containing
+         A-Z, a-z, 0-9 or underlines (first character must be a letter; maximum
+         16 characters for each word).
+      Also see the help for ';setcustomday'.
+       
+   User commands:
+      smo / setmonth / setcustommonth

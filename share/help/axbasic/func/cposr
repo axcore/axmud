@@ -1,0 +1,19 @@
+CPOSR (string, substring)
+CPOSR (string, substring, n)
+
+   Synopsis:
+      Returns the position in the string of the last occurence of any character
+         from the substring
+
+   Notes:
+      (Axbasic labels the first character in the string as 1, the second as 2,
+         and so on.)
+      If none of the characters in the substring occur in the string, 0 is
+         returned. If either the string or the substring are empty strings, 0 is
+         returned.
+      If the third argument is specified, the search begins at the nth character
+         in the string and proceeds to the left. CPOSR(string, substring) is the
+         equivalent of CPOSR(string, substring, length) where 'length' is the
+         length of the string.
+      If n is not an integer, it is rounded off. An error occurs if n is zero
+         or a negative number.

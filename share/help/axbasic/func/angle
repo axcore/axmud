@@ -1,0 +1,11 @@
+ANGLE (x, y)
+
+   Synopsis:
+      Returns the angle, in an anti-clockwise direction, between the positive
+         x-axis and a line from the origin to the point (x,y)
+
+   Notes:
+      The return value is always in the range -180 > @ >= 180, assuming that
+         OPTION ANGLE DEGREES has been specified. Otherwise, the return value is
+         the equivalent angle measured in radians.
+      x and y must not both be 0.

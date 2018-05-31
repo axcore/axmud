@@ -1,0 +1,24 @@
+kt / killtask                 Kills (stops) a task immediately
+ 
+   Format:
+      ;kt <task>              Kills <task>
+      ;kt -a                  Kills all current tasks
+ 
+   Notes:
+      <task> can be any Axmud built-in or external task that's currently 
+         running.
+      <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
+         formal name (e.g. 'status_task') or the task's unique name (e.g. 
+         'status_task_4').
+      (Use the ';listtasklabel' command to list all task labels.)
+      If there is more than one task matching <task>, they will all be stopped
+         immediately.
+ 
+      ';killtask' is a debugging command, and is not the recommended way to stop
+         tasks - it's almost always better to use ';halttask' instead.
+      ';killtask' sets the task's status to 'finished', so the task won't
+         actually stop until the start of the next task loop.
+      Use ';pausetask' to just pause a task.
+ 
+   User commands:
+      kt / killtask

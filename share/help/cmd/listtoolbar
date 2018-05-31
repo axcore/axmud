@@ -1,0 +1,15 @@
+ltb / listtoolbar             Lists toolbar buttons used in 'internal' windows
+ 
+   Format:
+      ;ltb                    Lists toolbar buttons
+
+   Notes:
+      Toolbar buttons are used in many 'internal' windows, especially 'main'
+         windows. When used, the same set of buttons are used each time.
+      Use this command to show the toolbar buttons used, or use the
+         ';edittoolbar' command to view settings for a particular button.
+      Toolbar buttons can be added, deleted and modified in the client's
+         preference window (use the ';editclient' command).
+  
+   User commands:
+      ltb / listtool / listtoolbar

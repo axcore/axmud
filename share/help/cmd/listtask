@@ -1,0 +1,11 @@
+lt / listtask                 Displays the current tasklist
+ 
+   Format:
+      ;lt                     Lists tasks
+ 
+   Notes:
+      This command lists all tasks in the 'current' tasklist.
+      The TaskList task provides a list of current tasks in real time.
+ 
+   User commands:
+      lt / listtask

@@ -1,0 +1,50 @@
+i / interact                  Interacts with target(s) in the current room
+ 
+   Format:
+      ;i                      Interacts with the first NPC in the room
+      ;i <target>             Interacts with a single <target>
+      ;i <target_list>        Interacts with the whole <target_list>
+ 
+   Notes:
+      Interactions are a form of attack usually involving guild skills. Whereas
+         a fighter will usually try to 'kill' targets, a thief might try to
+         'backstab' a target or a wizard might try to 'fry' a target.
+      ';interact' interacts with the first target in the room suggested by the
+         Locator. Axmud uses the 'interact' command specified by the current
+         world's command cages. For most pre-configured worlds, this command is 
+         not set. You should update the command cages to use a verb like 
+         'backstab' or 'fry' before using this command.
+ 
+      <target> must be a singular noun or adjective. To interact with a 'big
+         guard', you can use the command ';interact guard' or ';interact big';
+         but you can't use the command ';interact guards'.
+      However, <target> can be the words 'all' or 'mall' (or the equivalent in
+          the current world). 'all' normally means all creatures except your
+          character (and any minions your character controls). 'mall' normally
+          means every being that's not a player character (PC).
+ 
+      <target_list> should be a list of singular nouns and adjectives. To
+         interact with 'a big guard and a hairy orc', you could use the commands
+         ';interact guard orc', ';interact big hairy', ';interact guard hairy'
+         or ';interact big orc'.
+      One interaction will be launched for every noun or adjective in
+         <target_list>. The commands ';interact guard guard orc' and
+         ';interact big big hairy' will both interact with exactly two big
+         guards and one hairy orc, regardless of how many guards, orcs, big
+         things or hairy things there are in the room.
+ 
+      'all' overrides every other <target>, and 'mall' overrides every target
+         except 'all'. So, the command ';interact gandalf mall' will interact
+         with all NPCs in the room, but it won't interact with a player-
+         controlled character called Gandalf.
+      ';interact' can only be used to interact with things Axmud knows to be a
+         character, minion, sentient or creature. You can't ';interact door',
+         even if the world allows you to 'cast spell on door' as a way of 
+         breaking down a door; you can't use ';interact bear' if Axmud doesn't 
+         know that 'bear' is a living being.
+       If you don't specify a <target> at all, this command will attack the 
+         first NPC, ignoring any player characters in the room. If you specify a 
+         target, it can be either a player or non-player character.
+ 
+   User commands:
+      i / int / interact

@@ -1,0 +1,25 @@
+mxp / mxp                     Manages the Mud Xtension Protocol (MXP)
+ 
+   Format:
+      ;mxp                    Shows MXP status for this session
+
+      ;mxp -f                 Allow (or disallow) MXP to change fonts
+      ;mxp -i                 Allow MXP to display images
+      ;mxp -l                 Allow MXP to download image files
+      ;mxp -t                 Allow MXP to use world's own graphics formats
+      ;mxp -s                 Allow MXP to play sound/music files
+      ;mxp -o                 Allow MXP to download sound/music files
+      ;mxp -g                 Allow MXP to display gauges/status bars
+      ;mxp -a                 Allow MXP to use frames
+      ;mxp -n                 Allow MXP to use frames inside 'main' windows
+      ;mxp -c                 Allow MXP to crosslink to new servers
+      ;mxp -r                 Allow Locator task to use MXP room data
+ 
+   Notes:
+      The Mud Xtension Protocol (MXP) allows a world more control over the way
+         text is displayed in the client. Typically it's used to change colours
+         and fonts, to create clickable links and popup menus, to display images
+         and play sound/music files and to create extra windows (frames).
+ 
+   User commands:
+      mxp

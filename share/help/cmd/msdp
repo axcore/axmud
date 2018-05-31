@@ -1,0 +1,20 @@
+msdp / msdp                   Shows MSDP data reported by the current world
+ 
+   Format:
+      ;msdp                   Shows reportable variables only
+      ;msdp -f                Shows the full set of MSDP data
+      ;msdp -e                Empties collected data
+
+   Notes:
+      Some MUDs use protocols to exchange (negotiate) information which the 
+         client that can be used to improve the gaming experience. Axmud 
+         supports several protocols, including MSDP (Mud Server Data Protocol).
+      MSDP sends extra information about the character, such as their current 
+         health (hit) points. Some of this information is used to update the 
+         Status task (and, from there, the current character profile). 
+         Information about the character's current location, if sent, is used to
+         update the Locator task. The information is available to your scripts,
+         if they want it, and can be viewed with this command.
+ 
+   User commands:
+      msdp

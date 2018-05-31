@@ -1,0 +1,47 @@
+PEEKSHOW variable-name = axmud-object-property, expression
+PEEKSHOW ARRAY variable-name = axmud-object-property, expression
+
+   Synopsis:
+      Finds a key matching the expression in an Axmud internal hash property and
+         stores the matching value
+
+   Notes:
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+         the help for the PEEK statement for a full explanation).
+      PEEKSHOW can only be used with hash properties such as 
+         "world.current.currencyHash". It cannot be used with a scalar property
+         such as "world.current.name", a list property such as  
+         "world.current.doorPatternList" or a Perl object such as 
+         "world.current".
+      Hashes are a collection of key-value pairs, with each key being unique in 
+         the hash. (Some languages use the term 'associative array' instead.)
+      PEEKSHOW searches the hash for a key that matches the value of the
+         expression. If the key is found, 'variable-name' is set to the key's
+         corresponding value. If the corresponding value is the Perl special
+         value 'undef', then a string variable is set to "<<undef>>" and a 
+         numeric variable is set to 0. If the key is not found, a string 
+         variable is set to an empty string and a numberic variable is set to 0.
+      Normally you will use a PEEKEXISTS statement before a PEEKSHOW statement,
+         to check that the key actually exists in the hash.
+      Unless you are certain that all of the values in the hash property are
+         numeric, it's best to use a string varoab;e. If you use a numeric
+         variable and the matching key-value pair has a string value, you'll get
+         an error.
+
+   Examples:
+      ! Find the key "gold", and store the matching value in an Axbasic global
+      ! scalar variable
+      PEEKEXISTS result = "world.current.currencyHash", "gold"
+      IF result = 1 THEN
+         PEEKSHOW value$ = "world.current.currencyHash", "gold"
+         PRINT value$
+      END IF
+
+      ! Find the key "gold", and store the matching value in an Axbasic global
+      ! array
+      PEEKSHOW ARRAY value$ = "world.current.currencyHash", "gold"
+
+      ! Find the key "gold", and store the matching value in an Axbasic local
+      ! scalar variable
+      LOCAL value$
+      PEEKSHOW value$ = "world.current.currencyHash", "gold"

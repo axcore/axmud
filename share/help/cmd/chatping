@@ -1,0 +1,17 @@
+ping / chatping               Sends a ping to chat contacts
+ 
+   Format:
+      ;ping -n <name>         Pings all chat contacts called <name>
+      ;ping -g <group>        Pings everyone in the <group>
+      ;ping                   Pings everyone
+ 
+   Notes:
+      The Chat task is used to chat with other players directly via telnet.
+         Calls can be placed (or accepted) with any user whose MUD client uses
+         the zChat or MudMaster protocols.
+      This command is the equivalent of typing ';ping' in the relevant Chat task
+         windows.
+      The switches -n and -g can't be combined.
+ 
+   User commands:
+      ping / chatping

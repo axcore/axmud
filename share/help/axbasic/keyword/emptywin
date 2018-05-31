@@ -1,0 +1,19 @@
+EMPTYWIN
+
+   Synopsis:
+      Empties the task window
+
+   Notes:
+      If the Axbasic script isn't being run from within a task, the EMPTYWIN
+         statement is ignored (and no error message is generated). Execution
+         continues immediately with the next statement.
+      EMPTYWIN has exactly the same functionality as CLS.
+      If you want to empty text in the 'main' window, you can use the client 
+         command ';cls'.
+
+   Examples:
+      ! Empty the task window
+      EMPTYWIN
+
+      ! Empty the 'main' window
+      CLIENT "cls"

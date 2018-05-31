@@ -1,0 +1,46 @@
+stt / settermtype             Sets the data sent during TTYPE/MTTS negotiations
+ 
+   Format:
+      ;stt                    Shows current TTYPE/MTTS negotiation settings
+      ;stt <switch>           Sets the type of data sent
+      
+      ;stt -n <name>          Sets the custom client name
+      ;stt -n                 Resets the custom client name
+      ;stt -v <version>       Sets the custom client version
+      ;stt -v                 Resets the custom client version
+      
+   Notes:
+      When you connect to a world, it negotiates with Axmud about which terminal
+         type to use. Axmud sends a list of terminal types it supports, and the
+         world chooses the most appropriate one. In somes cases the world might
+         have special settings for particular clients, so Axmud can also send
+         its own name and version.
+      All of this happens invisibly if TTYPE/MTTS negotiation is enabled (see 
+         the help for ';settelnetoption' and ';setmudprotocol').
+      
+      The default setting is to send the client's name, followed by a list of
+         client-supported termtypes (for Axmud, the list is 'ansi', 'xterm', 
+         'dumb' and 'unknown', sent in that order).
+      You probably will never need to change the default settings, but if you
+         do, this command is available. In particular, if you want to pretend to
+         be using a different client, you can do so with this command.
+         
+      <switch>, if specified, sets what data is sent:
+      
+         -s   - Send nothing
+         -a   - Send the client name, followed by the usual list of termtypes
+         -x   - Send the client name and version, followed by the usual list of
+                   termtypes
+         -c   - Send a customised client name and version (see below), followed
+                   by the usual list of termtypes
+         -d   - Send only the the usual list of termtypes
+         -u   - Send the termtype 'unknown'
+         
+      If you want to pretend to be using a different client, first use
+         ';settermtype -c', and then use the '-n' switch to set a customised
+         client <name> or the '-v' switch to set a customised client <version>.
+         If you don't specify the <name> or <version>, Axmud's real name and 
+         version are used.
+         
+   User commands:
+      stt / setterm / settermtype

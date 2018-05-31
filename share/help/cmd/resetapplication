@@ -1,0 +1,19 @@
+rap / resetapplication        Resets external application commands
+ 
+   Format:
+      ;rap                    Uses default commands for your operating system
+      ;rap -l                 Uses default Linux commands
+      ;rap -w                 Uses default MS Windows commands
+ 
+   Notes:
+      When you click on a website link or an email address, and when you want to
+         play a sound effect or view a file, Axmud launches an external 
+         application.
+      The ';setapplication' command can be used to set the system commands used.
+         This command sets default system commands for your current operating
+         system; alternatively, you can specify that the default commands for
+         Linux or MS Windows should be used.
+      See also the help for the ';setapplication' command.
+
+   User commands:
+      rap / resetapp / resetapplication

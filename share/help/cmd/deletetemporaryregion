@@ -1,0 +1,13 @@
+dtn / deletetemporaryregion   Deletes all temporary regions
+ 
+   Format:
+      ;dtn                    Deletes temporary regions
+ 
+   Notes:
+      The world model stores information about the regions, rooms, characters
+         and objects in the game world. The automapper window uses the 
+         information stored in the world model to draw its maps.
+      This command deletes any regions that have been marked as 'temporary'.
+
+   User commands:
+      dtn / deltempregion / deletetemporaryregion

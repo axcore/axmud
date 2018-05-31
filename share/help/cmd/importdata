@@ -1,0 +1,19 @@
+imd / importdata              Imports an object (or objects)
+ 
+   Format:
+      ;imd                    Imports a partial data file
+      ;imd <path>             Imports the specified partial data file
+ 
+   Notes:
+      Axmud uses a fixed directory structure for its data files. Sometimes it's
+         convenient to move data files somewhere else - for backup purposes, or
+         to transfer them to another computer.
+      ';exportfiles' can export a whole file (or files), but sometimes you'll
+         only want to export a single thing - a single dictionary, or a single
+         zonemap. ';exportdata' can do this.
+      ';importdata' imports the data from any file created with the
+         ';exportdata' command. <path>, if specified, should be the full path
+         to the exported file.
+ 
+   User commands:
+      imd / importdata

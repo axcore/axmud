@@ -1,0 +1,81 @@
+# Portuguese phrasebook (from https://pt.wikipedia.org/wiki/Ponto_cardeal)
+# Accented characters converted so that entry boxes will show them
+#
+# English name for language (lower-case)
+portuguese
+# Native name for language (capitalise)
+Portugues
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+noun
+# Primary directions
+norte
+nornordeste
+nordeste
+esnordeste
+leste
+essudeste
+sudeste
+susudeste
+sul
+susudoeste
+sudoeste
+oessudoeste
+oeste
+oesnoroeste
+noroeste
+nornoroeste
+acima
+abaixo
+# Primary abbreviated directions
+n
+nne
+ne
+ene
+l
+ese
+se
+sse
+s
+sso
+so
+oso
+o
+ono
+no
+nno
+ac
+ab
+# Number of definite articles
+4
+# Definite articles
+o
+a
+os
+as
+# Number of indefinite articles
+4
+# Indefinite articles
+um
+uma
+uns
+umas
+# Number of 'and' words
+1
+# 'and' words
+e
+# Number of 'or' words
+2
+# 'or' words
+ou
+nem
+# Number words
+um
+dois
+tres
+quatro
+cinco
+seis
+sete
+oito
+nove
+dez

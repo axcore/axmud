@@ -1,0 +1,36 @@
+dtr / deletetrigger           Deletes a trigger
+ 
+   Format:
+      ;dtr <switches>         Deletes a trigger
+ 
+   Notes:
+      Triggers are one of five types of Axmud interface (the others being
+         aliases, macros, timers and hooks).
+      Triggers allow you to react automatically to text received from the world.
+         The reaction can have one of two forms: the trigger can execute an 
+         instruction (including world commands, forced world commands, client 
+         commands, echo commands, Perl commands, script commands and multi
+         commands), or it can change the way the received text is displayed in 
+         the 'main' window. The latter is called a 'rewriter' trigger.
+      This command deletes an existing 'inactive' trigger (one associated with a 
+         particular profile) and its corresponding 'active' trigger, if there 
+         is one.
+      It's not possible to delete an active trigger directly; enable or disable 
+         the trigger using ';modifytrigger' to set its 'enabled' attribute 
+         instead.
+
+      To delete the inactive trigger (and the active trigger based on it, if 
+         there is one), one of the following (group 1) switch options must be 
+         used:
+         <name>               - Deletes trigger belonging to the current world
+         <name> -w            - Deletes trigger belonging to the current world
+         <name> -g            - Deletes trigger belonging to the current guild
+         <name> -r            - Deletes trigger belonging to the current race
+         <name> -c            - Deletes trigger belonging to the current char
+         <name> -x <category> - Deletes trigger belonging to the current custom
+                                   profile <category>
+         <name> -d <prof>     - Deletes trigger belonging to the profile named
+                                   <prof>
+ 
+   User commands:
+      dtr / deltrig / deltrigger / deletetrig / deletetrigger

@@ -1,0 +1,31 @@
+ddp / deletedivertpattern     Deletes a pattern for Divert tasks
+
+   Format:
+      ;dsp <type> <number>
+               Deletes the pattern <number> of <type>
+ 
+   Notes:
+      The Divert task intercepts text received from the world and displays it in
+         its own task window. 
+      The patterns used are stored in the current world profile. This command
+         deletes one of those patterns. (See the help for ';adddivertpattern' 
+         for more information about Divert task patterns.)
+ 
+      <type> defines what kind of pattern is to be deleted:
+         -t   'tell' patterns
+         -e   An exception to a 'tell' pattern
+ 
+         -s   Social patterns
+         -o   An exception to a social pattern
+ 
+         -c   Custom patterns 
+         -u   Custom patterns
+         -x   An exception to a custom pattern
+      The switches -c and -u work on both gagged and ungagged custom patterns.
+ 
+      <number> is the pattern's number in the list produced by the 
+         ';listdivertpattern' command. (NB When a pattern is deleted, the other 
+         patterns in the same list will be re-numbered.)
+ 
+   User commands:
+      ddp / deldivert / deletedivertpattern

@@ -1,0 +1,19 @@
+pse / playsoundeffect         Plays a sound effect and shows a system message
+ 
+   Format:
+      ;pse <name>             Plays the sound effect <name>
+ 
+   Notes:
+      Axmud's sound effects bank contains a list of named sound effects, each of 
+         which corresponds to a sound file. This command can be used to play 
+         sound effects in the bank.
+      If sound is turned off or if the sound effect <name> doesn't exist, you'll
+         see a system error message. If the sound effect is played, you'll see a
+         normal system message.
+      You might prefer to avoid cluttering up the window with system messages,
+         for example when you're creating a trigger whose response to a stimulus
+         is to play a sound effect. In that case, you can use the ';beep' and
+         ';quicksoundeffect' commands.
+          
+   User commands:
+      pse / playse / playsound / playsoundeffect

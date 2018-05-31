@@ -1,0 +1,30 @@
+dhk / deletehook              Deletes a hook
+ 
+   Format:
+      ;dhk <switches>         Deletes a hook
+ 
+   Notes:
+      Hooks are one of five types of Axmud interface (the others being triggers, 
+         aliases, macros and timers).
+      Hooks allow you to specify instructions to be executed automatically when
+         certain events happen.
+      This command deletes an existing 'inactive' hook (one associated with a 
+         particular profile) and its corresponding 'active' hook, if there is
+         one.
+      It's not possible to delete an active hook directly; enable or disable the
+         hook using ';modifyhook' to set its 'enabled' attribute instead.
+
+      To delete the inactive hook (and the active hook based on it, if there 
+         is one), one of the following (group 1) switch options must be used:
+         <name>               - Deletes hook belonging to the current world
+         <name> -w            - Deletes hook belonging to the current world
+         <name> -g            - Deletes hook belonging to the current guild
+         <name> -r            - Deletes hook belonging to the current race
+         <name> -c            - Deletes hook belonging to the current char
+         <name> -x <category> - Deletes hook belonging to the current custom
+                                   profile <category>
+         <name> -d <prof>     - Deletes hook belonging to the profile named
+                                   <prof>
+ 
+   User commands:
+      dhk / delhk / delhook / deletehk / deletehook

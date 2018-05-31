@@ -1,0 +1,29 @@
+SORT variable-name
+
+   Synopsis:
+      Sorts the cells in an array variable
+
+   Notes:
+      String arrays are sorted alphabetically. The sort operation is case-
+         sensitive, so 'Zoo' will come before 'aardvark'. (Use the SORTCASE
+         statement if you want a case-insensitive sort opertion.)
+      Numeric arrays are sorted in order of ascending value.
+      Only one-dimensional arrays can be sorted. SORT assumes that the array
+         starts at element #1.
+      Also see the help for SORTR, which sorts arrays in reverse order.
+
+   Examples:
+      DATA 40, 200, 77, 10
+      DIM myarray (4)
+
+      ! Display the unsorted array
+      FOR a = 1 TO 4
+         READ myarray (a)
+         PRINT myarray (a)
+      NEXT a
+
+      ! Display the sorted array
+      SORT myarray
+      FOR a = 1 TO 4
+         PRINT myarray (a)
+      NEXT a

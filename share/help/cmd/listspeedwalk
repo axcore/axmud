@@ -1,0 +1,16 @@
+lwk / listspeedwalk           Lists speedwalk characters
+ 
+   Format:
+      ;lwk                    Lists speedwalk characters
+      
+   Notes:
+      Speedwalking is a method of moving from one location in the world to
+         another with a minimum of typing.
+      For more information on speedwalk characters, see the help for 
+         ';addspeedwalk'. For information on speedwalking in general, see the
+         help for ';speedwalk'.
+         
+      This command lists speedwalk characters in the current dictionary.
+      
+   User commands:
+      lwk / listspeed / listspeedwalk

@@ -1,0 +1,72 @@
+# Swedish phrasebook (from https://sv.wikipedia.org/wiki/V%C3%A4derstreck)
+# Accented characters converted so that entry boxes will show them
+#
+# English name for language (lower-case)
+swedish
+# Native name for language (capitalise)
+Svenska
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+adj
+# Primary directions
+norr
+nordnordost
+nordost
+ostnordost
+oster
+ostsydost
+sydost
+sydsydost
+soder
+sydsydvast
+sydvast
+vastsydvast
+vaster
+vastnordvast
+nordvast
+nordnordvast
+upp
+ner
+# Primary abbreviated directions
+n
+nno
+no
+ono
+o
+oso
+so
+sso
+s
+ssv
+sv
+vsv
+v
+vnv
+nv
+nnv
+u
+ner
+# Number of definite articles
+0
+# Definite articles
+# Number of indefinite articles
+0
+# Indefinite articles
+# Number of 'and' words
+1
+# 'and' words
+och
+# Number of 'or' words
+1
+# 'or' words
+eller
+# Number words
+ett
+tva
+tre
+fyra
+fem
+sex
+sju
+atta
+nio
+tio

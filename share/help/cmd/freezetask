@@ -1,0 +1,12 @@
+ft / freezetask               Freezes (or unfreezes) the current tasklist
+ 
+   Format:
+      ;ft                     Freezes (or unfreezes) tasks
+ 
+   Notes:
+      ';freezetask' prevents the task loop from running, so all tasks are 
+         actually frozen - unlike ';pausetask', which changes the status of
+         individual tasks to 'paused'.
+ 
+   User commands:
+      ft / freezetask

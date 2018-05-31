@@ -1,0 +1,16 @@
+xxit / xxit                   Terminates the connection and doesn't save files
+ 
+   Format:
+      ;xxit                   Terminates the connection immediately
+      ;xxit <minutes>         Terminates the connection after a delay 
+ 
+   Notes:
+      Use this command to terminate the connection immediately, without waiting
+         for the world to respond.
+      By using this command, you will lose any changes you have made to Axmud's
+         stored data. Use the ';exit' command to terminate the connection
+         immediately while saving files.
+      See also the help for ';abortselfdestruct'.
+ 
+   User commands:
+      xxit

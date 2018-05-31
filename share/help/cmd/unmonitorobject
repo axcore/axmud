@@ -1,0 +1,19 @@
+umo / unmonitorobject         Removes objects monitored by the Condition task
+ 
+   Format:
+      ;umo <number>           Removes monitored object <number>
+ 
+   Notes:
+      The Condition task is able to monitor the condition of objects in your
+         character's inventory (at least, those which have been detected by the
+         Inventory task, which must also be running). The idea is to alert you
+         to possessions which need to be repaired or replaced.
+      By default, all objects in your character's inventory are monitored;
+         however, if you use the ';monitorobject' command to create one or more 
+         monitored objects, only those objects will be monitored.
+      This command removes an object from the current character's list of
+         monitored objects. Use the ';listmonitorobject' command to get a 
+         numbered list of monitored objects.
+ 
+   User commands:
+      umo / unmonitorobj / unmonitorobject

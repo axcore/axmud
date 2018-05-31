@@ -1,0 +1,28 @@
+cs / checkscript              Checks an Axbasic script
+ 
+   Format:
+      ;cs                     Checks the script in the file test.bas
+      ;cs <script>            Checks the script in the file <script>.bas
+ 
+   Notes:
+      Axbasic is Axmud's own scripting language, based on the original Dartmouth
+         BASIC and the later implementation by the same authors, True BASIC.
+      As well as standard BASIC keywords and intrinsic (built-in) functions,
+         Axbasic provides a number of keywords and functions especially designed
+         to interact with the world and with Axmud's stored data. Use the 
+         ';axbasichelp' command for a list of keywords and functions.
+
+      This command tests the syntax of an Axbasic script by performing the
+         preliminary parsing stage. It's a useful way of checking your scripts
+         for obvious errors without actually having to run them.
+
+      When Axmud wants to load an Axbasic script, it checks a list of 
+         directories (called 'folders' on MS Windows systems), one at a time, 
+         until it finds a script with the right name. The first directory in the 
+         list is always the standard 'scripts' sub-directory, but the rest of 
+         the list is customisable (see the help for ';adddirectory'). 
+      <script> should match the name of at least one file in these directories
+         (without their .bas extensions).
+ 
+   User commands:
+      cs / checkscript

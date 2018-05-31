@@ -1,0 +1,15 @@
+lcs / listcolourscheme        Lists colour schemes
+ 
+   Format:
+      ;lcs                    Lists all colour schemes
+      ;lcs <name>             Lists the colour scheme <name>
+ 
+   Notes:
+      A textview is a scrolling area of a window where text is displayed. A
+         colour scheme determines the colours and font used in the textview.
+      Axmud provides a standard set of colour schemes, one for each window type.
+         These colour schemes can be modified but not deleted.
+      This command lists colour schemes and their colours/fonts.
+
+   User commands:
+      lcs / listscheme / listcolorscheme / listcolourscheme

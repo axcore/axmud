@@ -1,0 +1,17 @@
+lmc / listmodifierchar        Lists speedwalk modifier characters
+ 
+   Format:
+      ;lmc                    Lists modifier characters
+      
+   Notes:
+      Speedwalking is a method of moving from one location in the world to
+         another with a minimum of typing.
+      For more information on speedwalk modifier characters, see the help for 
+         ';addmodifierchar'. For information on speedwalking in general, see the
+         help for ';speedwalk'.
+         
+      This command lists speedwalk modifier characters in the current 
+         dictionary.
+      
+   User commands:
+      lmc / listmod / listmodchar / listmodifierchar

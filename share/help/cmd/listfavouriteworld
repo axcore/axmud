@@ -1,0 +1,17 @@
+lfv / listfavouriteworld      Shows the list of favourite worlds
+ 
+   Format:
+      ;lfv                    Shows the list
+ 
+   Notes:
+      Axmud's connections window displays a list of world profiles, sorted in
+         order of frequency, with the most-visited world highest on the list.
+      However, you can specify one or more 'favourite worlds' which are
+         automatically promoted to the top of the list. The first world in the
+         list is automatically selected, which means you can connect to the 
+         world with a single keypress.
+      This command shows the list of favourite worlds. You can set the list with
+         the ';setfavouriteworld' command.
+
+   User commands:
+      lfv / listfaveworld / listfavoriteworld / listfavouriteworld

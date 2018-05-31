@@ -1,0 +1,18 @@
+ddy / deletedictionary        Deletes a dictionary
+ 
+   Format:
+      ;ddy <name>             Deletes the dictionary <name>
+ 
+   Notes:
+      Dictionaries help Axmud to interpret the text it receives from the world.
+      An Axmud dictionary stores groups of words. It contains a group of weapon
+         words ('sword', 'mace', etc), a group of words for living beings
+         ('orc', 'dwarf', etc), and several more besides.
+      It also contains several useful terms, such as phrases for times of the
+         day.
+
+      This command deletes a dictionary, but it can't be used if any existing
+         session is using that dictionary as its current dictionary.
+ 
+   User commands:
+      ddy / deldict / deletedict / deletedictionary

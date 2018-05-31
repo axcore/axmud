@@ -1,0 +1,23 @@
+lst / listwindowstrip         Lists strip objects in an 'internal' window
+ 
+   Format:
+      ;lst <window>           Lists strip objects 
+
+      ;lst <window> -i        Lists strip objects and initialisation settings
+      ;lst -i <window>
+ 
+   Notes:
+      Winmaps are a plan for arranging the layout of 'internal' windows 
+         (consisting of all 'main' windows, 'protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows; see the help
+         for ';addwinmap' for more details).
+      The winmap consists of two parts: a list of strip objects, and a list of
+         table objects (use the ';listwindow' command to get a list of 'grid' 
+         window numbers.
+
+      This command lists strip objects for 'grid' window number <window>. If the
+         -i switch is specified, the strip's initialisation settings are
+         displayed, too.
+ 
+   User commands:
+      lst / liststrip / listwindowstrip

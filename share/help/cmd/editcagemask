@@ -1,0 +1,14 @@
+emk / editcagemask            Opens an 'edit' window for a cage mask
+ 
+   Format:
+      ;emk <name>             Opens an 'edit' window for the cage mask <name>
+ 
+   Notes:
+      Cage masks are a way of initialising (or resetting) a task's settings and
+         parameters depending on which profiles are current profiles. Axmud's
+         code does not contain any cage masks at the moment, though it may in 
+         the future.
+      <name> is the full name of the cage mask.
+ 
+   User commands:
+      emk / editmask / editcagemask

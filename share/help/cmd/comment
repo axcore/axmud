@@ -1,0 +1,19 @@
+cmt / comment                 Adds a comment to the current recording
+ 
+   Format:
+      ;cmt <comment>          Adds a comment
+ 
+   Notes:
+      Adds a comment to the current recording. Comments are useful if the 
+         recording is saved as a mission, but will be ignored if the recording
+         is saved as a route.
+      A mission is typically divided into groups of commands, separated by 
+         breaks. Just before a break, it's common to insert a comment - which is
+         displayed in the 'main' window - to explain to the user what is going 
+         on, or to instruct them to perform some task (by themselves) during the
+         break.
+      See the help for the ';record' command for more information about
+         recordings.
+ 
+   User commands:
+      cmt / comment

@@ -1,0 +1,38 @@
+SKIPIFACE
+
+   Synopsis:
+      Marks the next interface notification as the current one
+
+   Notes:
+      Whenever a trigger created by a SETTRIG statement fires, an 'interface
+         notification' is created.
+      The interface notification list contains all the notifications received
+         but not yet processed. One of them - usually the first one in the
+         list - is the 'current' notification.
+         
+      Axbasic functions like IFACENAME$() and IFACENUM() can be used to import
+         information about the trigger that caused the current notification.
+      NEXTIFACE removes the current notification from the list, but SKIPIFACE
+         retains it and simply moves on to the next notification in the list. In
+         addition, whereas NEXTIFACE always moves to the first item in the list
+         (if there is one), SKIPIFACE statements move sequentially through the
+         list, in order, returning to the beginning when they reach the end of
+         the list.
+      If the list was already empty, execution continues as normal and no error
+         message is generated. If the list contains only one notification, that
+         notification remains the current one.
+      See also the help for NEXTIFACE.
+
+   Examples:
+      SETTRIG "You are dead"
+
+      IF IFACECOUNT() >= 2
+         ! Get the name and number of the current interface notification
+         LET $name = IFACENAME$()
+         LET number = IFACENUM()
+
+         ! Move on the next notification on the list
+         SKIPIFACE
+         LET $name2 = IFACENAME$()
+         LET number2 = IFACENUM()
+      END IF

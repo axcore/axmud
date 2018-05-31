@@ -1,0 +1,15 @@
+et / edittask                 Opens an 'edit' window for a current task
+ 
+   Format:
+      ;et <task>              Edits the current <task>
+
+   Notes:
+      <task> can be any Axmud built-in or external task that's currently 
+         running.
+      <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
+         formal name (e.g. 'status_task') or the task's unique name (e.g. 
+         'status_task_4').
+      (Use the ';listtasklabel' command to list all task labels.)
+  
+   User commands:
+      et / edittask

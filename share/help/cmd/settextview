@@ -1,0 +1,18 @@
+stv / settextview             Sets the default size of textviews
+ 
+   Format:
+      ;stv <size>             Sets the default <size>
+      ;stv                    Resets the default size to 10000
+ 
+   Notes:
+      A textview is a scrolling area of a window where text is displayed. A
+         textview object is an Axmud component which handles these areas
+         intelligently.
+      This command sets a default <size> for textviews. <size>, if specified, 
+         must be an integer in the range 10-1000000.
+      
+      The Axmud code can create textviews with no size limit; the default size
+         does not apply to these textviews.
+
+   User commands:
+      stv / settv / settextview

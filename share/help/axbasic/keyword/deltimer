@@ -1,0 +1,21 @@
+DELTIMER expression
+
+   Synopsis:
+      Deletes an independent timer
+
+   Notes:
+      A convenient way to delete timers created with the ADDTIMER statement. The
+         expression is the name of the timer to delete.
+      DELTIMER assumes that the timer is assigned to a cage belonging to the
+         current world (unless an earlier PROFILE statement specified a
+         different profile).
+      The following Axbasic statements are therefore interchangeable:
+      
+         DELTIMER "name"
+         CLIENT "deletetimer name"
+         
+      If Axmud can't delete the timer, execution of the Axbasic script continues
+         as normal. No error message is generated.
+
+   Examples:
+      DELTIMER "invtimer"

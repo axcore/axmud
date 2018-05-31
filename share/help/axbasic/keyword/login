@@ -1,0 +1,25 @@
+LOGIN
+
+   Synopsis:
+      Marks the current character as logged in
+
+   Notes:
+      A LOGIN statement informs Axmud that the character has logged in to the
+         world. It's useful in Axbasic scripts that are run to handle an 
+         automatic login.
+      If the current character is already marked as 'logged in', the LOGIN
+         statement is ignored (and no error message is generated). Execution
+         continues immediately with the next statement.
+
+   Examples:
+      ! Tell the current world profile to run this Axbasic script to handle the
+      ! automatic login
+      LET $name = "gandalf"
+      LET $password = "123456"
+      ! Send an ordinary non-movement command
+      RELAY $name
+      ! Send an obscured password
+      RELAY $password, $password
+      PAUSE 1
+      LOGIN
+      END

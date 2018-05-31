@@ -1,0 +1,43 @@
+SUB STRING subroutine-name ( [ arg-list ] )
+SUB NUMERIC subroutine-name ( [ arg-list ] )
+
+   Synopsis:
+      Declares a subroutine with a numeric or string return value
+
+   Notes:
+      A subroutine is called with a CALL statement. Execution moves to the first
+         line after the SUB statement.
+      The argument list, if it is specified, contains a list of one or more 
+         scalar variables, which are used as local variables within the scope of 
+         the subroutine. More local variables in the same scope can be created 
+         with LOCAL or DIM LOCAL statements.
+      The variables in the argument list are set to the values specified in the 
+         CALL statement. Both argument lists must have the same number of 
+         variables, each of the same type (string or numeric).
+
+      All subroutines have a return value. Subroutines declared with SUB STRING
+         return a string value and those declared with SUB NUMERIC return a
+         numeric value.
+      You should use one or more RETURN statements to return the value you want.
+         If the END SUB statement occurs first, the return value is either an
+         empty string or 0.
+      EXIT SUB behaves exactly like END SUB, except that whereas each subroutine
+         can have only one END SUB statement, it can have as many EXIT SUB
+         statements as you like. The subroutine's return value is again either
+         an empty string or 0.
+      See also the help for CALL, END, EXIT and RETURN.
+
+   Availability:
+      SUB is not available in scripts with primitive line numbers (the GOSUB
+         statement can be used instead).
+
+   Examples:
+      LET number1 = 2
+      LET number2 = 5
+      LET result = CALL multiply (number1, number2)
+      PRINT result
+      END
+
+      SUB NUMERIC multiply (val1, val2)
+         RETURN (val1 * val2)
+      END SUB

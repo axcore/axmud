@@ -1,0 +1,32 @@
+DEF function-name ( variable-name [ , variable-name ... ] ) = expression
+
+   Synopsis:
+      Defines a one-line function
+
+   Notes:
+      An Axbasic function has a name and an argument list consisting of one or
+         more parameters.
+      Before evaluating the function, Axbasic assigns the value of each argument
+         to the parameter variable (in the example below, the value 10 is
+         assigned to x). The expression is evaluated and becomes the return 
+         value of the function.
+      Once defined in a DEF statement, the function can be used in an 
+         expression.
+      'variable-name' must be a scalar variable (not an array variable).
+      For multi-line functions, use subroutines (see the help for SUB and 
+         GOSUB).
+
+   Examples:
+      ! Define a function to multiply by 10
+      DEF Multiply (x) = x * 10
+
+      ! This statement prints the value 50
+      PRINT Multiply (5)
+      ! This statement prints the value 1000
+      PRINT 10 * Multiply (10)
+
+      ! Every defined function must have at least one argument, even if the
+      ! function doesn't need one
+      DEF Roll (x) = int(rnd(6) + 1)
+      ! Roll the die to print a value between 1 and 6
+      PRINT Roll

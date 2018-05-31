@@ -1,0 +1,16 @@
+INT (number)
+
+   Synopsis:
+      Converts a decimal number into an integer
+
+   Notes:
+      To get the integer part of a negative number, us the IP() function.
+
+   Examples:
+      INT (3.5)   >> 3
+      INT (3)     >> 3
+      INT (-3.5)  >> 4
+      INT (-7.2)  >> 8
+
+      IP (-7.2)   >> 7
+      INT (-7.2)  >> 8

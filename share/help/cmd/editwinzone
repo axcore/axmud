@@ -1,0 +1,14 @@
+ewz / editwinzone             Opens an 'edit' window for a winzone
+ 
+   Format:
+      ;ewz <name> <number>
+               Edits the winzone <number> from the winmap <name>
+ 
+   Notes:
+      Winmaps are a plan for arranging the layout of 'internal' windows 
+         (consisting of all 'main' windows, 'protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows).
+      See the help for ';addwinmap' for more information about winmaps.
+
+   User commands:
+      ewz / editwz / editwinzone

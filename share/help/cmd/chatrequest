@@ -1,0 +1,22 @@
+chr / chatrequest             Sets up a conference call
+ 
+   Format:
+      ;chr -n <name>          Makes request to chat contacts called <name>
+      ;chr -g <group>         Makes request to chat contacts in the <group>
+      ;chr                    Makes request to everyone
+ 
+   Notes:
+      The Chat task is used to chat with other players directly via telnet.
+         Calls can be placed (or accepted) with any user whose MUD client uses
+         the zChat or MudMaster protocols.
+      This command is the equivalent of typing ';request' in the relevant Chat
+         task windows and effectively sets up a conference call, asking the chat
+         contact for a list of their chat connections and then trying to open a 
+         chat session with everyone on that list.
+      The chat contact will only reveal connections which have been marked as 
+         'public' (connections are 'private' by default). See also the help for 
+         the ';chatpeek' command.
+      The switches -n and -g can't be combined.
+ 
+   User commands:
+      chr / chatrequest

@@ -1,0 +1,17 @@
+CLOSEWIN
+
+   Synopsis:
+      Closes the task window
+
+   Notes:
+      If the script is being run from within a task, this statement asks the
+         task to close the task window.
+      If the Axbasic script isn't being run from within a task, or if no task
+         window is open, the CLOSEWIN statement is ignored (and no error message
+         is generated). Execution continues immediately with the next statement.
+
+   Examples:
+      OPENWIN
+      WRITEWIN "Hello world!"
+      PAUSE 5
+      CLOSEWIN

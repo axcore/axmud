@@ -1,0 +1,23 @@
+FOR variable-name = expression TO expression [ STEP expression ]
+
+   Synopsis:
+      Initiates a FOR..NEXT loop
+
+   Notes:
+      The expressions must be integers.
+
+   Examples:
+      ! Print the numbers 1 to 10 in sequence
+      FOR a = 1 TO 10
+         PRINT a
+      NEXT a
+
+      ! Print the even numbers from 2 to 10 in sequence
+      FOR a = 2 TO 10 STEP 2
+         PRINT a
+      NEXT a
+
+      ! Print the numbers 1 to 10 in reverse sequence
+      FOR a = 10 to 1 STEP -1
+         PRINT a
+      NEXT a

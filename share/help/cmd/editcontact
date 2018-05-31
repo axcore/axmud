@@ -1,0 +1,7 @@
+ecn / editcontact             Opens an 'edit' window for a chat contact 
+ 
+   Format:
+      ;ecn <name>             Edits <name> from your contacts list
+  
+   User commands:
+      ecn / editcontact

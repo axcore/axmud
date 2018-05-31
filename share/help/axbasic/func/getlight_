@@ -1,0 +1,11 @@
+GETLIGHT$ ()
+
+   Synopsis:
+      Returns the world model's light status
+
+   Notes:
+      The rooms in the world model can have several stored descriptions, each
+         corresponding to a different light level (the default 'light status'
+         strings are "day", "night" and "dark".)
+      This function gets the current light status. To set the current light
+         status, see the SETLIGHT function.

@@ -1,0 +1,7 @@
+NEXT variable-name
+
+   Synopsis:
+      Terminates a FOR..NEXT loop
+
+   Notes:
+      See the help for FOR for a full explanation.

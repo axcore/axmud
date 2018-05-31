@@ -1,0 +1,21 @@
+POSR (string, substring)
+POSR (string, substring, n)
+
+   Synopsis:
+      Returns the position in the string of the last occurence of the whole
+         substring
+
+   Notes:
+      Specifically, returns the position of the first character of the last
+         occurence of the substring in the string. (Axbasic labels the first
+         character in the string as 1, the second as 2, and so on.)
+      If the substring doesn't occur in the string, 0 is returned. If an empty
+         substring is specified, 1 is returned. If the string is empty but the
+         substring is not empty, 0 is returned.
+      If the third argument is specified, the search begins at the nth character
+         in the string and proceeds to the left. POSR(string, substring) is 
+         interchangeable with POSR(string, substring, length), where 'length' is
+         the length of the string. If the substring is null, the starting
+         position is returned.
+      If n is not an integer, it is rounded off. An error occurs if n is zero or
+         a negative number.

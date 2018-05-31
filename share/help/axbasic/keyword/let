@@ -1,0 +1,20 @@
+[LET] variable-name = expression
+
+   Synopsis:
+      Assigns the value of a (scalar) variable
+
+   Notes:
+      In scripts without line numbers, variables must be assigned values with
+         LET, unless an OPTION NOLET statement appears in the script.
+      In scripts with line numbers, the LET keyword is optional.
+
+   Examples:
+      LET greeting$ = "Hello world!"
+      LET myarray (5) = 100
+
+      OPTION NOLET
+      greeting$ = "Hello world!"
+      myarray (5) = 100
+
+      10 a$ = "hello world!"
+      10 LET a$ = "hello world!"

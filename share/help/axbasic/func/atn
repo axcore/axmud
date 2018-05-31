@@ -1,0 +1,8 @@
+ATN (x)
+
+   Synopsis:
+      Returns the arctangent of x
+
+   Notes:
+      The result is returned in radians by default. If OPTION ANGLE DEGREES has
+         been specified, the result is returned in degrees.

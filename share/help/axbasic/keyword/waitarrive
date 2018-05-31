@@ -1,0 +1,31 @@
+WAITARRIVE [ expression ]
+
+   Synopsis:
+      Pauses execution until the character has arrived
+
+   Notes:
+      When you send a movement command to the mud (like "north" or "enter 
+         gate"), the Locator task is notified so it can keep track of how many
+         room descriptions to expect.
+      The WAITARRIVE statement pauses execution of the Axbasic script until the
+         Locator task reports that it isn't expecting any more room 
+         descriptions. If world commands have been queued, the Axbasic also 
+         waits for them to be sent to the world (in case some of them are 
+         movement commands).
+      WAITARRIVE is normally used in combination with the statements MOVE, RELAY 
+         or SEND.
+      The expression is a timeout measured in seconds. If specified, the script
+         gives up waiting after that period and resumes execution.
+      If the Axbasic script isn't being run from within a task, the WAITARRIVE
+         statement is ignored (and no error message is generated). Execution
+         continues immediately with the next statement.
+      If the Locator task isn't running or if it doesn't know anything about the
+         character's current location, the Axbasic script pauses briefly and
+         resumes execution on the next task loop.
+
+   Examples:
+      MOVE "north"
+      WAITARRIVE
+
+      MOVE "squeeze through curtains"
+      WAITARRIVE 5

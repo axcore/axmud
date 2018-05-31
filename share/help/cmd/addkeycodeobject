@@ -1,0 +1,26 @@
+ako / addkeycodeobject        Adds a new keycode object
+ 
+   Format:
+      ;ako <name>             Adds a new keycode object called <name>
+ 
+   Notes:
+      Keycodes are used by the system to recognise the keys on your keyboard.
+         For example, the F5 key usually has the keycode 'F5', and the two SHIFT 
+         keys often have the keycodes 'Shift_L' and 'Shift_R'.
+      Keycodes vary between systems, so Axmud offers a set of standard keycodes
+         (for example 'f5' and 'shift'). Axmud represents two keys pressed down
+         together as a keycode string like 'shift f5' or 'ctrl c'. 
+      Axmud's standard keycodes are mostly used with macros; they allow you to 
+         design macros that will work on all systems, not just the one you're 
+         using right now.
+
+      Keycodes (and keycode strings) are stored in a keycode object. You might
+         have one called 'linux' and another one called 'windows', one of which
+         would be set as the 'current' keycode object. 
+      This command adds a new keycode object.
+      Keycode object names must be no longer than 16 characters, contain only 
+         A-Z, a-z, underlines and 0-9 (not the first character) and not be one 
+         of Axmud's reserved names (see the ';listreserved' command).
+ 
+   User commands:
+      ako / addko / addkeycodeobject

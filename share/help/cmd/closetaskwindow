@@ -1,0 +1,18 @@
+ctw / closetaskwindow         Closes a task's own window
+ 
+   Format:
+      ;ctw <task>             Closes the task window for <task>
+      ;ctw -a                 Closes windows for all current tasks 
+ 
+   Notes:
+      ';ctw -a' closes the task window for all tasks that have one open. Closing
+         the window will often cause the task to shut down completely.
+      <task> can be any Axmud built-in or external task that's currently 
+         running.
+      <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
+         formal name (e.g. 'status_task') or the task's unique name (e.g. 
+         'status_task_4').
+      (Use the ';listtasklabel' command to list all task labels.)
+ 
+   User commands:
+      ctw / closetaskwin / closetaskwindow

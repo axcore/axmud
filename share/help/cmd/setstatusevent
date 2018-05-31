@@ -1,0 +1,25 @@
+sse / setstatusevent          Handles settings for Status task events
+ 
+   Format:
+      ;sse                    Shows current settings for Status task events
+      ;sse <switches>         Modifies settings for Status task events
+      
+   Notes:
+      A Status task event occurs when the Status task notices that your
+         character has fallen asleep, passed or died. 
+      If writing to the logfiles 'sleep', 'passout' and 'dead' is enabled then
+         the event is recorded in those logfiles. Typically, Axmud writes some
+         lines from before the event and some lines from after it.
+      This command sets how many lines can be written to the logfile during each
+         event.
+      <switches>, if specified, can be either or both of the following switch
+         options (in any order):
+         
+         -n <number>   - Write <number> lines from before the event
+         -a <after>    - Write <number> lines from after the event
+         
+      <number> must be an integer, zero or above. If it's zero, then lines from
+         before (or after) the event are not written at all. 
+
+   User commands:
+      sse / setevent / setstatusevent

@@ -1,0 +1,12 @@
+tgp / togglepalette           Toggles use of the OSC colour palette
+ 
+   Format:
+      ;tgp                    Enables/disables use of the palette
+ 
+   Notes:
+      The OSC colour palette is used by some worlds to display a set of colours 
+         customised for the world.
+      This command enables or disables Axmud's use of the OSC colour palette.
+
+   User commands:
+      tgp / togglepalette

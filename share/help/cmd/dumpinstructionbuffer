@@ -1,0 +1,36 @@
+dib / dumpinstructionbuffer   Displays contents of an instruction buffer
+ 
+   Format:
+      ;dib -s                 Shows most recent instruction in session buffer
+      ;dib                    
+      ;dib -s <number>        Shows instruction <number>
+      ;dib <number>
+      ;dib -s <start> <stop>  Shows instructions between <start> and <stop>
+      ;dib -s <start> <stop> 
+
+      ;dib -c                 Shows most recent instruction in combined buffer
+      ;dib -c <number>        Shows instruction <number>
+      ;dib -c <start> <stop>  Shows instructions between <start> and <stop>
+ 
+   Notes:
+      Instruction buffers are Axmud's records of processed instructions (see the
+         help for ';instructionbuffer').
+      Every session has its own instruction buffer, storing instructions 
+         processed by that session. There is also a combined instruction buffer
+         storing instructions processed by all sessions.
+
+      If specified, <number>, <start> and <stop> must be valid item numbers 
+         within the buffer. If the buffer is full, the earliest items are  
+         deleted to make room for new ones. Use the ';instructionbuffer' command 
+         to get the current bounds of the buffer.
+      <number>, <start> and <stop> can be replaced by the words 'start'/'first'
+         (for the first item in the buffer) and 'stop'/'last' (for the last
+         item) - e.g. ';dib start', ';dib 34 stop', ';dib first last'
+      <number> can be replaced with the word 'all' - e.g. ';dib all' (which is
+         the same as ';dib start stop').
+      If the line numbers are specified in the wrong order, e.g. ';dib 40 30' or
+         ';dib stop start', the contents of the buffer will be listed in reverse
+         order.
+ 
+   User commands:
+      dib / dumpinstructbuff / dumpinstructionbuffer

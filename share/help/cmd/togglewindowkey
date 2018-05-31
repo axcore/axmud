@@ -1,0 +1,38 @@
+twk / togglewindowkey         Toggles special keys used with Axmud windows
+ 
+   Format:
+      ;twk                    Shows current special key settings
+      ;twk <switch>           Toggles a special key/key combination
+      
+   Notes:
+      Several keys (or key combinations) on your keyboard have a special 
+         function. This command is used to enable or disable those functions. 
+         When disabled, the keys are available for use with Axmud macros.
+      <switch>, if specified, can be any of the following:
+      
+         -s   - Enables/disables scrolling. When enabled, the page up/page down/
+                   home/end keys cause window panes to scroll up or down. A 
+                   window pane is an area within many Axmud windows (such as the 
+                   'main' window and many task windows) which contains mostly 
+                   text. Not all window panes can be scrolled 
+         -m   - Enables/disables smooth scrolling. When enabled, using the page
+                   up/page down keys scrolls the window pane by less than the 
+                   pane height (which is convenient if you're trying to read a 
+                   block of text). When disabled, the keys scroll the pane by
+                   exactly the pane height
+         -p   - Enables/disables auto-split screen mode. Some window panes 
+                   (including the default one, where text received from the 
+                   world is usually displayed) can be split into two, which is
+                   convenient for reading a block of text, while new text is 
+                   being received. When enabled, the home key engages split mode
+                   mode and the end key disactivates it. The page up/page down 
+                   keys have the same effect, if the pane is scrolled to the 
+                   bottom/top
+         -t   - Enables/disables autocompletion of instructions in the 'main' 
+                   window's command entry box, using the tab and cursor up/down
+                   keys
+         -c   - Enables/disables switching between tabs in a window pane using
+                   CTRL+TAB
+      
+   User commands:
+      twk / togglewinkey / togglewindowkey

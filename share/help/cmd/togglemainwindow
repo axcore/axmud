@@ -1,0 +1,23 @@
+tmw / togglemainwindow        Toggles special features of 'main' windows
+ 
+   Format:
+      ;tmw                    Shows current special features
+      
+      ;tmw -u                 Toggles 'main' window's urgency hint
+      ;tmw -t                 Toggles tooltips in session's default tab
+      
+   Notes:
+      This command enables or disables a couple of features used exclusively in
+         'main' windows.
+      The '-u' switch enables or disables the 'main' window's urgency hint. 
+         When text is received from the world and the 'main' window is not on
+         the user's current workspace, the window has its urgency hint set. On 
+         many systems, the window will start flashing on the workspace panel 
+         (taskbar). This won't happen if the urgency hint has been disabled with
+         this command.
+      The '-t' switch enables or disables tooltips in the session's default tab,
+         meaning the area of the 'main' window where text received from the 
+         world is displayed.
+      
+   User commands:
+      tmw / togglemain / togglemainwin / togglemainwindow

@@ -1,0 +1,7 @@
+ezm / editzonemap             Opens an 'edit' window for a zonemap
+ 
+   Format:
+      ;ezm <name>             Edits the zonemap <name>
+  
+   User commands:
+      ezm / editzm / editzonemap

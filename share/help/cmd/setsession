@@ -1,0 +1,29 @@
+ss / setsession               Changes various session tab settings
+ 
+   Format:
+      ;ss                     Shows current tab settings
+      
+      ;ss -b                  Changes tab format to 'deathmud (Gandalf)
+      ;ss -h                  Changes tab format to 'deathmud - Gandalf'
+      ;ss -w                  Changes tab format to 'deathmud'
+      ;ss -c                  Changes tab format to 'Gandalf'
+      ;ss -x                  Toggles display xterm titles in tabs
+      ;ss -l                  Toggles display of long world names in tabs
+      ;ss -s                  Toggles simple tabs
+      
+      ;ss -m                  Opens prompt before click-closing 'main' window
+      ;ss -t                  Opens prompt before click-closing tab
+ 
+   Notes:
+      A session is a single connection to a world (even if it's in offline mode
+         and after a disconnection.) Each session has its own tab in the main
+         window.
+      This command customises the text displayed in the tab label.
+      'xterm' titles are not used by most worlds, so turning them on may have no
+         visible effect.
+      Simple tabs are those shown without a label at all, when there's only one
+         session open in a 'main' window. This is useful for conserving space on
+         small monitors.
+
+   User commands:
+      ss / setsession

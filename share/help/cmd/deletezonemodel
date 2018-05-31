@@ -1,0 +1,18 @@
+dzl / deletezonemodel         Deletes a zone model
+ 
+   Format:
+      ;dzl <name> <number>
+               Deletes the zone model <number> from the zonemap <name>
+
+   Notes:
+      Zonemaps are a plan for arranging windows on a workspace grid. Zonemaps
+         contain one or more zone models, describing a region of the workspace 
+         and the kinds of window that region is allowed to contain.
+      For a list of zonemaps, use the ';listzonemap' command.
+
+      ';deletezonemodel' can be used on a zonemap currently in use by a 
+         workspace grid, but the changes won't be applied until the grid is 
+         reset (using ';resetgrid').
+ 
+   User commands:
+      dzl / delzl / deletezl / deletezonemodel

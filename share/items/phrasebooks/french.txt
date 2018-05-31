@@ -1,0 +1,77 @@
+# French phrasebook (from https://fr.wikipedia.org/wiki/Point_cardinal)
+#
+# English name for language (lower-case)
+french
+# Native name for language (capitalise)
+Francais
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+noun
+# Primary directions
+nord
+nordnordest
+nordest
+estnordest
+est
+estsudest
+sudest
+sudsudest
+sud
+sudsudouest
+sudouest
+ouestsudouest
+ouest
+ouestnordouest
+nordouest
+nordnordouest
+haut
+bas
+# Primary abbreviated directions
+n
+nne
+ne
+ene
+e
+ese
+se
+sse
+s
+sso
+so
+oso
+o
+ono
+no
+nno
+h
+b
+# Number of definite articles
+3
+# Definite articles
+le
+la
+les
+# Number of indefinite articles
+3
+# Indefinite articles
+un
+une
+des
+# Number of 'and' words
+1
+# 'and' words
+et
+# Number of 'or' words
+1
+# 'or' words
+ou
+# Number words
+un
+deux
+trois
+quatre
+cinq
+six
+sept
+huit
+neuf
+dix

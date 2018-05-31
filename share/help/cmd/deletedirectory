@@ -1,0 +1,20 @@
+ddr / deletedirectory         Stops using directory containing Axbasic scripts
+ 
+   Format:
+      ;ddr <number>           Stops using the directory <number>
+ 
+   Notes:
+      When Axmud wants to load an Axbasic script, it checks a list of 
+         directories (called 'folders' on MS Windows systems), one at a time, 
+         until it finds a script with the right name.
+      The first directory in the list is always the standard 'scripts'
+         sub-directory, but the rest of the list is customisable. You can use 
+         the ';listdirectory' command to get a numbered list of directories, and
+         then use this command to remove one of them.
+      The standard directory can't be removed, so <number> must be at least 1.
+         Of course, after removing a directory, the numbers of other directories
+         will change, so you will need to consult ';listdirectory' each time you
+         use this command.
+
+   User commands:
+      ddr / deldir / deletefolder / deletedirectory

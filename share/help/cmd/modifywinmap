@@ -1,0 +1,69 @@
+mwm / modifywinmap            Modifies an existing winmap
+ 
+   Format:
+      ;mwm <name> <switch> <arguments>
+               Modifies a zone model <number> in the zonemap <name>
+ 
+   Notes:
+      Winmaps are a plan for arranging the layout of 'internal' windows 
+         (consisting of all 'main' windows, 'protocol' windows such as those 
+         created by MXP, and 'custom' windows such as task windows).
+      See the help for ';addwinmap' for more information about winmaps.
+
+      The winmap consists of two parts: a list of strip objects, and a list of
+         table objects. 
+      This command only modifies the list of strip objects and other winmap
+         properties. To modify table objects, see the help for ';resetwinmap',
+         ';addwinzone' and so on.
+
+      <switch> is one of the following switches, optionally followed by one or
+         more <arguments>:
+
+         -w <world> <world> ...
+               - Sets the list of worlds which use this winmap as their default
+                    winmap for 'main' windows
+         -w    - Empties the list of worlds
+            
+         -o <orientation>
+               - Sets the order in which strip objects are added to the window:
+                    'top'    - added vertically, top to bottom (default)
+                    'bottom' - added vertically, bottom to top
+                    'left'   - added horizontally, left to right
+                    'right'  - added horizontally, right to left
+   
+         -b <package>
+               - Adds a strip object to the beginning of the list of strip 
+                    objects added to the window. <package> is the strip object's
+                    package name, e.g. 'Games::Axmud::Strip::Entry' (but the 
+                    initial 'Games::Axmud::Strip::' part can be omitted, for 
+                    example just use 'Entry'; note that capitalisation must be 
+                    preserved)
+         -b <package> <key> <value> <key> <value> ...
+               - Adds a strip object to the beginning of the list, with a series
+                    of initialisation properties, <key>, set to <value>. Any
+                    property not specified here takes its default value 
+         -e <package>
+               - Adds a strip object to the end of the list
+         -e <package> <key> <value> <key> <value> ...
+               - Adds a strip object to the end of the list, with a series of
+                    initialisation properties (as described above)
+        
+         -l    - Shows a numerical list of each strip object and their 
+                    initialisation properties, if set
+         -u <number>
+               - Moves strip object <number> up one position in the list. If
+                    it's already at the top, it remains there
+         -d <number>
+               - Moves strip object <number> down one position in the list. If
+                    it's already at the bottom, it remains there
+         -v <number>
+               - Removes strip object <number> from the list
+
+         -s <width> <height>
+               - Standard size for adding new table objects to an existing 
+                    window. Should be a factor of the table size (i.e., for a 
+                    60x60 table, use 2/3/4/5/6/10/12/15/20/30/60). Default is 
+                    30x30
+
+   User commands:
+      mwm / modwm / modifywinmap

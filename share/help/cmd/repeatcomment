@@ -1,0 +1,12 @@
+rcm / repeatcomment           Repeats the current mission's most recent comment
+ 
+   Format:
+      ;rcm                    Repeats the most recent comment
+ 
+   Notes:
+      Repeats the comment most recently displayed by the current mission, in 
+         case it has scrolled out of view.
+      See the help for ';startmission' for more information about missions.
+ 
+   User commands:
+      rcm / repcm / repeatcm / repeatcomment

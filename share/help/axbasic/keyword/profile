@@ -1,0 +1,26 @@
+PROFILE [ expression ]
+
+   Synopsis:
+      Specifies the Axmud profile used in ADDTRIG and DELTRIG (etc) statements
+
+   Notes:
+      Both the ADDTRIG and DELTRIG statements assume that the trigger to be 
+         added or deleted is associated with the current world profile.
+      If you specify a different profile using a PROFILE statement, then ADDTRIG 
+         and DELTRIG will use that profile instead.
+      PROFILE also specifies the profile used by ADDALIAS, ADDHOOK, ADDMACRO, 
+         ADDTIMER, DELALIAS, DELHOOK, DELMACRO and DELTIMER statements.
+      The expression is the name of the profile. If no profile is specified or 
+         if the specified profile doesn't exist, Axbasic resumes using the 
+         current world.
+
+   Examples:
+      ! Add triggers to the 'orc' race profile
+      PROFILE "orc"
+      ADDTRIG "The knight kills you", ";runscript orc_prayers"
+      ADDTRIG "The knight strikes you", ";runscript orc_escape"
+
+      ! Add triggers to the current world profile
+      PROFILE
+      ADDTRIG "The knight kills you", "pray"
+      ADDTRIG "The knight strikes you", "escape"

@@ -1,0 +1,39 @@
+mcs / modifycolourscheme      Modifies a colour scheme
+ 
+   Format:
+      ;mcs <name> <switches>  Modifies the colour scheme <name>
+ 
+   Notes:
+      A textview is a scrolling area of a window where text is displayed. A
+         colour scheme determines the colours and font used in the textview.
+      Axmud provides a standard set of colour schemes, one for each window type.
+         These colour schemes can be modified with this command, but not 
+         deleted.
+  
+      <switches> consists of one or more switch options, in any order:
+
+         -t <text>        - Sets the text colour, must be an Axmud colour tag
+         -t               - Resets the text colour
+
+         -u <underlay>    - Sets the underlay colour, must be an Axmud underlay
+                               colour tag
+         -u               - Resets the underlay colour
+
+         -b <background>  - Sets the background colour, must be an Axmud colour
+                               tag
+         -b               - Resets the background colour
+
+         -f <font>        - Sets the font
+         -f               - Resets the font
+
+         -s <size>        - Sets the font size, must be a positive integer
+         -s               - Resets the font size
+
+      Windows using the modified colour scheme are not updated automatically.
+         You can use the ';updatecolourscheme' command to update window panes in
+         'internal' windows, but in all other situations the modified colour
+         scheme is not used until a window is created or re-drawn.
+      See also the help for ';applycolourscheme'.
+
+   User commands:
+      mcs / modscheme / modifycolorscheme / modifycolourscheme

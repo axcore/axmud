@@ -1,0 +1,18 @@
+lmo / listmonitorobject       Lists objects monitored by the Condition task
+ 
+   Format:
+      ;lmo                    Displays the list
+ 
+   Notes:
+      The Condition task is able to monitor the condition of objects in your
+         character's inventory (at least, those which have been detected by the
+         Inventory task, which must also be running). The idea is to alert you
+         to possessions which need to be repaired or replaced.
+      By default, all objects in your character's inventory are monitored;
+         however, if you use the ';monitorobject' command to create one or more 
+         monitored objects, only those objects will be monitored.
+      This command lists the monitored objects stored in the current character
+         profile.
+ 
+   User commands:
+      lmo / listmo / listmonitor / listmonitorobject

@@ -1,0 +1,34 @@
+chs / chatset                 Sets various chat session settings
+ 
+   Format:
+      ;chs -i                 Auto-accept all incoming chat requests
+      ;chs -c                 Auto-accept chat requests from contacts
+      ;chs -u                 Ask before accepting incoming chat requests
+      ;chs -a <switches>      Allows chat contacts to snoop you
+      ;chs -f <switches>      Forbids chat contacts from snooping you
+      ;chs -p <switches>      Marks chat connections as 'public'
+      ;chs -v <switches>      Marks chat connections as 'private'
+      ;chs -s <switches>      Marks chat connections as 'serving'
+      ;chs -z <switches>      Marks chat connections as 'not serving'
+      ;chs -e <en> <switches> Sets the encoding for chat sessions to <en>
+      ;chs -e <switches>      Uses the default encoding for chat sessions
+ 
+   Notes:
+      The Chat task is used to chat with other players directly via telnet.
+         Calls can be placed (or accepted) with any user whose MUD client uses
+         the zChat or MudMaster protocols. 
+
+      Commands with -i, -c and -u automatically apply to all running Chat task
+         sessions and are remembered for future sessions.
+      Commands with -a, -f, -p, -v, -s -z and -e apply only to the Chat tasks
+         specified by <switches>. <switches> can be any of the following:
+            (none)       - Applies to all Chat task sessions
+            -g <group>   - Applies to the group called <group>
+            -n <name>    - Applies to the chat contact called <name
+      Switches can't be combined.
+
+      See also the help for the ';chatsetname', ';chatsetgroup', ';chatsetemail'
+         and ';chatseticon' commands.
+ 
+   User commands:
+      chs / chatset

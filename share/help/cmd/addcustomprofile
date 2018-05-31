@@ -1,0 +1,21 @@
+acp / addcustomprofile        Adds a custom profile
+ 
+   Format:
+      ;acp <name> <template> 
+               Adds the custom profile <name> based on <template>
+ 
+   Notes:
+      Adds a custom profile using the profile template <template> as a 
+         blueprint. (See the help for ';listprofile' for more information about
+         profiles and profile templates.)
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
+         underlines and 0-9 (not the first character) and not be one of Axmud's 
+         reserved names (see the ';listreserved' command).
+      The operation will fail if a profile called <name> already exists or if
+         <name> is invalid. The operation will also fail if <template> doesn't
+         exist.
+      To create a custom profile and make it the current custom profile for this
+         category, use the ';setcustomprofile' command.
+ 
+   User commands:
+      acp / addcustom / addcustomprof / addcustomprofile

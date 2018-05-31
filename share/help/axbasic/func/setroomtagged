@@ -1,0 +1,14 @@
+SETROOMTAGGED ()
+SETROOMTAGGED (string)
+        
+   Synopsis:
+      Sets the tagged room as the automapper's current room
+
+   Notes:
+      'string' is the tag of a world model room, such as 'tower'. If 'string' 
+         isn't specified, the current room (if any) is unset.
+      Returns 1 if the specified room is set as the current room, or if the 
+         current room is unset when no tagged room is specified. Returns 0 if 
+         'string' isn't a recognised room tag or if the set/unset operation 
+         fails.
+      See also the SETROOMNUM function.

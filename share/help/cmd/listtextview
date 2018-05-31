@@ -1,0 +1,14 @@
+ltv / listtextview            Lists textview objects
+ 
+   Format:
+      ;ltv                    Lists textview objects
+ 
+   Notes:
+      A textview is a scrolling area of a window where text is displayed. A
+         textview object is an Axmud component which handles these areas
+         intelligently.
+      This command (which is probably only of use to Axmud developers) lists all
+         textview objects and their properties.
+
+   User commands:
+      ltv / listtv / listtextview

@@ -1,0 +1,9 @@
+CLIENTVERSION$ ()
+
+   Synopsis:
+      Returns the current version of the Axmud client
+
+   Notes:
+      Returns a string in the form "1.0.0".
+      The Axmud client's version number is not the same as the Axbasic version 
+         number. To get the latter, use the VERSION() function.

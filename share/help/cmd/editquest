@@ -1,0 +1,7 @@
+eqs / editquest               Opens an 'edit' window for a quest
+ 
+   Format:
+      ;eqs <name>             Edits the quest <name>
+  
+   User commands:
+      eqs / editqs / editquest

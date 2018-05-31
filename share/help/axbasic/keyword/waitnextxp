@@ -1,0 +1,27 @@
+WAITNEXTXP expression [ , expression ]
+
+   Synopsis:
+      Pauses execution until the character's experience points (XP) required to
+         reach the next level decrease
+
+   Notes:
+      The first expression is a number matching the experience points the
+         character requires to reach the next level, which is usually different
+         from their 'current' XP (depending on the world).
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting after that period and resumes execution.
+      If the Axbasic script isn't being run from within a task, the WAITNEXTXP
+         statement is ignored (and no error message is generated). Execution
+         continues immediately with the next statement.
+      WAITNEXTXP relies on the Status task to supply the character's required 
+         XP. If the Status task is not running (or if it doesn't know anything 
+         about the character's required XP), the Axbasic script pauses briefly 
+         and resumes execution on the next task loop.
+      See also the help for WAITEP, WAITGP, WAITHP, WAITMP, WAITSP and for 
+         WAITXP and WAITTOTALXP.
+
+   Examples:
+      ! Wait for required XP to fall below 1000
+      WAITNEXTXP 1001
+      ! Wait for no longer than five minutes (300 seconds)
+      WAITNEXTXP 1001, 300

@@ -1,0 +1,56 @@
+PRINT [ expression [ separator ] [ expression [ separator ] ... ] ]
+PRINT #channel: expression [ separator ] [ expression [ separator ] ... ]
+
+   Synopsis:
+      Displays one or more expressions or writes data to a file
+
+   Notes:
+      The first form of the PRINT statement displays data in the 'main' window.
+      If the script was started with an Axmud command like this:
+      
+         ;runscript myscript -w
+         
+      ...the script is running in 'forced window' mode. A task window is opened
+         even though the script doesn't ask for one, and the output from all
+         PRINT, INPUT and WRITEWIN statements is displayed in the window. This
+         is useful for running old BASIC scripts in their own window, even 
+         though the scripts don't know anything about Axmud task windows.
+      In addition, in 'forced window' mode, Axbasic will display a 'space'
+         character after a PRINTed number, as most flavours of BASIC do.
+         
+      The second form of the PRINT statement writes data to a file channel 
+         created with an earlier OPEN statement. If the file channel is closed 
+         or if it was opened in read-only mode, an error is generated.  
+
+      The Axbasic PRINT separators are ';' and ','. If no PRINT separators are
+         present, each expression is printed on a new line. If there is no
+         semicolon after the last expression, a newline character is printed
+         after the last expression.
+      Commas behave like a 14-character tab (but like a newline character past
+         column 56).
+      See also the help for DEBUG, ERROR, WARNING and WRITE.
+
+   Examples:
+      ! Display the same line of text three times
+      PRINT "Hello world!"
+      PRINT "Hello" ; " " ; "world!"
+      PRINT "Hello";
+      PRINT " world!"
+      END
+
+      ! Print data in columns
+      LET val1 = 10
+      LET val2 = 20
+      LET val3 = 50
+      PRINT "Column 1" , "Column 2" , "Column 3"
+      PRINT val1 , val2 , val3
+      END
+
+      ! Write data to a file
+      OPEN #1: NAME "output.txt", ACCESS OUTPUT
+      FOR i = 1 TO 3
+         PRINT #1: "Going ";
+      NEXT i
+      PRINT #1: "Gone!"
+      CLOSE #1
+      END

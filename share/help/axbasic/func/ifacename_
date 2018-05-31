@@ -1,0 +1,11 @@
+IFACENAME$ ()
+
+   Synopsis:
+      Returns the name of the active interface that caused the current interface
+         notification
+
+   Notes:
+      The interface notification list contains all the notifications received,
+         and not yet processed, as the result of an earlier SETTRIG statement.
+      Returns the name of the active interface corresponding to the trigger that
+         fired. If there is no current notification, returns an empty string.

@@ -1,0 +1,251 @@
+atr / addtrigger              Adds an independent trigger
+ 
+   Format:
+      ;atr <switches>         Adds a trigger
+ 
+   Notes:
+      Triggers are one of five types of Axmud interface (the others being
+         aliases, macros, timers and hooks).
+      Triggers allow you to react automatically to text received from the world.
+         The reaction can have one of three forms: the trigger can execute an 
+         instruction (including world commands, client commands, Perl commands
+         and echo commands), or it can split a line into two (a 'splitter' 
+         trigger), or it can change the way the received text is displayed in 
+         the 'main' window (a 'rewriter' trigger), 
+      This command creates a trigger interface that's 'inactive' - it's 
+         associated with a particular profile (actually, stored in a 'cage' 
+         object associated with that profile). When that profile becomes a 
+         current profile - and only if there isn't another trigger with the same 
+         name, attached to a higher-priority profile - then an 'active' trigger 
+         is created with the same attributes.
+      The trigger created is also 'independent', meaning that it doesn't call 
+         some part of the Axmud code directly.
+
+      All interfaces have four standard attributes:
+         'name'      - A name for the trigger
+         'stimulus'  - What causes the alias to 'fire'. The stimulus is a
+                          pattern in the form of a Perl regular expression (or
+                          'regex'). An example of a simple pattern would be
+                          'The orc kills you', which causes the trigger to fire 
+                          whenever a line is received from the world which 
+                          contains that text.
+         'response'  - The instruction to execute when the trigger fires. 
+                          Includes world commands, forced world commands 
+                          (starting with ',,'), client commands (starting ';'), 
+                          echo commands (starting '"'), Perl commands (starting 
+                          '/'), script commands (starting '&') and multi 
+                          commands (starting ':'). A Perl command is evaluated 
+                          before the received text is displayed in the 'main' 
+                          window, but the resulting world command (if any), 
+                          along with all other instructions, are executed after 
+                          the text is displayed (in the order in which the 
+                          triggers fired). 'Rewriter' triggers use the response 
+                          in a different way (see below).
+         'enabled'   - A flag set to 1 (default) or 0. When set to 1, the active
+                          trigger is enabled (does something). When set to 0, it 
+                          is disabled (temporarily does nothing)    
+      Triggers also have the following non-standard attributes:
+         'splitter'  - A flag set to 1 or 0 (default). If set to 1, the trigger
+                          is a 'splitter' trigger. If the 'stimulus' matches the
+                          line, the line is split into two lines just before the
+                          portion of the line matching the 'response'. Splitter
+                          triggers are tested before non-splitter triggers, 
+                          which act on the two split lines. If set to 0, the 
+                          'response' attribute is an instruction (as described
+                          above).
+         'split_after'
+                     - A flag set to 1 or 0 (default). If set to 0, splitter
+                          triggers which match a line split the line just before
+                          the portion which matches the 'response'. If set to 1,
+                          the line is split just after the portion which matches
+                          the response. Non-splitter triggers are not affected 
+                          by this flag.
+         'keep_splitting'
+                     - A flag set to 1 or 0 (default). If set to 1, splitter
+                          triggers whose 'response' pattern matches the line 
+                          more than once, split the line into more than two new
+                          lines. If set to 0, the line is split at the first 
+                          portion which matches the 'response'. Non-splitter
+                          triggers are not affected by this flag.
+         'rewriter'  - A flag set to 1 or 0 (default). If set to 1, the trigger
+                          is a 'rewriter' trigger. The 'stimulus' and 'response' 
+                          attributes are used in a substitution which modifies
+                          the received line. Any later triggers act on the 
+                          modified line, and it is the modified line which is
+                          displayed in the 'main' window. If set to 0, the
+                          'response' attribute is an instruction (as described
+                          above).
+         'rewrite_global'
+                     - A flag set to 1 or 0 (default). If set to 0, rewriter
+                          triggers which match a line only rewrite the first
+                          matching part of the line. If set to 1, rewriter 
+                          triggers rewrite every matching part of the line. Non-
+                          rewriter triggers are not affected by this flag. 
+         'ignore_case'
+                     - A flag set to 1 (default) or 0. - If set to 1, the 
+                          pattern is case-insensitive (so the text 'THE ORC
+                          KILLS YOU' would match the pattern 'The orc kills 
+                          you'). If set to 0, patterns are case-sensitive.
+         'gag'       - A flag set to 1 or 0 (default). If 1, the received line
+                          that caused the trigger to fire is not displayed in
+                          the 'main' window. If set to 0, it is displayed (in a
+                          modified form for 'rewriter' triggers). If the 
+                          received line causes several triggers to fire, only 
+                          the last trigger's 'gag' attribute is used.
+         'gag_log'   - A flag set to 1 or 0 (default). If 1, the received line
+                          that caused the trigger to fire is not written to any
+                          logfiles (if logging is enabled). If set to 0, the
+                          normal rules for writing to logfiles are used. If the
+                          received line causes several triggers to fire, only 
+                          the last trigger's 'gag_log' attribute is used.
+         'need_prompt'
+                     - A flag set to 1 or 0 (default). If 1, the trigger will 
+                          only fire on a line that doesn't end with a newline
+                          character (probably a prompt). If 0, the trigger can
+                          fire on a line, regardless of how it ends.
+         'need_login'
+                     - A flag set to 1 or 0 (default). If 1, the trigger will
+                          only fire when the character has logged in. If 0, the
+                          trigger can fire at any time.
+         'keep_checking' 
+                     - A flag set to 1 (default) or 0. If set to 0, after the 
+                          first trigger fires, the instruction is executed
+                          immediately and no more triggers are checked. If set
+                          to 1, Axmud continues to check the line against other
+                          triggers.
+         'default_pane'
+                     - A flag set to 1 (default) or 0. If 1, the trigger is only
+                          checked against text displayed in the default pane. If 
+                          0, the trigger is checked against text displayed in 
+                          all panes.
+         'pane_name' - If specified, the trigger is only checked against text
+                          displayed in the pane with this name (and the 
+                          'default_pane' attribute is ignored)
+         'temporary' - A flag set to 1 or 0 (default). When set to 1, the active
+                          interface is destroyed after the trigger fires for the
+                          first time. When set to 0, the interface can fire
+                          indefinitely
+         'style_mode' 
+                     - A style mode. Styles change the way the matching line is
+                          displayed. If set to 0, styles are turned off. If set
+                          to -1, the style is applied to the whole line. If set
+                          to -2, the style is applied only to the portion of the
+                          line that matches the 'stimulus' attribute. If set to
+                          a positive integer, the style is applied to the 
+                          matched substring. When a style is applied, the 
+                          following attributes are used.
+         'style_text' 
+                     - The text colour; an Axmud standard colour tag like 'red' 
+                          or 'BLUE', an xterm colour tag like 'x255' or an RGB
+                          colour tag like '#FFFFFF' (use the value 0 to specify 
+                          the default text colour)
+         'style_underlay'  
+                     - The underlay colour; an Axmud standard colour tag like 
+                          'ul_red' or 'UL_BLUE', an xterm colour tag like 
+                          'ux255' or an RGB colour tag like 'u#FFFFFF' (use the 
+                          value 0 to specify the default underlay colour)
+         'style_italics'
+                     - Show text in italics. Set to 1 (yes), 2 (no) or 0 (don't
+                          change anything)
+         'style_underline'
+                     - Show text underlined. Set to 1 (yes), 2 (no) or 0 (don't
+                          change anything)
+         'style_blink_slow'
+                     - Show text in slow-blinking mode. Set to 1 (yes), 2 (no)
+                          or 0 (don't change anything)
+         'style_blink_fast'
+                     - Show text in fast-blinking mode. Set to 1 (yes), 2 (no)
+                          or 0 (don't change anything)
+         'style_strike'
+                     - Show text in strike-through mode. Set to 1 (yes), 2 (no)
+                          or 0 (don't change anything)
+         'style_link' 
+                     - Show text as a clickable link. Set to 1 (yes), 2 (no) or
+                          0 (don't change anything)
+
+      <switches> allows you to define which attributes the trigger will have and
+         with which profile it will be associated.
+
+      Group 1 switch options: one of the following options must be used:
+         -no option-          - Adds a trigger belonging to the current world
+         -w                   - Adds a trigger belonging to the current world
+         -g                   - Adds a trigger belonging to the current guild
+         -r                   - Adds a trigger belonging to the current race
+         -c                   - Adds a trigger belonging to the current char
+         -x <category>        - Adds a trigger belonging to the current custom
+                                   profile <category>
+         -d <prof>            - Adds a trigger belonging to profile <prof>
+
+      Group 2 switch options: both of the following options must be used:
+         -s <pattern>         - Sets the 'stimulus' attribute (a regex)
+         -p <instruction> / -p <substitution>  
+                              - Sets the 'response' attribute (an instruction,
+                                   or a Perl substitution for 'rewriter' 
+                                   triggers) 
+      Group 3 switch options: 0, 1 or more of the following options can be used:
+         -n <string>          - Sets the 'name' attribute (a string). If not
+                                   specified, a name is generated for you
+         -e <boolean>         - Sets the 'enabled' attribute (1 or 0; default is
+                                   1)
+         -sp <boolean>        - Sets the 'splitter' attribute (1 or 0; default 
+                                   is 0)
+         -sa <boolean>        - Sets the 'split_after' attribute (1 or 0; 
+                                   default is 0)
+         -ks <boolean>        - Sets the 'keep_splitting' attribute (1 or 0;
+                                   default is 0)
+         -rw <boolean>        - Sets the 'rewriter' attribute (1 or 0; default 
+                                   is 0)
+         -rg <boolean>        - Sets the 'rewrite_global' attribute (1 or 0; 
+                                   default is 0)
+         -o <boolean>         - Sets the 'ignore_case' attribute (1 or 0, 
+                                   default is 1)
+         -a <boolean>         - Sets the 'gag' attribute (1 or 0, default is 0)
+         -l <boolean>         - Sets the 'gag_log' attribute (1 or 0, default is
+                                   0)
+         -pr <boolean>        - Sets the 'need_prompt' attribute (1 or 0, 
+                                   default is 0)
+         -lg <boolean>        - Sets the 'need_login' attribute (1 or 0, default
+                                   is 0)
+         -k <boolean>         - Sets the 'keep_checking' attribute (1 or 0; 
+                                   default is 1)
+         -dp <boolean>        - Sets the 'default_pane' attribute (1 or 0;
+                                   default is 0)
+         -pn <string>         - Sets the 'pane_name' attribute. If not 
+                                   specified, an empty string is used
+         -t <boolean>         - Sets the 'temporary' attribute (1 or 0; default 
+                                   is 0)
+         -m <mode>            - Sets the 'style_mode' attribute (-2, -1, 0 or 
+                                   1+; default is 0)
+         -h <colour>          - Sets the 'style_text' attribute (0 or an Axmud 
+                                   text colour tag; default is 0)
+         -j <underlay>        - Sets the 'style_underlay' attribute (0 or an  
+                                   Axmud underlay colour tag; default is 0)
+         -it <style>          - Sets the 'style_italics' attribute (0, 1 or 2;
+                                   default is 0)
+         -u <style>           - Sets the 'style_underline' attribute (0, 1 or 2;
+                                   default is 0)
+         -bs <style>          - Sets the 'style_blink_slow' attribute (0, 1 or 
+                                   2; default is 0)
+         -bf <style>          - Sets the 'style_blink_fast' attribute (0, 1 or 
+                                   2; default is 0)
+         -q <style>           - Sets the 'style_strike' attribute (0, 1 or 2;
+                                   default is 0)
+         -lk <style>          - Sets the 'style_link' attribute (0, 1 or 2; 
+                                   default is 0)
+
+      Group 4 switch options: 0, 1 or more of the following options can be used:
+         -b <name>            - This trigger is checked before triggers called
+                                   <name> (when they both become active)
+         -f <name>            - This trigger is checked after triggers called
+                                   <name> (when they both become active)
+
+   General interface notes:
+      If <instruction>, <pattern>, <string> or <substitution> contain 
+         whitespace, they must be enclosed by diamond brackets
+         
+            e.g. <You see (.*) exits>
+            
+      <boolean> can be typed as 1 or 0, or any word beginning with t, T, f or F
+ 
+   User commands:
+      atr / addtrig / addtrigger

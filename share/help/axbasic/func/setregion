@@ -1,0 +1,11 @@
+SETREGION (string)
+
+   Synopsis:
+      Sets the automapper's current region
+
+   Notes:
+      'string' is a region name, such as "desert".
+      Returns 1 if the region is set. Returns 0 if the region is not set or if
+         the automapper window isn't open.
+      To set the current region using a world model number, see the SETREGIONNUM
+         function.

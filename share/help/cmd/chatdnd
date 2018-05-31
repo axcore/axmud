@@ -1,0 +1,19 @@
+dnd / chatdnd                 Sends a 'do not disturb' request to chat contacts
+ 
+   Format:
+      ;dnd -n <name>          Sends request to chat contacts called <name>
+      ;dnd -g <group>         Sends request to everyone in the <group>
+      ;dnd                    Sends request to everyone
+ 
+   Notes:
+      The Chat task is used to chat with other players directly via telnet.
+         Calls can be placed (or accepted) with any user whose MUD client uses
+         the zChat or MudMaster protocols.
+      This command is the equivalent of typing ';dnd' in the relevant Chat task
+         windows. Note that 'do not disturb' requests can only be sent in chat
+         sessions using the MudMaster protocol. You'll get an error message if 
+         you try to send it in a zChat session.
+      The switches -n and -g can't be combined.
+ 
+   User commands:
+      dnd / chatdnd

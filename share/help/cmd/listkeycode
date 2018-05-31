@@ -1,0 +1,11 @@
+lkc / listkeycode             Lists keycodes for current keycode object
+ 
+   Format:
+      ;lkc                    Lists all keycodes (in the normal order)
+      ;lkc -s                 Lists all keycodes (sorted alphabetically)
+ 
+   Notes:
+      See the help for ';setkeycode' for more information about keycodes.
+ 
+   User commands:
+      lkc / listkc / listkeycode

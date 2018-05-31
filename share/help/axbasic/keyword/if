@@ -1,0 +1,56 @@
+IF condition THEN statement [ : statement ... ] 
+   [ ELSE statement [ : statement ... ]]
+   
+IF condition THEN expression [ ELSE expression ]
+
+IF condition THEN
+   statement
+   statement
+ELSE IF condition THEN
+   statement
+ELSE
+   statement
+END IF
+
+   Synopsis:
+      Tests the truth of a conditional expression
+
+   Notes:
+      IF..THEN tests whether a condition is true and decides which statement (or
+         group of statements) to execute as a result.
+      IF..THEN and IF..THEN..ELSE statements can occur either on a single line,
+         or spread across multiple lines in a code block terminating with an
+         END IF statement.
+      In scripts with line numbers, these statements are interchangeable:
+         10 IF number > 1 THEN GOTO 100
+         10 IF number > 1 THEN 100
+      If non-conditional expressions are used, they must evaluate to line 
+         numbers or an error will occur. Complex expressions like '(x + 10) / 2' 
+         can be used as well as simple line numbers like 100.
+
+   Availability:
+      Multiple-line IF..END IF code blocks aren't available in scripts with
+         primitive line numbers.
+
+   Examples
+      IF number > 1 THEN PRINT "It is true!"
+      IF number > 1 THEN PRINT "It is true!" : PRINT "This is also printed!"
+      IF number > 1 THEN PRINT "It is true!" ELSE PRINT "It is false!"
+
+      IF number > 100 THEN
+         PRINT "Greater than 100!"
+      ELSE IF number < 5 THEN
+         PRINT "Less than 5!"
+      ELSE
+         PRINT "Number is between 5 and 100"
+      END IF
+
+      10 LET number = 5
+      20 IF number > 10 THEN 100
+      30 IF number > 1 THEN 200 ELSE 300
+      100 PRINT "Greater than 10"
+      110 STOP
+      200 PRINT "Between 2 and 10"
+      210 STOP
+      300 PRINT "Less than 2"
+      310 END

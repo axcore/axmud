@@ -1,0 +1,45 @@
+peek / peek                   Reads Axmud internal data
+ 
+   Format:
+      ;peek <string>          Reads data from an internal variable <string>
+      ;peek                   Reads data from the previous variable <string>
+ 
+   Notes:
+      This debugging command can be used to view much of Axmud's internal data.
+      <string> represents either a collection of data - implemented as a Perl 
+         object - or some data stored within a Perl object.
+      Some examples of <string> are: 
+      
+         world.current
+            - The Perl object containing data for the current world (a world
+                 profile)
+         world.current.name
+            - The name of the current world - a scalar property (instance 
+                 variable / IV) in the Perl object
+         world.current.doorPatternList
+            - Some patterns which match lines of text when the character bumps 
+                 into a door - a list property in the Perl object
+         world.current.currencyHash
+            - Some units of currency in the current world, tied to their
+                 absolute value - key-value pairs in a hash property in the Perl
+                 Perl object
+ 
+      <string> usually refers directly to a Perl object or one of its 
+         properties. In a few cases, <string> refers to a value that must be 
+         extracted from one of the Perl object's properties.
+      If <string> is not specified, the last string specified by a ';peek' or 
+         ';poke' command is used (so you can use ';peek' repeatedly to monitor 
+         how a particular value changes over time).
+      If <string> is not recognised, an error is displayed.
+      Axmud internal variables have camel-class names, so you must use the 
+         correct capitalisation: 'world.current.doorpatternlist' will not be 
+         recognised.
+      You can use the ';poke' command to modify some internal variables.
+
+      Because this is a debugging command, a full list of recognised <string>s 
+         is not given here. You'll find one in the Axmud manual; technically-
+         minded users may wish to consult the source code file /lib/session.pm 
+         for the function ->parsePeekPoke.
+ 
+   User commands:
+      peek

@@ -1,0 +1,19 @@
+rc / reconnect                Saves files and reconnects to the same world
+ 
+   Format:
+      ;rc                     Reconnects to the world
+      ;rc  -o                 Reconnects to the world in 'offline' mode
+ 
+   Notes:
+      This command reconnects to the same world, first terminating the current
+         connection (if there is one) and saving data files. The connection
+         opens in a new 'main' window (or in a new tab in a shared 'main'
+         window).
+      If there is a current character profile, it is re-used. If that 
+         character's password is known, automatic logins can take place.
+      In offline mode, Axmud simulates a connection to the world; some client
+         commands will be available, but others will not.
+      Use the ';xconnect' command to reconnect to the mud without saving files.
+ 
+   User commands:
+      rc / reconnect

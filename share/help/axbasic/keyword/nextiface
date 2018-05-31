@@ -1,0 +1,37 @@
+NEXTIFACE
+
+   Synopsis:
+      Deletes the current interface notification
+
+   Notes:
+      Whenever a trigger created by a SETTRIG statement fires, an 'interface
+         notification' is created.
+      The interface notification list contains all the notifications received
+         but not yet processed. One of them - usually the first one in the
+         list - is the 'current' notification.
+         
+      Axbasic functions like IFACENAME$() and IFACENUM() can be used to import
+         information about the trigger that caused the current notification.
+      Once you have all the information you need, use a NEXTIFACE statement to
+         remove that notification from the list (permanently).
+      If the modified list is not empty, the first notification in the list is
+         marked as the new 'current' notification. If the list was already 
+         empty, execution continues as normal and no error message is generated
+         (so it is always safe to use a NEXTIFACE statement).
+      See also the help for SKIPIFACE.
+
+   Examples:
+      SETTRIG "You are dead"
+
+      WHILE 1
+         IF IFACECOUNT() > 1
+            ! Get the name and number of the current interface notification
+            LET $name = IFACENAME$()
+            LET number = IFACENUM()
+            ! Delete the notification
+            NEXTIFACE
+         END IF
+
+         ! Wait for the next Axmud task loop, before checking again
+         BREAK
+      LOOP

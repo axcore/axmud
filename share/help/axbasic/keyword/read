@@ -1,0 +1,16 @@
+READ variable-name [ , variable-name ... ]
+
+   Synopsis:
+      Reads the data defined in DATA statements
+
+   Notes:
+      See also the help for READ and RESTORE.
+
+   Examples:
+      DATA 5, 10, 20, 40, 80
+      DATA 160, 320, 640, 1280
+
+      DIM myarray(10)
+      FOR a = 1 TO 10
+         READ myarray(a)
+      NEXT a

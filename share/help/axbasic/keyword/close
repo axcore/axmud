@@ -1,0 +1,16 @@
+CLOSE #channel
+
+   Synopsis:
+      Closes a file channel
+
+   Notes:
+      Closes a file channel created with an earlier OPEN statement. When the 
+         Axbasic script halts, all file channels are automatically closed, but 
+         it's good practice to close a channel as soon as you no longer need it.
+
+   Examples:
+      ! Open a file channel, read a value, then close the channel
+      OPEN #1: NAME "myfile.txt"
+      INPUT #1: text$
+      CLOSE #1
+      END

@@ -1,0 +1,52 @@
+ait / addinitialtask          Adds a task to an initial tasklist
+ 
+   Format:
+      ;ait <task>
+      ;ait <task> <switches>
+               Adds the <task> to the global initial tasklist
+
+      ;ait <task> <profile>
+      ;ait <task> <profile> <switches>
+               Adds the <task> to the <profile>'s initial tasklist
+ 
+   Notes:
+      Initial tasks are started when Axmud marks the current character as logged 
+         in (you can use the ';login' command to override the automatic process, 
+         if necessary), or when the user changes a current profile with commands
+         like ';setworld' and ';setchar'.
+      There are two types of initial tasklist - one 'global' list which contains
+         a list of tasks which apply to every world, and a separate set of 
+         initial tasklists stored in each profile.
+      When a current profile changes, any tasks that were created from the old
+         profile's initial tasklist are halted before the new current profile's 
+         initial tasks are started.
+
+      <task> can be any Axmud built-in or external task.
+      <task> can be in the form of a task's label (e.g. 'stat', 'status') or its
+          formal name (e.g. 'status_task').
+      (Use the ';listtasklabel' command to list all task labels.)
+
+      <switches> specify the settings that will apply to the task, once it 
+         actually starts.
+      Group 1 <switches>: 0 or 1 switch from:
+         -i               - Start <task> immediately (default setting)
+         -e <other_task>  - Wait for <other_task> to exist, before starting
+                               <task>
+         -n <other_task>  - Wait for <other_task> to not exist, before starting
+                               <task>
+         -s <other_task>  - Wait for <other_task> to start, then stop, before
+                               starting <task>
+         -t <minutes>     - Start <task> <minutes> from now
+ 
+      Group 2 <switches>: 0 or 1 switch from:
+         -d               - Run <task> for an unlimited amount of time (default)
+         -f <minutes>     - Run the task for <minutes>
+         -u <timer>       - Run the task until the task loop reaches <timer>
+                               (seconds since the session began) 
+ 
+      Group 3 <switches>: 0 or 1 switch from: 
+         -w               - Run the task without opening its own window (if it
+                               usually opens one when it starts)
+
+   User commands:
+      ait / addinittask / addinitialtask

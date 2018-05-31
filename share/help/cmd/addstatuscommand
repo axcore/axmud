@@ -1,0 +1,22 @@
+asc / addstatuscommand        Adds a command to those sent by Status task
+ 
+   Format:
+      ;asc <cmd> <interval>   Adds a Status task command
+      ;asc <cmd>              Adds a Status task command with default interval
+ 
+   Notes:
+      In 'active' mode, the Status task sends commands to the world every few
+         seconds (usually commands like 'score', 'sc' and 'time') to keep the
+         task's statistics up to date.
+      <cmd> is the command to add, and <interval> is the gap in seconds until
+         the same command is sent again. If <cmd> already exists in Status 
+         task's command list, it is replaced (with the new specified interval). 
+         If <interval> is not specified, a default value of 30 seconds is used. 
+         <interval> must be a positive integer.
+      If <cmd> contains spaces, you must surround it with diamond brackets,
+         e.g. <go north>
+      This command can only be used when the Status task is in 'disactivated' 
+         mode. Use ';disactivatestatustask' to disactivate the task.
+ 
+   User commands:
+      asc / addstatuscommand

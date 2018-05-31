@@ -1,0 +1,12 @@
+SETREGIONNUM (number)
+
+   Synopsis:
+      Sets the automapper's current region
+
+   Notes:
+      'number' is the region's world model number.
+      Returns 1 if the region is set (or if it is already the current region).
+         Returns 0 if the region is not set or if the automapper window isn't
+         open.
+      To set the current region using the region's name, see the SETREGION
+         functon.

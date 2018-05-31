@@ -1,0 +1,36 @@
+PEEKEQUALS variable-name = axmud-object-property, expression
+PEEKEQUALS ARRAY variable-name = axmud-object-property, expression
+
+   Synopsis:
+      Returns the index of an Axmud internal list property whose numeric value 
+         is equal to the numeric expression
+
+   Notes:
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+         the help for the PEEK statement for a full explanation).
+      PEEKEQUALS can only be used with list properties such as 
+         "world.current.doorPatternList". It cannot be used with a scalar 
+         property such as "world.current.name", a hash property like 
+         "world.current.currencyHash" or a Perl object like "world.current".
+      'variable-name' is set to the index of the first element in the list 
+         property whose value is the same as the value of the expression. If the
+         value of the expression is not numeric, you will get an error. 
+         Otherwise, the value of the expression is compared against the values
+         of the list, as if those values were numbers. If none of the list's
+         values equal the value of the expression, or if the list is empty, the
+         variable is set to -1. 
+      PEEKFIND cannot be used to search a list property for the Perl special
+         value, 'undef'.
+
+   Examples:
+      ! Store the index of the first matching value in an Axbasic global scalar
+      ! variable
+      PEEKEQUALS index = "imaginary.list.property", 5
+
+      ! Store the index of the matching value in an Axbasic global array
+      PEEKEQUALS ARRAY indices = "imaginary.list.property", 5
+ 
+      ! Store the index of the matching value in an Axbasic local scalar 
+      ! variable
+      LOCAL index
+      PEEKEQUALS index = "imaginary.list.property", 5

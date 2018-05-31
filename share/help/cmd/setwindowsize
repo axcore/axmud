@@ -1,0 +1,31 @@
+swz / setwindowsize           Sets the default size of 'grid' windows
+ 
+   Format:
+      ;swz                    Shows default 'grid' window sizes
+      ;swz -m <wid> <hei>     Sets default size of 'main' windows
+      ;swz -m                 Resets default size of 'main' windows
+      ;swz -g <wid> <hei>     Sets default size of other 'grid' windows 
+      ;swz -g                 Resets default size of other 'grid' windows 
+
+   Notes:
+      The workspace grid is an invisible grid, spanning the whole available
+         workspace, on which Axmud tries to arrange its windows so that they 
+         don't overlap (as far as possible). The grid is divided into zones 
+         within which one or more windows are arranged. The 'blueprint' for 
+         zones on a desktop is called a 'zonemap'. 
+      Only 'grid' windows (including the 'main' window, task windows and the 
+         automapper window) are arranged on the workspace grid. Temporary
+         windows, including the GUI window and all edit, preference, wizard and
+         dialogue windows, are not affected.
+
+      The size of 'grid' windows normally depends on the grid in which they're
+         arranged. However, if workspace grids are disactivated, windows are
+         created using a default size which can be modified with this command.
+      Actually, there are two default sizes: one for 'main' windows, and one for
+         other types of 'grid' window. (The default size of 'free' windows can't
+         be modified.)
+      <wid> and <hei> are the width and height of the window; if specified, they
+         must be numbers between 100 and Axmud's maximum desktop size.
+ 
+   User commands:
+      swz / setwinsize / setwindowsize

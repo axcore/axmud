@@ -1,0 +1,28 @@
+POKEDELETE axmud-object-property, expression
+
+   Synopsis:
+      Deletes a key-value pair from an Axmud internal hash property
+
+   Notes:
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
+         the help for the POKE statement for a full explanation). 
+      POKEDELETE is similar to POKE, but it only modifies hash properties such
+         as "world.current.currencyHash". It cannot be used to modify a scalar 
+         property such as "world.current.longName", a list property such as
+         "world.current.doorPatternList" or a Perl object such as 
+         "world.current".
+      POKEDELETE removes a key-value pair from the hash property. 'expression'
+         is a key which must exist in the hash. Both the key and its 
+         corresponding value are removed.
+      Much of Axmud's internal data is read-only, and cannot be modified with
+         POKE or with this statement. If you try to modify a read-only property
+         you will get an 'operation failure' error.
+
+   Warning: 
+      Do not try to modify Axmud's internal data unless you know what you are 
+         doing. Read the Axmud manual before you try to POKE anything. (The
+         examples below are safe, but backup your data first.)
+
+   Examples:
+      ! Remove a unit of currency at the DeadSouls world profile
+      POKEDELETE "world.current.currencyHash", "silver"
