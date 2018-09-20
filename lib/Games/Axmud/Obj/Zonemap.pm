@@ -229,7 +229,7 @@
             $count++;
         }
 
-        $self->ivPoke('modelCount', $count);
+        $clone->ivPoke('modelCount', $count);
 
         # If the original and clone are both standard zonemaps, it's because the clone needs to
         #   have its zone models modified to allow multiple layers

@@ -34,11 +34,17 @@ package convertlpc;
 #
 #   2. Load the plugin using this (client) command:
 #
-#           ;loadplugin
+#           ;loadplugin -s
 #
 #      It might be more convenient to have the plugin load every time you start Axmud, in which case
 #           you should use this command:
 #
+#           ;addinitialplugin -s
+#
+#      If you have copied the plugin to Axmud's data folder, because you want to modify it for your
+#           own purposes, then don't use the -s switch
+#
+#           ;loadplugin
 #           ;addinitialplugin
 #
 #   3. Convert your world model into LPC files with this command:

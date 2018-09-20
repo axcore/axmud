@@ -6316,7 +6316,7 @@
                 $obj = $wmObj->ivShow('exitModelHash', $exitNum);
 
                 # Return the type of exit
-                if ($obj->impassFlag) {
+                if ($obj->exitOrnament eq 'impass') {
 
                     return 'impassable';
 

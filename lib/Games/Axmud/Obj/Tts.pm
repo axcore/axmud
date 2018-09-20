@@ -34,30 +34,31 @@
         #
         # Expected arguments
         #   $name       - A unique string name for this TTS object (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Reserved names in
-        #                   $axmud::CLIENT->constReservedHash allowed)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Reserved names in $axmud::CLIENT->constReservedHash allowed)
         #   $engine     - TTS engine to use (must be one of the values in
         #                   GA::CLIENT->constTTSList)
         #
         # Optional arguments
-        #   $voice      - Voice used with the TTS engine (eSpeak, Flite, Festival server, Swift
-        #                   only; ignored when the engine is Festival command line). If an empty
-        #                   string or 'undef', the engine's default voice is used
-        #   $speed      - Word speed used with the TTS engine(eSpeak only; ignored for other
-        #                   engines). For eSpeak, in words per minute in the range 10-200. If an
-        #                   invalid value or 'undef', the engine's default speed is used.
+        #   $voice      - Voice used with the TTS engine (eSpeak, espeak-ng, Flite, Festival server,
+        #                   Swift only; ignored when the engine is Festival command line). If an
+        #                   empty string or 'undef', the engine's default voice is used
+        #   $speed      - Word speed used with the TTS engine (eSpeak and espeak-ng only; ignored
+        #                   for other engines). For eSpeak/espeak-ng, in words per minute in the
+        #                   range 10-200. If an invalid value or 'undef', the engine's default speed
+        #                   is used
         #   $rate       - Word rate used with the TTS engine (Festival server and Swift only;
         #                   ignored for other engines, including Festival command line). For
         #                   Festival/Swift, in the range 0.50 - 2.00. If an invalid value or
-        #                   'undef', the engine's default rate is used.
+        #                   'undef', the engine's default rate is used
         #   $pitch      - Word pitch used with the TTS engine (eSpeak and Swift only; ignored for
         #                   other engines). For eSpeak, in the range 0-99. For Swift, in the range
         #                   0.1 (10% of normal) to 5 (500% of normal). If an invalid value or
-        #                   'undef', the engine's default pitch is used.
+        #                   'undef', the engine's default pitch is used
         #   $volume     - Volume used with the TTS engine (Festival server and Swift only; ignored
         #                   for other engines, including Festival command line). For Festival/Swift,
         #                   in the range 0.33 - 6.00. If an invalid value or 'undef', the engine's
-        #                   default pitch is used.
+        #                   default pitch is used
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -75,7 +76,8 @@
         }
 
         # Check that $name is valid and not already in use by another TTS object
-        if (! ($name =~ m/^[A-Za-z_]{1}[A-Za-z0-9_]{0,15}$/)) {
+#        if (! ($name =~ m/^[A-Za-z_]{1}[A-Za-z0-9_]{0,15}$/)) {
+        if (! ($name =~ m/^[[:alpha:]\_]{1}[[:word:]]{0,15}$/)) {
 
             return $axmud::CLIENT->writeError(
                 'Registry naming error: invalid name \'' . $name . '\'',
@@ -198,8 +200,9 @@
         #
         # Expected arguments
         #   $name       - A unique string name for this TTS object (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid

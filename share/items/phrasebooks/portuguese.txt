@@ -1,5 +1,5 @@
 # Portuguese phrasebook (from https://pt.wikipedia.org/wiki/Ponto_cardeal)
-# Accented characters converted so that entry boxes will show them
+# Accented characters converted (in accordance with standard MU* practice)
 #
 # English name for language (lower-case)
 portuguese

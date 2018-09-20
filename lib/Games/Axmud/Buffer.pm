@@ -424,6 +424,119 @@
         return 1;
     }
 
+    sub copyLine {
+
+        # Can be called by anything (for example, called by the Channels task)
+        # Copies the contents of the line stored in this object into another textview, preserving
+        #   the colour and style of the original line
+        # Normal links (e.g. a line containing 'http://mywebsite.com') are clickable, but MXP links
+        #   and so on are not
+        #
+        # Expected arguments
+        #   $textViewObj    - The textview object (GA::Obj::TextView) into which the line is copied
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 on success
+
+        my ($self, $textViewObj, $check) = @_;
+
+        # Local variables
+        my (
+            $lastOffset, $lastNewline,
+            @previousTagList, @lastList,
+            %origHash, %modHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $textViewObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->copyLine', @_);
+        }
+
+        # Import the textview object's hash of styles and colours that apply at the current text
+        #   insertion position, so it can be restored when this function has finished
+        %modHash = %origHash = $textViewObj->colourStyleHash;
+
+        # The colour/style tags that applied at the beginning of the original line must be applied
+        #   to that hash
+        @previousTagList = $self->previousTagList;
+        %modHash = $self->session->applyColourStyleTags(\%modHash, \@previousTagList);
+        $textViewObj->set_colourStyleHash(%modHash);
+
+        # Split the original line into portions, and insert each portion (along with the colour/
+        #   style tags that apply to that portion) into the textview
+        foreach my $offset (sort {$a <=> $b} ($self->ivKeys('offsetHash'))) {
+
+            my ($listRef, $newline, $portion);
+
+            # Get a list of colour/style tags that apply to this offset
+            $listRef = $self->ivShow('offsetHash', $offset);
+
+            # Decide where the newline character should be put
+            if ($textViewObj->newLineDefault eq 'before') {
+
+                if ($offset == 0) {
+                    $newline = 'before';
+                } else {
+                    $newline = 'echo';
+                }
+
+            } elsif (
+                $textViewObj->newLineDefault eq 'after'
+                || $textViewObj->newLineDefault eq 'nl'
+            ) {
+                if ($offset == 0) {
+                    $newline = 'echo';
+                } else {
+                    $newline = 'after';
+                }
+            }
+
+            # Now we know where the previous portion of text ends, so we can display it
+            if (defined $lastOffset) {
+
+                $portion = substr($self->stripLine, $lastOffset, ($offset - $lastOffset));
+
+                %modHash = $textViewObj->colourStyleHash;
+                %modHash = $self->session->applyColourStyleTags(\%modHash, \@lastList);
+                $textViewObj->set_colourStyleHash(%modHash);
+
+                $textViewObj->insertText(
+                    $portion,
+                    $lastNewline,
+                    $textViewObj->listColourStyleTags(),
+                );
+            }
+
+            # This portion is displayed in the next iteration of the loop, so we know where the
+            #   portion ends
+            $lastOffset = $offset;
+            $lastNewline = $newline;
+            @lastList = @$listRef;
+        }
+
+        # Display the final portion
+        if (defined $lastOffset) {
+
+            %modHash = $textViewObj->colourStyleHash;
+            %modHash = $self->session->applyColourStyleTags(\%modHash, \@lastList);
+            $textViewObj->set_colourStyleHash(%modHash);
+
+            $textViewObj->insertText(
+                substr($self->stripLine, $lastOffset),
+                $lastNewline,
+                $textViewObj->listColourStyleTags(),
+            );
+        }
+
+        # Restore the textview's original colour/style hash, restoring it to its previous state
+        $textViewObj->set_colourStyleHash(%origHash);
+
+        # Operation complete
+        return 1;
+    }
+
     ##################
     # Accessors - set
 

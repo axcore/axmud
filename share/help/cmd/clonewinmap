@@ -17,7 +17,8 @@ cwm / clonewinmap             Clones a winmap
          command, and then modify the clone using commands like ';modifywinmap',
          ';addwinzone' and so on.
       <new> must be no longer than 16 characters, and contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character).
+         underlines and 0-9 (not the first character). Non-Latin alphabets are
+         acceptable.
 
    User commands:
       cwm / clonewm / clonewinmap

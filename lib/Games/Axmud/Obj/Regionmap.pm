@@ -152,6 +152,35 @@
             # (The number is set by $self->storeLabel)
             labelCount                  => 0,
 
+            # Gridblocks in the map's background can be coloured in (useful for representing map
+            #   features that aren't actually accessible to the player, such as rivers and mountain
+            #   ranges)
+            # The user can colour in a single gridblock, or a group of gridblocks in a rectangle
+            #   shape
+            # The rules for drawing are these:
+            # 1. Coloured rectangles can overlap each other. The coloured rectangle that was added
+            #   first is drawn first (so will be obscured by later rectangles)
+            # 2. Coloured rectangles cannot overlap a single coloured block. Adding a coloured
+            #   rectangle destroys any single coloured block in the same space
+            # 3. Single coloured blocks cannot overlap other coloured blacks or other coloured
+            #   rectangles. Adding a single coloured block destroys any existing single coloured
+            #   block or coloured rectangle occupying the same gridblock
+            #
+            # Single gridblock colours are stored in this hash, a hash in the form
+            #   $gridColourBlockHash{'x_y_z'} = rgb_colour_tag
+            #   $gridColourBlockHash{'x_y'} = rgb_colour_tag
+            # ...where 'x_y_z' are the block's coordinates in the regionmap (for coloured blocks
+            #       displayed on only one level), 'x_y' are the block's coordinates (for coloured
+            #       blocks that are displayed on every level), and 'rgb_colour_tag' is in the form
+            #       #ABCDEF (case-insensitive)
+            gridColourBlockHash         => {},
+            # Multiple gridblock colours are stored as GA::Obj::GridColour objects. Hash in the form
+            #   $gridColourObjHash{unique_number} = blessed_reference_to_grid_colour_object
+            gridColourObjHash           => {},
+            # Number of grid colour objects ever created in this regionmap (used to give each
+            #   object a unique number)
+            colourObjCount              => 0,
+
             # Hash of exits that lead to another region, in the form
             #   $regionExitHash{exit_number} = model_number_of_other_region
             regionExitHash              => {},
@@ -238,6 +267,11 @@
         $self->ivEmpty('gridExitHash');
         $self->ivEmpty('gridLabelHash');
         $self->ivPoke('labelCount', 0);
+
+        # Empty the hashes of grid colours
+        $self->ivEmpty('gridColourBlockHash');
+        $self->ivEmpty('gridColourObjHash');
+        $self->ivPoke('colourObjCount', 0);
 
         # Empty the hashes of region paths
         $self->ivEmpty('regionExitHash');
@@ -847,6 +881,487 @@
         }
     }
 
+    # Functions for $self->gridColourBlockHash, ->gridColourObjHash
+
+    sub fetchSquareInSquare {
+
+        # Called by GA::Win::Map->setColouredSquare
+        # Given a single gridblock, return a list of coloured squares that occupy the block
+        #   (possible on differently levels)
+        #
+        # Expected arguments
+        #   $xBlocks, $yBlocks
+        #               - Grid coordinates of the block to check
+        #
+        # Optional arguments
+        #   $level      - The z-coordinate, matching $self->currentLevel. If not defined, coloured
+        #                   blocks/rectangles on all levels are counted
+        #
+        # Return values
+        #   An empty list on improper arguments or if the specified block's position on the grid is
+        #       invalid
+        #   Otherwise returns a list of keys from $self->gridColourBlockHash, one for each matching
+        #       square (the keys are strings in the form 'x_y_z' or 'x_y')
+
+        my ($self, $xBlocks, $yBlocks, $level, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @returnList);
+
+        # Check for improper arguments
+        if (! defined $xBlocks || ! defined $yBlocks || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->fetchSquareInSquare', @_);
+            return @emptyList;
+        }
+
+        # Check that the coordinates are valid grid coordinates
+        if (! $self->checkGridBlock($xBlocks, $yBlocks, $self->currentLevel)) {
+
+            # The specified gridblock doesn't exist
+            return undef;
+        }
+
+        # Count coloured blocks on the specified gridblock, across all levels
+        foreach my $coord ($self->ivKeys('gridColourBlockHash')) {
+
+            # $coord is in the form 'x_y_z' or 'x_y', for coloured blocks shown on every level
+            my ($thisX, $thisY, $thisZ) = split(/_/, $coord);
+
+            if (
+                $thisX == $xBlocks
+                && $thisY == $yBlocks
+                && (
+                    ! defined $thisZ
+                    || ! defined $level
+                    || $thisZ == $level
+                )
+            ) {
+                push (@returnList, $coord);
+            }
+        }
+
+        return @returnList;
+    }
+
+    sub fetchSquareInArea {
+
+        # Called by GA::Win::Map->setColouredRect
+        # Given a rectangular area of the grid (which can be as small as a single gridblock),
+        #   return a list of coloured squares that occupy a block within the area
+        #
+        # Expected arguments
+        #   $x1, $y1, $x2, $y2
+        #               - Grid coordinates of opposite corners (top-left, then bottom-right) of the
+        #                   rectangular area. $x1 and $x2 can be the same, and $y1 and $y2 can
+        #                   be the same. If both pairs are the same, it's a single gridblock (this
+        #                   should never happen, but is not forbidden)
+        #
+        # Optional arguments
+        #   $level      - The z-coordinate, matching $self->currentLevel. If not defined, coloured
+        #                   blocks/rectangles on all levels are counted
+        #
+        # Return values
+        #   An empty list on improper arguments or if the rectangular area's position on the grid is
+        #       invalid
+        #   Otherwise returns a list of keys from $self->gridColourBlockHash, one for each matching
+        #       square (the keys are strings in the form 'x_y_z' or 'x_y')
+
+        my ($self, $x1, $y1, $x2, $y2, $level, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @returnList);
+
+        # Check for improper arguments
+        if (! defined $x1 || ! defined $y1 || ! defined $x2 || ! defined $y2 || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->fetchSquareInArea', @_);
+            return @emptyList;
+        }
+
+        # Check that both corners of the rectangle are valid grid coordinates
+        if (
+            ! $self->checkGridBlock($x1, $y1, $self->currentLevel)
+            || ! $self->checkGridBlock($x2, $y2, $self->currentLevel)
+        ) {
+            # The specified gridblock(s) don't exist
+            return @emptyList;
+        }
+
+        # If the two corners are the wrong way around, swap them
+        if ($x1 > $x2) {
+
+            ($x1, $x2) = ($x2, $x1);
+        }
+
+        if ($y1 > $y2) {
+
+            ($y1, $y2) = ($y2, $y1);
+        }
+
+        # Count coloured blocks in the rectangular area
+        foreach my $coord ($self->ivKeys('gridColourBlockHash')) {
+
+            # $coord is in the form 'x_y_z' or 'x_y', for coloured blocks shown on every level
+            my ($thisX, $thisY, $thisZ) = split(/_/, $coord);
+
+            if (
+                $thisX >= $x1
+                && $thisX <= $x2
+                && $thisY >= $y1
+                && $thisY <= $y2
+                && (
+                    ! defined $thisZ
+                    || ! defined $level
+                    || $thisZ == $level
+                )
+            ) {
+                push (@returnList, $coord);
+            }
+        }
+
+        return @returnList;
+    }
+
+    sub storeSquare {
+
+        # Called by GA::Win::Map->setColouredSquare
+        # Update this object's IVs
+        #
+        # Expected arguments
+        #   $colour     - The block's colour
+        #   $xBlocks, $yBlocks
+        #               - The block's grid coordinates
+        #
+        # Optional arguments
+        #   $level      - The z-coordinate, matching $self->currentLevel. If not defined, the
+        #                   coloured block is visible on every level
+        #
+        # Return values
+        #   'undef' on improper arguments or if the block's proposed location on the grid is invalid
+        #   1 otherwise
+
+        my ($self, $colour, $xBlocks, $yBlocks, $level, $check) = @_;
+
+        # Local variables
+        my $coord;
+
+        # Check for improper arguments
+        if (! defined $colour || ! defined $xBlocks || ! defined $yBlocks || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->storeSquare', @_);
+        }
+
+        # Check that the coordinates are valid grid coordinates
+        if (! $self->checkGridBlock($xBlocks, $yBlocks, $self->currentLevel)) {
+
+            # The specified gridblock doesn't exist
+            return undef;
+        }
+
+        # Store the block by updating the IV
+        $coord = $xBlocks . '_' . $yBlocks;
+        if (defined $level) {
+
+            $coord .= '_' . $level;
+        }
+
+        $self->ivAdd('gridColourBlockHash', $coord, $colour);
+
+        return 1;
+    }
+
+    sub removeSquare {
+
+        # Called by GA::Win::Map->setColouredSquare and ->setColouredRect
+        # Updates this object's IVs
+        #
+        # Expected arguments
+        #   $coord  - A string representing the coloured block's coordinates, matching a key in
+        #               $self->gridColourBlockHash
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $coord, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $coord || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeSquare', @_);
+        }
+
+        $self->ivDelete('gridColourBlockHash', $coord);
+
+        return 1;
+    }
+
+    sub fetchRectInSquare {
+
+        # Called by GA::Win::Map->setColouredSquare
+        # Given a single gridblock, return a list of coloured rectangles that occupy the block
+        #   (possible on differently levels)
+        #
+        # Expected arguments
+        #   $xBlocks, $yBlocks
+        #               - Grid coordinates of the block to check
+        #
+        # Optional arguments
+        #   $level      - The z-coordinate, matching $self->currentLevel. If not defined, coloured
+        #                   blocks/rectangles on all levels are counted
+        #
+        # Return values
+        #   An empty list on improper arguments or if the specified block's position on the grid is
+        #       invalid
+        #   Otherwise returns a list of GA::Obj::GridColour objects, one for each rectangle
+        #       occupying the specified block (may be an empty list)
+
+        my ($self, $xBlocks, $yBlocks, $level, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @returnList);
+
+        # Check for improper arguments
+        if (! defined $xBlocks || ! defined $yBlocks || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->fetchRectInSquare', @_);
+            return @emptyList;
+        }
+
+        # Check that the coordinates are valid grid coordinates
+        if (! $self->checkGridBlock($xBlocks, $yBlocks, $self->currentLevel)) {
+
+            # The specified gridblock doesn't exist
+            return undef;
+        }
+
+        # Count coloured rectangles in the rectangular area
+        foreach my $obj ($self->ivValues('gridColourObjHash')) {
+
+            if (
+                $xBlocks >= $obj->x1
+                && $xBlocks <= $obj->x2
+                && $yBlocks >= $obj->y1
+                && $yBlocks <= $obj->y2
+                && (
+                    ! defined $level
+                    || ! defined $obj->level
+                    || $level == $obj->level
+                )
+            ) {
+                push (@returnList, $obj);
+            }
+        }
+
+        return @returnList;
+    }
+
+    sub fetchRectInArea {
+
+        # Called by GA::Win::Map->setColouredRect
+        # Given a rectangular area of the grid (which can be as small as a single gridblock),
+        #   return a list of coloured rectangles that occupy the same area, wholly or partially
+        #
+        # Expected arguments
+        #   $x1, $y1, $x2, $y2
+        #               - Grid coordinates of opposite corners (top-left, then bottom-right) of the
+        #                   rectangular area. $x1 and $x2 can be the same, and $y1 and $y2 can
+        #                   be the same. If both pairs are the same, it's a single gridblock (this
+        #                   should never happen, but is not forbidden)
+        #
+        # Optional arguments
+        #   $level      - The z-coordinate, matching $self->currentLevel. If not defined, coloured
+        #                   blocks/rectangles on all levels are counted
+        #
+        # Return values
+        #   An empty list on improper arguments or if the rectangular area's position on the grid is
+        #       invalid
+        #   Otherwise returns a list of GA::Obj::GridColour objects, one for each rectangle
+        #       occupying part of the rectangular area (may be an empty list)
+
+        my ($self, $x1, $y1, $x2, $y2, $level, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @returnList);
+
+        # Check for improper arguments
+        if (! defined $x1 || ! defined $y1 || ! defined $x2 || ! defined $y2 || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->fetchRect', @_);
+            return @emptyList;
+        }
+
+        # Check that both corners of the rectangle are valid grid coordinates
+        if (
+            ! $self->checkGridBlock($x1, $y1, $self->currentLevel)
+            || ! $self->checkGridBlock($x2, $y2, $self->currentLevel)
+        ) {
+            # The specified gridblock(s) don't exist
+            return @emptyList;
+        }
+
+        # If the two corners are the wrong way around, swap them
+        if ($x1 > $x2) {
+
+            ($x1, $x2) = ($x2, $x1);
+        }
+
+        if ($y1 > $y2) {
+
+            ($y1, $y2) = ($y2, $y1);
+        }
+
+        # Count coloured rectangles in the rectangular area
+        foreach my $obj ($self->ivValues('gridColourObjHash')) {
+
+            if (
+                (
+                    # Occupy the same 2-dimensional space
+                    ($x1 >= $obj->x1 && $x1 <= $obj->x2)
+                    || ($x2 >= $obj->x1 && $x2 <= $obj->x2)
+                    || ($y1 >= $obj->y1 && $y1 <= $obj->y2)
+                    || ($y2 >= $obj->y1 && $y2 <= $obj->y2)
+                ) && (
+                    # Occupy the same level
+                    ! defined $level
+                    || ! defined $obj->level
+                    || $level == $obj->level
+                )
+            ) {
+                push (@returnList, $obj);
+            }
+        }
+
+        return @returnList;
+    }
+
+    sub storeRect {
+
+        # Called by GA::Win::Map->setColouredRect
+        # Update this object's IVs
+        #
+        # Expected arguments
+        #   $session    - The calling function's GA::Session
+        #   $colour     - The rectangle's colour
+        #   $x1, $y1, $x2, $y2
+        #               - Grid coordinates of opposite corners (top-left, then bottom-right) of the
+        #                   coloured rectangle. $x1 and $x2 can be the same, and $y1 and $y2 can
+        #                   be the same. If both pairs are the same, it's a single gridblock (this
+        #                   should never happen, but is not forbidden)
+        #
+        # Optional arguments
+        #   $level      - The z-coordinate, matching $self->currentLevel. If not defined, the
+        #                   coloured rectangle is visible on every level
+        #
+        # Return values
+        #   'undef' on improper arguments or if the rectangles's proposed location on the grid is
+        #       invalid
+        #   Otherwise returns the GA::Obj::GridColour object created
+
+        my ($self, $session, $colour, $x1, $y1, $x2, $y2, $level, $check) = @_;
+
+        # Local variables
+        my $colourObj;
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $colour || ! defined $x1 || ! defined $y1
+            || ! defined $x2 || ! defined $y2 || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->storeRect', @_);
+        }
+
+        # Check that both corners of the rectangle are valid grid coordinates
+        if (
+            ! $self->checkGridBlock($x1, $y1, $self->currentLevel)
+            || ! $self->checkGridBlock($x2, $y2, $self->currentLevel)
+        ) {
+            # The specified gridblock(s) don't exist
+            return undef;
+        }
+
+        # If the two corners are the wrong way around, swap them
+        if ($x1 > $x2) {
+
+            ($x1, $x2) = ($x2, $x1);
+        }
+
+        if ($y1 > $y2) {
+
+            ($y1, $y2) = ($y2, $y1);
+        }
+
+        # Coloured rectangles can be drawn on top of each other, but coloured blocks cannot
+        # Import the IV (for speed) and check every coloured square
+        foreach my $coord ($self->ivKeys('gridColourBlockHash')) {
+
+            # $coord is in the form 'x_y_z' or 'x_y', for coloured blocks shown on every level
+            my ($thisX, $thisY, $thisZ) = split(/_/, $coord);
+
+            if (
+                $thisX >= $x1
+                && $thisX <= $x2
+                && $thisY >= $y1
+                && $thisY <= $y2
+                && (
+                    ! defined $thisZ
+                    || ! defined $level
+                    || $thisZ == $level
+                )
+            ) {
+                # This coloured block occupies part of the space that the rectangle wants, so don't
+                #   draw the rectangle
+                return undef;
+            }
+        }
+
+        # Create a new grid colour object
+        $colourObj = Games::Axmud::Obj::GridColour->new(
+            $session,
+            $self->ivIncrement('colourObjCount'),
+            $colour,
+            $x1, $y1,
+            $x2, $y2,
+            $level,
+        );
+
+        if (! $colourObj) {
+
+            return undef;
+        }
+
+        # Store the rectangle by updating the IV
+        $self->ivAdd('gridColourObjHash', $colourObj->number, $colourObj);
+
+        return $colourObj;
+    }
+
+    sub removeRect {
+
+        # Called by GA::Win::Map->setColouredSquare and ->setColouredRect
+        # Updates this object's IVs
+        #
+        # Expected arguments
+        #   $obj    - The GA::Obj::GridColour to remove
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $obj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $obj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeRect', @_);
+        }
+
+        $self->ivDelete('gridColourObjHash', $obj->number);
+
+        return 1;
+    }
+
     # Functions for $self->regionExitHash, ->regionPathHash, ->safeRegionPathHash
 
     sub storeRegionExit {
@@ -1268,6 +1783,13 @@
 
     sub labelCount
         { $_[0]->{labelCount} }
+
+    sub gridColourBlockHash
+        { my $self = shift; return %{$self->{gridColourBlockHash}}; }
+    sub gridColourObjHash
+        { my $self = shift; return %{$self->{gridColourObjHash}}; }
+    sub colourObjCount
+        { $_[0]->{colourObjCount} }
 
     sub regionExitHash
         { my $self = shift; return %{$self->{regionExitHash}}; }

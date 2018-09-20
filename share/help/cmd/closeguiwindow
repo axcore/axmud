@@ -1,7 +1,0 @@
-cgw / closeguiwindow          Closes the GUI window
- 
-   Format:
-      ;cgw                    Closes the window
-
-   User commands:
-      cgw / closegui / closeguiwindow

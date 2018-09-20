@@ -27,7 +27,8 @@ sdy / setdictionary           Sets the current dictionary for this session
       Dictionary names must be no longer than 16 characters, contain only A-Z, 
          a-z, underlines and 0-9 (not the first character) and not be one of 
          Axmud's reserved names (see the ';listreserved' command). The same
-         restriction applies to the language.
+         restriction applies to the language. Non-Latin alphabets are
+         acceptable.
  
    User commands:
       sdy / setdict / setdictionary

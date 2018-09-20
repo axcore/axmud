@@ -18,7 +18,8 @@ sll / setlightlist            Sets the list of recognised light status values
          light status (the default value is 'day').
 
       Each item in <list> must be no longer than 16 characters, and contain only
-         A-Z, a-z, underlines and 0-9 (not the first character).
+         A-Z, a-z, underlines and 0-9 (not the first character). Non-Latin
+         alphabets are acceptable.
       Repeating items in <list> are ignored. The world model's list of light
          status values always contains 'day', 'night' and 'dark', so there is no
          need to specify them.

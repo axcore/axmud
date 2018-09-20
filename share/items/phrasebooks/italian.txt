@@ -1,5 +1,5 @@
-# Italian phrasebook (from https://it.wikipedia.org/wiki/Punto_cardinale; checked at Silmarillia
-#	MUD, mud.silmarillia.com 4000)
+# Italian phrasebook (from https://it.wikipedia.org/wiki/Punto_cardinale; checked at Clessidra
+#	MUD, mud.clessidra.it 4000)
 #
 # English name for language (lower-case)
 italian
@@ -27,24 +27,24 @@ nordnordovest
 alto
 basso
 # Primary abbreviated directions
-nord
+n
 nordnordest
-nordest
+ne
 estnordest
-est
+e
 estsudest
-sudest
+se
 sudsudest
-sud
+s
 sudsudovest
-sudovest
+so
 ovestsudovest
-ovest
+o
 ovestnordovest
-nordovest
+no
 nordnordovest
-alto
-basso
+a
+b
 # Number of definite articles
 7
 # Definite articles

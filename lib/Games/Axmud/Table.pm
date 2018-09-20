@@ -4888,7 +4888,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::SimpleList, which contains a simple Gtk2::Ex::Simple::List
+        # Creates the GA::Table::SimpleList, which contains a simple GA::Gtk::Simple::List
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -4928,12 +4928,12 @@
         #                   'column_ref' - Reference to a list of column headings and types, in the
         #                       form ('heading', 'column_type', 'heading', 'column_type'...), where
         #                       'column_type' is one of the column types recognised by
-        #                       Gtk2::Ex::Simple::List, i.e. 'text', 'markup', 'int', 'double',
+        #                       GA::Gtk::Simple::List, i.e. 'text', 'markup', 'int', 'double',
         #                       'bool', 'scalar' or 'pixbuf'. If 'undef' or an empty list, a single
         #                       column of type 'text' is created. If the list contains an odd
         #                       number of items, the final one is discarded
         #                   'data_ref' - Reference to a list used to populate the
-        #                       Gtk2::Ex::Simple::List. If there are 2 columns, a list in the form
+        #                       GA::Gtk::Simple::List. If there are 2 columns, a list in the form
         #                       (a, b, a, b...) is expected. If there are 3 columns, a list in the
         #                       form (a, b, c, a, b, c) is expected. If 'undef' or an empty list,
         #                       nothing is added to the simple list
@@ -5053,7 +5053,7 @@
             # ---------
 
             # Widgets
-            slWidget                    => undef,       # Gtk2::Ex::Simple::List
+            slWidget                    => undef,       # GA::Gtk::Simple::List
 
             # The number of columns in the simple list (minimum 1)
             numColumns                  => undef,
@@ -5129,8 +5129,8 @@
         my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::ScrolledWindow->new());
         $packingBox2->set_policy('automatic', 'automatic');
 
-        # Create the Gtk2::Ex::Simple::List
-        my $slWidget = Gtk2::Ex::Simple::List->new(@columnList);
+        # Create the GA::Gtk::Simple::List
+        my $slWidget = Games::Axmud::Gtk::Simple::List->new(@columnList);
         $packingBox2->add_with_viewport($slWidget);
 
         # Make all columns of type 'bool' (which are composed of checkbuttons) non-activatable, so
@@ -5873,13 +5873,6 @@
         #                   'frame_title' - If specified, the table object is drawn inside a frame
         #                       with the specified title. If 'undef', an empty string or not
         #                       specified, the table object does not use a frame and title
-        #                   'no_label_flag' - TRUE if a single tab should not have a tab label,
-        #                       FALSE if it should have one (when there are multipled tabs, all tabs
-        #                       have tab labels). If not specified at all, the value stored in
-        #                       GA::Client->simpleTabFlag is used. Most of the time, this flag
-        #                       should not be specified when creating a pane with a default tab (one
-        #                       used by sessions to display most of the text received from the
-        #                       world), but SHOULD be specified when creating any other pane
         #                   'entry_flag' - TRUE if a Gtk2::Entry should be drawn beneath the
         #                       textview(s), FALSE if not. Ignored if 'func' is not also specified
         #                   'func' - Reference to a function to call when the user types something
@@ -5900,6 +5893,16 @@
         #                       pane. If specified, can be any value except 'undef'. It's up to the
         #                       calling code to keep track of the widgets it has created and their
         #                       corresponding 'id' values
+        #                   'close_func' - Reference to a function to call when a tab is closed. Not
+        #                       required for sessions using this pane object for their default tabs,
+        #                       as the code checks for that separately
+        #                   'close_id' - A value passed to the function which identifies this
+        #                       pane. If specified, can be any value except 'undef'. It's up to the
+        #                       calling code to keep track of the widgets it has created and their
+        #                       corresponding 'id' values
+        #                   'can_close_flag' - TRUE if tabs with labels also have a small button for
+        #                       closing the tab, FALSE (or 'undef') if not. Ignored for 'simple'
+        #                       tabs which have no label
         #                   'split_mode' - 'single' if split screen mode is off, 'split' or 'hidden'
         #                       if split screen mode is on (for 'hidden', the divider is initially
         #                       positioned at the top of the screen). If not specified or an
@@ -5956,12 +5959,14 @@
 
         %modHash = (
             'frame_title'               => undef,
-            'no_label_flag'             => $axmud::CLIENT->simpleTabFlag,
             'entry_flag'                => FALSE,
             'func'                      => undef,
             'id'                        => '',
             'switch_func'               => undef,
             'switch_id'                 => '',
+            'close_func'               => undef,
+            'close_id'                 => '',
+            'can_close_flag'            => TRUE,
             'split_mode'                => 'single',
             'colour_scheme'             => $colourScheme,
             'max_lines'                 => $axmud::CLIENT->customTextBufferSize,
@@ -5973,10 +5978,8 @@
 
             if (exists $initHash{$key}) {
 
-                if (
-                    $key eq 'no_label_flag'
-                    || $key eq 'entry_flag'
-                ) {
+                if ($key eq 'entry_flag' || $key eq 'can_close_flag') {
+
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
                     } else {
@@ -5995,8 +5998,10 @@
                         $modHash{$key} = $initHash{$key};
                     }
 
-                } elsif (($key eq 'id' || $key eq 'switch_id') && ! defined $initHash{$key}) {
-
+                } elsif (
+                    ($key eq 'id' || $key eq 'switch_id' || $key eq 'close_id')
+                    && ! defined $initHash{$key}
+                ) {
                     $modHash{$key} = '';        # 'id' value must not be 'undef'
 
                 } elsif (
@@ -6123,7 +6128,7 @@
             #       $tabObjHash{unique_number} = blessed_reference_to_tab_object
             #
             # When a Gtk2::Notebook is not in use, the comments in this table object describe a
-            #   'simple tab'. In reality, the simplified inheritance tree looks like this:
+            #   'simple tab'. In actuality, the simplified inheritance tree looks like this:
             #       Gtk2::VBox                                  ($self->packingBox, ->packingBox2)
             #           Gtk2::ScrolledWindow                    ($tabObj->packedObj)
             #               Gtk2::TextView                      ($tabObj->textViewObj->textView)
@@ -6148,9 +6153,22 @@
             # The visible tab object; set by $self->respondVisibleTab when the visible tab actually
             #   changes
             currentTabObj               => undef,
+            # When a simple tab is created, this flag is set to TRUE. If a second tab is added, the
+            #   existing simple tab is converted into a normal tab, and this flag is unchanged. If
+            #   tabs are removed and there's only one tab left, that tab is converted into a simple
+            #   tab if this flag is TRUE. When there are no tabs left, the flag is set back to
+            #   FALSE
+            # In that way, whether the pane uses simple tabs or not depends entirely on the calling
+            #   code, which can create its first tab through a call ->addSimpleTab or ->addTab
+            simpleTabFlag               => FALSE,
             # Flag set to TRUE while $self->convertSimpleTab and ->convertTab are in progress, so
             #   that various ->signal_connects know not to take action
             tabConvertFlag              => FALSE,
+            # Flag set to TRUE if tabs with labels also have a small button for closing the tab,
+            #   FALSE if not. Ignored for 'simple' tabs which have no label
+            # If modified via a call to $self->set_canCloseFlag, the new setting will only be
+            #   applied to tabs opened after that
+            canCloseFlag                => TRUE,
 
             # Reference to a function to call when a tab becomes the visible one (including when it
             #   is created). Not required for sessions using this pane object for their default
@@ -6160,6 +6178,13 @@
             #   can be any value except 'undef'. It's up to the calling code to keep track of the
             #   widgets it has created and their corresponding 'id' values
             switchFuncID                => '',
+            # Reference to a function to call when a tab is closed. Not required for sessions using
+            #   this pane object for their default tabs, as the code checks for that separately
+            closeFuncRef               => undef,
+            # A value passed to the $self->closeFuncRef which identifies this pane. If specified,
+            #   can be any value except 'undef'. It's up to the calling code to keep track of the
+            #   widgets it has created and their corresponding 'id' values
+            closeFuncID                => '',
         };
 
         # Bless the object into existence
@@ -6197,21 +6222,6 @@
         my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::VBox->new(FALSE, 0));
         $packingBox2->set_border_width($self->normalBorderWidth);
 
-        # Draw a Gtk2::Notebook, with textviews on each tab, if required
-        my $notebook;
-        if (! $self->ivShow('initHash', 'no_label_flag')) {
-
-            $notebook = $self->drawNotebook();
-            if (! $notebook) {
-
-                return undef;
-
-            } else {
-
-                $packingBox2->pack_start($notebook, TRUE, TRUE, 0);
-            }
-        }
-
         # Draw a Gtk2::Entry, if specified
         my ($hBox, $entry);
         if (
@@ -6230,11 +6240,19 @@
         $self->ivPoke('funcID', $self->ivShow('initHash', 'id'));
         $self->ivPoke('packingBox', $packingBox);
         $self->ivPoke('packingBox2', $packingBox2);
-        $self->ivPoke('notebook', $notebook);
         $self->ivPoke('hBox', $hBox);
         $self->ivPoke('entry', $entry);
+
+        if ($self->ivShow('initHash', 'can_close_flag')) {
+            $self->ivPoke('canCloseFlag', TRUE);
+        } else {
+            $self->ivPoke('canCloseFlag', FALSE);
+        }
+
         $self->ivPoke('switchFuncRef', $self->ivShow('initHash', 'switch_func'));
         $self->ivPoke('switchFuncID', $self->ivShow('initHash', 'switch_id'));
+        $self->ivPoke('closeFuncRef', $self->ivShow('initHash', 'close_func'));
+        $self->ivPoke('closeFuncID', $self->ivShow('initHash', 'close_id'));
 
         # Set up ->signal_connects
         if ($self->entry) {
@@ -6356,16 +6374,19 @@
         #
         # Expected arguments
         #   $button     - The Gtk2::Button which emits the signal
-        #   $session    - The GA::Session for the tab containining the button
+        #   $tabObj     - The corresponding GA::Obj::Tab
+        #
+        # Optional arguments
+        #   $session    - If the tab is a session's default tab, the GA::Session for the tab
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $button, $session, $check) = @_;
+        my ($self, $button, $tabObj, $session, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $button || ! defined $session || defined $check) {
+        if (! defined $button || ! defined $tabObj || defined $check) {
 
              return $axmud::CLIENT->writeImproper($self->_objClass . '->setButtonClicked', @_);
         }
@@ -6374,23 +6395,32 @@
 
             my $choice;
 
-            if ($session->status eq 'connected' && $axmud::CLIENT->confirmCloseTabFlag) {
+            if ($session) {
 
-                $choice = $self->winObj->showMsgDialogue(
-                    'Close tab',
-                    'question',
-                    'This session is connected to a world. Are you sure you want to close it?',
-                    'yes-no',
-                );
+                if ($session->status eq 'connected' && $axmud::CLIENT->confirmCloseTabFlag) {
 
-                if ($choice && $choice eq 'yes') {
+                    $choice = $self->winObj->showMsgDialogue(
+                        'Close tab',
+                        'question',
+                        'This session is connected to a world. Are you sure you want to close it?',
+                        'yes-no',
+                    );
+
+                    if ($choice && $choice eq 'yes') {
+
+                        # ->stopSession calls this object's ->removeSessionTab
+                        $axmud::CLIENT->stopSession($session);
+                    }
+
+                } else {
 
                     $axmud::CLIENT->stopSession($session);
                 }
 
             } else {
 
-                $axmud::CLIENT->stopSession($session);
+                # If this isn't a session's default tab, we can remove the tab directly
+                $self->removeTab($tabObj);
             }
         });
 
@@ -6438,7 +6468,7 @@
 
     sub drawNotebook {
 
-        # Called by $self->objEnable and $self->convertSimpleTab
+        # Called by $self->addTab and $self->convertSimpleTab
         # Draws a Gtk2::Notebook whose tabs can each contain a Gtk2::TextView
         #
         # Expected arguments
@@ -6462,8 +6492,13 @@
         $notebook->can_focus(FALSE);
         $notebook->set_tab_border(0);
 
+        # Gtk2::Notebook created
+        $self->packingBox2->pack_start($notebook, TRUE, TRUE, 0);
         # Set up ->signal_connects
         $self->setSwitchPageEvent($notebook);
+
+        # Update IVs
+        $self->ivPoke('notebook', $notebook);
 
         return $notebook;
     }
@@ -6478,6 +6513,9 @@
         #                       it contains)
         #
         # Optional arguments
+        #   $colourScheme   - If specified, the name of the colour scheme to use. If 'undef' (or if
+        #                       the specified colour scheme doesn't exist), the colour scheme
+        #                       specified by $self->initHash is used
         #   $sessionFlag    - Flag set to TRUE if this tab was called by
         #                       GA::Session->setDefaultTab, FALSE (or 'undef') if it was called by
         #                       anything else
@@ -6496,7 +6534,10 @@
         #   Otherwise returns the tab object (GA::Obj::Tab) created, which stores (among other
         #       things) the textview object created
 
-        my ($self, $session, $sessionFlag, $defaultFlag, $labelText, $oldBuffer, $check) = @_;
+        my (
+            $self, $session, $colourScheme, $sessionFlag, $defaultFlag, $labelText, $oldBuffer,
+            $check,
+        ) = @_;
 
         # Local variables
         my ($textViewObj, $packedObj, $tabObj);
@@ -6518,7 +6559,14 @@
                 $self->_objClass . '->addSimpleTab',
             );
 
-            return $self->addTab($session, $sessionFlag, $defaultFlag, $labelText, $oldBuffer);
+            return $self->addTab(
+                $session,
+                $colourScheme,
+                $sessionFlag,
+                $defaultFlag,
+                $labelText,
+                $oldBuffer,
+            );
 
         # If there is already a simple tab, don't create another one
         } elsif ($self->tabObjHash) {
@@ -6541,11 +6589,19 @@
             return undef;
         }
 
+        # Set the colour scheme to use
+        if (
+            ! defined $colourScheme
+            || ! $axmud::CLIENT->ivExists('colourSchemeHash', $colourScheme)
+        ) {
+            $colourScheme = $self->ivShow('initHash', 'colour_scheme');
+        }
+
         # Create the Gtk2::TextView(s) themselves. The function call returns a Gtk2::ScrolledWindow
         #   or a Gtk2::VPaned containing the textview(s)
         $packedObj = $textViewObj->objEnable(
             $self->ivShow('initHash', 'split_mode'),
-            $self->ivShow('initHash', 'colour_scheme'),
+            $colourScheme,
             $self->ivShow('initHash', 'max_lines'),
             $self->ivShow('initHash', 'new_line'),
             $oldBuffer,
@@ -6574,6 +6630,7 @@
         # Update IVs. The code above has already checked that $self->tabObjHash is empty
         $self->ivAdd('tabObjHash', $tabObj->number, $tabObj);
         $self->ivIncrement('tabObjCount');
+        $self->ivPoke('simpleTabFlag', TRUE);
 
         # Make the changes visible
         $self->winObj->winShowAll($self->_objClass . '->addSimpleTab');
@@ -6594,6 +6651,9 @@
         #                       it contains)
         #
         # Optional arguments
+        #   $colourScheme   - If specified, the name of the colour scheme to use. If 'undef' (or if
+        #                       the specified colour scheme doesn't exist), the colour scheme
+        #                       specified by $self->initHash is used
         #   $sessionFlag    - Flag set to TRUE if this tab was called by
         #                       GA::Session->setDefaultTab, FALSE (or 'undef') if it was called by
         #                       anything else
@@ -6611,7 +6671,10 @@
         #   Otherwise returns the tab object (GA::Obj::Tab) created, which stores (among other
         #       things) the textview object created
 
-        my ($self, $session, $sessionFlag, $defaultFlag, $labelText, $oldBuffer, $check) = @_;
+        my (
+            $self, $session, $colourScheme, $sessionFlag, $defaultFlag, $labelText, $oldBuffer,
+            $check,
+        ) = @_;
 
         # Local variables
         my ($textViewObj, $packedObj, $tabObj);
@@ -6624,10 +6687,29 @@
 
         # If this table object isn't using a notebook, but a simple container (a
         #   Gtk2::ScrolledWindow or a Gtk2::VPaned), convert from the latter to the former
-        if (! $self->notebook && ! $self->convertSimpleTab()) {
+        if (! $self->notebook) {
 
-            # (Error message displayed by called function)
-            return undef;
+            if ($self->tabObjHash) {
+
+                # Convert the existing single tab to a normal tab
+                if (! $self->convertSimpleTab()) {
+
+                    # (Error message displayed by called function)
+                    return undef;
+                }
+
+            } else {
+
+                # No tabs exist, so create the notebook, then we can continue creating the first
+                #   tab in it
+                if (! $self->drawNotebook()) {
+
+                    return $self->writeWarning(
+                        'General error adding a tab',
+                        $self->_objClass . '->addTab',
+                    );
+                }
+            }
         }
 
         # Create the tab
@@ -6642,12 +6724,16 @@
         $hBox->pack_start($label, FALSE, FALSE, 0);
         $label->show();
 
-        # Add an 'X' button to close the tab, if needed
-        my $button = Gtk2::Button->new();
-        $hBox->pack_start($button, FALSE, FALSE, 0);
-        $button->set_image(Gtk2::Image->new_from_stock('gtk-close', 'menu'));
-        $button->set_relief('none');
-        $button->show();
+        # Add an 'X' button to close the tab, if required
+        my $button;
+        if ($self->canCloseFlag) {
+
+            $button = Gtk2::Button->new();
+            $hBox->pack_start($button, FALSE, FALSE, 0);
+            $button->set_image(Gtk2::Image->new_from_stock('gtk-close', 'menu'));
+            $button->set_relief('none');
+            $button->show();
+        }
 
         # Create a new GA::Obj::Textview object to handle the Gtk2::Textview(s)
         $textViewObj = $axmud::CLIENT->desktopObj->add_textView(
@@ -6661,11 +6747,19 @@
             return undef;
         }
 
+        # Set the colour scheme to use
+        if (
+            ! defined $colourScheme
+            || ! $axmud::CLIENT->ivExists('colourSchemeHash', $colourScheme)
+        ) {
+            $colourScheme = $self->ivShow('initHash', 'colour_scheme');
+        }
+
         # Create the Gtk2::TextView(s) themselves. The function call returns a Gtk2::ScrolledWindow
         #   or a Gtk2::VPaned containing the textview(s)
         $packedObj = $textViewObj->objEnable(
             $self->ivShow('initHash', 'split_mode'),
-            $self->ivShow('initHash', 'colour_scheme'),
+            $colourScheme,
             $self->ivShow('initHash', 'max_lines'),
             $self->ivShow('initHash', 'new_line'),
             $oldBuffer,
@@ -6736,8 +6830,15 @@
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->addTab');
         }
 
-        # Set up ->signal_connects
-        $self->setButtonClicked($button, $session);
+        # Set up ->signal_connects for the close button, if it was created
+        if ($button) {
+
+            if (! $defaultFlag) {
+                $self->setButtonClicked($button, $tabObj);
+            } else {
+                $self->setButtonClicked($button, $tabObj, $session);
+            }
+        }
 
         # Make the changes visible
         $self->winObj->winShowAll($self->_objClass . '->addTab');
@@ -6753,7 +6854,7 @@
         return $tabObj;
     }
 
-    sub removeTab {
+    sub removeSessionTab {
 
         # Called by GA::Session->stop (only)
         # Removes the tab containing the default textview object for the calling session (if other
@@ -6774,8 +6875,7 @@
         my ($self, $session, $check) = @_;
 
         # Local variables
-        my $tabObj;
-
+        my ($tabObj, $count, $newTabObj);
 
         # Check for improper arguments
         if (! defined $session || defined $check) {
@@ -6826,19 +6926,132 @@
             # Update IVs
             $self->ivDelete('tabObjHash', $tabObj->number);
 
-            # If there is only one tab left, and if the initialisation setting specifies that a
-            #   single notebook tab should be replaced by a simple tab, perform the replacement
-            #   operation
-            if (
-                $self->ivPairs('tabObjHash') == 1
-                && $self->ivShow('initHash', 'no_label_flag')
-            ) {
+            # If there is only one tab left, and the first tab created (since the pane was last
+            #   empty of tabs) was a simple tab, convert a normal tab into a simple tab
+            $count = $self->ivPairs('tabObjHash');
+            if ($count == 1 && $self->simpleTabFlag) {
+
                 if (! $self->convertTab()) {
 
                     # (Error message already displayed)
                     return undef;
                 }
+
+            # If there are no tabs left, remove the notebook itself, so the next tab to be added can
+            #   be a simple or normal tab
+            } elsif (! $count) {
+
+                $axmud::CLIENT->desktopObj->removeWidget($self->packingBox2, $self->notebook);
+
+                $self->ivUndef('notebook');
             }
+        }
+
+        # If there are no tabs left, the calling code can create a simple tab or a normal tab
+        if (! $self->tabObjHash) {
+
+            $self->ivPoke('simpleTabFlag', FALSE);
+        }
+
+        # Make the changes visible
+        $self->winObj->winShowAll($self->_objClass . '->removeTab');
+
+        return 1;
+    }
+
+    sub removeTab {
+
+        # Called by callback in $self->setButtonClicked (only)
+        # Removes the specified tab
+        #
+        # Expected arguments
+        #   $tabObj     - The GA::Obj::Tab to remove
+        #
+        # Return values
+        #   'undef' on improper arguments, or if the specified tab doesn't exist
+        #   1 on success
+
+        my ($self, $tabObj, $check) = @_;
+
+        # Local variables
+        my ($count, $funcRef);
+
+        # Check for improper arguments
+        if (! defined $tabObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeTab', @_);
+        }
+
+        # Check the tab exists
+        if (! $self->ivExists('tabObjHash', $tabObj->number)) {
+
+            return undef;
+        }
+
+        # Remove the tab
+        if (! $self->notebook) {
+
+            # A simple tab, containing a standalone textview object
+
+            # Remove the simple tab by removing everything from the main packing box
+            $axmud::CLIENT->desktopObj->removeWidget($self->packingBox2, $tabObj->packedObj);
+            # Inform the textview object (if any) of its demise
+            if ($tabObj->textViewObj) {
+
+                $tabObj->textViewObj->objDestroy();
+            }
+
+            # Update IVs
+            $self->ivEmpty('tabObjHash');
+            $self->ivPoke('tabObjCount', 0);
+
+        } else {
+
+            # A tab in a Gtk2::Notebook
+
+            # Remove the tab from its Gtk2::Notebook
+            $self->notebook->remove_page($self->notebook->page_num($tabObj->tabWidget));
+            # Inform the textview object (if any) of its demise
+            if ($tabObj->textViewObj) {
+
+                $tabObj->textViewObj->objDestroy();
+            }
+
+            # Update IVs
+            $self->ivDelete('tabObjHash', $tabObj->number);
+
+            # If there is only one tab left, and the first tab created (since the pane was last
+            #   empty of tabs) was a simple tab, convert a normal tab into a simple tab
+            $count = $self->ivPairs('tabObjHash');
+            if ($count == 1 && $self->simpleTabFlag) {
+
+                if (! $self->convertTab()) {
+
+                    # (Error message already displayed)
+                    return undef;
+                }
+
+            # If there are no tabs left, remove the notebook itself, so the next tab to be added can
+            #   be a simple or normal tab
+            } elsif (! $count) {
+
+                $axmud::CLIENT->desktopObj->removeWidget($self->packingBox2, $self->notebook);
+
+                $self->ivUndef('notebook');
+            }
+        }
+
+        # If there are no tabs left, the calling code can create a simple tab or a normal tab
+        if (! $self->tabObjHash) {
+
+            $self->ivPoke('simpleTabFlag', FALSE);
+        }
+
+        # Inform any code that wants to be informed when the tab changes
+        if ($self->closeFuncRef) {
+
+            $funcRef = $self->closeFuncRef;
+            &$funcRef($self, $tabObj, $self->closeFuncID);
         }
 
         # Make the changes visible
@@ -6864,7 +7077,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($oldTabObj, $newTabObj, $notebook);
+        my ($oldTabObj, $newTabObj, $notebook, $oldLabelText);
 
         # Check for improper arguments
         if (defined $check) {
@@ -6896,20 +7109,22 @@
             );
         }
 
-        # Gtk2::Notebook created
-        $self->packingBox2->pack_start($notebook, TRUE, TRUE, 0);
-
         # Update IVs
-        $self->ivPoke('notebook', $notebook);
         $self->ivEmpty('tabObjHash');
         $self->ivPoke('tabObjCount', 0);
 
         # Add a tab in its place, using the old textview object's buffer and the old session number
+        if ($oldTabObj->defaultFlag) {
+
+            $oldLabelText = $oldTabObj->session->getTabLabelText();
+        }
+
         $newTabObj = $self->addTab(
             $oldTabObj->session,
-            undef,                          # Not called by GA::Session->setDefaultTab
+            $oldTabObj->textViewObj->colourScheme,
+            undef,                                      # Not called by GA::Session->setDefaultTab
             $oldTabObj->defaultFlag,
-            $oldTabObj->session->getTabLabelText(),
+            $oldLabelText,
             $oldTabObj->textViewObj->buffer,
         );
 
@@ -6945,8 +7160,8 @@
 
     sub convertTab {
 
-        # Called by $self->removeTab when there's only a single Gtk2::Notebook tab left, and the
-        #   initialisation setting specifies that a tab label shouldn't be visible
+        # Called by $self->removeSessionTab or ->removeTab when there's only a single Gtk2::Notebook
+        #   tab left, and the initialisation setting specifies that a tab label shouldn't be visible
         # Converts the Gtk2::Notebook containing a single remaining tab into a standalone textview
         #   object, preserving its Gtk2::TextBuffer (a simple tab)
         #
@@ -6960,7 +7175,7 @@
         my ($self, $tabObj, $check) = @_;
 
         # Local variables
-        my ($oldTabObj, $scroll, $newTabObj);
+        my ($oldTabObj, $scroll, $newTabObj, $oldLabelText);
 
         # Check for improper arguments
         if (defined $check) {
@@ -6985,21 +7200,28 @@
         # Remove the Gtk2::Notebook
         $axmud::CLIENT->desktopObj->removeWidget($self->packingBox2, $self->notebook);
 
-        # Add a standalone textview object in its place
-        $axmud::CLIENT->desktopObj->removeWidget($oldTabObj->packableObj, $oldTabObj->packedObj);
-        $self->packingBox2->pack_start($oldTabObj->packedObj, TRUE, TRUE, 0);
+        # v1.1.128 This is not necessary, and in fact messes up everything
+#        # Replace it with a standalone textview object
+#        $axmud::CLIENT->desktopObj->removeWidget($oldTabObj->packableObj, $oldTabObj->packedObj);
+#        $self->packingBox2->pack_start($oldTabObj->packedObj, TRUE, TRUE, 0);
 
         # Update IVs
         $self->ivUndef('notebook');
         $self->ivEmpty('tabObjHash');
         $self->ivPoke('tabObjCount', 0);
 
-        # Add a simple tab in its place, using the old tab's buffer and the old session
+        # Add a simple tab, using the old tab's buffer and the old session
+        if ($oldTabObj->defaultFlag) {
+
+            $oldLabelText = $oldTabObj->session->getTabLabelText();
+        }
+
         $newTabObj = $self->addSimpleTab(
             $oldTabObj->session,
-            undef,                          # Not called by GA::Session->setDefaultTab
+            $oldTabObj->textViewObj->colourScheme,
+            undef,                                  # Not called by GA::Session->setDefaultTab
             $oldTabObj->defaultFlag,
-            $oldTabObj->session->getTabLabelText(),
+            $oldLabelText,
             $oldTabObj->textViewObj->buffer,
         );
 
@@ -7209,7 +7431,7 @@
 
         # Local variables
         my (
-            $mode,
+            $type,
             @tabList,
         );
 
@@ -7229,16 +7451,16 @@
         # If colours were specified, check they are valid
         if (defined $backgroundColour) {
 
-            ($mode) = defined $axmud::CLIENT->checkColourTags($backgroundColour);
-            if (! $mode) {
+            ($type) = defined $axmud::CLIENT->checkColourTags($backgroundColour);
+            if (! $type) {
 
                 return undef;
             }
 
         } elsif (defined $textColour) {
 
-            ($mode) = defined $axmud::CLIENT->checkColourTags($textColour);
-            if (! $mode) {
+            ($type) = defined $axmud::CLIENT->checkColourTags($textColour);
+            if (! $type) {
 
                 return undef;
             }
@@ -7785,12 +8007,12 @@
         return 1;
     }
 
-    sub setTabLabel {
+    sub setSessionTabLabel {
 
-        # Called by GA::Session->spinTaskLoop and ->checkTabLabels to change a default tab's title
-        #   to something like '*Deathmud (Gandalf)' to show that there are files that need to be
-        #   saved, or to something like 'Deathmud (Gandalf)', to show there are no longer files that
-        #   need to be saved
+        # Called by GA::Session->spinTaskLoop and ->checkTabLabels to change the label of the
+        #   session's default tab's to something like '*Deathmud (Gandalf)' to show that there are
+        #   files that need to be saved, or to something like 'Deathmud (Gandalf)', to show there
+        #   are no longer files that need to be saved
         #
         # Expected arguments
         #   $session    - The calling GA::Session which uses a default tab (or default simple tab)
@@ -7813,7 +8035,7 @@
         # Check for improper arguments
         if (! defined $session || ! defined $string || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setTabLabel', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setSessionTabLabel', @_);
         }
 
         # Find the session's tab
@@ -7834,6 +8056,47 @@
 
                 $tabObj->tabLabel->set_markup($string);
             }
+        }
+
+        return 1;
+    }
+
+    sub setTabLabel {
+
+        # Can be called by anything
+        # Changes the specified tab's label
+        #
+        # Expected arguments
+        #   $tabNum     - The number of the tab object (GA::Obj::Tab) whose label should be changed
+        #   $string     - The string to use. Empty strings are acceptable, if some code wants to do
+        #                   that
+        #
+        # Return values
+        #   'undef' on improper arguments or if the specified tab doesn't exist in this window
+        #   1 otherwise
+
+        my ($self, $tabNum, $string, $check) = @_;
+
+        # Local variables
+        my $tabObj;
+
+        # Check for improper arguments
+        if (! defined $tabNum || ! defined $string || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setTabLabel', @_);
+        }
+
+        # Check the tab exists in this window
+        $tabObj = $self->ivShow('tabObjHash', $tabNum);
+        if (! $tabObj) {
+
+            return undef;
+        }
+
+        # Set the tab label, but don't modify a simple tab (which has no tab label)
+        if ($self->notebook && $tabObj->tabLabel) {
+
+            $tabObj->tabLabel->set_markup($string);
         }
 
         return 1;
@@ -7907,6 +8170,91 @@
         return 1;
     }
 
+    sub set_canCloseFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_canCloseFlag', @_);
+        }
+
+        if (! $flag) {
+            $self->ivPoke('canCloseFlag', FALSE);
+        } else {
+            $self->ivPoke('canCloseFlag', TRUE);
+        }
+
+        return 1;
+    }
+
+    sub set_closeFunc {
+
+        # A ->set_func exists in the generic table object for setting $self->funcRef, but there's
+        #   no generic ->closeFuncRef and therefore no generic accessor function
+
+        my ($self, $funcRef, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_closeFunc', @_);
+        }
+
+        $self->ivPoke('closeFuncRef', $funcRef);
+
+        return 1;
+    }
+
+    sub set_closeID {
+
+        my ($self, $funcID, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_closeID', @_);
+        }
+
+        $self->ivPoke('closeFuncID', $funcID);
+
+        return 1;
+    }
+
+    sub set_switchFunc {
+
+        # A ->set_func exists in the generic table object for setting $self->funcRef, but there's
+        #   no generic ->switchFuncRef and therefore no generic accessor function
+
+        my ($self, $funcRef, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_switchFunc', @_);
+        }
+
+        $self->ivPoke('switchFuncRef', $funcRef);
+
+        return 1;
+    }
+
+    sub set_switchID {
+
+        my ($self, $funcID, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_switchID', @_);
+        }
+
+        $self->ivPoke('switchFuncID', $funcID);
+
+        return 1;
+    }
+
     ##################
     # Accessors - get
 
@@ -7926,13 +8274,21 @@
         { $_[0]->{tabObjCount} }
     sub currentTabObj
         { $_[0]->{currentTabObj} }
+    sub simpleTabFlag
+        { $_[0]->{simpleTabFlag} }
     sub tabConvertFlag
         { $_[0]->{tabConvertFlag} }
+    sub canCloseFlag
+        { $_[0]->{canCloseFlag} }
 
     sub switchFuncRef
         { $_[0]->{switchFuncRef} }
     sub switchFuncID
         { $_[0]->{switchFuncID} }
+    sub closeFuncRef
+        { $_[0]->{closeFuncRef} }
+    sub closeFuncID
+        { $_[0]->{closeFuncID} }
 }
 
 # 'Grid' window substitutes

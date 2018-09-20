@@ -18,7 +18,8 @@ auc / addusercommand          Adds a new user command
           standard form of the corresponding client command before executing it.
       User commands must be no longer than 32 characters, contain only A-Z, a-z, 
          underlines and 0-9 (not the first character) and not be one of Axmud's 
-         reserved names (see the ';listreserved' command).
+         reserved names (see the ';listreserved' command). Non-Latin alphabets
+         are acceptable.
       You can't add a user command which is already in use by another standard
          command.
  

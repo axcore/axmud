@@ -36,8 +36,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this profile (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Optional arguments
         #   $tempFlag   - If set to TRUE, this is a temporary profile created for use with an 'edit'
@@ -135,6 +136,8 @@
             # Flag set to TRUE if this profile has EVER been a current profile (in which case, it
             #   will have cages etc); set to FALSE if not (in which case, the parent file object
             #   will set up cages etc when this profile first becomes a current profile)
+            # NB The flag will be TRUE for all pre-configured worlds, as the code that creates them
+            #   also creates cages for each world
             setupCompleteFlag           => FALSE,
             # List containing notes written by this user for this profile, and available to the
             #   Notepad task when it's running
@@ -580,6 +583,11 @@
             # Failed exit pattern groups (groups of 1)
             #   [0]     - the pattern to match
             failExitPatternList         => [],
+            # Transient exit pattern groups, matching any exits which are temporary and usually in
+            #   random locations (such as the entrance to a wagon, which is moving from room to
+            #   room) (groups of 1)
+            #   [0]     - the pattern to match
+            transientExitPatternList    => [],
             # Dark room pattern groups (take the place of a room statement) (groups of 1)
             #   [0]     - the pattern to match
             darkRoomPatternList         => [],
@@ -759,6 +767,21 @@
             # These patterns are matched against lines after patterns in
             #   ->inventoryIgnorePatternList are checked
             inventoryDiscardPatternList => [],
+            # Inventory split pattern groups (groups of 1)
+            #   [0] - the pattern which matches a portion of a line
+            # All patterns in the list are matched against all lines. For any matching lines, the
+            #   line is split into multiple pieces, in a standard Perl split operation using the
+            #   pattern. If multiple discard patterns are specified, they are all applied, one after
+            #   another, potentially splitting existing line pieces into smaller pieces. Each piece
+            #   is then parsed as a (separate) object. The portion of the line matching the split
+            #   pattern is discarded
+            # NB The split occurs before the object(s) are passed to GA::Obj::WorldModel->parseObj.
+            #   That function uses the current dictonary to parse a string like 'Two orcs, a sword
+            #   and three shields' into a list of objects. This IV doesn't need to include commas
+            #   and words like 'and' because ->parseObj already takes care of that
+            # These patterns are matched against lines after patterns in
+            #   ->inventoryIgnorePatternList and ->inventoryDiscardPatternList are checked
+            inventorySplitPatternList   => [],
             # The way in which the Inventory task (if running) interprets the character's inventory
             # In inventory mode 'match_all', only lines matching one of the patterns in
             #   ->inventoryPatternList (and not matching ->inventoryIgnorePatternList) are used. The
@@ -920,21 +943,23 @@
             #   [0]     - the pattern to match
             advanceFailPatternList      => [],
 
-            # Social string arguments, used by the Social task (groups of 1)
+            # List of patterns for use in the Channels and Divert task (groups of 3)
             #   [0] - the pattern to match
-            tellPatternList             => [],
-            # Patterns which will also match any string, which matches patterns in
-            #   ->tellPatternList, but which aren't a tell message (groups of 1)
-            #   [0]     - the pattern to match
-            noTellPatternList           => [],
-            socialPatternList           => [],
-            noSocialPatternList         => [],  # More exceptions
-            # Strings to be diverted to the Divert task window, if it is open (groups of 2)
+            #   [1] - a channel name
+            #   [2] - a flag set to FALSE if the matching line must also be displayed in the 'main'
+            #           window, TRUE if it must be gagged in the 'main' window
+            # When text matching a pattern is received, the Channels task displays it in a tab with
+            #   the name of the channel. The Divert task uses assigned colours for the channels
+            #   'tell', 'social', 'custom' and 'warning', and a separate assigned colour for every
+            #   other channel
+            # Channel names must be 1-16 characters. There is no need to add channels anywhere; the
+            #   channel exists if it's defined in this list
+            channelList                 => [],
+            # A list of exceptions. If text matches a pattern in $self->channelList, but also
+            #   matches any of the patterns in this list, it is not diverted to the Channels or
+            #   Divert task (groups of 1)
             #   [0] - the pattern to match
-            #   [1] - a flag set to FALSE if the matching line must also be displayed in the 'main'
-            #           window, TRUE if it must be diverted to the Divert task window
-            customDivertPatternList     => [],
-            noCustomDivertPatternList   => [],  # More exceptions; groups of 1
+            noChannelList               => [],
 
             # Hash of currency units mapping each unit onto a standard unit (usually the largest
             #   one)
@@ -1034,8 +1059,6 @@
             #   GA::Obj::Component object. Axmud recognises the following component types
             #   (available as a list in GA::Client->constComponentTypeList):
             #       'anchor'        - See below (1 line only)
-            #       'ignore_line'   - Lines inside the statement, which should be ignored (here,
-            #                           'inside' can mean the first or last lines of the statement)
             #       'verb_title'    - The room title in a verbose/short verbose statement
             #       'verb_descrip'  - The description in a verbose/short verbose statement
             #       'verb_exit'     - The exit list in a verbose/short verbose statement
@@ -1052,6 +1075,13 @@
             #       'room_cmd'      - List of commands available in the room
             #       'mudlib_path'   - Path to the room's source code, relative to
             #                           GA::Obj::WorldModel->mudlibPath
+            #       'weather'       - Lines describing the weather. They are not stored in the world
+            #                           model but are displayed in the Locator task's window (if
+            #                           open. The component's name is displayed too, so this
+            #                           component can used for the weather, the time of day, or
+            #                           anything else that we want displayed in the window
+            #       'ignore_line'   - Lines inside the statement, which should be ignored (here,
+            #                           'inside' can mean the first or last lines of the statement)
             #       'custom'        - Available for any other code that wants to create their own
             #                           GA::Obj:Components, and to store them here
             # The 'anchor' is a special component, which is always one line long and matches a
@@ -1110,7 +1140,7 @@
             #   statements contain some matchable text, like a list of exits). TRUE - use basic
             #   mapping (assume a move was successful, unless a recognisable fail exit string is
             #   seen straight after the move)
-            basicMappingMode            => FALSE,
+            basicMappingFlag            => FALSE,
             # The world MUD1 (British Legends) echos back movement commands. This leaves the Locator
             #   unable to detect fail exit strings, and so on (in basic mapping mode)
             # A list of patterns which match a line which should NOT be checked as potential anchor
@@ -1155,10 +1185,13 @@
             # Settings for 'verb_exit' component
             # If the exits in the 'verb_exit' component are separated by characters or strings, the
             #   delimiters used. Must include whitespace, as appropriate (e.g. ' and ' / ', ' / '.')
+            # Items in the list should ideally be in order of length, longest first (but the
+            #   Locator task sorts them before using them, anyway)
             verboseExitDelimiterList    => [],      # String, not a regex
             # A non-delimiter is a string which the exit list should NOT contain. This helps the
             #   Locator task to work out what is a list of exits, and what is not (e.g. 'is here',
             #   'are here')
+            # Items in the list can be in any order (and are not sorted by the Locator task)
             verboseExitNonDelimiterList => [],      # String, not a regex
             # Alternatively, if the exits are single letters in a continuous string (e.g. NSEW),
             #   set this flag to TRUE to split the string into 1-letter exits
@@ -1182,10 +1215,13 @@
             # Settings for 'brief_exit', 'brief_title_exit' and 'brief_exit_title' components
             # If the exits in these components are separated by characters or strings, the
             #   delimiters used. Must include whitespace, as appropriate (e.g. ' and ' / ', ' / '.')
+            # Items in the list should ideally be in order of length, longest first (but the
+            #   Locator task sorts them before using them, anyway)
             briefExitDelimiterList      => [],      # String, not a regex
             # A non-delimiter is a string which the exit list should NOT contain. This helps the
             #   Locator task to work out what is a list of exits, and what is not (e.g. 'is here',
             #   'are here')
+            # Items in the list can be in any order (and are not sorted by the Locator task)
             briefExitNonDelimiterList   => [],      # String, not a regex
             # Alternatively, if the exits are single letters in a continuous string (e.g. NSEW),
             #   set this flag to TRUE to split the string into 1-letter exits
@@ -1210,7 +1246,7 @@
             #   hotel), etc. The portions in brackets are not required by the Locator, so we need
             #   to be able to extract them
             # An unlimited list of patterns; any matching portions of the exit are removed. In
-            #   addition, the first backreference (if any) is used to set GA::Obj::Exit->info
+            #   addition, the first backreference (if any) is used to set GA::Obj::Exit->exitInfo
             #   (otherwise, ->exitInfo remains set to 'undef')
             exitInfoPatternList         => [],
             # An unlimited list of patterns; any matching portions of the exit are removed (in a
@@ -1246,6 +1282,19 @@
             # NB The first matching set of exit state strings determine an exit's state, so a
             #   duplicate set of exit state strings would never be checked
             exitStateStringList         => [],
+            # If exit state strings themselves contain exit delimiters (one of the strings in
+            #   $self->verboseExitDelimiterList and/or ->briefExitDelimiterList), exit parsing will
+            #   fail
+            # For example, the exit delimiter appears in the exit state string meaning 'closed':
+            #   > Exits: north south [ west ] east
+            # In that case, pattern(s) matching the whole exit, including its surrounding exit state
+            #   strings, can be added to this list (in the example above, we'd add the pattern
+            #   '\[\s\w+\s\]', and the exit delimiter list should contain the strings '  ' and ' '
+            #   (two spaces, as well as one)
+            # When splitting an exit list into separated exits, any portion of the text matching
+            #   one of these patterns is removed and treated as a single exit, before the text is
+            #   split into individual exits using exit delimiters
+            exitStatePatternList        => [],
             # Some worlds use exit lists, with two or more exits represented as a single word;
             #   for example, Lost Souls uses 'compass' to mean 'n w s e nw ne sw se'
             # Hash of exit aliases. The key is a pattern found in the world's exit list; the
@@ -1270,9 +1319,12 @@
             # If the commands in the 'room_cmd' component are separated by characters or strings,
             #   the delimiters used. Must include whitespace, as appropriate (e.g. ' and ' / ', '
             #   / '.')
+            # Items in the list should ideally be in order of length, longest first (but the
+            #   Locator task sorts them before using them, anyway)
             roomCmdDelimiterList        => [],      # String, not a regex
             # A non-delimiter is a string which the room command list should NOT contain. This helps
             #   the Locator task to work out what is a list of room commands, and what is not
+            # Items in the list can be in any order (and are not sorted by the Locator task)
             roomCmdNonDelimiterList     => [],      # String, not a regex
             # Alternatively, if the room commands are single letters in a continuous string (e.g.
             #   HGP representing commands for harvesting, gathering and picking), set this flag to
@@ -1293,6 +1345,8 @@
             #   '^There are no commands in this room\.*$'
             roomCmdLeftMarkerList       => [],
             roomCmdRightMarkerList      => [],
+            # A list of room commands for this world which should be ignored by ';roomcommand'
+            roomCmdIgnoreList           => [],
 
             # For worlds with long(ish) room statements - especially those whose verbose
             #   descriptions come after the anchor line - it's possible to define a pattern which
@@ -1319,8 +1373,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this profile (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -1461,6 +1516,7 @@
             doorPatternList             => [$self->doorPatternList],
             lockedPatternList           => [$self->lockedPatternList],
             failExitPatternList         => [$self->failExitPatternList],
+            transientExitPatternList    => [$self->transientExitPatternList],
             darkRoomPatternList         => [$self->darkRoomPatternList],
             unspecifiedRoomPatternList  => [$self->unspecifiedRoomPatternList],
             involuntaryExitPatternList  => [$self->involuntaryExitPatternList],
@@ -1489,6 +1545,7 @@
             inventoryPatternList        => [$self->inventoryPatternList],
             inventoryIgnorePatternList  => [$self->inventoryIgnorePatternList],
             inventoryDiscardPatternList => [$self->inventoryDiscardPatternList],
+            inventorySplitPatternList   => [$self->inventorySplitPatternList],
             inventoryMode               => $self->inventoryMode,
 
             conditionPatternList        => [$self->conditionPatternList],
@@ -1540,7 +1597,7 @@
             noInteractionsRoomPatternList
                                         => [$self->noInteractionsRoomPatternList],
 
-            getSuccessPatternList           => [$self->getSuccessPatternList],
+            getSuccessPatternList       => [$self->getSuccessPatternList],
             getHeavyPatternList         => [$self->getHeavyPatternList],
             getFailPatternList          => [$self->getFailPatternList],
             dropSuccessPatternList      => [$self->dropSuccessPatternList],
@@ -1557,12 +1614,8 @@
             advanceSuccessPatternList   => [$self->advanceSuccessPatternList],
             advanceFailPatternList      => [$self->advanceFailPatternList],
 
-            tellPatternList             => [$self->tellPatternList],
-            noTellPatternList           => [$self->noTellPatternList],
-            socialPatternList           => [$self->socialPatternList],
-            noSocialPatternList         => [$self->noSocialPatternList],
-            customDivertPatternList     => [$self->customDivertPatternList],
-            noCustomDivertPatternList   => [$self->noCustomDivertPatternList],
+            channelList                 => [$self->channelList],
+            noChannelList               => [$self->noChannelList],
 
             currencyHash                => {$self->currencyHash},
             standardCurrencyUnit        => $self->standardCurrencyUnit,
@@ -1590,7 +1643,7 @@
             shortComponentList          => [$self->shortComponentList],
             briefComponentList          => [$self->briefComponentList],
 
-            basicMappingMode            => $self->basicMappingMode,
+            basicMappingFlag            => $self->basicMappingFlag,
             notAnchorPatternList        => [$self->notAnchorPatternList],
 
             verboseAnchorPatternList    => [$self->verboseAnchorPatternList],
@@ -1618,6 +1671,7 @@
             exitInfoPatternList         => [$self->exitInfoPatternList],
             exitRemovePatternList       => [$self->exitRemovePatternList],
             exitStateStringList         => [$self->exitStateStringList],
+            exitStatePatternList        => [$self->exitStatePatternList],
             exitAliasHash               => {$self->exitAliasHash},
 
             contentPatternList          => [$self->contentPatternList],
@@ -1628,6 +1682,7 @@
             roomCmdSplitCharFlag        => $self->roomCmdSplitCharFlag,
             roomCmdLeftMarkerList       => [$self->roomCmdLeftMarkerList],
             roomCmdRightMarkerList      => [$self->roomCmdRightMarkerList],
+            roomCmdIgnoreList           => [$self->roomCmdIgnoreList],
 
             verboseFinalPattern         => $self->verboseFinalPattern,
             shortFinalPattern           => $self->shortFinalPattern,
@@ -2010,6 +2065,7 @@
         $self->mergeList('doorPatternList', $otherObj);
         $self->mergeList('lockedPatternList', $otherObj);
         $self->mergeList('failExitPatternList', $otherObj);
+        $self->mergeList('transientExitPatternList', $otherObj);
         $self->mergeList('darkRoomPatternList', $otherObj);
         $self->mergeList('unspecifiedRoomPatternList', $otherObj);
         $self->mergeList('involuntaryExitPatternList', $otherObj);
@@ -2040,6 +2096,7 @@
         $self->mergeGroupList('inventoryPatternList', $otherObj, 5);
         $self->mergeGroupList('inventoryIgnorePatternList', $otherObj, 2);
         $self->mergeList('inventoryDiscardPatternList', $otherObj);
+        $self->mergeList('inventorySplitPatternList', $otherObj);
         $self->ivPoke('inventoryMode', $otherObj->inventoryMode);
         $self->mergeGroupList('conditionPatternList', $otherObj, 4);
         $self->mergeList('conditionIgnorePatternList', $otherObj);
@@ -2099,13 +2156,9 @@
         $self->mergeList('advanceSuccessPatternList', $otherObj);
         $self->mergeList('advanceFailPatternList', $otherObj);
 
-        # Merge Divert task patterns
-        $self->mergeList('tellPatternList', $otherObj);
-        $self->mergeList('noTellPatternList', $otherObj);
-        $self->mergeList('socialPatternList', $otherObj);
-        $self->mergeList('noSocialPatternList', $otherObj);
-        $self->mergeGroupList('customDivertPatternList', $otherObj, 2);
-        $self->mergeGroupList('noCustomDivertPatternList', $otherObj, 2);
+        # Merge Channels/Divert task patterns
+        $self->mergeGroupList('channelList', $otherObj, 3);
+        $self->mergeList('noChannelList', $otherObj);
 
         # Merge currency IVs
         if ($otherObj->currencyHash) {
@@ -2156,7 +2209,7 @@
         }
 
         # Merge basic mapping mode
-        $self->ivPoke('basicMappingMode', $otherObj->basicMappingMode);
+        $self->ivPoke('basicMappingFlag', $otherObj->basicMappingFlag);
         $self->mergeList('notAnchorPatternList', $otherObj);
 
         # Merge room statement patterns
@@ -2185,6 +2238,7 @@
         $self->mergeList('exitInfoPatternList', $otherObj);
         $self->mergeList('exitRemovePatternList', $otherObj);
         $self->mergeGroupList('exitStateStringList', $otherObj, 4);
+        $self->mergeList('exitStatePatternList', $otherObj);
         $self->mergeHash('exitAliasHash', $otherObj);
 
         $self->mergeList('contentPatternList', $otherObj);
@@ -2195,6 +2249,7 @@
         $self->ivPoke('roomCmdSplitCharFlag', $otherObj->roomCmdSplitCharFlag);
         $self->mergeList('roomCmdLeftMarkerList', $otherObj);
         $self->mergeList('roomCmdRightMarkerList', $otherObj);
+        $self->mergeList('roomCmdIgnoreList', $otherObj);
 
         $self->ivPoke('verboseFinalPattern', $otherObj->verboseFinalPattern);
         $self->ivPoke('shortFinalPattern', $otherObj->shortFinalPattern);
@@ -2555,6 +2610,8 @@
         { my $self = shift; return @{$self->{lockedPatternList}}; }
     sub failExitPatternList
         { my $self = shift; return @{$self->{failExitPatternList}}; }
+    sub transientExitPatternList
+        { my $self = shift; return @{$self->{transientExitPatternList}}; }
     sub darkRoomPatternList
         { my $self = shift; return @{$self->{darkRoomPatternList}}; }
     sub unspecifiedRoomPatternList
@@ -2608,6 +2665,8 @@
         { my $self = shift; return @{$self->{inventoryIgnorePatternList}}; }
     sub inventoryDiscardPatternList
         { my $self = shift; return @{$self->{inventoryDiscardPatternList}}; }
+    sub inventorySplitPatternList
+        { my $self = shift; return @{$self->{inventorySplitPatternList}}; }
     sub inventoryMode
         { $_[0]->{inventoryMode} }
 
@@ -2711,18 +2770,10 @@
     sub advanceFailPatternList
         { my $self = shift; return @{$self->{advanceFailPatternList}}; }
 
-    sub tellPatternList
-        { my $self = shift; return @{$self->{tellPatternList}}; }
-    sub noTellPatternList
-        { my $self = shift; return @{$self->{noTellPatternList}}; }
-    sub socialPatternList
-        { my $self = shift; return @{$self->{socialPatternList}}; }
-    sub noSocialPatternList
-        { my $self = shift; return @{$self->{noSocialPatternList}}; }
-    sub customDivertPatternList
-        { my $self = shift; return @{$self->{customDivertPatternList}}; }
-    sub noCustomDivertPatternList
-        { my $self = shift; return @{$self->{noCustomDivertPatternList}}; }
+    sub channelList
+        { my $self = shift; return @{$self->{channelList}}; }
+    sub noChannelList
+        { my $self = shift; return @{$self->{noChannelList}}; }
 
     sub currencyHash
         { my $self = shift; return %{$self->{currencyHash}}; }
@@ -2769,8 +2820,8 @@
     sub briefComponentList
         { my $self = shift; return @{$self->{briefComponentList}}; }
 
-    sub basicMappingMode
-        { $_[0]->{basicMappingMode} }
+    sub basicMappingFlag
+        { $_[0]->{basicMappingFlag} }
     sub notAnchorPatternList
         { my $self = shift; return @{$self->{notAnchorPatternList}}; }
 
@@ -2821,6 +2872,8 @@
         { my $self = shift; return @{$self->{exitRemovePatternList}}; }
     sub exitStateStringList
         { my $self = shift; return @{$self->{exitStateStringList}}; }
+    sub exitStatePatternList
+        { my $self = shift; return @{$self->{exitStatePatternList}}; }
     sub exitAliasHash
         { my $self = shift; return %{$self->{exitAliasHash}}; }
 
@@ -2839,6 +2892,8 @@
         { my $self = shift; return @{$self->{roomCmdLeftMarkerList}}; }
     sub roomCmdRightMarkerList
         { my $self = shift; return @{$self->{roomCmdRightMarkerList}}; }
+    sub roomCmdIgnoreList
+        { my $self = shift; return @{$self->{roomCmdIgnoreList}}; }
 
     sub verboseFinalPattern
         { $_[0]->{verboseFinalPattern} }
@@ -2869,8 +2924,9 @@
         # Expected arguments
         #   $session     - The GA::Session which called this function (not stored as an IV)
         #   $name        - A unique string name for this profile (max 16 chars, containing
-        #                    A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                    global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                    A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                    Must not exist as a key in the global hash of reserved names,
+        #                    $axmud::CLIENT->constReservedHash)
         #   $parentWorld - The name of the parent world profile, with which this profile is
         #                    associated
         #
@@ -3026,8 +3082,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this profile (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -3156,9 +3213,10 @@
         # Expected arguments
         #   $session     - The GA::Session which called this function (not stored as an IV)
         #   $name        - A unique string name for this profile (max 16 chars, containing
-        #                    A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                    global hash of reserved names, $axmud::CLIENT->constReservedHash)
-        #   $parentWorld  - The name of the parent world profile, with which this profile is
+        #                    A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                    Must not exist as a key in the global hash of reserved names,
+        #                    $axmud::CLIENT->constReservedHash)
+        #   $parentWorld - The name of the parent world profile, with which this profile is
         #                    associated
         #
         # Optional arguments
@@ -3295,8 +3353,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this profile (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -3408,8 +3467,9 @@
         # Expected arguments
         #   $session     - The GA::Session which called this function (not stored as an IV)
         #   $name        - A unique string name for this profile (max 16 chars, containing
-        #                    A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                    global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                    A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                    Must not exist as a key in the global hash of reserved names,
+        #                    $axmud::CLIENT->constReservedHash)
         #   $parentWorld - The name of the parent world profile, with which this profile is
         #                    associated
         #
@@ -3723,8 +3783,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this profile (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -4182,7 +4243,7 @@
 
     sub new {
 
-        # Called by GA::Cmd::AddTemplate->do, ListProperty->do or by the GUI window
+        # Called by GA::Cmd::AddTemplate->do, ListProperty->do or by the object viewer window
         # Creates a new kind of custom profile, called a 'profile template'
         #   Call ->new to create the bare bones of a custom profile - the instance variables that
         #       all custom profile must have
@@ -4201,8 +4262,9 @@
         #   $category   - What kind of profile this is (must not be one of the four standard
         #                   categories, 'world', 'guild', 'race' and 'char', nor the category for
         #                   any existing profile template) (max 16 chars, containing A-Za-z0-9_ -
-        #                   1st char can't be number. Must not exist as a key in the global hash of
-        #                   reserved names, $axmud::CLIENT->constReservedHash)
+        #                   1st char can't be number, non-Latin alphabets acceptable. Must not exist
+        #                   as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Optional arguments
         #   $tempFlag   - If set to TRUE, this is a temporary profile template created for use with
@@ -4284,8 +4346,9 @@
         #   $category   - What kind of profile the copy will be (must not be one of the four
         #                   standard categories, 'world', 'guild', 'race' and 'char', nor the
         #                   category for any existing profile template) (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -4373,8 +4436,9 @@
         # Expected arguments
         #   $session     - The GA::Session which called this function
         #   $name        - A unique string name for this profile (max 16 chars, containing
-        #                    A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                    global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                    A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                    Must not exist as a key in the global hash of reserved names,
+        #                    $axmud::CLIENT->constReservedHash)
         #   $parentWorld - The name of the parent world profile, with which this profile is
         #                    associated
         #
@@ -4643,8 +4707,9 @@
         # Expected arguments
         #   $session     - The GA::Session which called this function (not stored as an IV)
         #   $name        - A unique string name for this profile (max 16 chars, containing
-        #                    A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                    global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                    A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                    Must not exist as a key in the global hash of reserved names,
+        #                    $axmud::CLIENT->constReservedHash)
         #   $parentWorld - The name of the parent world profile, with which this profile is
         #                    associated
         #   $category    - What kind of profile this is. Matches the ->category of a
@@ -4781,8 +4846,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this profile (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid

@@ -4,17 +4,15 @@ tts / speech                  Modifies text-to-speech (TTS) general settings
       ;speech                 Shows current text-to-speech settings
       ;speech <options>       Modifies text-to-speech settings
 
-   Warning:
-      Axmud's text-to-speech features haven't been implemented on MS Windows
-         yet (but you can still use your screenreader with its default
-         settings).
-
    Notes:
       If you have one or more of the text-to-speech engines installed on your
-         system, Axmud can use them to convert text to speech. The engines 
-         currently supported are eSpeak, Flite, Festival and Swift. (Axmud also 
-         uses a dummy engine, called 'none'. If Axmud tries to convert text to 
-         speech using the dummy engine, you'll hear nothing.)
+         system, Axmud can use them to convert text to speech.
+      The engines currently supported on MS Windows are eSpeak, espeak-ng and
+         Swift. The engines supported on Linux are eSpeak, espeak-ng, Flite,
+         Festival and Swift.
+      Axmud also uses a dummy engine, called 'none'. If Axmud tries to convert
+         text to speech using the dummy engine, you'll hear nothing.
+         
       This command can be used to modify general text-to-speech settings.
          (Individual text-to-speech configurations can be modified with the 
          ';editconfig' command.)

@@ -36,32 +36,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -69,11 +69,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -85,7 +85,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -94,10 +94,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -106,7 +106,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -136,6 +136,7 @@
         $self->{winPreferList}          = [];
         $self->{winmap}                 = undef;
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = undef;
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -191,7 +192,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -201,7 +202,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -224,36 +225,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -271,7 +272,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -1110,32 +1111,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -1143,11 +1144,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -1158,7 +1159,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -1167,10 +1168,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -1179,7 +1180,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -1209,6 +1210,7 @@
         $self->{winPreferList}          = [];
         $self->{winmap}                 = undef;
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = undef;
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = TRUE;
@@ -1240,7 +1242,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -1250,7 +1252,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -1273,36 +1275,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -1320,7 +1322,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -2555,6 +2557,1230 @@
         { $_[0]->{announceFlag} }
 }
 
+{ package Games::Axmud::Task::Channels;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Task Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Creates a new instances of the Channels task
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #
+        # Optional arguments
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world), 'custom' (tasks with
+        #                   customised initial parameters, which are run when the user demands). If
+        #                   set to 'undef', this is a temporary task, created in order to access the
+        #                   default values stored in IVs, that will not be added to any tasklist
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
+        #                   profile from whose initial tasklist this task was created ('undef' if
+        #                   none)
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
+        #                   task will be. If 'undef', the global initial tasklist is used
+        #               - ($taskType = 'custom') 'undef'
+        #   $profCategory
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
+        #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
+        #               - ($taskType = 'custom') 'undef'
+        #   $customName
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
+        #                   GA::Session->customTaskHash
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be added to the specified tasklist
+        #   Blessed reference to the newly-created object on success
+
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        if ($taskType) {
+
+            # For initial tasks, check that $profName exists
+            if (
+                $taskType eq 'initial'
+                && defined $profName
+                && ! $session->ivExists('profHash', $profName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $profName . '\' profile doesn\'t exist',
+                    $class . '->new',
+                );
+
+            # For custom tasks, check that $customName doesn't already exist
+            } elsif (
+                $taskType eq 'custom'
+                && $axmud::CLIENT->ivExists('customTaskHash', $customName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new custom task because \'' . $customName . '\' is already being'
+                    . ' used',
+                    $class . '->new',
+                );
+
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
+
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
+                    $class . '->new',
+                );
+            }
+        }
+
+        # Task settings
+        my $self = Games::Axmud::Generic::Task->new(
+            $session,
+            $taskType,
+            $profName,
+            $profCategory,
+            $customName,
+        );
+
+        $self->{_objName}               = 'channels_task';
+        $self->{_objClass}              = $class;
+        $self->{_parentFile}            = undef;            # Set below
+        $self->{_parentWorld}           = undef;            # Set below
+        $self->{_privFlag}              = TRUE,             # All IVs are private
+
+        $self->{name}                   = 'channels_task';
+        $self->{prettyName}             = 'Channels';
+        $self->{shortName}              = 'Cl';
+        $self->{shortCutIV}             = 'channelsTask';   # Axmud built-in jealous task
+
+        $self->{category}               = 'activity';
+        $self->{descrip}                = 'Displays text received from the world in multiple tabs';
+        $self->{jealousyFlag}           = TRUE;
+        $self->{requireLocatorFlag}     = FALSE;
+        $self->{profSensitivityFlag}    = TRUE;
+        $self->{storableFlag}           = TRUE;
+        $self->{delayTime}              = 0;
+        $self->{allowWinFlag}           = TRUE;
+        $self->{requireWinFlag}         = TRUE;
+        $self->{startWithWinFlag}       = TRUE;
+        $self->{winPreferList}          = ['pane', 'grid'];
+        $self->{winmap}                 = 'basic_fill';
+        $self->{winUpdateFunc}          = 'restoreWin';
+        $self->{tabMode}                = 'empty';
+        $self->{monochromeFlag}         = FALSE;
+        $self->{noScrollFlag}           = FALSE;
+        $self->{ttsFlag}                = TRUE;
+        $self->{ttsConfig}              = 'channels';
+        $self->{ttsAttribHash}          = {};
+        $self->{ttsFlagAttribHash}      = {
+            'channels'                  => FALSE,
+        };
+        $self->{ttsAlertAttribHash}     = {};
+        $self->{status}                 = 'wait_init';
+#       $self->{activeFlag}             = TRUE;             # Task can't be activated/disactivated
+
+        # Task parameters
+        #
+        # Multiple triggers can match a single line, but this task only displays a single line in
+        #   its task window once. The display buffer line number of the last line that matched a
+        #   tell, social or custom pattern
+        $self->{lastLine}               = 0;
+        # The task window's pane object (GA::Table::Pane) has multiple tabs, one for each channel.
+        # A hash of tabs in use, in the form
+        #   $tabHash{channel_name} = blessed_reference_to_tab_object
+        $self->{tabHash}                = {},
+
+        # Summary mode
+        #   'single' - Use a single tab, in which all text for all channels is displayed. Any
+        #               channels specified in $self->initChannelList are ignored
+        #   'multi' - Every channel has its own tab and, in addition, there is a 'summmary' tab
+        #               which duplicates text displayed in every channel
+        #   'default' - Every channel has its own tab and there is no 'summary' channel
+        $self->{summaryMode}            = 'default',
+        # The channel name to use for the 'summary' channel
+        $self->{summaryChannel}         = 'all',
+
+        # List of channels for which a tab should be added when the window opens, even though there
+        #   is no text to display yet
+        $self->{initChannelList}        = [
+            # Three of the four 'channels' for which the Divert task has an assigned background
+            #   colour/sound effect
+            'tell', 'social', 'custom',
+        ];
+        # List of channels that should be ignored (i.e. no tab is created for the channel, and when
+        #   text is received to display in one of these channels, it is not displayed, not even in
+        #   the summary channel)
+        # The summary channel and any channels in $self->initChannelList can't be ignored. If
+        #   any of them are added to this list, they are not ignored
+        $self->{ignoreChannelList}      = [],
+
+        # In these hashes, the keys are affected channels names, and the corresponding values are
+        #   'undef' or FALSE if the effect shouldn't be applied (so the user can disable it,
+        #   without emptying the hash of channel names)
+        #
+        # Hash of sound effects that should be played when text is displayed in a channel. The keys
+        #   are channel names; the corresponding value is a sound effect
+        $self->{soundEffectHash}        = {
+            'tell'                      => 'greeting',
+            'social'                    => 'notify',
+            'custom'                    => 'notify',
+            'warning'                   => 'alarm',
+        },
+        # Hash of flags. The keys are channel names, the corresponding value is TRUE if the task
+        #   window's urgency hint should be displayed when the channel receives text, FALSE if not
+        $self->{urgencyHash}            = {
+            'tell'                      => FALSE,
+            'social'                    => FALSE,
+            'custom'                    => FALSE,
+            'warning'                   => FALSE,
+        },
+
+        # Flag set to TRUE if the tabs should have a close button, FALSE if not
+        $self->{tabCloseButtonFlag}     = FALSE;
+        # Flag set to TRUE if channel names, displayed in the tab labels, should be capitalised
+        $self->{capitaliseFlag}         = TRUE;
+        # Flag set to TRUE if the original line's colour/style tags should be preserved in the task
+        #   window
+        $self->{useColourStyleFlag}     = TRUE;
+
+        # Bless task
+        bless $self, $class;
+
+        # For all tasks that aren't temporary...
+        if ($taskType) {
+
+            # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+            #   added to any current, initial or custom tasklist)
+            if (! $self->checkPlugins()) {
+
+                return undef;
+            }
+
+            # Set the parent file object
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
+
+            # Create entries in tasklists, if possible
+            if (! $self->updateTaskLists($session)) {
+
+                return undef;
+            }
+        }
+
+        # Task creation complete
+        return $self;
+    }
+
+    sub clone {
+
+        # Create a clone of an existing task
+        # Usually used upon connection to a world, when every task in the initial tasklists must
+        #   be cloned into a new object, representing a task in the current tasklist
+        # (Also used when cloning a profile object, since all the tasks in its initial tasklist must
+        #   also be cloned)
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world). Custom tasks aren't
+        #                   cloned (at the moment)
+        #
+        # Optional arguments
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
+        #                   existing task is stored
+        #   $profCategory
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
+        #                   'world', 'race', 'char', etc)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be cloned
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # For initial tasks, check that $profName exists
+        if (
+            $taskType eq 'initial'
+            && defined $profName
+            && ! $session->ivExists('profHash', $profName)
+        ) {
+            return $axmud::CLIENT->writeError(
+                'Can\'t create cloned task because \'' . $profName . '\' profile doesn\'t exist',
+                $self->_objClass . '->clone',
+            );
+        }
+
+        # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+        #   cloned)
+        if (! $self->checkPlugins()) {
+
+            return undef;
+        }
+
+        # Create the new task, using default settings and parameters
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
+
+        # Most of the cloned task's settings have default values, but a few are copied from the
+        #   original
+        $self->cloneTaskSettings($clone);
+
+        # Give the new (cloned) task the same initial parameters as the original one
+        $clone->{lastLine}              = $self->lastLine;
+        $clone->{tabHash}               = {$self->tabHash};
+
+        $clone->{summaryMode}           = $self->summaryMode;
+        $clone->{summaryChannel}        = $self->summaryChannel;
+
+        $clone->{initChannelList}       = [$self->initChannelList];
+        $clone->{ignoreChannelList}     = [$self->ignoreChannelList];
+
+        $clone->{soundEffectHash}       = {$self->soundEffectHash};
+        $clone->{urgencyHash}           = {$self->urgencyHash};
+
+        $clone->{tabCloseButtonFlag}    = $self->tabCloseButtonFlag;
+        $clone->{capitaliseFlag}        = $self->capitaliseFlag;
+        $clone->{useColourStyleFlag}    = $self->useColourStyleFlag;
+
+        # Cloning complete
+        return $clone;
+    }
+
+    sub preserve {
+
+        # Called by $self->main whenever this task is reset, in order to preserve some if its task
+        #   parameters (but not necessarily all of them)
+        #
+        # Expected arguments
+        #   $newTask    - The new task which has been created, to which some of this task's instance
+        #                   variables might have to be transferred
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $newTask isn't in the GA::Session's current
+        #       tasklist
+        #   1 on success
+
+        my ($self, $newTask, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $newTask || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->preserve', @_);
+        }
+
+        # Check the task is in the current tasklist
+        if (! $self->session->ivExists('currentTaskHash', $newTask->uniqueName)) {
+
+            return $self->writeWarning(
+                '\'' . $self->uniqueName . '\' task missing from the current tasklist',
+                $self->_objClass . '->preserve',
+            );
+        }
+
+        # Preserve some task parameters (the others are left with their default settings, some of
+        #   which will be re-initialised in stage 2)
+
+        # Preserve summary channel IVs
+        $newTask->ivPoke('summaryMode', $self->summaryMode);
+        $newTask->ivPoke('summaryChannel', $self->summaryChannel);
+
+        # Preserve initial and ignorable channels
+        $newTask->ivPoke('initChannelList', $self->initChannelList);
+        $newTask->ivPoke('ignoreChannelList', $self->ignoreChannelList);
+
+        # Preserve sound effect and urgency settings
+        $newTask->ivPoke('soundEffectHash', $self->soundEffectHash);
+        $newTask->ivPoke('urgencyHash', $self->urgencyHash);
+
+        # Preserve other customisation settings
+        $newTask->ivPoke('tabCloseButtonFlag', $self->tabCloseButtonFlag);
+        $newTask->ivPoke('capitaliseFlag', $self->capitaliseFlag);
+        $newTask->ivPoke('useColourStyleFlag', $self->useColourStyleFlag);
+
+        return 1;
+    }
+
+#   sub setParentFileObj {}     # Inherited from generic task
+
+#   sub updateTaskLists {}      # Inherited from generic task
+
+#   sub ttsReadAttrib {}        # Inherited from generic task
+
+#   sub ttsSwitchFlagAttrib {}  # Inherited from generic task
+
+#   sub ttsSetAlertAttrib {}    # Inherited from generic task
+
+    ##################
+    # Task windows
+
+#   sub toggleWin {}            # Inherited from generic task
+
+#   sub openWin {}              # Inherited from generic task
+
+#   sub closeWin {}             # Inherited from generic task
+
+    ##################
+    # Methods
+
+#   sub init {}                 # Inherited from generic task
+
+    sub doInit {
+
+        # Called by $self->init, just before the task completes its setup ($self->init)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if a Divert task is running
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doInit', @_);
+        }
+
+        # The Channels and Divert tasks can't run at the same time
+        if ($self->session->divertTask) {
+
+            $self->writeError(
+                'The Channels and Divert tasks cannot run at the same time, so halting the'
+                . ' Channels task',
+                $self->_objClass . '->doStage',
+            );
+
+            # Mark the task to be shutdown
+            $self->ivPoke('shutdownFlag', TRUE);
+            return undef;
+        }
+
+        # If triggers have already been created for this task, remove them before replacing them
+        #   with new triggers
+        $self->session->tidyInterfaces($self);
+
+        if (! $self->resetTriggers()) {
+
+            $self->writeError(
+                'Could not create ' . $self->prettyName . ' task triggers, so halting the task',
+                $self->_objClass . '->doStage',
+            );
+
+            # Mark the task to be shutdown
+            $self->ivPoke('shutdownFlag', TRUE);
+            return undef;
+        }
+
+        # If the task window has actually opened...
+        if ($self->winObj) {
+
+            # Set up the initial set of tabs specified by various IVs
+            $self->refreshTabs();
+        }
+
+        return 1;
+    }
+
+#   sub doShutdown {}           # Inherited from generic task
+
+    sub doReset {
+
+        # Called just before the task completes a reset
+        # For process tasks, called by $self->main. For activity tasks, called by $self->reset
+        #
+        # Removes existings tabs and replaces them with the initial set of tabs specified by various
+        #   IVs
+        #
+        # Expected arguments
+        #   $newTaskObj     - The replacement task object
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $newTaskObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $newTaskObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doReset', @_);
+        }
+
+        # Close all of the pane's existing tabs
+        foreach my $tabObj ($self->ivValues('tabHash')) {
+
+            $tabObj->paneObj->removeTab($tabObj);
+        }
+
+        return 1;
+    }
+
+#   sub doFirstStage {}         # Inherited from generic task
+
+    sub resetTriggers {
+
+        # Called by $self->doInit, GA::Cmd::AddChannelPattern->do and
+        #   GA::Cmd::DeleteChannelPattern->do
+        # Removes all of this task's dependent triggers and replaces them with new ones
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, or if there's an error replacing or creating the triggers
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @channelList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetTriggers', @_);
+        }
+
+        # First remove any existing triggers. ->tidyInterfaces returns the number of triggers
+        #   removed, or 'undef' it there's an error
+        if (! defined $self->session->tidyInterfaces($self)) {
+
+            return undef;
+        }
+
+        # Import the list of patterns (groups of 3)
+        @channelList = $self->session->currentWorld->channelList;
+        if (@channelList) {
+
+            do {
+
+                my ($pattern, $channel, $flag, $interfaceObj);
+
+                $pattern = shift @channelList;
+                $channel = shift @channelList;
+                $flag = shift @channelList;
+
+                # Create dependent trigger
+                $interfaceObj = $self->session->createInterface(
+                    'trigger',
+                    $pattern,
+                    $self,
+                    'channelsPatternSeen',
+                    'gag',
+                    $flag,
+                );
+
+                if (! $interfaceObj) {
+
+                    # If there's an error creating any triggers, remove any triggers already created
+                    $self->session->tidyInterfaces($self);
+                    return undef;
+
+                } else {
+
+                    # Give the trigger some properties that will tell $self->channelsPatternSeen
+                    #   which channel to use when the trigger fires
+                    $interfaceObj->ivAdd('propertyHash', 'channel', $channel);
+                }
+
+            } until (! @channelList);
+        }
+
+        return 1;
+    }
+
+    sub displayText {
+
+        # Called by $self->channelsPatternSeen to display text in a tab in the task window
+        # Can also be called by any other code which needs to display text in one of the task's
+        #   tabs. This capability has been introduced so that any code can display text in the
+        #   'warning' channel's tab; artificially adding text to any other channel's tab would be
+        #   rude
+        #
+        # Expected arguments
+        #   $channel        - The channel name, e.g. 'tell', 'social', 'custom', 'warning'
+        #   $text           - The text to display in this channel. When called by
+        #                       $self->channelsPatternSeen, it's the (whole) line of text received
+        #                       from the world, stripped of control sequences, possibly after being
+        #                       modified by rewriter triggers have acted on it (equivalent to
+        #                       GA::Buffer::Display->modLine)
+        #
+        # Optional arguments
+        #   $triggerFlag    - Set to TRUE when called by $self->channelsPatternSeen (only), so that
+        #                       this function can reintroduce colour/style tags that were stripped
+        #                       away from $text. Must be FALSE (or 'undef') when called by anything
+        #                       else
+        #
+        # Return values
+        #   'undef' on improper arguments or if a tab for the channel doesn't exist and can't be
+        #       created
+        #   1 otherwise
+
+        my ($self, $channel, $text, $triggerFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $paneObj, $origText, $bufferObj, $tabObj, $checkObj, $summaryTabObj, $visibleTabObj,
+            $effect,
+        );
+
+        # Check for improper arguments
+        if (! defined $channel || ! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayText', @_);
+        }
+
+        # Import the task window's GA::Table::Pane object (for convenience)
+        if ($self->defaultTabObj) {
+
+            $paneObj = $self->defaultTabObj->paneObj;
+        }
+
+        # Preserve the original text, in case we convert the text to speech below
+        $origText = $text;
+
+        # Display the text (if there is any)
+        if ($self->taskWinFlag && $text ne '') {
+
+            # If called by $self->channelsPatternSeen, get the line's display buffer object
+            if ($triggerFlag) {
+
+                $bufferObj = $self->session->ivShow(
+                    'displayBufferHash',
+                    $self->session->displayBufferLast,
+                );
+
+                if (! $bufferObj) {
+
+                    # If the buffer object is missing (extremely unlikely), behave as though some
+                    #   other part of the code had called this function
+                    $triggerFlag = FALSE;
+                }
+            }
+
+            if ($self->summaryMode eq 'multi' || $self->summaryMode eq 'default') {
+
+                # Each tab in the task window has a unique tab number; however, tab numbers are
+                #   reset if all the tabs are closed
+                # Get the tab corresponding to $channel, and make sure it's still visible in the
+                #   task window
+                $tabObj = $self->ivShow('tabHash', $channel);
+                if (defined $tabObj) {
+
+                    # Check the tab is still visible in the pane. $self->closeTabCallback takes care
+                    #   of updating $self->tabHash when a tab is manually closed, but it's better to
+                    #   be safe than sorry
+                    $checkObj = $paneObj->ivShow('tabObjHash', $tabObj->number);
+                    if (! $checkObj || $checkObj ne $tabObj) {
+
+                        $tabObj = undef;
+                    }
+                }
+
+                # If the tab corresponding to $channel doesn't exist, create it (unless it's a
+                #   channel that should be ignored)
+                if (! $tabObj) {
+
+                    if (defined $self->ivFind('ignoreChannelList', $channel)) {
+
+                        # Text on this channel should be ignored
+                        return undef;
+
+                    } else {
+
+                        $tabObj = $self->addTab(
+                            $self->getLabelText($channel, FALSE),
+                        );
+
+                        if (! $tabObj) {
+
+                            # Nothing we can do to display this message
+                            return undef;
+
+                        } else {
+
+                            $self->ivAdd('tabHash', $channel, $tabObj);
+                            $paneObj = $tabObj->textViewObj->paneObj;
+                        }
+                    }
+                }
+            }
+
+            if ($self->summaryMode eq 'single' || $self->summaryMode eq 'multi') {
+
+                # Get the summary channel. If it doesn't exist (because the user has closed the
+                #   tab manually), don't create it
+                $summaryTabObj = $self->ivShow('tabHash', $self->summaryChannel);
+                if (defined $summaryTabObj) {
+
+                    # Check the tab is still visible in the pane
+                    $checkObj = $paneObj->ivShow('tabObjHash', $tabObj->number);
+                    if (! $checkObj || $checkObj ne $tabObj) {
+
+                        $summaryTabObj = undef;
+                    }
+                }
+            }
+
+            # Display the text in one or both tabs. We can use the original text colours/styles if
+            #   called by $self->channelsPatternSeen and if the flag allows us
+            if (! $bufferObj || ! $self->useColourStyleFlag) {
+
+                # Display the text without applying any colour/style tags
+                if ($tabObj) {
+
+                    $tabObj->textViewObj->insertWithLinks($text);
+                }
+
+                if ($summaryTabObj) {
+
+                    $summaryTabObj->textViewObj->insertWithLinks($text);
+                }
+
+            } else {
+
+                # Display the text, preserving original colour/style tags in the task window's
+                #   textview
+                if ($tabObj) {
+
+                    $bufferObj->copyLine($tabObj->textViewObj);
+                }
+
+                if ($summaryTabObj) {
+
+                    $bufferObj->copyLine($summaryTabObj->textViewObj);
+                }
+            }
+
+            # If the tab isn't the visible one, make its label red (but don't change the colour of
+            #   the summary tab's label, and don't change the colour at all if the summary tab is
+            #   the visible one)
+            $visibleTabObj = $paneObj->getVisibleTab();
+            if (
+                $tabObj
+                && $visibleTabObj
+                && $tabObj ne $visibleTabObj
+                && (! $summaryTabObj || $visibleTabObj ne $summaryTabObj)
+            ) {
+                $paneObj->setTabLabel(
+                    $tabObj->number,
+                    $self->getLabelText($channel, TRUE),
+                );
+            }
+
+            # If the text was actually displayed in a tab...
+            if ($tabObj || $summaryTabObj) {
+
+                # Play a sound effect, if required
+                $effect = $self->ivShow('soundEffectHash', $channel);
+                if (defined $effect) {
+
+                    $axmud::CLIENT->playSound($effect);
+                }
+
+                # Set the task window's urgency hint, if required
+                if ($self->ivShow('urgencyHash', $channel)) {
+
+                    $self->winObj->setUrgent();
+                }
+            }
+        }
+
+        # If there are any Watch tasks running - in any session - update them
+        foreach my $otherSession ($axmud::CLIENT->listSessions()) {
+
+            my ($world, $char);
+
+            if ($otherSession->watchTask) {
+
+                $world = $self->session->currentWorld->name;
+                if ($self->session->currentChar) {
+
+                    $char = $self->session->currentChar->name;  # Otherwise 'undef'
+                }
+
+                $otherSession->watchTask->displayText('divert', $world, $char, $text);
+            }
+        }
+
+        # Also write the text to the logs, as if it had appeared in the 'main' window (if allowed)
+        if ($triggerFlag) {
+
+            $self->session->writeIncomingDataLogs($bufferObj->stripLine, $bufferObj->modLine);
+        }
+
+        # Read out a TTS message, if required
+        if ($self->ivShow('ttsFlagAttribHash', 'channels')) {
+
+            $self->ttsQuick($origText);
+        }
+
+        return 1;
+    }
+
+    sub resetWin {
+
+        # Called by GA::Cmd::EmptyChannelsWindow->do and $self->doReset
+        # Resets the task window - removes all tabs (and the text they contain), and replaces them
+        #   with the initial set
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $paneObj;
+
+        # Check for improper arguments
+        if (defined $check)  {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetWin', @_);
+        }
+
+        if ($self->winObj) {
+
+            $paneObj = $self->winObj->findTableObj('pane');
+        }
+
+        if ($paneObj) {
+
+            # Close all of the pane's existing tabs
+            foreach my $tabObj ($paneObj->ivValues('tabObjHash')) {
+
+                $paneObj->removeTab($tabObj);
+            }
+
+            # Update IVs
+            $self->ivEmpty('tabHash');
+
+            # Restore the initial set of tabs specified by various IVs
+            $self->refreshTabs();
+
+            # If the task window's urgency hint is set, then reset it
+            $self->winObj->resetUrgent();
+        }
+
+        return 1;
+    }
+
+    sub refreshTabs {
+
+        # Called by $self->doInit and ->resetWin
+        # Assuming that the task window's pane object contain no tabs, sets up an initial set of
+        #   tabs specified by various IVs
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($paneObj, $summaryTabObj, $firstTabObj);
+
+        # Check for improper arguments
+        if (defined $check)  {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->refreshTabs', @_);
+        }
+
+        # Mark the task window's tabs as closeable, or not
+        $paneObj = $self->winObj->findTableObj('pane');
+        if ($paneObj) {
+
+            $paneObj->set_canCloseFlag($self->tabCloseButtonFlag);
+        }
+
+        # Add a 'summary' tab, if one is specified
+        if ($self->summaryMode eq 'single' || $self->summaryMode eq 'multi') {
+
+            $summaryTabObj = $self->addTab(
+                $self->getLabelText($self->summaryChannel, FALSE),
+            );
+
+            if ($summaryTabObj) {
+
+                $self->ivAdd('tabHash', $self->summaryChannel, $summaryTabObj);
+                $firstTabObj = $summaryTabObj;
+            }
+        }
+
+        if ($self->summaryMode ne 'single') {
+
+            # Add tabs for any channels which should be opened immediately, even before text to
+            #   display in those channels has been received
+            foreach my $channel ($self->initChannelList) {
+
+                my $tabObj = $self->addTab(
+                    $self->getLabelText($channel, FALSE),
+                );
+
+                if ($tabObj) {
+
+                    $self->ivAdd('tabHash', $channel, $tabObj);
+                    if (! $firstTabObj) {
+
+                        $firstTabObj = $tabObj;
+                    }
+                }
+            }
+        }
+
+        # Make the first tab created the visible one
+        if ($firstTabObj) {
+
+            $paneObj->setVisibleTab($firstTabObj);
+        }
+
+        return 1;
+    }
+
+    sub getLabelText {
+
+        # Called by various functions in this task
+        # Change the text and/or colour of one of the task window's tab labels
+        #
+        # Expected arguments
+        #   $text       - The new label text; for this task, the name of the channel
+        #   $colourFlag - If TRUE, the label text is a different colour (signifying that the tab's
+        #                   textview has received new text since it was last visible). If FALSE, the
+        #                   label text is the normal colour
+        #
+        # Return values
+        #   'undef' on improper arguments or if the tab's text can't be updated
+        #   1 otherwise
+
+        my ($self, $text, $colourFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $text || ! defined $colourFlag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->getLabelText', @_);
+        }
+
+        # Capitalise the channel name, if required
+        if ($self->capitaliseFlag) {
+
+            $text = ucfirst($text);
+        }
+
+        # If tabs are not using a close button, add extra space to make the tab label a bit wider
+        if (! $self->tabCloseButtonFlag) {
+
+            $text = '   ' . $text . '   ';
+        }
+
+        # Change the text colour, if required
+        if ($colourFlag) {
+
+            $text = '<span foreground="red">' . $text . '</span>';
+        }
+
+        return $text;
+    }
+
+    ##################
+    # Response methods
+
+    sub channelsPatternSeen {
+
+        # Called by GA::Session->checkTriggers
+        #
+        # This task's ->resetTriggers function creates some triggers to capture strings matching
+        #   patterns in the world profile's ->patternList
+        #   e.g. Gandalf tells you, Give me the ring!
+        #
+        # The function diverts the line to the task window, displaying it in a tab matching the
+        #   pattern's corresponding channel. Backreferences are ignored
+        #
+        # The trigger interfaces have the following properties in ->propertyHash:
+        #   channel         - Which channel to use
+        #
+        # Expected arguments (standard args from GA::Session->checkTriggers)
+        #   $session        - The calling function's GA::Session
+        #   $interfaceNum   - The number of the active trigger interface that fired
+        #   $line           - The line of text received from the world
+        #   $stripLine      - $line, with all escape sequences removed
+        #   $modLine        - $stripLine, possibly modified by previously-checked triggers
+        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #                       (equivalent of @_)
+        #   $matchMinusListRef
+        #                   - Reference to a list of matched substring offsets (equivalent of @-)
+        #   $matchPlusListRef
+        #                   - Reference to a list of matched substring offsets (equivalent of @+)
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $session is the wrong session, if the interface
+        #       object can't be found, if the corresponding IV can't be found or if the received
+        #       line of text matches one of the exception patterns for this type of message
+        #   1 otherwise
+
+        my (
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $matchMinusListRef, $matchPlusListRef, $check,
+        ) = @_;
+
+        # Local variables
+        my $obj;
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
+            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $matchPlusListRef || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->channelsPatternSeen',
+                @_,
+            );
+        }
+
+        # Basic check - the trigger should belong to the right session
+        if ($session ne $self->session) {
+
+            return undef;
+        }
+
+        # Get the interface object itself
+        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
+        if (! $obj) {
+
+            return undef;
+        }
+
+        # Respond to the fired trigger
+
+        # Ignore the trigger, if this line has already been diverted
+        if ($self->lastLine && $self->lastLine == $self->session->displayBufferLast) {
+
+            return undef;
+
+        } else {
+
+            # Don't act on any more triggers from this line
+            $self->ivPoke('lastLine', $self->session->displayBufferLast);
+        }
+
+        # Check this line of text doesn't match one of the patterns in the exception list,
+        #   GA::Profile::World->noChannelList
+        # Any line of text which matches a pattern in that list is diverted back to the 'main'
+        #   window, and is not displayed in the task window
+        # Check that $modLine doesn't contain one of those exception patterns
+        foreach my $pattern ($self->session->currentWorld->noChannelList) {
+
+            if ($modLine =~ m/$pattern/i) {
+
+                # Divert the text back into the 'main' window, where it belongs (but only if a gag
+                #   trigger was used)
+                if ($obj->ivShow('attribHash', 'gag')) {
+
+                    $self->session->defaultTabObj->textViewObj->insertText(
+                        $modLine,
+                        'after',           # Assume that the line would have ended in a newline char
+                    );
+
+                    # Write to logs, if allowed
+                    $self->session->writeIncomingDataLogs($stripLine, $modLine);
+                }
+
+                # (Don't bother checking the other exception patterns)
+                return undef;
+            }
+        }
+
+        # Display the text in the task window
+        $self->displayText(
+            $obj->ivShow('propertyHash', 'channel'),
+            $modLine,
+            $stripLine,
+        );
+
+        # Write the message to a logfile (if possible)
+        $axmud::CLIENT->writeLog(
+            $self->session,
+            FALSE,      # Not a 'standard' logfile
+            $modLine,
+            FALSE,      # Don't precede with a newline character
+            TRUE,       # Use final newline character
+            'channels', # Write to this logfile
+        );
+
+        return 1;
+    }
+
+    sub switchTabCallback {
+
+        # Usually called GA::Table::Pane->respondVisibleTab whenever the visible tab in the task
+        #   window changes
+        # Resets the colour of the tab's label text
+        #
+        # Expected arguments
+        #   $paneObj    - The GA::Table::Pane object for the task window
+        #   $tabObj     - The GA::Obj::Tab for the newly-visible tab
+        #
+        # Optional arguments
+        #   $id         - A value passed by the pane object; for tasks, set to this task's ->name
+        #                   (in general, might be 'undef')
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $paneObj, $tabObj, $id, $check) = @_;
+
+        # Local variables
+        my (
+            $channel,
+            %reverseHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $paneObj || ! defined $tabObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->switchTabCallback', @_);
+        }
+
+        %reverseHash = reverse $self->tabHash;
+        $channel = $reverseHash{$tabObj};
+
+        if (defined $channel) {
+
+            $paneObj->setTabLabel(
+                $tabObj->number,
+                $self->getLabelText($channel, FALSE),
+            );
+        }
+
+        return 1;
+    }
+
+    sub closeTabCallback {
+
+        # Usually called GA::Table::Pane->removeTab whenever a tab in the task window is manually
+        #   closed by the user
+        # Updates $self->tabHash
+        #
+        # Expected arguments
+        #   $paneObj    - The GA::Table::Pane object for the task window
+        #   $tabObj     - The GA::Obj::Tab for the closed tab
+        #
+        # Optional arguments
+        #   $id         - A value passed by the pane object; for tasks, set to this task's ->name
+        #                   (in general, might be 'undef')
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $paneObj, $tabObj, $id, $check) = @_;
+
+        # Local variables
+        my $chooseTabObj;
+
+        # Check for improper arguments
+        if (! defined $paneObj || ! defined $tabObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->closeTabCallback', @_);
+        }
+
+        OUTER: foreach my $channel ($self->ivKeys('tabHash')) {
+
+            my $otherTabObj = $self->ivShow('tabhash', $channel);
+
+            if ($otherTabObj eq $tabObj) {
+
+                $self->ivDelete('tabHash', $channel);
+
+                last OUTER;
+            }
+        }
+
+        if ($self->defaultTabObj && $self->defaultTabObj eq $tabObj) {
+
+            # The first tab opened has been closed. Choose another default tab
+            foreach my $tabObj ($self->ivValues('tabHash')) {
+
+                if (! $chooseTabObj || $tabObj->number < $chooseTabObj->number) {
+
+                    $chooseTabObj = $tabObj;
+                }
+            }
+
+            # If there are no tabs left then, of course, $self->defaultTabObj is set to 'undef'
+            $self->ivPoke('defaultTabobj', $chooseTabObj);
+        }
+
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - task settings - get
+
+    # The accessors for task settings are inherited from the generic task
+
+    ##################
+    # Accessors - task parameters - get
+
+    sub lastLine
+        { $_[0]->{lastLine} }
+    sub tabHash
+        { my $self = shift; return %{$self->{tabHash}}; }
+
+    sub summaryMode
+        { $_[0]->{summaryMode} }
+    sub summaryChannel
+        { $_[0]->{summaryChannel} }
+
+    sub initChannelList
+        { my $self = shift; return @{$self->{initChannelList}}; }
+    sub ignoreChannelList
+        { my $self = shift; return @{$self->{ignoreChannelList}}; }
+
+    sub soundEffectHash
+        { my $self = shift; return %{$self->{soundEffectHash}}; }
+    sub urgencyHash
+        { my $self = shift; return %{$self->{urgencyHash}}; }
+
+    sub tabCloseButtonFlag
+        { $_[0]->{tabCloseButtonFlag} }
+    sub capitaliseFlag
+        { $_[0]->{capitaliseFlag} }
+    sub useColourStyleFlag
+        { $_[0]->{useColourStyleFlag} }
+}
+
 { package Games::Axmud::Task::Chat;
 
     # Chat task, based on the Kildclient plugin by Eduardo M Kalinowski
@@ -2578,32 +3804,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -2611,11 +3837,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -2626,7 +3852,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -2635,10 +3861,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -2647,7 +3873,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -2679,6 +3905,7 @@
         $self->{winPreferList}          = ['entry', 'grid'];
         $self->{winmap}                 = 'entry_fill';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = TRUE;
@@ -3064,7 +4291,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -3074,7 +4301,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -3097,36 +4324,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -3144,7 +4371,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -4095,7 +5322,7 @@
                     $char = $self->session->currentChar->name;  # Otherwise 'undef'
                 }
 
-                $otherSession->watchTask->displayMsg('chat', $world, $char, $text);
+                $otherSession->watchTask->displayText('chat', $world, $char, $text);
             }
         }
 
@@ -10483,32 +11710,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -10516,11 +11743,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -10531,7 +11758,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -10540,10 +11767,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -10552,7 +11779,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -10582,6 +11809,7 @@
         $self->{winPreferList}          = ['pseudo', 'grid'];
         $self->{winmap}                 = 'basic_empty';
         $self->{winUpdateFunc}          = 'createWidgets';
+        $self->{tabMode}                = undef;
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -10711,7 +11939,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -10721,7 +11949,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -10744,36 +11972,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -10791,7 +12019,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -11217,7 +12445,7 @@
             'func'          => $self->getMethodRef('radioButtonCallback'),
             'id'            => 'button_2',
             'text'          => 'Enable',
-            'select_flag'   => TRUE,
+            'select_flag'   => FALSE,
             'group'         => $radioTableObj->group,
         );
 
@@ -11755,32 +12983,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -11788,11 +13016,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -11803,7 +13031,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -11812,10 +13040,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -11824,7 +13052,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -11854,6 +13082,7 @@
         $self->{winPreferList}          = [];
         $self->{winmap}                 = undef;
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = undef;
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -11914,7 +13143,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -11924,7 +13153,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -11947,36 +13176,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -11994,7 +13223,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -12909,32 +14138,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -12942,11 +14171,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -12957,7 +14186,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -12966,10 +14195,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -12978,7 +14207,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -13008,6 +14237,7 @@
         $self->{winPreferList}          = ['pane', 'grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = TRUE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -13041,7 +14271,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -13051,7 +14281,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -13074,36 +14304,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -13121,7 +14351,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -13380,32 +14610,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -13413,11 +14643,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -13428,7 +14658,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -13437,10 +14667,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -13449,7 +14679,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -13479,6 +14709,7 @@
         $self->{winPreferList}          = ['entry', 'grid'];
         $self->{winmap}                 = 'entry_fill';
         $self->{winUpdateFunc}          = 'restoreWin';
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = TRUE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = TRUE;
@@ -13500,27 +14731,28 @@
         # The normal background colour for the window (set when the window is enabled) - set to one
         #   of Axmud's standard colour tags or 'undef' to use the default colour
         $self->{defaultColour}          = undef;
-        # The colour scheme for the task window changes for a few seconds, every time some text is
-        #   diverted to it. These IVs are set to one of Axmud's colour tags
-        # The colour to use for 'tell' messages (matching a pattern in the world profile's
-        #   ->tellPatternList
+        # When some text is diverted to the task window, the window's background colour changes.
+        #   The colour depends on the channel. The channels 'tell', 'social', 'custom' and 'warning'
+        #   have a colour assigned to them; all other channels share the same colour
+        # The IVs are set to an Axmud colour tag. Any non-underlay tag can be used, but the task's
+        #   edit window only shows standard colour tags like 'blue' and 'RED'
+        # The colour to use for the 'tell' channel
         $self->{tellAlertColour}        = 'YELLOW';
-        # The colour to use for 'social' messages (matching a pattern in the world profile's
-        #   ->socialPatternList
+        # The colour to use for the 'social' channel
         $self->{socialAlertColour}      = 'BLUE';
-        # The colour to use for 'custom' messages (caused when one of this task's customised
-        #   triggers fires)
+        # The colour to use for the 'custom' channel
         $self->{customAlertColour}      = 'cyan';
-        # The colour to use for a warning (caused when any part of the Axmud code calls this task,
-        #   asking it to display some text in its window, perhaps as an alternative to an audible
-        #   sound effect)
+        # The colour to use for the 'warning' channel
         $self->{warningAlertColour}     = 'RED',
+        # The colour to use for all other channels
+        $self->{otherAlertColour}       = 'magenta',
 
-        # When diverted text is received, how many seconds to use the alert colour scheme
+        # When diverted text is received, how many seconds to use the alert colour
         $self->{tellAlertInterval}      = 10;
         $self->{socialAlertInterval}    = 3;
         $self->{customAlertInterval}    = 3;
         $self->{warningAlertInterval}   = 10;
+        $self->{otherAlertInterval}     = 10;
 
         # Which sound effects are played when diverted text is received. The value should be
         #   one of the keys in GA::Client->customSoundHash; if the value is 'undef', no sound effect
@@ -13529,13 +14761,15 @@
         $self->{socialAlertSound}       = 'notify';
         $self->{customAlertSound}       = 'notify';
         $self->{warningAlertSound}      = 'alarm';
+        $self->{otherAlertSound}        = 'notify';
 
         # Limits to the amount of text displayed in the task window. If set to 0, the whole matching
-        #   line is displayed. Otherwise, the first n characters are displayed. (No limit applies to
-        #   warning alerts)
+        #   line is displayed. Otherwise, the first n characters are displayed
         $self->{tellCharLimit}          = 0;
         $self->{socialCharLimit}        = 0;
         $self->{customCharLimit}        = 0;
+        $self->{warningCharLimit}       = 0;
+        $self->{otherCharLimit}         = 0;
 
         # Flags which, if set to TRUE, cause the automapper object's current room to be displayed
         #   when a tell, social or custom alert occurs. (If the automapper's current room isn't set,
@@ -13544,17 +14778,19 @@
         $self->{socialRoomFlag}         = FALSE;
         $self->{customRoomFlag}         = FALSE;
         $self->{warningRoomFlag}        = FALSE;
+        $self->{otherRoomFlag}          = FALSE;
 
-        # Flags which, if set to TRUE, cause the task window's urgency hint to be set when a tell,
-        #   social or custom alert occurs (might not work in all desktop environments)
-        $self->{tellUrgencyFlag}        = TRUE;
-        $self->{socialUrgencyFlag}      = TRUE;
-        $self->{customUrgencyFlag}      = TRUE;
-        $self->{warningUrgencyFlag}     = TRUE;
+        # Flags which, if set to TRUE, cause the task window's urgency hint to be set when text is
+        #   diverted (might not work in all desktop environments)
+        $self->{tellUrgencyFlag}        = FALSE;
+        $self->{socialUrgencyFlag}      = FALSE;
+        $self->{customUrgencyFlag}      = FALSE;
+        $self->{warningUrgencyFlag}     = FALSE;
+        $self->{otherUrgencyFlag}       = FALSE;
 
-        # When diverted text is received, the time at which the alert colour scheme should be
-        #   replaced by the default colour scheme (matches GA::Session->sessionTime). Usually set
-        #   to 'undef', which means the default colour scheme is visible
+        # When diverted text is received, the time (matching GA::Session->sessionTime) at which the
+        #   alert background colour should be replaced by the default background colour . Usually
+        #   set to 'undef', which means the default background colour is visible
         $self->{resetTime}              = undef;
         # Flag set to TRUE the first time diverted text is received (set to FALSE if no diverted
         #   text has been received)
@@ -13563,23 +14799,18 @@
         #   its task window once. The display buffer line number of the last line that matched a
         #   tell, social or custom pattern
         $self->{lastLine}               = 0;
-        # Flag set to FALSE if diverted text should also be displayed in both the 'main' window and
-        #   the task window (set to TRUE if it should only be diverted to the task window)
-        # NB This applies only to 'tell' and 'social' patterns; custom patterns have their own gag
-        #   flag
-        $self->{gagFlag}                = TRUE;
         # A short string written to the task window, in front of any text typed by the user (to make
         #   clear what was typed by whom)
         $self->{responseString}         = '=> ';
-        # A list of all lines displayed in the window so that, if the window is closed and
-        #   strings are displayed, when the window is open they'll be ready for the user to see
+        # A list of all lines displayed in the window so that, if the window is closed when text is
+        #   visible in it, when the window is opened they'll be ready for the user to see
         $self->{lineList}               = [];
 
         # Bless task
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -13589,7 +14820,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -13612,36 +14843,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -13659,7 +14890,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -13671,35 +14902,41 @@
         $clone->{socialAlertColour}     = $self->socialAlertColour;
         $clone->{customAlertColour}     = $self->customAlertColour;
         $clone->{warningAlertColour}    = $self->warningAlertColour;
+        $clone->{otherAlertColour}      = $self->otherAlertColour;
 
         $clone->{tellAlertInterval}     = $self->tellAlertInterval;
         $clone->{socialAlertInterval}   = $self->socialAlertInterval;
         $clone->{customAlertInterval}   = $self->customAlertInterval;
         $clone->{warningAlertInterval}  = $self->warningAlertInterval;
+        $clone->{otherAlertInterval}    = $self->otherAlertInterval;
 
         $clone->{tellAlertSound}        = $self->tellAlertSound;
         $clone->{socialAlertSound}      = $self->socialAlertSound;
         $clone->{customAlertSound}      = $self->customAlertSound;
         $clone->{warningAlertSound}     = $self->warningAlertSound;
+        $clone->{otherAlertSound}       = $self->otherAlertSound;
 
         $clone->{tellCharLimit}         = $self->tellCharLimit;
         $clone->{socialCharLimit}       = $self->socialCharLimit;
         $clone->{customCharLimit}       = $self->customCharLimit;
+        $clone->{warningCharLimit}      = $self->warningCharLimit;
+        $clone->{otherCharLimit}        = $self->otherCharLimit;
 
         $clone->{tellRoomFlag}          = $self->tellRoomFlag;
         $clone->{socialRoomFlag}        = $self->socialRoomFlag;
         $clone->{customRoomFlag}        = $self->customRoomFlag;
         $clone->{warningRoomFlag}       = $self->warningRoomFlag;
+        $clone->{otherRoomFlag}         = $self->otherRoomFlag;
 
         $clone->{tellUrgencyFlag}       = $self->tellUrgencyFlag;
         $clone->{socialUrgencyFlag}     = $self->socialUrgencyFlag;
         $clone->{customUrgencyFlag}     = $self->customUrgencyFlag;
         $clone->{warningUrgencyFlag}    = $self->warningUrgencyFlag;
+        $clone->{otherUrgencyFlag}      = $self->otherUrgencyFlag;
 
         $clone->{resetTime}             = $self->resetTime;
         $clone->{firstTextFlag}         = $self->firstTextFlag;
         $clone->{lastLine}              = $self->lastLine;
-        $clone->{gagFlag}               = $self->gagFlag;
         $clone->{responseString}        = $self->responseString;
 
         $clone->{lineList}              = [$self->lineList];
@@ -13742,35 +14979,44 @@
         # Preserve some task parameters (the others are left with their default settings, some of
         #   which will be re-initialised in stage 2)
 
-        # Preserve the colour schemes
+        # Preserve the default colour
+        $newTask->ivPoke('defaultColour', $self->defaultColour);
+        # Preserve the background colours
         $newTask->ivPoke('tellAlertColour', $self->tellAlertColour);
         $newTask->ivPoke('socialAlertColour', $self->socialAlertColour);
         $newTask->ivPoke('customAlertColour', $self->customAlertColour);
         $newTask->ivPoke('warningAlertColour', $self->warningAlertColour);
-        # Preserve intervals before resetting the colour scheme
+        $newTask->ivPoke('otherAlertColour', $self->otherAlertColour);
+        # Preserve intervals before resetting the background colour
         $newTask->ivPoke('tellAlertInterval', $self->tellAlertInterval);
         $newTask->ivPoke('socialAlertInterval', $self->socialAlertInterval);
         $newTask->ivPoke('customAlertInterval', $self->customAlertInterval);
         $newTask->ivPoke('warningAlertInterval', $self->warningAlertInterval);
+        $newTask->ivPoke('otherAlertInterval', $self->otherAlertInterval);
         # Preserve sound effects
         $newTask->ivPoke('tellAlertSound', $self->tellAlertSound);
         $newTask->ivPoke('socialAlertSound', $self->socialAlertSound);
         $newTask->ivPoke('customAlertSound', $self->customAlertSound);
         $newTask->ivPoke('warningAlertSound', $self->warningAlertSound);
+        $newTask->ivPoke('otherAlertSound', $self->otherAlertSound);
         # Preserve character limits
         $newTask->ivPoke('tellCharLimit', $self->tellCharLimit);
         $newTask->ivPoke('socialCharLimit', $self->socialCharLimit);
         $newTask->ivPoke('customCharLimit', $self->customCharLimit);
+        $newTask->ivPoke('warningCharLimit', $self->warningCharLimit);
+        $newTask->ivPoke('otherCharLimit', $self->otherCharLimit);
         # Preserve room flags
         $newTask->ivPoke('tellRoomFlag', $self->tellRoomFlag);
         $newTask->ivPoke('socialRoomFlag', $self->socialRoomFlag);
         $newTask->ivPoke('customRoomFlag', $self->customRoomFlag);
         $newTask->ivPoke('warningRoomFlag', $self->warningRoomFlag);
+        $newTask->ivPoke('otherRoomFlag', $self->otherRoomFlag);
         # Preserve urgency hint flags
         $newTask->ivPoke('tellUrgencyFlag', $self->tellUrgencyFlag);
         $newTask->ivPoke('socialUrgencyFlag', $self->socialUrgencyFlag);
         $newTask->ivPoke('customUrgencyFlag', $self->customUrgencyFlag);
         $newTask->ivPoke('warningUrgencyFlag', $self->warningUrgencyFlag);
+        $newTask->ivPoke('otherUrgencyFlag', $self->otherUrgencyFlag);
 
         return 1;
     }
@@ -13906,8 +15152,7 @@
         # Called just before the task completes a reset
         # For process tasks, called by $self->main. For activity tasks, called by $self->reset
         #
-        # This function does nothing, so tasks that need to do something special during a reset
-        #   should have their own ->doReset function
+        # Makes sure the task window is using the default background colour
         #
         # Expected arguments
         #   $newTaskObj     - The replacement task object
@@ -13937,7 +15182,38 @@
         return 1;
     }
 
-#   sub doFirstStage {}         # Inherited from generic task
+    sub doFirstStage {
+
+        # Called by $self->main, just before the task completes the first stage ($self->stage)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doFirstStage', @_);
+        }
+
+        if ($self->session->channelsTask) {
+
+            $self->writeError(
+                'The Channels and Divert tasks cannot run at the same time, so halting the'
+                . ' Divert task',
+                $self->_objClass . '->doStage',
+            );
+
+            # Mark the task to be shutdown
+            $self->ivPoke('shutdownFlag', TRUE);
+            return undef;
+        }
+    }
 
     sub doStage {
 
@@ -13961,8 +15237,7 @@
 
         if ($self->stage == 2) {
 
-            # Create dependent triggers for the 'tell' and 'social' patterns defined by the current
-            #   world profile
+            # Create dependent triggers for patterns defined by the current world profile
             if (! $self->resetTriggers()) {
 
                 $self->writeError(
@@ -13984,7 +15259,7 @@
                 if ($self->defaultTabObj) {
 
                     # The delay, started the last time some diverted text was received, is over.
-                    #   Revert the task window to its original colour scheme
+                    #   Revert the task window to its original background colour
                     $self->defaultTabObj->paneObj->applyMonochrome(
                         $self->defaultTabObj,
                         $self->defaultColour,
@@ -14006,7 +15281,8 @@
 
     sub resetTriggers {
 
-        # Called by $self->doStage, GA::Cmd::AddDivertPattern->do and DeleteDivertPattern->do
+        # Called by $self->doStage, GA::Cmd::AddChannelPattern->do and
+        #   GA::Cmd::DeleteChannelPattern->do
         # Removes all of this task's dependent triggers and replaces them with new ones
         #
         # Expected arguments
@@ -14019,25 +15295,13 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my (
-            $worldObj,
-            @customList,
-        );
+        my @channelList;
 
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->resetTriggers', @_);
         }
-
-        # Import the current world
-        $worldObj = $self->session->currentWorld;
-
-        # The world profile stores characteristic patterns which mark text as being a social
-        #   interaction (e.g. 'CHAT: ', 'asks you', 'tells you')
-        # Create triggers to intercept these messages.
-        # In calls to $session->createInterface, the arguments ('gag', 1) prevents any matching
-        #   line of text received from the world from being displayed in the 'main' window
 
         # First remove any existing triggers. ->tidyInterfaces returns the number of triggers
         #   removed, or 'undef' it there's an error
@@ -14046,118 +15310,80 @@
             return undef;
         }
 
-        # Create dependent triggers for 'tell' patterns
-        foreach my $pattern ($worldObj->tellPatternList) {
-
-            my $obj = $self->session->createInterface(
-                'trigger',
-                $pattern,
-                $self,
-                'tellPatternSeen',
-                'gag',
-                $self->gagFlag,
-            );
-
-            if (! $obj) {
-
-                # If there's an error creating any triggers, remove any triggers already created
-                $self->session->tidyInterfaces($self);
-                return undef;
-            }
-        }
-
-        # Create dependent triggers for social patterns
-        foreach my $pattern ($worldObj->socialPatternList) {
-
-            my $obj = $self->session->createInterface(
-                'trigger',
-                $pattern,
-                $self,
-                'socialPatternSeen',
-                'gag',
-                $self->gagFlag,
-            );
-
-            if (! $obj) {
-
-                # If there's an error creating any triggers, remove any triggers already created
-                $self->session->tidyInterfaces($self);
-                return undef;
-            }
-        }
-
-        # Import the world profile's list of custom divert patterns
-        @customList = $worldObj->customDivertPatternList;
-        # Create dependent triggers for custom divert patterns
-        if (@customList) {
+        # Import the list of patterns (groups of 3)
+        @channelList = $self->session->currentWorld->channelList;
+        if (@channelList) {
 
             do {
 
-                my $pattern = shift @customList;
-                my $flag = shift @customList;
+                my ($pattern, $channel, $flag, $interfaceObj);
 
-                my $obj = $self->session->createInterface(
+                $pattern = shift @channelList;
+                $channel = shift @channelList;
+                $flag = shift @channelList;
+
+                # Create dependent trigger
+                $interfaceObj = $self->session->createInterface(
                     'trigger',
                     $pattern,
                     $self,
-                    'customPatternSeen',
+                    'divertPatternSeen',
                     'gag',
                     $flag,
                 );
 
-                if (! $obj) {
+                if (! $interfaceObj) {
 
                     # If there's an error creating any triggers, remove any triggers already created
                     $self->session->tidyInterfaces($self);
                     return undef;
+
+                } else {
+
+                    # Give the trigger some properties that will tell $self->divertPatternSeen which
+                    #   channel to use when the trigger fires
+                    $interfaceObj->ivAdd('propertyHash', 'channel', $channel);
                 }
 
-            } until (! @customList);
+            } until (! @channelList);
         }
 
         return 1;
     }
 
-    sub displayMsg {
+    sub displayText {
 
-        # Called by $self->tellPatternSeen, ->socialPatternSeen and ->customPatternSeen to display a
-        #   message in the task window
+        # Called by $self->divertPatternSeen and ->displayWarning (only) to display text in the task
+        #   window
         #
         # Expected arguments
-        #   $type       - Message type: 'tell', 'social', 'custom' or 'warning'
+        #   $channel    - The channel name, e.g. 'tell', 'social', 'custom', 'warning'
         #
         # Optional arguments
-        #   $msg        - The message to display. If 'undef', no text is displayed in the task
-        #                   window, but the colour scheme is still changed
-        #   $charLimit  - The number of characters of $msg to display. If set to 0 (or 'undef'), the
-        #                   whole line; otherwise the first n characters from the line are displayed
+        #   $text       - The text to display. If 'undef', no text is displayed in the task window,
+        #                   but the background colour is still changed
         #   $stripLine  - The original line of text received from the world (after escape sequences
         #                   are removed); used for writing logs ('undef' for 'warning' messages)
-        #   $modLine    - $stripLine after any triggers had fired; used for writing logs ('undef'
-        #                   for warning messages)
         #
         # Return values
         #   'undef' on improper arguments or if the task window isn't open
         #   1 otherwise
 
-        my ($self, $type, $msg, $charLimit, $stripLine, $modLine, $check) = @_;
+        my ($self, $channel, $text, $stripLine, $check) = @_;
 
         # Local variables
-        my ($time, $origMsg);
+        my ($time, $origText, $otherFlag);
 
         # Check for improper arguments
-        if (
-            ! defined $type
-            || ($type ne 'tell' && $type ne 'social' && $type ne 'custom' && $type ne 'warning')
-            || defined $check
-        )  {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayMsg', @_);
+        if (! defined $channel || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayText', @_);
         }
 
-        # Change the task window's colour scheme, and set the interval at which the colour scheme
-        #   will revert to the default
-        # Also, play a sound (if allowed)
-        if ($type eq 'tell') {
+        # Change the task window's background colour, and set the interval at which the colour
+        #   will revert back to the default colour
+        # Also, play a sound (if allowed) and apply a size limit to the text (if a limit is set)
+        if ($channel eq 'tell') {
 
             if ($self->defaultTabObj) {
 
@@ -14173,7 +15399,12 @@
                 $axmud::CLIENT->playSound($self->tellAlertSound);
             }
 
-        } elsif ($type eq 'social') {
+            if ($self->tellCharLimit) {
+
+                $text = substr($text, 0, $self->tellCharLimit);
+            }
+
+        } elsif ($channel eq 'social') {
 
             if ($self->defaultTabObj) {
 
@@ -14189,7 +15420,12 @@
                 $axmud::CLIENT->playSound($self->socialAlertSound);
             }
 
-        } elsif ($type eq 'custom') {
+            if ($self->socialCharLimit) {
+
+                $text = substr($text, 0, $self->socialCharLimit);
+            }
+
+        } elsif ($channel eq 'custom') {
 
             if ($self->defaultTabObj) {
 
@@ -14205,7 +15441,12 @@
                 $axmud::CLIENT->playSound($self->customAlertSound);
             }
 
-        } elsif ($type eq 'warning') {
+            if ($self->customCharLimit) {
+
+                $text = substr($text, 0, $self->customCharLimit);
+            }
+
+        } elsif ($channel eq 'warning') {
 
             if ($self->defaultTabObj) {
 
@@ -14220,6 +15461,34 @@
 
                 $axmud::CLIENT->playSound($self->warningAlertSound);
             }
+
+            if ($self->warningCharLimit) {
+
+                $text = substr($text, 0, $self->warningCharLimit);
+            }
+
+        } else {
+
+            $otherFlag = TRUE;
+
+            if ($self->defaultTabObj) {
+
+                $time = $self->session->sessionTime + $self->otherAlertInterval;
+                $self->defaultTabObj->paneObj->applyMonochrome(
+                    $self->defaultTabObj,
+                    $self->otherAlertColour,
+                );
+            }
+
+            if ($self->otherAlertSound) {
+
+                $axmud::CLIENT->playSound($self->otherAlertSound);
+            }
+
+            if ($self->otherCharLimit) {
+
+                $text = substr($text, 0, $self->otherCharLimit);
+            }
         }
 
         if ($self->taskWinFlag) {
@@ -14232,41 +15501,36 @@
             }
         }
 
-        # Reduce the size of $msg, if necessary
-        if ($charLimit) {
-
-            $msg = substr($msg, 0, $charLimit);
-        }
-
-        # (Preserve the original message, in case we convert the message to speech below)
-        $origMsg = $msg;
+        # Preserve the original text, in case we convert the text to speech below
+        $origText = $text;
 
         # Add the automapper's current room, if allowed
         if (
             $self->session->mapObj->currentRoom
             && (
-                ($type eq 'tell' && $self->tellRoomFlag)
-                || ($type eq 'social' && $self->socialRoomFlag)
-                || ($type eq 'custom' && $self->customRoomFlag)
-                || ($type eq 'warning' && $self->warningRoomFlag)
+                ($channel eq 'tell' && $self->tellRoomFlag)
+                || ($channel eq 'social' && $self->socialRoomFlag)
+                || ($channel eq 'custom' && $self->customRoomFlag)
+                || ($channel eq 'warning' && $self->warningRoomFlag)
+                || ($otherFlag && $self->otherRoomFlag)
             )
         ) {
-            $msg .= ' [Room #' . $self->session->mapObj->currentRoom->number . ']';
+            $text .= ' [Room #' . $self->session->mapObj->currentRoom->number . ']';
         }
 
-        # Display the message (if there is one)
-        if ($self->taskWinFlag && $msg) {
+        # Display the text (if there is any)
+        if ($self->taskWinFlag && $text ne '') {
 
             if (! $self->firstTextFlag) {
 
-                # This is the first message to be displayed in the task window; need to remove any
+                # This is the first text to be displayed in the task window; need to remove any
                 #   holding messages
-                $self->insertWithLinks($msg, 'empty');
+                $self->insertWithLinks($text, 'empty');
                 $self->ivPoke('firstTextFlag', TRUE);
 
             } else {
 
-                $self->insertWithLinks($msg);
+                $self->insertWithLinks($text);
             }
         }
 
@@ -14283,7 +15547,7 @@
                     $char = $self->session->currentChar->name;  # Otherwise 'undef'
                 }
 
-                $otherSession->watchTask->displayMsg('divert', $world, $char, $msg);
+                $otherSession->watchTask->displayText('divert', $world, $char, $text);
             }
         }
 
@@ -14291,34 +15555,34 @@
         if ($self->winObj) {
 
             if (
-                ($type eq 'tell' && $self->tellUrgencyFlag)
-                || ($type eq 'social' && $self->socialUrgencyFlag)
-                || ($type eq 'custom' && $self->customUrgencyFlag)
-                || ($type eq 'warning' && $self->warningUrgencyFlag)
+                ($channel eq 'tell' && $self->tellUrgencyFlag)
+                || ($channel eq 'social' && $self->socialUrgencyFlag)
+                || ($channel eq 'custom' && $self->customUrgencyFlag)
+                || ($channel eq 'warning' && $self->warningUrgencyFlag)
+                || ($otherFlag && $self->otherUrgencyFlag)
             ) {
                 $self->winObj->setUrgent();
             }
         }
 
-        # Also write the message to the logs, as if it had appeared in the 'main' window (if
-        #   allowed)
-        if (defined $stripLine && defined $modLine) {
+        # Also write the text to the logs, as if it had appeared in the 'main' window (if allowed)
+        if (defined $stripLine && defined $origText) {
 
-            $self->session->writeIncomingDataLogs($stripLine, $modLine);
+            $self->session->writeIncomingDataLogs($stripLine, $origText);
         }
 
-        # Store the message in this list IV so that, if the window is closed and then re-opened,
-        #   all the messages (since the last use of ';emptydivertwindow') can be re-displayed
-        $self->ivPush('lineList', $msg);
+        # Store the text in this list IV so that, if the window is closed and then re-opened, all
+        #   the lines of text (since the last use of ';emptydivertwindow') can be re-displayed
+        $self->ivPush('lineList', $text);
 
         # Read out a TTS message, if required
         if (
             # Read out all messages, if set
             $self->ivShow('ttsFlagAttribHash', 'divert')
-            # Read out only this $type of message, if set
-            || $self->ivShow('ttsFlagAttribHash', $type)
+            # Read out only this text for this $channel, if set
+            || $self->ivShow('ttsFlagAttribHash', $channel)
         ) {
-            $self->ttsQuick($origMsg);
+            $self->ttsQuick($origText);
         }
 
         return 1;
@@ -14326,21 +15590,21 @@
 
     sub displayWarning {
 
-        # Can be called by anything that wants to display some text in the task window as a
-        #   warning (an alternative to an audible alarm)
+        # Can be called by anything that wants to display some text in the task window as if it were
+        #   in the 'warning' channel (a handy alternative to an audible alarm)
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
-        #   $warning    - The warning to display. If 'undef', nothing is displayed, but the window's
-        #                   colour scheme is still changed
+        #   $text    - The warning text to display. If 'undef', nothing is displayed, but the
+        #               window's background colour is still changed
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $warning, $check) = @_;
+        my ($self, $text, $check) = @_;
 
         # Check for improper arguments
         if (defined $check)  {
@@ -14348,8 +15612,8 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->displayWarning', @_);
         }
 
-        # Write the message to the window
-        $self->displayMsg('warning', $warning);
+        # Write the text to the window
+        $self->displayText('warning', $text);
 
         return 1;
     }
@@ -14357,7 +15621,8 @@
     sub resetWin {
 
         # Called by GA::Cmd::EmptyDivertWindow->do
-        # Resets the task window - removes any text, and sets the colour scheme back to the default
+        # Resets the task window - removes any text, and sets the background colour back to the
+        #   default
         #
         # Expected arguments
         #   (none besides $self)
@@ -14379,7 +15644,7 @@
             # Empty the window of text
             $self->clearBuffer();
 
-            # Use the default colour scheme
+            # Use the default background colour
             if ($self->defaultTabObj) {
 
                 $self->defaultTabObj->paneObj->applyMonochrome($self->defaultColour);
@@ -14401,7 +15666,7 @@
     sub restoreWin {
 
         # Called by $self->toggleWin, when the window is re-opened after being closed
-        # Restores all the messages that would have been displayed, had the window been open
+        # Restores all the lines of text that would have been displayed, had the window been open
         #
         # Expected arguments
         #   (none besides $self)
@@ -14432,16 +15697,19 @@
     ##################
     # Response methods
 
-    sub tellPatternSeen {
+    sub divertPatternSeen {
 
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture strings matching
-        #   'tell' patterns
+        #   patterns in the world profile's ->patternList
         #   e.g. Gandalf tells you, Give me the ring!
         #
-        # The function diverts the line to the task window and modifies its colour scheme
-        #   (temporarily). Backreferences and the interface's ->propertyHash are not used
+        # The function diverts the line to the task window and modifies its background colour
+        #   (temporarily). Backreferences are ignored
+        #
+        # The trigger interfaces have the following properties in ->propertyHash:
+        #   channel         - Which channel to use
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -14477,7 +15745,7 @@
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->tellPatternSeen',
+                $self->_objClass . '->divertPatternSeen',
                 @_,
             );
         }
@@ -14508,12 +15776,12 @@
             $self->ivPoke('lastLine', $self->session->displayBufferLast);
         }
 
-        # As well as a list of 'tell' patterns, the world profile specifies lists of patterns which
-        #   are exceptions to the rule (i.e. are NOT 'tell' patterns)
-        # Any line of text which matches both patterns is diverted back to the 'main' window, and is
-        #   not displayed in the task window
+        # Check this line of text doesn't match one of the patterns in the exception list,
+        #   GA::Profile::World->noChannelList
+        # Any line of text which matches a pattern in that list is diverted back to the 'main'
+        #   window, and is not displayed in the task window
         # Check that $modLine doesn't contain one of those exception patterns
-        foreach my $pattern ($self->session->currentWorld->noTellPatternList) {
+        foreach my $pattern ($self->session->currentWorld->noChannelList) {
 
             if ($modLine =~ m/$pattern/i) {
 
@@ -14535,247 +15803,12 @@
             }
         }
 
-        # Write the message to the task window
-        $self->displayMsg('tell', $modLine, $self->tellCharLimit);
-
-        # Write the message to a logfile (if possible)
-        $axmud::CLIENT->writeLog(
-            $self->session,
-            FALSE,      # Not a 'standard' logfile
+        # Display the text in the task window
+        $self->displayText(
+            $obj->ivShow('propertyHash', 'channel'),
             $modLine,
-            FALSE,      # Don't precede with a newline character
-            TRUE,       # Use final newline character
-            'divert',   # Write to this logfile
+            $stripLine,
         );
-
-        return 1;
-    }
-
-    sub socialPatternSeen {
-
-        # Called by GA::Session->checkTriggers
-        #
-        # This task's ->resetTriggers function creates some triggers to capture strings matching
-        #   social patterns
-        #   e.g. CHAT: What a lovely day! Gonna kill me some orcs
-        #
-        # The function diverts the line to the task window and modifies its colour scheme
-        #   (temporarily). Backreferences and the interface's ->propertyHash are not used
-        #
-        # Expected arguments (standard args from GA::Session->checkTriggers)
-        #   $session        - The calling function's GA::Session
-        #   $interfaceNum   - The number of the active trigger interface that fired
-        #   $line           - The line of text received from the world
-        #   $stripLine      - $line, with all escape sequences removed
-        #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
-        #                       (equivalent of @_)
-        #   $matchMinusListRef
-        #                   - Reference to a list of matched substring offsets (equivalent of @-)
-        #   $matchPlusListRef
-        #                   - Reference to a list of matched substring offsets (equivalent of @+)
-        #
-        # Return values
-        #   'undef' on improper arguments, or if $session is the wrong session, if the interface
-        #       object can't be found, if the corresponding IV can't be found or if the received
-        #       line of text matches one of the exception patterns for this type of message
-        #   1 otherwise
-
-        my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
-            $matchMinusListRef, $matchPlusListRef, $check,
-        ) = @_;
-
-        # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (
-            ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
-            || ! defined $matchPlusListRef || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->socialPatternSeen',
-                @_,
-            );
-        }
-
-        # Basic check - the trigger should belong to the right session
-        if ($session ne $self->session) {
-
-            return undef;
-        }
-
-        # Get the interface object itself
-        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
-        if (! $obj) {
-
-            return undef;
-        }
-
-        # Respond to the fired trigger
-
-        # Ignore the trigger, if this line has already been diverted
-        if ($self->lastLine && $self->lastLine == $self->session->displayBufferLast) {
-
-            return undef;
-
-        } else {
-
-            # Don't act on any more triggers from this line
-            $self->ivPoke('lastLine', $self->session->displayBufferLast);
-        }
-
-        # As well as a list of social patterns, the world profile specifies lists of patterns which
-        #   are exceptions to the rule (i.e. are NOT social patterns)
-        # Any line of text which matches both patterns is diverted back to the 'main' window, and is
-        #   not displayed in the task window
-        # Check that $modLine doesn't contain one of those exception patterns
-        foreach my $pattern ($self->session->currentWorld->noSocialPatternList) {
-
-            if ($modLine =~ m/$pattern/i) {
-
-                # Divert the text back into the 'main' window, where it belongs (but only if a gag
-                #   trigger was used)
-                if ($obj->ivShow('attribHash', 'gag')) {
-
-                    $self->session->defaultTabObj->textViewObj->insertText(
-                        $modLine,
-                        'after',           # Assume that the line would have ended in a newline char
-                    );
-
-                    # Write to logs, if allowed
-                    $self->session->writeIncomingDataLogs($stripLine, $modLine);
-                }
-
-                # (Don't bother checking the other exception patterns)
-                return undef;
-            }
-        }
-
-        # Write the message to the task window
-        $self->displayMsg('social', $modLine, $self->socialCharLimit);
-
-        # Write the message to a logfile (if possible)
-        $axmud::CLIENT->writeLog(
-            $self->session,
-            FALSE,      # Not a 'standard' logfile
-            $modLine,
-            FALSE,      # Don't precede with a newline character
-            TRUE,       # Use final newline character
-            'divert',   # Write to this logfile
-        );
-
-        return 1;
-    }
-
-    sub customPatternSeen {
-
-        # Called by GA::Session->checkTriggers
-        #
-        # This task's ->resetTriggers function creates some triggers to capture strings matching
-        #   customised patterns, with the intention of diverting them to this task's window
-        #   e.g. You kill the orc
-        #
-        # The function diverts the line to the task window and modifies its colour scheme
-        #   (temporarily). Backreferences and the interface's ->propertyHash are not used
-        #
-        # Expected arguments (standard args from GA::Session->checkTriggers)
-        #   $session        - The calling function's GA::Session
-        #   $interfaceNum   - The number of the active trigger interface that fired
-        #   $line           - The line of text received from the world
-        #   $stripLine      - $line, with all escape sequences removed
-        #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
-        #                       (equivalent of @_)
-        #   $matchMinusListRef
-        #                   - Reference to a list of matched substring offsets (equivalent of @-)
-        #   $matchPlusListRef
-        #                   - Reference to a list of matched substring offsets (equivalent of @+)
-        #
-        # Return values
-        #   'undef' on improper arguments, or if $session is the wrong session, if the interface
-        #       object can't be found, if the corresponding IV can't be found or if the received
-        #       line of text matches one of the exception patterns for this type of message
-        #   1 otherwise
-
-        my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
-            $matchMinusListRef, $matchPlusListRef, $check,
-        ) = @_;
-
-        # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (
-            ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
-            || ! defined $matchPlusListRef || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->customPatternSeen',
-                @_,
-            );
-        }
-
-        # Basic check - the trigger should belong to the right session
-        if ($session ne $self->session) {
-
-            return undef;
-        }
-
-        # Get the interface object itself
-        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
-        if (! $obj) {
-
-            return undef;
-        }
-
-        # Respond to the fired trigger
-
-        # Ignore the trigger, if this line has already been diverted
-        if ($self->lastLine && $self->lastLine == $self->session->displayBufferLast) {
-
-            return undef;
-
-        } else {
-
-            # Don't act on any more triggers from this line
-            $self->ivPoke('lastLine', $self->session->displayBufferLast);
-        }
-
-        # As well as a list of custom divert patterns, the world profile specifies lists of patterns
-        #   which are exceptions to the rule (i.e. are NOT custom divert patterns)
-        # Any line of text which matches both patterns is diverted back to the 'main' window, and is
-        #   not displayed in the task window
-        # Check that $modLine doesn't contain one of those exception patterns
-        foreach my $pattern ($self->session->currentWorld->noCustomDivertPatternList) {
-
-            if ($modLine =~ m/$pattern/i) {
-
-                # Divert the text back into the 'main' window, where it belongs (but only if a gag
-                #   trigger was used)
-                if ($obj->ivShow('attribHash', 'gag')) {
-
-                    $self->session->defaultTabObj->textViewObj->insertText(
-                        $self->session,
-                        $modLine,
-                        'after',           # Assume that the line would have ended in a newline char
-                    );
-
-                    # Write to logs, if allowed
-                    $self->session->writeIncomingDataLogs($stripLine, $modLine);
-                }
-
-                # (Don't bother checking the other exception patterns)
-                return undef;
-            }
-        }
-
-        # Write the message to the task window
-        $self->displayMsg('custom', $modLine, $self->customCharLimit);
 
         # Write the message to a logfile (if possible)
         $axmud::CLIENT->writeLog(
@@ -14852,6 +15885,8 @@
         { $_[0]->{customAlertColour} }
     sub warningAlertColour
         { $_[0]->{warningAlertColour} }
+    sub otherAlertColour
+        { $_[0]->{otherAlertColour} }
 
     sub tellAlertInterval
         { $_[0]->{tellAlertInterval} }
@@ -14861,6 +15896,8 @@
         { $_[0]->{customAlertInterval} }
     sub warningAlertInterval
         { $_[0]->{warningAlertInterval} }
+    sub otherAlertInterval
+        { $_[0]->{otherAlertInterval} }
 
     sub tellAlertSound
         { $_[0]->{tellAlertSound} }
@@ -14870,6 +15907,8 @@
         { $_[0]->{customAlertSound} }
     sub warningAlertSound
         { $_[0]->{warningAlertSound} }
+    sub otherAlertSound
+        { $_[0]->{otherAlertSound} }
 
     sub tellCharLimit
         { $_[0]->{tellCharLimit} }
@@ -14877,6 +15916,10 @@
         { $_[0]->{socialCharLimit} }
     sub customCharLimit
         { $_[0]->{customCharLimit} }
+    sub warningCharLimit
+        { $_[0]->{warningCharLimit} }
+    sub otherCharLimit
+        { $_[0]->{otherCharLimit} }
 
     sub tellRoomFlag
         { $_[0]->{tellRoomFlag} }
@@ -14886,6 +15929,8 @@
         { $_[0]->{customRoomFlag} }
     sub warningRoomFlag
         { $_[0]->{warningRoomFlag} }
+    sub otherRoomFlag
+        { $_[0]->{otherRoomFlag} }
 
     sub tellUrgencyFlag
         { $_[0]->{tellUrgencyFlag} }
@@ -14895,6 +15940,8 @@
         { $_[0]->{customUrgencyFlag} }
     sub warningUrgencyFlag
         { $_[0]->{warningUrgencyFlag} }
+    sub otherUrgencyFlag
+        { $_[0]->{otherUrgencyFlag} }
 
     sub resetTime
         { $_[0]->{resetTime} }
@@ -14902,8 +15949,6 @@
         { $_[0]->{firstTextFlag} }
     sub lastLine
         { $_[0]->{lastLine} }
-    sub gagFlag
-        { $_[0]->{gagFlag} }
     sub responseString
         { $_[0]->{responseString} }
     sub lineList
@@ -14931,32 +15976,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -14964,11 +16009,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -14979,7 +16024,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -14988,10 +16033,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -15000,7 +16045,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -15030,6 +16075,7 @@
         $self->{winPreferList}          = ['grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = undef;            # No func to call after ;opentaskwindow
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -15054,7 +16100,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -15064,7 +16110,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -15087,36 +16133,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -15134,7 +16180,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -15479,32 +16525,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -15512,11 +16558,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -15527,7 +16573,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -15536,10 +16582,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -15548,7 +16594,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -15578,6 +16624,7 @@
         $self->{winPreferList}          = ['pane', 'grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = TRUE;
         $self->{ttsFlag}                = FALSE;
@@ -15676,7 +16723,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -15686,7 +16733,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -15709,36 +16756,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -15756,7 +16803,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -16553,7 +17600,7 @@
         # Local variables
         my (
             $statusObj, $modelObj, $worldObj, $cashValue,
-            @patternList, @objList,
+            @patternList, @stringList, @modList,
         );
 
         # Check for improper arguments
@@ -16594,80 +17641,99 @@
             } until (! @patternList);
         }
 
-        # For carried objects in an inventory list...
-        if (
-            $type eq 'wield' || $type eq 'hold' || $type eq 'wear' || $type eq 'carry'
-            || $type eq 'sack' || $type eq 'misc'
-        ) {
-            # Convert the matched string into a list of non-model objects
-            push (@objList, $modelObj->parseObj($self->session, FALSE, $string));
+        # The world profile provides patterns which should be applied in a Perl split operation,
+        #   discarding the matching portions and using everything between them as separate objects
+        push (@stringList, $string);
+        foreach my $pattern ($worldObj->inventorySplitPatternList) {
 
-            OUTER: foreach my $obj (@objList) {
+            foreach my $item (@stringList) {
 
-                my (
-                    $count, $index,
-                    @previousList,
-                );
+                push (@modList, split(/$pattern/, $item));
+            }
 
-                # Add the object to this task's inventory list
-                $self->ivPush('inventoryList', $obj);
-                # Set the object's inventory type
-                $obj->ivPoke('inventoryType', $type);
+            @stringList = @modList;
+            @modList = ();
+        }
 
-                # Compare $obj against everything in the previous inventory list. If a match is
-                #   found, remove the equivalent object from the previous inventory list, but copy
-                #   its condition (if set) to $obj
-                @previousList = $self->previousList;    # We're going to splice the IV
-                $count = -1;
+        # If $string has been split into multiple strings, apply the same $type to all of them
+        foreach my $item (@stringList) {
 
-                INNER: foreach my $oldObj (@previousList) {
+            my @objList;
 
-                    $count++;
-                    if ($modelObj->objCompare($self->sensitivity, $obj, $oldObj)) {
+            # For carried objects in an inventory list...
+            if (
+                $type eq 'wield' || $type eq 'hold' || $type eq 'wear' || $type eq 'carry'
+                || $type eq 'sack' || $type eq 'misc'
+            ) {
+                # Convert the matched string into a list of non-model objects
+                push (@objList, $modelObj->parseObj($self->session, FALSE, $item));
 
-                        # $obj was also present in the previous list. Remove the entry from that
-                        #   list
+                OUTER: foreach my $obj (@objList) {
 
-                        # Remove the entry in the previous list
-                        $index = $self->ivFind('previousList', $oldObj);
-                        if (defined $index) {
+                    my (
+                        $count, $index,
+                        @previousList,
+                    );
 
-                            $self->ivSplice('previousList', $index, 1);
+                    # Add the object to this task's inventory list
+                    $self->ivPush('inventoryList', $obj);
+                    # Set the object's inventory type
+                    $obj->ivPoke('inventoryType', $type);
+
+                    # Compare $obj against everything in the previous inventory list. If a match is
+                    #   found, remove the equivalent object from the previous inventory list, but
+                    #   copy its condition (if set) to $obj
+                    @previousList = $self->previousList;    # We're going to splice the IV
+                    $count = -1;
+
+                    INNER: foreach my $oldObj (@previousList) {
+
+                        $count++;
+                        if ($modelObj->objCompare($self->sensitivity, $obj, $oldObj)) {
+
+                            # $obj was also present in the previous list. Remove the entry from that
+                            #   list
+
+                            # Remove the entry in the previous list
+                            $index = $self->ivFind('previousList', $oldObj);
+                            if (defined $index) {
+
+                                $self->ivSplice('previousList', $index, 1);
+                            }
+
+                            # If $oldObj had a condition set, copy it to the current object
+                            if (defined $oldObj->condition) {
+
+                                $obj->ivPoke('condition', $oldObj->condition);
+                            }
+
+                            # Only need to copy one condition setting per object
+                            next OUTER;
                         }
-
-                        # If $oldObj had a condition set, copy it to the current object
-                        if (defined $oldObj->condition) {
-
-                            $obj->ivPoke('condition', $oldObj->condition);
-                        }
-
-                        # Only need to copy one condition setting per object
-                        next OUTER;
                     }
                 }
-            }
 
-        # For all lines representing money..
-        } elsif ($type ne 'ignore') {
+            # For all lines representing money..
+            } elsif ($type ne 'ignore') {
 
-            if ($type eq 'empty') {
+                if ($type eq 'empty') {
 
-                $cashValue = 0;
+                    $cashValue = 0;
 
-            } else {
+                } else {
 
-                # Convert the value into the standard currency unit (defined by the current world
-                #   profile)
-                $cashValue = $self->convertCash($string);
-            }
+                    # Convert the value into the standard currency unit (defined by the current
+                    #   world profile)
+                    $cashValue = $self->convertCash($item);
+                }
 
+                if (defined $cashValue) {
 
-            if (defined $cashValue) {
+                    # Update the Status task, if it is running
+                    if ($statusObj) {
 
-                # Update the Status task, if it is running
-                if ($statusObj) {
-
-                    $statusObj->set_cashValues($type, $cashValue);
+                        $statusObj->set_cashValues($type, $cashValue);
+                    }
                 }
             }
         }
@@ -17358,32 +18424,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -17391,11 +18457,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -17406,7 +18472,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -17415,10 +18481,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -17427,7 +18493,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -17457,6 +18523,7 @@
         $self->{winPreferList}          = ['pseudo', 'grid'];
         $self->{winmap}                 = 'basic_empty';
         $self->{winUpdateFunc}          = 'createWidgets';
+        $self->{tabMode}                = undef;
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -17469,7 +18536,7 @@
 
         # Task parameters
         #
-        # Table object handling the Gtk2::Ex::Simple::List
+        # Table object handling the GA::Gtk::Simple::List
         $self->{slTableObj}             = undef;
         # A hash of scripts displayed in the window, in the form
         #   $fileHash{script_name} = full_file_path
@@ -17480,7 +18547,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -17490,7 +18557,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -18175,32 +19242,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -18208,11 +19275,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -18223,7 +19290,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -18232,10 +19299,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -18244,7 +19311,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -18274,6 +19341,7 @@
         $self->{winPreferList}          = ['pane', 'grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = 'refreshWin';
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = TRUE;
         $self->{ttsFlag}                = TRUE;
@@ -18336,6 +19404,19 @@
         #   correspond to the non-model room, $self->roomObj). 'undef' otherwise
         $self->{modelNumber}            = undef;
 
+        # The 'weather' component captures lines of text that should not be stored in the model, but
+        #   should be displayed in this task's window. (This is mostly used for weather and the time
+        #   of day, but can be used for anything)
+        # The contents of this hash is replaced whenever $self->processAnchor successfully extracts
+        #   a room statement
+        # The keys are the name of the 'weather' component. The corresponding values are the line(s)
+        #   captured by that component, with any text portions removed as normal, and with multiple
+        #   lines joined together in a single string. Both key and value are displayed in the window
+        $self->{weatherHash}            = {};
+        # Flag which sets how objects in the room contents are displayed in the Locator task window.
+        #   FALSE to display the (original) base string, TRUE to nouns first, and so on
+        $self->{showParsedFlag}         = FALSE;
+
         # Hash used to store the received lines of text that comprise certain components of the
         #   room statement, so that the text-to-speech routines can read them aloud (if required).
         # Hash in the form
@@ -18387,10 +19468,16 @@
         # The GA::Buffer::Cmd that is thought to have caused the most recent move from one room to
         #   another (actually, the last one removed from $self->moveList); set to 'undef' if the
         #   last move was a result of unknown command(s)
-        $self->{previousMoveObj}        = undef;
-        # The direction of the most recent move, taken from $self->previousMoveObj; set to 'undef'
-        #   if unknown
-        $self->{previousMove}           = undef;
+        $self->{prevMoveObj}            = undef;
+        # The direction of the most recent move, taken from $self->prevMoveObj; set to 'undef' if
+        #   unknown
+        $self->{prevMove}               = undef;
+        # When $self->add_cmdObj is called, this IV is set (or reset). If $self->moveList is empty
+        #   at that time, this IV is set to GA::Session->displayBufferCount, which represents the
+        #   buffer number of the first line of text received from the world in response to the
+        #   command. If $self->moveList is not empty at that time, it's reset to 'undef'
+        # (The IV is used for auto-processing new failed exit messages)
+        $self->{prevCmdBufferNum}       = undef;
         # Flag set to TRUE whenever a failed exit is detected by this task (any code can set this
         #   flag to FALSE using $self->reset_failExitFlag, and then check the flag regularly,
         #   waiting to see when a failed exit is next detected)
@@ -18400,13 +19487,6 @@
         #   using $self->reset_involuntaryExitFlag, and then check the flag regularly, waiting to
         #   see when an involuntary exit is next detected)
         $self->{involuntaryExitFlag}    = FALSE;
-        # When ->moveList is not empty, the number of expected moves is displayed in the task
-        #   window's title bar (if it's open). When the list is empty, no indication is shown in the
-        #   title bar (i.e. (9) or (5) is shown, but not (0)
-        # When this flag is set to TRUE, the number of expected moves needs to be displayed in the
-        #   title bar; when the number of expected moves becomes zero again, the flag resets to
-        #   FALSE
-        $self->{resetTitleBarFlag}      = FALSE;
         # Arrival tag: for the ';drive' (etc) commands, when the character moves along a pre-defined
         #   route and the room at the end of the route has a tag specified by the ';drive' (etc)
         #   command, that tag is stored here. (When this task's ->moveList becomes empty, that
@@ -18446,7 +19526,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -18456,7 +19536,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -18479,36 +19559,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -18526,7 +19606,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -18543,6 +19623,8 @@
         $clone->{roomObj}               = $self->roomObj;
         $clone->{prevRoomObj}           = $self->prevRoomObj;
         $clone->{modelNumber}           = $self->modelNumber;
+        $clone->{weatherHash}           = {$self->weatherHash};
+        $clone->{showParsedFlag}        = $self->showParsedFlag;
 
         $clone->{ttsToReadHash}         = {$self->ttsToReadHash};
 
@@ -18553,11 +19635,11 @@
 
         $clone->{cmdObjList}            = [$self->cmdObjList];
         $clone->{moveList}              = [$self->moveList];
-        $clone->{previousMoveObj}       = $self->previousMoveObj;
-        $clone->{previousMove}          = $self->previousMove;
+        $clone->{prevMoveObj}           = $self->prevMoveObj;
+        $clone->{prevMove}              = $self->prevMove;
+        $clone->{prevCmdBufferNum}      = $self->prevCmdBufferNum;
         $clone->{failExitFlag}          = $self->failExitFlag;
         $clone->{involuntaryExitFlag}   = $self->involuntaryExitFlag;
-        $clone->{resetTitleBarFlag}     = $self->resetTitleBarFlag;
         $clone->{arrivalTag}            = $self->arrivalTag;
 
         $clone->{manualResetFlag}       = $self->manualResetFlag;
@@ -18613,6 +19695,8 @@
         # Preserve the corpse/body part flags
         $newTask->ivPoke('combineCorpseFlag', $self->combineCorpseFlag);
         $newTask->ivPoke('combineBodyPartFlag', $self->combineBodyPartFlag);
+        $newTask->ivPoke('showParsedFlag', $self->showParsedFlag);
+        $newTask->ivPoke('autoLookMode', $self->autoLookMode);
 
         return 1;
     }
@@ -19015,7 +20099,7 @@
                 if (
                     ! $self->roomCount
                     # (In basic mapping mode, always move forwards)
-                    && ! $worldObj->basicMappingMode
+                    && ! $worldObj->basicMappingFlag
                 ) {
                     # Situation 1 - move backwards from the end of the display buffer
                     ($stopLine, $startLine) = ($startLine, $stopLine);
@@ -19116,7 +20200,7 @@
                             #   room statement we've just analysed
                             # Walk the list, eliminating any lines up to and including the end of
                             #   the statement
-                            # NB If the world profile's ->basicMappingMode is TRUE, $step will be 1
+                            # NB If the world profile's ->basicMappingFlag is TRUE, $step will be 1
                             #   but $self->lastStatementEndLine will be 'undef', so we had to check
                             #   for that
                             do {
@@ -19219,7 +20303,8 @@
 
                         # Check any following lines of text
                         $nextLine = $lineList[0];
-                        if ($nextLine =~ m/^\s*[a-z]/) {
+#                        if ($nextLine =~ m/^\s*[a-z]/) {
+                        if ($nextLine =~ m/^\s*[[:lower:]]/) {
 
                             $nextLine = shift @lineList;
                             $nextLineObj = $self->session->ivShow('displayBufferHash', $nextLine);
@@ -19418,9 +20503,7 @@
                 $self->refreshWin($moveDir);
             }
 
-            # Inform the automapper of the failed exit so it can decide what to do (but only if the
-            #   failed exit is one of those defined by the current world profile. The automapper
-            #   doesn't act on failed exit patterns for a specific room)
+            # Inform the automapper of the failed exit so it can decide what to do
             $self->session->mapObj->failedExitSeen($foundFailPattern, $moveDir);
         }
 
@@ -19523,8 +20606,8 @@
             #   command, and remove it from the list
             $cmdObj = $self->removeFirstMove();
             # Direction of move is unknown
-            $self->ivUndef('previousMoveObj');
-            $self->ivUndef('previousMove');
+            $self->ivUndef('prevMoveObj');
+            $self->ivUndef('prevMove');
             # Current location is unknown
             $self->ivUndef('roomObj');
 
@@ -19847,6 +20930,7 @@
                 # Make sure the move lists are empty
                 $self->ivEmpty('cmdObjList');
                 $self->ivEmpty('moveList');
+                $self->ivUndef('prevCmdBufferNum');
                 # Display information about the room statement in the task window (if it's open and
                 #   enabled)
                 if ($self->taskWinFlag) {
@@ -19944,7 +21028,7 @@
             if (
                 ! $anchorFlag
                 && ! $self->useMxpFlag
-                && $worldObj->basicMappingMode
+                && $worldObj->basicMappingFlag
                 && $self->moveList
             ) {
                 push (@promptList,
@@ -20324,6 +21408,7 @@
                     # Otherwise, make sure the move lists are empty
                     $self->ivEmpty('cmdObjList');
                     $self->ivEmpty('moveList');
+                    $self->ivUndef('prevCmdBufferNum');
                 }
 
                 # Display information about the room statement in the task window (if it's open
@@ -20411,14 +21496,14 @@
 
                 # Store the direction of movement so it's available to anything that wants to know
                 if ($cmdObj->redirectFlag || $cmdObj->assistedFlag) {
-                    $self->ivPoke('previousMove', 'cmd');
+                    $self->ivPoke('prevMove', 'cmd');
                 } else {
-                    $self->ivPoke('previousMove', $cmdObj->moveDir);
+                    $self->ivPoke('prevMove', $cmdObj->moveDir);
                 }
 
                 # Also store the buffer object itself, in case anything wants more details about
                 #   the move
-                $self->ivPoke('previousMoveObj', $cmdObj);
+                $self->ivPoke('prevMoveObj', $cmdObj);
             }
 
             # Display information about the room statement in the task window (if it's open and
@@ -20733,6 +21818,12 @@
         $self->setRoomFromMxp($worldObj, $roomObj, %mxpPropHash);
 
         # Store the lines at which the room statement starts/ends
+        if (! defined $useLine) {
+
+            # No additional lines found, besides $origLineNum
+            $useLine = $origLineNum;
+        }
+
         if ($step < 0) {
 
             $self->ivPoke('lastStatementStartLine', $useLine);
@@ -21009,7 +22100,7 @@
             $anchorOffset, $anchorFlag, $roomObj, $result, $successFlag, $firstLineNum,
             $lastLineNum, $otherLineNum, $hashRef1, $hashRef2,
             @componentList, @beforeList, @afterList,
-            %posnHash, %noExtractHash,
+            %posnHash, %noExtractHash, %oldWeatherHash,
         );
 
         # Check for improper arguments
@@ -21049,7 +22140,7 @@
 
             # In basic mapping mode, while trying to extract room statement components, the offset
             #   must be +1 (anchor line shares a line with the first line of the statement)
-            if ($worldObj->basicMappingMode) {
+            if ($worldObj->basicMappingFlag) {
 
                 $anchorOffset = 1;
             }
@@ -21090,6 +22181,13 @@
             FALSE,                  # Non-model object
         );
 
+        # $self->roomObj hasn't been set yet, but we still need to reset $self->weatherHash, as it's
+        #   about to be re-filled
+        # Keep a copy of the existing contents, in case extraction fails (in which case we can
+        #   restore the existing contents)
+        %oldWeatherHash = $self->weatherHash;
+        $self->ivEmpty('weatherHash');
+
         # Extract the components that come before the anchor line (if any)
         if (@beforeList) {
 
@@ -21109,6 +22207,8 @@
 
             # Attempted to extract a non-optional component, but failed
             if (! $successFlag) {
+
+                $self->ivPoke('weatherHash', %oldWeatherHash);
 
                 return undef;
 
@@ -21149,6 +22249,8 @@
 
             # Attempted to extract a non-optional component, but failed
             if (! $successFlag) {
+
+                $self->ivPoke('weatherHash', %oldWeatherHash);
 
                 return undef;
 
@@ -21737,6 +22839,10 @@
 
                         $result = $self->setRoomMudlibPath($roomObj, @lineTextList);
 
+                    } elsif ($type eq 'weather') {
+
+                        $result = $self->setRoomWeather($componentObj, @lineTextList);
+
                     } elsif ($type eq 'anchor' || $type eq 'ignore_line' || $type eq 'custom') {
 
                         # These components don't have a function, so there is no error flag to set
@@ -22227,7 +23333,8 @@
             #   at this line
             if ($componentObj->upperCount) {
 
-                if ($thisLineText =~ m/^[A-Z]/) {
+#                if ($thisLineText =~ m/^[A-Z]/) {
+                if ($thisLineText =~ m/^[[:upper:]]/) {
 
                     $upperCount++;
 
@@ -22244,7 +23351,8 @@
 
             if ($componentObj->otherCount) {
 
-                if ($thisLineText =~ m/^[a-z0-9_]/) {
+#                if ($thisLineText =~ m/^[a-z0-9_]/) {
+                if ($thisLineText =~ m/^[[:lower:]0-9\_]/) {
 
                     $otherCount++;
 
@@ -22557,7 +23665,8 @@
             #   at this line
             if ($componentObj->upperCount) {
 
-                if ($thisLineText =~ m/^[A-Z]/) {
+#                if ($thisLineText =~ m/^[A-Z]/) {
+                if ($thisLineText =~ m/^[[:upper:]]/) {
 
                     $upperCount++;
 
@@ -22574,7 +23683,8 @@
 
             if ($componentObj->otherCount) {
 
-                if ($thisLineText =~ m/^[a-z0-9_]/) {
+#                if ($thisLineText =~ m/^[a-z0-9_]/) {
+                if ($thisLineText =~ m/^[[:lower:]0-9\_]/) {
 
                     $otherCount++;
 
@@ -22788,15 +23898,15 @@
 
                 foreach my $tag ($bufferObj->initialTagList) {
 
-                    my $mode;
+                    my $type;
 
                     $tagHash{$tag} = undef;
 
                     # If this is a standard colour tag and the component is bold-insensitive, we
                     #   add two entries to a parallel hash, so we can check 'RED' against this
                     #   parallel hash, and get a match against either 'red' or 'RED'
-                    ($mode) = $axmud::CLIENT->checkColourTags($tag, 'standard');
-                    if ($mode && ! $componentObj->boldSensitiveFlag) {
+                    ($type) = $axmud::CLIENT->checkColourTags($tag, 'standard');
+                    if ($type && ! $componentObj->boldSensitiveFlag) {
 
                         $otherTagHash{lc($tag)} = undef;
                         $otherTagHash{uc($tag)} = undef;
@@ -22817,7 +23927,7 @@
             # Count the number of relevant colour/style tags
             OUTER: foreach my $tag (keys %tagHash) {
 
-                my $mode;
+                my $type;
 
                 if ($axmud::CLIENT->debugMaxLocatorFlag) {
 
@@ -22827,8 +23937,8 @@
                     );
                 }
 
-                ($mode) = $axmud::CLIENT->checkColourTags($tag);
-                if ($mode) {
+                ($type) = $axmud::CLIENT->checkColourTags($tag);
+                if ($type) {
                     $colourCount++;     # It's a colour tag
                 } else {
                     $styleCount++;      # It's a style tag
@@ -23414,6 +24524,7 @@
         # Empty the command lists, since none of them matter now
         $self->ivEmpty('moveList');
         $self->ivEmpty('cmdObjList');
+        $self->ivUndef('prevCmdBufferNum');
 
         # Set flags that other parts of the Axmud code can consult frequently, to see if there's
         #   been a failed exit (etc) or not
@@ -23523,6 +24634,10 @@
                 # Empty both lists, to prevent a whole stream of errors
                 $self->ivEmpty('cmdObjList');
                 $self->ivEmpty('moveList');
+                $self->ivUndef('prevCmdBufferNum');
+
+                # Update the task window's title bar (if open)
+                $self->prepareTitleBar();
 
                 return undef;
 
@@ -23533,6 +24648,10 @@
                 # Restore IVs
                 $self->ivPoke('cmdObjList', @cmdObjList);
                 $self->ivPoke('moveList', @moveList);
+                $self->ivUndef('prevCmdBufferNum');
+
+                # Update the task window's title bar (if open)
+                $self->prepareTitleBar();
 
                 # Return the object found
                 return $thisObj;
@@ -23633,6 +24752,10 @@
                 # Empty both lists, to prevent a whole stream of errors
                 $self->ivEmpty('cmdObjList');
                 $self->ivEmpty('moveList');
+                $self->ivUndef('prevCmdBufferNum');
+
+                # Update the task window's title bar (if open)
+                $self->prepareTitleBar();
 
                 return undef;
 
@@ -23643,6 +24766,10 @@
                 # Restore IVs
                 $self->ivPoke('cmdObjList', @cmdObjList);
                 $self->ivPoke('moveList', @moveList);
+                $self->ivUndef('prevCmdBufferNum');
+
+                # Update the task window's title bar (if open)
+                $self->prepareTitleBar();
 
                 # Return the object found
                 return $thisObj;
@@ -23836,6 +24963,35 @@
 
             my @thisList = ($line);
 
+            # In case the delimiter interferes with exit state strings, remove anything matching
+            #   the pattern(s), and treat that portion as an exit
+            foreach my $pattern ($worldObj->exitStatePatternList) {
+
+                my @tempList = @thisList;
+                @thisList = ();
+
+                foreach my $item (@tempList) {
+
+                    my $exitFlag;
+
+                    do {
+
+                        $exitFlag = FALSE;
+
+                        if ($item =~ s/($pattern)//) {
+
+                            push (@exitList, $1);
+                            $exitFlag = TRUE;
+                        }
+
+                    } until (! $exitFlag);
+
+                    # Anything remaining after matching portions extracted
+                    push (@thisList, $item);
+                 }
+            }
+
+            # Now split the line using exit delimiters
             foreach my $delim ($worldObj->verboseExitDelimiterList) {
 
                 my @tempList = @thisList;
@@ -23843,8 +24999,23 @@
 
                 foreach my $item (@tempList) {
 
-                    my @miniList = split($delim, $item);        # $delim is not a regex
-                    push (@thisList, @miniList);
+                    my $offset;
+
+                    # Can't use Perl split(), because $delim is not a regex
+                    do {
+
+                        $offset = index($item, $delim);
+                        if ($offset >= 0) {
+
+                            push (@thisList, substr($item, 0, $offset));
+                            $item = substr($item, ($offset + length($delim)));
+
+                        } else {
+
+                            push (@thisList, $item);
+                        }
+
+                    } until ($offset < 0);
                 }
             }
 
@@ -24099,6 +25270,35 @@
 
             my @thisList = ($line);
 
+            # In case the delimiter interferes with exit state strings, remove anything matching
+            #   the pattern(s), and treat that portion as an exit
+            foreach my $pattern ($worldObj->exitStatePatternList) {
+
+                my @tempList = @thisList;
+                @thisList = ();
+
+                foreach my $item (@tempList) {
+
+                    my $exitFlag;
+
+                    do {
+
+                        $exitFlag = FALSE;
+
+                        if ($item =~ s/($pattern)//) {
+
+                            push (@exitList, $1);
+                            $exitFlag = TRUE;
+                        }
+
+                    } until (! $exitFlag);
+
+                    # Anything remaining after matching portions extracted
+                    push (@thisList, $item);
+                 }
+            }
+
+            # Now split the line using exit delimiters
             foreach my $delim ($worldObj->briefExitDelimiterList) {
 
                 my @tempList = @thisList;
@@ -24106,8 +25306,23 @@
 
                 foreach my $item (@tempList) {
 
-                    my @miniList = split($delim, $item);        # $delim is not a regex
-                    push (@thisList, @miniList);
+                    my $offset;
+
+                    # Can't use Perl split(), because $delim is not a regex
+                    do {
+
+                        $offset = index($item, $delim);
+                        if ($offset >= 0) {
+
+                            push (@thisList, substr($item, 0, $offset));
+                            $item = substr($item, ($offset + length($delim)));
+
+                        } else {
+
+                            push (@thisList, $item);
+                        }
+
+                    } until ($offset < 0);
                 }
             }
 
@@ -24310,6 +25525,7 @@
 
             my @thisList = ($line);
 
+            # Sort in reverse order of length, otherwise unexpected problems might occur
             foreach my $delim ($worldObj->roomCmdDelimiterList) {
 
                 my @tempList = @thisList;
@@ -24317,8 +25533,23 @@
 
                 foreach my $item (@tempList) {
 
-                    my @miniList = split($delim, $item);        # $delim is not a regex
-                    push (@thisList, @miniList);
+                    my $offset;
+
+                    # Can't use Perl split(), because $delim is not a regex
+                    do {
+
+                        $offset = index($item, $delim);
+                        if ($offset >= 0) {
+
+                            push (@thisList, substr($item, 0, $offset));
+                            $item = substr($item, ($offset + length($delim)));
+
+                        } else {
+
+                            push (@thisList, $item);
+                        }
+
+                    } until ($offset < 0);
                 }
             }
 
@@ -24363,6 +25594,7 @@
 
         # Update the non-model room object
         $roomObj->ivPush('roomCmdList', @finalList);
+        $roomObj->ivPoke('tempRoomCmdList', $roomObj->roomCmdList);
 
         # Operation complete
         return 1;
@@ -24406,6 +25638,69 @@
 
         # Mudlib path not found
         return undef;
+    }
+
+    sub setRoomWeather {
+
+        # Called by $self->extractComponents (at stage 3)
+        # Adds text describing the weather, the time of day and so on to a task hash used to display
+        #   that information in the task window
+        # (The text isn't anywhere stored in the world model)
+        #
+        # Expected arguments
+        #   $componentObj   - The GA::Obj::Component of the type 'weather'
+        #   @lineList       - A list of lines comprising that room statement component
+        #
+        # Return values
+        #   'undef' on improper arguments or if the lines in @lineList contain no non-space
+        #       characters
+        #   1 otherwise
+
+        my ($self, $componentObj, @lineList) = @_;
+
+        # Local variables
+        my (
+            $string,
+            @newList,
+        );
+
+        # Check for improper arguments
+        if (! defined $componentObj || ! @lineList) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setRoomWeather', @_);
+        }
+
+        # Merge the lines into a single string, ignoring any empty lines
+        foreach my $line (@lineList) {
+
+            if ($line =~ m/\S/) {
+
+                # Remove leading/trailing whitespace. The TRUE flag means to remove multiple space
+                #   characters in the middle of the line, too
+                $line = $axmud::CLIENT->trimWhitespace($line, TRUE);
+                push (@newList, $line);
+            }
+        }
+
+        if (! @newList) {
+
+            # No non-space characters found, so there's nothing to display
+            return undef;
+
+        } else {
+
+            # If the room statement contains (for some reason) multiple 'weather' components with
+            #   the same name, merge them all
+            if ($self->ivExists('weatherHash', $componentObj->name)) {
+
+                unshift (@newList, $self->ivShow('weatherHash', $componentObj->name));
+            }
+
+            # Store the merged string
+            $self->ivAdd('weatherHash', $componentObj->name, join(' ', @newList));
+
+            return 1;
+        }
     }
 
     sub setRoomFromMxp {
@@ -24557,9 +25852,8 @@
 
                 $exit =~ s/$pattern//gi;
                 if (! $exit) {
+
                     next OUTER;     # All text has been removed, so ignore this exit
-                } else {
-                    last INNER;     # Only remove the first matching portion of the exit
                 }
             }
 
@@ -24587,8 +25881,8 @@
 
                 # Set the exit type, info and state
                 $exitObj->ivPoke('exitType', $dictObj->ivShow('combDirHash', $exit));
-                $exitObj->ivPoke('info', $info);        # May be 'undef'
-                $exitObj->ivPoke('exitState', $state);  # May be 'normal'
+                $exitObj->ivPoke('exitInfo', $info);        # May be 'undef'
+                $exitObj->ivPoke('exitState', $state);      # May be 'normal'
             }
         }
 
@@ -24688,8 +25982,9 @@
 
         # Local variables
         my (
-            $roomID, $nextTag, $verboseDescrip, $exitString, $roomCmdString, $corpseCount,
-            $bodyPartCount, $protocolRoomString, $protocolExitString,
+            $dictObj, $roomID, $nextTag, $verboseDescrip, $exitString, $roomCmdString, $corpseCount,
+            $bodyPartCount, $protocolRoomString, $protocolExitString, $colour, $posn, $before,
+            $after,
             @titleList, @sortedExitList, @objList, @modObjList, @charList, @minionList,
             @sentientList, @creatureList, @corpseList, @otherList, @newOtherList, @moveList,
             %exitNumHash, %otherHash, %protocolRoomHash, %protocolExitHash,
@@ -24707,6 +26002,9 @@
             return undef;
         }
 
+        # Import the current dictonary (for convenience)
+        $dictObj = $self->session->currentDict;
+
         # Import the lists and hashes for display, if they've been set ($self->roomObj may not be
         #   set if there's been a failed exit)
         if ($self->roomObj) {
@@ -24721,41 +26019,15 @@
             %protocolExitHash = $self->roomObj->protocolExitHash;
         }
 
-        # Check the number of expected moves, and update the window's title bar as necessary
-        if ((! $self->moveList) && $self->resetTitleBarFlag) {
+        # Set the task window's title bar (if open) to show the number of expected room statements
+        $self->prepareTitleBar();
+        # If ->arrivalTag has been set (by one of the route commands, e.g. ';go') and if the current
+        #   room is known and the room doesn't already have a tag, name the room with the supplied
+        #   tag
+        if (! $self->moveList && $self->arrivalTag && $self->roomObj && ! $self->roomObj->roomTag) {
 
-            # No more moves expected; remove the count from the task window's title bar
-            $self->setTaskWinTitle();
-            # Mark the title bar as not needing a further update
-            $self->ivPoke('resetTitleBarFlag', FALSE);
-            # Also update the Automapper window's title bar, if it's open
-            if ($self->session->mapWin) {
-
-                $self->session->mapWin->setWinTitle();
-            }
-
-            # If ->arrivalTag has been set (by one of the route commands, e.g. ';go') and if the
-            #   current room is known and the room doesn't already have a tag, name the room with
-            #   the supplied tag
-            if ($self->arrivalTag && $self->roomObj && ! $self->roomObj->roomTag) {
-
-                $self->roomObj->ivPoke('roomTag', $self->arrivalTag);
-                $self->ivEmpty('arrivalTag');
-            }
-
-        } elsif ($self->moveList) {
-
-            # Update the task window's title bar
-            $self->setTaskWinTitle('(' . scalar $self->moveList . ')', TRUE);
-
-            # Also update the Automapper window's title bar, if it's open (and not in 'wait' mode)
-            if ($self->session->mapWin && $self->session->mapWin->mode ne 'wait') {
-
-                $self->session->mapWin->setWinTitle(' (' . scalar $self->moveList . ')');
-            }
-
-            # Mark the title bar as needing an update sooner or later
-            $self->ivPoke('resetTitleBarFlag', TRUE);
+            $self->roomObj->ivPoke('roomTag', $self->arrivalTag);
+            $self->ivEmpty('arrivalTag');
         }
 
         # If the room has a tag and/or its world model number is known, display them first
@@ -24784,9 +26056,15 @@
             # If the automapper's current location isn't set, the room's tag must have been set
             #   following a command like ';drive' or ';quick'. If so, display the text in blue, so
             #   that the user can see it's not a tag used by a room in the world model
-            if (! $self->session->mapObj->currentRoom && $self->roomObj->roomTag) {
+            if (
+                ! $self->session->mapObj->currentRoom
+                && $self->roomObj
+                && $self->roomObj->roomTag
+            ) {
                 $self->insertText('[' . $roomID . '] ', 'empty', 'BLUE');
+
             } else {
+
                 $self->insertText('[' . $roomID . '] ', 'empty', 'RED');
             }
 
@@ -24948,13 +26226,22 @@
 
             foreach my $exit (@sortedExitList) {
 
-                my ($exitNum, $exitObj);
+                my ($modExit, $autoDir, $exitNum, $exitObj);
+
+                # If it's a secondary direction that's been mapped onto a primary direction,
+                #   display the primary direction too
+                $modExit = $exit;
+                $autoDir = $dictObj->ivShow('secondaryAutoHash', $exit);
+                if (defined $autoDir) {
+
+                    $modExit .= '/' . $dictObj->ivShow('primaryDirHash', $autoDir);
+                }
 
                 if (defined $failedExit && $exit eq $failedExit) {
 
                     # This is probably the direction that caused a failed exit string to appear.
                     #   Mark it.
-                    $exit = '*' . $exit;
+                    $modExit = '*' . $modExit;
                 }
 
                 # Find the corresponding exit model object
@@ -24974,34 +26261,34 @@
                 if ($exitObj && $exitObj->exitState) {
 
                     if ($exitObj->exitState eq 'open') {
-                        $exit .= '[O]';     # Open
+                        $modExit .= '[O]';     # Open
                     } elsif ($exitObj->exitState eq 'closed') {
-                        $exit .= '[C]';     # Closed
+                        $modExit .= '[C]';     # Closed
                     } elsif ($exitObj->exitState eq 'locked') {
-                        $exit .= '[L]';     # Locked
+                        $modExit .= '[L]';     # Locked
                     } elsif ($exitObj->exitState eq 'secret') {
-                        $exit .= '[S]';     # Secret
+                        $modExit .= '[S]';     # Secret
                     } elsif ($exitObj->exitState eq 'secret_open') {
-                        $exit .= '[SO]';     # Secret and open
+                        $modExit .= '[SO]';     # Secret and open
                     } elsif ($exitObj->exitState eq 'secret_closed') {
-                        $exit .= '[SC]';     # Secret and closed
+                        $modExit .= '[SC]';     # Secret and closed
                     } elsif ($exitObj->exitState eq 'secret_locked') {
-                        $exit .= '[SL]';     # Secret and locked
+                        $modExit .= '[SL]';     # Secret and locked
                     } elsif ($exitObj->exitState eq 'impass') {
-                        $exit .= '[I]';     # Impassable
+                        $modExit .= '[I]';     # Impassable
                     } elsif ($exitObj->exitState eq 'dark') {
-                        $exit .= '[D]';     # Dest room is dark
+                        $modExit .= '[D]';     # Dest room is dark
                     } elsif ($exitObj->exitState eq 'danger') {
-                        $exit .= '[!]';     # Dest room is dangerous
+                        $modExit .= '[!]';     # Dest room is dangerous
                     } elsif ($exitObj->exitState eq 'other') {
-                        $exit .= '[-]';     # Other
+                        $modExit .= '[-]';     # Other
                     }
                 }
 
                 if (! $exitString) {
-                    $exitString = $exit;
+                    $exitString = $modExit;
                 } else {
-                    $exitString .= ', '.$exit;
+                    $exitString .= ', '.$modExit;
                 }
             }
 
@@ -25044,11 +26331,23 @@
 
                 } else {
 
-                    $roomCmdString .= ' ' . $roomCmd;
+                    $roomCmdString .= ', ' . $roomCmd;
                 }
             }
 
             $self->insertText($roomCmdString, 'green');
+        }
+
+        # Display weather (etc) information, if set
+        if ($self->weatherHash) {
+
+            foreach my $key (sort {lc($a) cmp lc($b)} ($self->ivKeys('weatherHash'))) {
+
+                $self->insertText(
+                    ucfirst($key) . ': ' . $self->ivShow('weatherHash', $key),
+                    'yellow',
+                );
+            }
         }
 
         # If the flags are set, we need to remove all the corpses/body parts from @objList, so they
@@ -25228,36 +26527,82 @@
                 $column = ' ';
             }
 
+            # Highlight player characters and minions
             if ($obj->category eq 'char') {
 
-                $self->insertText($column . $nounString, 'RED');
+                $colour = 'RED';
 
             } elsif ($obj->category eq 'minion') {
 
                 if ($obj->ownMinionFlag) {
-                    $self->insertText($column . $nounString, 'CYAN');
+                    $colour = 'CYAN';
                 } else {
-                    $self->insertText($column . $nounString, 'GREEN');
+                    $colour = 'GREN';
                 }
 
             } else {
 
-                $self->insertText($column . $nounString, 'white');
+                $colour = 'white';
             }
 
-            if ($otherNounString) {
+            if (! $self->showParsedFlag) {
 
-                $self->insertText(' ' . $otherNounString, 'echo', 'yellow');
-            }
+                # Show the object before it was parsed, highlighing the noun in yellow
+                $posn = index($obj->baseString, $obj->noun);
 
-            if ($adjString) {
+                if ($posn == -1 || $colour ne 'white' || $obj->noun eq '') {
 
-                $self->insertText(' ' . $adjString, 'echo', 'green');
-            }
+                    # The actual noun seems to be missing, for some reason
+                    # Also, don't highlight the noun if it's a player character or minion
+                    $self->insertText($column . $obj->baseString, $colour);
 
-            if ($unknownWordString) {
+                } else {
 
-                $self->insertText(' ' . $unknownWordString, 'echo', 'magenta');
+                    $before = substr($obj->baseString, 0, $posn);
+                    if ($before ne '') {
+
+                        $self->insertText($column . $before, 'white');
+
+                        $self->insertText(
+                            substr($obj->baseString, $posn, length($obj->noun)),
+                            'echo',
+                            'yellow',
+                        );
+
+                    } else {
+
+                        $self->insertText(
+                            $column . substr($obj->baseString, $posn, length($obj->noun)),
+                            'yellow',
+                        );
+                    }
+
+                    $after = substr($obj->baseString, ($posn + length($obj->noun)));
+                    if ($after ne '') {
+
+                        $self->insertText($after, 'echo', 'white');
+                    }
+                }
+
+            } else {
+
+                # Show information about the object after it was parsed
+                $self->insertText($column . $nounString, $colour);
+
+                if ($otherNounString) {
+
+                    $self->insertText(' ' . $otherNounString, 'echo', 'yellow');
+                }
+
+                if ($adjString) {
+
+                    $self->insertText(' ' . $adjString, 'echo', 'green');
+                }
+
+                if ($unknownWordString) {
+
+                    $self->insertText(' ' . $unknownWordString, 'echo', 'magenta');
+                }
             }
 
             if ($multiple != 1 && $multiple > 0) {      # So, can include 0.333, 0.5, etc
@@ -25292,6 +26637,52 @@
 
                 $self->insertText(' [' . $bodyPartCount . ']', 'echo', 'red');
             }
+        }
+
+        return 1;
+    }
+
+    sub prepareTitleBar {
+
+        # Called by various functions, including $self->refreshWin
+        # Prepares text to display in the task window's title bar (if open), and then displays it
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->prepareTitleBar', @_);
+        }
+
+        # v1.1.093 The number of expected room statements is no longer displayed in the automapper
+        #   window
+        if (! $self->moveList) {
+
+            # No more moves expected. To make the title bar more pleasant to look out, display a
+            #   hyphen rather than nothing
+            $self->setTaskWinTitle(' - ', TRUE);
+#            # Also update the Automapper window's title bar, if it's open
+#            if ($self->session->mapWin) {
+#
+#                $self->session->mapWin->setWinTitle();
+#            }
+
+        } else {
+
+            $self->setTaskWinTitle(' ' . scalar $self->moveList . ' ', TRUE);
+#            # Also update the Automapper window's title bar, if it's open (and not in 'wait' mode)
+#            if ($self->session->mapWin && $self->session->mapWin->mode ne 'wait') {
+#
+#                $self->session->mapWin->setWinTitle(' (' . scalar $self->moveList . ')');
+#            }
         }
 
         return 1;
@@ -25490,6 +26881,7 @@
         # Update IVs
         $self->ivEmpty('cmdObjList');
         $self->ivEmpty('moveList');
+        $self->ivUndef('prevCmdBufferNum');
         # Update the task window
         $self->refreshWin();
 
@@ -25653,12 +27045,9 @@
         # Clone the model exit's properties
         $cloneExitObj->ivPoke('exitType', $modelExitObj->exitType);
         $cloneExitObj->ivPoke('hiddenFlag', $modelExitObj->hiddenFlag);
-        $cloneExitObj->ivPoke('breakFlag', $modelExitObj->breakFlag);
-        $cloneExitObj->ivPoke('pickFlag', $modelExitObj->pickFlag);
-        $cloneExitObj->ivPoke('lockFlag', $modelExitObj->lockFlag);
-        $cloneExitObj->ivPoke('openFlag', $modelExitObj->openFlag);
-        $cloneExitObj->ivPoke('impassFlag', $modelExitObj->impassFlag);
+        $cloneExitObj->ivPoke('exitOrnament', $modelExitObj->exitOrnament);
         $cloneExitObj->ivPoke('exitState', $modelExitObj->exitState);
+        $cloneExitObj->ivPoke('exitInfo', $modelExitObj->exitInfo);
 
         return $cloneExitObj;
     }
@@ -25716,6 +27105,113 @@
         }
     }
 
+    sub insertFailedExit {
+
+        # Called by GA::Cmd::InsertFailedExit->do, when there is exactly one item in $self->moveList
+        #   (meaning that the task is expecting a single room statement after a movement or look/
+        #   glance command)
+        # Looks at the first line of text received from the world after the movement/look/glance
+        #   command was sent, and assumes it's a failed message, updating the task's own IVs
+        #   accordingly (so it's no longer expecting a room statement)
+        # Optionally adds that message to the list in the current world or current room
+        #
+        # Expected arguments
+        #   $mode   - 'room' to update the current room's list of failed exit messages, 'world'
+        #               to update the current world profile's list, or 'update' to update neither
+        #               list
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $mode, $check) = @_;
+
+        # Local variables
+        my ($bufferObj, $text, $regex);
+
+        # Check for improper arguments
+        if (
+            ! defined $mode
+            || ($mode ne 'room' && $mode ne 'world' && $mode ne 'update')
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->insertFailedExit', @_);
+        }
+
+        # Check we're expecting a single room statement from a single move/look/glance command
+        if ((scalar $self->moveList) != 1 && defined $self->prevCmdBufferNum) {
+
+            return undef;
+
+        # $self->prevCmdBufferNum specifies the buffer number of the first line of text received
+        #   from the world after that command was processed. Check it's actually been received
+        } elsif (! $self->session->ivExists('displayBufferHash', $self->prevCmdBufferNum)) {
+
+            return undef;
+        }
+
+        # Retrieve the line of text, shorten it to a reasonable size (currently 40 characters) and
+        #   convert it to a regex
+        $bufferObj = $self->session->ivShow('displayBufferHash', $self->prevCmdBufferNum);
+        $text = substr($bufferObj->stripLine, 0, 40);
+        if ($text eq '') {
+
+            return undef;
+        }
+
+        $regex = '^' . quotemeta($text);
+
+        # Update failed exit lists, if required too
+        if ($mode eq 'room' && $self->session->mapObj->currentRoom) {
+            $self->session->mapObj->currentRoom->ivPush('failExitPatternList', $regex);
+        } elsif ($mode eq 'world') {
+            $self->session->currentWorld->ivPush('failExitPatternList', $regex);
+        }
+
+        # The task is no longer expecting any room statements
+        $self->resetMoveList();
+
+        return 1;
+    }
+
+    sub useRoomCmd {
+
+        # Called by GA::Cmd::RoomCommand->do
+        # Removes the first room command from the current room's list, executes it as a world
+        #   command, then moves it to the end of the list (so room commands can be executed in a
+        #   continuous cycle)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if there is no current room or if the current room has
+        #       no room commands
+        #   Otherwise returns the room command executed
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $cmd;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->useRoomCmd', @_);
+        }
+
+        if (! $self->roomObj || ! $self->roomObj->tempRoomCmdList) {
+
+            return undef;
+        }
+
+        $cmd = $self->roomObj->ivShift('tempRoomCmdList');
+        $self->session->worldCmd($cmd);
+        $self->roomObj->ivPush('tempRoomCmdList', $cmd);
+
+        return $cmd;
+    }
+
     ##################
     # Response methods
 
@@ -25747,12 +27243,22 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->add_cmdObj', @_);
         }
 
+        # If no room statements are expected, store the display buffer number of the first line of
+        #   text that will be received after the command is sent to the world
+        if (! $self->moveList) {
+            $self->ivPoke('prevCmdBufferNum', $self->session->displayBufferCount);
+        } else {
+            $self->ivUndef('prevCmdBufferNum');
+        }
+
         $self->ivPush('cmdObjList', $obj);
         if ($obj->lookFlag || $obj->glanceFlag || $obj->moveFlag || $obj->followFlag) {
 
             # It's a look, glance or movement command (including redirect mode commands and
             #   assisted moves)
             $self->ivPush('moveList', $obj);
+            # Update the task window's title bar (if open)
+            $self->prepareTitleBar();
         }
 
         return 1;
@@ -25991,6 +27497,10 @@
         { $_[0]->{prevRoomObj} }
     sub modelNumber
         { $_[0]->{modelNumber} }
+    sub weatherHash
+        { my $self = shift; return %{$self->{weatherHash}}; }
+    sub showParsedFlag
+        { $_[0]->{showParsedFlag} }
 
     sub ttsToReadHash
         { my $self = shift; return %{$self->{ttsToReadHash}}; }
@@ -26007,16 +27517,16 @@
         { my $self = shift; return @{$self->{cmdObjList}}; }
     sub moveList
         { my $self = shift; return @{$self->{moveList}}; }
-    sub previousMoveObj
-        { $_[0]->{previousMoveObj} }
-    sub previousMove
-        { $_[0]->{previousMove} }
+    sub prevMoveObj
+        { $_[0]->{prevMoveObj} }
+    sub prevMove
+        { $_[0]->{prevMove} }
+    sub prevCmdBufferNum
+        { $_[0]->{prevCmdBufferNum} }
     sub failExitFlag
         { $_[0]->{failExitFlag} }
     sub involuntaryExitFlag
         { $_[0]->{involuntaryExitFlag} }
-    sub resetTitleBarFlag
-        { $_[0]->{resetTitleBarFlag} }
     sub arrivalTag
         { $_[0]->{arrivalTag} }
 
@@ -26054,32 +27564,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -26087,11 +27597,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -26102,7 +27612,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -26111,10 +27621,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -26123,7 +27633,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -26153,6 +27663,7 @@
         $self->{winPreferList}          = ['pseudo', 'grid'];
         $self->{winmap}                 = 'basic_empty';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = undef;
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -26181,7 +27692,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -26191,7 +27702,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -26214,36 +27725,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -26261,7 +27772,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -26724,32 +28235,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -26757,11 +28268,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -26772,7 +28283,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -26781,10 +28292,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -26793,7 +28304,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -26823,6 +28334,7 @@
         $self->{winPreferList}          = ['pane', 'grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -26840,7 +28352,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -26850,7 +28362,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -26933,32 +28445,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -26966,11 +28478,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -26981,7 +28493,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -26990,10 +28502,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -27002,7 +28514,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -27032,6 +28544,7 @@
         $self->{winPreferList}          = ['pane', 'grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -27049,7 +28562,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -27059,7 +28572,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -27140,32 +28653,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -27173,11 +28686,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -27188,7 +28701,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -27197,10 +28710,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -27209,7 +28722,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -27239,6 +28752,7 @@
         $self->{winPreferList}          = ['pseudo', 'grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = FALSE;
@@ -27319,7 +28833,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -27329,7 +28843,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -27352,36 +28866,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -27399,7 +28913,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -27562,7 +29076,6 @@
         # If any gauges/status bars have been created, destroy them
         if ($self->gaugeStripObj && ($self->gaugeHash || $self->statusBarHash)) {
 
-            print "taskobj 27309 ->removeGauges\n";
             $self->gaugeStripObj->removeGauges(
                 $self->session,
                 FALSE,
@@ -27601,7 +29114,6 @@
         # If any gauges/status bars have been created, destroy them
         if ($self->gaugeStripObj && ($self->gaugeHash || $self->statusBarHash)) {
 
-             print "taskobj 27347 ->removeGauges\n";
            $self->gaugeStripObj->removeGauges(
                 $self->session,
                 FALSE,
@@ -28625,7 +30137,6 @@
         # Delete the gauge with this local $number, if it exists
         if ($self->ivExists('gaugeHash', $number)) {
 
-              print "taskobj 28362 ->removeGauges\n";
           $self->gaugeStripObj->removeGauges(
                 $self->session,
                 FALSE,
@@ -28757,7 +30268,6 @@
         # If this task has already created a status bar with the local number $number, remove it
         if ($self->ivExists('statusBarHash', $number)) {
 
-            print "taskobj 28493 ->removeGauges\n";
             $self->gaugeStripObj->removeGauges(
                 $self->session,
                 FALSE,
@@ -28816,7 +30326,6 @@
         # Delete the status bar with this local $number, if it exists
         if ($self->ivExists('statusBarHash', $number)) {
 
-              print "taskobj 28551 ->removeGauges\n";
           $self->gaugeStripObj->removeGauges(
                 $self->session,
                 FALSE,
@@ -29257,32 +30766,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -29290,11 +30799,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -29305,7 +30814,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -29314,10 +30823,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -29326,7 +30835,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -29355,6 +30864,7 @@
         $self->{startWithWinFlag}       = TRUE;
         $self->{winPreferList}          = ['pane', 'grid'];
         $self->{winmap}                 = 'basic_fill';
+        $self->{tabMode}                = 'simple';
         $self->{winUpdateFunc}          = 'refreshWin';
         $self->{monochromeFlag}         = TRUE;
         $self->{noScrollFlag}           = TRUE;
@@ -29839,7 +31349,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -29849,7 +31359,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -29872,36 +31382,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be cloned
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -29919,7 +31429,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -30116,6 +31626,7 @@
         $newTask->ivPoke('tempTimerBaseline', $self->tempTimerBaseline);
         # Preserve some gauge variables
         $newTask->ivPoke('gaugeFlag', $self->gaugeFlag);
+        $newTask->ivPoke('gaugeValueFlag', $self->gaugeFlag);
 
         return 1;
     }
@@ -35532,32 +37043,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -35565,11 +37076,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -35580,7 +37091,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -35589,10 +37100,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -35601,7 +37112,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -35631,6 +37142,7 @@
         $self->{winPreferList}          = ['pane', 'grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
         $self->{noScrollFlag}           = TRUE;
         $self->{ttsFlag}                = FALSE;
@@ -35648,7 +37160,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -35658,7 +37170,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -35837,32 +37349,32 @@
         #   $session    - The parent GA::Session (not stored as an IV)
         #
         # Optional arguments
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world), 'custom' (tasks with
         #                   customised initial parameters, which are run when the user demands). If
         #                   set to 'undef', this is a temporary task, created in order to access the
         #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskList = 'current', when called by $self->clone) Name of the
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
         #                   profile from whose initial tasklist this task was created ('undef' if
         #                   none)
-        #               - ($taskList = 'initial') name of the profile in whose initial tasklist this
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
         #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $profCategory
-        #               - ($taskList = 'current', 'initial') which category the profile falls undef
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
         #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskList = 'custom') 'undef'
+        #               - ($taskType = 'custom') 'undef'
         #   $customName
-        #               - ($taskList = 'current', 'initial') 'undef'
-        #               - ($taskList = 'custom') the custom task name, matching a key in
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
         #                   GA::Session->customTaskHash
         #
         # Return values
         #   'undef' on improper arguments or if the task can't be added to the specified tasklist
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $taskList, $profName, $profCategory, $customName, $check) = @_;
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
 
         # Check for improper arguments
         if (! defined $class || ! defined $session || defined $check) {
@@ -35870,11 +37382,11 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($taskList) {
+        if ($taskType) {
 
             # For initial tasks, check that $profName exists
             if (
-                $taskList eq 'initial'
+                $taskType eq 'initial'
                 && defined $profName
                 && ! $session->ivExists('profHash', $profName)
             ) {
@@ -35885,7 +37397,7 @@
 
             # For custom tasks, check that $customName doesn't already exist
             } elsif (
-                $taskList eq 'custom'
+                $taskType eq 'custom'
                 && $axmud::CLIENT->ivExists('customTaskHash', $customName)
             ) {
                 return $session->writeError(
@@ -35894,10 +37406,10 @@
                     $class . '->new',
                 );
 
-            } elsif ($taskList ne 'current' && $taskList ne 'initial' && $taskList ne 'custom') {
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
 
                 return $session->writeError(
-                    'Can\'t create new task because \'' . $taskList . '\' is an invalid tasklist',
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
                     $class . '->new',
                 );
             }
@@ -35906,7 +37418,7 @@
         # Task settings
         my $self = Games::Axmud::Generic::Task->new(
             $session,
-            $taskList,
+            $taskType,
             $profName,
             $profCategory,
             $customName,
@@ -35924,7 +37436,7 @@
         $self->{shortCutIV}             = 'watchTask';      # Axmud built-in jealous task
 
         $self->{category}               = 'process';
-        $self->{descrip}                = 'Displays updates to Divert/Chat tasks in all sessions';
+        $self->{descrip}                = 'Displays Channels/Chat/Divert task activity';
         $self->{jealousyFlag}           = TRUE;
         $self->{requireLocatorFlag}     = FALSE;
         $self->{profSensitivityFlag}    = FALSE;
@@ -35936,6 +37448,7 @@
         $self->{winPreferList}          = ['pane', 'grid'];
         $self->{winmap}                 = 'basic_fill';
         $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = TRUE;
         $self->{noScrollFlag}           = FALSE;
         $self->{ttsFlag}                = TRUE;
@@ -35953,20 +37466,24 @@
         # The normal background colour for the window (set when the window is enabled) - set to one
         #   of Axmud's standard colour tags or 'undef' to use the default colour
         $self->{defaultColour}          = undef;
-        # The colour scheme for the task window changes for a few seconds, every time an update is
-        #   displayed in it. These IVs are set to one of Axmud's standard colour tags
-        # The colour to use for Divert task updates
-        $self->{divertAlertColour}      = 'GREEN';
-        # The colour to use for Chat task updates
+        # The background colour for the task window changes for a few seconds, every time an update
+        #   is displayed in it. These IVs are set to one of Axmud's standard colour tags
+        # The colour to use for Channels task activity
+        $self->{channelsAlertColour}    = 'YELLOW';
+        # The colour to use for Chat task activity
         $self->{chatAlertColour}        = 'MAGENTA';
+        # The colour to use for Divert task activity
+        $self->{divertAlertColour}      = 'GREEN';
 
-        # When an update is received, how many seconds to use the alert colour scheme
-        $self->{divertAlertInterval}    = 10;
+        # When an activity notification is received, how many seconds to use the alert background
+        #   colour
+        $self->{channelsAlertInterval}  = 10;
         $self->{chatAlertInterval}      = 5;
+        $self->{divertAlertInterval}    = 10;
 
-        # When an update is received, the time at which the alert colour scheme should be replaced
-        #   by the default colour scheme (matches GA::Session->sessionTime). Usually set
-        #   to 'undef', which means the default colour scheme is visible
+        # When an update is received, the time at which the alert background colour should be
+        #   replaced by the default background colour (matches GA::Session->sessionTime). Usually
+        #   set to 'undef', which means the default background colour is visible
         $self->{resetTime}              = undef;
         # Flag set to TRUE the first time an updated is received (set to FALSE if no update has
         #   been received)
@@ -35976,7 +37493,7 @@
         bless $self, $class;
 
         # For all tasks that aren't temporary...
-        if ($taskList) {
+        if ($taskType) {
 
             # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
             #   added to any current, initial or custom tasklist)
@@ -35986,7 +37503,7 @@
             }
 
             # Set the parent file object
-            $self->setParentFileObj($session, $taskList, $profName, $profCategory);
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
 
             # Create entries in tasklists, if possible
             if (! $self->updateTaskLists($session)) {
@@ -36009,36 +37526,36 @@
         #
         # Expected arguments
         #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskList   - Which tasklist this task is being created into - 'current' for the current
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
         #                   tasklist (tasks which are actually running now), 'initial' (tasks which
         #                   should be run when the user connects to the world). Custom tasks aren't
         #                   cloned (at the moment)
         #
         # Optional arguments
-        #   $profName   - ($taskList = 'initial') name of the profile in whose initial tasklist the
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
         #                   existing task is stored
         #   $profCategory
-        #               - ($taskList = 'initial') which category the profile falls under (i.e.
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
         #                   'world', 'race', 'char', etc)
         #
         # Return values
         #   'undef' on improper arguments
         #   Blessed reference to the newly-created object on success
 
-        my ($self, $session, $taskList, $profName, $profCategory, $check) = @_;
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $taskList || defined $check
-            || ($taskList ne 'current' && $taskList ne 'initial')
-            || ($taskList eq 'initial' && (! defined $profName || ! defined $profCategory))
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
         }
 
         # For initial tasks, check that $profName exists
         if (
-            $taskList eq 'initial'
+            $taskType eq 'initial'
             && defined $profName
             && ! $session->ivExists('profHash', $profName)
         ) {
@@ -36049,7 +37566,7 @@
         }
 
         # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskList, $profName, $profCategory);
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
 
         # Most of the cloned task's settings have default values, but a few are copied from the
         #   original
@@ -36057,11 +37574,13 @@
 
         # Give the new (cloned) task the same initial parameters as the original one
         $clone->{defaultColour}         = $self->defaultColour;
-        $clone->{divertAlertColour}     = $self->divertAlertColour;
+        $clone->{channelsAlertColour}   = $self->channelsAlertColour;
         $clone->{chatAlertColour}       = $self->chatAlertColour;
+        $clone->{divertAlertColour}     = $self->divertAlertColour;
 
-        $clone->{divertAlertInterval}   = $self->divertAlertInterval;
+        $clone->{channelsAlertInterval} = $self->channelsAlertInterval;
         $clone->{chatAlertInterval}     = $self->chatAlertInterval;
+        $clone->{divertAlertInterval}   = $self->divertAlertInterval;
 
         $clone->{resetTime}             = $self->resetTime;
         $clone->{firstTextFlag}         = $self->firstTextFlag;
@@ -36104,12 +37623,15 @@
         # Preserve some task parameters (the others are left with their default settings, some of
         #   which will be re-initialised in stage 2)
 
-        # Preserve the colour schemes
+        # Preserve the background colours
+        $newTask->ivPoke('defaultColour', $self->defaultColour);
+        $newTask->ivPoke('channelsAlertColour', $self->channelsAlertColour);
+        $newTask->ivPoke('chatAlertColour', $self->chatAlertColour);
         $newTask->ivPoke('divertAlertColour', $self->divertAlertColour);
-        $newTask->ivPoke('chatAlertColour', $self->chatAlertColour);
-        # Preserve intervals before resetting the colour scheme
+        # Preserve intervals before resetting the background colour
+        $newTask->ivPoke('channelsAlertInterval', $self->channelsAlertInterval);
+        $newTask->ivPoke('chatAlertInterval', $self->chatAlertInterval);
         $newTask->ivPoke('divertAlertInterval', $self->divertAlertInterval);
-        $newTask->ivPoke('chatAlertColour', $self->chatAlertColour);
 
         return 1;
     }
@@ -36210,7 +37732,7 @@
             if (defined $self->resetTime && $self->resetTime <= $self->session->sessionTime) {
 
                 # The delay, started the last time an update was received, is over. Revert the task
-                #   window to its original colour scheme
+                #   window to its original background colour
                 $self->defaultTabObj->paneObj->applyMonochrome(
                     $self->defaultTabObj,
                     $self->defaultColour,
@@ -36229,20 +37751,21 @@
         }
     }
 
-    sub displayMsg {
+    sub displayText {
 
-        # Calledy by GA::Task::Divert->displayMsg or GA::Task::Chat->writeText
-        # Whenever text is displayed in any Divert or Chat task window, in any session, it is sent
-        #   to this function in every Watch task in every session
+        # Calledy by GA::Task::Channels->displayText, GA::Task::Chat->writeText or
+        #   GA::Task::Divert->displayText
+        # Whenever text is displayed in any Channels, Chat or Divert task window, in any session, it
+        #   is sent to this function in every Watch task in every session
         #
         # Expected arguments
-        #   $type       - Calling task type: 'divert' or 'chat'
+        #   $type       - Calling task type: 'chat', 'channels' or 'divert'
         #   $world      - The calling session's current world
         #
         # Optional arguments
         #   $char       - The calling session's current character ('undef' if no current character)
         #   $msg        - The message to display. If 'undef', no text is displayed in the task
-        #                   window, but the colour scheme is still changed
+        #                   window, but the background colour is still changed
         #
         # Return values
         #   'undef' on improper arguments or if the task window isn't open
@@ -36255,10 +37778,10 @@
 
         # Check for improper arguments
         if (
-            ! defined $type || ($type ne 'divert' && $type ne 'chat')
+            ! defined $type || ($type ne 'channels' && $type ne 'chat' && $type ne 'divert')
             || ! defined $world || defined $check
         ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayMsg', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayText', @_);
         }
 
         # Don't do anything if the task window isn't open
@@ -36267,14 +37790,14 @@
             return undef;
         }
 
-        # Change the task window's colour scheme, and set the interval at which the colour scheme
-        #   will revert to the default
-        if ($type eq 'divert') {
+        # Change the task window's background colour, and set the interval at which the background
+        #   colour will revert to the default
+        if ($type eq 'channels') {
 
-            $time = $self->session->sessionTime + $self->divertAlertInterval;
+            $time = $self->session->sessionTime + $self->channelsAlertInterval;
             $self->defaultTabObj->paneObj->applyMonochrome(
                 $self->defaultTabObj,
-                $self->divertAlertColour,
+                $self->channelsAlertColour,
             );
 
         } elsif ($type eq 'chat') {
@@ -36283,6 +37806,14 @@
             $self->defaultTabObj->paneObj->applyMonochrome(
                 $self->defaultTabObj,
                 $self->chatAlertColour,
+            );
+
+        } elsif ($type eq 'divert') {
+
+            $time = $self->session->sessionTime + $self->divertAlertInterval;
+            $self->defaultTabObj->paneObj->applyMonochrome(
+                $self->defaultTabObj,
+                $self->divertAlertColour,
             );
         }
 
@@ -36338,7 +37869,8 @@
     sub resetWin {
 
         # Called by GA::Cmd::EmptyWatchWindow->do
-        # Resets the task window - removes any text, and sets the colour scheme back to the default
+        # Resets the task window - removes any text, and sets the background colour back to the
+        #   default
         #
         # Expected arguments
         #   (none besides $self)
@@ -36360,7 +37892,7 @@
             # Empty the window of text
             $self->clearBuffer();
 
-            # Use the default colour scheme
+            # Use the default background colour
             if ($self->defaultTabObj) {
 
                 $self->defaultTabObj->paneObj->applyMonochrome(
@@ -36394,15 +37926,19 @@
 
     sub defaultColour
         { $_[0]->{defaultColour} }
-    sub divertAlertColour
-        { $_[0]->{divertAlertColour} }
+    sub channelsAlertColour
+        { $_[0]->{channelsAlertColour} }
     sub chatAlertColour
         { $_[0]->{chatAlertColour} }
+    sub divertAlertColour
+        { $_[0]->{divertAlertColour} }
 
-    sub divertAlertInterval
-        { $_[0]->{divertAlertInterval} }
+    sub channelsAlertInterval
+        { $_[0]->{channelsAlertInterval} }
     sub chatAlertInterval
         { $_[0]->{chatAlertInterval} }
+    sub divertAlertInterval
+        { $_[0]->{divertAlertInterval} }
 
     sub resetTime
         { $_[0]->{resetTime} }

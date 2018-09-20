@@ -35,8 +35,9 @@
         # Expected arguments
         #   $session    - The GA::Session which created this object (not stored as an IV)
         #   $name       - A unique string name for this keycode object (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -112,8 +113,9 @@
         # Expected arguments
         #   $session    - The GA::Session which created this object (not stored as an IV)
         #   $name       - A unique string name for this keycode object (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid

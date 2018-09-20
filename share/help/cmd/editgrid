@@ -11,8 +11,8 @@ egr / editgrid                Opens an 'edit' window for a workspace grid
          zones on a desktop is called a 'zonemap'. 
       Only 'grid' windows (including the 'main' window, task windows and the 
          automapper window) are arranged on the workspace grid. Temporary 
-         windows, including the GUI window and all edit, preference, wizard and
-         dialogue windows, are not affected.
+         windows, including the object viewer window and all edit, preference,
+         wizard and dialogue windows, are not affected.
 
       For a list of workspace grid <number>s, use the ';listworkspace' command.
  

@@ -147,6 +147,8 @@ adw / addword                 Adds words or terms to the current dictionary
          added and modified with the ';addspeedwalk' and ';addmodifierchar'
          commands.         
       See also the help for ';quickaddword'.
+      The dictionary's stored directions can be viewed and modified with
+         commands like ';modifyprimary', ';addsecondary' and ';listdirection'.
  
    User commands:
       adw / addword

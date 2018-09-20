@@ -37,8 +37,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this dictionary (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Optional arguments
         #   $language   - Which language the dictionary will use. If specified, can be any string
@@ -1206,9 +1207,9 @@
                 'portal'                => '',
                 'vortex'                => '',
             },
-            # Secondary auto-allocatable directions. Maps a secondary direction onto a primary
-            #   direction, so that the automapper can automatically allocate it (e.g. if a newly-
-            #   encountered room contains a 'portal' exit, the automapper can automatically
+            # Secondary auto-allocatable directions. Maps a secondary direction onto a standard
+            #   primary direction, so that the automapper can automatically allocate it (e.g. if a
+            #   newly-encountered room contains a 'portal' exit, the automapper can automatically
             #   allocate it to 'down', if that's what the user wants)
             # For each key-value pair, if the value is 'undef', the secondary direction in the key
             #   is not auto-allocated
@@ -1234,10 +1235,10 @@
             # Speedwalk directions
             # --------------------
 
-            # Hash of speedwalking characters (lower-case letters in range a-z) and their
-            #   corresponding movement commands, which can be standard primary directions (one of
-            #   the items in GA::Client->constPrimaryDirList) or any other type of movement
-            #   command
+            # Hash of speedwalking characters (lower-case letters in range a-z, non-Latin alphabets
+            #   acceptable) and their corresponding movement commands, which can be standard primary
+            #   directions (one of the items in GA::Client->constPrimaryDirList) or any other type
+            #   of movement command
             # When interpreting speedwalk commands, GA::Session refers to this hash. If the key's
             #   corresponding value is a standard primary direction, this dictionary is consulted to
             #   provide the corresponding custom primary direction. Otherwise, GA::Session assumes
@@ -1256,9 +1257,9 @@
                 'g'                     => 'southwest',
                 'h'                     => 'southeast',
             },
-            # Hash of speedwalking modifier characters (upper-case letters in range A-Z) and their
-            #   corresponding standard commands (keys in GA::Cage::Cmd->cmdHash, e.g. 'go', 'fly',
-            #   'sail', 'open_dir', 'unlock_dir' etc)
+            # Hash of speedwalking modifier characters (upper-case letters in range A-Z, non-Latin
+            #   alphabets acceptable) and their corresponding standard commands (keys in
+            #   GA::Cage::Cmd->cmdHash, e.g. 'go', 'fly', 'sail', 'open_dir', 'unlock_dir' etc)
             # The cage specifies a replacement command for each standard command (the replacement
             #   command can be modified by the user). The replacement is usually in the form
             #   'go direction', 'fly direction', 'sail direction'. There are also non-movement
@@ -1343,8 +1344,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this dictionary (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -2473,6 +2475,227 @@
 
         # Otherwise, assume the specified $adj wasn't a declined form, and simply return it
         return $adj;
+    }
+
+    # Modify directions
+
+    sub modifyPrimaryDir {
+
+        # Called by GA::Cmd::ModifyPrimary->do or any other code
+        # Modifies a primary direction and its abbreviation, updating others hashes as required
+        #
+        # NB So that a calling function can replace all directions in one go, it's the calling
+        #   function's responsibility to check that a custom direction doesn't already exist as a
+        #   custom primary OR secondary direction, before calling this function
+        #
+        # Expected arguments
+        #   $standardDir    - The standard primary direction, a key in $self->primaryDirHash
+        #   $customDir      - A custom primary direction, the corresponding value in
+        #                       $self->primaryDirHash
+        #
+        # Optional arguments
+        #   $customAbbrev   - The abbreviated custom primary direction, the corresponding value in
+        #                       $self->primaryAbbrevHash. If 'undef' or an empty string, the custom
+        #                       direction and its abbreviation are the same
+        #   $noUpdateFlag   - If TRUE, the calling function expects to call this function several
+        #                       times, in which case $self->updateOppDirHash is not called (it's up
+        #                       to the calling function to do it, when ready). If FALSE (or
+        #                       'undef'), other hashes are updated as required
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $standardDir, $customDir, $customAbbrev, $noUpdateFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $standardDir || ! defined $customDir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->modifyPrimaryDir', @_);
+        }
+
+        if (! defined $customAbbrev || $customAbbrev eq '') {
+
+            $customAbbrev = $customDir;
+        }
+
+        $self->ivAdd('primaryDirHash', $standardDir, $customDir);
+        $self->ivAdd('primaryAbbrevHash', $standardDir, $customAbbrev);
+
+        if (! $noUpdateFlag) {
+
+            $self->updateOppDirHash();
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub addSecondaryDir {
+
+        # Called by GA::Cmd::AddSecondary->do or any other code
+        # Adds a secondary direction and its abbreviation (if any), updating others hashes as
+        #   required
+        #
+        # NB So that a calling function can replace all directions in one go, it's the calling
+        #   function's responsibility to check that a custom direction doesn't already exist as a
+        #   custom primary OR secondary direction, before calling this function
+        # NB Note that $self->secondaryDirList exists, but no $self->primaryDirList exists; also
+        #   abbreviated secondary directions are set to 'undef' by default; so this function behaves
+        #   slightly differently to $self->modifyPrimaryDir
+        #
+        # Expected arguments
+        #   $customDir      - A custom secondary direction, stored as both a key and an item in
+        #                       $self->secondaryDirHash
+        #
+        # Optional arguments
+        #   $customAbbrev   - The abbreviated custom secondary direction. If 'undef' or an empty
+        #                       string, the custom, the abbreviation is stored as 'undef'
+        #   $noUpdateFlag   - If TRUE, the calling function expects to call this function several
+        #                       times, in which case $self->updateOppDirHash is not called (it's up
+        #                       to the calling function to do it, when ready). If FALSE (or
+        #                       'undef'), other hashes are updated as required
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $customDir, $customAbbrev, $noUpdateFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $customDir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addSecondaryDir', @_);
+        }
+
+        if (defined $customAbbrev && $customAbbrev eq '') {
+
+            $customAbbrev = undef;
+        }
+
+        $self->ivPush('secondaryDirList', $customDir);
+        $self->ivAdd('secondaryDirHash', $customDir, $customDir);
+        $self->ivAdd('secondaryAbbrevHash', $customDir, $customAbbrev);
+        $self->ivAdd('secondaryOppHash', $customDir, '');
+        $self->ivAdd('secondaryOppAbbrevHash', $customDir, '');
+        $self->ivAdd('secondaryAutoHash', $customDir, undef);
+
+        if (! $noUpdateFlag) {
+
+            $self->updateOppDirHash();
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub modifySecondaryDir {
+
+        # Called by GA::Cmd::ModifySecondary->do or any other code
+        # Sets the opposite direction of an existing custom secondary direction, updating others
+        #   hashes as required
+        #
+        # Expected arguments
+        #   $customDir      - A custom secondary direction, stored as both a key and an item in
+        #                       $self->secondaryDirList
+        #
+        # Optional arguments
+        #   $oppDir         - The opposite custom secondary direction. If 'undef' or an empty
+        #                       string, $customDir has no opposite direction
+        #
+        # Optional arguments
+        #   $noUpdateFlag   - If TRUE, the calling function expects to call this function several
+        #                       times, in which case $self->updateOppDirHash is not called (it's up
+        #                       to the calling function to do it, when ready). If FALSE (or
+        #                       'undef'), other hashes are updated as required
+        #
+        # Return values
+        #   'undef' on improper arguments, if $customDir isn't a custom secondary direction, of if
+        #       $customAbbrev is specified and it, too, is not a custom secondary direction
+        #   1 otherwise
+
+        my ($self, $customDir, $oppDir, $noUpdateFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $customDir || ! defined $oppDir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->modifySecondaryDir', @_);
+        }
+
+        if (! defined $oppDir) {
+
+            $oppDir = '';
+        }
+
+        if (
+            ! $self->ivExists('secondaryDirHash', $customDir)
+            || ($oppDir ne '' && ! $self->ivExists('secondaryDirHash', $oppDir))
+        ) {
+            return undef;
+        }
+
+        $self->ivAdd('secondaryOppHash', $customDir, $oppDir);
+        $self->ivAdd(
+            'secondaryOppAbbrevHash',
+            $customDir,
+            $self->ivShow('secondaryAbbrevHash', $oppDir),
+        );
+
+        if (! $noUpdateFlag) {
+
+            $self->updateOppDirHash();
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub deleteSecondaryDir {
+
+        # Called by GA::Cmd::DeleteSecondary->do or any other code
+        # Deletes a secondary direction and its abbreviation (if any), updating others hashes as
+        #   required
+        #
+        # Expected arguments
+        #   $customDir      - A custom secondary direction, stored as both a key and an item in
+        #                       $self->secondaryDirHash
+        #
+        # Optional arguments
+        #   $noUpdateFlag   - If TRUE, the calling function expects to call this function several
+        #                       times, in which case $self->updateOppDirHash is not called (it's up
+        #                       to the calling function to do it, when ready). If FALSE (or
+        #                       'undef'), other hashes are updated as required
+        #
+        # Return values
+        #   'undef' on improper arguments or if the specified custom secondary direction doesn't
+        #       exist
+        #   1 otherwise
+
+        my ($self, $customDir, $noUpdateFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $customDir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteSecondaryDir', @_);
+        }
+
+        if (! $self->ivExists('secondaryDirHash', $customDir)) {
+
+            return undef;
+        }
+
+        $self->ivSplice('secondaryDirList', $self->ivMatch('secondaryDirList', $customDir), 1);
+        $self->ivDelete('secondaryDirHash', $customDir);
+        $self->ivDelete('secondaryAbbrevHash', $customDir);
+        $self->ivDelete('secondaryAutoHash', $customDir);
+
+        if (! $noUpdateFlag) {
+
+            $self->updateOppDirHash();
+        }
+
+        # Operation complete
+        return 1;
     }
 
     # Phrasebooks

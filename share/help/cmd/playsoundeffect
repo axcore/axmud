@@ -2,6 +2,7 @@ pse / playsoundeffect         Plays a sound effect and shows a system message
  
    Format:
       ;pse <name>             Plays the sound effect <name>
+      ;pse                    Plays a random sound effect
  
    Notes:
       Axmud's sound effects bank contains a list of named sound effects, each of 

@@ -19,6 +19,8 @@ ilk / insertlook              Inserts fake 'look' into the Locator movement list
 
          ...and whose response is this client command. Hopefully, the artificial
          look is inserted before the Locator task interprets the room statement.
- 
+
+       See also the help for ';insertfailedexit'.
+
    User commands:
       ilk / ilook / insertlook

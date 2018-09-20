@@ -11,7 +11,8 @@ ccp / clonecustomprofile      Clones a custom profile
          all the interfaces stored in the cages.
       Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
          underlines and 0-9 (not the first character) and not be one of Axmud's 
-         reserved names (see the ';listreserved' command).
+         reserved names (see the ';listreserved' command). Non-Latin alphabets
+         are acceptable.
       The operation will fail if a profile called <copy> already exists, or if
          one named <original> doesn't exist.
  

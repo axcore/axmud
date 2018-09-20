@@ -40,7 +40,7 @@ awm / addwinmap               Adds a new winmap
          uniform layout can have one).
       You can use this command to create new winmaps. <name> must be no longer 
          than 16 characters, and contain only A-Z, a-z, underlines and 0-9 (not 
-         the first character).
+         the first character). Non-Latin alphabets are acceptable.
       Use the ';modifywinmap' command to modify the winmap's strip objects. (See
          also the help for ';clonewinmap').
       Use the ';addwinzone', ';modifywinzone' and ';resetwinmap' commands to

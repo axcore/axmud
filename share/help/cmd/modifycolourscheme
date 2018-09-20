@@ -29,6 +29,17 @@ mcs / modifycolourscheme      Modifies a colour scheme
          -s <size>        - Sets the font size, must be a positive integer
          -s               - Resets the font size
 
+         -m               - Toggles the setting to ignore all colours besides
+                               the text and background colours
+
+         -a <old> <new>   - Adds a colour override, with any text using the
+                               colour tag <old> displayed using the colour tag
+                               <new> instead
+         -a <old>         - Adds a colour override, with any text using the
+                               colour tag <old> displayed in the usual colour
+                               instead
+         -d <old>         - Deletes a colour override
+                              
       Windows using the modified colour scheme are not updated automatically.
          You can use the ';updatecolourscheme' command to update window panes in
          'internal' windows, but in all other situations the modified colour

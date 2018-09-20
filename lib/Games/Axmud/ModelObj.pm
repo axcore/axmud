@@ -709,7 +709,7 @@
 
                     } elsif (! $exitObj->destRoom) {
 
-                        if ($exitObj->impassFlag) {
+                        if ($exitObj->exitOrnament eq 'impass') {
                             $incompImpassCount++;
                         } elsif ($exitObj->randomType eq 'none') {
                             $incompleteCount++;
@@ -723,6 +723,82 @@
             $exitCount, $unallocatedCount, $unallocatableCount, $uncertainCount, $incompleteCount,
             $incompImpassCount,
         );
+    }
+
+    sub countCheckedDirs {
+
+        # Called by GA::Cmd::ModelReport->do
+        # Counts the number of checked directions in this region (actually, counts the number of
+        #   child GA::ModelObj::Room objects, and then counts each of their checked directions)
+        # Keeps track of the number of checkable directions at the same time
+        #
+        # Expected arguments
+        #   $session    - The calling function's GA::Session
+        #   %dirHash    - A hash of custom primary directions which are checkable, in the form
+        #                   $hash{custom_primary_dir} = undef
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise, returns the counts as a list in the form
+        #       ( total_exits_in_region, checked_direction_count, checkable_direction_count )
+
+        my ($self, $session, %dirHash) = @_;
+
+        # Local variables
+        my (
+            $exitCount, $checkedCount, $checkableCount,
+            %emptyHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $session || ! %dirHash) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->countCheckedDirs', @_);
+            return %emptyHash;
+        }
+
+        # Initialise variables
+        $exitCount = 0;
+        $checkedCount = 0;
+        $checkableCount = 0;
+
+        foreach my $childNum ($self->ivKeys('childHash')) {
+
+            my (
+                $childObj,
+                %thisHash,
+            );
+
+            $childObj = $session->worldModelObj->ivShow('modelHash', $childNum);
+
+            if ($childObj->category eq 'room') {
+
+                foreach my $exitNum ($childObj->ivValues('exitNumHash')) {
+
+                    my $exitObj = $session->worldModelObj->ivShow('exitModelHash', $exitNum);
+
+                    $exitCount++;
+                }
+
+                # Checkable directions are all of those remaining in %thisHash after deleting
+                #   actual exit objects and checked directions
+                %thisHash = %dirHash;
+                foreach my $dir ($childObj->ivKeys('checkedDirHash')) {
+
+                    delete $thisHash{$dir};
+                }
+
+                foreach my $dir ($childObj->sortedExitList) {
+
+                    delete $thisHash{$dir};
+                }
+
+                $checkedCount += $childObj->ivPairs('checkedDirHash');
+                $checkableCount += scalar (keys %thisHash);
+            }
+        }
+
+        return ($exitCount, $checkedCount, $checkableCount);
     }
 
     ##################
@@ -836,7 +912,7 @@
         $self->{roomGuildYOffset}       = 0;
 
         # When the user creates a model room on the map (e.g. with 'Add room at click'), that room
-        #   has no properties except the default ones.
+        #   has no properties except the default ones
         # In this situation, when the automapper calls ->compareRooms to work out whether this room
         #   matches the Locator's current room, the answer must always be 'yes'
         # This flag starts set to FALSE. After being matched with the Locator's room the first time,
@@ -876,6 +952,29 @@
         #   Hash in the form
         #       $randomExitHash{exit_number} = undef
         $self->{randomExitHash}         = {};
+        # Some worlds have invisible exits hidden around the game for the user to discover. This
+        #   hash stores 'checked directions' - primary and secondary directions which the user has
+        #   tried, while the character was in this room (and while collection of checked directions
+        #   was turned on), and which generated a failed exit message
+        # If an exit in the same direction is subsequently created, or if an unallocated exit is
+        #   allocated to the same direction, the entry in this hash is automatically deleted
+        # Hash in the form
+        #   $checkedDirHash{custom_primary_direction} = number_of_failed_attempts;
+        $self->{checkedDirHash}        = {};
+        # Wilderness mode. Many worlds have 'wilderness' areas where exits aren't explicitly stated,
+        #   but are assumed to exist between adjacent rooms
+        # There are three settings for this mode:
+        #   'normal'   - All of this room's exits have a GA::Obj::Exit, and the automapper window
+        #       draws each of those exits
+        #   'wild'      - None of this room's exits have a GA::Obj::Exit, and the automapper window
+        #       does not draw the room with any exits. Axmud assumes that movement between this room
+        #       and any adjacent room (and back again) is possible
+        #   'border'    - Like 'wild', except that Axmud assumes that movement between this room
+        #       and any adjacent room is possible, but only if the adjacent room's ->wildMode is set
+        #       to 'wild' or 'border'. If the adjacent room's ->wildMode is set to 'normal', Axmud
+        #       assumes that no exit exists between the two rooms unless it has been explicitly
+        #       added to the model with a GA::Obj::Exit
+        $self->{wildMode}               = 'normal';
 
         # List of titles (i.e. brief descriptions) for this room
         $self->{titleList}              = [];
@@ -919,6 +1018,10 @@
         # For worlds that provide a list of commands available in the room (typically instead of an
         #   exit list, but not necessarily), a list of those commands
         $self->{roomCmdList}            = [];
+        # A temporary list of room commands. Set whenever $self->roomCmdList is set. Thereafter,
+        #   when the user types ';roomcommand', the first command is removed from the list,
+        #   executed as a world command, and added to the end of the list
+        $self->{tempRoomCmdList}        = [];
 
         # Records the number of visits to this room for each character. Hash in the form
         #   $visitHash{character_name} = number_of_visits
@@ -1052,6 +1155,10 @@
         { my $self = shift; return %{$self->{oneWayExitHash}}; }
     sub randomExitHash
         { my $self = shift; return %{$self->{randomExitHash}}; }
+    sub checkedDirHash
+        { my $self = shift; return %{$self->{checkedDirHash}}; }
+    sub wildMode
+        { $_[0]->{wildMode} }
 
     sub titleList
         { my $self = shift; return @{$self->{titleList}}; }
@@ -1072,6 +1179,8 @@
 
     sub roomCmdList
         { my $self = shift; return @{$self->{roomCmdList}}; }
+    sub tempRoomCmdList
+        { my $self = shift; return @{$self->{tempRoomCmdList}}; }
 
     sub visitHash
         { my $self = shift; return %{$self->{visitHash}}; }

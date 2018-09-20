@@ -141,6 +141,7 @@
     use Games::Axmud::EditWin;
     use Games::Axmud::FixedWin;
     use Games::Axmud::Generic;
+    use Games::Axmud::Gtk;
     use Games::Axmud::Interface;
     use Games::Axmud::InterfaceModel;
     use Games::Axmud::ModelObj;
@@ -162,6 +163,7 @@
     use Games::Axmud::Obj::Area;
     use Games::Axmud::Obj::Atcp;
     use Games::Axmud::Obj::BasicWorld;
+    use Games::Axmud::Obj::BinomialHeap;
     use Games::Axmud::Obj::Blinker;
     use Games::Axmud::Obj::ChatContact;
     use Games::Axmud::Obj::ColourScheme;
@@ -175,6 +177,7 @@
     use Games::Axmud::Obj::Gauge;
     use Games::Axmud::Obj::GaugeLevel;
     use Games::Axmud::Obj::Gmcp;
+    use Games::Axmud::Obj::GridColour;
     use Games::Axmud::Obj::Keycode;
     use Games::Axmud::Obj::Link;
     use Games::Axmud::Obj::Loop;
@@ -190,6 +193,7 @@
     use Games::Axmud::Obj::Regionmap;
     use Games::Axmud::Obj::RegionPath;
     use Games::Axmud::Obj::Repeat;
+    use Games::Axmud::Obj::RoomFlag;
     use Games::Axmud::Obj::Route;
     use Games::Axmud::Obj::SkillHistory;
     use Games::Axmud::Obj::Sound;
@@ -1741,8 +1745,8 @@
         #   $scalar     - The scalar value to match
         #
         # Return values
-        #   'undef' on failure (because $iv doesn't exist, or isn't an array, or improper arguments
-        #        supplied)
+        #   'undef' on failure (because $iv doesn't exist, or isn't an array, or no matching
+        #       element found, or improper arguments supplied)
         #   The index of the first element in the array that matches $scalar, on success
 
         my ($self, $iv, $scalar, $check) = @_;
@@ -1815,8 +1819,8 @@
         #   If $globalFlag and $ignoreCaseFlag are both 1, the match done is m/.../gi
         #
         # Return values
-        #   'undef' on failure (because $iv doesn't exist, or isn't an array, or improper arguments
-        #        supplied)
+        #   'undef' on failure (because $iv doesn't exist, or isn't an array, or no matching
+        #       element found, or improper arguments supplied)
         #   The index of the first element in the array that matches the regular expression, on
         #       success
 
@@ -3549,9 +3553,9 @@
         foreach my $key (keys %hash) {
 
             if (defined $hash{$key}) {
-                $self->writeDebug('  key ' . $key . ' value ' . $hash{$key});
+                $self->writeDebug('  key: ' . $key . ' value: ' . $hash{$key});
             } else {
-                $self->writeDebug('  key ' . $key . ' value <<UNDEF>>');
+                $self->writeDebug('  key: ' . $key . ' value: <<UNDEF>>');
             }
         }
 

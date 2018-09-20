@@ -15,7 +15,8 @@ dtm / deletetemplate          Deletes a profile template
          delete the template on which they're based.)
       Category names must be no longer than 16 characters, contain only A-Z, 
          a-z, underlines and 0-9 (not the first character) and not be one of 
-         Axmud's reserved names (see the ';listreserved' command).
+         Axmud's reserved names (see the ';listreserved' command). Non-Latin
+         alphabets are acceptable.
       (See the help for ';listprofile' for more information about profiles.)
 
    User commands:

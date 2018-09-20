@@ -1706,24 +1706,30 @@
             if ($stripObj) {
 
                 $paneObj = $stripObj->ivFirst('paneObjList');
-                if ($paneObj) {
 
-                    # Get the pane's visible tab and the scrollable Gtk2::Textview
-                    $tabObj = $paneObj->getVisibleTab();
-                    if ($tabObj) {
+            } else {
 
-                        $splitScreenMode = $tabObj->textViewObj->splitScreenMode;
-                        if ($splitScreenMode eq 'split') {
-                            $textView = $tabObj->textViewObj->textView2;
-                        } else {
-                            $textView = $tabObj->textViewObj->textView;
-                        }
+                # If there's no entry, then use the first pane object created in this window
+                $paneObj = $self->findTableObj('pane');
+            }
+
+            if ($paneObj) {
+
+                # Get the pane's visible tab and the scrollable Gtk2::Textview
+                $tabObj = $paneObj->getVisibleTab();
+                if ($tabObj) {
+
+                    $splitScreenMode = $tabObj->textViewObj->splitScreenMode;
+                    if ($splitScreenMode eq 'split') {
+                        $textView = $tabObj->textViewObj->textView2;
+                    } else {
+                        $textView = $tabObj->textViewObj->textView;
                     }
                 }
             }
 
             # The CTRL+C combination tends to be CTRL+SHIFT+C in Gtk, which is very inconvenient.
-            #   Implement a quic-and-dirty CTRL+C instead
+            #   Implement a quick-and-dirty CTRL+C instead
             if ($string eq 'ctrl c' && $tabObj) {
 
                 ($startIter, $endIter) = $tabObj->textViewObj->buffer->get_selection_bounds();
@@ -1838,13 +1844,15 @@
 
             # If the up/down/tab arrow keys have been pressed and the client's auto-complete mode is
             #   on (i.e. set to 'auto'), apply auto-complete or navigate through command buffers
-            # However, for CTRL+TAB, switch between sessions
+            # However, CTRL+TAB switches between tabs in the pane object. If there's an entry strip
+            #   object, that object specifies which of multiple pane objects to use; if there's no
+            #   strip object, the first pane object created in the window is used
+            # TAB can be used instead of CTRL+TAB if there is no entry strip object in the window
             } elsif ($standard eq 'up' || $standard eq 'down' || $standard eq 'tab') {
 
                 if (
-                    $self->ctrlKeyFlag
+                    ($self->ctrlKeyFlag || ! $stripObj)
                     && $standard eq 'tab'
-                    && $self->visibleSession
                     && $paneObj
                     && $paneObj->notebook
                     && $axmud::CLIENT->useSwitchKeysFlag
@@ -3059,13 +3067,13 @@
             'edit_cmds', 'edit_routes',
             'simulate',
             'run_locator_wiz', 'edit_world_model',
-            'edit_client_prefs', 'edit_session_prefs', 'edit_current_prof',
+            'edit_quick_prefs', 'edit_client_prefs', 'edit_session_prefs', 'edit_current_prof',
             # 'Tasks' column
             'freeze_tasks', 'chat_task',
             'run_locator_wiz_2',
             'other_task',
             # 'Display' column
-            'open_automapper', 'open_gui_window',
+            'open_automapper', 'open_object_viewer',
             'activate_grid', 'activate_grid_with', 'reset_grid', 'disactivate_grid',
             'win_components', 'current_layer',
             'test_controls', 'test_panels',
@@ -3196,6 +3204,19 @@
         );
 
         if ($openFlag && $self->visibleSession->taskListTask) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu bar items that require a 'main' window with a visible session whose status is
+        #   'connected' or 'offline' and a Channels task
+        @list = (
+            # 'Tasks' column
+            'channels_task',
+        );
+
+        if ($openFlag && $self->visibleSession->channelsTask) {
             push (@sensitiseList, @list);
         } else {
             push (@desensitiseList, @list);
@@ -4627,14 +4648,85 @@
             mapObj                      => undef,
             # The session's current world model object
             worldModelObj               => $session->worldModelObj,
-            # The pause window (a 'dialogue' window), set by $self->showPauseWin and reset by
-            #   $self->hidePauseWin
-            pauseWin                    => undef,
 
             # The menu bar
             menuBar                     => undef,
-            # The toolbar
-            toolbar                     => undef,
+            # The window can have several toolbars. Toolbars each have a button set, and there are
+            #   several button sets to choose from
+            # If the window component for toolbars is turned on, there is at least one toolbar,
+            #   which has a switcher button and an adder button, followed by the default button set.
+            #   The switcher button switches between button sets, and the adder button adds a new
+            #   toolbar below the existing ones
+            # Additional toolbars have a remove button, which removes that toolbar
+            # Each button set can only be visible once; the switcher button switches to the next
+            #   button set that isn't already in use
+            # GA::Obj::WorldModel->buttonSetList stores which button sets should be used when the
+            #   automapper window opens, and is updated as the user adds/removes sets (but not when
+            #   the user clicks the switcher button; when the window opens, the first button set is
+            #   always the default one)
+            #
+            # Constant list of names of button sets, in the order used by the switcher button
+            constButtonSetList          => [
+                'default',              # The default set, visible when the window first opens
+                'exits',
+                'painting',
+                'background',
+                'tracking',
+                'misc',
+                'flags',
+                'interiors',
+            ],
+            # Constant hash of names of button sets and their corresponding (short) descriptions
+            constButtonDescripHash      => {
+                'default'               => 'Show the default button set',    # Never actually used
+                'exits'                 => 'Show exit customisation buttons',
+                'painting'              => 'Show room painting buttons',
+                'background'            => 'Show background colouring buttons',
+                'tracking'              => 'Show room tracking buttons',
+                'misc'                  => 'Show miscellaneous buttons',
+                'flags'                 => 'Show room flag filter buttons',
+                'interiors'             => 'Show room interior buttons',
+            },
+            # Hash of names of button sets, showing which are visible (TRUE) and which are not
+            #   visible (FALSE)
+            buttonSetHash               => {
+                'default'               => FALSE,
+                'exits'                 => FALSE,
+                'painting'              => FALSE,
+                'background'            => FALSE,
+                'tracking'              => FALSE,
+                'misc'                  => FALSE,
+                'flags'                 => FALSE,
+                'interiors'             => FALSE,
+            },
+            # Ordered list of toolbar widgets that are visible now, with the default toolbar always
+            #   first in the list
+            toolbarList                 => [],
+            # Corresponding hash of toolbar widgets, in the form
+            #   $toolbarHash{toolbar_widget} = name_of_button_set_visible_now
+            toolbarHash                 => {},
+            # A list of button widgets in the original toolbar (not including the add button, the
+            #   switcher button and the separator that follows them); updated every time the user
+            #   clicks the switcher icon
+            # NB Buttons in additional toolbars aren't stored in an IV
+            toolbarButtonList           => [],
+            # The 'add' button in the original toolbar
+            toolbarAddButton            => undef,
+            # The 'switch' button in the original toolbar
+            toolbarSwitchButton         => undef,
+            # The default set (the first one drawn); this IV never changes
+            constToolbarDefaultSet      => 'default',
+            # Whenever the original (first) toolbar is drawn, this IV records the button set used
+            #   (so that the same button set appears whenever $self->redrawWidgets is called)
+            toolbarOriginalSet          => 'default',
+            # Hash of room flags currently in use as preferred room flags, and whose toolbar button
+            #   in the 'painter' set (if visible) is currently toggled on. The hash is reset every
+            #   time the toolbar is drawn or redrawn, and is used to make sure that the toggled
+            #   button(s) remain toggled after the redraw
+            # Hash in the form
+            #   toolbarRoomFlagHash{room_flag} = undef
+            toolbarRoomFlagHash         => {},
+
             # Menu bar/toolbar items which will be sensitised or desensitised, depending on the
             #   context. Hash in the form
             #       $menuToolItemHash{'item_name'} = gtk2_widget
@@ -4642,24 +4734,11 @@
             #   'item_name' is a descriptive scalar, e.g. 'move_up_level'
             #   'gtk2_widget' is the Gtk2::MenuItem or toolbar widget, typically Gtk2::ToolButton or
             #       Gtk2::RadioToolButton
+            # NB Entries in this hash continue to exist, after the widgets are no longer visible.
+            #   Doesn't matter, because there are a limited number of 'item_name' scalars, and so
+            #   a limited size to the hash (and referencing no-longer visible widgets, for example
+            #   to sensitise/desensitise them, doesn't have any ill effects)
             menuToolItemHash            => {},
-
-            # The icons on the toolbar appear and disappear in a cycle. This IV stores which set of
-            #   icons is currently visible. It is set to 0 when the toolbar isn't visible; the first
-            #   set of icons is set 1
-            toolbarCurrentSet           => 0,
-            # The number of sets available
-            toolbarSetCount             => 6,
-            # The switcher icon (a Gtk2::ToolItem)
-            toolbarSwitchIcon           => undef,
-            # The separator which is immediately next to the switcher icon
-            toolbarMainSeparator        => undef,
-            # Only one set of icons is visible at a time. This hash contains all of the toolbar
-            #   buttons that have been created, in the form
-            #       $toolbarButtonHash{number_of_set} = [button, button, button, button...]
-            #   ...where 'number_of_set' is an integer (the first set is #1), and 'button' is a
-            #       Gtk2::ToolButton, Gtk2::ToggleToolButton or Gtk2::RadioToolButton
-            toolbarButtonHash           => {},
 
             # A horizontal pane, dividing the treeview on the left from everything else on the right
             hPaned                      => undef,
@@ -4808,6 +4887,19 @@
             # Hash of (all) labels that exist in this regionmap, in the form
             #   $drawnLabelHash{label_number} = [canvas_object, canvas_object...]
             drawnLabelHash              => {},
+            # Hash of checked directions for each room, if they have been drawn. Checked directions
+            #   can't be clicked (selelected), so all the canvas objects for checked directions in
+            #   a room are stored together as a single key-value pair. Hash in the form
+            #   $drawnCheckedDirHash{'x_y_z'} = [canvas_object, canvas_object...]
+            drawnCheckedDirHash         => {},
+            # Hash of coloured gridblocks (for background colouring, not a clickable object on the
+            #   map), in the form
+            #   $colouredSquareHash{'x_y'} = canvas_object
+            colouredSquareHash          => {},
+            # Hash of coloured rectangles (for background colouring, not a clickable object on the
+            #   map), in the form
+            #   $colouredRectHash{grid_colour_object_number} = canvas_object
+            colouredRectHash            => {},
             # Flag that can be set to TRUE by any code that wants to prevent a drawing operation
             #   from starting (temporarily); the operation will be able to start when the flag is
             #   set back to FALSE
@@ -4876,7 +4968,35 @@
             #   'move_room' - 'Move selected rooms to click' menu option - when the user clicks on
             #       the map (probably in a new region), the selected rooms (and their room tags/room
             #       guilds/exits/exit tags) and labels are move to that position on the map
+            # NB To set this IV, you must call $self->set_freeClickMode($mode) or
+            #   $self->reset_freeClickMode() (which sets it to 'default')
             freeClickMode               => 'default',
+            # A 'move selected rooms to click' operation can also be initiated by press CTRL+C.
+            #   $self->setKeyPressEvent needs to know when the CTRL key is being held down, so this
+            #   flag is set to TRUE when it's held down
+            ctrlKeyFlag                 => FALSE,
+            # Background colour mode can be applied whenever ->freeClickMode is 'default', and is
+            #   used to colour in gridblocks in the background canvas:
+            #   'default' - Normal operation. Clicks on the canvas don't affect background colour
+            #   'square_start' - Clicks on a gridblock colours in that gridblock
+            #   'rect_start' - The first click on a gridblock marks that gridblock as one corner in
+            #       a rectangle. The mode is changed to 'rect_stop' in anticipation of the next
+            #       click
+            #   'rect_stop' - The first click on a gridblock marks that gridblock as the opposite
+            #       corner in a rectangle. The mode is changed back to 'rect_start'
+            bgColourMode                => 'default',
+            # The colour to use when colouring in the background. If 'undef', colours are removed
+            #   from gridblock(s) instead of being added. If defined, should be an RGB tag like
+            #   '#ABCDEF' (case-insensitive)
+            bgColourChoice              => undef,
+            # When $self->bgColourMode is 'rect_start' and the user clicks on the map, the value
+            #   is changed to 'rect_stop' and the coordinates of the click are stored in these
+            #   IVs, while waiting for a second click
+            bgRectXPos                  => undef,
+            bgRectYPos                  => undef,
+            # Flag set to TRUE when new coloured blocks/rectangles should be drawn on all levels,
+            #   FALSE when new coloured blocks/squares should only be drawn on the current level
+            bgAllLevelFlag              => FALSE,
             # When working out whether the user has clicked on an exit, how closely the angle of the
             #   drawn exit's gradient (relative to the x-axis) must match the gradient of a line
             #   from the exit's origin point, to the point on the map the user clicked (in degrees)
@@ -4906,6 +5026,16 @@
             #   this flag is set to TRUE, the painter's IVs are used to create (or update) new room
             #   objects; if set to FALSE, the painter is ignored
             painterFlag                 => FALSE,
+
+            # Flag set to TRUE when 'graffiti mode' is on
+            graffitiModeFlag            => FALSE,
+            # Every room the character visits while graffiti mode is on (when $self->mode is
+            #   'follow' or 'update') is added to this hash, and is drawn differently. The hash is
+            #   emptied when graffiti mode is turned off (or when the window is closed)
+            # No changes are made to the world model because of graffiti mode (though the model is
+            #   still updated in the normal way, with character visits and so on). If multiple
+            #   sessions are showing the same map, other automapper windows are not affected
+            graffitiHash                => {},
 
             # Primary vector hash - maps Axmud's primary directions onto a vector, expressed in a
             #   list reference as (x, y, z), showing the direction that each primary direction takes
@@ -5105,6 +5235,10 @@
             preDrawnUncertainExitHash   => {},
             preDrawnLongExitHash        => {},
             preDrawnSquareExitHash      => {},
+            # Also calculates which primary directions should be used, if counting checked/
+            #   checkeable directions (i.e. when $self->worldModelObj->roomInteriorMode is set to
+            #   'checked_count')
+            preCountCheckedHash         => {},
 
             # Magnfication list. A list of standard magnification factors used for zooming in or out
             #   from the map
@@ -5140,9 +5274,22 @@
             dragModeFlag                => FALSE,
             # Flag set to TRUE when a dragging operation starts
             dragFlag                    => FALSE,
-            # The canvas object being dragged
+            # Flag set to TRUE when $self->continueDrag is called, and set back to FALSE at the
+            #   end of that call. ->continueDrag does nothing if a previous call to the function
+            #   hasn't been completed (happens a lot)
+            dragContinueFlag            => FALSE,
+            # The canvas object that was underneath the mouse cursor when the drag operation began
+            #   (the object that was grabbed, when using Alt-Gr)
             dragCanvasObj               => undef,
-            # The GA::ModelObj::Room / GA::Obj::Exit / GA::Obj::MapLabel being dragged
+            # A list of all canvas objects that are being dragged together. $self->dragCanvasObj is
+            #   always the first item in the list
+            # If $self->dragCanvasObj is a room, all selected rooms/labels in the same region are
+            #   dragged together
+            # If $self->dragCanvasObj is a label, both the label and its box (if drawn) are dragged
+            #   together
+            dragCanvasObjList           => [],
+            # The GA::ModelObj::Room / GA::Obj::Exit / GA::Obj::MapLabel being dragged,
+            #   corresponding to $self->dragCanvasObj
             dragModelObj                => undef,
             # The type of object being dragged - 'room', 'room_tag', 'room_guild', 'exit',
             #   'exit_tag' or 'label'
@@ -5153,9 +5300,9 @@
             # The canvas object's current coordinates on the canvas
             dragCurrentXPos             => undef,
             dragCurrentYPos             => undef,
-            # When dragging a room, the fake room drawn at the original location (so that the exits
-            #   don't look messy)
-            dragFakeRoomObj             => undef,
+            # When dragging a room(s), the fake room(s) drawn at the original location (so that the
+            #   exits don't look messy)
+            dragFakeRoomList            => [],
             # When dragging an exit bend, the bend's index in the exit's list of bends (the bend
             #   closest to the start of the exit has the index 0)
             dragBendNum                 => undef,
@@ -5170,6 +5317,19 @@
             # When dragging an exit bend, the exit drawing mode (corresponds to
             #   GA::Obj::WorldModel->drawExitMode)
             dragExitDrawMode            => undef,
+
+            # IVs used during a selection box operation
+            # Flag set to TRUE when a selection box operation starts, but before the box has
+            #   actually been drawn
+            selectBoxFlag               => FALSE,
+            # The selection box's canvas object, once it has been drawn
+            selectBoxCanvasObj          => undef,
+            # The canvas 's initial coordinates on the canvas
+            selectBoxInitXPos           => undef,
+            selectBoxInitYPos           => undef,
+            # The canvas object's current coordinates on the canvas
+            selectBoxCurrentXPos        => undef,
+            selectBoxCurrentYPos        => undef,
         };
 
         # Bless the object into existence
@@ -5235,6 +5395,8 @@
         # Set up ->signal_connects (other ->signal_connects are set up in the call to
         #   $self->winEnable() )
         $self->setDeleteEvent();            # 'delete-event'
+        $self->setKeyPressEvent();          # 'key-press-event'
+        $self->setKeyReleaseEvent();        # 'key-release-event'
         $self->setFocusOutEvent();          # 'focus-out-event'
         # Set up ->signal_connects specified by the calling function, if any
         if ($listRef) {
@@ -5383,7 +5545,7 @@
         }
 
         # If the pause window is visible, destroy it
-        if ($self->pauseWin) {
+        if ($axmud::CLIENT->busyWin) {
 
             $self->hidePauseWin();
         }
@@ -5464,7 +5626,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($menuBar, $toolbar, $hPaned, $treeViewScroller, $canvasFrame);
+        my ($menuBar, $hPaned, $treeViewScroller, $canvasFrame);
 
         # Check for improper arguments
         if (defined $check) {
@@ -5490,11 +5652,15 @@
             }
         }
 
-        # Create a toolbar at the top of the window (if allowed)
+        # Create toolbar(s) at the top of the window (if allowed)
         if ($self->worldModelObj->showToolbarFlag) {
 
-            $toolbar = $self->enableToolbar();
-            if ($toolbar) {
+            # Reset toolbar IVs to their default state; the subsequent call to $self->enableToolbar
+            #   imports the list of button sets from the world model, and updates these IVs
+            #   accordinly
+            $self->resetToolbarIVs();
+
+            foreach my $toolbar ($self->enableToolbar()) {
 
                 # Pack the widget
                 $packingBox->pack_start($toolbar, FALSE, FALSE, 0);
@@ -5565,7 +5731,7 @@
     sub redrawWidgets {
 
         # Can be called by any function
-        # Redraws some or all of the menu bar, toolbar, treeview and canvas
+        # Redraws some or all of the menu bar, toolbar(s), treeview and canvas
         # The widgets redrawn are specified by the calling function, but are not redrawn if the
         #   right flags aren't set (e.g. the menu bar isn't redrawn if
         #   GA::Obj::WorldModel->showMenuBarFlag isn't set)
@@ -5582,7 +5748,8 @@
 
         # Local variables
         my (
-            $menuBar, $toolbar, $hPaned, $treeViewScroller, $canvasFrame,
+            $menuBar, $hPaned, $treeViewScroller, $canvasFrame,
+            @toolbarList,
             %widgetHash,
         );
 
@@ -5626,9 +5793,9 @@
             $axmud::CLIENT->desktopObj->removeWidget($self->packingBox, $self->menuBar);
         }
 
-        if ($self->toolbar) {
+        foreach my $toolbar ($self->toolbarList) {
 
-            $axmud::CLIENT->desktopObj->removeWidget($self->packingBox, $self->toolbar);
+            $axmud::CLIENT->desktopObj->removeWidget($self->packingBox, $toolbar);
         }
 
         if ($self->hPaned) {
@@ -5682,18 +5849,24 @@
             }
         }
 
-        # Redraw the toolbar, if specified (and if allowed)
+        # Redraw the toolbar(s), if specified (and if allowed)
         if ($self->worldModelObj->showToolbarFlag) {
 
             if ($widgetHash{'toolbar'}) {
 
+                # Reset toolbar IVs to their default state; the subsequent call to
+                #   $self->enableToolbar imports the list of button sets from the world model, and
+                #   updates these IVs accordinly
                 $self->resetToolbarIVs();
 
-                $toolbar = $self->enableToolbar();
-                if ($toolbar) {
+                @toolbarList = $self->enableToolbar();
+                if (@toolbarList) {
 
-                    # Pack the new widget
-                    $self->packingBox->pack_start($toolbar, FALSE, FALSE, 0);
+                    foreach my $toolbar (@toolbarList) {
+
+                        # Pack the new widget
+                        $self->packingBox->pack_start($toolbar, FALSE, FALSE, 0);
+                    }
 
                 } else {
 
@@ -5701,11 +5874,20 @@
                     $self->worldModelObj->set_showToolbarFlag(FALSE);
                 }
 
-            # Otherwise, repack the old toolbar
-            } elsif ($self->toolbar) {
+            # Otherwise, repack the old toolbar(s)
+            } else {
 
-                $self->packingBox->pack_start($self->toolbar, FALSE, FALSE, 0);
+                foreach my $toolbar ($self->toolbarList) {
+
+                    $self->packingBox->pack_start($toolbar, FALSE, FALSE, 0);
+                }
             }
+
+        } else {
+
+            # When the toolbars are next drawn, make sure the default button set is visible in the
+            #   original (first) toolbar
+            $self->ivPoke('toolbarOriginalSet', $self->constToolbarDefaultSet);
         }
 
         # Create a new horizontal pane (only if both the treeview and the canvas are allowed)
@@ -5850,6 +6032,7 @@
 
         # Repack complete
         $self->winShowAll($self->_objClass . '->redrawWidgets');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->redrawWidgets');
 
         return 1;
     }
@@ -5899,7 +6082,7 @@
         $self->ivEmpty('selectedLabelHash');
 
         # Reset other IVs to their default values
-        $self->ivPoke('freeClickMode', 'default');
+        $self->reset_freeClickMode();
         $self->ivPoke('mode', 'wait');
         $self->ivUndef('showChar');     # Show character visits for the current character
 
@@ -5972,6 +6155,122 @@
         return 1;
     }
 
+    sub setKeyPressEvent {
+
+        # Called by $self->winSetup
+        # Set up a ->signal_connect to watch out for certain key presses
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the ->signal_connect doesn't interfere with the key
+        #       press
+        #   1 if the ->signal_connect does interfere with the key press, or when the
+        #       ->signal_connect is first set up
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setKeyPressEvent', @_);
+        }
+
+        $self->winBox->signal_connect('key-press-event' => sub {
+
+            my ($widget, $event) = @_;
+
+            # Local variables
+            my ($keycode, $standard);
+
+            # Get the system keycode for this keypress
+            $keycode = Gtk2::Gdk->keyval_name($event->keyval);
+
+            # Translate it into a standard Axmud keycode
+            $standard = $axmud::CLIENT->currentKeycodeObj->reverseKeycode($keycode);
+            if (! $standard) {
+
+                # Not a standard Axmud keycode (which includes all letters and numbers), so just
+                #   use the system keycode
+                $standard = $keycode;
+            }
+
+            # Respond to the keypress. The only key combination that interests the automapper is
+            #   CTRL+C
+            if ($standard eq 'ctrl') {
+
+                $self->ivPoke('ctrlKeyFlag', TRUE);
+            }
+
+            if ($standard eq 'c' && $self->ctrlKeyFlag && $self->worldModelObj->allowCtrlCopyFlag) {
+
+                # If there are one or more selected rooms, start a 'move selected room to click'
+                #   operation
+                if ($self->selectedRoom || $self->selectedRoomHash) {
+
+                    $self->set_freeClickMode('move_room');
+                }
+
+                return 1;
+
+            } else {
+
+                return undef;
+            }
+        });
+
+        return 1;
+    }
+
+    sub setKeyReleaseEvent {
+
+        # Called by $self->winSetup
+        # Set up a ->signal_connect to watch out for certain key releases
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the ->signal_connect doesn't interfere with the key
+        #       release
+        #   1 if the ->signal_connect does interfere with the key release, or when the
+        #       ->signal_connect is first set up
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setKeyReleaseEvent', @_);
+        }
+
+        $self->winBox->signal_connect('key-release-event' => sub {
+
+            my ($widget, $event) = @_;
+
+            # Local variables
+            my ($keycode, $standard);
+
+            # Get the system keycode for this keypress
+            $keycode = Gtk2::Gdk->keyval_name($event->keyval);
+            # Translate it into a standard Axmud keycode
+            $standard = $axmud::CLIENT->currentKeycodeObj->reverseKeycode($keycode);
+
+            # Respond to the key release. The only key combination that interests the automapper is
+            #   CTRL+C
+            if ($standard && $standard eq 'ctrl') {
+
+                $self->ivPoke('ctrlKeyFlag', FALSE);
+            }
+
+            # Return 'undef' to show that we haven't interfered with this keypress
+            return undef;
+        });
+
+        return 1;
+    }
+
     sub setFocusOutEvent {
 
         # Called by $self->winSetup
@@ -6036,8 +6335,10 @@
 
     sub resetToolbarIVs {
 
-        # Called by $self->redrawWidgets at certain points, to reset the IVs storing details about
-        #   the toolbar back to their defaults
+        # Called by $self->drawWidgets and $self->redrawWidget to reset the IVs storing details
+        #   about toolbars back to their defaults
+        # (If $self->enableToolbar is then called, it's that function which imports a list of
+        #   button sets from the world model and updates these IVs accordinly)
         #
         # Expected arguments
         #   (none besides $self)
@@ -6054,11 +6355,13 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->resetToolbarIVs', @_);
         }
 
-        $self->ivUndef('toolbar');
-        $self->ivPoke('toolbarCurrentSet', 0);
-        $self->ivUndef('toolbarSwitchIcon');
-        $self->ivUndef('toolbarMainSeparator');
-        $self->ivEmpty('toolbarButtonHash');
+        foreach my $key ($self->ivKeys('buttonSetHash')) {
+
+            $self->ivAdd('buttonSetHash', $key, FALSE);
+        }
+
+        $self->ivEmpty('toolbarList');
+        $self->ivEmpty('toolbarHash');
 
         return 1;
     }
@@ -6392,6 +6695,151 @@
             });
             $subMenu_select->append($item_selectAllLabels);
 
+            $subMenu_select->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+                # 'Select rooms' sub-submenu
+                my $subSubMenu_selectRooms = Gtk2::Menu->new();
+
+                my $item_selectNoTitle = Gtk2::MenuItem->new('Rooms with no _titles');
+                $item_selectNoTitle->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('no_title');
+                });
+                $subSubMenu_selectRooms->append($item_selectNoTitle);
+
+                my $item_selectNoDescrip = Gtk2::MenuItem->new('Rooms with no _descriptions');
+                $item_selectNoDescrip->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('no_descrip');
+                });
+                $subSubMenu_selectRooms->append($item_selectNoDescrip);
+
+                my $item_selectNoTitleDescrip = Gtk2::MenuItem->new('Rooms with neither');
+                $item_selectNoTitleDescrip->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('no_title_descrip');
+                });
+                $subSubMenu_selectRooms->append($item_selectNoTitleDescrip);
+
+                my $item_selectTitleDescrip = Gtk2::MenuItem->new('Rooms with both');
+                $item_selectTitleDescrip->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('title_descrip');
+                });
+                $subSubMenu_selectRooms->append($item_selectTitleDescrip);
+
+                $subSubMenu_selectRooms->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+                my $item_selectNoVisitChar = Gtk2::MenuItem->new('Rooms not visited by character');
+                $item_selectNoVisitChar->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('no_visit_char');
+                });
+                $subSubMenu_selectRooms->append($item_selectNoVisitChar);
+
+                my $item_selectNoVisitAllChar = Gtk2::MenuItem->new('Rooms not visited by anyone');
+                $item_selectNoVisitAllChar->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('no_visit_all');
+                });
+                $subSubMenu_selectRooms->append($item_selectNoVisitAllChar);
+
+                my $item_selectVisitChar = Gtk2::MenuItem->new('Rooms visited by character');
+                $item_selectVisitChar->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('visit_char');
+                });
+                $subSubMenu_selectRooms->append($item_selectVisitChar);
+
+                my $item_selectVisitAllChar = Gtk2::MenuItem->new('Rooms visited by anyone');
+                $item_selectVisitAllChar->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('visit_all');
+                });
+                $subSubMenu_selectRooms->append($item_selectVisitAllChar);
+
+                $subSubMenu_selectRooms->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+                my $item_selectCheckable = Gtk2::MenuItem->new('Rooms with checkable directions');
+                $item_selectCheckable->signal_connect('activate' => sub {
+
+                    $self->selectRoomCallback('checkable');
+                });
+                $subSubMenu_selectRooms->append($item_selectCheckable);
+
+            my $item_selectRooms = Gtk2::MenuItem->new('Select r_ooms');
+            $item_selectRooms->set_submenu($subSubMenu_selectRooms);
+            $subMenu_select->append($item_selectRooms);
+
+                # 'Select exits' sub-submenu
+                my $subSubMenu_selectExits = Gtk2::Menu->new();
+
+                my $item_selectInRooms = Gtk2::MenuItem->new('Exits in selected _rooms');
+                $item_selectInRooms->signal_connect('activate' => sub {
+
+                    $self->selectExitTypeCallback('in_rooms');
+                });
+                $subSubMenu_selectExits->append($item_selectInRooms);
+
+                $subSubMenu_selectExits->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+                my $item_selectUnallocated = Gtk2::MenuItem->new('_Unallocated exits');
+                $item_selectUnallocated->signal_connect('activate' => sub {
+
+                    $self->selectExitTypeCallback('unallocated');
+                });
+                $subSubMenu_selectExits->append($item_selectUnallocated);
+
+                my $item_selectUnallocatable = Gtk2::MenuItem->new('Una_llocatable exits');
+                $item_selectUnallocatable->signal_connect('activate' => sub {
+
+                    $self->selectExitTypeCallback('unallocatable');
+                });
+                $subSubMenu_selectExits->append($item_selectUnallocatable);
+
+                my $item_selectUncertain = Gtk2::MenuItem->new('Un_certain exits');
+                $item_selectUncertain->signal_connect('activate' => sub {
+
+                    $self->selectExitTypeCallback('uncertain');
+                });
+                $subSubMenu_selectExits->append($item_selectUncertain);
+
+                my $item_selectIncomplete = Gtk2::MenuItem->new('I_ncomplete exits');
+                $item_selectIncomplete->signal_connect('activate' => sub {
+
+                    $self->selectExitTypeCallback('incomplete');
+                });
+                $subSubMenu_selectExits->append($item_selectIncomplete);
+
+                $subSubMenu_selectExits->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+                my $item_selectAllAbove = Gtk2::MenuItem->new('_All the above');
+                $item_selectAllAbove->signal_connect('activate' => sub {
+
+                    $self->selectExitTypeCallback('all_above');
+                });
+                $subSubMenu_selectExits->append($item_selectAllAbove);
+
+                $subSubMenu_selectExits->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+                my $item_selectRegion = Gtk2::MenuItem->new('_Region exits');
+                $item_selectRegion->signal_connect('activate' => sub {
+
+                    $self->selectExitTypeCallback('region');
+                });
+                $subSubMenu_selectExits->append($item_selectRegion);
+
+                my $item_selectSuper = Gtk2::MenuItem->new('_Super-region exits');
+                $item_selectSuper->signal_connect('activate' => sub {
+
+                    $self->selectExitTypeCallback('super');
+                });
+                $subSubMenu_selectExits->append($item_selectSuper);
+
+            my $item_selectExits = Gtk2::MenuItem->new('Select e_xits');
+            $item_selectExits->set_submenu($subSubMenu_selectExits);
+            $subMenu_select->append($item_selectExits);
+
         my $item_select = Gtk2::MenuItem->new('S_elect');
         $item_select->set_submenu($subMenu_select);
         $column_edit->append($item_select);
@@ -6409,25 +6857,58 @@
 
         $column_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
-        my $item_moveSelected = Gtk2::MenuItem->new('_Move selected rooms...');
-        $item_moveSelected->signal_connect('activate' => sub {
+            # 'Selected rooms/exits' submenu
+            my $subMenu_selectedObjs = Gtk2::Menu->new();
 
-            $self->moveSelectedRoomsCallback();
-        });
-        $column_edit->append($item_moveSelected);
-        # (Requires $self->currentRegionmap and one or more selected rooms)
-        $self->ivAdd('menuToolItemHash', 'move_selected', $item_moveSelected);
+            my $item_identifyRoom = Gtk2::MenuItem->new('_Identify selected room(s)');
+            $item_identifyRoom->signal_connect('activate' => sub {
 
-        my $item_moveSelectedToClick = Gtk2::MenuItem->new('Move selected rooms to _click');
-        $item_moveSelectedToClick->signal_connect('activate' => sub {
+                $self->identifyRoomsCallback();
+            });
+            $subMenu_selectedObjs->append($item_identifyRoom);
+            # (Requires $self->currentRegionmap and EITHER $self->selectedRoom or
+            #   $self->selectedRoomHash or $self->mapObj->currentRoom)
+            $self->ivAdd('menuToolItemHash', 'identify_room', $item_identifyRoom);
 
-            # Set the free clicking mode: $self->mouseClickEvent will move the objects  when the
-            #   user next clicks on an empty part of the map
-            $self->ivPoke('freeClickMode', 'move_room');
-        });
-        $column_edit->append($item_moveSelectedToClick);
-        # (Requires $self->currentRegionmap and one or more selected rooms)
-        $self->ivAdd('menuToolItemHash', 'move_to_click', $item_moveSelectedToClick);
+            $subMenu_selectedObjs->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+            my $item_moveSelected = Gtk2::MenuItem->new('_Move selected rooms...');
+            $item_moveSelected->signal_connect('activate' => sub {
+
+                $self->moveSelectedRoomsCallback();
+            });
+            $subMenu_selectedObjs->append($item_moveSelected);
+            # (Requires $self->currentRegionmap and one or more selected rooms)
+            $self->ivAdd('menuToolItemHash', 'move_selected', $item_moveSelected);
+
+            my $item_moveSelectedToClick = Gtk2::MenuItem->new('Move selected rooms to _click');
+            $item_moveSelectedToClick->signal_connect('activate' => sub {
+
+                # Set the free clicking mode: $self->mouseClickEvent will move the objects  when the
+                #   user next clicks on an empty part of the map
+                $self->set_freeClickMode('move_room');
+            });
+            $subMenu_selectedObjs->append($item_moveSelectedToClick);
+            # (Requires $self->currentRegionmap and one or more selected rooms)
+            $self->ivAdd('menuToolItemHash', 'move_to_click', $item_moveSelectedToClick);
+
+            $subMenu_selectedObjs->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+            my $item_identifyExit = Gtk2::MenuItem->new('I_dentify selected exit(s)');
+            $item_identifyExit->signal_connect('activate' => sub {
+
+                $self->identifyExitsCallback();
+            });
+            $subMenu_selectedObjs->append($item_identifyExit);
+            # (Requires $self->currentRegionmap & either $self->selectedExit or
+            #   $self->selectedExitHash)
+            $self->ivAdd('menuToolItemHash', 'identify_exit', $item_identifyExit);
+
+        my $item_selectedObjs = Gtk2::MenuItem->new('S_elected rooms/exits');
+        $item_selectedObjs->set_submenu($subMenu_selectedObjs);
+        $column_edit->append($item_selectedObjs);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'selected_objs', $item_selectedObjs);
 
         $column_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
@@ -6628,8 +7109,7 @@
                         @list,
                     );
 
-                    @list = sort {lc($a) cmp lc($b)}
-                                ($self->worldModelObj->ivKeys('roomFlagTextHash'));
+                    @list = $self->worldModelObj->roomFlagOrderedList;
 
                     $choice = $self->showComboDialogue(
                         'Select room flag',
@@ -6656,8 +7136,7 @@
                         @list,
                     );
 
-                    @list = sort {lc($a) cmp lc($b)}
-                                ($self->worldModelObj->ivKeys('roomFlagTextHash')),
+                    @list = $self->worldModelObj->roomFlagOrderedList;
 
                     $choice = $self->showComboDialogue(
                         'Select room flag',
@@ -6735,6 +7214,32 @@
             $item_exits->set_submenu($subSubMenu_exits);
             $subMenu_reports->append($item_exits);
 
+                 # 'Checked directions' sub-submenu
+                my $subSubMenu_checked = Gtk2::Menu->new();
+
+                my $item_checked1 = Gtk2::MenuItem->new('_All regions');
+                $item_checked1->signal_connect('activate' => sub {
+
+                    $self->session->pseudoCmd('modelreport -h', 'show_all');
+                });
+                $subSubMenu_checked->append($item_checked1);
+
+                my $item_checked2 = Gtk2::MenuItem->new('_Current region');
+                $item_checked2->signal_connect('activate' => sub {
+
+                    $self->session->pseudoCmd(
+                        'modelreport -h -r <' . $self->currentRegionmap->name . '>',
+                        'show_all',
+                    );
+                });
+                $subSubMenu_checked->append($item_checked2);
+                # (Requires $self->currentRegionmap)
+                $self->ivAdd('menuToolItemHash', 'report_checked_2', $item_checked2);
+
+            my $item_checked = Gtk2::MenuItem->new('_Checked directions');
+            $item_checked->set_submenu($subSubMenu_checked);
+            $subMenu_reports->append($item_checked);
+
         my $item_reports = Gtk2::MenuItem->new('_Generate reports');
         $item_reports->set_submenu($subMenu_reports);
         $column_edit->append($item_reports);
@@ -6745,6 +7250,31 @@
             $self->resetVisitsCallback();
         });
         $column_edit->append($item_resetVisits);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'reset_char_visits', $item_resetVisits);
+
+            # 'Reset checked directions' submenu
+            my $subMenu_checkedDirs = Gtk2::Menu->new();
+
+            my $item_resetCheckedCurrent = Gtk2::MenuItem->new('In current region');
+            $item_resetCheckedCurrent->signal_connect('activate' => sub {
+
+                $self->resetCheckedDirCallback(FALSE);
+            });
+            $subMenu_checkedDirs->append($item_resetCheckedCurrent);
+
+            my $item_resetCheckedAll = Gtk2::MenuItem->new('In all regions');
+            $item_resetCheckedAll->signal_connect('activate' => sub {
+
+                $self->resetCheckedDirCallback(TRUE);
+            });
+            $subMenu_checkedDirs->append($item_resetCheckedAll);
+
+        my $item_checkedDirs = Gtk2::MenuItem->new('Reset _checked directions');
+        $item_checkedDirs->set_submenu($subMenu_checkedDirs);
+        $column_edit->append($item_checkedDirs);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'reset_checked_dirs', $item_checkedDirs);
 
         my $item_resetRemote = Gtk2::MenuItem->new('Reset remo_te data...');
         $item_resetRemote->signal_connect('activate' => sub {
@@ -6752,6 +7282,8 @@
             $self->resetRemoteCallback();
         });
         $column_edit->append($item_resetRemote);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'reset_remote_data', $item_resetRemote);
 
         $column_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
@@ -6931,31 +7463,6 @@
             });
             $subMenu_winComponents->append($item_redrawWindow);
 
-            $subMenu_winComponents->append(Gtk2::SeparatorMenuItem->new());  # Separator
-
-            my $item_resetList = Gtk2::MenuItem->new('Re_set region list');
-            $item_resetList->signal_connect('activate' => sub {
-
-                $self->worldModelObj->resetRegionList();
-            });
-            $subMenu_winComponents->append($item_resetList);
-
-            my $item_reverseList = Gtk2::MenuItem->new('Re_verse region list');
-            $item_reverseList->signal_connect('activate' => sub {
-
-                $self->worldModelObj->reverseRegionList();
-            });
-            $subMenu_winComponents->append($item_reverseList);
-
-            my $item_moveCurrentRegion = Gtk2::MenuItem->new('Move _current region to top');
-            $item_moveCurrentRegion->signal_connect('activate' => sub {
-
-                $self->worldModelObj->moveRegionToTop($self->currentRegionmap);
-            });
-            $subMenu_winComponents->append($item_moveCurrentRegion);
-            # (Requires $self->currentRegionmap for a region that doesn't have a parent region)
-            $self->ivAdd('menuToolItemHash', 'move_region_top', $item_moveCurrentRegion);
-
         my $item_windowComponents = Gtk2::MenuItem->new('_Window components');
         $item_windowComponents->set_submenu($subMenu_winComponents);
         $column_view->append($item_windowComponents);
@@ -7051,12 +7558,10 @@
 
             $subMenu_roomFilters->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
-            foreach my $filter ($self->worldModelObj->roomFilterList) {
-
-                my $iconItem;
+            foreach my $filter ($axmud::CLIENT->constRoomFilterList) {
 
                 my $menuItem = Gtk2::CheckMenuItem->new('Release _' . $filter . ' filter');
-                $menuItem->set_active($self->worldModelObj->ivShow('roomFilterHash', $filter));
+                $menuItem->set_active($self->worldModelObj->ivShow('roomFilterApplyHash', $filter));
                 $menuItem->signal_connect('toggled' => sub {
 
                     if (! $self->ignoreMenuUpdateFlag) {
@@ -7083,6 +7588,7 @@
                 'none' => '_Don\'t draw counts',
                 'shadow_count' => 'Draw _unallocated/shadow exits',
                 'region_count' => 'Draw reg_ion/super region exits',
+                'checked_count' => 'Draw checked/checkable directions',
                 'room_content' => 'Draw _room contents',
                 'hidden_count' => 'Draw _hidden contents',
                 'temp_count' => 'Draw _temporary contents',
@@ -7718,6 +8224,67 @@
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'drag_mode', $item_dragMode);
 
+        my $item_graffitMode = Gtk2::CheckMenuItem->new('_Graffiti mode');
+        $item_graffitMode->set_active($self->graffitiModeFlag);
+        $item_graffitMode->signal_connect('toggled' => sub {
+
+            my @redrawList;
+
+            if ($item_graffitMode->get_active()) {
+
+                $self->ivPoke('graffitiModeFlag', TRUE);
+
+                # Tag current room, if any
+                if ($self->mapObj->currentRoom) {
+
+                    $self->ivAdd('graffitiHash', $self->mapObj->currentRoom->number);
+                    $self->doDraw('room', $self->mapObj->currentRoom);
+                }
+
+                # Initialise graffitied room counts
+                $self->setWinTitle();
+
+            } else {
+
+                $self->ivPoke('graffitiModeFlag', FALSE);
+
+                foreach my $num ($self->ivKeys('graffitiHash')) {
+
+                    my $roomObj = $self->worldModelObj->ivShow('modelHash', $num);
+                    if ($roomObj && $roomObj->parent == $self->currentRegionmap->number) {
+
+                        push (@redrawList, 'room', $self->worldModelObj->ivShow('modelHash', $num));
+                    }
+                }
+
+                $self->ivEmpty('graffitiHash');
+
+                # Redraw any graffitied rooms
+                if (@redrawList) {
+
+                    $self->doDraw(@redrawList);
+                }
+
+                # Remove graffitied room counts
+                $self->setWinTitle();
+            }
+
+            # Set the equivalent toolbar button
+            if ($self->ivExists('menuToolItemHash', 'icon_graffiti_mode')) {
+
+                my $menuItem = $self->ivShow('menuToolItemHash', 'icon_graffiti_mode');
+                $menuItem->set_active($item_graffitMode->get_active());
+            }
+
+            # The menu items which toggle graffiti in selected rooms are desensitised if
+            #   ->graffitiModeFlag is FALSE
+            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+            $self->restrictWidgets();
+        });
+        $column_mode->append($item_graffitMode);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'graffiti_mode', $item_graffitMode);
+
         $column_mode->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
             # 'Match rooms' submenu
@@ -8007,10 +8574,10 @@
 
             $subMenu_painter->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
-            my $item_radio4 = Gtk2::RadioMenuItem->new(undef, 'Paint _all rooms');
-            $item_radio4->signal_connect('toggled' => sub {
+            my $item_paintAll = Gtk2::RadioMenuItem->new(undef, 'Paint _all rooms');
+            $item_paintAll->signal_connect('toggled' => sub {
 
-                if ($item_radio4->get_active) {
+                if ($item_paintAll->get_active) {
 
                     $self->worldModelObj->set_paintAllRoomsFlag(TRUE);
 
@@ -8021,22 +8588,22 @@
                     }
                 }
             });
-            my $item_group2 = $item_radio4->get_group();
-            $subMenu_painter->append($item_radio4);
+            my $item_paintGroup = $item_paintAll->get_group();
+            $subMenu_painter->append($item_paintAll);
             # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'paint_all', $item_radio4);
+            $self->ivAdd('menuToolItemHash', 'paint_all', $item_paintAll);
 
-            my $item_radio5 = Gtk2::RadioMenuItem->new(
-                $item_group2,
+            my $item_paintNew = Gtk2::RadioMenuItem->new(
+                $item_paintGroup,
                 'Paint only _new rooms',
             );
             if (! $self->worldModelObj->paintAllRoomsFlag) {
 
-                $item_radio5->set_active(TRUE);
+                $item_paintNew->set_active(TRUE);
             }
-            $item_radio5->signal_connect('toggled' => sub {
+            $item_paintNew->signal_connect('toggled' => sub {
 
-                if ($item_radio5->get_active) {
+                if ($item_paintNew->get_active) {
 
                     $self->worldModelObj->set_paintAllRoomsFlag(FALSE);
 
@@ -8047,13 +8614,84 @@
                     }
                 }
             });
-            $subMenu_painter->append($item_radio5);
+            $subMenu_painter->append($item_paintNew);
             # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'paint_new', $item_radio5);
+            $self->ivAdd('menuToolItemHash', 'paint_new', $item_paintNew);
 
             $subMenu_painter->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
-            my $item_repaintCurrentRoom = Gtk2::MenuItem->new('_Repaint current room');
+            my $item_paintNormal = Gtk2::RadioMenuItem->new(undef, 'Paint _normal rooms');
+            $item_paintNormal->signal_connect('toggled' => sub {
+
+                if ($item_paintNormal->get_active) {
+
+                    $self->worldModelObj->painterObj->ivPoke('wildMode', 'normal');
+
+                    # Set the equivalent toolbar button
+                    if ($self->ivExists('menuToolItemHash', 'icon_paint_normal')) {
+
+                        $self->ivShow('menuToolItemHash', 'icon_paint_normal')->set_active(TRUE);
+                    }
+                }
+            });
+            my $item_paintGroup2 = $item_paintNormal->get_group();
+            $subMenu_painter->append($item_paintNormal);
+            # (Never desensitised)
+            $self->ivAdd('menuToolItemHash', 'paint_normal', $item_paintNormal);
+
+            my $item_paintWild = Gtk2::RadioMenuItem->new(
+                $item_paintGroup2,
+                'Paint _wilderness rooms',
+            );
+            if ($self->worldModelObj->painterObj->wildMode eq 'wild') {
+
+                $item_paintWild->set_active(TRUE);
+            }
+            $item_paintWild->signal_connect('toggled' => sub {
+
+                if ($item_paintWild->get_active) {
+
+                    $self->worldModelObj->painterObj->ivPoke('wildMode', 'wild');
+
+                    # Set the equivalent toolbar button
+                    if ($self->ivExists('menuToolItemHash', 'icon_paint_wild')) {
+
+                        $self->ivShow('menuToolItemHash', 'icon_paint_wild')->set_active(TRUE);
+                    }
+                }
+            });
+            $subMenu_painter->append($item_paintWild);
+            # (Requires $self->session->currentWorld->basicMappingFlag to be FALSE)
+            $self->ivAdd('menuToolItemHash', 'paint_wild', $item_paintWild);
+
+            my $item_paintBorder = Gtk2::RadioMenuItem->new(
+                $item_paintGroup2,
+                'Paint wilderness _border rooms',
+            );
+            if ($self->worldModelObj->painterObj->wildMode eq 'border') {
+
+                $item_paintBorder->set_active(TRUE);
+            }
+            $item_paintBorder->signal_connect('toggled' => sub {
+
+                if ($item_paintBorder->get_active) {
+
+                    $self->worldModelObj->painterObj->ivPoke('wildMode', 'border');
+
+                    # Set the equivalent toolbar button
+                    if ($self->ivExists('menuToolItemHash', 'icon_paint_border')) {
+
+                        $self->ivShow('menuToolItemHash', 'icon_paint_border')->set_active(TRUE);
+                    }
+                }
+            });
+            $subMenu_painter->append($item_paintBorder);
+            # (Requires $self->session->currentWorld->basicMappingFlag to be FALSE)
+            $self->ivAdd('menuToolItemHash', 'paint_border', $item_paintBorder);
+
+            $subMenu_painter->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+            my $item_repaintCurrentRoom = Gtk2::MenuItem->new('Repaint _current room');
             $item_repaintCurrentRoom->signal_connect('activate' => sub {
 
                 if ($self->mapObj->currentRoom) {
@@ -8079,20 +8717,6 @@
 
             $subMenu_painter->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
-            my $item_useNewPainter = Gtk2::MenuItem->new('_Use new painter');
-            $item_useNewPainter->signal_connect('activate' => sub {
-
-                $self->worldModelObj->resetPainter($self->session);
-
-                $self->showMsgDialogue(
-                    'Painter',
-                    'info',
-                    'The painter object has been reset',
-                    'ok',
-                );
-            });
-            $subMenu_painter->append($item_useNewPainter);
-
             my $item_editPainter = Gtk2::ImageMenuItem->new('_Edit painter');
             my $img_editPainter = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
             $item_editPainter->set_image($img_editPainter);
@@ -8110,6 +8734,22 @@
             });
             $subMenu_painter->append($item_editPainter);
 
+            $subMenu_painter->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+            my $item_resetPainter = Gtk2::MenuItem->new('_Reset painter');
+            $item_resetPainter->signal_connect('activate' => sub {
+
+                $self->worldModelObj->resetPainter($self->session);
+
+                $self->showMsgDialogue(
+                    'Painter',
+                    'info',
+                    'The painter object has been reset',
+                    'ok',
+                );
+            });
+            $subMenu_painter->append($item_resetPainter);
+
         my $item_painter = Gtk2::ImageMenuItem->new('_Painter');
         my $img_painter = Gtk2::Image->new_from_stock('gtk-select-color', 'menu');
         $item_painter->set_image($img_painter);
@@ -8118,8 +8758,8 @@
 
         $column_mode->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
-            # 'Assisted moves' submenu
-            my $subMenu_assistedMoves = Gtk2::Menu->new();
+            # 'Moves' submenu
+            my $subMenu_moves = Gtk2::Menu->new();
 
             my $item_allowAssisted = Gtk2::CheckMenuItem->new('_Allow assisted moves');
             $item_allowAssisted->set_active($self->worldModelObj->assistedMovesFlag);
@@ -8135,16 +8775,16 @@
                     );
 
                     # The menu items below which set ->protectedMovesFlag and
-                    #   ->superProtectedMovesFlag are desensitised if ->assistedMovesFlag is false
+                    #   ->superProtectedMovesFlag are desensitised if ->assistedMovesFlag is FALSE
                     # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
                     $self->restrictWidgets();
                 }
             });
-            $subMenu_assistedMoves->append($item_allowAssisted);
+            $subMenu_moves->append($item_allowAssisted);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'allow_assisted_moves', $item_allowAssisted);
 
-            $subMenu_assistedMoves->append(Gtk2::SeparatorMenuItem->new()); # Separator
+            $subMenu_moves->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
             my $item_assistedBreak = Gtk2::CheckMenuItem->new('_Break doors before move');
             $item_assistedBreak->set_active($self->worldModelObj->assistedBreakFlag);
@@ -8160,7 +8800,7 @@
                     );
                 }
             });
-            $subMenu_assistedMoves->append($item_assistedBreak);
+            $subMenu_moves->append($item_assistedBreak);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'break_before_move', $item_assistedBreak);
 
@@ -8178,7 +8818,7 @@
                     );
                 }
             });
-            $subMenu_assistedMoves->append($item_assistedPick);
+            $subMenu_moves->append($item_assistedPick);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'pick_before_move', $item_assistedPick);
 
@@ -8196,7 +8836,7 @@
                     );
                 }
             });
-            $subMenu_assistedMoves->append($item_assistedUnlock);
+            $subMenu_moves->append($item_assistedUnlock);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'unlock_before_move', $item_assistedUnlock);
 
@@ -8214,7 +8854,7 @@
                     );
                 }
             });
-            $subMenu_assistedMoves->append($item_assistedOpen);
+            $subMenu_moves->append($item_assistedOpen);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'open_before_move', $item_assistedOpen);
 
@@ -8232,7 +8872,7 @@
                     );
                 }
             });
-            $subMenu_assistedMoves->append($item_assistedClose);
+            $subMenu_moves->append($item_assistedClose);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'close_after_move', $item_assistedClose);
 
@@ -8250,11 +8890,11 @@
                     );
                 }
             });
-            $subMenu_assistedMoves->append($item_assistedLock);
+            $subMenu_moves->append($item_assistedLock);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'lock_after_move', $item_assistedLock);
 
-            $subMenu_assistedMoves->append(Gtk2::SeparatorMenuItem->new()); # Separator
+            $subMenu_moves->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
             my $item_allowProtected = Gtk2::CheckMenuItem->new('Allow p_rotected moves');
             $item_allowProtected->set_active($self->worldModelObj->protectedMovesFlag);
@@ -8268,9 +8908,14 @@
                         FALSE,      # Don't call $self->drawRegion
                         'allow_protected_moves',
                     );
+
+                    # The menu item below which sets ->crafyMovesFlag is desensitised if
+                    #   ->assistedMovesFlag is false
+                    # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+                    $self->restrictWidgets();
                 }
             });
-            $subMenu_assistedMoves->append($item_allowProtected);
+            $subMenu_moves->append($item_allowProtected);
             # (Requires $self->worldModelObj->assistedMovesFlag)
             $self->ivAdd('menuToolItemHash', 'allow_protected_moves', $item_allowProtected);
 
@@ -8288,13 +8933,33 @@
                     );
                 }
             });
-            $subMenu_assistedMoves->append($item_allowSuper);
+            $subMenu_moves->append($item_allowSuper);
             # (Requires $self->worldModelObj->assistedMovesFlag)
             $self->ivAdd('menuToolItemHash', 'allow_super_protected_moves', $item_allowSuper);
 
-        my $item_assistedMoves = Gtk2::MenuItem->new('_Assisted moves');
-        $item_assistedMoves->set_submenu($subMenu_assistedMoves);
-        $column_mode->append($item_assistedMoves);
+            $subMenu_moves->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+            my $item_allowCrafty = Gtk2::CheckMenuItem->new('Allow _crafty moves');
+            $item_allowCrafty->set_active($self->worldModelObj->craftyMovesFlag);
+            $item_allowCrafty->signal_connect('toggled' => sub {
+
+                if (! $self->ignoreMenuUpdateFlag) {
+
+                    $self->worldModelObj->toggleFlag(
+                        'craftyMovesFlag',
+                        $item_allowCrafty->get_active(),
+                        FALSE,      # Don't call $self->drawRegion
+                        'allow_crafty_moves',
+                    );
+                }
+            });
+            $subMenu_moves->append($item_allowCrafty);
+            # (Requires $self->worldModelObj->protectedMovesFlag set to be FALSE)
+            $self->ivAdd('menuToolItemHash', 'allow_crafty_moves', $item_allowCrafty);
+
+        my $item_moves = Gtk2::MenuItem->new('_Moves');
+        $item_moves->set_submenu($subMenu_moves);
+        $column_mode->append($item_moves);
 
             # 'Start-up flags' submenu
             my $subMenu_startUpFlags = Gtk2::Menu->new();
@@ -8357,6 +9022,97 @@
         $item_startUpFlags->set_submenu($subMenu_startUpFlags);
         $column_mode->append($item_startUpFlags);
 
+            # 'Drawing flags' submenu
+            my $subMenu_drawingFlags = Gtk2::Menu->new();
+
+            my $item_roomTagsInCaps = Gtk2::CheckMenuItem->new('Capitalise room _tags');
+            $item_roomTagsInCaps->set_active($self->worldModelObj->capitalisedRoomTagFlag);
+            $item_roomTagsInCaps->signal_connect('toggled' => sub {
+
+                if (! $self->ignoreMenuUpdateFlag) {
+
+                    $self->worldModelObj->toggleFlag(
+                        'capitalisedRoomTagFlag',
+                        $item_roomTagsInCaps->get_active(),
+                        TRUE,      # Do call $self->drawRegion
+                        'room_tags_capitalised',
+                    );
+                }
+            });
+            $subMenu_drawingFlags->append($item_roomTagsInCaps);
+            # (Never desensitised)
+            $self->ivAdd('menuToolItemHash', 'room_tags_capitalised', $item_roomTagsInCaps);
+
+            my $item_drawBentExits = Gtk2::CheckMenuItem->new('Draw _bent broken exits');
+            $item_drawBentExits->set_active($self->worldModelObj->drawBentExitsFlag);
+            $item_drawBentExits->signal_connect('toggled' => sub {
+
+                if (! $self->ignoreMenuUpdateFlag) {
+
+                    $self->worldModelObj->toggleFlag(
+                        'drawBentExitsFlag',
+                        $item_drawBentExits->get_active(),
+                        FALSE,      # Don't call $self->drawRegion
+                        'draw_bent_exits',
+                    );
+                }
+            });
+            $subMenu_drawingFlags->append($item_drawBentExits);
+            # (Never desensitised)
+            $self->ivAdd('menuToolItemHash', 'draw_bent_exits', $item_drawBentExits);
+
+            my $item_drawRoomEcho = Gtk2::CheckMenuItem->new('Draw _room echos');
+            $item_drawRoomEcho->set_active($self->worldModelObj->drawRoomEchoFlag);
+            $item_drawRoomEcho->signal_connect('toggled' => sub {
+
+                if (! $self->ignoreMenuUpdateFlag) {
+
+                    $self->worldModelObj->toggleFlag(
+                        'drawRoomEchoFlag',
+                        $item_drawRoomEcho->get_active(),
+                        TRUE,      # Do call $self->drawRegion
+                        'draw_room_echo',
+                    );
+                }
+            });
+            $subMenu_drawingFlags->append($item_drawRoomEcho);
+            # (Never desensitised)
+            $self->ivAdd('menuToolItemHash', 'draw_room_echo', $item_drawRoomEcho);
+
+            my $item_showTooltips = Gtk2::CheckMenuItem->new('_Show tooltips');
+            $item_showTooltips->set_active($self->worldModelObj->showTooltipsFlag);
+            $item_showTooltips->signal_connect('toggled' => sub {
+
+                $self->worldModelObj->toggleShowTooltipsFlag(
+                    $item_showTooltips->get_active(),
+                );
+            });
+            $subMenu_drawingFlags->append($item_showTooltips);
+            # (Never desensitised)
+            $self->ivAdd('menuToolItemHash', 'show_tooltips', $item_showTooltips);
+
+            my $item_showNotes = Gtk2::CheckMenuItem->new('Show _room notes in tooltips');
+            $item_showNotes->set_active($self->worldModelObj->showNotesFlag);
+            $item_showNotes->signal_connect('toggled' => sub {
+
+                if (! $self->ignoreMenuUpdateFlag) {
+
+                    $self->worldModelObj->toggleFlag(
+                        'showNotesFlag',
+                        $item_showNotes->get_active(),
+                        FALSE,      # Don't call $self->drawRegion
+                        'show_notes',
+                    );
+                }
+            });
+            $subMenu_drawingFlags->append($item_showNotes);
+            # (Never desensitised)
+            $self->ivAdd('menuToolItemHash', 'show_notes', $item_showNotes);
+
+        my $item_drawingFlags = Gtk2::MenuItem->new('_Drawing flags');
+        $item_drawingFlags->set_submenu($subMenu_drawingFlags);
+        $column_mode->append($item_drawingFlags);
+
             # 'Other flags' submenu
             my $subMenu_otherFlags = Gtk2::Menu->new();
 
@@ -8376,7 +9132,7 @@
             });
             $subMenu_otherFlags->append($item_allowModelScripts);
             # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'allow_model_scripts', $item_autoOpenWindow);
+            $self->ivAdd('menuToolItemHash', 'allow_model_scripts', $item_allowModelScripts);
 
             my $item_allowRoomScripts = Gtk2::CheckMenuItem->new(
                 'Allow ' . $axmud::BASIC_NAME . ' _scripts',
@@ -8396,7 +9152,7 @@
             });
             $subMenu_otherFlags->append($item_allowRoomScripts);
             # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'allow_room_scripts', $item_autoOpenWindow);
+            $self->ivAdd('menuToolItemHash', 'allow_room_scripts', $item_allowRoomScripts);
 
             my $item_autoCheckRooms = Gtk2::CheckMenuItem->new('A_uto-compare new rooms');
             $item_autoCheckRooms->set_active($self->worldModelObj->autoCompareFlag);
@@ -8416,24 +9172,6 @@
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'auto_compare_rooms', $item_autoCheckRooms);
 
-            my $item_roomTagsInCaps = Gtk2::CheckMenuItem->new('Capitalise room _tags');
-            $item_roomTagsInCaps->set_active($self->worldModelObj->capitalisedRoomTagFlag);
-            $item_roomTagsInCaps->signal_connect('toggled' => sub {
-
-                if (! $self->ignoreMenuUpdateFlag) {
-
-                    $self->worldModelObj->toggleFlag(
-                        'capitalisedRoomTagFlag',
-                        $item_roomTagsInCaps->get_active(),
-                        TRUE,      # Do call $self->drawRegion
-                        'room_tags_capitalised',
-                    );
-                }
-            });
-            $subMenu_otherFlags->append($item_roomTagsInCaps);
-            # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'room_tags_capitalised', $item_roomTagsInCaps);
-
             my $item_countVisits = Gtk2::CheckMenuItem->new('_Count character visits');
             $item_countVisits->set_active($self->worldModelObj->countVisitsFlag);
             $item_countVisits->signal_connect('toggled' => sub {
@@ -8450,7 +9188,7 @@
             });
             $subMenu_otherFlags->append($item_countVisits);
             # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'count_char_visits', $item_autoOpenWindow);
+            $self->ivAdd('menuToolItemHash', 'count_char_visits', $item_countVisits);
 
             my $item_disableUpdate = Gtk2::CheckMenuItem->new('_Disable update mode');
             $item_disableUpdate->set_active($self->worldModelObj->disableUpdateModeFlag);
@@ -8466,42 +9204,6 @@
             $subMenu_otherFlags->append($item_disableUpdate);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'disable_update_mode', $item_disableUpdate);
-
-            my $item_drawBentExits = Gtk2::CheckMenuItem->new('Draw _bent broken exits');
-            $item_drawBentExits->set_active($self->worldModelObj->drawBentExitsFlag);
-            $item_drawBentExits->signal_connect('toggled' => sub {
-
-                if (! $self->ignoreMenuUpdateFlag) {
-
-                    $self->worldModelObj->toggleFlag(
-                        'drawBentExitsFlag',
-                        $item_drawBentExits->get_active(),
-                        FALSE,      # Don't call $self->drawRegion
-                        'draw_bent_exits',
-                    );
-                }
-            });
-            $subMenu_otherFlags->append($item_drawBentExits);
-            # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'draw_bent_exits', $item_drawBentExits);
-
-            my $item_drawRoomEcho = Gtk2::CheckMenuItem->new('Draw _room echos');
-            $item_drawRoomEcho->set_active($self->worldModelObj->drawRoomEchoFlag);
-            $item_drawRoomEcho->signal_connect('toggled' => sub {
-
-                if (! $self->ignoreMenuUpdateFlag) {
-
-                    $self->worldModelObj->toggleFlag(
-                        'drawRoomEchoFlag',
-                        $item_drawRoomEcho->get_active(),
-                        TRUE,      # Do call $self->drawRegion
-                        'draw_room_echo',
-                    );
-                }
-            });
-            $subMenu_otherFlags->append($item_drawRoomEcho);
-            # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'draw_room_echo', $item_drawRoomEcho);
 
             my $item_explainGetLost = Gtk2::CheckMenuItem->new('_Explain when getting lost');
             $item_explainGetLost->set_active($self->worldModelObj->explainGetLostFlag);
@@ -8539,17 +9241,23 @@
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'follow_anchor', $item_followAnchor);
 
-            my $item_showTooltips = Gtk2::CheckMenuItem->new('_Show tooltips');
-            $item_showTooltips->set_active($self->worldModelObj->showTooltipsFlag);
-            $item_showTooltips->signal_connect('toggled' => sub {
+            my $item_allowCtrlCopy = Gtk2::CheckMenuItem->new('Move rooms to click with CTRL+C');
+            $item_allowCtrlCopy->set_active($self->worldModelObj->allowCtrlCopyFlag);
+            $item_allowCtrlCopy->signal_connect('toggled' => sub {
 
-                $self->worldModelObj->toggleShowTooltipsFlag(
-                    $item_showTooltips->get_active(),
-                );
+                if (! $self->ignoreMenuUpdateFlag) {
+
+                    $self->worldModelObj->toggleFlag(
+                        'allowCtrlCopyFlag',
+                        $item_allowCtrlCopy->get_active(),
+                        FALSE,      # Don't call $self->drawRegion
+                        'allow_ctrl_copy',
+                    );
+                }
             });
-            $subMenu_otherFlags->append($item_showTooltips);
+            $subMenu_otherFlags->append($item_allowCtrlCopy);
             # (Never desensitised)
-            $self->ivAdd('menuToolItemHash', 'show_tooltips', $item_showTooltips);
+            $self->ivAdd('menuToolItemHash', 'allow_ctrl_copy', $item_allowCtrlCopy);
 
             my $item_showAllPrimary = Gtk2::CheckMenuItem->new('_Show all directions in dialogues');
             $item_showAllPrimary->set_active($self->worldModelObj->showAllPrimaryFlag);
@@ -8635,7 +9343,7 @@
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'edit_region', $item_editRegion);
 
-        my $item_editRegionmap = Gtk2::ImageMenuItem->new('_E_dit regionmap...');
+        my $item_editRegionmap = Gtk2::ImageMenuItem->new('E_dit regionmap...');
         my $img_editRegionmap = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
         $item_editRegionmap->set_image($img_editRegionmap);
         $item_editRegionmap->signal_connect('activate' => sub {
@@ -8653,50 +9361,6 @@
         $column_regions->append($item_editRegionmap);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'edit_regionmap', $item_editRegionmap);
-
-            # 'Edit region features' submenu
-            my $subMenu_editFeatures = Gtk2::Menu->new();
-
-            my $item_renameRegion = Gtk2::MenuItem->new('_Rename region...');
-            $item_renameRegion->signal_connect('activate' => sub {
-
-                $self->renameRegionCallback();
-            });
-            $subMenu_editFeatures->append($item_renameRegion);
-            # (Requires $self->currentRegionmap)
-            $self->ivAdd('menuToolItemHash', 'rename_region', $item_renameRegion);
-
-            my $item_changeParent = Gtk2::MenuItem->new('_Change parent...');
-            $item_changeParent->signal_connect('activate' => sub {
-
-                $self->changeRegionParentCallback();
-            });
-            $subMenu_editFeatures->append($item_changeParent);
-
-            $subMenu_editFeatures->append(Gtk2::SeparatorMenuItem->new());    # Separator
-
-            my $item_resetObjectCounts = Gtk2::MenuItem->new('Reset _object counts');
-            $item_resetObjectCounts->signal_connect('activate' => sub {
-
-                 # Empty the hashes which store temporary object counts and redraw the region
-                 $self->worldModelObj->resetRegionCounts($self->currentRegionmap);
-            });
-            $subMenu_editFeatures->append($item_resetObjectCounts);
-
-            my $item_removeRoomFlags = Gtk2::MenuItem->new('Remove room _flags...');
-            $item_removeRoomFlags->signal_connect('activate' => sub {
-
-                $self->removeRoomFlagsCallback();
-            });
-            $subMenu_editFeatures->append($item_removeRoomFlags);
-            # (Requires $self->currentRegionmap)
-            $self->ivAdd('menuToolItemHash', 'remove_room_flags', $item_removeRoomFlags);
-
-        my $item_editFeatures = Gtk2::MenuItem->new('_Edit region features');
-        $item_editFeatures->set_submenu($subMenu_editFeatures);
-        $column_regions->append($item_editFeatures);
-        # (Requires $self->currentRegionmap)
-        $self->ivAdd('menuToolItemHash', 'edit_region_features', $item_editFeatures);
 
             # 'Recalculate paths' submenu
             my $subMenu_recalculatePaths = Gtk2::Menu->new();
@@ -8749,14 +9413,88 @@
 
         $column_regions->append(Gtk2::SeparatorMenuItem->new());    # Separator
 
-        my $item_identifyRegion = Gtk2::MenuItem->new('_Identify highlighted region');
-        $item_identifyRegion->signal_connect('activate' => sub {
+            # 'Region list' submenu
+            my $subMenu_regionsTree = Gtk2::Menu->new();
 
-            $self->identifyRegionCallback();
-        });
-        $column_regions->append($item_identifyRegion);
-        # (Requires $self->treeViewSelectedLine)
-        $self->ivAdd('menuToolItemHash', 'identify_region', $item_identifyRegion);
+            my $item_resetList = Gtk2::MenuItem->new('_Reset region list');
+            $item_resetList->signal_connect('activate' => sub {
+
+                $self->worldModelObj->resetRegionList();
+            });
+            $subMenu_regionsTree->append($item_resetList);
+
+            my $item_reverseList = Gtk2::MenuItem->new('Re_verse region list');
+            $item_reverseList->signal_connect('activate' => sub {
+
+                $self->worldModelObj->reverseRegionList();
+            });
+            $subMenu_regionsTree->append($item_reverseList);
+
+            $subMenu_regionsTree->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+            my $item_moveCurrentRegion = Gtk2::MenuItem->new('Move _current region to top');
+            $item_moveCurrentRegion->signal_connect('activate' => sub {
+
+                $self->worldModelObj->moveRegionToTop($self->currentRegionmap);
+            });
+            $subMenu_regionsTree->append($item_moveCurrentRegion);
+            # (Requires $self->currentRegionmap for a region that doesn't have a parent region)
+            $self->ivAdd('menuToolItemHash', 'move_region_top', $item_moveCurrentRegion);
+
+            $subMenu_regionsTree->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+            my $item_identifyRegion = Gtk2::MenuItem->new('_Identify highlighted region');
+            $item_identifyRegion->signal_connect('activate' => sub {
+
+                $self->identifyRegionCallback();
+            });
+            $subMenu_regionsTree->append($item_identifyRegion);
+            # (Requires $self->treeViewSelectedLine)
+            $self->ivAdd('menuToolItemHash', 'identify_region', $item_identifyRegion);
+
+        my $item_regionsTree = Gtk2::MenuItem->new('Region _list');
+        $item_regionsTree->set_submenu($subMenu_regionsTree);
+        $column_regions->append($item_regionsTree);
+
+            # 'Current region' submenu
+            my $subMenu_currentRegion = Gtk2::Menu->new();
+
+            my $item_renameRegion = Gtk2::MenuItem->new('_Rename region...');
+            $item_renameRegion->signal_connect('activate' => sub {
+
+                $self->renameRegionCallback();
+            });
+            $subMenu_currentRegion->append($item_renameRegion);
+
+            my $item_changeParent = Gtk2::MenuItem->new('_Set parent region...');
+            $item_changeParent->signal_connect('activate' => sub {
+
+                $self->changeRegionParentCallback();
+            });
+            $subMenu_currentRegion->append($item_changeParent);
+
+            $subMenu_currentRegion->append(Gtk2::SeparatorMenuItem->new());  # Separator
+
+            my $item_resetObjectCounts = Gtk2::MenuItem->new('Reset _object counts');
+            $item_resetObjectCounts->signal_connect('activate' => sub {
+
+                 # Empty the hashes which store temporary object counts and redraw the region
+                 $self->worldModelObj->resetRegionCounts($self->currentRegionmap);
+            });
+            $subMenu_currentRegion->append($item_resetObjectCounts);
+
+            my $item_removeRoomFlags = Gtk2::MenuItem->new('Remove room _flags...');
+            $item_removeRoomFlags->signal_connect('activate' => sub {
+
+                $self->removeRoomFlagsCallback();
+            });
+            $subMenu_currentRegion->append($item_removeRoomFlags);
+
+        my $item_currentRegion = Gtk2::MenuItem->new('_Current region');
+        $item_currentRegion->set_submenu($subMenu_currentRegion);
+        $column_regions->append($item_currentRegion);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'current_region', $item_currentRegion);
 
             # 'Screenshots' submenu
             my $subMenu_screenshots = Gtk2::Menu->new();
@@ -8822,6 +9560,30 @@
 
         $column_regions->append(Gtk2::SeparatorMenuItem->new());    # Separator
 
+            # 'Background colours' submenu
+            my $subMenu_bgColours = Gtk2::Menu->new();
+
+            my $item_removeBGAll = Gtk2::MenuItem->new('Remove colour...');
+            $item_removeBGAll->signal_connect('activate' => sub {
+
+                $self->removeBGColourCallback();
+            });
+            $subMenu_bgColours->append($item_removeBGAll);
+
+            my $item_removeBGColour = Gtk2::MenuItem->new('Remove all colours');
+            $item_removeBGColour->signal_connect('activate' => sub {
+
+                $self->removeBGAllCallback();
+            });
+            $subMenu_bgColours->append($item_removeBGColour);
+
+        my $item_bgColours = Gtk2::MenuItem->new('Background colours');
+        $item_bgColours->set_submenu($subMenu_bgColours);
+        $column_regions->append($item_bgColours);
+        # (Requires $self->currentRegionmap whose ->gridColourBlockHash and/or ->gridColourObjHash
+        #   is not empty)
+        $self->ivAdd('menuToolItemHash', 'empty_bg_colours', $item_bgColours);
+
         my $item_emptyRegion = Gtk2::MenuItem->new('Empt_y region');
         $item_emptyRegion->signal_connect('activate' => sub {
 
@@ -8830,6 +9592,8 @@
         $column_regions->append($item_emptyRegion);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'empty_region', $item_emptyRegion);
+
+        $column_regions->append(Gtk2::SeparatorMenuItem->new());    # Separator
 
         my $item_deleteRegion = Gtk2::ImageMenuItem->new('De_lete region');
         my $img_deleteRegion = Gtk2::Image->new_from_stock('gtk-delete', 'menu');
@@ -8925,12 +9689,14 @@
             # (Requires $self->currentRegionmap & $self->mapObj->currentRoom)
             $self->ivAdd('menuToolItemHash', 'update_locator', $item_updateLocator);
 
-            my $item_editLocatorRoom = Gtk2::MenuItem->new('_Edit Locator room...');
-            $item_editLocatorRoom->signal_connect('activate' => sub {
+            $subMenu_locatorTask->append(Gtk2::SeparatorMenuItem->new());  # Separator
+
+            my $item_viewLocatorRoom = Gtk2::MenuItem->new('_View Locator room...');
+            $item_viewLocatorRoom->signal_connect('activate' => sub {
 
                 $self->editLocatorRoomCallback();
             });
-            $subMenu_locatorTask->append($item_editLocatorRoom);
+            $subMenu_locatorTask->append($item_viewLocatorRoom);
 
         my $item_locatorTask = Gtk2::MenuItem->new('_Locator task');
         $item_locatorTask->set_submenu($subMenu_locatorTask);
@@ -9040,7 +9806,7 @@
                 #   the user next clicks on an empty part of the map
                 if ($self->currentRegionmap) {
 
-                    $self->ivPoke('freeClickMode', 'add_room');
+                    $self->set_freeClickMode('add_room');
                 }
             });
             $subMenu_addRoom->append($item_addRoomAtClick);
@@ -9060,39 +9826,101 @@
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'add_room', $item_addRoom);
 
-            # 'Add exit' submenu
-            my $subMenu_addExit = Gtk2::Menu->new();
+            # 'Set exits' submenu
+            my $subMenu_setExits = Gtk2::Menu->new();
 
             my $item_addNormal = Gtk2::MenuItem->new('Add _normal exit...');
             $item_addNormal->signal_connect('activate' => sub {
 
                 $self->addExitCallback(FALSE);  # FALSE - not a hidden exit
             });
-            $subMenu_addExit->append($item_addNormal);
+            $subMenu_setExits->append($item_addNormal);
+            # (Requires $self->currentRegionmap and a $self->selectedRoom whose ->wildMode is not
+            #   'wild' - the value 'border' is ok, though)
+            $self->ivAdd('menuToolItemHash', 'add_normal_exit', $item_addNormal);
 
             my $item_addMultiple = Gtk2::MenuItem->new('Add _multiple exits...');
             $item_addMultiple->signal_connect('activate' => sub {
 
                 $self->addMultipleExitsCallback();
             });
-            $subMenu_addExit->append($item_addMultiple);
+            $subMenu_setExits->append($item_addMultiple);
+            # (Requires $self->currentRegionmap and a $self->selectedRoom whose ->wildMode is not
+            #   'wild' - the value 'border' is ok, though)
+            $self->ivAdd('menuToolItemHash', 'add_multiple_exits', $item_addMultiple);
 
-            $subMenu_addExit->append(Gtk2::SeparatorMenuItem->new()); # Separator
+            $subMenu_setExits->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
             my $item_addHiddenExit = Gtk2::MenuItem->new('Add _hidden exit...');
             $item_addHiddenExit->signal_connect('activate' => sub {
 
                 $self->addExitCallback(TRUE);   # TRUE - a hidden exit
             });
-            $subMenu_addExit->append($item_addHiddenExit);
+            $subMenu_setExits->append($item_addHiddenExit);
+            # (Requires $self->currentRegionmap and a $self->selectedRoom whose ->wildMode is not
+            #   'wild' - the value 'border' is ok, though)
+            $self->ivAdd('menuToolItemHash', 'add_hidden_exit', $item_addHiddenExit);
 
-        my $item_addExit = Gtk2::ImageMenuItem->new('_Add exit to room');
-        my $img_addExit = Gtk2::Image->new_from_stock('gtk-add', 'menu');
-        $item_addExit->set_image($img_addExit);
-        $item_addExit->set_submenu($subMenu_addExit);
-        $column_rooms->append($item_addExit);
-        # (Requires $self->currentRegionmap & $self->selectedRoom)
-        $self->ivAdd('menuToolItemHash', 'room_exits', $item_addExit);
+            $subMenu_setExits->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+            my $item_removeChecked = Gtk2::MenuItem->new('Remove checked direction...');
+            $item_removeChecked->signal_connect('activate' => sub {
+
+                $self->removeCheckedDirCallback(FALSE);
+            });
+            $subMenu_setExits->append($item_removeChecked);
+            # (Require a current regionmap, a single selected room that has one or more checked
+            #   directions)
+            $self->ivAdd('menuToolItemHash', 'remove_checked', $item_removeChecked);
+
+            my $item_removeCheckedAll = Gtk2::MenuItem->new('Remove all checked directions');
+            $item_removeCheckedAll->signal_connect('activate' => sub {
+
+                $self->removeCheckedDirCallback(TRUE);
+            });
+            $subMenu_setExits->append($item_removeCheckedAll);
+            # (Require a current regionmap, a single selected room that has one or more checked
+            #   directions)
+            $self->ivAdd('menuToolItemHash', 'remove_checked_all', $item_removeCheckedAll);
+
+            $subMenu_setExits->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+            my $item_markNormal = Gtk2::MenuItem->new('Mark room(s) as normal');
+            $item_markNormal->signal_connect('activate' => sub {
+
+                $self->setWildCallback('normal');
+            });
+            $subMenu_setExits->append($item_markNormal);
+            # (Require a current regionmap and one or more selected rooms)
+            $self->ivAdd('menuToolItemHash', 'wilderness_normal', $item_markNormal);
+
+            my $item_markWild = Gtk2::MenuItem->new('Mark room(s) as wilderness');
+            $item_markWild->signal_connect('activate' => sub {
+
+                $self->setWildCallback('wild');
+            });
+            $subMenu_setExits->append($item_markWild);
+            # (Require a current regionmap, one or more selected rooms and
+            #   $self->session->currentWorld->basicMappingFlag to be FALSE)
+            $self->ivAdd('menuToolItemHash', 'wilderness_wild', $item_markWild);
+
+            my $item_markBorder = Gtk2::MenuItem->new('Mark room(s) as wilderness border');
+            $item_markBorder->signal_connect('activate' => sub {
+
+                $self->setWildCallback('border');
+            });
+            $subMenu_setExits->append($item_markBorder);
+            # (Require a current regionmap, one or more selected rooms and
+            #   $self->session->currentWorld->basicMappingFlag to be FALSE)
+            $self->ivAdd('menuToolItemHash', 'wilderness_border', $item_markBorder);
+
+        my $item_setExits = Gtk2::ImageMenuItem->new('Set e_xits');
+        my $img_setExits = Gtk2::Image->new_from_stock('gtk-add', 'menu');
+        $item_setExits->set_image($img_setExits);
+        $item_setExits->set_submenu($subMenu_setExits);
+        $column_rooms->append($item_setExits);
+        # (Require a current regionmap and one or more selected rooms)
+        $self->ivAdd('menuToolItemHash', 'set_exits', $item_setExits);
 
             # 'Add patterns' submenu
             my $subMenu_exitPatterns = Gtk2::Menu->new();
@@ -9224,15 +10052,66 @@
 
         $column_rooms->append(Gtk2::SeparatorMenuItem->new());  # Separator
 
-        my $item_identifyRoom = Gtk2::MenuItem->new('_Identify room(s)');
-        $item_identifyRoom->signal_connect('activate' => sub {
+            # 'Update character visits' submenu
+            my $subMenu_updateVisits = Gtk2::Menu->new();
 
-            $self->identifyRoomsCallback();
-        });
-        $column_rooms->append($item_identifyRoom);
-        # (Requires $self->currentRegionmap and EITHER $self->selectedRoom or
-        #   $self->selectedRoomHash or $self->mapObj->currentRoom)
-        $self->ivAdd('menuToolItemHash', 'identify_room', $item_identifyRoom);
+            my $item_increaseSetCurrent = Gtk2::MenuItem->new('Increase & set _current');
+            $item_increaseSetCurrent->signal_connect('activate' => sub {
+
+                $self->updateVisitsCallback('increase');
+                $self->mapObj->setCurrentRoom($self->selectedRoom);
+            });
+            $subMenu_updateVisits->append($item_increaseSetCurrent);
+            # (Requires $self->currentRegionmap and $self->selectedRoom)
+            $self->ivAdd('menuToolItemHash', 'increase_set_current', $item_increaseSetCurrent);
+
+            $subMenu_updateVisits->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+            my $item_increaseVisits = Gtk2::MenuItem->new('_Increase by one');
+            $item_increaseVisits->signal_connect('activate' => sub {
+
+                $self->updateVisitsCallback('increase');
+            });
+            $subMenu_updateVisits->append($item_increaseVisits);
+
+            my $item_decreaseVisits = Gtk2::MenuItem->new('_Decrease by one');
+            $item_decreaseVisits->signal_connect('activate' => sub {
+
+                $self->updateVisitsCallback('decrease');
+            });
+            $subMenu_updateVisits->append($item_decreaseVisits);
+
+            my $item_manualVisits = Gtk2::MenuItem->new('Set _manually');
+            $item_manualVisits->signal_connect('activate' => sub {
+
+                $self->updateVisitsCallback('manual');
+            });
+            $subMenu_updateVisits->append($item_manualVisits);
+
+            my $item_resetVisits = Gtk2::MenuItem->new('_Reset to zero');
+            $item_resetVisits->signal_connect('activate' => sub {
+
+                $self->updateVisitsCallback('reset');
+            });
+            $subMenu_updateVisits->append($item_resetVisits);
+
+            $subMenu_updateVisits->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+            my $item_toggleGraffiti = Gtk2::MenuItem->new('Toggle _graffiti');
+            $item_toggleGraffiti->signal_connect('activate' => sub {
+
+                $self->toggleGraffitiCallback();
+            });
+            $subMenu_updateVisits->append($item_toggleGraffiti);
+            # (Requires $self->currentRegionmap, $self->graffitiModeFlag & one or more selected
+            #   rooms)
+            $self->ivAdd('menuToolItemHash', 'toggle_graffiti', $item_toggleGraffiti);
+
+        my $item_updateVisits = Gtk2::MenuItem->new('Update character _visits');
+        $item_updateVisits->set_submenu($subMenu_updateVisits);
+        $column_rooms->append($item_updateVisits);
+        # (Requires $self->currentRegionmap & either $self->selectedRoom or $self->selectedRoomHash)
+        $self->ivAdd('menuToolItemHash', 'update_visits', $item_updateVisits);
 
         my $item_editRoom = Gtk2::ImageMenuItem->new('_Edit room...');
         my $img_editRoom = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
@@ -9358,31 +10237,38 @@
             # 'Toggle room flag' submenu
             my $subMenu_toggleRoomFlag = Gtk2::Menu->new();
 
-            foreach my $filter ($self->worldModelObj->roomFilterList) {
-
-                my $flagListRef;
+            foreach my $filter ($axmud::CLIENT->constRoomFilterList) {
 
                 # A sub-sub menu for $filter
                 my $subMenu = Gtk2::Menu->new();
 
-                $flagListRef = $self->worldModelObj->ivShow('roomFlagReverseHash', $filter);
-                foreach my $flag (@$flagListRef) {
+                my @nameList = $self->worldModelObj->getRoomFlagsInFilter($filter);
+                foreach my $name (@nameList) {
 
-                    my $menuItem = Gtk2::MenuItem->new(
-                        $self->worldModelObj->ivShow('roomFlagDescripHash', $flag),
-                    );
-                    $menuItem->signal_connect('activate' => sub {
+                    my $obj = $self->worldModelObj->ivShow('roomFlagHash', $name);
+                    if ($obj) {
 
-                        # Toggle the flags for all selected rooms, redraw them and (if the flag is
-                        #   one of the hazardous room flags) recalculate the regionmap's paths. The
-                        #   TRUE argument tells the world model to redraw the rooms
-                        $self->worldModelObj->toggleRoomFlags(
-                            $self->session,
-                            TRUE,
-                            $flag,
-                            $self->compileSelectedRooms(),
-                        );
-                    });
+                        my $menuItem = Gtk2::MenuItem->new($obj->descrip);
+                        $menuItem->signal_connect('activate' => sub {
+
+                            # Toggle the flags for all selected rooms, redraw them and (if the flag
+                            #   is one of the hazardous room flags) recalculate the regionmap's
+                            #   paths. The TRUE argument tells the world model to redraw the rooms
+                            $self->worldModelObj->toggleRoomFlags(
+                                $self->session,
+                                TRUE,
+                                $obj->name,
+                                $self->compileSelectedRooms(),
+                            );
+                        });
+                        $subMenu->append($menuItem);
+                    }
+                }
+
+                if (! @nameList) {
+
+                    my $menuItem = Gtk2::MenuItem->new('(No flags in this filter)');
+                    $menuItem->set_sensitive(FALSE);
                     $subMenu->append($menuItem);
                 }
 
@@ -9611,27 +10497,27 @@
             my $subMenu_setOrnament = Gtk2::Menu->new();
 
             # Create a list of exit ornament types, in groups of two, in the form
-            #   (menu_item_title, IV_to_be_set)
+            #   (menu_item_title, exit_ornament_type)
             @titleList = (
-                '_No ornament', undef,
-                '_Openable exit', 'openFlag',
-                '_Lockable exit', 'lockFlag',
-                '_Pickable exit', 'pickFlag',
-                '_Breakable exit', 'breakFlag',
-                '_Impassable exit', 'impassFlag',
+                '_No ornament', 'none',
+                '_Openable exit', 'open',
+                '_Lockable exit', 'lock',
+                '_Pickable exit', 'pick',
+                '_Breakable exit', 'break',
+                '_Impassable exit', 'impass',
             );
 
             do {
 
-                my ($title, $iv);
+                my ($title, $type);
 
                 $title = shift @titleList;
-                $iv = shift @titleList;
+                $type = shift @titleList;
 
                 my $menuItem = Gtk2::MenuItem->new($title);
                 $menuItem->signal_connect('activate' => sub {
 
-                    $self->exitOrnamentCallback($iv);
+                    $self->exitOrnamentCallback($type);
                 });
                 $subMenu_setOrnament->append($menuItem);
 
@@ -9951,80 +10837,6 @@
 
         $column_exits->append(Gtk2::SeparatorMenuItem->new());  # Separator
 
-            # 'Find exits' submenu
-            my $subMenu_findExits = Gtk2::Menu->new();
-
-            my $item_identifyExit = Gtk2::MenuItem->new('_Identify selected exit(s)');
-            $item_identifyExit->signal_connect('activate' => sub {
-
-                $self->identifyExitsCallback();
-            });
-            $subMenu_findExits->append($item_identifyExit);
-            # (Requires $self->currentRegionmap & either $self->selectedExit or
-            #   $self->selectedExitHash)
-            $self->ivAdd('menuToolItemHash', 'identify_exit', $item_identifyExit);
-
-            $subMenu_findExits->append(Gtk2::SeparatorMenuItem->new());    # Separator
-
-            my $item_selectUnallocated = Gtk2::MenuItem->new('Select _unallocated exits');
-            $item_selectUnallocated->signal_connect('activate' => sub {
-
-                $self->selectExitTypeCallback('unallocated');
-            });
-            $subMenu_findExits->append($item_selectUnallocated);
-
-            my $item_selectUnallocatable = Gtk2::MenuItem->new('Select una_llocatable exits');
-            $item_selectUnallocatable->signal_connect('activate' => sub {
-
-                $self->selectExitTypeCallback('unallocatable');
-            });
-            $subMenu_findExits->append($item_selectUnallocatable);
-
-            my $item_selectUncertain = Gtk2::MenuItem->new('Select un_certain exits');
-            $item_selectUncertain->signal_connect('activate' => sub {
-
-                $self->selectExitTypeCallback('uncertain');
-            });
-            $subMenu_findExits->append($item_selectUncertain);
-
-            my $item_selectIncomplete = Gtk2::MenuItem->new('Select i_ncomplete exits');
-            $item_selectIncomplete->signal_connect('activate' => sub {
-
-                $self->selectExitTypeCallback('incomplete');
-            });
-            $subMenu_findExits->append($item_selectIncomplete);
-
-            $subMenu_findExits->append(Gtk2::SeparatorMenuItem->new());    # Separator
-
-            my $item_selectAllAbove = Gtk2::MenuItem->new('Select _all the above');
-            $item_selectAllAbove->signal_connect('activate' => sub {
-
-                $self->selectExitTypeCallback('all_above');
-            });
-            $subMenu_findExits->append($item_selectAllAbove);
-
-            $subMenu_findExits->append(Gtk2::SeparatorMenuItem->new());    # Separator
-
-            my $item_selectRegion = Gtk2::MenuItem->new('Select _region exits');
-            $item_selectRegion->signal_connect('activate' => sub {
-
-                $self->selectExitTypeCallback('region');
-            });
-            $subMenu_findExits->append($item_selectRegion);
-
-            my $item_selectSuper = Gtk2::MenuItem->new('Select _super-region exits');
-            $item_selectSuper->signal_connect('activate' => sub {
-
-                $self->selectExitTypeCallback('super');
-            });
-            $subMenu_findExits->append($item_selectSuper);
-
-        my $item_findExits = Gtk2::MenuItem->new('_Find exits');
-        $item_findExits->set_submenu($subMenu_findExits);
-        $column_exits->append($item_findExits);
-        # (Requires $self->currentRegionmap)
-        $self->ivAdd('menuToolItemHash', 'find_exits', $item_findExits);
-
         my $item_editExit = Gtk2::ImageMenuItem->new('_Edit exit...');
         my $img_editExit = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
         $item_editExit->set_image($img_editExit);
@@ -10038,26 +10850,26 @@
 
         $column_exits->append(Gtk2::SeparatorMenuItem->new());  # Separator
 
-            # 'Uncertain exits' submenu
-            my $subMenu_uncertainExits = Gtk2::Menu->new();
+            # 'Exit options' submenu
+            my $subMenu_exitOptions = Gtk2::Menu->new();
 
             my $item_completeSelected = Gtk2::MenuItem->new('Complete selected _uncertain exits');
             $item_completeSelected->signal_connect('activate' => sub {
 
                 $self->completeExitsCallback();
             });
-            $subMenu_uncertainExits->append($item_completeSelected);
+            $subMenu_exitOptions->append($item_completeSelected);
 
             my $item_connectAdjacent = Gtk2::MenuItem->new('Connect selected _adjacent rooms');
             $item_connectAdjacent->signal_connect('activate' => sub {
 
                 $self->connectAdjacentCallback();
             });
-            $subMenu_uncertainExits->append($item_connectAdjacent);
+            $subMenu_exitOptions->append($item_connectAdjacent);
             # (Requires $self->currentRegionmap and one or more selected rooms)
             $self->ivAdd('menuToolItemHash', 'connect_adjacent', $item_connectAdjacent);
 
-            $subMenu_uncertainExits->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_exitOptions->append(Gtk2::SeparatorMenuItem->new());    # Separator
 
             my $item_autocomplete = Gtk2::CheckMenuItem->new('A_utocomplete uncertain exits');
             $item_autocomplete->set_active($self->worldModelObj->autocompleteExitsFlag);
@@ -10073,7 +10885,7 @@
                     );
                 }
             });
-            $subMenu_uncertainExits->append($item_autocomplete);
+            $subMenu_exitOptions->append($item_autocomplete);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'autocomplete_uncertain', $item_autocomplete);
 
@@ -10093,15 +10905,142 @@
                     );
                 }
             });
-            $subMenu_uncertainExits->append($item_intUncertain);
+            $subMenu_exitOptions->append($item_intUncertain);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'intelligent_uncertain', $item_intUncertain);
 
-        my $item_uncertainExits = Gtk2::MenuItem->new('_Uncertain exits');
-        $item_uncertainExits->set_submenu($subMenu_uncertainExits);
-        $column_exits->append($item_uncertainExits);
+            $subMenu_exitOptions->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+            my $item_collectChecked = Gtk2::CheckMenuItem->new('Collect _checked directions');
+            $item_collectChecked->set_active(
+                $self->worldModelObj->collectCheckedDirsFlag,
+            );
+            $item_collectChecked->signal_connect('toggled' => sub {
+
+                if (! $self->ignoreMenuUpdateFlag) {
+
+                    $self->worldModelObj->toggleFlag(
+                        'collectCheckedDirsFlag',
+                        $item_collectChecked->get_active(),
+                        FALSE,      # Don't call $self->drawRegion
+                        'collect_checked_dirs',
+                    );
+                }
+            });
+            $subMenu_exitOptions->append($item_collectChecked);
+            # (Never desensitised)
+            $self->ivAdd('menuToolItemHash', 'collect_checked_dirs', $item_collectChecked);
+
+            my $item_drawChecked = Gtk2::CheckMenuItem->new('Draw c_hecked directions');
+            $item_drawChecked->set_active(
+                $self->worldModelObj->drawCheckedDirsFlag,
+            );
+            $item_drawChecked->signal_connect('toggled' => sub {
+
+                if (! $self->ignoreMenuUpdateFlag) {
+
+                    $self->worldModelObj->toggleFlag(
+                        'drawCheckedDirsFlag',
+                        $item_drawChecked->get_active(),
+                        FALSE,      # Don't call $self->drawRegion
+                        'draw_checked_dirs',
+                    );
+                }
+
+                # Redraw the region, if one is visible
+                if ($self->currentRegionmap) {
+
+                    $self->drawRegion();
+                }
+            });
+            $subMenu_exitOptions->append($item_drawChecked);
+            # (Never desensitised)
+            $self->ivAdd('menuToolItemHash', 'draw_checked_dirs', $item_drawChecked);
+
+            $subMenu_exitOptions->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+                 # 'Checkable directions' sub-submenu
+                my $subSubMenu_checkable = Gtk2::Menu->new();
+
+                my $item_checkableSimple = Gtk2::RadioMenuItem->new(undef, 'Count NSEW');
+                $item_checkableSimple->signal_connect('toggled' => sub {
+
+                    if ($item_checkableSimple->get_active) {
+
+                        $self->worldModelObj->setCheckableDirMode('simple');
+                    }
+                });
+                my $item_checkableGroup = $item_checkableSimple->get_group();
+                $subSubMenu_checkable->append($item_checkableSimple);
+                # (Never desensitised)
+                $self->ivAdd('menuToolItemHash', 'checkable_dir_simple', $item_checkableSimple);
+
+                my $item_checkableDiku = Gtk2::RadioMenuItem->new(
+                    $item_checkableGroup,
+                    'Count NSEWUD',
+                );
+                if ($self->worldModelObj->checkableDirMode eq 'diku') {
+
+                    $item_checkableDiku->set_active(TRUE);
+                }
+                $item_checkableDiku->signal_connect('toggled' => sub {
+
+                    if ($item_checkableDiku->get_active) {
+
+                        $self->worldModelObj->setCheckableDirMode('diku');
+                    }
+                });
+                $subSubMenu_checkable->append($item_checkableDiku);
+                # (Never desensitised)
+                $self->ivAdd('menuToolItemHash', 'checkable_dir_diku', $item_checkableDiku);
+
+                my $item_checkableLP = Gtk2::RadioMenuItem->new(
+                    $item_checkableGroup,
+                    'Count NSEWUD, NE/NW/SE/SW',
+                );
+                if ($self->worldModelObj->checkableDirMode eq 'lp') {
+
+                    $item_checkableLP->set_active(TRUE);
+                }
+                $item_checkableLP->signal_connect('toggled' => sub {
+
+                    if ($item_checkableLP->get_active) {
+
+                        $self->worldModelObj->setCheckableDirMode('lp');
+                    }
+                });
+                $subSubMenu_checkable->append($item_checkableLP);
+                # (Never desensitised)
+                $self->ivAdd('menuToolItemHash', 'checkable_dir_lp', $item_checkableLP);
+
+                my $item_checkableComplex = Gtk2::RadioMenuItem->new(
+                    $item_checkableGroup,
+                    'Count all primary directions',
+                );
+                if ($self->worldModelObj->checkableDirMode eq 'complex') {
+
+                    $item_checkableComplex->set_active(TRUE);
+                }
+                $item_checkableComplex->signal_connect('toggled' => sub {
+
+                    if ($item_checkableComplex->get_active) {
+
+                        $self->worldModelObj->setCheckableDirMode('complex');
+                    }
+                });
+                $subSubMenu_checkable->append($item_checkableComplex);
+                # (Never desensitised)
+                $self->ivAdd('menuToolItemHash', 'checkable_dir_complex', $item_checkableComplex);
+
+            my $item_exits = Gtk2::MenuItem->new('_Checkable directions');
+            $item_exits->set_submenu($subSubMenu_checkable);
+            $subMenu_exitOptions->append($item_exits);
+
+        my $item_exitOptions = Gtk2::MenuItem->new('Exit _options');
+        $item_exitOptions->set_submenu($subMenu_exitOptions);
+        $column_exits->append($item_exitOptions);
         # (Requires $self->currentRegionmap)
-        $self->ivAdd('menuToolItemHash', 'uncertain_exits', $item_uncertainExits);
+        $self->ivAdd('menuToolItemHash', 'exit_options', $item_exitOptions);
 
             # 'Exit lengths' submenu
             my $subMenu_exitLengths = Gtk2::Menu->new();
@@ -10166,6 +11105,9 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my $alignFlag;
+
         # Check for improper arguments
         if (defined $check) {
 
@@ -10188,7 +11130,7 @@
             #   user next clicks on an empty part of the map
             if ($self->currentRegionmap) {
 
-                $self->ivPoke('freeClickMode', 'add_label');
+                $self->set_freeClickMode('add_label');
             }
         });
         $column_labels->append($item_addLabelAtClick);
@@ -10208,44 +11150,23 @@
 
         $column_labels->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
-        my $item_editLabel = Gtk2::MenuItem->new('_Edit label...');
-        $item_editLabel->signal_connect('activate' => sub {
+        my $item_setLabel = Gtk2::MenuItem->new('_Set label...');
+        $item_setLabel->signal_connect('activate' => sub {
 
-            $self->editLabelCallback();
+            $self->setLabelCallback(FALSE);
         });
-        $column_labels->append($item_editLabel);
+        $column_labels->append($item_setLabel);
         # (Requires $self->currentRegionmap and $self->selectedLabel)
-        $self->ivAdd('menuToolItemHash', 'edit_label', $item_editLabel);
+        $self->ivAdd('menuToolItemHash', 'set_label', $item_setLabel);
 
-            # 'Set size' submenu
-            my $subMenu_labelSize = Gtk2::Menu->new();
+        my $item_customiseLabel = Gtk2::MenuItem->new('_Customise label...');
+        $item_customiseLabel->signal_connect('activate' => sub {
 
-            my $item_setLabelNormal = Gtk2::MenuItem->new('Set _normal size');
-            $item_setLabelNormal->signal_connect('activate' => sub {
-
-                $self->worldModelObj->setLabelSize(TRUE, $self->selectedLabel, 1);
-            });
-            $subMenu_labelSize->append($item_setLabelNormal);
-
-            my $item_setLabelLarge = Gtk2::MenuItem->new('Set _large size');
-            $item_setLabelLarge->signal_connect('activate' => sub {
-
-                $self->worldModelObj->setLabelSize(TRUE, $self->selectedLabel, 2);
-            });
-            $subMenu_labelSize->append($item_setLabelLarge);
-
-            my $item_setLabelHuge = Gtk2::MenuItem->new('Set _huge size');
-            $item_setLabelHuge->signal_connect('activate' => sub {
-
-                $self->worldModelObj->setLabelSize(TRUE, $self->selectedLabel, 4);
-            });
-            $subMenu_labelSize->append($item_setLabelHuge);
-
-        my $item_labelSize = Gtk2::MenuItem->new('Set label si_ze');
-        $item_labelSize->set_submenu($subMenu_labelSize);
-        $column_labels->append($item_labelSize);
+            $self->setLabelCallback(TRUE);
+        });
+        $column_labels->append($item_customiseLabel);
         # (Requires $self->currentRegionmap and $self->selectedLabel)
-        $self->ivAdd('menuToolItemHash', 'set_label_size', $item_labelSize);
+        $self->ivAdd('menuToolItemHash', 'customise_label', $item_customiseLabel);
 
         $column_labels->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
@@ -10257,6 +11178,75 @@
         $column_labels->append($item_selectLabel);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'select_label', $item_selectLabel);
+
+        $column_labels->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+        my $item_addStyle = Gtk2::MenuItem->new('_Add label style...');
+        $item_addStyle->signal_connect('activate' => sub {
+
+            $self->addStyleCallback();
+        });
+        $column_labels->append($item_addStyle);
+
+        my $item_renameStyle = Gtk2::MenuItem->new('_Rename label style...');
+        $item_renameStyle->signal_connect('activate' => sub {
+
+            $self->renameStyleCallback();
+        });
+        $column_labels->append($item_renameStyle);
+
+            # 'Label alignment' submenu
+            my $subMenu_alignment = Gtk2::Menu->new();
+
+            my $item_alignHorizontal = Gtk2::CheckMenuItem->new('Align _horizontally');
+            $item_alignHorizontal->set_active($self->worldModelObj->mapLabelAlignXFlag);
+            $item_alignHorizontal->signal_connect('toggled' => sub {
+
+                # Use $alignFlag to avoid an infinite loop, if we have to toggle the button back to
+                #   its original state because the user declined to confirm the operation
+                if (! $alignFlag) {
+
+                    if (! $self->toggleAlignCallback('horizontal')) {
+
+                        $alignFlag = TRUE;
+                        if (! $item_alignHorizontal->get_active()) {
+                            $item_alignHorizontal->set_active(TRUE);
+                        } else {
+                            $item_alignHorizontal->set_active(FALSE);
+                        }
+
+                        $alignFlag = FALSE;
+                    }
+                }
+            });
+            $subMenu_alignment->append($item_alignHorizontal);
+
+            my $item_alignVertical = Gtk2::CheckMenuItem->new('Align _vertically');
+            $item_alignVertical->set_active($self->worldModelObj->mapLabelAlignYFlag);
+            $item_alignVertical->signal_connect('toggled' => sub {
+
+                # Use $alignFlag to avoid an infinite loop, if we have to toggle the button back to
+                #   its original state because the user declined to confirm the operation
+                if (! $alignFlag) {
+
+                    if (! $self->toggleAlignCallback('vertical')) {
+
+                        $alignFlag = TRUE;
+                        if (! $item_alignVertical->get_active()) {
+                            $item_alignVertical->set_active(TRUE);
+                        } else {
+                            $item_alignVertical->set_active(FALSE);
+                        }
+
+                        $alignFlag = FALSE;
+                    }
+                }
+            });
+            $subMenu_alignment->append($item_alignVertical);
+
+        my $item_alignment = Gtk2::MenuItem->new('Label _alignment');
+        $item_alignment->set_submenu($subMenu_alignment);
+        $column_labels->append($item_alignment);
 
         $column_labels->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
@@ -10283,7 +11273,7 @@
 
     sub enableCanvasPopupMenu {
 
-        # Called by $self->canvasObjEventHandler
+        # Called by $self->canvasEventHandler
         # Creates a popup-menu for the Gtk2::Canvas when no rooms, exits, room tags or labels are
         #   selected
         #
@@ -10341,10 +11331,10 @@
 
             # The 'Add room at click' operation from the main menu resets the value of
             #   ->freeClickMode; we must do the same here
-            $self->ivPoke('freeClickMode', 'default');
+            $self->reset_freeClickMode();
 
             # Create the room
-            $roomObj = $self->createNewRoom(
+            $roomObj = $self->mapObj->createNewRoom(
                 $self->currentRegionmap,
                 $clickXPosBlocks,
                 $clickYPosBlocks,
@@ -10488,36 +11478,110 @@
         $menu_rooms->append(Gtk2::SeparatorMenuItem->new());  # Separator
 
              # 'Add exit' submenu
-            my $subMenu_addExit = Gtk2::Menu->new();
+            my $subMenu_setExits = Gtk2::Menu->new();
 
             my $item_addExit = Gtk2::MenuItem->new('Add _normal exit...');
             $item_addExit->signal_connect('activate' => sub {
 
                 $self->addExitCallback(FALSE);      # FALSE - not a hidden exit
             });
-            $subMenu_addExit->append($item_addExit);
+            $subMenu_setExits->append($item_addExit);
+            # (Also requires the selected room's ->wildMode to be 'normal' or 'border')
+            if ($self->selectedRoom->wildMode eq 'wild') {
+
+                $item_addExit->set_sensitive(FALSE);
+            }
 
             my $item_addMultiple = Gtk2::MenuItem->new('Add _multiple exits...');
             $item_addMultiple->signal_connect('activate' => sub {
 
                 $self->addMultipleExitsCallback();
             });
-            $subMenu_addExit->append($item_addMultiple);
+            $subMenu_setExits->append($item_addMultiple);
+            # (Also requires the selected room's ->wildMode to be 'normal' or 'border')
+            if ($self->selectedRoom->wildMode eq 'wild') {
 
-            $subMenu_addExit->append(Gtk2::SeparatorMenuItem->new()); # Separator
+                $item_addMultiple->set_sensitive(FALSE);
+            }
+
+            $subMenu_setExits->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
             my $item_addHiddenExit = Gtk2::MenuItem->new('Add _hidden exit...');
             $item_addHiddenExit->signal_connect('activate' => sub {
 
                 $self->addExitCallback(TRUE);       # TRUE - a hidden exit
             });
-            $subMenu_addExit->append($item_addHiddenExit);
+            $subMenu_setExits->append($item_addHiddenExit);
+            # (Also requires the selected room's ->wildMode to be 'normal' or 'border')
+            if ($self->selectedRoom->wildMode eq 'wild') {
 
-        my $item_exits = Gtk2::ImageMenuItem->new('Add e_xit');
-        my $img_exits = Gtk2::Image->new_from_stock('gtk-add', 'menu');
-        $item_exits->set_image($img_exits);
-        $item_exits->set_submenu($subMenu_addExit);
-        $menu_rooms->append($item_exits);
+                $item_addHiddenExit->set_sensitive(FALSE);
+            }
+
+            $subMenu_setExits->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+            my $item_removeChecked = Gtk2::MenuItem->new('Remove checked direction...');
+            $item_removeChecked->signal_connect('activate' => sub {
+
+                $self->removeCheckedDirCallback(FALSE);
+            });
+            $subMenu_setExits->append($item_removeChecked);
+            # (Also requires the selected room's ->checkedDirHash to be non-empty)
+            if (! $self->selectedRoom->checkedDirHash) {
+
+                $item_removeChecked->set_sensitive(FALSE);
+            }
+
+            my $item_removeCheckedAll = Gtk2::MenuItem->new('Remove all checked directions');
+            $item_removeCheckedAll->signal_connect('activate' => sub {
+
+                $self->removeCheckedDirCallback(TRUE);
+            });
+            $subMenu_setExits->append($item_removeCheckedAll);
+            # (Also requires the selected room's ->checkedDirHash to be non-empty)
+            if (! $self->selectedRoom->checkedDirHash) {
+
+                $item_removeCheckedAll->set_sensitive(FALSE);
+            }
+
+            $subMenu_setExits->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+            my $item_markNormal = Gtk2::MenuItem->new('Mark room as normal');
+            $item_markNormal->signal_connect('activate' => sub {
+
+                $self->setWildCallback('normal');
+            });
+            $subMenu_setExits->append($item_markNormal);
+
+            my $item_markWild = Gtk2::MenuItem->new('Mark room as wilderness');
+            $item_markWild->signal_connect('activate' => sub {
+
+                $self->setWildCallback('wild');
+            });
+            $subMenu_setExits->append($item_markWild);
+            # (Also requires $self->session->currentWorld->basicMappingFlag to be FALSE)
+            if ($self->session->currentWorld->basicMappingFlag) {
+
+                $item_markWild->set_sensitive(FALSE);
+            }
+
+            my $item_markBorder = Gtk2::MenuItem->new('Mark room as wilderness border');
+            $item_markBorder->signal_connect('activate' => sub {
+
+                $self->setWildCallback('border');
+            });
+            $subMenu_setExits->append($item_markBorder);
+            # (Also requires $self->session->currentWorld->basicMappingFlag to be FALSE)
+            if ($self->session->currentWorld->basicMappingFlag) {
+
+                $item_markBorder->set_sensitive(FALSE);
+            }
+
+        my $item_setExits = Gtk2::ImageMenuItem->new('Set e_xits');
+        my $img_setExits = Gtk2::Image->new_from_stock('gtk-add', 'menu');
+        $item_setExits->set_image($img_setExits);
+        $item_setExits->set_submenu($subMenu_setExits);
+        $menu_rooms->append($item_setExits);
 
             # 'Add patterns' submenu
             my $subMenu_exitPatterns = Gtk2::Menu->new();
@@ -10638,8 +11702,18 @@
 
         $menu_rooms->append(Gtk2::SeparatorMenuItem->new());  # Separator
 
-            # 'Source code' submenu
+            # 'Update character visits' submenu
             my $subMenu_updateVisits = Gtk2::Menu->new();
+
+            my $item_increaseSetCurrent = Gtk2::MenuItem->new('Increase & set _current');
+            $item_increaseSetCurrent->signal_connect('activate' => sub {
+
+                $self->updateVisitsCallback('increase');
+                $self->mapObj->setCurrentRoom($self->selectedRoom);
+            });
+            $subMenu_updateVisits->append($item_increaseSetCurrent);
+
+            $subMenu_updateVisits->append(Gtk2::SeparatorMenuItem->new()); # Separator
 
             my $item_increaseVisits = Gtk2::MenuItem->new('_Increase by one');
             $item_increaseVisits->signal_connect('activate' => sub {
@@ -10662,24 +11736,26 @@
             });
             $subMenu_updateVisits->append($item_manualVisits);
 
-            $subMenu_updateVisits->append(Gtk2::SeparatorMenuItem->new()); # Separator
-
-            my $item_increaseAndCurrent = Gtk2::MenuItem->new('_Increase & set current');
-            $item_increaseAndCurrent->signal_connect('activate' => sub {
-
-                $self->updateVisitsCallback('increase');
-                $self->mapObj->setCurrentRoom($self->selectedRoom);
-            });
-            $subMenu_updateVisits->append($item_increaseAndCurrent);
-
-            $subMenu_updateVisits->append(Gtk2::SeparatorMenuItem->new()); # Separator
-
             my $item_resetVisits = Gtk2::MenuItem->new('_Reset to zero');
             $item_resetVisits->signal_connect('activate' => sub {
 
                 $self->updateVisitsCallback('reset');
             });
             $subMenu_updateVisits->append($item_resetVisits);
+
+            $subMenu_updateVisits->append(Gtk2::SeparatorMenuItem->new()); # Separator
+
+            my $item_toggleGraffiti = Gtk2::MenuItem->new('Toggle _graffiti');
+            $item_toggleGraffiti->signal_connect('activate' => sub {
+
+                $self->toggleGraffitiCallback();
+            });
+            $subMenu_updateVisits->append($item_toggleGraffiti);
+            # (Also requires $self->graffitiModeFlag)
+            if (! $self->graffitiModeFlag) {
+
+                $item_toggleGraffiti->set_sensitive(FALSE);
+            }
 
         my $item_updateVisits = Gtk2::MenuItem->new('Update character visits');
         $item_updateVisits->set_submenu($subMenu_updateVisits);
@@ -10796,31 +11872,38 @@
             # 'Toggle room flag' submenu
             my $subMenu_toggleRoomFlag = Gtk2::Menu->new();
 
-            foreach my $filter ($self->worldModelObj->roomFilterList) {
-
-                my $flagListRef;
+            foreach my $filter ($axmud::CLIENT->constRoomFilterList) {
 
                 # A sub-sub menu for $filter
                 my $subMenu = Gtk2::Menu->new();
 
-                $flagListRef = $self->worldModelObj->ivShow('roomFlagReverseHash', $filter);
-                foreach my $flag (@$flagListRef) {
+                my @nameList = $self->worldModelObj->getRoomFlagsInFilter($filter);
+                foreach my $name (@nameList) {
 
-                    my $menuItem = Gtk2::MenuItem->new(
-                        $self->worldModelObj->ivShow('roomFlagDescripHash', $flag),
-                    );
-                    $menuItem->signal_connect('activate' => sub {
+                    my $obj = $self->worldModelObj->ivShow('roomFlagHash', $name);
+                    if ($obj) {
 
-                        # Toggle the flags for all selected rooms, redraw them and (if the flag is
-                        #   one of the hazardous room flags) recalculate the regionmap's paths. The
-                        #   TRUE argument tells the world model to redraw the rooms
-                        $self->worldModelObj->toggleRoomFlags(
-                            $self->session,
-                            TRUE,
-                            $flag,
-                            $self->compileSelectedRooms(),
-                        );
-                    });
+                        my $menuItem = Gtk2::MenuItem->new($obj->descrip);
+                        $menuItem->signal_connect('activate' => sub {
+
+                            # Toggle the flags for all selected rooms, redraw them and (if the flag
+                            #   is one of the hazardous room flags) recalculate the regionmap's
+                            #   paths. The TRUE argument tells the world model to redraw the rooms
+                            $self->worldModelObj->toggleRoomFlags(
+                                $self->session,
+                                TRUE,
+                                $obj->name,
+                                $self->compileSelectedRooms(),
+                            );
+                        });
+                        $subMenu->append($menuItem);
+                    }
+                }
+
+                if (! @nameList) {
+
+                    my $menuItem = Gtk2::MenuItem->new('(No flags in this filter)');
+                    $menuItem->set_sensitive(FALSE);
                     $subMenu->append($menuItem);
                 }
 
@@ -11197,27 +12280,27 @@
             my $subMenu_setOrnament = Gtk2::Menu->new();
 
             # Create a list of exit ornament types, in groups of two, in the form
-            #   (menu_item_title, IV_to_be_set)
+            #   (menu_item_title, exit_ornament_type)
             @titleList = (
-                '_No ornament', undef,
-                '_Openable exit', 'openFlag',
-                '_Lockable exit', 'lockFlag',
-                '_Pickable exit', 'pickFlag',
-                '_Breakable exit', 'breakFlag',
-                '_Impassable exit', 'impassFlag',
+                '_No ornament', 'none',
+                '_Openable exit', 'open',
+                '_Lockable exit', 'lock',
+                '_Pickable exit', 'pick',
+                '_Breakable exit', 'break',
+                '_Impassable exit', 'impass',
             );
 
             do {
 
-                my ($title, $iv);
+                my ($title, $type);
 
                 $title = shift @titleList;
-                $iv = shift @titleList;
+                $type = shift @titleList;
 
                 my $menuItem = Gtk2::MenuItem->new($title);
                 $menuItem->signal_connect('activate' => sub {
 
-                    $self->exitOrnamentCallback($iv);
+                    $self->exitOrnamentCallback($type);
                 });
                 $subMenu_setOrnament->append($menuItem);
 
@@ -11640,40 +12723,19 @@
 
         # (Everything here assumes $self->currentRegionmap and $self->selectedLabel)
 
-        my $item_editLabel = Gtk2::MenuItem->new('_Edit label...');
-        $item_editLabel->signal_connect('activate' => sub {
+        my $item_setLabel = Gtk2::MenuItem->new('_Set label...');
+        $item_setLabel->signal_connect('activate' => sub {
 
-            $self->editLabelCallback();
+            $self->setLabelCallback(FALSE)
         });
-        $menu_labels->append($item_editLabel);
+        $menu_labels->append($item_setLabel);
 
-            # 'Set label size' submenu
-            my $subMenu_labelSize = Gtk2::Menu->new();
+        my $item_customiseLabel = Gtk2::MenuItem->new('_Customise label...');
+        $item_customiseLabel->signal_connect('activate' => sub {
 
-            my $item_setLabelNormal = Gtk2::MenuItem->new('Set _normal size');
-            $item_setLabelNormal->signal_connect('activate' => sub {
-
-                $self->worldModelObj->setLabelSize(TRUE, $self->selectedLabel, 1);
-            });
-            $subMenu_labelSize->append($item_setLabelNormal);
-
-            my $item_setLabelLarge = Gtk2::MenuItem->new('Set _large size');
-            $item_setLabelLarge->signal_connect('activate' => sub {
-
-                $self->worldModelObj->setLabelSize(TRUE, $self->selectedLabel, 2);
-            });
-            $subMenu_labelSize->append($item_setLabelLarge);
-
-            my $item_setLabelHuge = Gtk2::MenuItem->new('Set _huge size');
-            $item_setLabelHuge->signal_connect('activate' => sub {
-
-                $self->worldModelObj->setLabelSize(TRUE, $self->selectedLabel, 4);
-            });
-            $subMenu_labelSize->append($item_setLabelHuge);
-
-        my $item_labelSize = Gtk2::MenuItem->new('Set label si_ze');
-        $item_labelSize->set_submenu($subMenu_labelSize);
-        $menu_labels->append($item_labelSize);
+            $self->setLabelCallback(TRUE);
+        });
+        $menu_labels->append($item_customiseLabel);
 
         $menu_labels->append(Gtk2::SeparatorMenuItem->new());  # Separator
 
@@ -11703,128 +12765,228 @@
     sub enableToolbar {
 
         # Called by $self->drawWidgets
-        # Sets up the Automapper window's Gtk2::Toolbar widget
+        # Sets up the Automapper window's Gtk2::Toolbar widget(s)
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget can't be created
-        #   Otherwise returns the Gtk2::Toolbar created
+        #   'undef' on improper arguments or if one of the widgets can't be created
+        #   Otherwise returns a list of Gtk2::Toolbar widgets created
 
         my ($self, $check) = @_;
 
         # Local variables
-        my $label;
+        my (
+            $flag,
+            @emptyList, @setList, @widgetList,
+            %checkHash,
+        );
 
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->enableToolbar', @_);
+            $axmud::CLIENT->writeImproper($self->_objClass . '->enableToolbar', @_);
+            return @emptyList;
         }
 
-        # Create the toolbar
+        # Import the list of button sets from the world model
+        # Remove 'default' (which shouldn't be there) and also remove any duplicates or unrecognised
+        #   sets
+        foreach my $set ($self->worldModelObj->buttonSetList) {
+
+            if (
+                $set ne $self->constToolbarDefaultSet
+                && ! exists $checkHash{$set}
+                && $self->ivExists('buttonSetHash', $set)
+            ) {
+                push (@setList, $set);
+                # Watch out for duplicates
+                $checkHash{$set} = undef;
+            }
+        }
+
+        # Draw the original (first) toolbar. The TRUE argument means that the add/switcher buttons
+        #   should be drawn
+        my $origToolbar = $self->drawToolbar($self->toolbarOriginalSet, TRUE);
+
+        if (! $origToolbar) {
+
+            # Give up on the first error
+            return @emptyList;
+
+        } else {
+
+            push (@widgetList, $origToolbar);
+        }
+
+        # Draw a toolbar for each button set in turn, updating IVs as we go
+        foreach my $set (@setList) {
+
+            my $otherToolbar = $self->drawToolbar($set);
+
+            if (! $otherToolbar) {
+
+                # Give up on the first error (@widgetList might be an empty list)
+                return @widgetList;
+
+            } else {
+
+                push (@widgetList, $otherToolbar);
+            }
+        }
+
+        # On success, update the world model's list of button sets (having removed anything that
+        #   shouldn't be there
+        $self->worldModelObj->set_buttonSetList(@setList);
+
+        # If all button sets are visible, the 'add'/'switch' buttons in the default set are
+        #   desensitised
+        OUTER: foreach my $key ($self->ivKeys('buttonSetHash')) {
+
+            if (! $self->ivShow('buttonSetHash', $key)) {
+
+                $flag = TRUE;
+                last OUTER;
+            }
+        }
+
+        if (! $flag) {
+
+            $self->toolbarAddButton->set_sensitive(FALSE);
+            $self->toolbarSwitchButton->set_sensitive(FALSE);
+        }
+
+        # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+        $self->restrictWidgets();
+
+        return @widgetList;
+    }
+
+    sub drawToolbar {
+
+        # Called by $self->enableToolbar
+        # Creates a new toolbar using the button set specified by the calling function, and updates
+        #   IVs accordingly
+        #
+        # Expected arguments
+        #   $set        - The button set to use (one of the items in $self->constButtonSetList)
+        #
+        # Optional arguments
+        #   $origFlag   - If TRUE, this is the original (first) toolbar; FALSE (or 'undef') for any
+        #                   subsequent toolbar
+        #
+        # Return values
+        #   'undef' on improper arguments or if the widget can't be created
+        #   Otherwise returns the Gtk2::Toolbar created
+
+        my ($self, $set, $origFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $text, $text2, $text3,
+            @buttonList,
+        );
+
+        # Check for improper arguments
+        if (! defined $set || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawToolbar', @_);
+        }
+
+        # Check the button set actually exists
+        if (! $self->ivExists('buttonSetHash', $set)) {
+
+            return undef;
+        }
+
+        # Create the toolbar widget
         my $toolbar = Gtk2::Toolbar->new();
         if (! $toolbar) {
 
             return undef;
         }
 
-        # Store the widget
-        $self->ivPoke('toolbar', $toolbar);
+        # Store the widget and update associated IVs
+        $self->ivAdd('buttonSetHash', $set, TRUE);
+        $self->ivPush('toolbarList', $toolbar);
+        $self->ivAdd('toolbarHash', $toolbar, $set);
+
         # Use large icons, and allow the menu to shrink when there's not enough space for it
         $toolbar->set_icon_size('large-toolbar');
         $toolbar->set_show_arrow(TRUE);
 
         if ($axmud::CLIENT->toolbarLabelFlag) {
 
-            # Otherwise, $label remains as 'undef', which is what Gtk2::ToolButton is expecting
-            $label = 'Switch icons';
+            # Otherwise, these values continue to be 'undef', which is what Gtk2::ToolButton is
+            #   expecting
+            $text = 'Switch button sets';
+            $text2 = 'Add button set';
+            $text3 = 'Remove button set';
         }
 
-        # The buttons on the toolbar consist of a switcher icon - which is always present - and a
-        #   set of other icons. Clicking on the switcher icon cycles through the sets of other icons
-        # Create the switcher icon
-        my $toolButton = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_switch.png'),
-            $label,
-        );
-        $toolButton->signal_connect('clicked' => sub {
+        # Add buttons that are displayed, regardless of which button set is visible
+        if ($origFlag) {
 
-            # Switch to the next set of toolbar buttons
-            $self->switchToolbarButtons();
-        });
-        $toolButton->set_tooltip_text('Icon switcher');
-        $toolbar->insert($toolButton, -1);
-        # Store it in an IV
-        $self->ivPoke('toolbarSwitchIcon', $toolButton);
+            # Draw an add button, which adds new toolbars (unless all button sets are visible)
+            my $toolButton = Gtk2::ToolButton->new(
+                Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_add.png'),
+                $text2,
+            );
+            $toolButton->signal_connect('clicked' => sub {
 
-        # Immediately to the right of the switcher icon is a separator, which is also always present
-        my $separator = Gtk2::SeparatorToolItem->new();
-        $toolbar->insert($separator, -1);
-        # Store it in an IV
-        $self->ivPoke('toolbarMainSeparator', $separator);
+                # Switch to the next set of toolbar buttons
+                $self->addToolbar();
+            });
+            $toolButton->set_tooltip_text('Add button set');
+            $toolbar->insert($toolButton, -1);
 
-        # Set up the remaining sets of icons. We can change the order in which the sets are
-        #   displayed by changing the arguments to each setup function
-        for (my $count = 1; $count <= $self->toolbarSetCount; $count++) {
+            # Draw a switcher button, which cycles through button sets that aren't visible in other
+            #   toolbars
+            my $toolButton2 = Gtk2::ToolButton->new(
+                Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_switch.png'),
+                $text,
+            );
+            $toolButton2->signal_connect('clicked' => sub {
 
-            my $package = 'enableToolbarButtonSet' . $count;
+                # Switch to the next set of toolbar buttons
+                $self->switchToolbarButtons();
+            });
+            $toolButton2->set_tooltip_text('Switch button sets');
+            $toolbar->insert($toolButton2, -1);
 
-            $self->$package($count);
+            # Update IVs
+            $self->ivPoke('toolbarOriginalSet', $set);
+            $self->ivPoke('toolbarAddButton', $toolButton);
+            $self->ivPoke('toolbarSwitchButton', $toolButton2);
+
+        } else {
+
+            # Draw a remove button, which adds new toolbars (unless all button sets are visible)
+            my $toolButton = Gtk2::ToolButton->new(
+                Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_remove.png'),
+                $text3,
+            );
+            $toolButton->signal_connect('clicked' => sub {
+
+                # Switch to the next set of toolbar buttons
+                $self->removeToolbar($toolbar);
+            });
+
+            $toolButton->set_tooltip_text('Remove button set');
+            $toolbar->insert($toolButton, -1);
         }
 
-        # Show the first set of icons
-        $self->switchToolbarButtons();
+        # Immediately to the right of those buttons is a separator
+        my $separator2 = Gtk2::SeparatorToolItem->new();
+        $toolbar->insert($separator2, -1);
 
-        # Setup complete
-        return $toolbar;
-    }
+        # After the separator, we draw the specified button set. This function decides which
+        #   specific function to call, and returns the result
+        @buttonList = $self->chooseButtonSet($toolbar, $set);
 
-    sub switchToolbarButtons {
-
-        # Called by $self->enableToolbar, and whenever the user clicks on the switcher icon
-        # Removes the icon set currently visible on the toolbar, and displays the next set
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my $listRef;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->switchToolbarButtons', @_);
-        }
-
-        # Remove the currently visible set of buttons from view
-        if ($self->toolbarCurrentSet) {
-
-            $listRef = $self->ivShow('toolbarButtonHash', $self->toolbarCurrentSet);
-            foreach my $button (@$listRef) {
-
-                $axmud::CLIENT->desktopObj->removeWidget($self->toolbar, $button);
-            }
-        }
-
-        # Decide which set of buttons to show next
-        $self->ivIncrement('toolbarCurrentSet');
-        if ($self->toolbarCurrentSet > $self->toolbarSetCount) {
-
-            # Go back to the first set
-            $self->ivPoke('toolbarCurrentSet', 1);
-        }
-
-        # Display a set of buttons
-        $listRef = $self->ivShow('toolbarButtonHash', $self->toolbarCurrentSet);
-        foreach my $button (@$listRef) {
+        # Add the buttons/separators to the toolbar
+        foreach my $button (@buttonList) {
 
             my $label;
 
@@ -11834,38 +12996,356 @@
                 $button->set_label(undef);
             }
 
-            $self->toolbar->insert($button, -1);
+            $toolbar->insert($button, -1);
         }
 
-        $self->toolbar->show_all();
+        # Update IVs
+        if ($origFlag) {
+
+            $self->ivPoke('toolbarButtonList', @buttonList);
+        }
+
+        # Setup complete
+        return $toolbar;
+    }
+
+    sub switchToolbarButtons {
+
+        # Called by a ->signal_connect in $self->addToolbar whenever the user clicks the original
+        #   toolbar's switcher button
+        # Removes the existing button set (preserving the switcher and add buttons, and the
+        #   separator that follows them), and then draws a new button set
+        # NB This function is only called for the original (first) toolbar, not for any additional
+        #   toolbars
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $toolbar, $currentSet, $foundFlag, $nextSet,
+            @setList, @beforeList, @afterList, @buttonList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->switchToolbarButtons', @_);
+        }
+
+        # Get the original toolbar (always the first one in this list)
+        $toolbar = $self->ivFirst('toolbarList');
+        if (! $toolbar) {
+
+            return undef;
+        }
+
+        # Decide which button set to show next
+        $currentSet = $self->ivShow('toolbarHash', $toolbar);
+        if (! $currentSet) {
+
+            return undef;
+        }
+
+        # Compile a list of all button sets but the current one, starting with those which appear
+        #   after the current one, then those that appear before it
+        #   e.g. (A B current D E F) > (D E F A B)
+        @setList = $self->constButtonSetList;
+        for (my $count = 0; $count < scalar @setList; $count++) {
+
+            if ($setList[$count] eq $currentSet) {
+
+                $foundFlag = TRUE;
+
+            } elsif ($foundFlag) {
+
+                push (@afterList, $setList[$count]);
+
+            } else {
+
+                push (@beforeList, $setList[$count]);
+            }
+        }
+
+        # Go through that list, from the beginning, and use the first button set that's not already
+        #   visible
+        OUTER: foreach my $set (@afterList, @beforeList) {
+
+            if (! $self->ivShow('buttonSetHash', $set)) {
+
+                $nextSet = $set;
+                last OUTER;
+            }
+        }
+
+        if (! $nextSet) {
+
+            # All button sets are visible; cannot switch set
+            return undef;
+        }
+
+        # Remove the existing button set (preserving the switcher and add buttons, and the separator
+        #   that follows them)
+        foreach my $widget ($self->toolbarButtonList) {
+
+            $axmud::CLIENT->desktopObj->removeWidget($toolbar, $widget);
+        }
+
+        # After the separator, we draw the specified button set. This function decides which
+        #   specific function to call, and returns the result
+        @buttonList = $self->chooseButtonSet($toolbar, $nextSet);
+
+        # Add the buttons/separators to the toolbar
+        foreach my $button (@buttonList) {
+
+            my $label;
+
+            # (Separators don't have labels, so we need to check for that)
+            if (! $axmud::CLIENT->toolbarLabelFlag && $button->isa('Gtk2::ToolButton')) {
+
+                $button->set_label(undef);
+            }
+
+            $toolbar->insert($button, -1);
+        }
+
+        # Update IVs
+        $self->ivAdd('buttonSetHash', $currentSet, FALSE);
+        $self->ivAdd('buttonSetHash', $nextSet, TRUE);
+        $self->ivAdd('toolbarHash', $toolbar, $nextSet);
+        $self->ivPoke('toolbarButtonList', @buttonList);
+        $self->ivPoke('toolbarOriginalSet', $nextSet);
+
+        # Not worth calling $self->redrawWidgets, so must do a ->show_all()
+        $toolbar->show_all();
 
         return 1;
     }
 
-    sub enableToolbarButtonSet1 {
+    sub addToolbar {
 
-        # Called by $self->enableToolbar to set up one set of toolbar buttons
+        # Called by a ->signal_connect in $self->drawToolbar whenever the user clicks the original
+        #   toolbar's add button
+        # Creates a popup menu containing all of the button sets that aren't currently visible, then
+        #   imlements the user's choice
         #
         # Expected arguments
-        #   $setNumber  - The number of the set (which can vary from the number of this function, if
-        #                   we want to change the order in which the sets are displayed)
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            @list,
+            %hash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addToolbar', @_);
+        }
+
+        # Get a list of button sets that aren't already visible
+        # NB The 'default' set can only be viewed in the original (first) toolbar, so it's not added
+        #   to this list
+        foreach my $set ($self->constButtonSetList) {
+
+            my $descrip = $self->ivShow('constButtonDescripHash', $set);
+
+            if ($set ne $self->constToolbarDefaultSet && ! $self->ivShow('buttonSetHash', $set)) {
+
+                push (@list, $descrip);
+                $hash{$descrip} = $set;
+            }
+        }
+
+        if (! @list) {
+
+            # All button sets are visible (this shouldn't happen)
+            return undef;
+        }
+
+        # Set up the popup menu
+        my $popupMenu = Gtk2::Menu->new();
+        if (! $popupMenu) {
+
+            return undef;
+        }
+
+        # Add a title menu item, which does nothing
+        my $title_item = Gtk2::MenuItem->new('Add button set:');
+        $title_item->signal_connect('activate' => sub {
+
+            return undef;
+        });
+        $title_item->set_sensitive(FALSE);
+        $popupMenu->append($title_item);
+
+        $popupMenu->append(Gtk2::SeparatorMenuItem->new());     # Separator
+
+        # Fill the popup menu with button sets
+        foreach my $descrip (@list) {
+
+            my $menu_item = Gtk2::MenuItem->new($descrip);
+            $menu_item->signal_connect('activate' => sub {
+
+                # Add the set to the world model's list of button sets...
+                $self->worldModelObj->add_buttonSet($hash{$descrip});
+                # ...then redraw the window component containing the toolbar(s)
+                $self->redrawWidgets('toolbar');
+            });
+            $popupMenu->append($menu_item);
+        }
+
+        # Also add a 'Cancel' menu item, which does nothing
+        $popupMenu->append(Gtk2::SeparatorMenuItem->new());     # Separator
+
+        my $cancel_item = Gtk2::MenuItem->new('Cancel');
+        $cancel_item->signal_connect('activate' => sub {
+
+            return undef;
+        });
+        $popupMenu->append($cancel_item);
+
+        # Display the popup menu
+        $popupMenu->popup(
+            undef, undef, undef, undef,
+            1,                              # Left mouse button
+            Gtk2->get_current_event_time(),
+        );
+
+        $popupMenu->show_all();
+
+        # Operation complete. Now wait for the user's response
+        return 1;
+    }
+
+    sub removeToolbar {
+
+        # Called by a ->signal_connect in $self->drawToolbar whenever the user clicks on the remove
+        #   button in any toolbar except the original one
+        # Removes the specified toolbar and updates IVs
+        #
+        # Expected arguments
+        #   $toolbar    - The toolbar widget to be removed
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $toolbar, $check) = @_;
+
+        # Local variables
+        my (
+            $set,
+            @modList,
+        );
+
+        # Check for improper arguments
+        if (! defined $toolbar || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeToolbar', @_);
+        }
+
+        # Check the toolbar widget still exists (no reason it shouldn't, but it doesn't hurt to
+        #   check)
+        if (! $self->ivExists('toolbarHash', $toolbar)) {
+
+            return undef;
+
+        } else {
+
+            # Get the button set that was drawn in this toolbar
+            $set = $self->ivShow('toolbarHash', $toolbar);
+        }
+
+        # Add the set to the world model's list of button sets...
+        $self->worldModelObj->del_buttonSet($set);
+        # ...then redraw the window component containing the toolbar(s)
+        $self->redrawWidgets('toolbar');
+
+        return 1;
+    }
+
+    sub chooseButtonSet {
+
+        # Called by $self->drawToolbar and ->switchToolbarButtons
+        # Calls the right function for the specified button set, and returns the result
+        #
+        # Expected arguments
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
+        #   $set        - The button set to use (one of the items in $self->constButtonSetList)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $toolbar, $set, $check) = @_;
+
+        # Local variables
+        my @emptyList;
+
+        # Check for improper arguments
+        if (! defined $toolbar || ! defined $set || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->chooseButtonSet', @_);
+            return @emptyList;
+        }
+
+        if ($set eq 'default') {
+            return $self->drawDefaultButtonSet($toolbar);
+        } elsif ($set eq 'exits') {
+            return $self->drawExitsButtonSet($toolbar);
+        } elsif ($set eq 'painting') {
+            return $self->drawPaintingButtonSet($toolbar);
+        } elsif ($set eq 'background') {
+            return $self->drawBackgroundButtonSet($toolbar);
+        } elsif ($set eq 'tracking') {
+            return $self->drawTrackingButtonSet($toolbar);
+        } elsif ($set eq 'misc') {
+            return $self->drawMiscButtonSet($toolbar);
+        } elsif ($set eq 'flags') {
+            return $self->drawFlagsButtonSet($toolbar);
+        } elsif ($set eq 'interiors') {
+            return $self->drawInteriorsButtonSet($toolbar);
+        } else {
+            return @emptyList;
+        }
+    }
+
+    sub drawDefaultButtonSet {
+
+        # Called by $self->chooseButtonSet, which in turn was called by $self->drawToolbar or
+        #   ->switchToolbarButtons
+        # Draws buttons for this button set, and adds them to the toolbar
+        #
+        # Expected arguments
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $setNumber, $check) = @_;
+        my ($self, $toolbar, $check) = @_;
 
         # Local variables
-        my @iconList;
+        my @buttonList;
 
         # Check for improper arguments
-        if (! defined $setNumber || defined $check) {
+        if (! defined $toolbar || defined $check) {
 
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->enableToolbarButtonSet1',
-                @_,
-            );
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawDefaultButtonSet', @_);
         }
 
         # Radio button for 'wait mode'
@@ -11888,7 +13368,7 @@
                 $self->setMode('wait');
             }
         });
-        push (@iconList, $radioButton_waitMode);
+        push (@buttonList, $radioButton_waitMode);
         # (Never desensitised)
         $self->ivAdd('menuToolItemHash', 'icon_set_wait_mode', $radioButton_waitMode);
 
@@ -11910,7 +13390,7 @@
                 $self->setMode('follow');
             }
         });
-        push (@iconList, $radioButton_followMode);
+        push (@buttonList, $radioButton_followMode);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'icon_set_follow_mode', $radioButton_followMode);
 
@@ -11934,14 +13414,14 @@
                 $self->setMode('update');
             }
         });
-        push (@iconList, $radioButton_updateMode);
+        push (@buttonList, $radioButton_updateMode);
         # (Requires $self->currentRegionmap, GA::Obj::WorldModel->disableUpdateModeFlag set to
         #   FALSE and a session not in 'connect offline' mode
         $self->ivAdd('menuToolItemHash', 'icon_set_update_mode', $radioButton_updateMode);
 
         # Separator
         my $separator = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator);
+        push (@buttonList, $separator);
 
         # Toolbutton for 'move up level'
         my $toolButton_moveUpLevel = Gtk2::ToolButton->new(
@@ -11956,7 +13436,7 @@
             # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
             $self->restrictWidgets();
         });
-        push (@iconList, $toolButton_moveUpLevel);
+        push (@buttonList, $toolButton_moveUpLevel);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'icon_move_up_level', $toolButton_moveUpLevel);
 
@@ -11973,27 +13453,13 @@
             # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
             $self->restrictWidgets();
         });
-        push (@iconList, $toolButton_moveDownLevel);
+        push (@buttonList, $toolButton_moveDownLevel);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'icon_move_down_level', $toolButton_moveDownLevel);
 
         # Separator
         my $separator2 = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator2);
-
-        # Toolbutton for 'set current room'
-        my $toolButton_setCurrentRoom = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_set.png'),
-            'Set current room',
-        );
-        $toolButton_setCurrentRoom->set_tooltip_text('Set current room');
-        $toolButton_setCurrentRoom->signal_connect('clicked' => sub {
-
-            $self->mapObj->setCurrentRoom($self->selectedRoom);
-        });
-        push (@iconList, $toolButton_setCurrentRoom);
-        # (Requires $self->currentRegionmap & $self->selectedRoom)
-        $self->ivAdd('menuToolItemHash', 'icon_set_current_room', $toolButton_setCurrentRoom);
+        push (@buttonList, $separator2);
 
         # Toolbutton for 'reset locator'
         my $toolButton_resetLocator = Gtk2::ToolButton->new(
@@ -12005,23 +13471,37 @@
 
             $self->resetLocatorCallback();
         });
-        push (@iconList, $toolButton_resetLocator);
+        push (@buttonList, $toolButton_resetLocator);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'icon_reset_locator', $toolButton_resetLocator);
 
-        # Toolbutton for 'horizontal exit length'
-        my $toolButton_exitLengths = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_exit_lengths.png'),
-            'Horizontal exit length',
+        # Toolbutton for 'set current room'
+        my $toolButton_setCurrentRoom = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_set.png'),
+            'Set current room',
         );
-        $toolButton_exitLengths->set_tooltip_text('Exit lengths');
-        $toolButton_exitLengths->signal_connect('clicked' => sub {
+        $toolButton_setCurrentRoom->set_tooltip_text('Set current room');
+        $toolButton_setCurrentRoom->signal_connect('clicked' => sub {
 
-            $self->setExitLengthCallback('horizontal');
+            $self->mapObj->setCurrentRoom($self->selectedRoom);
         });
-        push (@iconList, $toolButton_exitLengths);
-        # (Requires $self->currentRegionmap)
-        $self->ivAdd('menuToolItemHash', 'icon_exit_lengths', $toolButton_exitLengths);
+        push (@buttonList, $toolButton_setCurrentRoom);
+        # (Requires $self->currentRegionmap & $self->selectedRoom)
+        $self->ivAdd('menuToolItemHash', 'icon_set_current_room', $toolButton_setCurrentRoom);
+
+        # Toolbutton for 'set failed exit'
+        my $toolButton_setFailedExit = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_fail_exit.png'),
+            'Set failed exit',
+        );
+        $toolButton_setFailedExit->set_tooltip_text('Set failed exit');
+        $toolButton_setFailedExit->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd('insertfailexit');
+        });
+        push (@buttonList, $toolButton_setFailedExit);
+        # (Requires $self->currentRegionmap and a current room
+        $self->ivAdd('menuToolItemHash', 'icon_fail_exit', $toolButton_setFailedExit);
 
         # Toggle button for 'drag mode'
         my $toggleButton_dragMode = Gtk2::ToggleToolButton->new();
@@ -12046,24 +13526,9 @@
                 $menuItem->set_active($self->dragModeFlag);
             }
         });
-        push (@iconList, $toggleButton_dragMode);
+        push (@buttonList, $toggleButton_dragMode);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'icon_drag_mode', $toggleButton_dragMode);
-
-        # Toolbutton for 'connect to click'
-        my $toolButton_connectClick = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_connect_click.png'),
-            'Connect selected exit to room',
-        );
-        $toolButton_connectClick->set_tooltip_text('Connect selected exit to room');
-        $toolButton_connectClick->signal_connect('clicked' => sub {
-
-            $self->connectToClickCallback();
-        });
-        push (@iconList, $toolButton_connectClick);
-        # (Requires $self->currentRegionmap, $self->selectedExit and
-        #   $self->selectedExit->drawMode is 'primary', 'temp_unalloc' or 'perm_alloc')
-        $self->ivAdd('menuToolItemHash', 'icon_connect_click', $toolButton_connectClick);
 
         # Toolbutton for 'move selected rooms to click'
         my $toolButton_moveClick = Gtk2::ToolButton->new(
@@ -12075,242 +13540,26 @@
 
             # Set the free clicking mode: $self->mouseClickEvent will move the objects  when the
             #   user next clicks on an empty part of the map
-            $self->ivPoke('freeClickMode', 'move_room');
+            $self->set_freeClickMode('move_room');
         });
-        push (@iconList, $toolButton_moveClick);
+        push (@buttonList, $toolButton_moveClick);
         # (Requires $self->currentRegionmap and one or more selected rooms)
         $self->ivAdd('menuToolItemHash', 'icon_move_to_click', $toolButton_moveClick);
 
-        # Store the buttons created
-        $self->ivAdd('toolbarButtonHash', $setNumber, \@iconList);
-
-        return 1;
-    }
-
-    sub enableToolbarButtonSet2 {
-
-        # Called by $self->enableToolbar to set up one set of toolbar buttons
-        #
-        # Expected arguments
-        #   $setNumber  - The number of the set (which can vary from the number of this function, if
-        #                   we want to change the order in which the sets are displayed)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $setNumber, $check) = @_;
-
-        # Local variables
-        my @iconList;
-
-        # Check for improper arguments
-        if (! defined $setNumber || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->enableToolbarButtonSet2',
-                @_,
-            );
-        }
-
-        # Toolbutton for 'select all'
-        my $toolButton_selectAll = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_select_all.png'),
-            'Select all',
+        # Toolbutton for 'connect to click'
+        my $toolButton_connectClick = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_connect_click.png'),
+            'Connect selected exit to room',
         );
-        $toolButton_selectAll->set_tooltip_text('Select all rooms, exits and labels');
-        $toolButton_selectAll->signal_connect('clicked' => sub {
+        $toolButton_connectClick->set_tooltip_text('Connect selected exit to room');
+        $toolButton_connectClick->signal_connect('clicked' => sub {
 
-            $self->selectAllCallback();
+            $self->connectToClickCallback();
         });
-        push (@iconList, $toolButton_selectAll);
-        # (Requires $self->currentRegionmap)
-        $self->ivAdd('menuToolItemHash', 'icon_select_all', $toolButton_selectAll);
-
-        # Toolbutton for 'search world model'
-        my $toolButton_searchWorldModel = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_search_model.png'),
-            'Search world model',
-        );
-        $toolButton_searchWorldModel->set_tooltip_text('Search world model');
-        $toolButton_searchWorldModel->signal_connect('clicked' => sub {
-
-            # Open a 'pref' window to conduct the search
-            $self->createFreeWin(
-                'Games::Axmud::PrefWin::Search',
-                $self,
-                $self->session,
-                'World model search',
-            );
-        });
-        push (@iconList, $toolButton_searchWorldModel);
-
-        # Toolbutton for 'edit dictionary'
-        my $toolButton_editDictionary = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_edit_dict.png'),
-            'Edit current dictionary',
-        );
-        $toolButton_editDictionary->set_tooltip_text('Edit current dictionary');
-        $toolButton_editDictionary->signal_connect('clicked' => sub {
-
-            # Open an 'edit' window for the current dictionary
-            $self->createFreeWin(
-                'Games::Axmud::EditWin::Dict',
-                $self,
-                $self->session,
-                'Edit \'' . $self->session->currentDict->name . '\' dictionary',
-                $self->session->currentDict,
-                FALSE,          # Not temporary
-            );
-        });
-        push (@iconList, $toolButton_editDictionary);
-
-        # Toolbutton for 'add words'
-        my $toolButton_addQuickWords = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_add_word.png'),
-            'Add dictionary words',
-        );
-        $toolButton_addQuickWords->set_tooltip_text('Add dictionary words');
-        $toolButton_addQuickWords->signal_connect('clicked' => sub {
-
-            $self->createFreeWin(
-                'Games::Axmud::OtherWin::QuickWord',
-                $self,
-                $self->session,
-                'Quick word adder',
-            );
-        });
-        push (@iconList, $toolButton_addQuickWords);
-
-        # Toolbutton for 'edit preferences'
-        my $toolButton_editPreferences = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_edit_model.png'),
-            'Edit world model preferences',
-        );
-        $toolButton_editPreferences->set_tooltip_text('Edit world model');
-        $toolButton_editPreferences->signal_connect('clicked' => sub {
-
-            # Open an 'edit' window for the world model
-            $self->createFreeWin(
-                'Games::Axmud::EditWin::WorldModel',
-                $self,
-                $self->session,
-                'Edit world model',
-                $self->session->worldModelObj,
-                FALSE,                          # Not temporary
-            );
-        });
-        push (@iconList, $toolButton_editPreferences);
-
-        # Separator
-        my $separator = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator);
-
-        # Toggle button for 'enable painter'
-        my $toggleButton_enablePainter = Gtk2::ToggleToolButton->new();
-        $toggleButton_enablePainter->set_active($self->painterFlag);
-        $toggleButton_enablePainter->set_icon_widget(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_enable_painter.png'),
-        );
-        $toggleButton_enablePainter->set_label('Enable painter');
-        $toggleButton_enablePainter->set_tooltip_text('Enable painter');
-        $toggleButton_enablePainter->signal_connect('toggled' => sub {
-
-            my $item;
-
-            # Toggle the flag
-            if ($toggleButton_enablePainter->get_active()) {
-                $self->ivPoke('painterFlag', TRUE);
-            } else {
-                $self->ivPoke('painterFlag', FALSE);
-            }
-
-            # Update the corresponding menu item
-            $item = $self->ivShow('menuToolItemHash', 'enable_painter');
-            if ($item) {
-
-                $item->set_active($self->painterFlag);
-            }
-        });
-        push (@iconList, $toggleButton_enablePainter);
-        # (Never desensitised)
-        $self->ivAdd('menuToolItemHash', 'icon_enable_painter', $toggleButton_enablePainter);
-
-        # Toolbutton for 'edit painter'
-        my $toolButton_editPainter = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_edit_painter.png'),
-            'Edit painter',
-        );
-        $toolButton_editPainter->set_tooltip_text('Edit painter');
-        $toolButton_editPainter->signal_connect('clicked' => sub {
-
-            # Open an 'edit' window for the painter object
-            $self->createFreeWin(
-                'Games::Axmud::EditWin::Painter',
-                $self,
-                $self->session,
-                'Edit world model painter',
-                $self->worldModelObj->painterObj,
-                FALSE,          # Not temporary
-            );
-        });
-        push (@iconList, $toolButton_editPainter);
-
-        # Radio button for 'paint all rooms'
-        my $radioButton_paintAllRooms = Gtk2::RadioToolButton->new(undef);
-        $radioButton_paintAllRooms->set_icon_widget(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_paint_all.png'),
-        );
-        $radioButton_paintAllRooms->set_label('Paint all rooms');
-        $radioButton_paintAllRooms->set_tooltip_text('Paint all rooms');
-        $radioButton_paintAllRooms->signal_connect('toggled' => sub {
-
-            if ($radioButton_paintAllRooms->get_active()) {
-
-                $self->worldModelObj->set_paintAllRoomsFlag(TRUE);
-
-                # Set the equivalent menu item
-                if ($self->ivExists('menuToolItemHash', 'paint_all')) {
-
-                    $self->ivShow('menuToolItemHash', 'paint_all')->set_active(TRUE);
-                }
-            }
-        });
-        push (@iconList, $radioButton_paintAllRooms);
-        # (Never desensitised)
-        $self->ivAdd('menuToolItemHash', 'icon_paint_all', $radioButton_paintAllRooms);
-
-        # Radio button for 'paint only new rooms'
-        my $radioButton_paintNewRooms = Gtk2::RadioToolButton->new($radioButton_paintAllRooms);
-        if (! $self->worldModelObj->paintAllRoomsFlag) {
-
-            $radioButton_paintNewRooms->set_active(TRUE);
-        }
-        $radioButton_paintNewRooms->set_icon_widget(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_paint_new.png'),
-        );
-        $radioButton_paintNewRooms->set_label('Paint only new rooms');
-        $radioButton_paintNewRooms->set_tooltip_text('Paint only new rooms');
-        $radioButton_paintNewRooms->signal_connect('toggled' => sub {
-
-            if ($radioButton_paintNewRooms->get_active) {
-
-                $self->worldModelObj->set_paintAllRoomsFlag(FALSE);
-
-                # Set the equivalent menu item
-                if ($self->ivExists('menuToolItemHash', 'paint_new')) {
-
-                    $self->ivShow('menuToolItemHash', 'paint_new')->set_active(TRUE);
-                }
-            }
-        });
-        push (@iconList, $radioButton_paintNewRooms);
-        # (Never desensitised)
-        $self->ivAdd('menuToolItemHash', 'icon_paint_new', $radioButton_paintNewRooms);
-
-        # Separator
-        my $separator2 = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator2);
+        push (@buttonList, $toolButton_connectClick);
+        # (Requires $self->currentRegionmap, $self->selectedExit and
+        #   $self->selectedExit->drawMode is 'primary', 'temp_unalloc' or 'perm_alloc')
+        $self->ivAdd('menuToolItemHash', 'icon_connect_click', $toolButton_connectClick);
 
         # Toolbutton for 'take screenshot'
         my $toolButton_visibleScreenshot = Gtk2::ToolButton->new(
@@ -12322,270 +13571,35 @@
 
             $self->visibleScreenshotCallback();
         });
-        push (@iconList, $toolButton_visibleScreenshot);
+        push (@buttonList, $toolButton_visibleScreenshot);
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'icon_visible_screenshot', $toolButton_visibleScreenshot);
 
-        # Store the buttons created
-        $self->ivAdd('toolbarButtonHash', $setNumber, \@iconList);
-
-        return 1;
+        return @buttonList;
     }
 
-    sub enableToolbarButtonSet3 {
+    sub drawExitsButtonSet {
 
-        # Called by $self->enableToolbar to set up one set of toolbar buttons
+        # Called by $self->chooseButtonSet, which in turn was called by $self->drawToolbar or
+        #   ->switchToolbarButtons
+        # Draws buttons for this button set, and adds them to the toolbar
         #
         # Expected arguments
-        #   $setNumber  - The number of the set (which can vary from the number of this function, if
-        #                   we want to change the order in which the sets are displayed)
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $setNumber, $check) = @_;
+        my ($self, $toolbar, $check) = @_;
 
         # Local variables
-        my @iconList;
+        my @buttonList;
 
         # Check for improper arguments
-        if (! defined $setNumber || defined $check) {
+        if (! defined $toolbar || defined $check) {
 
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->enableToolbarButtonSet3',
-                @_,
-            );
-        }
-
-        # Toolbutton for 'centre map on current room'
-        my $toolButton_centreCurrentRoom = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_centre_current.png'),
-            'Centre map on current room',
-        );
-        $toolButton_centreCurrentRoom->set_tooltip_text('Centre map on current room');
-        $toolButton_centreCurrentRoom->signal_connect('clicked' => sub {
-
-            $self->centreMapOverRoom($self->mapObj->currentRoom);
-        });
-        push (@iconList, $toolButton_centreCurrentRoom);
-        # (Requires $self->currentRegionmap & $self->mapObj->currentRoom)
-        $self->ivAdd(
-            'menuToolItemHash',
-            'icon_centre_map_current_room',
-            $toolButton_centreCurrentRoom,
-        );
-
-        # Toolbutton for 'centre map on selected room'
-        my $toolButton_centreSelectedRoom = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_centre_selected.png'),
-            'Centre map on selected room',
-        );
-        $toolButton_centreSelectedRoom->set_tooltip_text('Centre map on selected room');
-        $toolButton_centreSelectedRoom->signal_connect('clicked' => sub {
-
-            $self->centreMapOverRoom($self->selectedRoom);
-        });
-        push (@iconList, $toolButton_centreSelectedRoom);
-        # (Requires $self->currentRegionmap & $self->selectedRoom)
-        $self->ivAdd(
-            'menuToolItemHash',
-            'icon_centre_map_selected_room',
-            $toolButton_centreSelectedRoom,
-        );
-
-        # Toolbutton for 'centre map on last known room'
-        my $toolButton_centreLastKnownRoom = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_centre_last.png'),
-            'Centre map on last known room',
-        );
-        $toolButton_centreLastKnownRoom->set_tooltip_text('Centre map on last known room');
-        $toolButton_centreLastKnownRoom->signal_connect('clicked' => sub {
-
-            $self->centreMapOverRoom($self->mapObj->lastKnownRoom);
-        });
-        push (@iconList, $toolButton_centreLastKnownRoom);
-        # (Requires $self->currentRegionmap & $self->mapObj->lastknownRoom)
-        $self->ivAdd(
-            'menuToolItemHash',
-            'icon_centre_map_last_known_room',
-            $toolButton_centreLastKnownRoom,
-        );
-
-        # Toolbutton for 'centre map on middle of grid'
-        my $toolButton_centreMiddleGrid = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_centre_middle.png'),
-            'Centre map on middle of grid',
-        );
-        $toolButton_centreMiddleGrid->set_tooltip_text('Centre map on middle of grid');
-        $toolButton_centreMiddleGrid->signal_connect('clicked' => sub {
-
-            $self->setMapPosn(0.5, 0.5);
-        });
-        push (@iconList, $toolButton_centreMiddleGrid);
-        # (Requires $self->currentRegionmap)
-        $self->ivAdd(
-            'menuToolItemHash',
-            'icon_centre_map_middle_grid',
-            $toolButton_centreMiddleGrid,
-        );
-
-        # Separator
-        my $separator = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator);
-
-        # Toggle button for 'track current room'
-        my $toggleButton_trackCurrentRoom = Gtk2::ToggleToolButton->new();
-        $toggleButton_trackCurrentRoom->set_active($self->worldModelObj->trackPosnFlag);
-        $toggleButton_trackCurrentRoom->set_icon_widget(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_room.png'),
-        );
-        $toggleButton_trackCurrentRoom->set_label('Track current room');
-        $toggleButton_trackCurrentRoom->set_tooltip_text('Track current room');
-        $toggleButton_trackCurrentRoom->signal_connect('toggled' => sub {
-
-            if (! $self->ignoreMenuUpdateFlag) {
-
-                $self->worldModelObj->toggleFlag(
-                    'trackPosnFlag',
-                    $toggleButton_trackCurrentRoom->get_active(),
-                    FALSE,      # Don't call $self->drawRegion
-                    'track_current_room',
-                    'icon_track_current_room',
-                );
-            }
-        });
-        push (@iconList, $toggleButton_trackCurrentRoom);
-        # (Never desensitised)
-        $self->ivAdd('menuToolItemHash', 'icon_track_current_room', $toggleButton_trackCurrentRoom);
-
-        # Separator
-        my $separator2 = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator2);
-
-        # Radio button for 'always track position'
-        my $radioButton_trackAlways = Gtk2::RadioToolButton->new(undef);
-        if (
-            $self->worldModelObj->trackingSensitivity != 0.33
-            && $self->worldModelObj->trackingSensitivity != 0.66
-            && $self->worldModelObj->trackingSensitivity != 1
-        ) {
-            # Only the sensitivity values 0, 0.33, 0.66 and 1 are curently allowed; act as
-            #   though the IV was set to 0
-            $radioButton_trackAlways->set_active(TRUE);
-        }
-        $radioButton_trackAlways->set_icon_widget(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_always.png'),
-        );
-        $radioButton_trackAlways->set_label('Always track position');
-        $radioButton_trackAlways->set_tooltip_text('Always track position');
-        $radioButton_trackAlways->signal_connect('toggled' => sub {
-
-            if (! $self->ignoreMenuUpdateFlag && $radioButton_trackAlways->get_active()) {
-
-                $self->worldModelObj->setTrackingSensitivity(0);
-            }
-        });
-        push (@iconList, $radioButton_trackAlways);
-        # (Never desensitised)
-        $self->ivAdd('menuToolItemHash', 'icon_track_always', $radioButton_trackAlways);
-
-        # Radio button for 'track position near centre'
-        my $radioButton_trackNearCentre = Gtk2::RadioToolButton->new($radioButton_trackAlways);
-        if ($self->worldModelObj->trackingSensitivity == 0.33) {
-
-            $radioButton_trackNearCentre->set_active(TRUE);
-        }
-        $radioButton_trackNearCentre->set_icon_widget(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_centre.png'),
-        );
-        $radioButton_trackNearCentre->set_label('Track position near centre');
-        $radioButton_trackNearCentre->set_tooltip_text('Track position near centre');
-        $radioButton_trackNearCentre->signal_connect('toggled' => sub {
-
-            if (! $self->ignoreMenuUpdateFlag && $radioButton_trackNearCentre->get_active()) {
-
-                $self->worldModelObj->setTrackingSensitivity(0.33);
-            }
-        });
-        push (@iconList, $radioButton_trackNearCentre);
-        # (Never desensitised)
-        $self->ivAdd('menuToolItemHash', 'icon_track_near_centre', $radioButton_trackNearCentre);
-
-        # Radio button for 'track near edge'
-        my $radioButton_trackNearEdge = Gtk2::RadioToolButton->new($radioButton_trackNearCentre);
-        if ($self->worldModelObj->trackingSensitivity == 0.66) {
-
-            $radioButton_trackNearEdge->set_active(TRUE);
-        }
-        $radioButton_trackNearEdge->set_icon_widget(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_edge.png'),
-        );
-        $radioButton_trackNearEdge->set_label('Track position near edge');
-        $radioButton_trackNearEdge->set_tooltip_text('Track position near edge');
-        $radioButton_trackNearEdge->signal_connect('toggled' => sub {
-
-            if (! $self->ignoreMenuUpdateFlag && $radioButton_trackNearEdge->get_active()) {
-
-                $self->worldModelObj->setTrackingSensitivity(0.66);
-            }
-        });
-        push (@iconList, $radioButton_trackNearEdge);
-        # (Never desensitised)
-        $self->ivAdd('menuToolItemHash', 'icon_track_near_edge', $radioButton_trackNearEdge);
-
-        # Radio button for 'track if not visible'
-        my $radioButton_trackNotVisible = Gtk2::RadioToolButton->new($radioButton_trackNearEdge);
-        if ($self->worldModelObj->trackingSensitivity == 1) {
-
-            $radioButton_trackNotVisible->set_active(TRUE);
-        }
-        $radioButton_trackNotVisible->set_icon_widget(
-            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_visible.png'),
-        );
-        $radioButton_trackNotVisible->set_label('Track if not visible');
-        $radioButton_trackNotVisible->set_tooltip_text('Track position if not visible');
-        $radioButton_trackNotVisible->signal_connect('toggled' => sub {
-
-            if (! $self->ignoreMenuUpdateFlag && $radioButton_trackNotVisible->get_active()) {
-
-                $self->worldModelObj->setTrackingSensitivity(1);
-            }
-        });
-        push (@iconList, $radioButton_trackNotVisible);
-        # (Never desensitised)
-        $self->ivAdd('menuToolItemHash', 'icon_track_not_visible', $radioButton_trackNotVisible);
-
-        # Store the buttons created
-        $self->ivAdd('toolbarButtonHash', $setNumber, \@iconList);
-
-        return 1;
-    }
-
-    sub enableToolbarButtonSet4 {
-
-        # Called by $self->enableToolbar to set up one set of toolbar buttons
-        #
-        # Expected arguments
-        #   $setNumber  - The number of the set (which can vary from the number of this function, if
-        #                   we want to change the order in which the sets are displayed)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $setNumber, $check) = @_;
-
-        # Local variables
-        my @iconList;
-
-        # Check for improper arguments
-        if (! defined $setNumber || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->enableToolbarButtonSet4',
-                @_,
-            );
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawExitsButtonSet', @_);
         }
 
         # Radio button for 'use region exit settings' mode
@@ -12608,7 +13622,7 @@
                 );
             }
         });
-        push (@iconList, $radioButton_deferDrawExits);
+        push (@buttonList, $radioButton_deferDrawExits);
         # (Never desensitised)
         $self->ivAdd('menuToolItemHash', 'icon_draw_defer_exits', $radioButton_deferDrawExits);
 
@@ -12638,7 +13652,7 @@
                 );
             }
         });
-        push (@iconList, $radioButton_drawNoExits);
+        push (@buttonList, $radioButton_drawNoExits);
         # (Never desensitised)
         $self->ivAdd('menuToolItemHash', 'icon_draw_no_exits', $radioButton_drawNoExits);
 
@@ -12668,7 +13682,7 @@
                 );
             }
         });
-        push (@iconList, $radioButton_drawSimpleExits);
+        push (@buttonList, $radioButton_drawSimpleExits);
         # (Never desensitised)
         $self->ivAdd('menuToolItemHash', 'icon_draw_simple_exits', $radioButton_drawSimpleExits);
 
@@ -12698,13 +13712,31 @@
                 );
             }
         });
-        push (@iconList, $radioButton_drawComplexExits);
+        push (@buttonList, $radioButton_drawComplexExits);
         # (Never desensitised)
         $self->ivAdd('menuToolItemHash', 'icon_draw_complex_exits', $radioButton_drawComplexExits);
 
         # Separator
         my $separator = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator);
+        push (@buttonList, $separator);
+
+        # Toolbutton for 'horizontal exit length'
+        my $toolButton_exitLengths = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_exit_lengths.png'),
+            'Horizontal exit length',
+        );
+        $toolButton_exitLengths->set_tooltip_text('Exit lengths');
+        $toolButton_exitLengths->signal_connect('clicked' => sub {
+
+            $self->setExitLengthCallback('horizontal');
+        });
+        push (@buttonList, $toolButton_exitLengths);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'icon_exit_lengths', $toolButton_exitLengths);
+
+        # Separator2
+        my $separator2 = Gtk2::SeparatorToolItem->new();
+        push (@buttonList, $separator2);
 
         # Toggle button for 'draw exit ornaments'
         my $toggleButton_drawExitOrnaments = Gtk2::ToggleToolButton->new();
@@ -12727,7 +13759,7 @@
                 );
             }
         });
-        push (@iconList, $toggleButton_drawExitOrnaments);
+        push (@buttonList, $toggleButton_drawExitOrnaments);
         # (Never desensitised)
         $self->ivAdd('menuToolItemHash', 'icon_draw_ornaments', $toggleButton_drawExitOrnaments);
 
@@ -12739,16 +13771,16 @@
         $toolButton_noOrnament->set_tooltip_text('Set no ornament');
         $toolButton_noOrnament->signal_connect('clicked' => sub {
 
-            $self->exitOrnamentCallback(undef);
+            $self->exitOrnamentCallback('none');
         });
-        push (@iconList, $toolButton_noOrnament);
-        # (Requires $self->currentRegionmap & either $self->selectedRoom or
-        #   $self->selectedRoomHash)
+        push (@buttonList, $toolButton_noOrnament);
+        # (Requires $self->currentRegionmap & either $self->selectedExit or
+        #   $self->selectedExitHash)
         $self->ivAdd('menuToolItemHash', 'icon_no_ornament', $toolButton_noOrnament);
 
         # Separator
-        my $separator2 = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator2);
+        my $separator3 = Gtk2::SeparatorToolItem->new();
+        push (@buttonList, $separator3);
 
         # Toolbutton for 'openable exit'
         my $toolButton_openableExit = Gtk2::ToolButton->new(
@@ -12758,11 +13790,11 @@
         $toolButton_openableExit->set_tooltip_text('Set openable exit');
         $toolButton_openableExit->signal_connect('clicked' => sub {
 
-            $self->exitOrnamentCallback('openFlag');
+            $self->exitOrnamentCallback('open');
         });
-        push (@iconList, $toolButton_openableExit);
-        # (Requires $self->currentRegionmap & either $self->selectedRoom or
-        #   $self->selectedRoomHash)
+        push (@buttonList, $toolButton_openableExit);
+        # (Requires $self->currentRegionmap & either $self->selectedExit or
+        #   $self->selectedExitHash)
         $self->ivAdd('menuToolItemHash', 'icon_openable_exit', $toolButton_openableExit);
 
         # Toolbutton for 'lockable exit'
@@ -12773,11 +13805,11 @@
         $toolButton_lockableExit->set_tooltip_text('Set lockable exit');
         $toolButton_lockableExit->signal_connect('clicked' => sub {
 
-            $self->exitOrnamentCallback('lockFlag');
+            $self->exitOrnamentCallback('lock');
         });
-        push (@iconList, $toolButton_lockableExit);
-        # (Requires $self->currentRegionmap & either $self->selectedRoom or
-        #   $self->selectedRoomHash)
+        push (@buttonList, $toolButton_lockableExit);
+        # (Requires $self->currentRegionmap & either $self->selectedExit or
+        #   $self->selectedExitHash)
         $self->ivAdd('menuToolItemHash', 'icon_lockable_exit', $toolButton_lockableExit);
 
         # Toolbutton for 'pickable exit'
@@ -12788,11 +13820,11 @@
         $toolButton_pickableExit->set_tooltip_text('Set pickable exit');
         $toolButton_pickableExit->signal_connect('clicked' => sub {
 
-            $self->exitOrnamentCallback('pickFlag');
+            $self->exitOrnamentCallback('pick');
         });
-        push (@iconList, $toolButton_pickableExit);
-        # (Requires $self->currentRegionmap & either $self->selectedRoom or
-        #   $self->selectedRoomHash)
+        push (@buttonList, $toolButton_pickableExit);
+        # (Requires $self->currentRegionmap & either $self->selectedExit or
+        #   $self->selectedExitHash)
         $self->ivAdd('menuToolItemHash', 'icon_pickable_exit', $toolButton_pickableExit);
 
         # Toolbutton for 'breakable exit'
@@ -12803,11 +13835,11 @@
         $toolButton_breakableExit->set_tooltip_text('Set breakable exit');
         $toolButton_breakableExit->signal_connect('clicked' => sub {
 
-            $self->exitOrnamentCallback('breakFlag');
+            $self->exitOrnamentCallback('break');
         });
-        push (@iconList, $toolButton_breakableExit);
-        # (Requires $self->currentRegionmap & either $self->selectedRoom or
-        #   $self->selectedRoomHash)
+        push (@buttonList, $toolButton_breakableExit);
+        # (Requires $self->currentRegionmap & either $self->selectedExit or
+        #   $self->selectedExitHash)
         $self->ivAdd('menuToolItemHash', 'icon_breakable_exit', $toolButton_breakableExit);
 
         # Toolbutton for 'impassable exit'
@@ -12818,43 +13850,1036 @@
         $toolButton_impassableExit->set_tooltip_text('Set impassable exit');
         $toolButton_impassableExit->signal_connect('clicked' => sub {
 
-            $self->exitOrnamentCallback('impassFlag');
+            $self->exitOrnamentCallback('impass');
         });
-        push (@iconList, $toolButton_impassableExit);
-        # (Requires $self->currentRegionmap & either $self->selectedRoom or
-        #   $self->selectedRoomHash)
+        push (@buttonList, $toolButton_impassableExit);
+        # (Requires $self->currentRegionmap & either $self->selectedExit or
+        #   $self->selectedExitHash)
         $self->ivAdd('menuToolItemHash', 'icon_impassable_exit', $toolButton_impassableExit);
 
-        # Store the buttons created
-        $self->ivAdd('toolbarButtonHash', $setNumber, \@iconList);
-
-        return 1;
+        return @buttonList;
     }
 
-    sub enableToolbarButtonSet5 {
+    sub drawPaintingButtonSet {
 
-        # Called by $self->enableToolbar to set up one set of toolbar buttons
+        # Called by $self->chooseButtonSet, which in turn was called by $self->drawToolbar or
+        #   ->switchToolbarButtons
+        # Draws buttons for this button set, and adds them to the toolbar
         #
         # Expected arguments
-        #   $setNumber  - The number of the set (which can vary from the number of this function, if
-        #                   we want to change the order in which the sets are displayed)
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $setNumber, $check) = @_;
+        my ($self, $toolbar, $check) = @_;
 
         # Local variables
-        my @iconList;
+        my (
+            @buttonList,
+            %oldHash,
+        );
 
         # Check for improper arguments
-        if (! defined $setNumber || defined $check) {
+        if (! defined $toolbar || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawPaintingButtonSet', @_);
+        }
+
+        # This hash must be reset whenever the toolbar is redrawn. Make a temporary copy, so any
+        #   colour buttons can remain toggled, if they were toggled before being drawn
+        %oldHash = $self->toolbarRoomFlagHash;
+        $self->ivEmpty('toolbarRoomFlagHash');
+
+        # Toggle button for 'enable painter'
+        my $toggleButton_enablePainter = Gtk2::ToggleToolButton->new();
+        $toggleButton_enablePainter->set_active($self->painterFlag);
+        $toggleButton_enablePainter->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_enable_painter.png'),
+        );
+        $toggleButton_enablePainter->set_label('Enable painter');
+        $toggleButton_enablePainter->set_tooltip_text('Enable painter');
+        $toggleButton_enablePainter->signal_connect('toggled' => sub {
+
+            my $item;
+
+            # Toggle the flag
+            if ($toggleButton_enablePainter->get_active()) {
+                $self->ivPoke('painterFlag', TRUE);
+            } else {
+                $self->ivPoke('painterFlag', FALSE);
+            }
+
+            # Update the corresponding menu item
+            $item = $self->ivShow('menuToolItemHash', 'enable_painter');
+            if ($item) {
+
+                $item->set_active($self->painterFlag);
+            }
+        });
+        push (@buttonList, $toggleButton_enablePainter);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_enable_painter', $toggleButton_enablePainter);
+
+        # Toolbutton for 'edit painter'
+        my $toolButton_editPainter = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_edit_painter.png'),
+            'Edit painter',
+        );
+        $toolButton_editPainter->set_tooltip_text('Edit painter');
+        $toolButton_editPainter->signal_connect('clicked' => sub {
+
+            # Open an 'edit' window for the painter object
+            $self->createFreeWin(
+                'Games::Axmud::EditWin::Painter',
+                $self,
+                $self->session,
+                'Edit world model painter',
+                $self->worldModelObj->painterObj,
+                FALSE,          # Not temporary
+            );
+        });
+        push (@buttonList, $toolButton_editPainter);
+
+        # Radio button for 'paint all rooms'
+        my $radioButton_paintAllRooms = Gtk2::RadioToolButton->new(undef);
+        $radioButton_paintAllRooms->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_paint_all.png'),
+        );
+        $radioButton_paintAllRooms->set_label('Paint all rooms');
+        $radioButton_paintAllRooms->set_tooltip_text('Paint all rooms');
+        $radioButton_paintAllRooms->signal_connect('toggled' => sub {
+
+            if ($radioButton_paintAllRooms->get_active()) {
+
+                $self->worldModelObj->set_paintAllRoomsFlag(TRUE);
+
+                # Set the equivalent menu item
+                if ($self->ivExists('menuToolItemHash', 'paint_all')) {
+
+                    $self->ivShow('menuToolItemHash', 'paint_all')->set_active(TRUE);
+                }
+            }
+        });
+        push (@buttonList, $radioButton_paintAllRooms);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_paint_all', $radioButton_paintAllRooms);
+
+        # Radio button for 'paint only new rooms'
+        my $radioButton_paintNewRooms = Gtk2::RadioToolButton->new($radioButton_paintAllRooms);
+        if (! $self->worldModelObj->paintAllRoomsFlag) {
+
+            $radioButton_paintNewRooms->set_active(TRUE);
+        }
+        $radioButton_paintNewRooms->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_paint_new.png'),
+        );
+        $radioButton_paintNewRooms->set_label('Paint only new rooms');
+        $radioButton_paintNewRooms->set_tooltip_text('Paint only new rooms');
+        $radioButton_paintNewRooms->signal_connect('toggled' => sub {
+
+            if ($radioButton_paintNewRooms->get_active) {
+
+                $self->worldModelObj->set_paintAllRoomsFlag(FALSE);
+
+                # Set the equivalent menu item
+                if ($self->ivExists('menuToolItemHash', 'paint_new')) {
+
+                    $self->ivShow('menuToolItemHash', 'paint_new')->set_active(TRUE);
+                }
+            }
+        });
+        push (@buttonList, $radioButton_paintNewRooms);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_paint_new', $radioButton_paintNewRooms);
+
+        # Radio button for 'paint normal rooms'
+        my $radioButton_paintNormalRooms = Gtk2::RadioToolButton->new(undef);
+        $radioButton_paintNormalRooms->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_paint_normal.png'),
+        );
+        $radioButton_paintNormalRooms->set_label('Paint normal rooms');
+        $radioButton_paintNormalRooms->set_tooltip_text('Paint normal rooms');
+        $radioButton_paintNormalRooms->signal_connect('toggled' => sub {
+
+            if ($radioButton_paintNormalRooms->get_active()) {
+
+                $self->worldModelObj->painterObj->ivPoke('wildMode', 'normal');
+
+                # Set the equivalent menu item
+                if ($self->ivExists('menuToolItemHash', 'paint_normal')) {
+
+                    $self->ivShow('menuToolItemHash', 'paint_normal')->set_active(TRUE);
+                }
+            }
+        });
+        push (@buttonList, $radioButton_paintNormalRooms);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_paint_normal', $radioButton_paintNormalRooms);
+
+        # Radio button for 'paint wilderness rooms'
+        my $radioButton_paintWildRooms = Gtk2::RadioToolButton->new($radioButton_paintNormalRooms);
+        if ($self->worldModelObj->painterObj->wildMode eq 'wild') {
+
+            $radioButton_paintWildRooms->set_active(TRUE);
+        }
+        $radioButton_paintWildRooms->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_paint_wild.png'),
+        );
+        $radioButton_paintWildRooms->set_label('Paint wilderness rooms');
+        $radioButton_paintWildRooms->set_tooltip_text('Paint wilderness rooms');
+        $radioButton_paintWildRooms->signal_connect('toggled' => sub {
+
+            if ($radioButton_paintWildRooms->get_active) {
+
+                $self->worldModelObj->painterObj->ivPoke('wildMode', 'wild');
+
+                # Set the equivalent menu item
+                if ($self->ivExists('menuToolItemHash', 'paint_wild')) {
+
+                    $self->ivShow('menuToolItemHash', 'paint_wild')->set_active(TRUE);
+                }
+            }
+        });
+        push (@buttonList, $radioButton_paintWildRooms);
+        # (Requires $self->session->currentWorld->basicMappingFlag to be FALSE)
+        $self->ivAdd('menuToolItemHash', 'icon_paint_wild', $radioButton_paintWildRooms);
+
+        # Radio button for 'paint wilderness border rooms'
+        my $radioButton_paintBorderRooms = Gtk2::RadioToolButton->new($radioButton_paintWildRooms);
+        if ($self->worldModelObj->painterObj->wildMode eq 'border') {
+
+            $radioButton_paintBorderRooms->set_active(TRUE);
+        }
+        $radioButton_paintBorderRooms->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_paint_border.png'),
+        );
+        $radioButton_paintBorderRooms->set_label('Paint wilderness border rooms');
+        $radioButton_paintBorderRooms->set_tooltip_text('Paint wilderness border rooms');
+        $radioButton_paintBorderRooms->signal_connect('toggled' => sub {
+
+            if ($radioButton_paintBorderRooms->get_active) {
+
+                $self->worldModelObj->painterObj->ivPoke('wildMode', 'border');
+
+                # Set the equivalent menu item
+                if ($self->ivExists('menuToolItemHash', 'paint_border')) {
+
+                    $self->ivShow('menuToolItemHash', 'paint_border')->set_active(TRUE);
+                }
+            }
+        });
+        push (@buttonList, $radioButton_paintBorderRooms);
+        # (Requires $self->session->currentWorld->basicMappingFlag to be FALSE)
+        $self->ivAdd('menuToolItemHash', 'icon_paint_border', $radioButton_paintBorderRooms);
+
+        # Separator
+        my $separator = Gtk2::SeparatorToolItem->new();
+        push (@buttonList, $separator);
+
+        my $toolButton_addRoomFlag = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_add_room_flag.png'),
+            'Add preferred room flag',
+        );
+        $toolButton_addRoomFlag->set_tooltip_text('Add preferred room flag');
+        $toolButton_addRoomFlag->signal_connect('clicked' => sub {
+
+            $self->addRoomFlagButton();
+        });
+        push (@buttonList, $toolButton_addRoomFlag);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_add_room_flag', $toolButton_addRoomFlag);
+
+        my $toolButton_removeRoomFlag = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_remove_room_flag.png'),
+            'Remove preferred room flag',
+        );
+        $toolButton_removeRoomFlag->set_tooltip_text('Remove preferred room flag');
+        $toolButton_removeRoomFlag->signal_connect('clicked' => sub {
+
+            $self->removeRoomFlagButton();
+        });
+        push (@buttonList, $toolButton_removeRoomFlag);
+        # (Requires non-empty $self->worldModelObj->preferRoomFlagList)
+        $self->ivAdd('menuToolItemHash', 'icon_remove_room_flag', $toolButton_removeRoomFlag);
+
+        foreach my $roomFlag ($self->worldModelObj->preferRoomFlagList) {
+
+            my ($roomFlagObj, $colour, $text);
+
+            $roomFlagObj = $self->worldModelObj->ivShow('roomFlagHash', $roomFlag);
+            if ($roomFlagObj) {
+
+                $colour = $roomFlagObj->colour;
+                $text = $roomFlagObj->name;
+            }
+
+            if ($colour) {
+
+                my $pixbuf = Gtk2::Gdk::Pixbuf->new(
+                    'GDK_COLORSPACE_RGB',
+                    FALSE,
+                    # Same values as ->get_bits_per_sample, ->get_width, ->get_height as a
+                    #   Gtk2::Gdk::Pixbuf loaded from one of the icon files in ../share/icons/map
+                    8,
+                    20,
+                    20,
+                );
+
+                # (Convert RGB to Gdk RGBA)
+                $colour =~ s/^#//;
+                $colour = ((hex $colour) * 256) + 255;
+
+                $pixbuf->fill($colour);
+
+                my $toolButton = Gtk2::ToggleToolButton->new();
+                if (exists $oldHash{$roomFlag}) {
+
+                    $toolButton->set_active(TRUE);
+                    # (Toggled buttons must survive the toolbar redraw)
+                    $self->ivAdd('toolbarRoomFlagHash', $roomFlag, undef);
+                }
+                $toolButton->set_icon_widget(
+                    Gtk2::Image->new_from_pixbuf($pixbuf),
+                );
+                $toolButton->set_label($text);
+                $toolButton->set_tooltip_text($text);
+                $toolButton->signal_connect('toggled' => sub {
+
+                    # Add or remove the room flag from the painter
+                    if (! $toolButton->get_active()) {
+
+                        $self->worldModelObj->painterObj->ivDelete('roomFlagHash', $roomFlag);
+                        # (Entries in this hash may or may not exist in the painter's hash)
+                        $self->ivDelete('toolbarRoomFlagHash', $roomFlag);
+
+                    } else {
+
+                        $self->worldModelObj->painterObj->ivAdd('roomFlagHash', $roomFlag);
+                        $self->ivAdd('toolbarRoomFlagHash', $roomFlag, undef);
+                    }
+                });
+                push (@buttonList, $toolButton);
+            }
+        }
+
+        return @buttonList;
+    }
+
+    sub drawBackgroundButtonSet {
+
+        # Called by $self->chooseButtonSet, which in turn was called by $self->drawToolbar or
+        #   ->switchToolbarButtons
+        # Draws buttons for this button set, and adds them to the toolbar
+        #
+        # Expected arguments
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $toolbar, $check) = @_;
+
+        # Local variables
+        my @buttonList;
+
+        # Check for improper arguments
+        if (! defined $toolbar || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->enableToolbarButtonSet5',
+                $self->_objClass . '->drawBackgroundButtonSet',
                 @_,
             );
+        }
+
+        # Radio button for 'no background colouring'
+        my $radioButton_bgDefault = Gtk2::RadioToolButton->new(undef);
+        if ($self->bgColourMode eq 'default') {
+
+            $radioButton_bgDefault->set_active(TRUE);
+        }
+        $radioButton_bgDefault->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_bg_default.png')
+        );
+        $radioButton_bgDefault->set_label('No background colouring');
+        $radioButton_bgDefault->set_tooltip_text('No background colouring');
+        $radioButton_bgDefault->signal_connect('toggled' => sub {
+
+            my $item;
+
+            # Update the IVs
+            if ($radioButton_bgDefault->get_active()) {
+
+                $self->ivPoke('bgColourMode', 'default');
+                $self->ivUndef('bgRectXPos');
+                $self->ivUndef('bgRectYPos');
+
+                # Make sure any free click mode operations, like connecting exits or moving rooms,
+                #   are cancelled
+                $self->reset_freeClickMode();
+            }
+        });
+        push (@buttonList, $radioButton_bgDefault);
+
+        # Radio button for 'colour single blocks'
+        my $radioButton_bgColour = Gtk2::RadioToolButton->new_from_widget($radioButton_bgDefault);
+        if ($self->bgColourMode eq 'square_start') {
+
+            $radioButton_bgColour->set_active(TRUE);
+        }
+        $radioButton_bgColour->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_bg_colour.png')
+        );
+        $radioButton_bgColour->set_label('Colour single blocks');
+        $radioButton_bgColour->set_tooltip_text('Colour single blocks');
+        $radioButton_bgColour->signal_connect('toggled' => sub {
+
+            my $item;
+
+            # Update the IV
+            if ($radioButton_bgColour->get_active()) {
+
+                $self->ivPoke('bgColourMode', 'square_start');
+
+                # Make sure any free click mode operations, like connecting exits or moving rooms,
+                #   are cancelled
+                $self->reset_freeClickMode();
+            }
+        });
+        push (@buttonList, $radioButton_bgColour);
+
+        # Radio button for 'colour multiple blocks'
+        my $radioButton_bgShape = Gtk2::RadioToolButton->new_from_widget($radioButton_bgDefault);
+        if ($self->bgColourMode eq 'rect_start' || $self->bgColourMode eq 'rect_stop') {
+
+            $radioButton_bgShape->set_active(TRUE);
+        }
+        $radioButton_bgShape->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_bg_shape.png')
+        );
+        $radioButton_bgShape->set_label('Colour multiple blocks');
+        $radioButton_bgShape->set_tooltip_text('Colour multiple blocks');
+        $radioButton_bgShape->signal_connect('toggled' => sub {
+
+            my $item;
+
+            # Update the IV
+            if ($radioButton_bgShape->get_active()) {
+
+                $self->ivPoke('bgColourMode', 'rect_start');
+
+                # Make sure any free click mode operations, like connecting exits or moving rooms,
+                #   are cancelled
+                $self->reset_freeClickMode();
+            }
+        });
+        push (@buttonList, $radioButton_bgShape);
+
+        # Toggle button for 'colour on all levels'
+        my $toggleButton_colourAllLevel = Gtk2::ToggleToolButton->new();
+        $toggleButton_colourAllLevel->set_active($self->bgAllLevelFlag);
+        $toggleButton_colourAllLevel->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_colour_all_level.png'),
+        );
+        $toggleButton_colourAllLevel->set_label('Colour on all levels');
+        $toggleButton_colourAllLevel->set_tooltip_text('Colour on all levels');
+        $toggleButton_colourAllLevel->signal_connect('toggled' => sub {
+
+            # Update the IV
+            if ($toggleButton_colourAllLevel->get_active()) {
+                $self->ivPoke('bgAllLevelFlag', TRUE);
+            } else {
+                $self->ivPoke('bgAllLevelFlag', FALSE);
+            }
+        });
+        push (@buttonList, $toggleButton_colourAllLevel);
+
+        # Separator
+        my $separator = Gtk2::SeparatorToolItem->new();
+        push (@buttonList, $separator);
+
+        # Toolbutton for 'add background colour'
+        my $toolButton_addColour = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_bg_add.png'),
+            'Add background colour',
+        );
+        $toolButton_addColour->set_tooltip_text('Add background colour');
+        $toolButton_addColour->signal_connect('clicked' => sub {
+
+            $self->addBGColourButton();
+        });
+        push (@buttonList, $toolButton_addColour);
+
+        # Toolbutton for 'remove background colour'
+        my $toolButton_removeColour = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_bg_remove.png'),
+            'Remove background colour',
+        );
+        $toolButton_removeColour->set_tooltip_text('Remove background colour');
+        $toolButton_removeColour->signal_connect('clicked' => sub {
+
+            $self->removeBGColourButton();
+        });
+        push (@buttonList, $toolButton_removeColour);
+        # (Requires non-empty $self->worldModelObj->preferBGColourList)
+        $self->ivAdd('menuToolItemHash', 'icon_bg_remove', $toolButton_removeColour);
+
+        # Radiobutton for 'use default colour'
+        my $radioButton_useDefault = Gtk2::RadioToolButton->new(undef);
+        if (! defined $self->bgColourChoice) {
+
+            $radioButton_useDefault->set_active(TRUE);
+        }
+        $radioButton_useDefault->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_bg_blank.png'),
+        );
+        $radioButton_useDefault->set_label('No background colouring');
+        $radioButton_useDefault->set_tooltip_text('No background colouring');
+        $radioButton_useDefault->signal_connect('toggled' => sub {
+
+            if ($radioButton_useDefault->get_active()) {
+
+                $self->ivUndef('bgColourChoice');
+            }
+        });
+        push (@buttonList, $radioButton_useDefault);
+
+        foreach my $rgb ($self->worldModelObj->preferBGColourList) {
+
+            my ($text, $colour);
+
+            $text = 'Use colour ' . uc($rgb);
+
+            my $pixbuf = Gtk2::Gdk::Pixbuf->new(
+                'GDK_COLORSPACE_RGB',
+                FALSE,
+                # Same values as ->get_bits_per_sample, ->get_width, ->get_height as a
+                #   Gtk2::Gdk::Pixbuf loaded from one of the icon files in ../share/icons/map
+                8,
+                20,
+                20,
+            );
+
+            # (Convert RGB to Gdk RGBA)
+            $colour = $rgb;
+            $colour =~ s/^#//;
+            $colour = ((hex $colour) * 256) + 255;
+
+            $pixbuf->fill($colour);
+
+            my $radioButton = Gtk2::RadioToolButton->new($radioButton_useDefault);
+            if (defined $self->bgColourChoice && $self->bgColourChoice eq $rgb) {
+
+                $radioButton->set_active(TRUE);
+            }
+            $radioButton->set_icon_widget(
+                Gtk2::Image->new_from_pixbuf($pixbuf),
+            );
+            $radioButton->set_label($text);
+            $radioButton->set_tooltip_text($text);
+            $radioButton->signal_connect('toggled' => sub {
+
+                if ($radioButton->get_active()) {
+
+                    $self->ivPoke('bgColourChoice', $rgb);
+                }
+            });
+            push (@buttonList, $radioButton);
+        }
+
+        return @buttonList;
+    }
+
+    sub drawTrackingButtonSet {
+
+        # Called by $self->chooseButtonSet, which in turn was called by $self->drawToolbar or
+        #   ->switchToolbarButtons
+        # Draws buttons for this button set, and adds them to the toolbar
+        #
+        # Expected arguments
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $toolbar, $check) = @_;
+
+        # Local variables
+        my @buttonList;
+
+        # Check for improper arguments
+        if (! defined $toolbar || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawTrackingButtonSet', @_);
+        }
+
+        # Toolbutton for 'centre map on current room'
+        my $toolButton_centreCurrentRoom = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_centre_current.png'),
+            'Centre map on current room',
+        );
+        $toolButton_centreCurrentRoom->set_tooltip_text('Centre map on current room');
+        $toolButton_centreCurrentRoom->signal_connect('clicked' => sub {
+
+            $self->centreMapOverRoom($self->mapObj->currentRoom);
+        });
+        push (@buttonList, $toolButton_centreCurrentRoom);
+        # (Requires $self->currentRegionmap & $self->mapObj->currentRoom)
+        $self->ivAdd(
+            'menuToolItemHash',
+            'icon_centre_map_current_room',
+            $toolButton_centreCurrentRoom,
+        );
+
+        # Toolbutton for 'centre map on selected room'
+        my $toolButton_centreSelectedRoom = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_centre_selected.png'),
+            'Centre map on selected room',
+        );
+        $toolButton_centreSelectedRoom->set_tooltip_text('Centre map on selected room');
+        $toolButton_centreSelectedRoom->signal_connect('clicked' => sub {
+
+            $self->centreMapOverRoom($self->selectedRoom);
+        });
+        push (@buttonList, $toolButton_centreSelectedRoom);
+        # (Requires $self->currentRegionmap & $self->selectedRoom)
+        $self->ivAdd(
+            'menuToolItemHash',
+            'icon_centre_map_selected_room',
+            $toolButton_centreSelectedRoom,
+        );
+
+        # Toolbutton for 'centre map on last known room'
+        my $toolButton_centreLastKnownRoom = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_centre_last.png'),
+            'Centre map on last known room',
+        );
+        $toolButton_centreLastKnownRoom->set_tooltip_text('Centre map on last known room');
+        $toolButton_centreLastKnownRoom->signal_connect('clicked' => sub {
+
+            $self->centreMapOverRoom($self->mapObj->lastKnownRoom);
+        });
+        push (@buttonList, $toolButton_centreLastKnownRoom);
+        # (Requires $self->currentRegionmap & $self->mapObj->lastknownRoom)
+        $self->ivAdd(
+            'menuToolItemHash',
+            'icon_centre_map_last_known_room',
+            $toolButton_centreLastKnownRoom,
+        );
+
+        # Toolbutton for 'centre map on middle of grid'
+        my $toolButton_centreMiddleGrid = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_centre_middle.png'),
+            'Centre map on middle of grid',
+        );
+        $toolButton_centreMiddleGrid->set_tooltip_text('Centre map on middle of grid');
+        $toolButton_centreMiddleGrid->signal_connect('clicked' => sub {
+
+            $self->setMapPosn(0.5, 0.5);
+        });
+        push (@buttonList, $toolButton_centreMiddleGrid);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd(
+            'menuToolItemHash',
+            'icon_centre_map_middle_grid',
+            $toolButton_centreMiddleGrid,
+        );
+
+        # Separator
+        my $separator = Gtk2::SeparatorToolItem->new();
+        push (@buttonList, $separator);
+
+        # Toggle button for 'track current room'
+        my $toggleButton_trackCurrentRoom = Gtk2::ToggleToolButton->new();
+        $toggleButton_trackCurrentRoom->set_active($self->worldModelObj->trackPosnFlag);
+        $toggleButton_trackCurrentRoom->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_room.png'),
+        );
+        $toggleButton_trackCurrentRoom->set_label('Track current room');
+        $toggleButton_trackCurrentRoom->set_tooltip_text('Track current room');
+        $toggleButton_trackCurrentRoom->signal_connect('toggled' => sub {
+
+            if (! $self->ignoreMenuUpdateFlag) {
+
+                $self->worldModelObj->toggleFlag(
+                    'trackPosnFlag',
+                    $toggleButton_trackCurrentRoom->get_active(),
+                    FALSE,      # Don't call $self->drawRegion
+                    'track_current_room',
+                    'icon_track_current_room',
+                );
+            }
+        });
+        push (@buttonList, $toggleButton_trackCurrentRoom);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_track_current_room', $toggleButton_trackCurrentRoom);
+
+        # Radio button for 'always track position'
+        my $radioButton_trackAlways = Gtk2::RadioToolButton->new(undef);
+        if (
+            $self->worldModelObj->trackingSensitivity != 0.33
+            && $self->worldModelObj->trackingSensitivity != 0.66
+            && $self->worldModelObj->trackingSensitivity != 1
+        ) {
+            # Only the sensitivity values 0, 0.33, 0.66 and 1 are curently allowed; act as
+            #   though the IV was set to 0
+            $radioButton_trackAlways->set_active(TRUE);
+        }
+        $radioButton_trackAlways->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_always.png'),
+        );
+        $radioButton_trackAlways->set_label('Always track position');
+        $radioButton_trackAlways->set_tooltip_text('Always track position');
+        $radioButton_trackAlways->signal_connect('toggled' => sub {
+
+            if (! $self->ignoreMenuUpdateFlag && $radioButton_trackAlways->get_active()) {
+
+                $self->worldModelObj->setTrackingSensitivity(0);
+            }
+        });
+        push (@buttonList, $radioButton_trackAlways);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_track_always', $radioButton_trackAlways);
+
+        # Radio button for 'track position near centre'
+        my $radioButton_trackNearCentre = Gtk2::RadioToolButton->new($radioButton_trackAlways);
+        if ($self->worldModelObj->trackingSensitivity == 0.33) {
+
+            $radioButton_trackNearCentre->set_active(TRUE);
+        }
+        $radioButton_trackNearCentre->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_centre.png'),
+        );
+        $radioButton_trackNearCentre->set_label('Track position near centre');
+        $radioButton_trackNearCentre->set_tooltip_text('Track position near centre');
+        $radioButton_trackNearCentre->signal_connect('toggled' => sub {
+
+            if (! $self->ignoreMenuUpdateFlag && $radioButton_trackNearCentre->get_active()) {
+
+                $self->worldModelObj->setTrackingSensitivity(0.33);
+            }
+        });
+        push (@buttonList, $radioButton_trackNearCentre);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_track_near_centre', $radioButton_trackNearCentre);
+
+        # Radio button for 'track near edge'
+        my $radioButton_trackNearEdge = Gtk2::RadioToolButton->new($radioButton_trackNearCentre);
+        if ($self->worldModelObj->trackingSensitivity == 0.66) {
+
+            $radioButton_trackNearEdge->set_active(TRUE);
+        }
+        $radioButton_trackNearEdge->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_edge.png'),
+        );
+        $radioButton_trackNearEdge->set_label('Track position near edge');
+        $radioButton_trackNearEdge->set_tooltip_text('Track position near edge');
+        $radioButton_trackNearEdge->signal_connect('toggled' => sub {
+
+            if (! $self->ignoreMenuUpdateFlag && $radioButton_trackNearEdge->get_active()) {
+
+                $self->worldModelObj->setTrackingSensitivity(0.66);
+            }
+        });
+        push (@buttonList, $radioButton_trackNearEdge);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_track_near_edge', $radioButton_trackNearEdge);
+
+        # Radio button for 'track if not visible'
+        my $radioButton_trackNotVisible = Gtk2::RadioToolButton->new($radioButton_trackNearEdge);
+        if ($self->worldModelObj->trackingSensitivity == 1) {
+
+            $radioButton_trackNotVisible->set_active(TRUE);
+        }
+        $radioButton_trackNotVisible->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_track_visible.png'),
+        );
+        $radioButton_trackNotVisible->set_label('Track if not visible');
+        $radioButton_trackNotVisible->set_tooltip_text('Track position if not visible');
+        $radioButton_trackNotVisible->signal_connect('toggled' => sub {
+
+            if (! $self->ignoreMenuUpdateFlag && $radioButton_trackNotVisible->get_active()) {
+
+                $self->worldModelObj->setTrackingSensitivity(1);
+            }
+        });
+        push (@buttonList, $radioButton_trackNotVisible);
+        # (Never desensitised)
+        $self->ivAdd('menuToolItemHash', 'icon_track_not_visible', $radioButton_trackNotVisible);
+
+        return @buttonList;
+    }
+
+    sub drawMiscButtonSet {
+
+        # Called by $self->chooseButtonSet, which in turn was called by $self->drawToolbar or
+        #   ->switchToolbarButtons
+        # Draws buttons for this button set, and adds them to the toolbar
+        #
+        # Expected arguments
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $toolbar, $check) = @_;
+
+        # Local variables
+        my @buttonList;
+
+        # Check for improper arguments
+        if (! defined $toolbar || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawMiscButtonSet', @_);
+        }
+
+        # Toolbutton for 'increase visits and set current'
+        my $toolButton_incVisitsCurrent = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file(
+                $axmud::SHARE_DIR . '/icons/map/icon_inc_visits_current.png',
+            ),
+            'Increase visits and set current',
+        );
+        $toolButton_incVisitsCurrent->set_tooltip_text('Increase visits and set current');
+        $toolButton_incVisitsCurrent->signal_connect('clicked' => sub {
+
+            $self->updateVisitsCallback('increase');
+            $self->mapObj->setCurrentRoom($self->selectedRoom);
+        });
+        push (@buttonList, $toolButton_incVisitsCurrent);
+        # (Requires $self->currentRegionmap & $self->selectedRoom)
+        $self->ivAdd('menuToolItemHash', 'icon_inc_visits_current', $toolButton_incVisitsCurrent);
+
+        # Toolbutton for 'increase visits by one'
+        my $toolButton_incVisits = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_inc_visits.png'),
+            'Increase visits by one',
+        );
+        $toolButton_incVisits->set_tooltip_text('Increase visits by one');
+        $toolButton_incVisits->signal_connect('clicked' => sub {
+
+            $self->updateVisitsCallback('increase');
+        });
+        push (@buttonList, $toolButton_incVisits);
+        # (Requires $self->currentRegionmap & either $self->selectedRoom or
+        #   $self->selectedRoomHash)
+        $self->ivAdd('menuToolItemHash', 'icon_inc_visits', $toolButton_incVisits);
+
+        # Toolbutton for 'decrease visits by one'
+        my $toolButton_decVisits = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_dec_visits.png'),
+            'Decrease visits by one',
+        );
+        $toolButton_decVisits->set_tooltip_text('Decrease visits by one');
+        $toolButton_decVisits->signal_connect('clicked' => sub {
+
+            $self->updateVisitsCallback('decrease');
+        });
+        push (@buttonList, $toolButton_decVisits);
+        # (Requires $self->currentRegionmap & either $self->selectedRoom or
+        #   $self->selectedRoomHash)
+        $self->ivAdd('menuToolItemHash', 'icon_dec_visits', $toolButton_decVisits);
+
+        # Toolbutton for 'set visits manually'
+        my $toolButton_setVisits = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_set_visits.png'),
+            'Set visits manually',
+        );
+        $toolButton_setVisits->set_tooltip_text('Set visits manually');
+        $toolButton_setVisits->signal_connect('clicked' => sub {
+
+            $self->updateVisitsCallback('manual');
+        });
+        push (@buttonList, $toolButton_setVisits);
+        # (Requires $self->currentRegionmap & either $self->selectedRoom or
+        #   $self->selectedRoomHash)
+        $self->ivAdd('menuToolItemHash', 'icon_set_visits', $toolButton_setVisits);
+
+        # Toolbutton for 'reset visits'
+        my $toolButton_resetVisits = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_reset_visits.png'),
+            'Reset visits to zero',
+        );
+        $toolButton_resetVisits->set_tooltip_text('Reset visits to zero');
+        $toolButton_resetVisits->signal_connect('clicked' => sub {
+
+            $self->updateVisitsCallback('reset');
+        });
+        push (@buttonList, $toolButton_resetVisits);
+        # (Requires $self->currentRegionmap & either $self->selectedRoom or
+        #   $self->selectedRoomHash)
+        $self->ivAdd('menuToolItemHash', 'icon_reset_visits', $toolButton_resetVisits);
+
+        # Separator
+        my $separator = Gtk2::SeparatorToolItem->new();
+        push (@buttonList, $separator);
+
+        # Toggle button for 'graffiti mode'
+        my $toggleButton_graffitMode = Gtk2::ToggleToolButton->new();
+        $toggleButton_graffitMode->set_active($self->graffitiModeFlag);
+        $toggleButton_graffitMode->set_icon_widget(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_graffiti_mode.png'),
+        );
+        $toggleButton_graffitMode->set_label('Graffiti mode');
+        $toggleButton_graffitMode->set_tooltip_text('Graffiti mode');
+        $toggleButton_graffitMode->signal_connect('toggled' => sub {
+
+            if ($toggleButton_graffitMode->get_active()) {
+                $self->ivPoke('graffitiModeFlag', TRUE);
+            } else {
+                $self->ivPoke('graffitiModeFlag', FALSE);
+            }
+
+            # Set the equivalent menu item
+            if ($self->ivExists('menuToolItemHash', 'graffiti_mode')) {
+
+                my $menuItem = $self->ivShow('menuToolItemHash', 'graffiti_mode');
+                $menuItem->set_active($self->graffitiModeFlag);
+            }
+
+            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+            $self->restrictWidgets();
+        });
+        push (@buttonList, $toggleButton_graffitMode);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'icon_graffiti_mode', $toggleButton_graffitMode);
+
+        # Toolbutton for 'toggle graffiti'
+        my $toolButton_toggleGraffiti = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_toggle_graffiti.png'),
+            'Toggle graffiti',
+        );
+        $toolButton_toggleGraffiti->set_tooltip_text('Toggle graffiti in selected rooms');
+        $toolButton_toggleGraffiti->signal_connect('clicked' => sub {
+
+            $self->toggleGraffitiCallback();
+        });
+        push (@buttonList, $toolButton_toggleGraffiti);
+        # (Requires $self->currentRegionmap, $self->graffitiModeFlag and one or more selected rooms
+        $self->ivAdd('menuToolItemHash', 'icon_toggle_graffiti', $toolButton_toggleGraffiti);
+
+        # Separator
+        my $separator2 = Gtk2::SeparatorToolItem->new();
+        push (@buttonList, $separator2);
+
+        # Toolbutton for 'select all'
+        my $toolButton_selectAll = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_select_all.png'),
+            'Select all',
+        );
+        $toolButton_selectAll->set_tooltip_text('Select all rooms, exits and labels');
+        $toolButton_selectAll->signal_connect('clicked' => sub {
+
+            $self->selectAllCallback();
+        });
+        push (@buttonList, $toolButton_selectAll);
+        # (Requires $self->currentRegionmap)
+        $self->ivAdd('menuToolItemHash', 'icon_select_all', $toolButton_selectAll);
+
+        # Toolbutton for 'edit world model'
+        my $toolButton_editWorldModel = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_edit_model.png'),
+            'Edit world model preferences',
+        );
+        $toolButton_editWorldModel->set_tooltip_text('Edit world model');
+        $toolButton_editWorldModel->signal_connect('clicked' => sub {
+
+            # Open an 'edit' window for the world model
+            $self->createFreeWin(
+                'Games::Axmud::EditWin::WorldModel',
+                $self,
+                $self->session,
+                'Edit world model',
+                $self->session->worldModelObj,
+                FALSE,                          # Not temporary
+            );
+        });
+        push (@buttonList, $toolButton_editWorldModel);
+
+        # Toolbutton for 'search world model'
+        my $toolButton_searchWorldModel = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_search_model.png'),
+            'Search world model',
+        );
+        $toolButton_searchWorldModel->set_tooltip_text('Search world model');
+        $toolButton_searchWorldModel->signal_connect('clicked' => sub {
+
+            # Open a 'pref' window to conduct the search
+            $self->createFreeWin(
+                'Games::Axmud::PrefWin::Search',
+                $self,
+                $self->session,
+                'World model search',
+            );
+        });
+        push (@buttonList, $toolButton_searchWorldModel);
+
+        # Toolbutton for 'add words'
+        my $toolButton_addQuickWords = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_add_word.png'),
+            'Add dictionary words',
+        );
+        $toolButton_addQuickWords->set_tooltip_text('Add dictionary words');
+        $toolButton_addQuickWords->signal_connect('clicked' => sub {
+
+            $self->createFreeWin(
+                'Games::Axmud::OtherWin::QuickWord',
+                $self,
+                $self->session,
+                'Quick word adder',
+            );
+        });
+        push (@buttonList, $toolButton_addQuickWords);
+
+        # Toolbutton for 'edit dictionary'
+        my $toolButton_editDictionary = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_edit_dict.png'),
+            'Edit current dictionary',
+        );
+        $toolButton_editDictionary->set_tooltip_text('Edit current dictionary');
+        $toolButton_editDictionary->signal_connect('clicked' => sub {
+
+            # Open an 'edit' window for the current dictionary
+            $self->createFreeWin(
+                'Games::Axmud::EditWin::Dict',
+                $self,
+                $self->session,
+                'Edit \'' . $self->session->currentDict->name . '\' dictionary',
+                $self->session->currentDict,
+                FALSE,          # Not temporary
+            );
+        });
+        push (@buttonList, $toolButton_editDictionary);
+
+        return @buttonList;
+    }
+
+    sub drawFlagsButtonSet {
+
+        # Called by $self->chooseButtonSet, which in turn was called by $self->drawToolbar or
+        #   ->switchToolbarButtons
+        # Draws buttons for this button set, and adds them to the toolbar
+        #
+        # Expected arguments
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $toolbar, $check) = @_;
+
+        # Local variables
+        my @buttonList;
+
+        # Check for improper arguments
+        if (! defined $toolbar || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawFlagsButtonSet', @_);
         }
 
         # Toggle button for 'release all filters'
@@ -12878,7 +14903,7 @@
                 );
             }
         });
-        push (@iconList, $radioButton_releaseAllFilters);
+        push (@buttonList, $radioButton_releaseAllFilters);
         # (Never desensitised)
         $self->ivAdd(
             'menuToolItemHash',
@@ -12888,15 +14913,15 @@
 
         # Separator
         my $separator = Gtk2::SeparatorToolItem->new();
-        push (@iconList, $separator);
+        push (@buttonList, $separator);
 
         # Filter icons
-        foreach my $filter ($self->worldModelObj->roomFilterList) {
+        foreach my $filter ($axmud::CLIENT->constRoomFilterList) {
 
             # Filter button
             my $toolButton_filter = Gtk2::ToggleToolButton->new();
             $toolButton_filter->set_active(
-                $self->worldModelObj->ivShow('roomFilterHash', $filter),
+                $self->worldModelObj->ivShow('roomFilterApplyHash', $filter),
             );
             $toolButton_filter->signal_connect('toggled' => sub {
 
@@ -12923,45 +14948,40 @@
 
             $toolButton_filter->set_label('Toggle ' . $filter . ' filter');
             $toolButton_filter->set_tooltip_text('Toggle ' . $filter . ' filter');
-            push (@iconList, $toolButton_filter);
+            push (@buttonList, $toolButton_filter);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'icon_' . $filter . '_filter', $toolButton_filter);
         }
 
-        # Store the buttons created
-        $self->ivAdd('toolbarButtonHash', $setNumber, \@iconList);
-
-        return 1;
+        return @buttonList;
     }
 
-    sub enableToolbarButtonSet6 {
+    sub drawInteriorsButtonSet {
 
-        # Called by $self->enableToolbar to set up one set of toolbar buttons
+        # Called by $self->chooseButtonSet, which in turn was called by $self->drawToolbar or
+        #   ->switchToolbarButtons
+        # Draws buttons for this button set, and adds them to the toolbar
         #
         # Expected arguments
-        #   $setNumber  - The number of the set (which can vary from the number of this function, if
-        #                   we want to change the order in which the sets are displayed)
+        #   $toolbar    - The toolbar widget on which the buttons are drawn
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $setNumber, $check) = @_;
+        my ($self, $toolbar, $check) = @_;
 
         # Local variables
         my (
             $lastButton,
-            @initList, @interiorList, @iconList,
+            @initList, @interiorList, @buttonList,
             %interiorHash, %iconHash,
         );
 
         # Check for improper arguments
-        if (! defined $setNumber || defined $check) {
+        if (! defined $toolbar || defined $check) {
 
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->enableToolbarButtonSet6',
-                @_,
-            );
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawInteriorsButtonSet', @_);
         }
 
         @initList = (
@@ -12974,6 +14994,9 @@
             'region_count',
                 'Draw region/super-region exits',
                 'icon_draw_super.png',
+            'checked_count',
+                'Draw checked/checkable directions',
+                'icon_draw_checked.png',
             'room_content',
                 'Draw room contents',
                 'icon_draw_contents.png',
@@ -13054,7 +15077,7 @@
                     $self->worldModelObj->switchRoomInteriorMode($mode);
                 }
             });
-            push (@iconList, $radioButton);
+            push (@buttonList, $radioButton);
             # (Never desensitised)
             $self->ivAdd('menuToolItemHash', 'icon_interior_mode_' . $mode, $radioButton);
 
@@ -13065,13 +15088,385 @@
 
                 # Separator
                 my $separator = Gtk2::SeparatorToolItem->new();
-                push (@iconList, $separator);
+                push (@buttonList, $separator);
             }
         }
 
-        # Store the buttons created
-        $self->ivAdd('toolbarButtonHash', $setNumber, \@iconList);
+        return @buttonList;
+    }
 
+    sub addRoomFlagButton {
+
+        # Called by a ->signal_connect in $self->drawPaintingButtonSet whenever the user clicks the
+        #   'add room flag' button in the 'painting' button set
+        # Creates a popup menu containing all room flags, then implements the user's choice
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my %checkHash;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addRoomFlagButton', @_);
+        }
+
+        # Compile a hash of existing preferred room flags (we don't want the user to add the same
+        #   room flag twice)
+        foreach my $roomFlag ($self->worldModelObj->preferRoomFlagList) {
+
+            $checkHash{$roomFlag} = undef;
+        }
+
+        # Set up the popup menu
+        my $popupMenu = Gtk2::Menu->new();
+        if (! $popupMenu) {
+
+            return undef;
+        }
+
+        # Add a title menu item, which does nothing
+        my $title_item = Gtk2::MenuItem->new('Add preferred room flag:');
+        $title_item->signal_connect('activate' => sub {
+
+            return undef;
+        });
+        $title_item->set_sensitive(FALSE);
+        $popupMenu->append($title_item);
+
+        $popupMenu->append(Gtk2::SeparatorMenuItem->new());     # Separator
+
+        # Fill the popup menu with room flags
+        foreach my $filter ($axmud::CLIENT->constRoomFilterList) {
+
+            # A sub-sub menu for $filter
+            my $subMenu = Gtk2::Menu->new();
+
+            my @nameList = $self->worldModelObj->getRoomFlagsInFilter($filter);
+            foreach my $name (@nameList) {
+
+                my $obj = $self->worldModelObj->ivShow('roomFlagHash', $name);
+                if ($obj) {
+
+                    my $menuItem = Gtk2::MenuItem->new($obj->descrip);
+                    $menuItem->signal_connect('activate' => sub {
+
+                        # Add the room flag to the world model's list of preferred room flags...
+                        $self->worldModelObj->add_preferRoomFlag($name);
+                        # ...then redraw the window component containing the toolbar(s), toggling
+                        #   the button for the new room flag
+                        $self->redrawWidgets('toolbar');
+                    });
+                    $subMenu->append($menuItem);
+                }
+            }
+
+            if (! @nameList) {
+
+                my $menuItem = Gtk2::MenuItem->new('(No flags in this filter)');
+                $menuItem->set_sensitive(FALSE);
+                $subMenu->append($menuItem);
+            }
+
+            my $menuItem = Gtk2::MenuItem->new(ucfirst($filter));
+            $menuItem->set_submenu($subMenu);
+            $popupMenu->append($menuItem);
+        }
+
+        # Also add a 'Cancel' menu item, which does nothing
+        $popupMenu->append(Gtk2::SeparatorMenuItem->new());     # Separator
+
+        my $cancel_item = Gtk2::MenuItem->new('Cancel');
+        $cancel_item->signal_connect('activate' => sub {
+
+            return undef;
+        });
+        $popupMenu->append($cancel_item);
+
+        # Display the popup menu
+        $popupMenu->popup(
+            undef, undef, undef, undef,
+            1,                              # Left mouse button
+            Gtk2->get_current_event_time(),
+        );
+
+        $popupMenu->show_all();
+
+        # Operation complete. Now wait for the user's response
+        return 1;
+    }
+
+    sub removeRoomFlagButton {
+
+        # Called by a ->signal_connect in $self->drawPaintingButtonSet whenever the user clicks the
+        #   'remove room flag' button in the 'painting' button set
+        # Removes the specified room flag from the toolbar and updates IVs
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeRoomFlagButton', @_);
+        }
+
+        # Set up the popup menu
+        my $popupMenu = Gtk2::Menu->new();
+        if (! $popupMenu) {
+
+            return undef;
+        }
+
+        # Add a title menu item, which does nothing
+        my $title_item = Gtk2::MenuItem->new('Remove preferred room flag:');
+        $title_item->signal_connect('activate' => sub {
+
+            return undef;
+        });
+        $title_item->set_sensitive(FALSE);
+        $popupMenu->append($title_item);
+
+        $popupMenu->append(Gtk2::SeparatorMenuItem->new());     # Separator
+
+        # Fill the popup menu with room flags
+        foreach my $roomFlag ($self->worldModelObj->preferRoomFlagList) {
+
+            my $menu_item = Gtk2::MenuItem->new($roomFlag);
+            $menu_item->signal_connect('activate' => sub {
+
+                # Remove the room flag from the world model's list of preferred room flags...
+                $self->worldModelObj->del_preferRoomFlag($roomFlag);
+                # ...and from the painter object iself...
+                $self->worldModelObj->painterObj->ivDelete('roomFlagHash', $roomFlag);
+                # ...then redraw the window component containing the toolbar(s)
+                $self->redrawWidgets('toolbar');
+            });
+            $popupMenu->append($menu_item);
+        }
+
+        # Add a 'remove all' menu item
+        $popupMenu->append(Gtk2::SeparatorMenuItem->new());     # Separator
+
+        my $remove_all_item = Gtk2::MenuItem->new('Remove all');
+        $remove_all_item->signal_connect('activate' => sub {
+
+            my ($total, $choice);
+
+            $total = scalar $self->worldModelObj->preferRoomFlagList;
+
+            # If there's more than one colour, prompt the user for confirmation
+            if ($total > 1) {
+
+                $choice = $self->showMsgDialogue(
+                    'Remove all room flag buttons',
+                    'question',
+                    'Are you sure you want to remove all ' . $total . ' room flag buttons?',
+                    'yes-no',
+                );
+
+            } else {
+
+                $choice = 'yes';
+            }
+
+            if (defined $choice && $choice eq 'yes') {
+
+                # Reset the world model's list of preferred room flags
+                $self->worldModelObj->reset_preferRoomFlagList();
+
+                # Update the painter object (which might contain room flags not added with these
+                #   tools)
+                foreach my $roomFlag ($self->worldModelObj->preferRoomFlagList) {
+
+                    $self->worldModelObj->ivDelete('roomFlagHash', $roomFlag);
+                }
+
+                # Then redraw the window component containing the toolbar(s)
+                $self->redrawWidgets('toolbar');
+            }
+        });
+        $popupMenu->append($remove_all_item);
+
+        # Also add a 'Cancel' menu item, which does nothing
+        my $cancel_item = Gtk2::MenuItem->new('Cancel');
+        $cancel_item->signal_connect('activate' => sub {
+
+            return undef;
+        });
+        $popupMenu->append($cancel_item);
+
+        # Display the popup menu
+        $popupMenu->popup(
+            undef, undef, undef, undef,
+            1,                              # Left mouse button
+            Gtk2->get_current_event_time(),
+        );
+
+        $popupMenu->show_all();
+
+        # Operation complete. Now wait for the user's response
+        return 1;
+    }
+
+    sub addBGColourButton {
+
+        # Called by a ->signal_connect in $self->drawBackgroundButtonSet whenever the user clicks
+        #   the 'add background colour' button in the 'background' button set
+        # Prompts the user for a new RGB colour tag, then implements the user's choice
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $colour;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addBGColourButton', @_);
+        }
+
+        $colour = $self->showColourSelectionDialogue('Add preferred background colour');
+        if (defined $colour) {
+
+            # Add the room flag to the world model's list of preferred background colours...
+            $self->worldModelObj->add_preferBGColour($colour);
+            # ...then redraw the window component containing the toolbar(s), selecting the new
+            #   colour
+            $self->ivPoke('bgColourChoice', $colour);
+            $self->redrawWidgets('toolbar');
+        }
+
+        return 1;
+    }
+
+    sub removeBGColourButton {
+
+        # Called by a ->signal_connect in $self->drawBackgroundButtonSet whenever the user clicks
+        #   the 'remove background colour' button in the 'background' button set
+        # Removes the specified colour from the toolbar and updates IVs
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeBGColourButton', @_);
+        }
+
+        # Set up the popup menu
+        my $popupMenu = Gtk2::Menu->new();
+        if (! $popupMenu) {
+
+            return undef;
+        }
+
+        # Add a title menu item, which does nothing
+        my $title_item = Gtk2::MenuItem->new('Remove preferred background colour:');
+        $title_item->signal_connect('activate' => sub {
+
+            return undef;
+        });
+        $title_item->set_sensitive(FALSE);
+        $popupMenu->append($title_item);
+
+        $popupMenu->append(Gtk2::SeparatorMenuItem->new());     # Separator
+
+        # Fill the popup menu with colours
+        foreach my $colour ($self->worldModelObj->preferBGColourList) {
+
+            my $menu_item = Gtk2::MenuItem->new($colour);
+            $menu_item->signal_connect('activate' => sub {
+
+                # Remove the colour from the world model's list of preferred background colours...
+                $self->worldModelObj->del_preferBGColour($colour);
+                # ...then redraw the window component containing the toolbar(s)
+                $self->redrawWidgets('toolbar');
+            });
+            $popupMenu->append($menu_item);
+        }
+
+        # Add a 'remove all' menu item
+        $popupMenu->append(Gtk2::SeparatorMenuItem->new());     # Separator
+
+        my $remove_all_item = Gtk2::MenuItem->new('Remove all');
+        $remove_all_item->signal_connect('activate' => sub {
+
+            my ($total, $choice);
+
+            $total = scalar $self->worldModelObj->preferBGColourList;
+
+            # If there's more than one colour, prompt the user for confirmation
+            if ($total > 1) {
+
+                $choice = $self->showMsgDialogue(
+                    'Remove all colour buttons',
+                    'question',
+                    'Are you sure you want to remove all ' . $total . ' colour buttons?',
+                    'yes-no',
+                );
+
+            } else {
+
+                $choice = 'yes';
+            }
+
+            if (defined $choice && $choice eq 'yes') {
+
+                # Reset the world model's list of preferred background colour...
+                $self->worldModelObj->reset_preferBGColourList();
+                # ...then redraw the window component containing the toolbar(s)
+                $self->redrawWidgets('toolbar');
+            }
+        });
+        $popupMenu->append($remove_all_item);
+
+        # Also add a 'Cancel' menu item, which does nothing
+        my $cancel_item = Gtk2::MenuItem->new('Cancel');
+        $cancel_item->signal_connect('activate' => sub {
+
+            return undef;
+        });
+        $popupMenu->append($cancel_item);
+
+        # Display the popup menu
+        $popupMenu->popup(
+            undef, undef, undef, undef,
+            1,                              # Left mouse button
+            Gtk2->get_current_event_time(),
+        );
+
+        $popupMenu->show_all();
+
+        # Operation complete. Now wait for the user's response
         return 1;
     }
 
@@ -14209,6 +16604,7 @@
         @list = (
             'select_all', 'icon_select_all',
             'select', 'unselect_all',
+            'selected_objs',
             'set_follow_mode', 'icon_set_follow_mode',
 #            'zoom_sub',
 #            'level_sub',
@@ -14216,13 +16612,13 @@
 #            'centre_map_sub',
             'screenshots', 'icon_visible_screenshot',
             'drag_mode', 'icon_drag_mode',
+            'graffiti_mode', 'icon_graffiti_mode',
             'edit_region',
             'edit_regionmap',
-            'edit_region_features',
+            'current_region',
             'recalculate_paths',
             'exit_tags',
-            'find_exits',
-            'uncertain_exits',
+            'exit_options',
             'exit_lengths', 'icon_exit_lengths',
             'empty_region',
             'delete_region',
@@ -14241,6 +16637,10 @@
             'report_flags_4',
             'report_rooms_2',
             'report_exits_2',
+            'report_checked_2',
+            'reset_char_visits',
+            'reset_checked_dirs',
+            'reset_remote_data',
             'reset_locator', 'icon_reset_locator',
         );
 
@@ -14314,6 +16714,7 @@
             'add_involuntary_exit',
             'add_repulse_exit',
             'add_special_depart',
+            'icon_fail_exit',
         );
 
         if ($self->currentRegionmap && $self->session->loginFlag && $self->mapObj->currentRoom) {
@@ -14326,13 +16727,14 @@
         @list = (
             'centre_map_selected_room', 'icon_centre_map_selected_room',
             'set_current_room', 'icon_set_current_room',
-            'room_exits',
             'select_exit',
+            'increase_set_current',
             'edit_room',
             'set_file_path',
             'add_contents_string',
             'add_hidden_string',
             'add_exclusive_prof',
+            'icon_inc_visits_current',
         );
 
         if ($self->currentRegionmap && $self->session->loginFlag && $self->selectedRoom) {
@@ -14392,6 +16794,23 @@
             push (@desensitiseList, @list);
         }
 
+        # Menu items that require a current regionmap and a single selected room with one or more
+        #   checked directions
+        @list = (
+            'remove_checked', 'remove_checked_all',
+        );
+
+        if (
+            $self->currentRegionmap
+            && $self->session->loginFlag
+            && $self->selectedRoom
+            && $self->selectedRoom->checkedDirHash
+        ) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
         # Menu items that require a current regionmap and a single selected room with
         #   ->sourceCodePath set, but ->virtualAreaPath not set
         @list = (
@@ -14429,6 +16848,40 @@
             push (@desensitiseList, @list);
         }
 
+        # Menu items that require a current regionmap and a single selected room whose ->wildMode
+        #   is not set to 'wild' (the value 'border' is ok, though)
+        @list = (
+            'add_normal_exit', 'add_multiple_exits', 'add_hidden_exit',
+        );
+
+        if (
+            $self->currentRegionmap
+            && $self->session->loginFlag
+            && $self->selectedRoom
+            && $self->selectedRoom->wildMode ne 'wild'
+        ) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu items that require a current regionmap, one or more selected rooms and
+        #   $self->graffitiModeFlag set to TRUE
+        @list = (
+            'toggle_graffiti', 'icon_toggle_graffiti',
+        );
+
+        if (
+            $self->currentRegionmap
+            && $self->session->loginFlag
+            && ($self->selectedRoom || $self->selectedRoomHash)
+            && $self->graffitiModeFlag
+        ) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
         # Menu items that require a current regionmap and one or more selected rooms
         @list = (
             'move_selected',
@@ -14436,6 +16889,9 @@
             'toggle_room_flag_sub',
             'reset_positions',
             'room_exclusivity_sub',
+            'set_exits',
+            'wilderness_normal',
+            'update_visits',
             'delete_room',
             'repaint_selected',
             'set_virtual_area',
@@ -14443,6 +16899,7 @@
             'toggle_exclusivity',
             'clear_exclusive_profs',
             'connect_adjacent',
+            'icon_inc_visits', 'icon_dec_visits', 'icon_set_visits', 'icon_reset_visits',
         );
 
         if (
@@ -14759,8 +17216,8 @@
 
         # Menu items that require a current regionmap and a single selected label
         @list = (
-            'edit_label',
-            'set_label_size',
+            'set_label',
+            'customise_label',
         );
 
         if ($self->currentRegionmap && $self->session->loginFlag && $self->selectedLabel) {
@@ -14876,6 +17333,25 @@
             push (@desensitiseList, @list);
         }
 
+        # Menu items that require a current regionmap whose ->gridColourBlockHash and/or
+        #   ->gridColourObjHash is not empty)
+        @list = (
+            'empty_bg_colours',
+        );
+
+        if (
+            $self->currentRegionmap
+            && $self->session->loginFlag
+            && (
+                $self->currentRegionmap->gridColourBlockHash
+                || $self->currentRegionmap->gridColourObjHash
+            )
+        ) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
         # Menu items that require a current regionmap and a current guild profile
         @list = (
             'report_guilds_4',
@@ -14894,6 +17370,68 @@
         );
 
         if ($self->worldModelObj->assistedMovesFlag) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu items that require protected moves to be turned off
+        @list = (
+            'allow_crafty_moves',
+        );
+
+        if (! $self->worldModelObj->protectedMovesFlag) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu items that require basic mapping mode to be turned off
+        @list = (
+            'paint_wild', 'icon_paint_wild',
+            'paint_border', 'icon_paint_border',
+        );
+
+        if (! $self->session->currentWorld->basicMappingFlag) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu items that require a current regionmap, one or more selected rooms and basic mapping
+        #   mode to be turned off
+        @list = (
+            'wilderness_wild', 'wilderness_border',
+        );
+
+        if (
+            $self->currentRegionmap
+            && $self->session->loginFlag
+            && ($self->selectedRoom || $self->selectedRoomHash)
+            && ! $self->session->currentWorld->basicMappingFlag
+        ) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu items that require a non-empty list of preferred room flags
+        @list = (
+            'icon_remove_room_flag',
+        );
+
+        if ($self->worldModelObj->preferRoomFlagList) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu items that require a non-empty list of preferred background colours
+        @list = (
+            'icon_bg_remove',
+        );
+
+        if ($self->worldModelObj->preferBGColourList) {
             push (@sensitiseList, @list);
         } else {
             push (@desensitiseList, @list);
@@ -15047,19 +17585,13 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showPauseWin', @_);
         }
 
-        if (! $self->pauseWin) {
+        if (! $axmud::CLIENT->busyWin) {
 
             # Show the window widget
-            my $dialogueWin = $self->showBusyWin(
+            $self->showBusyWin(
                 $axmud::SHARE_DIR . '/icons/system/mapper.png',
                 'Working...',
             );
-
-            if ($dialogueWin) {
-
-                # Update IVs
-                $self->ivPoke('pauseWin', $dialogueWin);
-            }
         }
 
         return 1;
@@ -15085,10 +17617,9 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->hidePauseWin', @_);
         }
 
-        if ($self->pauseWin) {
+        if ($axmud::CLIENT->busyWin) {
 
-            $self->closeDialogueWin($self->pauseWin);
-            $self->ivUndef('pauseWin');
+            $self->closeDialogueWin($axmud::CLIENT->busyWin);
         }
 
         return 1;
@@ -15123,7 +17654,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupCanvasEvent', @_);
         }
 
-        $canvasObj->signal_connect (event => sub {
+        $canvasObj->signal_connect('event' => sub {
 
             my ($obj, $event) = @_;
 
@@ -15138,6 +17669,15 @@
 
                 # All clicks on the canvas itself are handled by this function
                 $self->canvasEventHandler($obj, $event);
+
+            } elsif (
+                $event->type eq 'motion-notify'
+                && $self->selectBoxFlag
+                && $event->state =~ m/button1-mask/
+            ) {
+                # Continue the selection box operation by re-drawing the canvas object at its new
+                #   position
+                $self->continueSelectBox($event);
             }
         });
 
@@ -15151,15 +17691,18 @@
         #   canvas objects above the map background, filter out the signals we don't want, and pass
         #   the signals we do want to an event handler
         # Because canvas objects are 'above' the background, the anonymous function (and not the
-        #   one in $self->setupCanvasEvent) is called when the user clicks on a room, room tag, room
-        #   guild, exit or label directly
+        #   one in $self->setupCanvasEvent) is called when the user clicks on a coloured block,
+        #   rectangle, room, room tag, room guild, exit or label directly
         #
         # Expected arguments
         #   $type       - What type of canvas object this is - 'room', 'room_tag', 'room_guild',
-        #                   'exit', 'exit_tag' or 'label'
+        #                   'exit', 'exit_tag', 'label', 'square' or 'rect'
         #   $canvasObj  - The Gnome2::Canvas::Item on which the user has clicked
+        #
+        # Optional arguments
         #   $modelObj   - The GA::ModelObj::Room, GA::Obj::Exit or GA::Obj::MapLabel which is
-        #                   represented by this canvas object
+        #                   represented by this canvas object. 'undef' for coloured blocks or
+        #                   rectangles, which can't be clicked
         #
         # Return values
         #   'undef' on improper arguments
@@ -15171,46 +17714,60 @@
         my ($xPos, $yPos);
 
         # Check for improper arguments
-        if (! defined $type || ! defined $canvasObj || ! defined $modelObj || defined $check) {
+        if (! defined $type || ! defined $canvasObj || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupCanvasObjEvent', @_);
         }
 
-        $canvasObj->signal_connect (event => sub {
+        $canvasObj->signal_connect('event' => sub {
 
             my ($obj, $event) = @_;
 
             # Get the coordinates of the click on the canvas (required for dragging operations)
             ($xPos, $yPos) = $canvasObj->parent->w2i($event->coords());
 
-            # Process left- or right-clicks on a canvas object
-            if ($event->type eq 'button-press' || $event->type eq '2button-press') {
+            # Coloured blocks/rectangles can't be clicked; treat a click on one of these canvas
+            #   objects as if it was a click on the map background
+            if (! $modelObj) {
 
-                # If the Alt-Gr key is pressed down (or if we're in drag mode), it's a drag
-                #   operation
-                if ($event->state =~ m/mod5-mask/ || $self->dragModeFlag) {
+                $self->canvasEventHandler($canvasObj, $event);
 
-                    $self->startDrag($type, $canvasObj, $modelObj, $event, $xPos, $yPos);
-
-                } else {
-
-                    # All other clicks on a canvas object are handled by the event handler
-                    $self->canvasObjEventHandler($type, $canvasObj, $modelObj, $event);
-                }
+            # For left-clicks, if the Alt-Gr key is pressed down (or if we're in drag mode), it's a
+            #   drag operation
+            } elsif (
+                $event->type eq 'button-press'
+                && $event->button == 1
+                && ($event->state =~ m/mod5-mask/ || $self->dragModeFlag)
+            ) {
+                $self->startDrag($type, $canvasObj, $modelObj, $event, $xPos, $yPos);
 
             } elsif (
                 $event->type eq 'button-release'
-                && $self->dragFlag && $canvasObj eq $self->dragCanvasObj
+                && $self->dragFlag
+                && (
+                    $canvasObj eq $self->dragCanvasObj
+                    # When dragging labels with a box, there are two canvas objects
+                    || $self->ivFind('dragCanvasObjList', $canvasObj)
+                )
             ) {
                 # Respond to the end of a drag operation
                 $self->stopDrag($event, $xPos, $yPos);
+
+            # All other clicks on a canvas object are handled by the event handler
+            } elsif ($event->type eq 'button-press' || $event->type eq '2button-press') {
+
+                $self->canvasObjEventHandler($type, $canvasObj, $modelObj, $event);
 
             # Process mouse events - when the mouse moves over a canvas object, or leaves it -
             #   in order to display tooltips, etc
             } elsif (
                 $event->type eq 'motion-notify'
                 && $self->dragFlag
-                && $canvasObj eq $self->dragCanvasObj
+                && (
+                    $canvasObj eq $self->dragCanvasObj
+                    # When dragging labels with a box, there are two canvas objects
+                    || $self->ivFind('dragCanvasObjList', $canvasObj)
+                )
                 && $event->state =~ m/button1-mask/
             ) {
                 # Continue the drag operation by re-drawing the object(s) at their new position
@@ -15230,6 +17787,7 @@
                 && $self->canvasTooltipObj eq $obj
                 && $self->canvasTooltipObjType eq $type
             ) {
+                # Hide the tooltips window
                 $self->hideTooltips();
             }
         });
@@ -15241,7 +17799,8 @@
     sub canvasEventHandler {
 
         # Handles events on the map background (i.e. clicking on an empty part of the background
-        #   which doesn't contain a room, room tag, room guild, exit, exit tag or label)
+        #   which doesn't contain a room, room tag, room guild, exit, exit tag, label, or checked
+        #   direction)
         # The calling function, an anonymous sub defined in $self->setupCanvasEvent, filters out the
         #   signals we don't want
         # At the moment, the signals let through the filter are:
@@ -15262,8 +17821,8 @@
         my (
             $clickXPosPixels, $clickYPosPixels, $clickType, $button, $shiftFlag, $ctrlFlag,
             $clickXPosBlocks, $clickYPosBlocks, $newRoomObj, $roomNum, $roomObj,
-            $borderCornerXPosPixels, $borderCornerYPosPixels, $exitObj, $result,
-            $result2, $twinExitObj, $popupMenu,
+            $borderCornerXPosPixels, $borderCornerYPosPixels, $exitObj, $listRef, $result, $result2,
+            $twinExitObj, $popupMenu,
         );
 
         # Check for improper arguments
@@ -15287,8 +17846,8 @@
         #   fractional values, so we need to use int()
         ($clickXPosPixels, $clickYPosPixels) = (int($event->x), int($event->y));
 
-        # For mouse button clicks, get the click type (single- or double-click) and whether or not
-        #   the SHIFT and/or CTRL keys were held down
+        # For mouse button clicks, get the click type and whether or not the SHIFT and/or CTRL keys
+        #   were held down
         ($clickType, $button, $shiftFlag, $ctrlFlag) = $self->checkMouseClick($event);
         if (! $clickType) {
 
@@ -15302,19 +17861,22 @@
             $clickYPosPixels
         );
 
-        # If $self->freeClickMode isn't set to 'default', left-clicking on empty space causes
-        #   something unusual to happen
-        if ($clickType eq 'single' && $button eq 'left' && $self->freeClickMode ne 'default') {
-
-            # Free click mode 1 - 'Add room at click' menu option
+        # If $self->freeClickMode and/or $self->bgColourMode aren't set to 'default', left-clicking
+        #   on empty space causes something unusual to happen
+        if (
+            $clickType eq 'single'
+            && $button eq 'left'
+            && ($self->freeClickMode ne 'default' || $self->bgColourMode ne 'default')
+        ) {
+            # Free click mode 'add_room' - 'Add room at click' menu option
             # (NB If this code is altered, the equivalent code in ->enableCanvasPopupMenu must also
             #   be altered)
             if ($self->freeClickMode eq 'add_room') {
 
                 # Only add one new room
-                $self->ivPoke('freeClickMode', 'default');
+                $self->reset_freeClickMode();
 
-                $newRoomObj = $self->createNewRoom(
+                $newRoomObj = $self->mapObj->createNewRoom(
                     $self->currentRegionmap,
                     $clickXPosBlocks,
                     $clickYPosBlocks,
@@ -15329,40 +17891,50 @@
                     FALSE,              # Select this object; unselect all other objects
                 );
 
-            # Free click mode 2 - 'Connect exit to click' menu option
-            } elsif (
-                $self->freeClickMode eq 'connect_exit'
-                && $clickType eq 'single'
-                && $button eq 'left'
-            ) {
+            # Free click mode 'connect_exit' - 'Connect exit to click' menu option
+            } elsif ($self->freeClickMode eq 'connect_exit') {
+
                 # If the user has selected the 'Connect exit to click' menu option,
                 #   $self->freeClickMode has been set; since this part of the grid is not occupied,
                 #   we can cancel it now
-                $self->ivPoke('freeClickMode', 'default');
+                $self->reset_freeClickMode();
 
-            # Free click mode 3 - 'Add label at click' menu option
-            } elsif (
-                $self->freeClickMode eq 'add_label'
-                && $clickType eq 'single'
-                && $button eq 'left'
-            ) {
+            # Free click mode 'add_label' - 'Add label at click' menu option
+            } elsif ($self->freeClickMode eq 'add_label') {
+
                 $self->addLabelAtClickCallback($clickXPosPixels, $clickYPosPixels);
 
                 # Only add one new label
-                $self->ivPoke('freeClickMode', 'default');
+                $self->reset_freeClickMode();
 
-            # Free click mode 4 - 'Move selected rooms to  click' menu option
-            } elsif (
-                $self->freeClickMode eq 'move_room'
-                && $clickType eq 'single'
-                && $button eq 'left'
-            ) {
+            # Free click mode 'move_room' - 'Move selected rooms to click' menu option
+            } elsif ($self->freeClickMode eq 'move_room') {
+
                 $self->moveRoomsToClick($clickXPosBlocks, $clickYPosBlocks);
 
                 # Only do it once
-                $self->ivPoke('freeClickMode', 'default');
+                $self->reset_freeClickMode();
+
+            # Background colour mode 'square_start' (no menu option)
+            } elsif ($self->freeClickMode eq 'default' && $self->bgColourMode eq 'square_start') {
+
+                $self->setColouredSquare($clickXPosBlocks, $clickYPosBlocks);
+
+            # Background colour mode 'rect_start' (no menu option)
+            } elsif ($self->freeClickMode eq 'default' && $self->bgColourMode eq 'rect_start') {
+
+                # Store the coordinates of the click, and wait for the second click
+                $self->ivPoke('bgColourMode', 'rect_stop');
+                $self->ivPoke('bgRectXPos', $clickXPosBlocks);
+                $self->ivPoke('bgRectYPos', $clickYPosBlocks);
+
+            # Background colour mode 'rect_stop' (no menu option)
+            } elsif ($self->freeClickMode eq 'default' && $self->bgColourMode eq 'rect_stop') {
+
+                $self->setColouredRect($clickXPosBlocks, $clickYPosBlocks);
             }
 
+            # Non-default operation complete
             return 1;
         }
 
@@ -15432,7 +18004,7 @@
         } elsif ($roomObj && $self->drawnExitHash) {
 
             # Usually, when we click on the map on an empty pixel, all selected objects are
-            #   unselected.
+            #   unselected
             # However, because exits are often drawn only 1 pixel wide, they're quite difficult to
             #   click on. This section checks whether the mouse click occured close enough to an
             #   exit
@@ -15446,7 +18018,26 @@
             $exitObj = $self->findClickedExit($clickXPosPixels, $clickYPosPixels, $roomObj);
             if ($exitObj) {
 
-                if ($button eq 'left') {
+                if (
+                    $clickType eq 'single'
+                    && $button eq 'left'
+                    && $event->state =~ m/mod5-mask/
+                ) {
+                    # This is a drag operation on the nearby exit
+                    $listRef = $self->ivShow('drawnExitHash', $exitObj->number);
+                    if (defined $listRef) {
+
+                        $self->startDrag(
+                            'exit',
+                            $$listRef[0],        # The exit's canvas object
+                            $exitObj,
+                            $event,
+                            $clickXPosPixels,
+                            $clickYPosPixels,
+                        );
+                    }
+
+                } elsif ($button eq 'left') {
 
                     # If this exit (and/or its twin) is a selected exit, unselect them
                     $result = $self->unselectObj($exitObj);
@@ -15474,7 +18065,7 @@
                 } elsif ($button eq 'right') {
 
                     # Select the exit, unselecting all other selected objects
-                    $self->setSelectedObj(
+                   $self->setSelectedObj(
                         [$exitObj, 'exit'],
                         FALSE,          # Select this object; unselect all other objects
                     );
@@ -15498,8 +18089,7 @@
             }
         }
 
-        # Otherwise, the user clicked in open space. Unselect all selected objects
-        $self->setSelectedObj();
+        # Otherwise, the user clicked in open space
 
         # If it was a right-click, open a popup menu
         if ($clickType eq 'single' && $button eq 'right') {
@@ -15519,6 +18109,23 @@
                     $event->time,
                 );
             }
+
+        # If it was a left-click, it's potentially a selection box operation
+        } elsif ($clickType eq 'single' && $button eq 'left') {
+
+            # The selection box isn't actually drawn until the user moves their mouse. If they
+            #   release the button instead, at that point we unselect all selected objects
+            $self->startSelectBox($clickXPosPixels, $clickYPosPixels);
+
+        } elsif ($clickType eq 'release' && $button eq 'left' && $self->selectBoxFlag) {
+
+            # Handle the end of the selection box operation
+            $self->stopSelectBox($event, $clickXPosPixels, $clickYPosPixels);
+
+        } else {
+
+            # In all other situations, just unselect all selected objects
+            $self->setSelectedObj();
         }
 
         return 1;
@@ -15527,11 +18134,12 @@
     sub canvasObjEventHandler {
 
         # Handles events on canvas object (i.e. clicking on a room, room tag, room guild, exit,
-        #   exit tag or label)
+        #   exit tag or label). Note that clicks on canvas objects for checked directions are
+        #   ignored; they are not handled by this function nor by $self->canvasEventHandler
         # The calling function, an anonymous sub defined in $self->setupCanvasObjEvent, filters out
         #   the signals we don't want
         # At the moment, the signals let through the filter are:
-        #   button_press, 2button_press,
+        #   button_press, 2button_press
         #
         # Expected arguments
         #   $objType    - 'room', 'room_tag', 'room_guild', 'exit', 'exit_tag' or 'label'
@@ -15571,11 +18179,11 @@
         #   occupied, we can go back to normal
         if ($self->freeClickMode eq 'add_room' || $self->freeClickMode eq 'add_label') {
 
-            $self->ivPoke('freeClickMode', 'default');
+            $self->reset_freeClickMode();
         }
 
-        # For mouse button clicks, get the click type (single- or double-click) and whether or not
-        #   the SHIFT and/or CTRL keys were held down
+        # For mouse button clicks, get the click type and whether or not the SHIFT and/or CTRL keys
+        #   were held down
         ($clickType, $button, $shiftFlag, $ctrlFlag) = $self->checkMouseClick($event);
         if (! $clickType) {
 
@@ -15594,7 +18202,7 @@
                 #   should get reset, but not in these situations
                 if (! $self->selectedExit) {
 
-                    $self->ivPoke('freeClickMode', 'default');
+                    $self->reset_freeClickMode();
 
                 } else {
 
@@ -15615,7 +18223,7 @@
                     }
 
                     # Only do it once
-                    $self->ivPoke('freeClickMode', 'default');
+                    $self->reset_freeClickMode();
                 }
 
             # Process a left-clicked room differently, if ->freeClickMode has been set to
@@ -15626,7 +18234,7 @@
                 $self->moveRoomsToExit($modelObj);
 
                 # Only do it once
-                $self->ivPoke('freeClickMode', 'default');
+                $self->reset_freeClickMode();
 
             # Process left-clicked rooms (ignoring the CTRL key, but checking for the SHIFT key)
             } elsif (
@@ -15977,7 +18585,8 @@
 
     sub startDrag {
 
-        # Called by $self->setupCanvasObjEvent at the start of a drag operation
+        # Called by $self->setupCanvasObjEvent and ->canvasEventHandler at the start of a drag
+        #   operation
         # Grabs the clicked canvas object and sets up IVs
         #
         # Expected arguments
@@ -15996,11 +18605,7 @@
         my ($self, $type, $canvasObj, $modelObj, $event, $xPos, $yPos, $check) = @_;
 
         # Local variables
-        my (
-            $mode, $posn, $listRef, $fakeRoomObj, $twinExitObj, $bendNum, $bendIndex, $twinBendNum,
-            $twinBendIndex,
-            @offsetList,
-        );
+        my (@canvasObjList, @fakeRoomList);
 
         # Check for improper arguments
         if (
@@ -16026,9 +18631,11 @@
 
         if ($type eq 'room') {
 
-            # If the room has been drawn emphasised (a normal box with a border, plus an extra
+            my $mode;
+
+            # If the room(s) have been drawn emphasised (a normal box with a border, plus an extra
             #   square just outside it, in the same colour as the border, giving the impression of a
-            #   thicker border), we need to re-draw it without emphasis - otherwise the extra
+            #   thicker border), we need to re-draw them without emphasis - otherwise the extra
             #   square will be left behind on the canvas, while the room is being dragged around
             if ($self->worldModelObj->drawExitMode eq 'ask_regionmap') {
                 $mode = $self->currentRegionmap->drawExitMode;
@@ -16036,29 +18643,93 @@
                 $mode = $self->worldModelObj->drawExitMode;
             }
 
-            # The TRUE argument means 'don't draw an emphasised room'
-            $self->drawRoom($modelObj, $mode, TRUE);
-
-            # Get the canvas object which has just been drawn
-            $posn = $modelObj->xPosBlocks . '_' . $modelObj->yPosBlocks . '_'
-                        . $modelObj->zPosBlocks;
-            $listRef = $self->ivShow('drawnRoomHash', $posn);
-            $canvasObj = $$listRef[0];
-
-            # Raise the canvas object above others so that, while we're dragging it around, it
-            #   doesn't disappear under exits (and so on)
-            $canvasObj->raise_to_top();
-
-            # Draw a fake room at the same position, so that $modelObj's exits don't look odd
-            $fakeRoomObj = $self->drawFakeRoomBox($modelObj);
-            if ($fakeRoomObj) {
-
-                $self->ivPoke('dragFakeRoomObj', $fakeRoomObj);
-                # Update Gtk2's events queue
-                $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->startDrag');
+            # Check that the room is selected. If not, we need to select it (which unselects any
+            #   other selected rooms/labels)
+            if (
+                ($self->selectedRoom && $self->selectedRoom ne $modelObj)
+                || (
+                    $self->selectedRoomHash
+                    && ! $self->ivExists('selectedRoomHash', $modelObj->number)
+                )
+                || (! $self->selectedRoom && ! $self->selectedRoomHash)
+            ) {
+                $self->setSelectedObj([$modelObj, 'room']);
             }
 
+            # If multiple rooms/labels are selected, they are all dragged alongside $canvasObj (as
+            #   long as they're in the same region as $roomObj)
+            foreach my $roomObj ($self->compileSelectedRooms) {
+
+                my ($listRef, $thisCanvasObj, $fakeRoomObj);
+
+                # If the rooms are in the same region...
+                if ($roomObj->parent == $modelObj->parent) {
+
+                    # Redraw the room to remove an emphasised border, as before
+                    $self->drawRoom($roomObj, $mode, TRUE);
+
+                    $listRef = $self->ivShow(
+                        'drawnRoomHash',
+                        $roomObj->xPosBlocks . '_' . $roomObj->yPosBlocks . '_'
+                        . $roomObj->zPosBlocks,
+                    );
+
+                    $thisCanvasObj = $$listRef[0];
+                    push (@canvasObjList, $thisCanvasObj);
+
+                    if ($roomObj eq $modelObj) {
+
+                        # This canvas object replaces the one that is actually being dragged/grabbed
+                        $canvasObj = $thisCanvasObj;
+                    }
+
+                    # Draw a fake room at the same position, so that $modelObj's exits don't look
+                    #   odd
+                    $fakeRoomObj = $self->drawFakeRoomBox($roomObj);
+                    if ($fakeRoomObj) {
+
+                        push (@fakeRoomList, $fakeRoomObj);
+
+                        # Don't let the fake room object be obscured by room echos
+                        $fakeRoomObj->raise_to_top();
+                    }
+
+                    # Raise the canvas object above others so that, while we're dragging it around,
+                    #   it doesn't disappear under exits (and so on)
+                    $thisCanvasObj->raise_to_top();
+                }
+            }
+
+            foreach my $labelObj ($self->compileSelectedLabels) {
+
+                my ($region, $listRef, $thisCanvasObj, $thisCanvasObj2);
+
+                # Drag both the label and its box (if it has one), as long as it's in the same
+                #   region
+                $region = $self->currentRegionmap->name;
+
+                if ($labelObj->region eq $region) {
+
+                    $listRef = $self->ivShow('drawnLabelHash', $labelObj->number);
+                    ($thisCanvasObj, $thisCanvasObj2) = @$listRef;
+
+                    if ($thisCanvasObj2) {
+
+                        push (@canvasObjList, $thisCanvasObj2);
+                        $thisCanvasObj2->raise_to_top();
+                    }
+
+                    push (@canvasObjList, $thisCanvasObj);
+                    $thisCanvasObj->raise_to_top();
+                }
+            }
+
+            # Update Gtk2's events queue
+            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->startDrag');
+
         } elsif ($type eq 'exit') {
+
+            my ($twinExitObj, $bendNum, $bendIndex, $twinBendNum, $twinBendIndex);
 
             if ($modelObj->twinExit) {
 
@@ -16116,7 +18787,7 @@
                     && (
                         (! $twinExitObj->brokenFlag || $twinExitObj->bentFlag)
                         && ! $twinExitObj->regionFlag
-                        && ! $twinExitObj->impassFlag
+                        && $twinExitObj->exitOrnament ne 'impass'
                     )
                 ) {
                     $self->deleteCanvasObj('exit', $twinExitObj);
@@ -16129,29 +18800,52 @@
                 $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->startDrag');
             }
 
+            push (@canvasObjList, $canvasObj);
+
+        } elsif ($type eq 'label' && $modelObj->boxFlag) {
+
+            my $listRef;
+
+            # If the label has a box, the user might have clicked on either the label or the box.
+            #   In either case, both objects need to be dragged
+            $listRef = $self->ivShow('drawnLabelHash', $modelObj->number);
+
+            foreach my $thisCanvasObj (reverse @$listRef) {
+
+                push (@canvasObjList, $thisCanvasObj);
+                $thisCanvasObj->raise_to_top();         # Text last, raised above box
+            }
+
+            # The canvas object to grab is always the label text, not the box (as $self->stopDrag
+            #   works out the distance using the label text)
+            $canvasObj = $$listRef[0];
+
         } else {
 
-            # For room tags, room guilds, exit tags and labels, just raise the canvas object above
-            #   others
+            # For room tags, room guilds, exit tags and labels without boxes, just raise the canvas
+            #   object above others
+            push (@canvasObjList, $canvasObj);
             $canvasObj->raise_to_top();
         }
 
-        # Grab the canvas object
+        # Grab the dragged canvas object
         $canvasObj->grab(
             [qw/pointer-motion-mask button-release-mask/],
             Gtk2::Gdk::Cursor->new('fleur'),
             $event->time,
         );
 
-        # Mark the drag as started, and store the canvas object's initial configuration
+        # Mark the drag as started, and update IVs (the IVs for bent exits have already been set)
         $self->ivPoke('dragFlag', TRUE);
         $self->ivPoke('dragCanvasObj', $canvasObj);
+        $self->ivPoke('dragCanvasObjList', @canvasObjList);
         $self->ivPoke('dragModelObj', $modelObj);
         $self->ivPoke('dragModelObjType', $type);
         $self->ivPoke('dragInitXPos', $xPos);
         $self->ivPoke('dragInitYPos', $yPos);
         $self->ivPoke('dragCurrentXPos', $xPos);
         $self->ivPoke('dragCurrentYPos', $yPos);
+        $self->ivPoke('dragFakeRoomList', @fakeRoomList);
 
         return 1;
     }
@@ -16172,7 +18866,7 @@
         my ($self, $event, $xPos, $yPos, $check) = @_;
 
         # Local variables
-        my ($listRef, $canvasObj, $twinExitObj);
+        my ($moveX, $moveY, $twinExitObj, $listRef, $canvasObj);
 
         # Check for improper arguments
         if (! defined $event || ! defined $xPos || ! defined $yPos || defined $check) {
@@ -16180,21 +18874,36 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->continueDrag', @_);
         }
 
+        # Don't do anything if an earlier call to this function hasn't been completed (happens quite
+        #   a lot if the user is dragging objects around rapidly, and it messes up the correct value
+        #   of $self->dragCurrentXPos and ->dragCurrentYPos)
+        if ($self->dragContinueFlag) {
+
+            return undef;
+
+        } else {
+
+            $self->ivPoke('dragContinueFlag', TRUE);
+        }
+
         # Gtk2 can return fractional values for $xPos, $yPos. We definitely want only integers
         $xPos = int($xPos);
         $yPos = int($yPos);
 
-        # For everything except exits, move the canvas object
+        # For everything except exits, move the canvas object(s)
         if ($self->dragModelObjType ne 'exit') {
 
-            $self->dragCanvasObj->move(
-                ($xPos - $self->dragCurrentXPos),
-                ($yPos - $self->dragCurrentYPos),
-            );
+            $moveX = $xPos - $self->dragCurrentXPos;
+            $moveY = $yPos - $self->dragCurrentYPos;
+
+            foreach my $canvasObj ($self->dragCanvasObjList) {
+
+                $canvasObj->move($moveX, $moveY);
+            }
 
         } else {
 
-            # Ungrab the canvas object
+            # Ungrab the exit's canvas object
             $self->dragCanvasObj->ungrab($event->time);
 
             # If dragging an exit bend...
@@ -16259,12 +18968,13 @@
             $self->ivPoke('dragCanvasObj', $canvasObj);
         }
 
-        # Show the canvas object in its new position
+        # Show the canvas object(s) in their new position
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->continueDrag');
 
         # Update IVs
         $self->ivPoke('dragCurrentXPos', $xPos);
         $self->ivPoke('dragCurrentYPos', $yPos);
+        $self->ivPoke('dragContinueFlag', FALSE);
 
         return 1;
     }
@@ -16284,7 +18994,7 @@
         my ($self, $event, $xPos, $yPos, $check) = @_;
 
         # Local variables
-        my ($destRoomObj, $newXPos, $newYPos);
+        my @drawList;
 
         # Check for improper arguments
         if (! defined $event || ! defined $xPos || ! defined $yPos || defined $check) {
@@ -16296,54 +19006,154 @@
         $xPos = int($xPos);
         $yPos = int($yPos);
 
-        # Ungrab the canvas object
+        # Ungrab the grabbed canvas object
         $self->dragCanvasObj->ungrab($event->time);
 
         # Mark the drag operation as finished
         $self->ivPoke('dragFlag', FALSE);
 
-        # Respond to the drag & drop
+        # Respond to the end of the drag operation
         if ($self->dragModelObjType eq 'room') {
 
-            # Destroy the fake room canvas object at the original position (if there is one)
-            if ($self->dragFakeRoomObj) {
+            my (
+                $newXPos, $newYPos, $adjustXPos, $adjustYPos, $failFlag,
+                %roomHash, %labelHash,
+            );
 
-                $self->dragFakeRoomObj->destroy();
+            # Destroy any fake room canvas objects
+            foreach my $fakeRoomObj ($self->dragFakeRoomList) {
+
+                $fakeRoomObj->destroy();
             }
 
-            # Calculate the coordinate of the room's new gridblock
+            # Calculate the grid coordinates of the dragged room's new gridblock
             $newXPos = int ($self->dragCurrentXPos / $self->currentRegionmap->blockWidthPixels);
             $newYPos = int ($self->dragCurrentYPos / $self->currentRegionmap->blockHeightPixels);
+            # Calculate the distance travelled (in blocks)
+            $adjustXPos = $newXPos
+                - int ($self->dragInitXPos / $self->currentRegionmap->blockWidthPixels);
+            $adjustYPos = $newYPos
+                - int ($self->dragInitYPos / $self->currentRegionmap->blockHeightPixels);
 
-            # Check that the new gridblock isn't occupied
-            if (
-                $self->currentRegionmap->fetchRoom(
-                    $newXPos,
-                    $newYPos,
-                    $self->currentRegionmap->currentLevel,
-                )
-            ) {
-                # The room has been dragged to the same gridblock, or the new gridblock is occupied;
-                #   in both cases, don't move the room; just redraw it at its original position
-                $self->doDraw('room', $self->dragModelObj);
+            # If the grabbed room hasn't been dragged to a new gridblock, don't do anything
+            if (! $adjustXPos && ! $adjustYPos) {
 
+                # Just redraw the dragged room(s)/label(s) at their original position
+                foreach my $roomObj ($self->compileSelectedRooms) {
+
+                    push (@drawList, 'room', $roomObj);
+                }
+
+                foreach my $labelObj ($self->compileSelectedLabels) {
+
+                    push (@drawList, 'label', $labelObj);
+                }
+
+                $self->doDraw(@drawList);
+
+            # If a single room and no labels are selected...
+            } elsif ($self->selectedRoom && ! $self->selectedLabel && ! $self->selectedLabelHash) {
+
+                # Check that the new gridblock isn't occupied
+                if (
+                    $self->currentRegionmap->fetchRoom(
+                        $newXPos,
+                        $newYPos,
+                        $self->currentRegionmap->currentLevel,
+                    )
+                ) {
+                    # The room has been dragged to an occupied gridblock. Don't move the room, just
+                    #   redraw it at its original position
+                    $self->doDraw('room', $self->dragModelObj);
+
+                } else {
+
+                    # Select the room
+                    $self->setSelectedObj(
+                        [$self->dragModelObj, 'room'],
+                        FALSE,                      # Select this object; unselect all other objects
+                    );
+
+                    # Move the (selected) room to its new location
+                    $self->moveSelectedObjs(
+                        ($newXPos - $self->dragModelObj->xPosBlocks),
+                        ($newYPos - $self->dragModelObj->yPosBlocks),
+                        0,      # Room doesn't change level
+                    );
+                }
+
+            # Multiple rooms and/or labels are selected; move all of them the same distance
             } else {
 
-                # Select the room
-                $self->setSelectedObj(
-                    [$self->dragModelObj, 'room'],
-                    FALSE,                      # Select this object; unselect all other objects
-                );
+                # Start by creating combined hashes, merging two IVs into one hash
+                %roomHash = $self->selectedRoomHash;
+                if ($self->selectedRoom) {
 
-                # Move the (selected) room to its new location
-                $self->moveSelectedObjs(
-                    ($newXPos - $self->dragModelObj->xPosBlocks),
-                    ($newYPos - $self->dragModelObj->yPosBlocks),
-                    0,      # Room doesn't change level
-                );
+                    $roomHash{$self->seletedRoom->number} = $self->selectedRoom;
+                }
+
+                %labelHash = $self->selectedLabelHash;
+                if ($self->selectedLabel) {
+
+                    $labelHash{$self->selectedLabel->number} = $self->selectedLabel;
+                }
+
+                # Check every room to make sure it's been dragged to a new, unoccupied gridblock
+                OUTER: foreach my $roomObj (values %roomHash) {
+
+                    my $existRoomNum = $self->currentRegionmap->fetchRoom(
+                        $roomObj->xPosBlocks + $adjustXPos,
+                        $roomObj->yPosBlocks + $adjustYPos,
+                        $self->currentRegionmap->currentLevel,
+                    );
+
+                    if (defined $existRoomNum && ! exists $roomHash{$existRoomNum}) {
+
+                        # At least one of the gridblocks is occupied by a room that's not going
+                        #   to be moved along with all the others
+                        $failFlag = TRUE;
+                        last OUTER;
+                    }
+                }
+
+                if ($failFlag) {
+
+                    # One or more of the selected rooms have been dragged to a gridblock occupied by
+                    #   a room that isn't one of those being moved
+                    # Don't move anything, just redraw the selected rooms/labels at their original
+                    #   positions
+                    foreach my $roomObj ($self->compileSelectedRooms) {
+
+                        push (@drawList, 'room', $roomObj);
+                    }
+
+                    foreach my $labelObj ($self->compileSelectedLabels) {
+
+                        push (@drawList, 'label', $labelObj);
+                    }
+
+                    $self->doDraw(@drawList);
+
+                } else {
+
+                    # Move all selected rooms to their new locations
+                    $self->worldModelObj->moveRoomsLabels(
+                        $self->session,
+                        TRUE,                       # Update Automapper windows now
+                        $self->currentRegionmap,    # Move from this region...
+                        $self->currentRegionmap,    # ...to this one...
+                        $adjustXPos,                # ...using this vector
+                        $adjustYPos,
+                        0,                          # No vertical displacement
+                        \%roomHash,
+                        \%labelHash,
+                    );
+                }
             }
 
         } elsif ($self->dragModelObjType eq 'exit') {
+
+            my $destRoomObj;
 
             # Don't need to do anything at the end of a drag operation, if we're dragging an exit
             #   bend
@@ -16372,6 +19182,8 @@
 
         } else {
 
+            my ($newXPos, $newYPos);
+
             # Work out the difference between the new position and the original position
             $newXPos = int ($self->dragCurrentXPos - $self->dragInitXPos);
             $newYPos = int ($self->dragCurrentYPos - $self->dragInitYPos);
@@ -16386,15 +19198,16 @@
             );
         }
 
-        # Reset other IVs
+        # Reset other IVs (->dragFlag was set above)
         $self->ivUndef('dragCanvasObj');
+        $self->ivEmpty('dragCanvasObjList');
         $self->ivUndef('dragModelObj');
         $self->ivUndef('dragModelObjType');
         $self->ivUndef('dragInitXPos');
         $self->ivUndef('dragInitYPos');
         $self->ivUndef('dragCurrentXPos');
         $self->ivUndef('dragCurrentYPos');
-        $self->ivUndef('dragFakeRoomObj');
+        $self->ivEmpty('dragFakeRoomList');
         $self->ivUndef('dragBendNum');
         $self->ivUndef('dragBendInitXPos');
         $self->ivUndef('dragBendInitYPos');
@@ -16402,6 +19215,201 @@
         $self->ivUndef('dragBendTwinInitXPos');
         $self->ivUndef('dragBendTwinInitYPos');
         $self->ivUndef('dragExitDrawMode');
+
+        return 1;
+    }
+
+    sub startSelectBox {
+
+        # Called by $self->canvasEventHandler
+        # When the user holds down their left mouse button on an empty area of the map, and then
+        #   moves their mouse, we draw a selection box. When the user releases the mouse button,
+        #   all rooms and labels inside the box are selected
+        # When this function is called, the user has merely left-clicked the empty area of the map.
+        #   This function initialises IVs. We don't actually draw the selection box until the user
+        #   moves their mouse while holding down the left mouse button
+        #
+        # Expected arguments
+        #   $xPos, $yPos    - The coordinates of the click on the canvas
+        #
+        # Return values
+        #   'undef' on improper arguments or if a selection box operation has already started
+        #   1 otherwise
+
+        my ($self, $xPos, $yPos, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $xPos || ! defined $yPos || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->startSelectBox', @_);
+        }
+
+        # Double-clicking on a canvas object can cause this function to be called twice; the second
+        #   time, don't do anything
+        if ($self->selectBoxFlag) {
+
+            return undef;
+        }
+
+        # If the tooltips are visible, hide them
+        $self->hideTooltips();
+
+        # Initialise IVs
+        $self->ivPoke('selectBoxFlag', TRUE);
+        $self->ivUndef('selectBoxCanvasObj');
+        $self->ivPoke('selectBoxInitXPos', $xPos);
+        $self->ivPoke('selectBoxInitYPos', $yPos);
+        $self->ivPoke('selectBoxCurrentXPos', $xPos);
+        $self->ivPoke('selectBoxCurrentYPos', $yPos);
+
+        return 1;
+    }
+
+    sub continueSelectBox {
+
+        # Called by $self->setupCanvasEvent
+        # Draws (or redraws) the selection box, after an earlier call to ->startSelectBox started
+        #   the operation
+        #
+        # Expected arguments
+        #   $event      - The Gtk2::Gdk::Event that caused the signal
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $event, $check) = @_;
+
+        # Local variables
+        my ($x1, $y1, $x2, $y2, $canvasObj);
+
+        # Check for improper arguments
+        if (! defined $event || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->continueSelectBox', @_);
+        }
+
+        # Deleting the existing canvas object (if one has already been drawn)
+        if ($self->selectBoxCanvasObj) {
+
+            # No need to call $self->deleteCanvasObj - the canvas object we're drawing doesn't
+            #   represent anything in the world model
+            $self->selectBoxCanvasObj->destroy();
+        }
+
+        # Set the selection box's coordinates
+        $x1 = $self->selectBoxInitXPos;
+        $y1 = $self->selectBoxInitYPos;
+        ($x2, $y2) = (int($event->x), int($event->y));
+
+        # If the user has somehow moved the mouse to the exact original location, don't draw a new
+        #   canvas object at all (but the operation continues until the user releases the mouse
+        #   button)
+        if ($x1 == $x2 && $y1 == $y2) {
+
+            $self->ivUndef('selectBoxCanvasObj');
+
+        } else {
+
+            # Swap values so that ($x1, $y1) represents the top-left corner of the selection box,
+            #   and ($x2, $y2) represents the bottom-right corner
+            if ($x1 > $x2) {
+
+                ($x1, $x2) = ($x2, $x1);
+            }
+
+            if ($y1 > $y2) {
+
+                ($y1, $y2) = ($y2, $y1);
+            }
+
+            # Draw the new canvas object
+            $canvasObj = Gnome2::Canvas::Item->new(
+                $self->canvasRoot,
+                'Gnome2::Canvas::Rect',
+                x1 => $x1,
+                y1 => $y1,
+                x2 => $x2,
+                y2 => $y2,
+                outline_color => $self->worldModelObj->selectBoxColour,
+            );
+
+            # Move it above everything else
+            $canvasObj->raise_to_top();
+
+            $self->ivPoke('selectBoxCanvasObj', $canvasObj);
+        }
+
+        # Update remaining IVs
+        $self->ivPoke('selectBoxCurrentXPos', int($event->x));
+        $self->ivPoke('selectBoxCurrentYPos', int($event->y));
+
+        return 1;
+    }
+
+    sub stopSelectBox {
+
+        # Called by $self->canvasEventHandler
+        # Terminates the selection box operation. Destroys the canvas object, updates IVs and calls
+        #   $self->selectAllInBox to handle selecting any objects within the selection box
+        #
+        # Expected arguments
+        #   $event          - The Gtk2::Gdk::Event that caused the signal
+        #   $xPos, $yPos    - The coordinates of the release-click on the canvas
+        #
+        # Return values
+        #   'undef' on improper arguments or if no selection box has been drawn yet
+        #   1 otherwise
+
+        my ($self, $event, $xPos, $yPos, $check) = @_;
+
+        # Local variables
+        my ($x1, $y1, $x2, $y2);
+
+        # Check for improper arguments
+        if (! defined $event || ! defined $xPos || ! defined $yPos || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->stopSelectBox', @_);
+        }
+
+        # If the user hasn't actually moved their mouse while the left mouse button was held down,
+        #   then no selection box was drawn. Just unselect all selected objects
+        if (! $self->selectBoxCanvasObj) {
+
+            $self->setSelectedObj();
+
+        } else {
+
+            $self->selectBoxCanvasObj->destroy();
+
+            $x1 = $self->selectBoxInitXPos;
+            $y1 = $self->selectBoxInitYPos;
+            $x2 = $self->selectBoxCurrentXPos;
+            $y2 = $self->selectBoxCurrentYPos;
+
+            # Again, swap values so that ($x1, $y1) represents the top-left corner of the selection
+            #   box, and ($x2, $y2) represents the bottom-right corner
+            if ($x1 > $x2) {
+
+                ($x1, $x2) = ($x2, $x1);
+            }
+
+            if ($y1 > $y2) {
+
+                ($y1, $y2) = ($y2, $y1);
+            }
+
+            # Select everything within that zone
+            $self->selectAllInBox($event, $x1, $y1, $x2, $y2);
+        }
+
+        # In either case, must reset IVs
+        $self->ivPoke('selectBoxFlag', FALSE);
+        $self->ivUndef('selectBoxCanvasObj');
+        $self->ivUndef('selectBoxInitXPos');
+        $self->ivUndef('selectBoxInitYPos');
+        $self->ivUndef('selectBoxCurrentXPos');
+        $self->ivUndef('selectBoxCurrentYPos');
 
         return 1;
     }
@@ -16789,6 +19797,173 @@
         return 1;
     }
 
+    sub selectAllInBox {
+
+        # Called by $self->stopSelectBox
+        # After the user has specified an area of the map, get a list of rooms and/or labels within
+        #   that area, and select them
+        #
+        # Expected arguments
+        #   $event          - The Gtk2::Gdk::Event that caused the signal
+        #   $x1, $y1        - Canvas coordinates of the top-left corner of the selection box
+        #   $x2, $y2        - Coordinates of the bottom-right corner
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $event, $x1, $y1, $x2, $y2, $check) = @_;
+
+        # Local variables
+        my (
+            $level, $coord, $xBlocks1, $yBlocks1, $xBlocks2, $yBlocks2, $mode, $borderX1, $borderY1,
+            $borderX2, $borderY2,
+            @selectList,
+            %roomHash,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $event || ! defined $x1 || ! defined $y1 || ! defined $x2 || ! defined $y2
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->selectAllInBox', @_);
+        }
+
+        # Import the world model's room hash (for speed)
+        %roomHash = $self->worldModelObj->roomModelHash;
+        # Import the current level (for speed)
+        $level = $self->currentRegionmap->currentLevel;
+
+        # Convert canvas (pixel) coordinates to gridblock coordinates
+        ($xBlocks1, $yBlocks1) = $self->findGridBlock($x1, $y1);
+        ($xBlocks2, $yBlocks2) = $self->findGridBlock($x2, $y2);
+
+        # Get the position of a room's border drawn within its gridblock
+        if ($self->worldModelObj->drawExitMode eq 'ask_regionmap') {
+            $mode = $self->currentRegionmap->drawExitMode;
+        } else {
+            $mode = $self->worldModelObj->drawExitMode;
+        }
+
+        # The coordinates of the pixel at the top-left corner of the room box
+        if ($mode eq 'no_exit') {
+
+            # Draw exit mode 'no_exit': The room takes up the whole gridblock
+            $borderX1 = 0;
+            $borderY1 = 0;
+            $borderX2 = $self->currentRegionmap->blockWidthPixels - 1;
+            $borderY2 = $self->currentRegionmap->blockHeigthPixels - 1;
+
+        } else {
+
+            # Draw exit modes 'simple_exit'/'complex_exit': The room takes up the central part of
+            #   the gridblock
+            $borderX1 = int(
+                (
+                    $self->currentRegionmap->blockWidthPixels
+                        - $self->currentRegionmap->roomWidthPixels
+                ) / 2
+            );
+
+            $borderY1 = int(
+                (
+                    $self->currentRegionmap->blockHeightPixels
+                        - $self->currentRegionmap->roomHeightPixels
+                ) / 2
+            );
+
+            $borderX2 = $borderX1 + $self->currentRegionmap->roomWidthPixels - 1;
+            $borderY2 = $borderX1 + $self->currentRegionmap->roomHeightPixels - 1;
+        }
+
+        if ($xBlocks1 == $xBlocks2 && $yBlocks1 == $yBlocks2) {
+
+            # Special case - if it's only one block, then don't check every room in the region
+            $coord = $xBlocks1 . '_' . $xBlocks2 . '_' . $level;
+            if ($self->currentRegionmap->ivExists('gridRoomHash', $coord)) {
+
+
+                my $roomNum = $self->currentRegionmap->ivShow('gridRoomHash', $coord);
+
+                push (
+                    @selectList,
+                    $self->worldModelObj->ivShow(
+                        'modelHash',
+                        $self->currentRegionmap->ivShow('gridRoomHash', $coord),
+                    ),
+                    'room',
+                );
+            }
+
+        } else {
+
+            # Find of rooms that are wholly or partially within the selection box
+            foreach my $roomNum ($self->currentRegionmap->ivValues('gridRoomHash')) {
+
+                my ($roomObj, $roomXBlocks, $roomYBlocks);
+
+                $roomObj = $roomHash{$roomNum};
+
+                if ($roomObj && $roomObj->zPosBlocks == $level) {
+
+                    $roomXBlocks = $roomObj->xPosBlocks * $self->currentRegionmap->blockWidthPixels;
+                    $roomYBlocks
+                        = $roomObj->yPosBlocks * $self->currentRegionmap->blockHeightPixels;
+
+                    if (
+                        ($roomXBlocks + $borderX1) <= $x2
+                        && ($roomXBlocks + $borderX2) >= $x1
+                        && ($roomYBlocks + $borderY1) <= $y2
+                        && ($roomYBlocks + $borderY2) >= $y1
+                    ) {
+                        push (@selectList, $roomObj, 'room');
+                    }
+                }
+            }
+
+            # Find a list of labels whose start position is within the selection box
+            foreach my $labelObj ($self->currentRegionmap->ivValues('gridLabelHash')) {
+
+                my ($listRef, $canvasObj, $labelX1, $labelY1, $labelX2, $labelY2);
+
+                $listRef = $self->ivShow('drawnLabelHash', $labelObj->number);
+                if (defined $listRef && $labelObj->level == $level) {
+
+                    # If the label has a box, use the boundaries of the box; otherwise use the
+                    #   boundaries of the label text
+                    if ($labelObj->boxFlag && defined $$listRef[1]) {
+                        $canvasObj = $$listRef[1];
+                    } else {
+                        $canvasObj = $$listRef[0];
+                    }
+
+                    ($labelX1, $labelY1, $labelX2, $labelY2) = $canvasObj->get_bounds();
+
+                    if (
+                        $labelX1 <= $x2
+                        && $labelX2 >= $x1
+                        && $labelY1 <= $y2
+                        && $labelY2 >= $y1
+                    ) {
+                        push (@selectList, $labelObj, 'label');
+                    }
+                }
+            }
+        }
+
+        # Search complete. If the CTRL keys are held down, add the rooms/labels to any objects which
+        #   are already selected; otherwise select just these objects
+        if (! ($event->state =~ m/control-mask/)) {
+
+            $self->setSelectedObj();
+        }
+
+        $self->setSelectedObj(\@selectList, TRUE);
+
+        return 1;
+    }
+
     sub checkMouseClick {
 
         # Called by $self->canvasEventHandler and ->canvasObjEventHandler
@@ -16801,9 +19976,10 @@
         #
         # Return values
         #   An empty list on improper arguments, or if $event wasn't cause by a single, double or
-        #       triple-mouse click (but by something else - mouse motion, perhaps)
+        #       triple-mouse click, or by the user releasing the mouse button but by something else
+        #       - mouse motion, perhaps
         #   Otherwise, returns a list in the form ($clickType, $button, $shiftFlag, $ctrlFlag):
-        #       $clickType  - 'single', 'double' or 'triple'
+        #       $clickType  - 'single', 'double' or 'triple' or 'release'
         #       $button     - 'left' or 'right'
         #       $shiftFlag  - Set to TRUE if the SHIFT key was held down during the click, set to
         #                       FALSE otherwise
@@ -16825,7 +20001,7 @@
             return @emptyList;
         }
 
-        # Set the type of click (single or double; ignore triple clicks)
+        # Set the type of click
         if ($event->type eq 'button-press') {
 
             $clickType = 'single';
@@ -16837,6 +20013,10 @@
         } elsif ($event->type eq '3button-press') {
 
             $clickType = 'triple';
+
+        } elsif ($event->type eq 'button-release') {
+
+            $clickType = 'release';
 
         } else {
 
@@ -16881,18 +20061,30 @@
         #
         # When a region object, room object, room tag, room guild, exit, exit tag or label is being
         #   drawn, redrawn or deleted from the world model, this function must be called
-        # This function checks whether the model object is currently displayed on the map as one or
+        # The function checks whether the model object is currently displayed on the map as one or
         #   more canvas objects and, if it is, destroys the canvas objects
+        #
+        # This function also handles coloured blocks and rectangles on the background map, details
+        #   of which are stored in the regionmap object (GA::Obj::Regionmap), not the world model
+        # The function checks whether a canvas object for the coloured block/rectangle is currently
+        #   displayed on the map as a canvas object and, if so, destroys the canvas object
         #
         # Expected arguments
         #   $type       - Set to 'region', 'room', 'room_tag', 'room_guild', 'exit', 'exit_tag' or
-        #                   'label'
+        #                   'label' for world model objects, 'checked_dir' for checked directions
+        #                   (which are not world model objects), and 'square', 'rect' for coloured
+        #                   blocks/rectangles
         #   $modelObj   - The GA::ModelObj::Region, GA::ModelObj::Room, GA::Obj::Exit or
         #                   GA::Obj::MapLabel being drawn /redrawn / deleted
+        #               - For checked directions, the GA::ModelObj::Room in which the checked
+        #                   direction is stored
+        #               - For coloured blocks, it's not a blessed reference, but a coordinate in the
+        #                   form 'x_y'. For coloured rectangles, it's a GA::Obj::GridColour
         #
         # Optional arguments
         #   $deleteFlag - Set to TRUE if the object is being deleted from the world model, FALSE
-        #                  (or 'undef') if not
+        #                   (or 'undef') if not. Never TRUE for coloured blocks/rectangles which
+        #                   are not stored in the world model
         #
         # Return values
         #   'undef' on improper arguments, if there is no current regionmap or if the model object
@@ -16903,7 +20095,7 @@
 
         # Local variables
         my (
-            $regionName, $regionmapObj, $posn, $listRef, $roomObj, $twinModelObj,
+            $regionName, $regionmapObj, $posn, $listRef, $roomObj, $twinModelObj, $thisCanvasObj,
             @redrawList,
             %redrawHash,
         );
@@ -16914,341 +20106,409 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteCanvasObj', @_);
         }
 
-        if ($self->currentRegionmap) {
+        if (! $self->currentRegionmap) {
 
-            # Handle a region deletion
-            if ($type eq 'region' && $deleteFlag) {
+            # No current regionmap, so no canvas objects can exist
+            return undef;
+        }
 
-                # Reset the treeview, so that the deleted region is no longer visible in it
-                $self->resetTreeView();
+        # Handle a region deletion
+        if ($type eq 'region' && $deleteFlag) {
 
-                # Because we can be sure that all of the region's children have now been deleted,
-                #   we can go ahead and redraw the current regionmap right away
-                $regionName = $modelObj->name;
-                $regionmapObj = $self->worldModelObj->ivShow('regionmapHash', $regionName);
+            # Reset the treeview, so that the deleted region is no longer visible in it
+            $self->resetTreeView();
 
-                if ($regionmapObj && $regionmapObj eq $self->currentRegionmap) {
+            # Because we can be sure that all of the region's children have now been deleted, we can
+            #   go ahead and redraw the current regionmap right away
+            $regionName = $modelObj->name;
+            $regionmapObj = $self->worldModelObj->ivShow('regionmapHash', $regionName);
 
-                    # The currently displayed region was the one deleted. Redraw the canvas with no
-                    #   map displayed
-                    $self->resetMap(FALSE);
+            if ($regionmapObj && $regionmapObj eq $self->currentRegionmap) {
 
-                } else {
-
-                    # Redraw all rooms containing region exits (which automatically redraws the
-                    #   exits)
-                    if ($self->currentRegionmap->regionExitHash) {
-
-                        # The same room can have more than one region exit; add affected rooms
-                        #   to a hash to eliminate duplicates
-                        foreach my $number ($self->currentRegionmap->ivKeys('regionExitHash')) {
-
-                            my $exitObj = $self->worldModelObj->ivShow('exitModelHash', $number);
-                            if ($exitObj) {
-
-                                $redrawHash{$exitObj->parent} = undef;
-                            }
-                        }
-
-                        # Having eliminated duplicates, compile the list of rooms to redraw
-                        foreach my $number (keys %redrawHash) {
-
-                            my $thisRoomObj = $self->worldModelObj->ivShow('modelHash', $number);
-                            if ($thisRoomObj) {
-
-                                push (@redrawList, 'room', $thisRoomObj);
-                            }
-                        }
-
-                        # Redraw the affected rooms
-                        $self->doDraw(@redrawList);
-
-                        # Sensitise/desensitise menu bar/toolbar items, depending on current
-                        #   conditions
-                        $self->restrictWidgets();
-                    }
-                }
-
-            # Handle a room draw/redraw/deletion
-            } elsif ($type eq 'room') {
-
-                if ($deleteFlag) {
-
-                    # Unselect the room, if selected
-                    $self->unselectObj(
-                        $modelObj,
-                        undef,          # A room, not a room tag or room guild
-                        TRUE,           # No re-draw
-                    );
-                }
-
-                # Get a string representing the room's position
-                if (! defined $modelObj->xPosBlocks) {
-
-                    # No canvas object to remove
-                    return undef;
-
-                } else {
-
-                    $posn = $modelObj->xPosBlocks . '_' . $modelObj->yPosBlocks . '_'
-                                . $modelObj->zPosBlocks;
-                }
-
-                # See if the room has been drawn on the current map by looking up its canvas object
-                if ($self->ivExists('drawnRoomHash', $posn)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnRoomHash', $posn);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnRoomHash', $posn);
-                    # (If there's an entry in the hash containing a sub-set of key-value pairs from
-                    #   $self->drawnRoomHash, delete that entry, too)
-                    $self->ivDelete('dummyRoomHash', $posn);
-                }
-
-                if ($self->ivExists('drawnRoomEchoHash', $posn)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnRoomEchoHash', $posn);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnRoomEchoHash', $posn);
-                }
-
-                # Delete the associated room tag, if there is one
-                if ($self->ivExists('drawnRoomTagHash', $posn)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnRoomTagHash', $posn);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnRoomTagHash', $posn);
-                }
-
-                # Delete the associated room guild, if there is one
-                if ($self->ivExists('drawnRoomGuildHash', $posn)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnRoomGuildHash', $posn);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnRoomGuildHash', $posn);
-                }
-
-                # Delete one or more associated room text items (the text drawn in the room's
-                #   interior), if there are any
-                if ($self->ivExists('drawnRoomTextHash', $posn)) {
-
-                    $listRef = $self->ivShow('drawnRoomTextHash', $posn);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnRoomTextHash', $posn);
-                }
-
-            # Handle a room tag deletion
-            } elsif ($type eq 'room_tag') {
-
-                if ($deleteFlag) {
-
-                    # Unselect the room tag, if selected
-                    $self->unselectObj(
-                        $modelObj,
-                        'room_tag',
-                        TRUE,           # No re-draw
-                    );
-                }
-
-                # Get a string representing the room's position
-                if (! defined $modelObj->xPosBlocks) {
-
-                    # No canvas object to remove
-                    return undef;
-
-                } else {
-
-                    $posn = $modelObj->xPosBlocks . '_' . $modelObj->yPosBlocks . '_'
-                                . $modelObj->zPosBlocks;
-                }
-
-                # See if the room tag has been drawn on the current map by looking up its canvas
-                #   object
-                if ($self->ivExists('drawnRoomTagHash', $posn)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnRoomTagHash', $posn);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnRoomTagHash', $posn);
-                }
-
-            # Handle a room guild deletion
-            } elsif ($type eq 'room_guild') {
-
-                if ($deleteFlag) {
-
-                    # Unselect the room guild, if selected
-                    $self->unselectObj(
-                        $modelObj,
-                        'room_guild',
-                        TRUE,           # No re-draw
-                    );
-                }
-
-                # Get a string representing the room's position
-                if (! defined $modelObj->xPosBlocks) {
-
-                    # No canvas object to remove
-                    return undef;
-
-                } else {
-
-                    $posn = $modelObj->xPosBlocks . '_' . $modelObj->yPosBlocks . '_'
-                                . $modelObj->zPosBlocks;
-                }
-
-                # See if the room guild has been drawn on the current map by looking up its canvas
-                #   object
-                if ($self->ivExists('drawnRoomGuildHash', $posn)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnRoomGuildHash', $posn);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnRoomGuildHash', $posn);
-                }
-
-            # Handle an exit deletion
-            } elsif ($type eq 'exit') {
-
-                # Unselect the exit, if selected
-                if ($deleteFlag) {
-
-                    $self->unselectObj(
-                        $modelObj,
-                        undef,          # An exit, not an exit tag
-                        TRUE,           # No re-draw
-                    );
-                }
-
-                # See if the exit has been drawn on the current map by looking up its canvas object
-                if ($self->ivExists('drawnExitHash', $modelObj->number)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnExitHash', $modelObj->number);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnExitHash', $modelObj->number);
-                }
-
-                # Delete the associated exit tag, if there is one
-                if ($self->ivExists('drawnExitTagHash', $modelObj->number)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnExitTagHash', $modelObj->number);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnExitTagHash', $modelObj->number);
-                }
-
-                # Delete the associated exit ornaments, if there are any
-                if ($self->ivExists('drawnOrnamentHash', $modelObj->number)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnOrnamentHash', $modelObj->number);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnOrnamentHash', $modelObj->number);
-                }
-
-            # Handle an exit tag deletion
-            } elsif ($type eq 'exit_tag') {
-
-                if ($deleteFlag) {
-
-                    # Unselect the exit tag, if selected
-                    $self->unselectObj(
-                        $modelObj,
-                        'exit_tag',
-                        TRUE,           # No re-draw
-                    );
-                }
-
-                # See if the eixt tag has been drawn on the current map by looking up its canvas
-                #   object
-                if ($self->ivExists('drawnExitTagHash', $modelObj->number)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnExitTagHash', $modelObj->number);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnExitTagHash', $modelObj->number);
-                }
-
-            # Handle a label deletion
-            } elsif ($type eq 'label') {
-
-                if ($deleteFlag) {
-
-                    # Unselect the label, if selected
-                    $self->unselectObj(
-                        $modelObj,
-                        undef,          # A label, not a room tag or room guild
-                        TRUE,           # No re-draw
-                    );
-                }
-
-                # See if the label has been drawn on the current map by looking up its canvas object
-                if ($self->ivExists('drawnLabelHash', $modelObj->number)) {
-
-                    # Delete these canvas objects
-                    $listRef = $self->ivShow('drawnLabelHash', $modelObj->number);
-                    foreach my $canvasObj (@$listRef) {
-
-                        $canvasObj->destroy();
-                    }
-
-                    $self->ivDelete('drawnLabelHash', $modelObj->number);
-                }
+                # The currently displayed region was the one deleted. Redraw the canvas with no map
+                #   displayed
+                $self->resetMap(FALSE);
 
             } else {
 
-                # Unrecognised object type
-                return undef;
+                # Redraw all rooms containing region exits (which automatically redraws the exits)
+                if ($self->currentRegionmap->regionExitHash) {
+
+                    # The same room can have more than one region exit; add affected rooms to a hash
+                    #   to eliminate duplicates
+                    foreach my $number ($self->currentRegionmap->ivKeys('regionExitHash')) {
+
+                        my $exitObj = $self->worldModelObj->ivShow('exitModelHash', $number);
+                        if ($exitObj) {
+
+                            $redrawHash{$exitObj->parent} = undef;
+                        }
+                    }
+
+                    # Having eliminated duplicates, compile the list of rooms to redraw
+                    foreach my $number (keys %redrawHash) {
+
+                        my $thisRoomObj = $self->worldModelObj->ivShow('modelHash', $number);
+                        if ($thisRoomObj) {
+
+                            push (@redrawList, 'room', $thisRoomObj);
+                        }
+                    }
+
+                    # Redraw the affected rooms
+                    $self->doDraw(@redrawList);
+
+                    # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+                    $self->restrictWidgets();
+                }
             }
+
+        # Handle a room draw/redraw/deletion
+        } elsif ($type eq 'room') {
+
+            if ($deleteFlag) {
+
+                # Unselect the room, if selected
+                $self->unselectObj(
+                    $modelObj,
+                    undef,          # A room, not a room tag or room guild
+                    TRUE,           # No re-draw
+                );
+            }
+
+            # Get a string representing the room's position
+            if (! defined $modelObj->xPosBlocks) {
+
+                # No canvas object to remove
+                return undef;
+
+            } else {
+
+                $posn = $modelObj->xPosBlocks . '_' . $modelObj->yPosBlocks . '_'
+                            . $modelObj->zPosBlocks;
+            }
+
+            # See if the room has been drawn on the current map by looking up its canvas object
+            $listRef = $self->ivShow('drawnRoomHash', $posn);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnRoomHash', $posn);
+                # (If there's an entry in the hash containing a sub-set of key-value pairs from
+                #   $self->drawnRoomHash, delete that entry, too)
+                $self->ivDelete('dummyRoomHash', $posn);
+            }
+
+            $listRef = $self->ivShow('drawnRoomEchoHash', $posn);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnRoomEchoHash', $posn);
+            }
+
+            # Delete the associated room tag, if there is one
+            $listRef = $self->ivShow('drawnRoomTagHash', $posn);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnRoomTagHash', $posn);
+            }
+
+            # Delete the associated room guild, if there is one
+            $listRef = $self->ivShow('drawnRoomGuildHash', $posn);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnRoomGuildHash', $posn);
+            }
+
+            # Delete one or more associated room text items (the text drawn in the room's interior),
+            #   if there are any
+            $listRef = $self->ivShow('drawnRoomTextHash', $posn);
+            if (defined $listRef) {
+
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnRoomTextHash', $posn);
+            }
+
+            # Delete one or more associated checked directions, if there are any
+            $listRef = $self->ivShow('drawnCheckedDirHash', $posn);
+            if (defined $listRef) {
+
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnCheckedDirHash', $posn);
+            }
+
+        # Handle a room tag deletion
+        } elsif ($type eq 'room_tag') {
+
+            if ($deleteFlag) {
+
+                # Unselect the room tag, if selected
+                $self->unselectObj(
+                    $modelObj,
+                    'room_tag',
+                    TRUE,           # No re-draw
+                );
+            }
+
+            # Get a string representing the room's position
+            if (! defined $modelObj->xPosBlocks) {
+
+                # No canvas object to remove
+                return undef;
+
+            } else {
+
+                $posn = $modelObj->xPosBlocks . '_' . $modelObj->yPosBlocks . '_'
+                            . $modelObj->zPosBlocks;
+            }
+
+            # See if the room tag has been drawn on the current map by looking up its canvas object
+            $listRef = $self->ivShow('drawnRoomTagHash', $posn);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnRoomTagHash', $posn);
+            }
+
+        # Handle a room guild deletion
+        } elsif ($type eq 'room_guild') {
+
+            if ($deleteFlag) {
+
+                # Unselect the room guild, if selected
+                $self->unselectObj(
+                    $modelObj,
+                    'room_guild',
+                    TRUE,           # No re-draw
+                );
+            }
+
+            # Get a string representing the room's position
+            if (! defined $modelObj->xPosBlocks) {
+
+                # No canvas object to remove
+                return undef;
+
+            } else {
+
+                $posn = $modelObj->xPosBlocks . '_' . $modelObj->yPosBlocks . '_'
+                            . $modelObj->zPosBlocks;
+            }
+
+            # See if the room guild has been drawn on the current map by looking up its canvas
+            #   object
+            $listRef = $self->ivShow('drawnRoomGuildHash', $posn);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnRoomGuildHash', $posn);
+            }
+
+        # Handle an exit deletion
+        } elsif ($type eq 'exit') {
+
+            # Unselect the exit, if selected
+            if ($deleteFlag) {
+
+                $self->unselectObj(
+                    $modelObj,
+                    undef,          # An exit, not an exit tag
+                    TRUE,           # No re-draw
+                );
+            }
+
+            # See if the exit has been drawn on the current map by looking up its canvas object
+            $listRef = $self->ivShow('drawnExitHash', $modelObj->number);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnExitHash', $modelObj->number);
+            }
+
+            # Delete the associated exit tag, if there is one
+            $listRef = $self->ivShow('drawnExitTagHash', $modelObj->number);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnExitTagHash', $modelObj->number);
+            }
+
+            # Delete the associated exit ornaments, if there are any
+            $listRef = $self->ivShow('drawnOrnamentHash', $modelObj->number);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnOrnamentHash', $modelObj->number);
+            }
+
+        # Handle an exit tag deletion
+        } elsif ($type eq 'exit_tag') {
+
+            if ($deleteFlag) {
+
+                # Unselect the exit tag, if selected
+                $self->unselectObj(
+                    $modelObj,
+                    'exit_tag',
+                    TRUE,           # No re-draw
+                );
+            }
+
+            # See if the eixt tag has been drawn on the current map by looking up its canvas object
+            $listRef = $self->ivShow('drawnExitTagHash', $modelObj->number);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnExitTagHash', $modelObj->number);
+            }
+
+        # Handle a label deletion
+        } elsif ($type eq 'label') {
+
+            if ($deleteFlag) {
+
+                # Unselect the label, if selected
+                $self->unselectObj(
+                    $modelObj,
+                    undef,          # A label, not a room tag or room guild
+                    TRUE,           # No re-draw
+                );
+            }
+
+            # See if the label has been drawn on the current map by looking up its canvas object
+            $listRef = $self->ivShow('drawnLabelHash', $modelObj->number);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnLabelHash', $modelObj->number);
+            }
+
+        # Handle a checked direction deletion
+        } elsif ($type eq 'checked_dir') {
+
+            # (Checked directions can't be selected)
+
+            # Get a string representing the room's position
+            if (! defined $modelObj->xPosBlocks) {
+
+                # No canvas object to remove
+                return undef;
+
+            } else {
+
+                $posn = $modelObj->xPosBlocks . '_' . $modelObj->yPosBlocks . '_'
+                            . $modelObj->zPosBlocks;
+            }
+
+            # See if the room has any checked directions drawn on the current map by looking up
+            #   their canvas objects
+            $listRef = $self->ivShow('drawnCheckedDirHash', $posn);
+            if (defined $listRef) {
+
+                # Delete these canvas objects
+                foreach my $canvasObj (@$listRef) {
+
+                    $canvasObj->destroy();
+                }
+
+                $self->ivDelete('drawnCheckedDirHash', $posn);
+            }
+
+        # Handle a coloured block deletion
+        } elsif ($type eq 'square') {
+
+            # See if the coloured block exists as a canvas object on the current map
+            # NB In this case, $modelObj is a coordinate in the form 'x_y', not a world model object
+            $thisCanvasObj = $self->ivShow('colouredSquareHash', $modelObj);
+            if ($thisCanvasObj) {
+
+                # Delete this canvas object
+                $thisCanvasObj->destroy;
+                $self->ivDelete('colouredSquareHash', $modelObj);
+            }
+
+        # Handle a coloured rectangle deletion
+        } elsif ($type eq 'rect') {
+
+            # See if the coloured rectangle exists as a canvas object on the current map
+            # NB In this case, $modelObj is a GA::Obj::GridColour object, not a world model object
+            $thisCanvasObj = $self->ivShow('colouredRectHash', $modelObj->number);
+            if ($thisCanvasObj) {
+
+                # Delete this canvas object
+                $thisCanvasObj->destroy;
+                $self->ivDelete('colouredRectHash', $modelObj->number);
+            }
+
+        } else {
+
+            # Unrecognised object type
+            return undef;
         }
 
         return 1;
@@ -17354,7 +20614,7 @@
         # Local variables
         my (
             $label, $vNum, $name, $area, $worldX, $worldY, $worldZ, $text, $flag, $standardDir,
-            $abbrevDir, $parentRoomObj, $destRoomObj, $twinExitObj, $xPos, $yPos,
+            $abbrevDir, $parentRoomObj, $destRoomObj, $twinExitObj, $xPos, $yPos, $modText,
         );
 
         # Check for improper arguments
@@ -17474,6 +20734,17 @@
                 $label .= "\n(No description available)";
             }
 
+            # Show room notes (if set)
+            if ($self->worldModelObj->showNotesFlag && $modelObj->notesList) {
+
+                $text = $axmud::CLIENT->trimWhitespace(join(' ', $modelObj->notesList), TRUE);
+
+                # Split the text into five lines of no more than 40 characters, appending an
+                #   ellipsis
+                $text = $self->splitText($text, 5, 40, TRUE);
+                $label .= "\n(N) " . $text;
+            }
+
         } elsif ($type eq 'room_tag') {
 
             $label = "Room tag \'" . $modelObj->roomTag . "\'";
@@ -17535,9 +20806,9 @@
                             . "\'";
             }
 
-            if ($modelObj->info) {
+            if ($modelObj->exitInfo) {
 
-                $label .= "\n  Info: " . $modelObj->info;
+                $label .= "\n  Info: " . $modelObj->exitInfo;
             }
 
         } elsif ($type eq 'exit_tag') {
@@ -17553,7 +20824,20 @@
             $yPos = int($modelObj->yPosPixels / $self->currentRegionmap->blockHeightPixels);
             $label .= " (" . $xPos . ", " . $yPos . ", " . $modelObj->level . ")";
 
-            $label .= "\n  \'" . $modelObj->name . "\'";
+            if (! defined $modelObj->style) {
+                $label .= "\nStyle: <custom>";
+            } else {
+                $label .= "\nStyle: \'" . $modelObj->style . "\'";
+            }
+
+            # (The text can include a lot of empty space and newline characters, so strip all of
+            #   that)
+            $modText = $modelObj->name;
+            $modText =~ s/^[\s\n]*//;
+            $modText =~ s/[\s\n]*$//;
+            $modText =~ s/[\s\n]+/ /;
+
+            $label .= "\nText: \'" . $modelObj->name . "\'";
 
         } else {
 
@@ -17607,31 +20891,40 @@
         }
 
         # Split the text
-        until ((length $line) <= $columns || scalar @array >= $rows) {
+        until ($line eq '' || (scalar @array) >= $rows) {
 
             my $i = 0;
 
-            # The line is going to be split near character number $columns. Find the space (or tab)
-            #   nearest to the end of the line
-            OUTER: for ($i = $columns; $i > 0; $i--) {
+            if (length($line) <= $columns) {
 
-                if (substr($line, $i, 1) eq " " || substr($line, $i, 1) eq "\t") {
+                # No need to split anything (and this is the final iteration)
+                push(@array, $line);
+                $line = '';
 
-                    last OUTER;
-                }
-            }
-
-            # A space (or tab) was found. Split the line there
-            if ($i > 1) {
-
-                push @array, substr($line, 0, $i);
-                $line = substr($line, ($i + 1));
-
-            # There is no space at which the line can be split. Split a word (using a hyphen)
             } else {
 
-                push @array, substr($line, 0, ($columns) . '-');
-                $line = substr($line, $columns);
+                # The line is going to be split near character number $columns. Find the space (or
+                #   tab) nearest to the end of the line
+                OUTER: for ($i = $columns; $i > 0; $i--) {
+
+                    if (substr($line, $i, 1) eq " " || substr($line, $i, 1) eq "\t") {
+
+                        last OUTER;
+                    }
+                }
+
+                # A space (or tab) was found. Split the line there
+                if ($i > 1) {
+
+                    push @array, substr($line, 0, $i);
+                    $line = substr($line, ($i + 1));
+
+                # There is no space at which the line can be split. Split a word (using a hyphen)
+                } else {
+
+                    push @array, substr($line, 0, ($columns) . '-');
+                    $line = substr($line, $columns);
+                }
             }
         }
 
@@ -17786,14 +21079,14 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $obj    - Set to 'room', 'exit', 'room_tag', 'room_guild', or 'label'. If not defined,
+        #   $type   - Set to 'room', 'exit', 'room_tag', 'room_guild', or 'label'. If not defined,
         #               selects everything
         #
         # Return values
         #   'undef' on improper arguments or if the standard callback check fails
         #   1 otherwise
 
-        my ($self, $obj, $check) = @_;
+        my ($self, $type, $check) = @_;
 
         # Local variables
         my (
@@ -17827,35 +21120,35 @@
         $self->ivEmpty('selectedLabelHash');
 
         # Select all rooms, exits, room tags, room guilds and/or labels
-        if (! defined $obj || $obj eq 'room') {
+        if (! defined $type || $type eq 'room') {
 
             # $self->currentRegionmap->gridRoomHash contains all the rooms in the regionmap
             # Get a list of world model numbers for each room
             @roomList = $self->currentRegionmap->ivValues('gridRoomHash');
         }
 
-        if (! defined $obj || $obj eq 'exit') {
+        if (! defined $type || $type eq 'exit') {
 
             # ->gridExitHash contains all the drawn exits
             # Get a list of exit model numbers for each exit
             @exitList = $self->currentRegionmap->ivKeys('gridExitHash');
         }
 
-        if (! defined $obj || $obj eq 'room_tag') {
+        if (! defined $type || $type eq 'room_tag') {
 
             # ->gridRoomTagHash contains all the rooms with room tags
             # Get a list of world model numbers for the rooms containing room tag
             @roomTagList = $self->currentRegionmap->ivValues('gridRoomTagHash');
         }
 
-        if (! defined $obj || $obj eq 'room_guild') {
+        if (! defined $type || $type eq 'room_guild') {
 
             # ->gridRoomGuildHash contains all the rooms with room guilds
             # Get a list of world model numbers for the roomw containing room guilds
             @roomGuildList = $self->currentRegionmap->ivValues('gridRoomGuildHash');
         }
 
-        if (! defined $obj || $obj eq 'label') {
+        if (! defined $type || $type eq 'label') {
 
             # ->gridLabelHash contains all the labels
             # Get a list of blessed references to GA::Obj::MapLabel objects
@@ -17956,6 +21249,460 @@
         return 1;
     }
 
+    sub selectRoomCallback {
+
+        # Called by $self->enableEditColumn
+        # Selects certain rooms
+        #
+        # Expected arguments
+        #   $type   - Set to 'no_title', 'no_descrip', 'no_title_descrip', 'title_descrip',
+        #               'no_visit_char', 'no_visit_all', 'visit_char', 'visit_all', 'checkable'
+        #
+        # Return values
+        #   'undef' on improper arguments, if the standard callback check fails or if no matching
+        #       rooms are found
+        #   1 otherwise
+
+        my ($self, $type, $check) = @_;
+
+        # Local variables
+        my (
+            $title, $msg,
+            @roomList, @selectList,
+            %dirHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $type || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->selectRoomCallback', @_);
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
+
+        # Import a list of all rooms in the current region (for convenience)
+        foreach my $roomNum ($self->currentRegionmap->ivValues('gridRoomHash')) {
+
+            my $roomObj = $self->worldModelObj->ivShow('roomModelHash', $roomNum);
+            if ($roomObj) {
+
+                push (@roomList, $roomObj);
+            }
+        }
+
+        # Compile a list of matching rooms
+        if ($type eq 'no_title') {
+
+            $title = 'Select rooms with no titles';
+
+            foreach my $roomObj (@roomList) {
+
+                if ($roomObj && ! $roomObj->titleList) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+
+        } elsif ($type eq 'no_descrip') {
+
+            $title = 'Select rooms with no descriptions';
+
+            foreach my $roomObj (@roomList) {
+
+                if (! $roomObj->descripHash) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+
+        } elsif ($type eq 'no_title_descrip') {
+
+            $title = 'Select rooms with no titles or descriptions';
+
+            foreach my $roomObj (@roomList) {
+
+                if (! $roomObj->titleList && ! $roomObj->descripHash) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+
+        } elsif ($type eq 'title_descrip') {
+
+            $title = 'Select rooms with titles and descriptions';
+
+            foreach my $roomObj (@roomList) {
+
+                if ($roomObj->titleList && $roomObj->descripHash) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+
+        } elsif ($type eq 'no_visit_char' && $self->session->currentChar) {
+
+            $title = 'Select unvisited rooms';
+
+            foreach my $roomObj (@roomList) {
+
+                if (! $roomObj->ivShow('visitHash', $self->session->currentChar->name)) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+
+        } elsif ($type eq 'no_visit_all') {
+
+            $title = 'Select unvisited rooms';
+
+            foreach my $roomObj (@roomList) {
+
+                if (! $roomObj->visitHash) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+
+        } elsif ($type eq 'visit_char' && $self->session->currentChar) {
+
+            $title = 'Select visited rooms';
+
+            foreach my $roomObj (@roomList) {
+
+                if ($roomObj->ivShow('visitHash', $self->session->currentChar->name)) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+
+        } elsif ($type eq 'visit_all') {
+
+            $title = 'Select visited rooms';
+
+            foreach my $roomObj (@roomList) {
+
+                if ($roomObj->visitHash) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+
+        } elsif ($type eq 'checkable') {
+
+            $title = 'Select rooms with checkable directions';
+
+            # Get a hash of custom primary directions which can be checked in each room
+            %dirHash = $self->worldModelObj->getCheckableDirs($self->session);
+
+            foreach my $roomObj (@roomList) {
+
+                my %checkHash = %dirHash;
+
+                foreach my $dir ($roomObj->ivKeys('checkedDirHash')) {
+
+                    delete $checkHash{$dir};
+                }
+
+                foreach my $dir ($roomObj->sortedExitList) {
+
+                    delete $checkHash{$dir};
+                }
+
+                if (%checkHash) {
+
+                    push (@selectList, $roomObj, 'room');
+                }
+            }
+        }
+
+        # Show a confirmation in both cases. Even if matching rooms are found, they might not be
+        #   visible
+        if (! @selectList) {
+
+            $self->showMsgDialogue(
+                $title,
+                'error',
+                'No matching rooms found in this region',
+                'ok',
+            );
+
+            return undef;
+
+        } else {
+
+            # Make sure nothing is selected
+            $self->setSelectedObj();
+
+            # Select matching rooms
+            $self->setSelectedObj(\@selectList, TRUE);
+
+            if (@selectList == 2) {
+                $msg = '1 matching room found in this region';
+            } else {
+                $msg = ((scalar @selectList) / 2) . ' matching rooms found in this region';
+            }
+
+            $self->showMsgDialogue(
+                $title,
+                'info',
+                $msg,
+                'ok',
+            );
+
+            return 1;
+        }
+    }
+
+    sub selectExitTypeCallback {
+
+        # Called by $self->enableEditColumn
+        # Scours the current map, looking for unallocated, unallocatable, uncertain or incomplete
+        #   exits (or all four of them together)
+        # Once found, selects both the exits and the parent rooms
+        # Finally, displays a 'dialogue' window showing how many were found
+        #
+        # Expected arguments
+        #   $type   - What to search for. Must be either 'in_rooms' 'unallocated', 'unallocatable,
+        #               'uncertain', 'incomplete', 'all_above', 'region' or 'super'
+        #
+        # Return values
+        #   'undef' on improper arguments or if the standard callback check fails
+        #   1 otherwise
+
+        my ($self, $type, $check) = @_;
+
+        # Local variables
+        my (
+            $obj, $number, $title, $text,
+            @exitNumList, @exitObjList,
+            %roomHash, %selectExitHash, %selectRoomHash,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $type
+            || (
+                $type ne 'in_rooms' && $type ne 'uncertain' && $type ne 'incomplete'
+                && $type ne 'unallocated' && $type ne 'unallocatable' && $type ne 'all_above'
+                && $type ne 'region' && $type ne 'super'
+            ) || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->selectExitTypeCallback', @_);
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
+
+        # Compile a list of all exit objects drawn in this map
+        @exitNumList = $self->currentRegionmap->ivKeys('gridExitHash');
+        foreach my $exitNum (@exitNumList) {
+
+            push (@exitObjList, $self->worldModelObj->ivShow('exitModelHash', $exitNum));
+        }
+
+        if ($type eq 'in_rooms') {
+
+            # Import a list of all the selected rooms, and copy them into a hash
+            if ($self->selectedRoom) {
+                $roomHash{$self->selectedRoom->number} = $self->selectedRoom;
+            } else {
+                %roomHash = $self->selectedRoomHash;
+            }
+
+            # Check each selected room in turn, marking all of its exits for selection
+            foreach my $roomObj (values %roomHash) {
+
+                foreach my $exitNum ($roomObj->ivValues('exitNumHash')) {
+
+                    my $exitObj = $self->worldModelObj->ivShow('exitModelHash', $exitNum);
+                    if ($exitObj) {
+
+                        $selectExitHash{$exitNum} = $exitObj;
+                    }
+                }
+            }
+
+        } else {
+
+            # Check each exit in turn. If it's one of the exits for which we're looking, mark it for
+            #   selection
+            OUTER: foreach my $exitObj (@exitObjList) {
+
+                if (
+                    (
+                        ($type eq 'uncertain' || $type eq 'all_above')
+                        && $exitObj->destRoom
+                        && (! $exitObj->twinExit)
+                        && (! $exitObj->oneWayFlag)
+                        && (! $exitObj->retraceFlag)
+                    ) || (
+                        ($type eq 'incomplete' || $type eq 'all_above')
+                        && (! $exitObj->destRoom && $exitObj->randomType eq 'none')
+                    ) || (
+                        ($type eq 'unallocated' || $type eq 'all_above')
+                        && (
+                            $exitObj->drawMode eq 'temp_alloc'
+                            || $exitObj->drawMode eq 'temp_unalloc'
+                        )
+                    ) || (
+                        $type eq 'unallocatable' && $exitObj->drawMode eq 'temp_unalloc'
+                    ) || (
+                        $type eq 'region' && $exitObj->regionFlag
+                    ) || (
+                        $type eq 'super' && $exitObj->superFlag
+                    )
+                ) {
+                    $selectExitHash{$exitObj->number} = $exitObj;
+                    $selectRoomHash{$exitObj->parent}
+                        = $self->worldModelObj->ivShow('modelHash', $exitObj->parent);
+                }
+            }
+        }
+
+        # If anything was marked for selection...
+        if (%selectExitHash) {
+
+            # Since we're going to redraw everything on the map, we'll sidestep the normal call to
+            #   $self->setSelectedObj, and set IVs directly
+
+            # Make sure there are no rooms, exits, room tags or labels selected
+            $self->ivUndef('selectedRoom');
+            $self->ivEmpty('selectedRoomHash');
+            $self->ivUndef('selectedExit');
+            $self->ivEmpty('selectedExitHash');
+            $self->ivUndef('selectedRoomTag');
+            $self->ivEmpty('selectedRoomTagHash');
+            $self->ivUndef('selectedLabel');
+            $self->ivEmpty('selectedLabelHash');
+
+            # Select rooms and exits. (There must be at least one of each, if there are any, so we
+            #   don't ever set ->selectedRoom or ->selectedExit)
+            if (scalar (keys %selectRoomHash) > 1) {
+
+                $self->ivPoke('selectedRoomHash', %selectRoomHash);
+
+            } elsif (%selectRoomHash) {
+
+                ($number) = keys %selectRoomHash;
+                $obj = $self->worldModelObj->ivShow('modelHash', $number);
+                $self->ivAdd('selectedRoomHash', $number, $obj);
+            }
+
+            if (scalar (keys %selectExitHash) > 1) {
+
+                $self->ivPoke('selectedExitHash', %selectExitHash);
+
+            } elsif (%selectExitHash) {
+
+                ($number) = keys %selectExitHash;
+                $obj = $self->worldModelObj->ivShow('exitModelHash', $number);
+                $self->ivAdd('selectedExitHash', $number, $obj);
+            }
+
+            # Redraw the current level, to show all the changes
+            $self->drawRegion();
+
+            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+            $self->restrictWidgets();
+
+            # Show a confirmation of how many uncertain/incomplete exits were found
+            if ($type eq 'in_rooms') {
+
+                $title = 'Selected rooms\' exits';
+
+                # (This will be a shorter string, so keep it on one line)
+                if (scalar (keys %selectExitHash) == 1) {
+                    $text = 'Found 1 exit in ';
+                } else {
+                    $text = 'Found ' . scalar (keys %selectExitHash) . ' exits in ';
+                }
+
+                if (scalar (keys %roomHash) == 1) {
+                    $text .= '1 selected room';
+                } else {
+                    $text .= scalar (keys %roomHash) . ' selected rooms';
+                }
+
+                $text .= ' in this region';
+
+            } else {
+
+                if ($type eq 'all_above') {
+
+                    $title = 'Select exits';
+
+                    # (This will be a longer string, so spread it across two lines)
+                    if (scalar (keys %selectExitHash) == 1) {
+
+                        $text = "Found 1 unallocated/uncertain/incomplete exit\n";
+
+                    } else {
+
+                        $text = "Found " . scalar (keys %selectExitHash) . " unallocated/uncertain/"
+                                . "incomplete exits\n";
+                    }
+
+                } else {
+
+                    $title = 'Select ' . $type . ' exits';
+
+                    # (This will be a shorter string, so keep it on one line)
+                    if (scalar (keys %selectExitHash) == 1) {
+                        $text = "Found 1 $type exit ";
+                    } else {
+                        $text = "Found " . scalar (keys %selectExitHash) . " $type exits ";
+                    }
+                }
+
+                if (scalar (keys %selectRoomHash) == 1) {
+                    $text .= 'in 1 room';
+                } else {
+                    $text .= 'spread across ' . scalar (keys %selectRoomHash) . ' rooms';
+                }
+
+                $text .= ' in this region';
+            }
+
+            $self->showMsgDialogue(
+                $title,
+                'info',
+                $text,
+                'ok',
+            );
+
+        } else {
+
+            # Show a confirmation that there are no uncertain/incomplete exits in this map
+            if ($type eq 'all_above') {
+
+                $title = 'Select exits';
+                $text = "There are no more unallocated, uncertain or\n"
+                    . "incomplete exits in this region";
+
+            } else {
+
+                $title = 'Select ' . $type . ' exits';
+                $text = 'There are no more ' . $type . ' exits in this region';
+            }
+
+            $self->showMsgDialogue(
+                $title,
+                'info',
+                $text,
+                'ok',
+            );
+        }
+
+        return 1;
+    }
+
     sub moveSelectedRoomsCallback {
 
         # Called by $self->enableEditColumn
@@ -17994,7 +21741,7 @@
 
         # Must reset free click mode, so 'move rooms' and 'move rooms to click' can't be combined
         #   accidentally
-        $self->ivPoke('freeClickMode', 'default');
+        $self->reset_freeClickMode();
 
         # Import the current dictionary
         $dictObj = $self->session->currentDict;
@@ -18348,8 +22095,8 @@
         #   (none besides $self)
         #
         # Return values
-        #   'undef' on improper arguments, if the user chooses 'cancel' in the 'dialogue' window or
-        #       if no characters/regions are found
+        #   'undef' on improper arguments, if the standard callback check fails, if the user chooses
+        #       'cancel' in the 'dialogue' window or if no characters/regions are found
         #   1 otherwise
 
         my ($self, $check) = @_;
@@ -18363,7 +22110,11 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->resetVisitsCallback', @_);
         }
 
-        # (No standard callback checks for this function)
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
 
         # Prompt the user
         ($result, $charListRef, $regionListRef) = $self->promptVisits();
@@ -18454,6 +22205,73 @@
         );
     }
 
+    sub resetCheckedDirCallback {
+
+        # Called by $self->enableEditColumn
+        # Prompts the user for confirmation, then resets checked directions in the region or in the
+        #   entire world model
+        #
+        # Expected arguments
+        #   $allFlag    - Set to TRUE if all checked directions should be reset, FALSE if only
+        #                   checked directions in the current region should be set
+        #
+        # Return values
+        #   'undef' on improper arguments, if the standard callback check fails or if the user
+        #       chooses 'cancel' in the 'dialogue' window
+        #   1 otherwise
+
+        my ($self, $allFlag, $check) = @_;
+
+        # Local variables
+        my ($string, $choice);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->resetCheckedDirCallback',
+                @_,
+            );
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
+
+        # Prompt the user
+        if (! $allFlag) {
+            $string = 'in this region';
+        } else {
+            $string = 'in every region';
+        }
+
+        $choice = $self->showMsgDialogue(
+            'Reset checked directions',
+            'question',
+            'Are you sure you want ro reset checked directions ' . $string . '?',
+            'yes-no',
+        );
+
+        if (defined $choice && $choice eq 'yes') {
+
+            # TRUE to redraw maps now
+            if ($allFlag) {
+                $self->worldModelObj->resetCheckedDirs(TRUE);
+            } else {
+                $self->worldModelObj->resetCheckedDirs(TRUE, $self->currentRegionmap->name);
+            }
+
+            $self->showMsgDialogue(
+                'Reset checked directions',
+                'info',
+                'Checked directions have been reset ' . $string,
+                'ok',
+            );
+        }
+    }
+
     sub resetRemoteCallback {
 
         # Called by $self->enableEditColumn
@@ -18463,7 +22281,8 @@
         #   (none besides $self)
         #
         # Return values
-        #   'undef' on improper arguments or if the user chooses 'cancel' in the 'dialogue' window
+        #   'undef' on improper arguments, if the standard callback check fails or if the user
+        #       chooses 'cancel' in the 'dialogue' window
         #   1 otherwise
 
         my ($self, $check) = @_;
@@ -18477,7 +22296,11 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->resetRemoteCallback', @_);
         }
 
-        # (No standard callback checks for this function)
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
 
         # Prompt the user
         $choice = $self->showMsgDialogue(
@@ -19798,8 +23621,8 @@
         # Local variables
         my (
             $choice, $msg, $count,
-            @flagList,
-            %flagHash, %priorityHash,
+            @list, @sortedList, @nameList,
+            %flagHash,
         );
 
         # Check for improper arguments
@@ -19855,17 +23678,28 @@
             return undef;
         }
 
-        # Import the world model's room flag priority hash
-        %priorityHash = $self->worldModelObj->roomFlagPriorityHash;
         # Get a list of the room flags in use, sorted by priority
-        @flagList = sort {$priorityHash{$a} <=> $priorityHash{$b}} (keys %flagHash);
+        foreach my $roomFlag (keys %flagHash) {
+
+            my $roomFlagObj = $self->worldModelObj->ivShow('roomFlagHash', $roomFlag);
+            if ($roomFlagObj) {
+
+                push (@list, $roomFlagObj);
+            }
+        }
+
+        @sortedList = sort {$a->priority <=> $b->priority} (@list);
+        foreach my $roomFlagObj (@sortedList) {
+
+            push (@nameList, $roomFlagObj->name);
+        }
 
         # Prompt the user to select one of the room flags
         $choice = $self->showComboDialogue(
             'Remove room flags',
             "Select which room flag should be removed\nfrom every room in this region",
             FALSE,
-            \@flagList,
+            \@nameList,
         );
 
         if (! $choice) {
@@ -19875,7 +23709,7 @@
         } else {
 
             # Remove the room flag from each room in turn
-            $count = $self->worldModelObj->removeRoomFlags($self->currentRegionmap, $choice);
+            $count = $self->worldModelObj->removeRoomFlagInRegion($self->currentRegionmap, $choice);
 
             # Display a confirmation message
             $msg = "Room flag \'" . $choice . "\' removed from\n";
@@ -20369,6 +24203,175 @@
         return 1;
     }
 
+    sub removeBGColourCallback {
+
+        # Called by $self->enableRegionsColumn
+        # Empties an existing region of any coloured blocks and rectangles matching a colour
+        #   specified by the user
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $choice,
+            @comboList, @squareList, @rectList,
+            %colourHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeBGColourCallback', @_);
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
+
+        # Get a list of all coloured blocks in the region
+        @squareList = $self->currentRegionmap->ivKeys('gridColourBlockHash');
+        # Get a list of all coloured rectangles in the region
+        @rectList = $self->currentRegionmap->ivValues('gridColourObjHash');
+
+        if (@squareList || @rectList) {
+
+            # Compile a hash of RGB colours in use with coloured squares and rectangles, so we can
+            #   eliminate duplicates
+            foreach my $colour ($self->currentRegionmap->ivValues('gridColourBlockHash')) {
+
+                $colourHash{uc($colour)} = undef;
+            }
+
+            foreach my $obj (@rectList) {
+
+                $colourHash{uc($obj->colour)} = undef;
+            }
+
+            # Sort into some kind of order
+            @comboList = sort {$a cmp $b} (keys %colourHash);
+
+            # Prompt the user
+            $choice = $self->showComboDialogue(
+                'Remove background colour',
+                "Choose a colour to remove from those\nused on the map background to remove",
+                FALSE,
+                \@comboList,
+            );
+
+            if (defined $choice) {
+
+                foreach my $coord (@squareList) {
+
+                    if ($self->currentRegionmap->ivShow('gridColourBlockHash', $coord) eq $choice) {
+
+                        # $coord can be in the form 'x_y_z' or 'x_y'; in either case, we don't
+                        #   want the z
+                        my ($x, $y) = split (/_/, $coord);
+
+                        $self->currentRegionmap->removeSquare($coord);
+                        $self->deleteCanvasObj('square', $x . '_' . $y);
+                    }
+                }
+
+                foreach my $obj (@rectList) {
+
+                    if ($obj->colour eq $choice) {
+
+                        $self->currentRegionmap->removeRect($obj);
+                        $self->deleteCanvasObj('rect', $obj);
+                    }
+                }
+
+                # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+                $self->restrictWidgets();
+            }
+        }
+
+        return 1;
+    }
+
+    sub removeBGAllCallback {
+
+        # Called by $self->enableRegionsColumn
+        # Empties an existing region of its coloured blocks and rectangles
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $choice,
+            @squareList, @rectList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeBGAllCallback', @_);
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
+
+        # Get a list of all coloured blocks in the region
+        @squareList = $self->currentRegionmap->ivKeys('gridColourBlockHash');
+        # Get a list of all coloured rectangles in the region
+        @rectList = $self->currentRegionmap->ivValues('gridColourObjHash');
+
+        # Prompt the user before removing anything
+        if (@squareList || @rectList) {
+
+            $choice = $self->showMsgDialogue(
+                'Remove background colours',
+                'question',
+                'Are you sure you want to remove all background colours in this region?',
+                'yes-no',
+            );
+
+            if (defined $choice && $choice eq 'yes') {
+
+                foreach my $coord (@squareList) {
+
+                    # $coord can be in the form 'x_y_z' or 'x_y'; in either case, we don't
+                    #   want the z
+                    my ($x, $y) = split (/_/, $coord);
+
+                    $self->currentRegionmap->removeSquare($coord);
+                    $self->deleteCanvasObj('square', $x . '_' . $y);
+                }
+
+                foreach my $obj (@rectList) {
+
+                    $self->currentRegionmap->removeRect($obj);
+                    $self->deleteCanvasObj('rect', $obj);
+                }
+
+                # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+                $self->restrictWidgets();
+            }
+        }
+
+        return 1;
+    }
+
     sub emptyRegionCallback {
 
         # Called by $self->enableRegionsColumn
@@ -20719,7 +24722,7 @@
 
             # Show a 'dialogue' window to explain the problem
             $self->showMsgDialogue(
-                'Edit Locator room',
+                'View Locator room',
                 'error',
                 'Either the Locator task isn\'t running or it doesn\'t know the current location',
                 'ok',
@@ -20734,8 +24737,7 @@
                 'Games::Axmud::EditWin::ModelObj::Room',
                 $self,
                 $self->session,
-                'Edit ' . $taskObj->roomObj->category . ' model object #'
-                . $taskObj->roomObj->number,
+                'Edit non-model room object',
                 $taskObj->roomObj,
                 FALSE,                          # Not temporary
             );
@@ -21116,14 +25118,14 @@
         }
 
         # Free click mode must be reset (nothing special happens when the user clicks on the map)
-        $self->ivPoke('freeClickMode', 'default');
+        $self->reset_freeClickMode();
 
         # Create a new room object, with this region as its parent, and update the map
         if ($self->session->locatorTask && $self->session->locatorTask->roomObj) {
 
             # Set the Automapper window's mode to 'update', make the new room the current location
             #   and copy properties from the Locator task's current room (where allowed)
-            $newRoomObj = $self->createNewRoom(
+            $newRoomObj = $self->mapObj->createNewRoom(
                 $self->currentRegionmap,
                 $xPosBlocks,
                 $yPosBlocks,
@@ -21137,7 +25139,7 @@
 
             # Locator task doesn't know the current location, so don't make the new room the
             #   current room, and don't change the mode
-            $newRoomObj = $self->createNewRoom(
+            $newRoomObj = $self->mapObj->createNewRoom(
                 $self->currentRegionmap,
                 $xPosBlocks,
                 $yPosBlocks,
@@ -21239,10 +25241,10 @@
         }
 
         # Free click mode must be reset (nothing special happens when the user clicks on the map)
-        $self->ivPoke('freeClickMode', 'default');
+        $self->reset_freeClickMode();
 
         # Create a new room object, with this region as its parent and update the map
-        $roomObj = $self->createNewRoom(
+        $roomObj = $self->mapObj->createNewRoom(
             $self->currentRegionmap,
             $xPosBlocks,
             $yPosBlocks,
@@ -21787,6 +25789,125 @@
         return 1;
     }
 
+    sub removeCheckedDirCallback {
+
+        # Called by $self->enableRoomsColumn and ->enableRoomsPopupMenu
+        # Removes one or all checked directions from the selected room
+        #
+        # Expected arguments
+        #   $allFlag    - If set to TRUE, all checked directions are removed. If set to FALSE, the
+        #                   user is prompted to choose an exit
+        #
+        # Return values
+        #   'undef' on improper arguments, if the standard callback check fails or if the user
+        #       clicks 'cancel' on the 'dialogue' window
+        #   1 otherwise
+
+        my ($self, $allFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $choice,
+            @comboList, @sortedList,
+        );
+
+        # Check for improper arguments
+        if (! defined $allFlag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->removeCheckedDirCallback',
+                @_,
+            );
+        }
+
+        # Standard callback check
+        if (
+            ! $self->currentRegionmap
+            || ! $self->selectedRoom
+            || ! $self->selectedRoom->checkedDirHash
+        ) {
+            return undef;
+        }
+
+        if ($allFlag) {
+
+            # Delete all checked directions
+            $self->selectedRoom->ivEmpty('checkedDirHash');
+
+        } else {
+
+            @comboList = sort {lc($a) cmp lc($b)} ($self->selectedRoom->ivKeys('checkedDirHash'));
+            @sortedList = $self->session->currentDict->sortExits(@comboList);
+
+            # Prompt the user for a checked direction to remove (even if there's only one)
+            $choice = $self->showComboDialogue(
+                'Remove checked direction',
+                'Select the checked direction to remove',
+                FALSE,
+                \@comboList,
+            );
+
+            if (! defined $choice) {
+
+                return undef;
+
+            } else {
+
+                $self->selectedRoom->ivDelete('checkedDirHash', $choice);
+            }
+        }
+
+        # Redraw the selected room in every window
+        $self->worldModelObj->updateMaps('room', $self->selectedRoom);
+
+        return 1;
+    }
+
+    sub setWildCallback {
+
+        # Called by $self->enableRoomsColumn and ->enableRoomsPopupMenu
+        # Sets the selected room(s)' wilderness mode
+        #
+        # Expected arguments
+        #   $mode   - One of the values for GA::ModelObj::Room->wildMode - 'normal', 'border' or
+        #               'wild'
+        #
+        # Return values
+        #   'undef' on improper arguments or if the standard callback check fails
+        #   1 otherwise
+
+        my ($self, $mode, $check) = @_;
+
+        # Local variables
+        my @drawList;
+
+        # Check for improper arguments
+        if (
+            ! defined $mode
+            || ($mode ne 'normal' && $mode ne 'border' && $mode ne 'wild')
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setWildCallback', @_);
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap && (! $self->selectedRoom && ! $self->selectedRoomHash)) {
+
+            return undef;
+        }
+
+        # For each selected room, convert their wilderness mode. The called function handles
+        #   redrawing
+        $self->worldModelObj->setWildernessRoom(
+            $self->session,
+            TRUE,                           # Update automapper windows
+            $mode,
+            $self->compileSelectedRooms(),
+        );
+
+        return 1;
+    }
+
     sub selectExitCallback {
 
         # Called by $self->enableRoomsColumn
@@ -22019,9 +26140,8 @@
 
     sub updateVisitsCallback {
 
-        # Called by $self->enableRoomsPopupMenu (only)
-        # Adjusts the number of character visits shown in the selected room (quicker than opening
-        #   the room's 'edit' window, and making the changes there)
+        # Called by $self->enableRoomsColumn, ->enableRoomsPopupMenu and ->drawMiscButtonSet
+        # Adjusts the number of character visits shown in the selected room(s)
         # Normally, the current character's visits are changed. However, if $self->showChar is set,
         #   that character's visits are changed
         #
@@ -22038,7 +26158,10 @@
         my ($self, $mode, $check) = @_;
 
         # Local variables
-        my ($char, $current, $result);
+        my (
+            $char, $current, $result, $matchFlag,
+            @roomList, @drawList,
+        );
 
         # Check for improper arguments
         if (
@@ -22050,10 +26173,13 @@
         }
 
         # Standard callback check
-        if (! $self->currentRegionmap || ! $self->selectedRoom) {
+        if (! $self->currentRegionmap || (! $self->selectedRoom && ! $self->selectedRoomHash)) {
 
             return undef;
         }
+
+        # Get a list of selected room(s)
+        @roomList = $self->compileSelectedRooms();
 
         # Decide which character to use
         if ($self->showChar) {
@@ -22080,44 +26206,63 @@
         if ($mode eq 'increase') {
 
             # Increase by one
-            if ($self->selectedRoom->ivExists('visitHash', $char)) {
-                $self->selectedRoom->ivIncHash('visitHash', $char);
-            } else {
-                $self->selectedRoom->ivAdd('visitHash', $char, 1);
+            foreach my $roomObj (@roomList) {
+
+                if ($roomObj->ivExists('visitHash', $char)) {
+                    $roomObj->ivIncHash('visitHash', $char);
+                } else {
+                    $roomObj->ivAdd('visitHash', $char, 1);
+                }
             }
 
         } elsif ($mode eq 'decrease') {
 
             # Decrease by one
-            if ($self->selectedRoom->ivExists('visitHash', $char)) {
+            foreach my $roomObj (@roomList) {
 
-                $self->selectedRoom->ivDecHash('visitHash', $char);
-                # If the number of visits is down to 0, remove the entry from the hash (so that we
-                #   don't get -1 visits the next time)
-                if (! $self->selectedRoom->ivShow('visitHash', $char)) {
+                if ($roomObj->ivExists('visitHash', $char)) {
 
-                    $self->selectedRoom->ivDelete('visitHash', $char);
+                    $roomObj->ivDecHash('visitHash', $char);
+                    # If the number of visits is down to 0, remove the entry from the hash (so that
+                    #   we don't get -1 visits the next time)
+                    if (! $roomObj->ivShow('visitHash', $char)) {
+
+                        $roomObj->ivDelete('visitHash', $char);
+                    }
                 }
             }
 
         } elsif ($mode eq 'manual') {
 
-            # Set manually
-            $current = $self->selectedRoom->ivShow('visitHash', $char);
-            if (! $current) {
+            if ($self->selectedRoom) {
 
-                # If there's no entry for this character in the room's ->visitHash, make sure the
-                #   'dialogue' window displays a value of 0
-                $current = 0;
+                # Set manually (one room only)
+                $current = $self->selectedRoom->ivShow('visitHash', $char);
+                if (! $current) {
+
+                    # If there's no entry for this character in the room's ->visitHash, make sure
+                    #   the 'dialogue' window displays a value of 0
+                    $current = 0;
+                }
+
+                $result = $self->showEntryDialogue(
+                    'Update character visits',
+                    'Enter the number of visits to this room #' . $self->selectedRoom->number
+                    . ' by \'' . $char . '\'',
+                    undef,              # No max number of characters
+                    $current,
+                );
+
+            } else {
+
+                # Set manually (multiple rooms)
+                $result = $self->showEntryDialogue(
+                    'Update character visits',
+                    'Enter the number of visits for each of these ' . (scalar @roomList) . ' rooms'
+                    . ' by \'' . $char . '\'',
+                    undef,              # No max number of characters
+                );
             }
-
-            $result = $self->showEntryDialogue(
-                'Update character visits',
-                'Enter the number of visits to this room #' . $self->selectedRoom->number
-                . ' by \'' . $char . '\'',
-                undef,              # No max number of characters
-                $current,
-            );
 
             if (! defined $result) {
 
@@ -22137,41 +26282,174 @@
 
             } else {
 
-                if ($result) {
-                    $self->selectedRoom->ivAdd('visitHash', $char, $result);
-                } else {
-                    $self->selectedRoom->ivDelete('visitHash', $char);
+                foreach my $roomObj (@roomList) {
+
+                    if ($result) {
+                        $roomObj->ivAdd('visitHash', $char, $result);
+                    } else {
+                        $roomObj->ivDelete('visitHash', $char);
+                    }
                 }
             }
 
         } else {
 
             # Reset to zero
-            if ($self->selectedRoom->ivExists('visitHash', $char)) {
 
-                $self->selectedRoom->ivDelete('visitHash', $char);
+            # Before resetting counts in multiple rooms, get a confirmation
+            if ($self->selectedRoomHash) {
+
+                $result = $self->showMsgDialogue(
+                    'Reset character visits',
+                    'question',
+                    'Are you sure you want to reset character visits in all ' . (scalar @roomList)
+                    . ' rooms?',
+                    'yes-no',
+                );
+
+                if (! $result || $result eq 'no') {
+
+                    # Don't reset anything
+                    return undef;
+                }
+            }
+
+            # Reset the counts
+            foreach my $roomObj (@roomList) {
+
+                if ($self->selectedRoom->ivExists('visitHash', $char)) {
+
+                    $self->selectedRoom->ivDelete('visitHash', $char);
+                }
             }
         }
 
-        # Mark the selected room to be re-drawn, in case the room and its character visits are
+        # Mark the selected room(s) to be re-drawn, in case the room and its character visits are
         #   currently visible
-        $self->markObjs('room', $self->selectedRoom);
+        foreach my $roomObj (@roomList) {
 
-        # Get the new number of visits for this room...
-        $current = $self->selectedRoom->ivShow('visitHash', $char);
-        if (! $current) {
-
-            $current = 0;
+            push (@drawList, 'room', $roomObj);
         }
 
-        # ...and then show a confirmation
-        $self->showMsgDialogue(
-            'Update character visits',
-            'info',
-            'Visits by \'' . $char . '\' to room #' . $self->selectedRoom->number . ' set to '
-            . $current,
-            'ok',
-        );
+        $self->markObjs(@drawList);
+
+        # Show a confirmation, but only if the selected room(s) are on a different level or in a
+        #   different region altogether
+        if ($self->selectedRoom) {
+
+            # Get the new number of visits for the single selected room...
+            $current = $self->selectedRoom->ivShow('visitHash', $char);
+            if (! $current) {
+
+                $current = 0;
+            }
+
+            # ...and then show a confirmation (but only if the selected room is on a different
+            #   level, or in a different region altogether)
+            if (
+                $self->selectedRoom->parent != $self->currentRegionmap->number
+                || $self->selectedRoom->zPosBlocks != $self->currentRegionmap->currentLevel
+            ) {
+                $self->showMsgDialogue(
+                    'Update character visits',
+                    'info',
+                    'Visits by \'' . $char . '\' to room #' . $self->selectedRoom->number
+                    . ' set to ' . $current,
+                    'ok',
+                );
+            }
+
+        } else {
+
+            # Check every selected room, stopping when we find one on the same level and in the
+            #   same region
+            OUTER: foreach my $roomObj (@roomList) {
+
+                if (! defined $current) {
+
+                    # (All the selected rooms now have the same number of visits, so $current only
+                    #   needs to be set once)
+                    $current = $roomObj->ivShow('visitHash', $char);
+                    if (! $current) {
+
+                        $current = 0;
+                    }
+                }
+
+                if (
+                    $roomObj->parent == $self->currentRegionmap->number
+                    && $roomObj->zPosBlocks == $self->currentRegionmap->currentLevel
+                ) {
+                    $matchFlag = TRUE;
+                    last OUTER;
+                }
+            }
+
+            if (! $matchFlag) {
+
+                # No selected rooms are actually visible, so show the confirmation
+                $self->showMsgDialogue(
+                    'Update character visits',
+                    'info',
+                    'Visits by \'' . $char . '\' in ' . (scalar @roomList) . ' rooms set to '
+                    . $current,
+                    'ok',
+                );
+            }
+        }
+
+        return 1;
+    }
+
+    sub toggleGraffitiCallback {
+
+        # Called by $self->enableRoomsColumn, ->enableRoomsPopupMenu and ->drawMiscButtonSet
+        # Toggles graffiti in the selected room(s)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (@roomList, @drawList);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggleGraffitiCallback', @_);
+        }
+
+        # Standard callback check
+        if (
+            ! $self->currentRegionmap
+            || (! $self->selectedRoom && ! $self->selectedRoomHash)
+            || ! $self->graffitiModeFlag
+        ) {
+            return undef;
+        }
+
+        # Get a list of selected room(s)
+        @roomList = $self->compileSelectedRooms();
+        foreach my $roomObj (@roomList) {
+
+            push (@drawList, 'room', $roomObj);
+
+            if (! $self->ivExists('graffitiHash', $roomObj->number)) {
+                $self->ivAdd('graffitiHash', $roomObj->number, undef);
+            } else {
+                $self->ivDelete('graffitiHash', $roomObj->number);
+            }
+        }
+
+        # Redraw the room(s) with graffiti on or off
+        $self->doDraw(@drawList);
+        # Update room counts in the window's title bar
+        $self->setWinTitle();
 
         return 1;
     }
@@ -23776,7 +28054,7 @@
         # Prompt the user for a primary direction
         $choice = $self->showComboDialogue(
             'Select map direction',
-            'Choose a primary direction for the \'' . $exitObj->dir . '\' exit',
+            "Choose a primary direction\nfor the \'" . $exitObj->dir . "\' exit",
             FALSE,
             \@comboList,
         );
@@ -23940,7 +28218,7 @@
                 FALSE,                   # Don't update Automapper windows now
                 $roomObj,
                 $exitObj,
-                $exitObj->mapDir,
+                $axmud::CLIENT->ivShow('constOppDirHash', $matchExitObj->mapDir),
             );
 
             # Connect the two exits together
@@ -24179,7 +28457,7 @@
 
         # Set ->freeClickMode; $self->canvasObjEventHandler will connect the exit to the room
         #   clicked on by the user
-        $self->ivPoke('freeClickMode', 'connect_exit');
+        $self->set_freeClickMode('connect_exit');
 
         return 1;
     }
@@ -24284,7 +28562,7 @@
     sub exitOrnamentCallback {
 
         # Called by $self->enableExitsColumn
-        # Adds an ornament to (or removes the existing ornament from) the selected exit or exits
+        # Sets (or resets) the ornament for the selected exit or exits
         # When there's a single selected exit, prompts the user whether the ornament should be
         #   added to an exit or to its twin (as appropriate)
         #
@@ -24292,15 +28570,16 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $iv - Which of the exit object's IV is used for this ornament, e.g. 'pickFlag'. If set
-        #           to 'undef', no ornament is used
+        #   $type   - The exit ornament type, one of the permitted values for
+        #               GA::Obj::Exit->exitOrnament ('none', 'break', 'pick', 'lock', 'open',
+        #               'impass', 'ornament'). If 'undef', the value 'none' is set
         #
         # Return values
         #   'undef' on improper arguments, if the standard callback check fails, if there's an error
         #       prompting the user to choose an exit or if the user cancels that prompt
         #   1 otherwise
 
-        my ($self, $iv, $check) = @_;
+        my ($self, $type, $check) = @_;
 
         # Local variables
         my (
@@ -24394,7 +28673,7 @@
         # Update the exits and redraw their parent rooms
         $self->worldModelObj->setMultipleOrnaments(
             TRUE,       # Update Automapper windows now
-            $iv,
+            $type,
             @exitList,
         );
 
@@ -26229,202 +30508,6 @@
         return 1;
     }
 
-    sub selectExitTypeCallback {
-
-        # Called by $self->enableExitsColumn
-        # Scours the current map, looking for unallocated, unallocatable, uncertain or incomplete
-        #   exits (or all four of them together)
-        # Once found, selects both the exits and the parent rooms
-        # Finally, displays a 'dialogue' window showing how many were found
-        #
-        # Expected arguments
-        #   $type   - What to search for. Must be either 'unallocated', 'unallocatable, 'uncertain',
-        #               'incomplete' or 'all_above'; can also be 'region' or 'super'
-        #
-        # Return values
-        #   'undef' on improper arguments or if the standard callback check fails
-        #   1 otherwise
-
-        my ($self, $type, $check) = @_;
-
-        # Local variables
-        my (
-            $obj, $number, $title, $text,
-            @exitNumList, @exitObjList,
-            %selectExitHash, %selectRoomHash,
-        );
-
-        # Check for improper arguments
-        if (
-            ! defined $type
-            || (
-                $type ne 'uncertain' && $type ne 'incomplete' && $type ne 'unallocated'
-                && $type ne 'unallocatable' && $type ne 'all_above' && $type ne 'region'
-                && $type ne 'super'
-            ) || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->selectExitTypeCallback', @_);
-        }
-
-        # Standard callback check
-        if (! $self->currentRegionmap) {
-
-            return undef;
-        }
-
-        # Compile a list of all exit objects drawn in this map
-        @exitNumList = $self->currentRegionmap->ivKeys('gridExitHash');
-        foreach my $exitNum (@exitNumList) {
-
-            push (@exitObjList, $self->worldModelObj->ivShow('exitModelHash', $exitNum));
-        }
-
-        # Check each exit in turn. If it's one of the exits for which we're looking, mark it for
-        #   selection
-        OUTER: foreach my $exitObj (@exitObjList) {
-
-            if (
-                (
-                    ($type eq 'uncertain' || $type eq 'all_above')
-                    && $exitObj->destRoom
-                    && (! $exitObj->twinExit)
-                    && (! $exitObj->oneWayFlag)
-                    && (! $exitObj->retraceFlag)
-                ) || (
-                    ($type eq 'incomplete' || $type eq 'all_above')
-                    && (! $exitObj->destRoom && $exitObj->randomType eq 'none')
-                ) || (
-                    ($type eq 'unallocated' || $type eq 'all_above')
-                    && ($exitObj->drawMode eq 'temp_alloc' || $exitObj->drawMode eq 'temp_unalloc')
-                ) || (
-                    $type eq 'unallocatable' && $exitObj->drawMode eq 'temp_unalloc'
-                ) || (
-                    $type eq 'region' && $exitObj->regionFlag
-                ) || (
-                    $type eq 'super' && $exitObj->superFlag
-                )
-            ) {
-                $selectExitHash{$exitObj->number} = $exitObj;
-                $selectRoomHash{$exitObj->parent}
-                    = $self->worldModelObj->ivShow('modelHash', $exitObj->parent);
-            }
-        }
-
-        # If anything was marked for selection...
-        if (%selectExitHash) {
-
-            # Since we're going to redraw everything on the map, we'll sidestep the normal call to
-            #   $self->setSelectedObj, and set IVs directly
-
-            # Make sure there are no rooms, exits, room tags or labels selected
-            $self->ivUndef('selectedRoom');
-            $self->ivEmpty('selectedRoomHash');
-            $self->ivUndef('selectedExit');
-            $self->ivEmpty('selectedExitHash');
-            $self->ivUndef('selectedRoomTag');
-            $self->ivEmpty('selectedRoomTagHash');
-            $self->ivUndef('selectedLabel');
-            $self->ivEmpty('selectedLabelHash');
-
-            # Select rooms and exits. (There must be at least one of each, if there are any, so we
-            #   don't ever set ->selectedRoom or ->selectedExit)
-            if (scalar (keys %selectRoomHash) > 1) {
-
-                $self->ivPoke('selectedRoomHash', %selectRoomHash);
-
-            } elsif (%selectRoomHash) {
-
-                ($number) = keys %selectRoomHash;
-                $obj = $self->worldModelObj->ivShow('modelHash', $number);
-                $self->ivAdd('selectedRoomHash', $number, $obj);
-            }
-
-            if (scalar (keys %selectExitHash) > 1) {
-
-                $self->ivPoke('selectedExitHash', %selectExitHash);
-
-            } elsif (%selectExitHash) {
-
-                ($number) = keys %selectExitHash;
-                $obj = $self->worldModelObj->ivShow('exitModelHash', $number);
-                $self->ivAdd('selectedExitHash', $number, $obj);
-            }
-
-            # Redraw the current level, to show all the changes
-            $self->drawRegion();
-
-            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
-            $self->restrictWidgets();
-
-            # Show a confirmation of how many uncertain/incomplete exits were found
-            if ($type eq 'all_above') {
-
-                $title = 'Select exits';
-
-                # (This will be a longer string, so spread it across two lines)
-                if (scalar (keys %selectExitHash) == 1) {
-
-                    $text = "Found 1 unallocated/uncertain/incomplete exit\n";
-
-                } else {
-
-                    $text = "Found " . scalar (keys %selectExitHash) . " unallocated/uncertain/"
-                            . "incomplete exits\n";
-                }
-
-            } else {
-
-                $title = 'Select ' . $type . ' exits';
-
-                # (This will be a shorter string, so keep it on one line)
-                if (scalar (keys %selectExitHash) == 1) {
-                    $text = "Found 1 $type exit ";
-                } else {
-                    $text = "Found " . scalar (keys %selectExitHash) . " $type exits ";
-                }
-            }
-
-            if (scalar (keys %selectRoomHash) == 1) {
-                $text .= 'in 1 room';
-            } else {
-                $text .= 'spread across ' . scalar (keys %selectRoomHash) . ' rooms';
-            }
-
-            $text .= ' in this regionmap';
-
-            $self->showMsgDialogue(
-                $title,
-                'info',
-                $text,
-                'ok',
-            );
-
-        } else {
-
-            # Show a confirmation that there are no uncertain/incomplete exits in this map
-            if ($type eq 'all_above') {
-
-                $title = 'Select exits';
-                $text = "There are no more unallocated, uncertain or\n"
-                    . "incomplete exits in this regionmap";
-
-            } else {
-
-                $title = 'Select ' . $type . ' exits';
-                $text = 'There are no more ' . $type . ' exits in this regionmap';
-            }
-
-            $self->showMsgDialogue(
-                $title,
-                'info',
-                $text,
-                'ok',
-            );
-        }
-
-        return 1;
-    }
-
     sub editExitCallback {
 
         # Called by $self->enableExitsColumn
@@ -26868,11 +30951,11 @@
             } else {
 
                 # Show an explanatory message
-               $self->showMsgDialogue(
+                $self->showMsgDialogue(
                     $title,
                     'error',
                     'Invalid value for exit length - must be an integer between 1 and '
-                    . $self->maxExitLengthBlocks,
+                    . $self->worldModelObj->maxExitLengthBlocks,
                     'ok',
                 );
             }
@@ -27252,7 +31335,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($xPosBlocks, $yPosBlocks, $zPosBlocks, $text);
+        my ($xPosBlocks, $yPosBlocks, $zPosBlocks, $text, $style);
 
         # Check for improper arguments
         if (defined $check) {
@@ -27294,18 +31377,14 @@
         }
 
         # Prompt the user to specify the label text
-        $text = $self->showEntryDialogue(
-            'Add label at block',
-            'Enter the contents of the new label',
-        );
-
+        ($text, $style) = $self->promptConfigLabel();
         # Free click mode must be reset (nothing special happens when the user clicks on the map)
-        $self->ivPoke('freeClickMode', 'default');
+        $self->reset_freeClickMode();
 
-        if ($text || (defined $text && $text eq '0')) {        # '0' is a valid label
+        if (defined $text && $text =~ m/\S/) {
 
             # Create a new label at the specified location
-            return $self->worldModelObj->addLabel(
+            $self->worldModelObj->addLabel(
                 $self->session,
                 TRUE,       # Update Automapper windows now
                 $self->currentRegionmap,
@@ -27313,7 +31392,20 @@
                 ($yPosBlocks * $self->currentRegionmap->blockHeightPixels),
                 $zPosBlocks,
                 $text,
+                $style,
             );
+
+            # The specified style is the preferred one
+            if (defined $style) {
+
+                $self->worldModelObj->set_mapLabelStyle($style);
+            }
+
+            return 1;
+
+        } else {
+
+            return undef;
         }
     }
 
@@ -27334,7 +31426,7 @@
         my ($self, $xPosPixels, $yPosPixels, $check) = @_;
 
         # Local variables
-        my $text;
+        my ($text, $style);
 
         # Check for improper arguments
         if (! defined $xPosPixels || ! defined $yPosPixels || defined $check) {
@@ -27348,18 +31440,14 @@
         # (No standard callback checks for this function)
 
         # Prompt the user to specify the label text
-        $text = $self->showEntryDialogue(
-            'Add label at click',
-            'Enter the contents of the new label',
-        );
-
+        ($text, $style) = $self->promptConfigLabel();
         # Free click mode must be reset (nothing special happens when the user clicks on the map)
-        $self->ivPoke('freeClickMode', 'default');
+        $self->reset_freeClickMode();
 
         if ($text || (defined $text && $text eq '0')) {        # '0' is a valid label
 
             # Create a new label at the specified location
-            return $self->worldModelObj->addLabel(
+            $self->worldModelObj->addLabel(
                 $self->session,
                 TRUE,       # Update Automapper windows now
                 $self->currentRegionmap,
@@ -27367,31 +31455,46 @@
                 $yPosPixels,
                 $self->currentRegionmap->currentLevel,
                 $text,
+                $style,
             );
+
+            # The specified style is the preferred one
+            if (defined $style) {
+
+                $self->worldModelObj->set_mapLabelStyle($style);
+            }
+
+            return 1;
+
+        } else {
+
+            return undef;
         }
     }
 
-    sub editLabelCallback {
+    sub setLabelCallback {
 
         # Called by $self->enableLabelsColumn
-        # Prompts the user to enter a new ->name for the selected label
+        # Prompts the user to modify a label's text and style (presenting only a list of map label
+        #   style objects to choose from), using the same 'dialogue' window used to add a label
         #
         # Expected arguments
-        #   (none besides $self)
+        #   $customiseFlag  - If FALSE, the 'dialogue' window only shows label text and style. If
+        #                       TRUE, the 'dialogue' window shows all label IVs
         #
         # Return values
         #   'undef' on improper arguments or if the standard callback check fails
         #   1 otherwise
 
-        my ($self, $check) = @_;
+        my ($self, $customiseFlag, $check) = @_;
 
         # Local variables
-        my $text;
+        my ($text, $style);
 
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->editLabelCallback', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setLabelCallback', @_);
         }
 
         # Standard callback check
@@ -27400,25 +31503,31 @@
             return undef;
         }
 
-        # Prompt the user for the new contents of the label
-        $text = $self->showEntryDialogue(
-            'Edit label',
-            'Enter the new contents for the label',
-            undef,              # No max chars
-            $self->selectedLabel->name,
-        );
+        # Prompt the user to mod the label
+        ($text, $style) = $self->promptConfigLabel($self->selectedLabel, $customiseFlag);
 
-        if ($text) {
+        if (defined $text && $text =~ m/\S/) {
 
-            # Change the label's contents
-            $self->worldModelObj->setLabelName(
-                TRUE,                       # Update Automapper windows
+            $self->worldModelObj->updateLabel(
+                TRUE,                       # Update automapper windows now
+                $self->session,
                 $self->selectedLabel,
                 $text,
+                $style,
             );
-        }
 
-        return 1;
+            # The specified style is the preferred one
+            if (defined $style) {
+
+                $self->worldModelObj->set_mapLabelStyle($style);
+            }
+
+            return 1;
+
+        } else {
+
+            return undef;
+        }
     }
 
     sub selectLabelCallback {
@@ -27465,7 +31574,7 @@
             return $self->showMsgDialogue(
                 'Select label',
                 'error',
-                'There are no labels in this regionmap',
+                'There are no labels in this region',
                 'ok',
             );
         }
@@ -27535,6 +31644,174 @@
         return 1;
     }
 
+    sub addStyleCallback {
+
+        # Called by $self->enableLabelsColumn
+        # Prompts the user for a name, then creates a label style with that name
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the user doesn't complete the prompt
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $name;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->selectLabelCallback', @_);
+        }
+
+        # (No standard callback check)
+
+        # Prompt the user for a name
+        $name = $self->showEntryDialogue(
+            'Add label style',
+            "Enter a name for a new label style\n(max 16 characters including spaces)",
+        );
+
+        if (! defined $name) {
+
+            return undef;
+        }
+
+        # Check that the style doesn't already exist
+        if ($self->worldModelObj->ivExists('mapLabelStyle', $name)) {
+
+            return $self->showMsgDialogue(
+                'Add label style',
+                'error',
+                'A label style called \'' . $name . '\' already exists',
+                'ok',
+            );
+
+        } else {
+
+             # Add the style
+            $self->session->pseudoCmd(
+                'addlabelstyle <' . $name . '>',
+                'win_error',
+            );
+
+            return 1;
+        }
+    }
+
+    sub renameStyleCallback {
+
+        # Called by $self->enableLabelsColumn
+        # Prompts the user for a style and a new name for that style, then updates the world model
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the user doesn't complete the prompt
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $newName, $oldName,
+            @comboList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->renameStyleCallback', @_);
+        }
+
+        # (No standard callback check)
+
+        # Get a list of styles
+        @comboList = sort {lc($a) cmp lc($b)} ($self->worldModelObj->ivKeys('mapLabelStyleHash'));
+
+        # Prompt the user
+        ($newName, $oldName) = $self->showDoubleComboDialogue(
+            'Rename label style',
+            'Enter a new name (max 16 chars)',
+            'Select a style',
+            \@comboList,
+            16,                 # Max chars
+            TRUE,               # Put combo above entry
+        );
+
+        if (! defined $newName) {
+
+            return undef;
+
+        } else {
+
+            $self->session->pseudoCmd(
+                'renamelabelstyle <' . $oldName . '> <' . $newName . '>',
+                'win_error',
+            );
+        }
+    }
+
+    sub toggleAlignCallback {
+
+        # Called by $self->enableLabelsColumn
+        # Prompts the user for confirmation before toggling horizontal/vertical label alignment
+        #
+        # Expected arguments
+        #   $type       - Which type of alignment to toggle - 'horizontal' or 'vertical'
+        #
+        # Return values
+        #   'undef' on improper arguments or if the user doesn't complete the prompt
+        #   1 otherwise
+
+        my ($self, $type, $check) = @_;
+
+        # Local variables
+        my ($msg, $choice);
+
+        # Check for improper arguments
+        if (! defined $type || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggleAlignCallback', @_);
+        }
+
+        # (No standard callback check)
+
+        # Prompt the user for confirmation
+        if (
+            ($type eq 'horizontal' && ! $self->worldModelObj->mapLabelAlignXFlag)
+            || ($type eq 'vertical' && ! $self->worldModelObj->mapLabelAlignYFlag)
+        ) {
+            $msg = 'Are you sure you want to enable ' . $type . ' label alignment?';
+        } else {
+            $msg = 'Are you sure you want to disable ' . $type . ' label alignment?';
+        }
+
+        $choice = $self->showMsgDialogue(
+            'Toggle label alignment',
+            'question',
+            $msg,
+            'yes-no',
+        );
+
+        if (! defined $choice || $choice eq 'no') {
+
+            return undef;
+
+        } else {
+
+            $self->worldModelObj->toggleLabelAlignment(
+                $self->session,
+                TRUE,               # Update automapper windows now
+                $type,
+            );
+        }
+    }
+
     # Graphical operations - window and background
 
     sub setWinTitle {
@@ -27556,7 +31833,7 @@
         my ($self, $optionalText, $check) = @_;
 
         # Local variables
-        my ($text, $upFlag, $downFlag);
+        my ($text, $upFlag, $downFlag, $regionCount, $worldCount);
 
         # Check for improper arguments
         if (defined $check) {
@@ -27598,6 +31875,31 @@
                     $text .= ' \\/';
                 } else {
                     $text .= '   ';
+                }
+
+                # If graffiti mode is on, show room counts
+                if ($self->graffitiModeFlag) {
+
+                    $regionCount = 0;
+                    $worldCount = 0;
+                    foreach my $roomNum ($self->ivKeys('graffitiHash')) {
+
+                        my $roomObj = $self->worldModelObj->ivShow('modelHash', $roomNum);
+
+                        if ($roomObj) {
+
+                            $worldCount++;
+                            if ($roomObj->parent == $self->currentRegionmap->number) {
+
+                                $regionCount++;
+                            }
+                        }
+                    }
+
+                    $text .= ' (' . $regionCount . '/'
+                                . $self->currentRegionmap->ivPairs('gridRoomHash')
+                                . ', ' . $worldCount . '/'
+                                . $self->worldModelObj->ivPairs('roomModelHash') . ')';
                 }
 
             } else {
@@ -27709,6 +32011,16 @@
             push (@objList, @$listRef);
         }
 
+        foreach my $listRef ($self->ivValues('drawnCheckedDirHash')) {
+
+            push (@objList, @$listRef);
+        }
+
+        push (@objList,
+            $self->ivValues('colouredSquareHash'),
+            $self->ivValues('colouredRectHash'),
+        );
+
         # Also delete the background object itself, if it exists
         if ($self->canvasBackground) {
 
@@ -27732,6 +32044,9 @@
         $self->ivEmpty('drawnExitTagHash');
         $self->ivEmpty('drawnOrnamentHash');
         $self->ivEmpty('drawnLabelHash');
+        $self->ivEmpty('drawnCheckedDirHash');
+        $self->ivEmpty('colouredSquareHash');
+        $self->ivEmpty('colouredRectHash');
 
         # Any objects that were marked to be drawn (or re-drawn) can now be removed
         $self->ivEmpty('markedRoomHash');
@@ -27842,6 +32157,9 @@
         #   background is the right colour
         $self->resetMap(TRUE);
 
+        # Colour in the background
+        $self->doColourIn();
+
         # Compose a list of objects to draw. If there are any rooms in this region, on this level,
         #   add them (any room tags, room guilds, exits or exits tags will be automatically drawn
         #   too)
@@ -27951,6 +32269,201 @@
         return 1;
     }
 
+    # Graphical operations - background colouring
+
+    sub doColourIn {
+
+        # Called by $self->drawRegion
+        # Draws all coloured blocks and rectangles that are visible for the current regionmap's
+        #   current level
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (%blockHash, %objHash);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doColourIn', @_);
+        }
+
+        # A single call to $self->doDraw represents a single drawing cycle. Don't allow a drawing
+        #   cycle to take place while this function is working
+        $self->ivPoke('delayDrawFlag', TRUE);
+
+        # Colour in individual gridblocks. Import the IV for speed
+        %blockHash = $self->currentRegionmap->gridColourBlockHash;
+        foreach my $coord (%blockHash) {
+
+            my ($x, $y, $level, $colour);
+
+            ($x, $y, $level) = split (/_/, $coord);
+            $colour = $blockHash{$coord};
+
+            # $level can be undefined. There's no reason why $x and $y should be undefined, but
+            #   we'll check anyway
+            if (
+                defined $y
+                && defined $colour
+            ) {
+                $self->drawColouredSquare($colour, $x, $y, $level);
+            }
+        }
+
+        # Colour in rectangles
+        %objHash = $self->currentRegionmap->gridColourObjHash;
+        foreach my $obj (
+            sort {$a->number <=> $b->number}
+            ($self->currentRegionmap->ivValues('gridColourObjHash'))
+        ) {
+            $self->drawColouredRect($obj);
+        }
+
+        # Allow new drawing cycles to take place
+        $self->ivPoke('delayDrawFlag', FALSE);
+
+        return 1;
+    }
+
+    sub drawColouredSquare {
+
+        # Called by $self->doColourIn and ->setColouredSquare
+        # Draws a coloured square on the (background) map, comprising the space taken by a single
+        #   gridblock
+        #
+        # Expected arguments
+        #   $colour     - The RGB colour to use, e.g. '#ABCDEF' (case-insensitive)
+        #   $x          - The block's x coordinate
+        #   $y          - The block's y coordinate
+        #
+        # Optional arguments
+        #   $level      - The block's z coordinate. If undefined, the block is coloured in on all
+        #                   levels
+        #
+        # Return values
+        #   'undef' on improper arguments or if the block can't be coloured in
+        #   1 otherwise
+
+        my ($self, $colour, $x, $y, $level, $check) = @_;
+
+        # Local variables
+        my ($coord, $xPos, $yPos, $newObj);
+
+        # Check for improper arguments
+        if (! defined $colour || ! defined $x || ! defined $y || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawColouredSquare', @_);
+        }
+
+        # Don't colour in this block if it's not on the currently-displayed level (unless $level is
+        #   undefined, in which case the block is coloured in on every level)
+        if (defined $level && $self->currentRegionmap->currentLevel != $level) {
+
+            return undef;
+        }
+
+        # Before drawing the canvas object for this coloured block, destroy the existing canvas
+        #   object from the last time the block was coloured
+        $coord = $x . '_' . $y;
+        $self->deleteCanvasObj('square', $coord);
+
+        # Get the position of the gridblock
+        $xPos = $x * $self->currentRegionmap->blockWidthPixels;
+        $yPos = $y * $self->currentRegionmap->blockHeightPixels;
+
+        # Draw the canvas object
+        $newObj = Gnome2::Canvas::Item->new(
+            $self->canvasRoot,
+            'Gnome2::Canvas::Rect',
+            x1 => $xPos,
+            y1 => $yPos,
+            x2 => $xPos + $self->currentRegionmap->blockWidthPixels - 1,
+            y2 => $yPos + $self->currentRegionmap->blockHeightPixels - 1,
+            outline_color => $colour,
+            fill_color => $colour,
+        );
+
+        # Set the object's position in the canvas drawing stack
+        $self->setSquareLevel($newObj);
+        # Set up the event handler for the canvas object
+        $self->setupCanvasObjEvent('square', $newObj);
+        # Store the canvas object
+        $self->ivAdd('colouredSquareHash', $coord, $newObj);
+
+        return 1;
+    }
+
+    sub drawColouredRect {
+
+        # Called by $self->doColourIn and ->setColouredREct
+        # Draws a coloured rectangle on the (background) map, comprising the space taken by a
+        #   multiple gridblocks in a rectangular shape (either or both of the x and y dimensions can
+        #   have a length of a single gridblock, so it doesn't have to be rectangular)
+        #
+        # Expected arguments
+        #   $colourObj  The GA::Obj::GridColour object, stored in the current regionmap, to draw
+        #
+        # Return values
+        #   'undef' on improper arguments or if the rectangle can't be coloured in
+        #   1 otherwise
+
+        my ($self, $colourObj, $check) = @_;
+
+        # Local variables
+        my $newObj;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawColouredRect', @_);
+        }
+
+        # Don't colour in this rectangle if it's not on the currently-displayed level (unless it's
+        #   set to be seen on every level)
+        if (
+            ! $colourObj
+            || (
+                defined $colourObj->level
+                && $self->currentRegionmap->currentLevel != $colourObj->level
+            )
+        ) {
+            return undef;
+        }
+
+        # Before drawing the canvas object for this coloured rectangle, destroy the existing canvas
+        #   object from the last time the rectangle was coloured
+        $self->deleteCanvasObj('rect', $colourObj);
+
+        # Draw the canvas object
+        $newObj = Gnome2::Canvas::Item->new(
+            $self->canvasRoot,
+            'Gnome2::Canvas::Rect',
+            x1 => $colourObj->x1 * $self->currentRegionmap->blockWidthPixels,
+            y1 => $colourObj->y1 * $self->currentRegionmap->blockHeightPixels,
+            x2 => ((($colourObj->x2) + 1) * $self->currentRegionmap->blockWidthPixels) - 1,
+            y2 => ((($colourObj->y2) + 1) * $self->currentRegionmap->blockHeightPixels) - 1,
+            outline_color => $colourObj->colour,
+            fill_color => $colourObj->colour,
+        );
+
+        # Set the object's position in the canvas drawing stack
+        $self->setRectLevel($newObj);
+        # Set up the event handler for the canvas object
+        $self->setupCanvasObjEvent('rect', $newObj);
+        # Store the canvas object
+        $self->ivAdd('colouredRectHash', $colourObj->number, $newObj);
+
+        return 1;
+    }
+
     # Graphical operations - map objects
 
     sub doDraw {
@@ -28029,6 +32542,16 @@
                     # Unrecognised $type
                     $self->session->writeWarning(
                         'Undefined object (type \'' . $type . '\') in draw list',
+                        $self->_objClass . '->doDraw',
+                    );
+
+                } elsif (! $obj->isa('Games::Axmud')) {
+
+                    # Unrecognised $obj - not sure what causes this to happen yet, so added a check
+                    #   to prevent a crash
+                    $self->session->writeWarning(
+                        'Non-blessed reference \'' . $obj . '\' (type \'' . $type
+                        . '\') in draw list',
                         $self->_objClass . '->doDraw',
                     );
 
@@ -28168,6 +32691,11 @@
         # v1.0.469 Even if we're not drawing exits on this map, we still need to call ->preDrawExits
         #   because room tags (etc) are drawn at the same position as an exit
         $self->preDrawExits($mode);
+
+        # Quickly compile a hash of (custom) primary directions that should be counted, if
+        #   $self->worldModelObj->roomInteriorMode is set to 'checked_count'. Otherwise, just empty
+        #   the hash
+        $self->prepareCheckedCounts();
 
         # Draw rooms
         foreach my $number (keys %markedRoomHash) {
@@ -28676,6 +33204,52 @@
         return 1;
     }
 
+    sub prepareCheckedCounts {
+
+        # Called by $self->doDraw, once per drawing cycle, straight after the call to
+        #   $self->preDrawExits
+        # Compiles a has of custom primary directions which should be counted, if
+        #   $self->worldModelObj->roomInteriorMode is set to 'checked_count'. If not, just empties
+        #   the existing hash
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $mode, $dictObj,
+            @list,
+            %hash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->prepareCheckedCounts', @_);
+        }
+
+        if ($self->worldModelObj->roomInteriorMode ne 'checked_count') {
+
+            # Don't need to count checked and checkable directions at all
+            $self->ivEmpty('preCountCheckedHash');
+
+        } else {
+
+            $self->ivPoke(
+                'preCountCheckedHash',
+                $self->worldModelObj->getCheckableDirs($self->session),
+            );
+        }
+
+        return 1;
+    }
+
     sub drawRoom {
 
         # Called by $self->doDraw or $self->startDrag
@@ -28702,7 +33276,7 @@
         # Local variables
         my (
             $regionObj, $xPos, $yPos, $unallocatedCount, $unallocatableCount, $shadowCount,
-            $regionCount, $superRegionCount, $roomTagCanvasObj,
+            $regionCount, $superRegionCount, $checkedCount, $roomTagCanvasObj,
         );
 
         # Check for improper arguments
@@ -28764,6 +33338,8 @@
         # Before drawing the canvas objects that make up this room, destroy any existing canvas
         #   objects from the last time the room was drawn
         $self->deleteCanvasObj('room', $roomObj);
+        # Also destroy the canvas objects for any checked directions
+        $self->deleteCanvasObj('checked_dir', $roomObj);
 
         # Get the position of $roomObj's gridblock
         $xPos = $roomObj->xPosBlocks * $self->currentRegionmap->blockWidthPixels;
@@ -28839,6 +33415,35 @@
 
                         $self->drawExitTag($exitObj, $roomObj, $regionObj);
                     }
+                }
+            }
+
+            # Also draw checked directions, if allowed
+            if ($self->worldModelObj->drawCheckedDirsFlag && $mode ne 'no_exit') {
+
+                my @newObjList;
+
+                foreach my $dir ($roomObj->ivKeys('checkedDirHash')) {
+
+                    my $canvasObj = $self->drawCheckedDir($roomObj, $dir);
+                    if ($canvasObj) {
+
+                        push (@newObjList, $canvasObj);
+                    }
+                }
+
+                if (@newObjList) {
+
+                    # Checked directions can't be clicked, so we can store all checked directions
+                    #   for the room in a single entry in the hash
+                    # (Also, there is no event handler for the canvas object(s) - clicking a checked
+                    #   direction does nothing)
+                    $self->ivAdd(
+                        'drawnCheckedDirHash',
+                        $roomObj->xPosBlocks . '_' . $roomObj->yPosBlocks . '_'
+                        . $roomObj->zPosBlocks,
+                        \@newObjList,
+                    );
                 }
             }
         }
@@ -28981,7 +33586,7 @@
             && (
                 (! $twinExitObj->brokenFlag || $twinExitObj->bentFlag)
                 && ! $twinExitObj->regionFlag
-                && ! $twinExitObj->impassFlag
+                && $twinExitObj->exitOrnament ne 'impass'
             )
         ) {
             $self->deleteCanvasObj('exit', $twinExitObj);
@@ -28990,8 +33595,8 @@
         # Draw the exit
         if (
             (
-                $exitObj->impassFlag
-                || ($twinExitObj && $twinExitObj->impassFlag)
+                $exitObj->exitOrnament eq 'impass'
+                || ($twinExitObj && $twinExitObj->exitOrnament eq 'impass')
             ) && $self->worldModelObj->drawOrnamentsFlag
         ) {
             # It's an impassable exit. The impassable ornament and the exit are drawn together by
@@ -29417,7 +34022,10 @@
         my ($self, $labelObj, $check) = @_;
 
         # Local variables
-        my $newObj;
+        my (
+            $styleObj, $useObj, $colour, $markup, $newObj, $newObj2, $x1, $y1, $x2, $y2,
+            @newObjList,
+        );
 
         # Check for improper arguments
         if (! defined $labelObj || defined $check) {
@@ -29427,8 +34035,8 @@
 
         # Don't draw this room tag if:
         #   1. The label's position on the map has not been set
-        #   2. The label isn't on the currently-display level
-        #   3. The label isn't on the currently-display region
+        #   2. The label isn't on the currently-displayed level
+        #   3. The label isn't on the currently-displayed region
         #   4. The label doesn't contain any text
         if (
             ! defined $labelObj->xPosPixels
@@ -29447,29 +34055,149 @@
         #   objects from the last time the label was drawn
         $self->deleteCanvasObj('label', $labelObj);
 
+        # Set the colour and style
+        if (defined $labelObj->style) {
+
+            $styleObj = $self->worldModelObj->ivShow('mapLabelStyleHash', $labelObj->style);
+        }
+
+        if ($styleObj) {
+            $useObj = $styleObj;        # Set style from the style object
+        } else {
+            $useObj = $labelObj;        # Set style from the map label object's own IVs
+        }
+
+        # When selected, a box with an underlay colour does not change colour, but a box with no
+        #   underlay colour does change, matching the selected colour of the text
+        if (
+            ($self->selectedLabel && $self->selectedLabel eq $labelObj)
+            || $self->ivExists('selectedLabelHash', $labelObj->number)
+        ) {
+            $colour = $self->worldModelObj->selectMapLabelColour;
+        } else {
+            $colour = $useObj->textColour;
+        }
+
+        if ($colour) {
+
+            $markup = 'foreground="' . $colour . '"';
+        }
+
+        # If ->boxFlag is TRUE, we use the box's fill colour as the underlay
+        if ($useObj->underlayColour && ! $useObj->boxFlag) {
+
+            if (! $markup) {
+                $markup = 'background="' . $useObj->underlayColour . '"';
+            } else {
+                $markup .= ' background="' . $useObj->underlayColour . '"';
+            }
+        }
+
+        if ($useObj->gravity) {
+
+            if (! $markup) {
+                $markup = 'gravity="' . $useObj->gravity . '"';
+            } else {
+                $markup .= ' gravity="' . $useObj->gravity . '"';
+            }
+        }
+
+        if ($markup) {
+
+            $markup = '<span ' . $markup . '>' . $labelObj->name . '</span>';
+        }
+
+        if ($useObj->italicsFlag) {
+
+            $markup = '<i>' . $markup . '</i>';
+        }
+
+        if ($useObj->boldFlag) {
+
+            $markup = '<b>' . $markup . '</b>';
+        }
+
+        if ($useObj->underlineFlag) {
+
+            $markup = '<u>' . $markup . '</u>';
+        }
+
+        if ($useObj->strikeFlag) {
+
+            $markup = '<s>' . $markup . '</s>';
+        }
+
+        # Gnome2::Canvas will complain about & characters, so replace them with an entity
+        $markup =~ s/\&/&amp;/;
+
         # Draw the canvas object
         $newObj = Gnome2::Canvas::Item->new(
             $self->canvasRoot,
             'Gnome2::Canvas::Text',
             x => $labelObj->xPosPixels,
             y => $labelObj->yPosPixels,
-            fill_color => $self->getLabelColour($labelObj),
             font => $self->worldModelObj->mapFont,
             size => int(
-                $self->drawMapTextSize * $self->worldModelObj->labelRatio * $labelObj->relSize
+                $self->drawMapTextSize * $self->worldModelObj->labelRatio * $useObj->relSize
             ),
             anchor => 'GTK_ANCHOR_W',   # Draw text to the right of the original mouse click
-            text => $labelObj->name,
+            markup => $markup,
         );
 
-        # Set the object's position in the canvas drawing stack
-        $self->setLabelLevel($newObj);
+        push (@newObjList, $newObj);
 
-        # Set up the event handler for the canvas object
+        # Draw a box at the same position, if required
+        if ($useObj->boxFlag) {
+
+            ($x1, $y1, $x2, $y2) = $newObj->get_bounds();
+
+            if (! $useObj->underlayColour) {
+
+                $newObj2 = Gnome2::Canvas::Item->new(
+                    $self->canvasRoot,
+                    'Gnome2::Canvas::Rect',
+                    x1 => $x1 - 10,
+                    y1 => $y1 - 10,
+                    x2 => $x2 + 10,
+                    y2 => $y2 + 10,
+                    outline_color => $colour,
+                );
+
+            } else {
+
+                # Use the fill colour as the text's underlay colour, so everything inside the box
+                #   border is coloured
+                $newObj2 = Gnome2::Canvas::Item->new(
+                    $self->canvasRoot,
+                    'Gnome2::Canvas::Rect',
+                    x1 => $x1 - 10,
+                    y1 => $y1 - 10,
+                    x2 => $x2 + 10,
+                    y2 => $y2 + 10,
+                    outline_color => '#000000',
+                    fill_color => $useObj->underlayColour,
+                );
+            }
+
+            push (@newObjList, $newObj2);
+        }
+
+        # Set the object(s) positions in the canvas drawing stack, putting the box (if drawn) below
+        #   the text
+        foreach my $canvasObj (reverse @newObjList) {
+
+            $self->setLabelLevel($canvasObj);
+        }
+
+        # Set up the event handler for the canvas object (only for the text - not the box)
         $self->setupCanvasObjEvent('label', $newObj, $labelObj);
+        if ($newObj2) {
 
-        # Store the canvas object
-        $self->ivAdd('drawnLabelHash', $labelObj->number, [$newObj]);
+            $self->setupCanvasObjEvent('label', $newObj2, $labelObj);
+        }
+
+        # Store the canvas object(s)
+        $self->ivAdd('drawnLabelHash', $labelObj->number, \@newObjList);
 
         return 1;
     }
@@ -29482,12 +34210,14 @@
         # Sets the map background's position in the canvas drawing stack
         #
         # The canvas drawing stack is organised like this:
-        #   6   - labels and draggable exits (placed at the top of the stack)
-        #   5   - room tags, room guilds and exit tags (lowered from the bottom)
-        #   4   - exits and exit ornaments (lowered from the bottom)
-        #   3   - room interior text (raised from the bottom)
-        #   2   - room boxes (raised from the bottom)
-        #   1   - room echose and fake room boxes (raised from the bottom)
+        #   8   - labels and draggable exits (placed at the top of the stack)
+        #   7   - room tags, room guilds and exit tags (lowered from the top)
+        #   6   - exits, exit ornaments and checked directions (lowered from the top)
+        #   5   - room interior text (raised from the bottom)
+        #   4   - room boxes (raised from the bottom)
+        #   3   - room echoes and fake room boxes (raised from the bottom)
+        #   2   - coloured rectangles on the map background (raised from the bottom)
+        #   1   - coloured blocks on the map background (raised from the bottom)
         #   0   - map background (placed at the bottom of the stack)
         #
         # Expected arguments
@@ -29510,12 +34240,12 @@
         return 1;
     }
 
-    sub setEchoLevel {
+    sub setSquareLevel {
 
         # Called by various drawing functions
         # Sets the canvas object's position in the canvas drawing stack
         #
-        # Room echos and fake room boxes are drawn at level 1 (above the map background)
+        # Coloured blocks are drawn at level 1 (above the map background)
         #
         # Expected arguments
         #   $canvasObj      - The canvas object which has just been drawn
@@ -29524,7 +34254,69 @@
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $canvasObj, $roomObj, $check) = @_;
+        my ($self, $canvasObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $canvasObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setSquareLevel', @_);
+        }
+
+        $canvasObj->lower_to_bottom();
+        $canvasObj->raise(1);
+
+        return 1;
+    }
+
+    sub setRectLevel {
+
+        # Called by various drawing functions
+        # Sets the canvas object's position in the canvas drawing stack
+        #
+        # Coloured rectangles are drawn at level 2 (above the map background and coloured blocks)
+        #
+        # Expected arguments
+        #   $canvasObj      - The canvas object which has just been drawn
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $canvasObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $canvasObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setRectLevel', @_);
+        }
+
+        $canvasObj->lower_to_bottom();
+        $canvasObj->raise(
+            $self->ivPairs('colouredSquareHash')
+            # The younger rectangle must be drawn above older rectangles
+            + $self->ivPairs('colouredRectHash')
+            + 1,
+        );
+
+        return 1;
+    }
+
+    sub setEchoLevel {
+
+        # Called by various drawing functions
+        # Sets the canvas object's position in the canvas drawing stack
+        #
+        # Room echos and fake room boxes are drawn at level 3 (above the map background, coloured
+        #   blocks and coloured rectangles)
+        #
+        # Expected arguments
+        #   $canvasObj      - The canvas object which has just been drawn
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $canvasObj, $check) = @_;
 
         # Check for improper arguments
         if (! defined $canvasObj || defined $check) {
@@ -29533,7 +34325,11 @@
         }
 
         $canvasObj->lower_to_bottom();
-        $canvasObj->raise(1);
+        $canvasObj->raise(
+            $self->ivPairs('colouredSquareHash')
+            + $self->ivPairs('colouredRectHash')
+            + 1,
+        );
 
         return 1;
     }
@@ -29543,7 +34339,8 @@
         # Called by various drawing functions
         # Sets the canvas object's position in the canvas drawing stack
         #
-        # Room boxes are drawn at level 2 (above the map background, room echos and fake room boxes)
+        # Room boxes are drawn at level 4 (above the map background, coloured squares, coloured
+        #   rectangles, room echos and fake room boxes)
         #
         # Expected arguments
         #   $canvasObj      - The canvas object which has just been drawn
@@ -29568,7 +34365,8 @@
 
         if (! defined $level) {
 
-            $level = $self->ivPairs('drawnRoomEchoHash') + 1;
+            $level = $self->ivPairs('colouredSquareHash') + $self->ivPairs('colouredRectHash')
+                        + $self->ivPairs('drawnRoomEchoHash') + 1;
         }
 
         $canvasObj->lower_to_bottom();
@@ -29582,8 +34380,8 @@
         # Called by various drawing functions
         # Sets the canvas object's position in the canvas drawing stack
         #
-        # Room interior text is drawn at level 3 (above the map background, room echos, fake room
-        #   boxes and real room boxes)
+        # Room interior text is drawn at level 5 (above the map background, coloured blocks,
+        #   coloured rectangles, room echos, fake room boxes and real room boxes)
         #
         # Expected arguments
         #   $canvasObj      - The canvas object which has just been drawn
@@ -29602,7 +34400,9 @@
 
         $canvasObj->lower_to_bottom();
         $canvasObj->raise(
-            $self->ivPairs('drawnRoomEchoHash')
+            $self->ivPairs('colouredSquareHash')
+            + $self->ivPairs('colouredRectHash')
+            + $self->ivPairs('drawnRoomEchoHash')
             + $self->ivPairs('drawnRoomHash')
             + $self->ivPairs('dummyRoomHash')
             + 1
@@ -29616,7 +34416,7 @@
         # Called by various drawing functions
         # Sets the canvas object's position in the canvas drawing stack
         #
-        # Exits and exit ornaments are drawn at level 4 (below labels, draggable exits, room tags,
+        # Exits and exit ornaments are drawn at level 6 (below labels, draggable exits, room tags,
         #   room guilds and exit tags)
         #
         # Expected arguments
@@ -29663,7 +34463,7 @@
         # Called by various drawing functions
         # Sets the canvas object's position in the canvas drawing stack
         #
-        # Room tags, room guilds and exit tags are drawn at level 5 (below labels and draggable
+        # Room tags, room guilds and exit tags are drawn at level 7 (below labels and draggable
         #   exits)
         #
         # Expected arguments
@@ -29703,7 +34503,7 @@
         # Called by various drawing functions
         # Sets the canvas object's position in the canvas drawing stack
         #
-        # Labels (and draggable exits) are drawn at level 6 (above everything else)
+        # Labels (and draggable exits) are drawn at level 8 (above everything else)
         #
         # Expected arguments
         #   $canvasObj      - The canvas object which has just been drawn
@@ -29730,6 +34530,7 @@
     sub drawRoomBox {
 
         # Called by $self->drawRoom to draw the room box in two colours - a border, and an interior
+        #   (and some graffiti, if this room has been tagged with graffiti)
         #
         # Expected arguments
         #   $mode
@@ -29758,8 +34559,10 @@
 
         # Local variables
         my (
-            $x2, $y2, $posn, $borderColour, $currentMode, $roomColour, $newObj, $newObj2,
-            $posnSet,
+            $x2, $y2, $posn, $borderColour, $currentMode, $roomColour, $newObj, $newObj2, $newObj3,
+            $newObj4, $newObj5, $gap, $posnSet, $origColour, $fillColour, $centreX, $centreY,
+            $xSize, $ySize,
+            @objList,
         );
 
         # Check for improper arguments
@@ -29814,9 +34617,11 @@
             fill_color => $roomColour,
         );
 
-        # For current/last known/ghost rooms, the border is drawn 2 pixels wide. In fact, we draw
-        #   another box, just below the first one (unless the original call to $self->drawRoom was
-        #   from ->startDrag, in which case $noEmphasisFlag is set)
+        push (@objList, $newObj);
+
+        # For current/last known/ghost rooms, the border can be drawn 2 pixels wide
+        # In fact, we draw another box, just below the first one (unless the original call to
+        #   $self->drawRoom was from ->startDrag, in which case $noEmphasisFlag is set)
         if ($currentMode eq 'double' && ! $noEmphasisFlag) {
 
             $newObj2 = Gnome2::Canvas::Item->new(
@@ -29828,30 +34633,126 @@
                 y2 => ($y2 + 1),
                 outline_color => $borderColour,
             );
+
+            push (@objList, $newObj2);
+
+            $gap = 2;       # Use this value for drawing graffiti in the right place
+
+        } else {
+
+            $gap = 1;
+        }
+
+        # Grafitti and wilderness markings don't change colour along with the room border
+        $origColour = $self->worldModelObj->borderColour;
+
+        # If the room has been tagged with graffiti, draw a big X
+        if ($self->graffitiModeFlag && $self->ivExists('graffitiHash', $roomObj->number)) {
+
+            $newObj3 = Gnome2::Canvas::Item->new(
+                $self->canvasRoot,
+                'Gnome2::Canvas::Line',
+                points => [
+                    ($borderCornerXPosPixels + $gap),
+                    ($borderCornerYPosPixels + $gap),
+                    ($x2 - $gap),
+                    ($y2 - $gap),
+                ],
+                fill_color => $origColour,
+                width_units => 2,
+                cap_style => 'round',
+            );
+
+            $newObj4 = Gnome2::Canvas::Item->new(
+                $self->canvasRoot,
+                'Gnome2::Canvas::Line',
+                points => [
+                    ($x2 - $gap),
+                    ($borderCornerYPosPixels + $gap),
+                    ($borderCornerXPosPixels + $gap),
+                    ($y2 - $gap),
+                ],
+                fill_color => $origColour,
+                width_units => 2,
+                cap_style => 'round',
+            );
+
+            push (@objList, $newObj3, $newObj4);
+        }
+
+        # If it's a wilderness room, mark it as one
+        if ($roomObj->wildMode ne 'normal') {
+
+            if ($roomObj->wildMode eq 'wild') {
+                $fillColour = $origColour;          # Filled-in circle
+            } else {
+                $fillColour = $roomColour;          # Empty circle
+            }
+
+            $centreX = $borderCornerXPosPixels + int($self->currentRegionmap->roomWidthPixels / 2);
+            $centreY = $borderCornerYPosPixels + int($self->currentRegionmap->roomHeightPixels / 2);
+            $xSize = int($self->currentRegionmap->roomWidthPixels / 10);    # Either side of centre
+            $ySize = int($self->currentRegionmap->roomHeightPixels / 5);    # One side of centre
+
+            # Don't draw a circle of zero size/width
+            if ($xSize && $ySize) {
+
+                $newObj5 = Gnome2::Canvas::Item->new(
+                    $self->canvasRoot,
+                    'Gnome2::Canvas::Ellipse',
+                    x1 => $centreX - $xSize,
+                    y1 => $centreY,
+                    x2 => $centreX + $xSize,
+                    y2 => $centreY + $ySize,
+                    outline_color => $origColour,
+                    fill_color => $fillColour,
+                );
+
+                push (@objList, $newObj5);
+            }
         }
 
         # Set the objects' positions in the canvas drawing stack
+        if ($newObj5) {
+
+            $posnSet = $self->setRoomLevel($newObj5);
+
+            # Set up the event handlers for the canvas objects
+            $self->setupCanvasObjEvent('room', $newObj5, $roomObj);
+        }
+
+        if ($newObj3) {
+
+            # $posnSet 'undef' if room not in wilderness mode
+            $posnSet = $self->setRoomLevel($newObj3, $posnSet);
+            $posnSet = $self->setRoomLevel($newObj4, $posnSet);
+
+            # Set up the event handlers for the canvas objects
+            $self->setupCanvasObjEvent('room', $newObj3, $roomObj);
+            $self->setupCanvasObjEvent('room', $newObj4, $roomObj);
+        }
+
         if ($newObj2) {
 
-            $posnSet = $self->setRoomLevel($newObj2);
-
+            $posnSet = $self->setRoomLevel($newObj2, $posnSet);
 
             # Set up the event handler for the canvas object
             $self->setupCanvasObjEvent('room', $newObj2, $roomObj);
         }
 
-        $self->setRoomLevel($newObj, $posnSet);         # $posnSet 'undef' if room not emphasised
+        # $posnSet 'undef' if room not emphasised
+        $self->setRoomLevel($newObj, $posnSet);
         # Set up the event handler for the canvas object
         $self->setupCanvasObjEvent('room', $newObj, $roomObj);
 
         # Store the canvas object(s)
         $posn = $roomObj->xPosBlocks . '_' . $roomObj->yPosBlocks . '_' . $roomObj->zPosBlocks;
 
-        if (! $newObj2) {
-            $self->ivAdd('drawnRoomHash', $posn, [$newObj]);
-        } else {
-            $self->ivAdd('drawnRoomHash', $posn, [$newObj, $newObj2]);
-            $self->ivAdd('dummyRoomHash', $posn, [$newObj, $newObj2]);  # Subset of ->drawnRoomHash
+        $self->ivAdd('drawnRoomHash', $posn, \@objList);
+        if ($newObj2) {
+
+            # Subset of ->drawnRoomHash
+            $self->ivAdd('dummyRoomHash', $posn, \@objList);
         }
 
         return 1;
@@ -30079,8 +34980,10 @@
 
         # Local variables
         my (
-            $mode, $livingCount, $nonLivingCount, $file, $assistedCount, $patternCount,
+            $mode, $checkedCount, $checkableCount, $livingCount, $nonLivingCount, $file,
+            $assistedCount, $patternCount,
             @list,
+            %checkHash,
         );
 
         # Check for improper arguments
@@ -30114,6 +35017,35 @@
                 $borderCornerYPosPixels,
                 $regionCount,
                 $superRegionCount,
+            );
+
+        # Draw the number of checked/checkable directions
+        } elsif ($mode eq 'checked_count') {
+
+            # Count the number of checked and checkable directions
+            $checkedCount = 0;
+            %checkHash = $self->preCountCheckedHash;
+
+            foreach my $dir ($roomObj->ivKeys('checkedDirHash')) {
+
+                $checkedCount++;
+                delete $checkHash{$dir};
+            }
+
+            foreach my $dir ($roomObj->sortedExitList) {
+
+                delete $checkHash{$dir};
+            }
+
+            # Checkable directions are all those that remain in the hash
+            $checkableCount = scalar (keys %checkHash);
+
+            $self->drawInteriorCounts(
+                $roomObj,
+                $borderCornerXPosPixels,
+                $borderCornerYPosPixels,
+                $checkedCount,
+                $checkableCount,
             );
 
         # Draw the number of living and non-living objects contained in the room
@@ -30368,7 +35300,7 @@
             $self->ivAdd('drawnExitHash', $exitObj->number, [$newObj]);
 
             # Draw ornaments for this exit, if there are any (and if allowed)
-            if ($exitObj->ornamentFlag && $self->worldModelObj->drawOrnamentsFlag) {
+            if ($exitObj->exitOrnament ne 'none' && $self->worldModelObj->drawOrnamentsFlag) {
 
                 $self->drawExitOrnaments(
                     $exitObj,
@@ -30462,7 +35394,7 @@
             $self->ivAdd('drawnExitHash', $exitObj->number, [$newObj]);
 
             # Draw ornaments for this exit, if there are any (and if allowed)
-            if ($exitObj->ornamentFlag && $self->worldModelObj->drawOrnamentsFlag) {
+            if ($exitObj->exitOrnament ne 'none' && $self->worldModelObj->drawOrnamentsFlag) {
 
                 $self->drawExitOrnaments(
                     $exitObj,
@@ -30662,8 +35594,10 @@
                         = $self->worldModelObj->ivShow('exitModelHash', $exitObj->twinExit);
                 }
 
-                if ($exitObj->ornamentFlag || ($twinExitObj && $twinExitObj->ornamentFlag)) {
-
+                if (
+                    $exitObj->exitOrnament ne 'none'
+                    || ($twinExitObj && $twinExitObj->exitOrnament ne 'none')
+                ) {
                     $self->drawExitOrnaments(
                         $exitObj,
                         $colour,
@@ -30968,8 +35902,10 @@
                         = $self->worldModelObj->ivShow('exitModelHash', $exitObj->twinExit);
                 }
 
-                if ($exitObj->ornamentFlag || ($twinExitObj && $twinExitObj->ornamentFlag)) {
-
+                if (
+                    $exitObj->exitOrnament ne 'none'
+                    || ($twinExitObj && $twinExitObj->exitOrnament ne 'none')
+                ) {
                     $self->drawExitOrnaments(
                         $exitObj,
                         $colour,
@@ -31136,9 +36072,9 @@
         # Decide which colour to use. If one of the exits is not impassable, it's drawn in the same
         #   colour (default purple) as the one that is impassable. If either of them are selected,
         #   then of course they'll be both drawn in the selected object colour (default blue)
-        if ($exitObj->impassFlag) {
+        if ($exitObj->exitOrnament eq 'impass') {
             $colour = $self->getExitColour($exitObj);
-        } elsif ($twinExitObj && $twinExitObj->impassFlag) {
+        } elsif ($twinExitObj && $twinExitObj->exitOrnament eq 'impass') {
             $colour = $self->getExitColour($twinExitObj);
         }
 
@@ -31181,7 +36117,7 @@
                     $xPos = $thisRoomObj->xPosBlocks * $self->currentRegionmap->blockWidthPixels;
                     $yPos = $thisRoomObj->yPosBlocks * $self->currentRegionmap->blockHeightPixels;
 
-                    if ($thisExitObj->impassFlag) {
+                    if ($thisExitObj->exitOrnament eq 'impass') {
 
                         # Draw an impassable exit. Find the exit's position
                         $posnListRef = $self->ivShow('preDrawnSquareExitHash', $mapDir);
@@ -31260,6 +36196,84 @@
         }
 
         return 1;
+    }
+
+    sub drawCheckedDir {
+
+        # Called by $self->drawRoom to draw a checked direction (after a character tries to move in
+        #   a certain direction, and that attempt generates a failed exit message)
+        #
+        # Expected arguments
+        #   $roomObj        - Blessed reference of the parent GA::ModelObj::Room
+        #   $dir            - The checked direction (a custom primary or secondary direction)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the exit isn't drawn
+        #   Returns the new canvas object on success
+
+        my ($self, $roomObj, $dir, $check) = @_;
+
+        # Local variables
+        my (
+            $xPos, $yPos, $posnListRef, $squareStartXPosPixels, $squareStopYPosPixels,
+            $squareStopXPosPixels, $squareStartYPosPixels, $colour, $newObj,
+        );
+
+        # Check for improper arguments
+        if (! defined $roomObj || ! defined $dir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawCheckedDir', @_);
+        }
+
+        # Don't draw the checked direction if it's not in a primary direction
+        if (! $self->session->currentDict->checkPrimaryDir($dir)) {
+
+            return undef;
+        }
+
+        # Get the position of $thisRoomObj's gridblock
+        $xPos = $roomObj->xPosBlocks * $self->currentRegionmap->blockWidthPixels;
+        $yPos = $roomObj->yPosBlocks * $self->currentRegionmap->blockHeightPixels;
+
+        # Find the position of an exit drawn in this direction
+        $posnListRef = $self->ivShow('preDrawnSquareExitHash', $dir);
+
+        # Invert the coordinates of the square occupied by the exit so that
+        #   ($squareStartXPosPixels, $squareStartYPosPixels) is the top-left corner, rather than the
+        #   bottom-left corner
+        (
+            $squareStartXPosPixels, $squareStopYPosPixels,
+            $squareStopXPosPixels, $squareStartYPosPixels,
+        ) = (
+            $$posnListRef[0], $$posnListRef[1],
+            $$posnListRef[2], $$posnListRef[3],
+        );
+
+        # Get the colour for checked directions
+        $colour = $self->worldModelObj->checkedDirColour;
+
+        # Draw the canvas object
+        $newObj = Gnome2::Canvas::Item->new (
+            $self->canvasRoot,
+            'Gnome2::Canvas::Rect',
+            x1 => $squareStartXPosPixels + $xPos,
+            y1 => $squareStartYPosPixels + $yPos,
+            x2 => $squareStopXPosPixels + $xPos,
+            y2 => $squareStopYPosPixels + $yPos,
+            outline_color => $colour,
+            fill_color => $colour,
+        );
+
+        # Set the object's position in the canvas drawing stack
+        $self->setExitLevel($newObj);
+
+        # (There is no event handler for the canvas object - clicking the checked direction does
+        #   nothing)
+
+
+        # The canvas objects for checked directions in each room are stored together, so let the
+        #   calling function add an entry to $self->drawnCheckedHash
+        return $newObj;
     }
 
     sub drawBentExit {
@@ -31617,8 +36631,10 @@
             # Draw ornaments for this exit and/or the twin exit, if there are any (and if allowed)
             if ($self->worldModelObj->drawOrnamentsFlag) {
 
-                if ($exitObj->ornamentFlag || ($twinExitObj && $twinExitObj->ornamentFlag)) {
-
+                if (
+                    $exitObj->exitOrnament ne 'none'
+                    || ($twinExitObj && $twinExitObj->exitOrnament ne 'none')
+                ) {
                     $self->drawExitOrnaments(
                         $exitObj,
                         $colour,
@@ -32366,7 +37382,7 @@
         }
 
         # Impassable and retracing exits are drawn bold. Other exit ornaments are drawn oblique
-        if ($exitObj->impassFlag || $exitObj->retraceFlag) {
+        if ($exitObj->exitOrnament eq 'impass' || $exitObj->retraceFlag) {
 
             $weight = 600;
             $style = 'normal';
@@ -32375,7 +37391,7 @@
 
             $weight = 400;
 
-            if ($exitObj->ornamentFlag) {
+            if ($exitObj->exitOrnament ne 'none') {
                 $style = 'oblique';
             } elsif ($exitObj->randomType ne 'none') {
                 $style = 'italic';
@@ -32562,7 +37578,7 @@
         #   $borderCornerXPosPixels, $borderCornerYPosPixels
         #               - Coordinates of the pixel at the top-left corner of the room's border
         #   $roomFlag   - The room flag to draw. Matches a key in
-        #                   GA::Obj::WorldModel->roomFlagTextHash
+        #                   GA::Obj::WorldModel->roomFlagHash
         #
         # Return values
         #   'undef' on improper arguments, or if the correct room flag text can't be found
@@ -32573,7 +37589,7 @@
         ) = @_;
 
         # Local variables
-        my $text;
+        my $roomFlagObj;
 
         # Check for improper arguments
         if (
@@ -32583,9 +37599,9 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->drawRoomFlagText', @_);
         }
 
-        # Get the label itself (A two-letter scalar, e.g. 'St' for stash rooms)
-        $text = $self->worldModelObj->ivShow('roomFlagTextHash', $roomFlag);
-        if ($text) {
+        # Get the short name itself (A two-letter scalar, e.g. 'St' for stash rooms)
+        $roomFlagObj = $self->worldModelObj->ivShow('roomFlagHash', $roomFlag);
+        if ($roomFlagObj) {
 
             # Draw the label
             $self->drawInteriorText(
@@ -32593,7 +37609,7 @@
                 $borderCornerXPosPixels,
                 $borderCornerYPosPixels,
                 0,          # Top-left corner
-                $text,
+                $roomFlagObj->shortName,
             );
         }
 
@@ -32625,7 +37641,7 @@
             ! defined $roomObj || ! defined $borderCornerXPosPixels
             || ! defined $borderCornerYPosPixels || defined $check
         ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawRoomFlagText', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawRoomSourceText', @_);
         }
 
         # Split a file path like /home/name/ds/lib/domains/town/room/start.c into path,
@@ -32829,9 +37845,9 @@
         }
 
         # Draw an ornament for $exitObj (if this GA::Obj::Exit has an ornament)
-        if ($exitObj->ornamentFlag) {
+        if ($exitObj->exitOrnament ne 'none') {
 
-            if ($exitObj->breakFlag) {
+            if ($exitObj->exitOrnament eq 'break') {
 
                 $self->drawBreakableOrnament(
                     $exitObj, $exitObj,
@@ -32840,7 +37856,7 @@
                     $posnListRef,
                 );
 
-            } elsif ($exitObj->pickFlag) {
+            } elsif ($exitObj->exitOrnament eq 'pick') {
 
                 $self->drawPickableOrnament(
                     $exitObj, $exitObj,
@@ -32849,7 +37865,7 @@
                     $posnListRef,
                 );
 
-            } elsif ($exitObj->lockFlag) {
+            } elsif ($exitObj->exitOrnament eq 'lock') {
 
                 $self->drawLockableOrnament(
                     $exitObj, $exitObj,
@@ -32858,7 +37874,7 @@
                     $posnListRef,
                 );
 
-            } elsif ($exitObj->openFlag) {
+            } elsif ($exitObj->exitOrnament eq 'open') {
 
                 $self->drawOpenableOrnament(
                     $exitObj, $exitObj,
@@ -32870,9 +37886,9 @@
         }
 
         # Draw an ornament for $twinExitObj (if this GA::Obj::Exit has an ornament)
-        if ($twinExitObj && $twinExitObj->ornamentFlag) {
+        if ($twinExitObj && $twinExitObj->exitOrnament ne 'none') {
 
-            if ($twinExitObj->breakFlag) {
+            if ($twinExitObj->exitOrnament eq 'break') {
 
                 $self->drawBreakableOrnament(
                     $twinExitObj, $exitObj,
@@ -32881,7 +37897,7 @@
                     $posnListRef,
                 );
 
-            } elsif ($twinExitObj->pickFlag) {
+            } elsif ($twinExitObj->exitOrnament eq 'pick') {
 
                 $self->drawPickableOrnament(
                     $twinExitObj, $exitObj,
@@ -32890,7 +37906,7 @@
                     $posnListRef,
                 );
 
-            } elsif ($twinExitObj->lockFlag) {
+            } elsif ($twinExitObj->exitOrnament eq 'lock') {
 
                 $self->drawLockableOrnament(
                     $twinExitObj, $exitObj,
@@ -32899,7 +37915,7 @@
                     $posnListRef,
                 );
 
-            } elsif ($twinExitObj->openFlag) {
+            } elsif ($twinExitObj->exitOrnament eq 'open') {
 
                 $self->drawOpenableOrnament(
                     $twinExitObj, $exitObj,
@@ -34118,7 +39134,7 @@
 
         # Local variables
         my (
-            $highestFlag, $highestScore,
+            $highestFlagObj, $highestScore,
             @flagList,
         );
 
@@ -34130,41 +39146,36 @@
             return $self->worldModelObj->roomColour;
         }
 
+        # Sort the room's room flags by priority
         # Work out which flag has the highest priority, while still being available through the
-        #   filters specified in GA::Obj::WorldModel->roomFlagFilterHash
+        #   filters specified in GA::Obj::WorldModel->roomFilterApplyHash
         $highestScore = 0;
-        if ($roomObj->roomFlagHash) {
+        foreach my $roomFlag ($roomObj->ivKeys('roomFlagHash')) {
 
-            @flagList = $roomObj->ivKeys('roomFlagHash');
+            my $roomFlagObj = $self->worldModelObj->ivShow('roomFlagHash', $roomFlag);
 
-            foreach my $flag (@flagList) {
-
-                my ($filter, $score);
-
-                # Check that the flag is available through the current filter (or that all filters
-                #   have been applied using the flag)
-                $filter = $self->worldModelObj->ivShow('roomFlagFilterHash', $flag);
-                if (
+            if (
+                $roomFlagObj
+                && (
                     $self->worldModelObj->allRoomFiltersFlag
-                    || $self->worldModelObj->ivShow('roomFilterHash', $filter)
-                ) {
-                    $score = $self->worldModelObj->ivShow('roomFlagPriorityHash', $flag);
-                    if ($highestScore == 0 || $score < $highestScore) {
+                    || $self->worldModelObj->ivShow('roomFilterApplyHash', $roomFlagObj->filter)
+                )
+            ) {
+                # This room flag can be drawn, if it's the highest-priority one
+                if ($highestScore == 0 || $roomFlagObj->priority < $highestScore) {
 
-                        # $flag's colour takes priority
-                        $highestFlag = $flag;
-                        $highestScore = $score;
-                    }
+                    # $flag's colour takes priority
+                    $highestFlagObj = $roomFlagObj;
+                    $highestScore = $roomFlagObj->priority;
                 }
             }
         }
 
-        if ($highestFlag) {
+        if ($highestFlagObj) {
 
             # This flag's colour has the highest priority, so it's the one we draw
-            $roomObj->ivPoke('lastRoomFlag', $highestFlag);
-
-            return $self->worldModelObj->ivShow('roomFlagColourHash', $highestFlag);
+            $roomObj->ivPoke('lastRoomFlag', $highestFlagObj->name);
+            return $highestFlagObj->colour;
 
         } else {
 
@@ -34317,7 +39328,7 @@
             #   to a selected exit (default is dark blue)
             return $self->worldModelObj->selectExitShadowColour;
 
-        } elsif ($exitObj->impassFlag) {
+        } elsif ($exitObj->exitOrnament eq 'impass') {
 
             return $self->worldModelObj->impassableExitColour;
 
@@ -34370,42 +39381,6 @@
 
             # Default exit tag colour
             return $self->worldModelObj->exitTagColour;
-        }
-    }
-
-    sub getLabelColour {
-
-        # Returns the colour in which a label should be drawn (which depends on several factors)
-        #
-        # Expected arguments
-        #   $labelObj   - The GA::Obj::MapLabel being drawn
-        #
-        # Return values
-        #   The default label colour on improper arguments
-        #   Otherwise, returns the colour with which to draw the label
-
-        my ($self, $labelObj, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $labelObj || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->getLabelColour', @_);
-            # Return the default colour
-            return $self->worldModelObj->mapLabelColour;
-        }
-
-        # Decide which colour to use
-        if (
-            ($self->selectedLabel && $self->selectedLabel eq $labelObj)
-            || $self->ivExists('selectedLabelHash', $labelObj->number)
-        ) {
-            # Selected label
-            return $self->worldModelObj->selectMapLabelColour;
-
-        } else {
-
-            # Default label colour
-            return $self->worldModelObj->mapLabelColour;
         }
     }
 
@@ -34657,7 +39632,7 @@
                 $exitObj->drawMode eq 'temp_alloc'
                 || $exitObj->brokenFlag
                 || $exitObj->regionFlag
-                || $exitObj->impassFlag
+                || $exitObj->exitOrnament eq 'impass'
             ) {
                 # Get the coordinates of two corners of the square occupied by the exit
                 # NB ($startXPosPixels, $startYPosPixels) is lower and further to the left than
@@ -36251,7 +41226,7 @@
         }
     }
 
-    # Prompt functions ('dialogue' windows uniqe to the Automapper window)
+    # Prompt functions ('dialogue' windows unique to the Automapper window)
 
     sub promptGridBlock {
 
@@ -37413,6 +42388,395 @@
         }
     }
 
+    sub promptConfigLabel {
+
+        # Called by $self->addLabelAtBlockCallback, ->addLabelAtClickCallback and
+        #   ->setLabelCallback
+        # Prompts the user for some label text and an optional label style
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $labelObj   - When called by ->setLabelCallback, the existing label text and style
+        #   $customiseFlag  - If FALSE, the 'dialogue' window only shows label text and style. If
+        #                       TRUE, the 'dialogue' window shows all label IVs
+        #
+        # Return values
+        #   An empty list on improper arguments or if the user closes the window without making
+        #       changes
+        #   Otherwise returns a list in the form
+        #       (label_text, label_style)
+        #   ...where 'label_text' must contain at least one non-space character, and 'label_style'
+        #       is the name of a label style object stored in GA::Obj::WorldModel->mapLabelStyleHash
+        #       (or 'undef', if the label style object specified by
+        #       GA::Obj::WorldModel->mapLabelStyle is used)
+
+        my ($self, $labelObj, $customiseFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $current, $response, $textColour, $underlayColour, $count, $index, $relSize,
+            @emptyList, @list, @comboList,
+            %descripHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->promptConfigLabel', @_);
+            return @emptyList;
+        }
+
+        # Show the 'dialogue' window
+        my $dialogueWin = Gtk2::Dialog->new(
+            'Add label',
+            $self->winWidget,
+            [qw/modal destroy-with-parent/],
+            'gtk-cancel' => 'reject',
+            'gtk-ok'     => 'accept',
+        );
+
+        $dialogueWin->set_position('center-always');
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+
+        $dialogueWin->signal_connect('delete-event' => sub {
+
+            $dialogueWin->destroy();
+            $self->restoreFocus();
+
+            return @emptyList;
+        });
+
+        # Add widgets to the 'dialogue' window
+        my $vBox = $dialogueWin->vbox;
+        # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
+        #   Gtk2::VBox on the right, into which we put everything
+        my $vBox2 = $self->addDialogueIcon($vBox);
+
+        # First label and textview
+        my $label = Gtk2::Label->new();
+        $vBox2->pack_start($label, FALSE, FALSE, 5);
+        $label->set_alignment(0, 0);
+        $label->set_markup('Enter the label text');
+
+        # Create a textview using the system's preferred colours and fonts
+        my $scroller = Gtk2::ScrolledWindow->new(undef, undef);
+        $vBox2->pack_start($scroller, FALSE, FALSE, 5);
+        $scroller->set_shadow_type('etched-out');
+        $scroller->set_policy('automatic', 'automatic');
+        $scroller->set_size_request(200, 75);
+
+        # Create a textview with default colours/fonts for a dialogue window
+        $axmud::CLIENT->desktopObj->getTextViewStyle('dialogue');
+        my $textView = Gtk2::TextView->new();
+        $scroller->add($textView);
+        my $buffer = Gtk2::TextBuffer->new();
+        $textView->set_buffer($buffer);
+        $textView->set_editable(TRUE);
+        $textView->set_cursor_visible(TRUE);
+
+        if ($labelObj) {
+
+            $buffer->set_text($labelObj->name);
+        }
+
+        my (
+            $label2, $combo,
+            $table,
+            $label3, $frame, $canvas, $canvasObj, $button, $button2,
+            $label4, $frame2, $canvas2, $canvasObj2, $button3, $button4,
+            $label5, $entry,
+            $checkButton, $checkButton2, $checkButton3, $checkButton4, $checkButton5,
+            $label6, $combo2,
+        );
+
+        if (! $customiseFlag) {
+
+            # Second label and combo
+            $label2 = Gtk2::Label->new();
+            $vBox2->pack_start($label2, FALSE, FALSE, 5);
+            $label2->set_alignment(0, 0);
+            $label2->set_markup('Select a label style');
+
+            # (The world model defines a style for use with new labels; show it first in the list,
+            #   or show the existing label's style
+            if ($labelObj) {
+                $current = $labelObj->style;
+            } else {
+                $current = $self->worldModelObj->mapLabelStyle;
+            }
+
+            foreach my $style (
+                sort {lc($a) cmp lc($b)} ($self->worldModelObj->ivKeys('mapLabelStyleHash'))
+            ) {
+                if (! defined $current || $current ne $style) {
+
+                    push (@comboList, $style);
+                }
+            }
+
+            if (defined $current) {
+
+                unshift(@comboList, $current);
+            }
+
+            $combo = Gtk2::ComboBox->new_text();
+            $vBox2->pack_start($combo, 0, 0, 5);
+            foreach my $item (@comboList) {
+
+                $combo->append_text($item);
+            }
+
+            $combo->set_active(0);
+
+        } elsif ($labelObj && $customiseFlag) {
+
+            # Extra widgets for all map label object IVs apart from ->style (which is about to be
+            #   reset). A lot to fit in, so we're going to need a table
+            $table = Gtk2::Table->new(7, 12, FALSE);
+            $vBox2->pack_start($table, TRUE, TRUE, $axmud::CLIENT->constFreeSpacingPixels);
+            $table->set_row_spacings($axmud::CLIENT->constFreeSpacingPixels);
+            $table->set_col_spacings($axmud::CLIENT->constFreeSpacingPixels);
+
+            # Text colour
+            $textColour = $labelObj->textColour;            # May be 'undef'
+
+            $label3 = Gtk2::Label->new();
+            $table->attach_defaults($label3, 0, 3, 0, 1);
+            $label3->set_markup('Text colour');
+            $label3->set_alignment(0, 0.5);
+
+            ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($table,
+                $textColour,
+                undef,                  # No neutral colour
+                3, 6, 0, 1,
+            );
+
+            $button = Gtk2::Button->new('Set');
+            $table->attach_defaults($button, 6, 9, 0, 1);
+            $button->signal_connect('clicked' => sub {
+
+                my $choice = $self->showColourSelectionDialogue(
+                    'Text colour',
+                    $labelObj->textColour,
+                );
+
+                if ($choice) {
+
+                    $textColour = $choice;
+                    $canvasObj = $self->fillSimpleCanvas($canvas, $canvasObj, $choice);
+                }
+            });
+
+            $button2 = Gtk2::Button->new('Reset');
+            $table->attach_defaults($button2, 9, 12, 0, 1);
+            $button2->signal_connect('clicked' => sub {
+
+                $textColour = undef;
+                $canvasObj = $self->fillSimpleCanvas($canvas, $canvasObj);
+            });
+
+            # Underlay colour
+            $underlayColour = $labelObj->underlayColour;    # May be 'undef'
+
+            $label4 = Gtk2::Label->new();
+            $table->attach_defaults($label4, 0, 3, 1, 2);
+            $label4->set_markup('Underlay colour');
+            $label4->set_alignment(0, 0.5);
+
+            ($frame2, $canvas2, $canvasObj2) = $self->addSimpleCanvas($table,
+                $underlayColour,
+                undef,                  # No neutral colour
+                3, 6, 1, 2,
+            );
+
+            $button3 = Gtk2::Button->new('Set');
+            $table->attach_defaults($button3, 6, 9, 1, 2);
+            $button3->signal_connect('clicked' => sub {
+
+                my $choice = $self->showColourSelectionDialogue(
+                    'Underlay colour',
+                    $labelObj->underlayColour,
+                );
+
+                if ($choice) {
+
+                    $underlayColour = $choice;
+                    $canvasObj2 = $self->fillSimpleCanvas($canvas2, $canvasObj2, $choice);
+                }
+            });
+
+            $button4 = Gtk2::Button->new('Reset');
+            $table->attach_defaults($button4, 9, 12, 1, 2);
+            $button4->signal_connect('clicked' => sub {
+
+                $underlayColour = undef;
+                $canvasObj2 = $self->fillSimpleCanvas($canvas2, $canvasObj2);
+            });
+
+            # Relative size
+            $label5 = Gtk2::Label->new();
+            $table->attach_defaults($label5, 0, 3, 2, 3);
+            $label5->set_markup('Size (0.5 - 10)');
+            $label5->set_alignment(0, 0.5);
+
+            $entry = Gtk2::Entry->new();
+            $table->attach_defaults($entry, 3, 12, 2, 3);
+            $entry->set_text($labelObj->relSize);
+            $entry->set_width_chars(8);
+            $entry->set_max_length(8);
+
+            # Flags
+            $checkButton = Gtk2::CheckButton->new_with_label('Italics');
+            $table->attach_defaults($checkButton, 0, 3, 3, 4);
+            $checkButton->set_active($labelObj->italicsFlag);
+
+            $checkButton2 = Gtk2::CheckButton->new_with_label('Bold');
+            $table->attach_defaults($checkButton2, 0, 3, 4, 5);
+            $checkButton2->set_active($labelObj->boldFlag);
+
+            $checkButton3 = Gtk2::CheckButton->new_with_label('Underline');
+            $table->attach_defaults($checkButton3, 0, 3, 5, 6);
+            $checkButton3->set_active($labelObj->underlineFlag);
+
+            $checkButton4 = Gtk2::CheckButton->new_with_label('Strike');
+            $table->attach_defaults($checkButton4, 3, 12, 3, 4);
+            $checkButton4->set_active($labelObj->strikeFlag);
+
+            $checkButton5 = Gtk2::CheckButton->new_with_label('Draw box');
+            $table->attach_defaults($checkButton5, 3, 12, 4, 5);
+            $checkButton5->set_active($labelObj->boxFlag);
+
+#            # Gravity
+#            $label6 = Gtk2::Label->new();
+#            $table->attach_defaults($label6, 0, 3, 6, 7);
+#            $label6->set_markup('Orientation');
+#            $label6->set_alignment(0, 0.5);
+#
+#            $count = -1;
+#            @list = (
+#                'south' => 'Normal',
+#                'north' => 'Rotated 180 degrees',
+#                'west'  => '90 degrees clockwise',
+#                'east'  => '90 degrees anti-clockwise',
+#            );
+#
+#            do {
+#
+#                my $gravity = shift @list;
+#                my $descrip = shift @list;
+#
+#                push (@comboList, $descrip);
+#                $descripHash{$descrip} = $gravity;
+#
+#                $count++;
+#                if ($gravity eq $labelObj->gravity) {
+#
+#                    $index = $count;
+#                }
+#
+#            } until (! @list);
+#
+#            $combo2 = Gtk2::ComboBox->new_text();
+#            $table->attach_defaults($combo2, 3, 12, 6, 7);
+#            foreach my $item (@comboList) {
+#
+#                $combo2->append_text($item);
+#            }
+#
+#            $combo2->set_active($index);
+        }
+
+        # Display the dialogue window. The double call to ->present is needed so the user can type
+        #   into the textview right away
+        $vBox->show_all();
+        $dialogueWin->present();
+        $dialogueWin->present();
+
+        # If the user clicked 'cancel', $response will be 'reject'
+        $response = $dialogueWin->run();
+
+        if ($response ne 'accept') {
+
+            $dialogueWin->destroy();
+            $self->restoreFocus();
+
+            return @emptyList;
+
+        # Otherwise, user clicked 'ok'
+        } elsif (! $customiseFlag) {
+
+            $dialogueWin->destroy();
+            $self->restoreFocus();
+
+            return (
+                $axmud::CLIENT->desktopObj->bufferGetText($buffer),
+                $combo->get_active_text(),
+            );
+
+        } elsif ($labelObj && $customiseFlag) {
+
+            # Update the map label object's IVs
+            $labelObj->ivPoke('textColour', $textColour);
+            $labelObj->ivPoke('underlayColour', $underlayColour);
+
+            $relSize = $entry->get_text();
+            if (defined $relSize && $axmud::CLIENT->floatCheck($relSize, 0.5, 10)) {
+
+                $labelObj->ivPoke('relSize', $relSize);
+            }
+
+            if (! $checkButton->get_active()) {
+                $labelObj->ivPoke('italicsFlag', FALSE);
+            } else {
+                $labelObj->ivPoke('italicsFlag', TRUE);
+            }
+
+            if (! $checkButton2->get_active()) {
+                $labelObj->ivPoke('boldFlag', FALSE);
+            } else {
+                $labelObj->ivPoke('boldFlag', TRUE);
+            }
+
+            if (! $checkButton3->get_active()) {
+                $labelObj->ivPoke('underlineFlag', FALSE);
+            } else {
+                $labelObj->ivPoke('underlineFlag', TRUE);
+            }
+
+            if (! $checkButton4->get_active()) {
+                $labelObj->ivPoke('strikeFlag', FALSE);
+            } else {
+                $labelObj->ivPoke('strikeFlag', TRUE);
+            }
+
+            if (! $checkButton5->get_active()) {
+                $labelObj->ivPoke('boxFlag', FALSE);
+            } else {
+                $labelObj->ivPoke('boxFlag', TRUE);
+            }
+
+#            $labelObj->ivPoke('gravity', $combo2->get_active_text());
+
+            # The following function call takes care of the ->name IV, and redraws the label in
+            #   every automapper window
+            $self->worldModelObj->updateLabel(
+                TRUE,           # Update automapper windows now
+                $self->session,
+                $labelObj,
+                $axmud::CLIENT->desktopObj->bufferGetText($buffer),
+                undef,          # No style - map label uses its own IVs
+            );
+
+            # Operation complete
+            $dialogueWin->destroy();
+            $self->restoreFocus();
+
+            return ($labelObj->name, $labelObj->style);
+        }
+    }
+
     # IV setting functions
 
     sub setMode {
@@ -37437,7 +42801,10 @@
         my ($self, $mode, $check) = @_;
 
         # Local variables
-        my ($taskObj, $title, $menuItemName, $radioMenuItem, $toolbarButtonName, $toolbarButton);
+        my (
+            $taskObj, $title, $oldMode, $menuItemName, $radioMenuItem, $toolbarButtonName,
+            $toolbarButton,
+        );
 
         # Check for improper arguments
         if (
@@ -37506,6 +42873,8 @@
             }
         }
 
+        # We need to compare the old/new settings of $self->mode in a moment
+        $oldMode = $self->mode;
         # Set the automapper's new operating mode
         $self->ivPoke('mode', $mode);
 
@@ -37525,7 +42894,7 @@
 
         # Update toolbar buttons in the toolbar (if the toolbar is visible)
         $toolbarButtonName = 'icon_set_'. $mode . '_mode';
-        if ($self->toolbar && $self->ivExists('menuToolItemHash', $toolbarButtonName)) {
+        if ($self->toolbarList && $self->ivExists('menuToolItemHash', $toolbarButtonName)) {
 
             $toolbarButton = $self->ivShow('menuToolItemHash', $toolbarButtonName);
             $toolbarButton->set_active(TRUE);
@@ -37540,6 +42909,16 @@
         if ($self->mode eq 'wait' && $self->mapObj->ghostRoom) {
 
             $self->mapObj->setGhostRoom();      # Automatically redraws the room
+
+        # If switching from 'wait' to 'follow'/'update' mode and there is a current room set, the
+        #   ghost room will not be set, so st it
+        } elsif (
+            $oldMode eq 'wait'
+            && $self->mode ne 'wait'
+            && $self->mapObj->currentRoom
+            && ! $self->mapObj->ghostRoom
+        ) {
+            $self->mapObj->setGhostRoom($self->mapObj->currentRoom);
         }
 
         if ($self->mapObj->currentRoom) {
@@ -38434,203 +43813,6 @@
 
     # Canvas object functions
 
-    sub createNewRoom {
-
-        # Called by $self->addFirstRoomCallback, ->addRoomAtBlockCallback, ->moveKnownDirSeen,
-        #   ->enableCanvasPopupMenu and ->canvasEventHandler
-        # Creates a new room - adding a new object to the world model, and drawing the room on the
-        #   map at the specified location
-        # If the process fails, deletes the world model object (if already created) and displays an
-        #   error
-        #
-        # Expected arguments
-        #   $regionmapObj   - The GA::Obj::Regionmap in which the new room will be created. Usually
-        #                       (but not always) matches $self->currentRegionmap
-        #   $xPosBlocks, $yPosBlocks, $zPosBlocks
-        #                   - The coordinates of the new room on the regionmap's grid
-        #
-        # Optional arguments
-        #   $mode           - The new $self->mode after the room has been created. If 'undef',
-        #                       $self->mode isn't changed
-        #   $currentFlag    - If set to TRUE, the new room is made the current location (if FALSE
-        #                       or 'undef', the current location isn't changed)
-        #   $updateFlag     - If set to TRUE, the room's properties are updated to match those of
-        #                       the Locator task's current room (depending on certain flags, and
-        #                       only when $currentFlag is TRUE; otherwise set to FALSE or 'undef')
-        #   $connectRoomObj - The room from which the character just departed ('undef' if not known)
-        #   $dir            - The command used to move (e.g. 'n', 'enter well' - matches
-        #                       GA::Obj::Exit->dir) ('undef' if unknown)
-        #   $mapDir         - How the exit is drawn on the map - one of Axmud's standard primary
-        #                       directions (e.g. 'north', 'south', 'up) ('undef' if unknown)
-        #   $exitObj        - The GA::Obj::Exit through which the character moved (if 'undef', a new
-        #                       exit object can be created)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the new room isn't created
-        #   Otherwise returns the GA::ModelObj::Room created
-
-        my (
-            $self, $regionmapObj, $xPosBlocks, $yPosBlocks, $zPosBlocks, $mode, $currentFlag,
-            $updateFlag, $connectRoomObj, $dir, $mapDir, $exitObj, $check,
-        ) = @_;
-
-        # Local variables
-        my (
-            $text, $result, $roomObj, $filePath, $virtualPath,
-            @matchList, @selectList,
-        );
-
-        # Check for improper arguments
-        if (
-            ! defined $regionmapObj || ! defined $xPosBlocks || ! defined $yPosBlocks
-            || ! defined $zPosBlocks || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->createNewRoom', @_);
-        }
-
-        if ($updateFlag && $self->worldModelObj->autoCompareFlag) {
-
-            # Before creating the new room, compare the Locator's current room against all rooms
-            #   already in the region, looking for matches - in case we're about to create a
-            #   duplicate room
-            @matchList = $self->autoCompareLocatorRoom($regionmapObj);
-            if (@matchList) {
-
-                # Select all the matching rooms. $self->setSelectedObj expects a list in the form
-                #   (room_object, 'room', room_object, 'room', ...)
-                foreach my $obj (@matchList) {
-
-                    push (@selectList, $obj, 'room');
-                }
-
-                # First unselect all selected objects, then selecting just the matching rooms
-                $self->setSelectedObj();
-                $self->setSelectedObj(
-                    \@selectList,
-                    TRUE,           # Select multiple objects
-                );
-
-                # Show a 'dialogue' window as a warning
-                if (@matchList == 1) {
-                    $text = 'The Locator\'s current room matches 1 room';
-                } else {
-                    $text = 'The Locator\'s current room matches ' . scalar @matchList . ' rooms';
-                }
-
-                $text .= ' in the current region. Do you want to continue?';
-
-                $result = $self->showMsgDialogue(
-                    'Add new room',
-                    'warning',
-                    $text,
-                    'yes-no',
-                );
-
-                if ($result ne 'yes') {
-
-                    # If there is a current room, mark the automapper as lost
-                    if ($self->mapObj->currentRoom) {
-
-                        return $self->setCurrentRoom(
-                            undef,
-                            $self->_objClass . '->createNewRoom',    # Character now lost
-                        );
-
-                        # Display an explanatory message, if necessary
-                        if ($self->worldModelObj && $self->worldModelObj->explainGetLostFlag) {
-
-                            $self->session->writeText(
-                                'MAP: Lost after user declined to create a new room',
-                            );
-                        }
-                    }
-
-                    # Don't create the new room
-                    return undef;
-                }
-            }
-        }
-
-        # Create the room object. Tell the world model not to update automappers immediately - we
-        #   might want to mark the room as current
-        $roomObj = $self->worldModelObj->addRoom(
-            $self->session,
-            TRUE,               # Update Automapper windows now
-            $regionmapObj->name,
-            $xPosBlocks,
-            $yPosBlocks,
-            $zPosBlocks,
-        );
-
-        if (! $roomObj) {
-
-            # Operation failed
-            $self->showMsgDialogue(
-                'New room',
-                'error',
-                'Could not create the new room',
-                'ok',
-            );
-
-            return undef;
-        }
-
-        # Set the automapper's mode, if a new mode was specified
-        if ($mode) {
-
-            $self->setMode($mode);
-        }
-
-        # Set the current location (which causes both the previous current location, if there was
-        #   one, and the new current location to be redrawn)
-        if ($currentFlag) {
-
-            # Paint the room, if required to do so
-            if ($self->painterFlag) {
-
-                $self->paintRoom($roomObj);
-            }
-
-            # Update the number of character visits to this room, if allowed
-            $self->worldModelObj->updateVisitCount(
-                $self->session,
-                # Don't update Automapper windows now (the call to ->updateRoom will do that)
-                FALSE,
-                $roomObj->number,
-            );
-
-            # If necessary, give the new room the properties of the Locator task's current room
-            if ($updateFlag) {
-
-                $self->mapObj->updateRoom($roomObj, $connectRoomObj, $exitObj, $mapDir);
-            }
-
-            # If the previous room is known, connect it to this room
-            if ($connectRoomObj && $dir) {
-
-                $self->worldModelObj->connectRooms(
-                    $self->session,
-                    TRUE,       # Update Automapper windows now (for the benefit of $connectRoomObj)
-                    $connectRoomObj,
-                    $roomObj,
-                    $dir,
-                    $mapDir,
-                    $exitObj,
-                );
-            }
-
-            # Set the current location
-            $self->mapObj->setCurrentRoom($roomObj);
-
-        } else {
-
-            # Just draw the new room (in every Automapper window)
-            $self->worldModelObj->updateMaps('room', $roomObj);
-        }
-
-        return $roomObj;
-    }
-
     sub connectExitToRoom {
 
         # Called by $self->canvasObjEventHandler and ->stopDrag
@@ -38650,13 +43832,13 @@
         #   $exitObj    - When called by $self->stopDrag, the dragged exit to connect
         #
         # Return values
-        #   'undef' on improper arguments
+        #   'undef' on improper arguments or if the exit can't be connected
         #   1 otherwise
 
         my ($self, $roomObj, $type, $exitObj, $check) = @_;
 
         # Local variables
-        my $destRoomObj;
+        my $parentRoomObj;
 
         # Check for improper arguments
         if (
@@ -38672,10 +43854,46 @@
             $exitObj = $self->selectedExit;
         }
 
+        # There are restrictions on wilderness rooms; check whether they apply
+        $parentRoomObj = $self->worldModelObj->ivShow('modelHash', $exitObj->parent);
+        if ($roomObj->wildMode eq 'wild' || $parentRoomObj->wildMode eq 'wild') {
+
+            $self->showMsgDialogue(
+                'Connect exit',
+                'error',
+                'Exits cannot be connected to a \'wilderness\' room',
+                'ok',
+            );
+
+            return undef;
+
+        } elsif ($parentRoomObj->wildMode eq 'wild') {
+
+            # This should not be possible, but just in case, refuse anyway
+            $self->showMsgDialogue(
+                'Connect exit',
+                'error',
+                'Exits from a \'wilderness\' room cannot be connected to any other room',
+                'ok',
+            );
+
+            return undef;
+
+        } elsif ($roomObj->wildMode eq 'border' && $parentRoomObj->wildMode eq 'border') {
+
+            $self->showMsgDialogue(
+                'Connect exit',
+                'error',
+                'Exits in \'wilderness border\' rooms can only be connected to \'normal\' rooms',
+                'ok',
+            );
+
+            return undef;
+        }
+
         # Special case: if the exit is a 'retracing' exit - it leads back to the same room - then
         #   it's obviously not a region or broken exit
-        $destRoomObj = $self->worldModelObj->ivShow('modelHash', $exitObj->parent);
-        if ($destRoomObj && $destRoomObj eq $roomObj) {
+        if ($parentRoomObj && $parentRoomObj eq $roomObj) {
 
             # The callback can take care of everything
             return $self->markRetracingExitCallback();
@@ -38705,12 +43923,259 @@
             )
         ) {
             $self->showMsgDialogue(
-                'Connect to click',
+                'Connect exit',
                 'info',
                 'Exit #' . $exitObj->number . ' now leads to room #' . $roomObj->number,
                 'ok',
             );
         }
+
+        return 1;
+    }
+
+    sub setColouredSquare {
+
+        # Called by $self->canvasEventHandler
+        # Sets up a coloured block at the position on the background map that the user has just
+        #   clicked
+        #
+        # Expected arguments
+        #   $xBlocks, $yBlocks
+        #       - The coordinates of the gridblock that was just clicked
+        #
+        # Return values
+        #   'undef' on improper arguments or or if the user declines to proceed, after prompting
+        #   1 otherwise
+
+        my ($self, $xBlocks, $yBlocks, $check) = @_;
+
+        # Local variables
+        my (
+            $level, $string, $choice,
+            @squareList, @rectList,
+        );
+
+        # Check for improper arguments
+        if (! defined $xBlocks || ! defined $yBlocks || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setColouredSquare', @_);
+        }
+
+        # Set the square to be drawn on all levels, or just the current level
+        if (! $self->bgAllLevelFlag) {
+
+            # Just the current level
+            $level = $self->currentRegionmap->currentLevel;
+        }
+
+        # Get a list of coloured blocks occupying the same block (might be more than one, if
+        #   there are blocks on different levels)
+        @squareList = $self->currentRegionmap->fetchSquareInSquare(
+            $xBlocks,
+            $yBlocks,
+            $level,
+        );
+
+        # Get a list of coloured rectangles occupying a portion of the area (might be more than
+        #   one, if there are rectangles on different levels)
+        @rectList = $self->currentRegionmap->fetchRectInSquare(
+            $xBlocks,
+            $yBlocks,
+            $level,
+        );
+
+        # If there is more than one square, of if there are any rectangles, prompt the user
+        #   before erasing them
+        if (@squareList > 1 || @rectList) {
+
+            if ($self->bgColourChoice) {
+                $string = "Are you sure you want to overwrite this block? It contains:\n";
+            } else {
+                $string = "Are you sure you want to erase this block? It is occupied by:\n";
+            }
+
+            $choice = $self->showMsgDialogue(
+                'Colour background',
+                'question',
+                $string . "Coloured squares: " . (scalar @squareList) . "\nColoured rectangles: "
+                . (scalar @rectList),
+                'yes-no',
+            );
+
+            if (! defined $choice || $choice ne 'yes') {
+
+                return undef;
+            }
+        }
+
+        # Erase any existing coloured blocks/squares
+        foreach my $coord (@squareList) {
+
+            # $coord can be in the form 'x_y_z' or 'x_y'; in either case, we don't want the z
+            my ($x, $y) = split (/_/, $coord);
+
+            $self->currentRegionmap->removeSquare($coord);
+            $self->deleteCanvasObj('square', $x . '_' . $y);
+        }
+
+        foreach my $obj (@rectList) {
+
+            $self->currentRegionmap->removeRect($obj);
+            $self->deleteCanvasObj('rect', $obj);
+        }
+
+        if ($self->bgColourChoice) {
+
+            # Colour in a new block
+            if (
+                $self->currentRegionmap->storeSquare(
+                    $self->bgColourChoice,
+                    $xBlocks,
+                    $yBlocks,
+                    $level,
+                )
+            ) {
+                # Draw the coloured block
+                $self->drawColouredSquare($self->bgColourChoice, $xBlocks, $yBlocks);
+            }
+        }
+
+        # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+        $self->restrictWidgets();
+
+        return 1;
+    }
+
+    sub setColouredRect {
+
+        # Called by $self->canvasEventHandler
+        # Sets up a coloured rectangle at the position on the background map that the user has just
+        #   clicked
+        #
+        # Expected arguments
+        #   $xBlocks, $yBlocks
+        #       - The coordinates of the gridblock that was just clicked
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $xBlocks, $yBlocks, $check) = @_;
+
+        # Local variables
+        my (
+            $level, $colourObj, $choice,
+            @squareList, @rectList,
+        );
+
+        # Check for improper arguments
+        if (! defined $xBlocks || ! defined $yBlocks || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setColouredRect', @_);
+        }
+
+        # Set the square to be drawn on all levels, or just the current level
+        if (! $self->bgAllLevelFlag) {
+
+            # Just the current level
+            $level = $self->currentRegionmap->currentLevel;
+        }
+
+        if ($self->bgColourChoice) {
+
+            # Update the regionmap's IVs
+            $colourObj = $self->currentRegionmap->storeRect(
+                $self->session,
+                $self->bgColourChoice,
+                $self->bgRectXPos,
+                $self->bgRectYPos,
+                $xBlocks,
+                $yBlocks,
+                $level,
+            );
+
+            if (! $colourObj) {
+
+                # Show a 'dialogue' window to explain the problem
+                $self->showMsgDialogue(
+                    'Colour background',
+                    'error',
+                    'Can\'t draw a coloured rectangle over one or more coloured squares (but'
+                    . ' rectangles can be drawn over other rectangles)',
+                    'ok',
+                );
+
+            } else {
+
+                # Draw the coloured rectangle. If any other rectangle(s) already exist in the same
+                #   space, this rectangle is drawn on top of them
+                $self->drawColouredRect($colourObj);
+            }
+
+        } else {
+
+            # When $self->bgColourChoice is not defined, instead of drawing a coloured rectangle,
+            #   we remove any coloured blocks/rectangles occupying that rectangular area
+
+            # Get a list of coloured blocks in the area
+            @squareList = $self->currentRegionmap->fetchSquareInArea(
+                $self->bgRectXPos,
+                $self->bgRectYPos,
+                $xBlocks,
+                $yBlocks,
+                $level,
+            );
+
+            # Get a list of coloured rectangles occupying a portion of the area
+            @rectList = $self->currentRegionmap->fetchRectInArea(
+                $self->bgRectXPos,
+                $self->bgRectYPos,
+                $xBlocks,
+                $yBlocks,
+                $level,
+            );
+
+            # If there is more than one square, of if there are any rectangles, prompt the user
+            #   before continuing
+            if (@squareList > 1 || @rectList) {
+
+                $choice = $self->showMsgDialogue(
+                    'Colour background',
+                    'question',
+                    "Are you sure you want to erase this area? It contains:\n"
+                    . "Coloured squares: " . (scalar @squareList) . "\n"
+                    . "Coloured rectangles: " . (scalar @rectList),
+                    'yes-no',
+                );
+
+                if (defined $choice && $choice eq 'yes') {
+
+                    foreach my $coord (@squareList) {
+
+                        # $coord can be in the form 'x_y_z' or 'x_y'; in either case, we don't
+                        #   want the z
+                        my ($x, $y) = split (/_/, $coord);
+
+                        $self->currentRegionmap->removeSquare($coord);
+                        $self->deleteCanvasObj('square', $x . '_' . $y);
+                    }
+
+                    foreach my $obj (@rectList) {
+
+                        $self->currentRegionmap->removeRect($obj);
+                        $self->deleteCanvasObj('rect', $obj);
+                    }
+                }
+            }
+        }
+
+        # Reset IVs
+        $self->ivPoke('bgColourMode', 'rect_start');
+        $self->ivUndef('bgRectXPos');
+        $self->ivUndef('bgRectYPos');
+
+        # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+        $self->restrictWidgets();
 
         return 1;
     }
@@ -39997,15 +45462,18 @@
 
     sub paintRoom {
 
-        # Called by $self->enableModeColumn, ->repaintSelectedRoomsCallback and ->createNewRoom
-        # Also called by GA::Obj::Map->autoProcessNewRoom and ->useExistingRoom
+        # Called by $self->enableModeColumn and ->repaintSelectedRoomsCallback
+        # Also called by GA::Obj::Map->createNewRoom, ->autoProcessNewRoom and ->useExistingRoom
         #
         # 'Paints' a room by transfering the values of certain IVs from the world model's painter
         #   object (a non-model GA::ModelObj::Room object) to the specified room (which IS in the
         #   world model)
         # Scalar and list IVs are copied, replacing existing values; but hashes are merged. If the
         #   same key exists in both the specified room and the painter, the painter's key-value pair
-        #   is used.
+        #   is used
+        #
+        # Also applies room flags specified by the world model's ->paintFromTitleHash,
+        #   ->paintFromDescripHash (etc) IVs
         #
         # Expected arguments
         #   $roomObj        - The room model object to 'paint'
@@ -40022,8 +45490,9 @@
 
         # Local variables
         my (
-            $painterObj,
+            $wmObj, $painterObj, $roomFlag, $checkFlag,
             @ivList,
+            %checkHash, %usedHash,
         );
 
         # Check for improper arguments
@@ -40032,10 +45501,11 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->paintRoom', @_);
         }
 
-        # Import the painter object (for convenience)
+        # Import the world model and painter object (for convenience)
+        $wmObj = $self->worldModelObj;
         $painterObj = $self->worldModelObj->painterObj;
         # Import the list of IVs that are to be copied
-        @ivList = $self->worldModelObj->painterIVList;
+        @ivList = $self->worldModelObj->constPainterIVList;
 
         foreach my $iv (@ivList) {
 
@@ -40047,81 +45517,165 @@
             # Work out what kind of IV this is - scalar, list or hash
             $ivType = ref $roomObj->{$iv};
 
+            # Hash IVs are merged
             if ($ivType eq 'HASH') {
 
-                # Hash IVs are merged
                 %hash = $painterObj->$iv;
                 foreach my $key (keys %hash) {
 
                     $roomObj->ivAdd($iv, $key, $hash{$key});
                 }
 
-            } else {
+            # List IVs are copied whole but only if they are not empty
+            } elsif ($ivType eq 'ARRAY') {
 
-                # Scalar/list IVs are copied whole, replacing the existing IV
+                if ($painterObj->$iv) {
+
+                    # Replace the existing list
+                    $roomObj->{$iv} = $painterObj->{$iv};
+                }
+
+            # Scalar IVs are copied but only if they are defined
+            } elsif (defined $painterObj->$iv) {
+
                 $roomObj->{$iv} = $painterObj->{$iv};
             }
         }
 
+        # Compare patterns in the world model's painting IVs and, if they match this room, apply
+        #   the corresponding room flag
+
+        # NB For titles only, if ->paintFromTitleHash contains multiple flags, they can all be set
+        #   in the room
+        # After setting those flags, the code checks any flags in ->paintFromTitleHash that haven't
+        #   just been set, and unsets them in the room
+        # This restriction prevents problems at worlds like EmpireMUD 2.0, whose room titles change
+        #   as you chop down trees and dig up crops
+
+        # The keys in %checkHash are all the room flags in ->paintFromTitleHash
+        %checkHash = reverse $wmObj->paintFromTitleHash;
+        # Set room flags for any titles that match a pattern in ->paintFromTitleHash
+        OUTER: foreach my $pattern ($wmObj->ivKeys('paintFromTitleHash')) {
+
+            INNER: foreach my $title ($roomObj->titleList) {
+
+                if ($title =~ m/$pattern/) {
+
+                    $roomFlag = $wmObj->ivShow('paintFromTitleHash', $pattern);
+
+                    $roomObj->ivAdd('roomFlagHash', $roomFlag, undef);
+
+                    # Remember which room flags we've set during this operation
+                    $checkFlag = TRUE;
+                    delete $checkHash{$roomFlag};
+                    $usedHash{$roomFlag} = undef;
+
+                    # No need to check the pattern against the remaining titles
+                    next OUTER;
+                }
+            }
+        }
+
+        # If any room flags were set during this operation...
+        if ($checkFlag) {
+
+            # Unset any room flags in ->paintFromTitleHash that were not set during this operation
+            foreach my $key (%checkHash) {
+
+                if (! exists $usedHash{$key}) {
+
+                    $roomObj->ivDelete('roomFlagHash', $key);
+                }
+            }
+        }
+
+        OUTER: foreach my $pattern ($wmObj->ivKeys('paintFromDescripHash')) {
+
+            INNER: foreach my $descrip ($roomObj->ivValues('descripHash')) {
+
+                if ($descrip =~ m/$pattern/) {
+
+                    $roomObj->ivAdd(
+                        'roomFlagHash',
+                        $wmObj->ivShow('paintFromDescripHash', $pattern),
+                        undef,
+                    );
+
+                    # No need to check the pattern against the remaining descriptions
+                    next OUTER;
+                }
+            }
+        }
+
+        OUTER: foreach my $pattern ($wmObj->ivKeys('paintFromExitHash')) {
+
+            INNER: foreach my $exit ($roomObj->ivKeys('exitNumHash')) {
+
+                if ($exit =~ m/$pattern/) {
+
+                    $roomObj->ivAdd(
+                        'roomFlagHash',
+                        $wmObj->ivShow('paintFromExitHash', $pattern),
+                        undef,
+                    );
+
+                    # No need to check the pattern against the remaining exits
+                    next OUTER;
+                }
+            }
+        }
+
+        OUTER: foreach my $pattern ($wmObj->ivKeys('paintFromObjHash')) {
+
+            INNER: foreach my $obj ($roomObj->tempObjList) {
+
+                if (
+                    (defined $obj->baseString && $obj->baseString =~ m/$pattern/)
+                    || (
+                        # Only check the noun, if the base string isn't defined (for some reason)
+                        ! defined $obj->baseString
+                        && defined $obj->noun
+                        && $obj->noun =~ m/$pattern/
+                    )
+                ) {
+                    $roomObj->ivAdd(
+                        'roomFlagHash',
+                        $wmObj->ivShow('paintFromObjHash', $pattern),
+                        undef,
+                    );
+
+                    # No need to check the pattern against the remaining objects
+                    next OUTER;
+                }
+            }
+        }
+
+        OUTER: foreach my $pattern ($wmObj->ivKeys('paintFromRoomCmdHash')) {
+
+            INNER: foreach my $cmd ($roomObj->roomCmdList) {
+
+                if ($cmd =~ m/$pattern/) {
+
+                    $roomObj->ivAdd(
+                        'roomFlagHash',
+                        $wmObj->ivShow('paintFromRoomCmdHash', $pattern),
+                        undef,
+                    );
+
+                    # No need to check the pattern against the remaining room commands
+                    next OUTER;
+                }
+            }
+        }
+
+        # Painting complete. If allowed, redraw the room in every Automapper window using this world
+        #   model
         if ($updateFlag) {
 
-            # Redraw the room in every Automapper window using this world model
             $self->worldModelObj->updateMaps('room', $roomObj);
         }
 
         return 1;
-    }
-
-    sub autoCompareLocatorRoom {
-
-        # Called by $self->createNewRoom
-        # Compares the Locator's current room against all rooms in the same regionmap. Returns a
-        #   list of all the matching rooms
-        #
-        # Expected arguments
-        #   $regionmapObj  - The GA::Obj::Regionmap containing the current room
-        #
-        # Return values
-        #   An empty list on improper arguments or if there are no matching rooms
-        #   Otherwise returns a list of blessed references to matching GA::ModelObj::Room objects
-
-        my ($self, $regionmapObj, $check) = @_;
-
-        # Local variables
-        my (@emptyList, @roomList, @returnList);
-
-        # Check for improper arguments
-        if (! defined $regionmapObj || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->autoCompareLocatorRoom', @_);
-            return @emptyList;
-        }
-
-        # Don't do anything if the Locator task isn't running or doesn't know about the current room
-        if (! $self->session->locatorTask || ! $self->session->locatorTask->roomObj) {
-
-            return @emptyList;
-        }
-
-        # Get a list of rooms in the same regionmap
-        @roomList = $regionmapObj->ivValues('gridRoomHash');
-        foreach my $roomNum (@roomList) {
-
-            my ($roomObj, $result);
-
-            $roomObj = $self->worldModelObj->ivShow('modelHash', $roomNum);
-
-            # Compare the two rooms. The TRUE arguments forbids empty, dark or unspecified rooms
-            #   from being matched
-            ($result) = $self->compareRooms($self->session, $roomObj, TRUE);
-            if (! $result) {
-
-                # $roomRef matches the Locator's current room
-                push (@returnList, $roomObj);
-            }
-        }
-
-        return @returnList;
     }
 
     sub findOccupiedMap {
@@ -40382,6 +45936,25 @@
         return 1;
     }
 
+    sub set_freeClickMode {
+
+        my ($self, $mode, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $mode || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_freeClickMode', @_);
+        }
+
+        $self->ivPoke('freeClickMode', $mode);
+        if ($self->bgColourMode eq 'rect_stop') {
+
+            $self->ivPoke('bgColourMode', 'rect_start');
+        }
+
+        return 1;
+    }
+
     sub reset_freeClickMode {
 
         my ($self, $check) = @_;
@@ -40414,6 +45987,48 @@
             $self->ivPoke('ignoreMenuUpdateFlag', TRUE);
         } else {
             $self->ivPoke('ignoreMenuUpdateFlag', FALSE);
+        }
+
+        return 1;
+    }
+
+    sub add_graffiti {
+
+        my ($self, $roomObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $roomObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_graffiti', @_);
+        }
+
+        # Update IVs
+        if ($self->graffitiModeFlag) {
+
+            $self->ivAdd('graffitiHash', $roomObj->number);
+
+            # Update room counts in the window's title bar
+            $self->setWinTitle();
+        }
+
+        return 1;
+    }
+
+    sub del_graffiti {
+
+        my ($self, @roomList) = @_;
+
+        # (No improper arguments to check)
+
+        if ($self->graffitiModeFlag) {
+
+            foreach my $roomObj (@roomList) {
+
+                $self->ivDelete('graffitiHash', $roomObj->number);
+            }
+
+            # Update room counts in the window's title bar
+            $self->setWinTitle();
         }
 
         return 1;
@@ -40546,26 +46161,34 @@
         { $_[0]->{mapObj} }
     sub worldModelObj
         { $_[0]->{worldModelObj} }
-    sub pauseWin
-        { $_[0]->{pauseWin} }
 
     sub menuBar
         { $_[0]->{menuBar} }
-    sub toolbar
-        { $_[0]->{toolbar} }
+    sub constButtonSetList
+        { my $self = shift; return @{$self->{constButtonSetList}}; }
+    sub constButtonDescripHash
+        { my $self = shift; return %{$self->{constButtonDescripHash}}; }
+    sub buttonSetHash
+        { my $self = shift; return %{$self->{buttonSetHash}}; }
+    sub toolbarList
+        { my $self = shift; return @{$self->{toolbarList}}; }
+    sub toolbarHash
+        { my $self = shift; return %{$self->{toolbarHash}}; }
+    sub toolbarButtonList
+        { my $self = shift; return @{$self->{toolbarButtonList}}; }
+    sub toolbarAddButton
+        { $_[0]->{toolbarAddButton} }
+    sub toolbarSwitchButton
+        { $_[0]->{toolbarSwitchButton} }
+    sub constToolbarDefaultSet
+        { $_[0]->{constToolbarDefaultSet} }
+    sub toolbarOriginalSet
+        { $_[0]->{toolbarOriginalSet} }
+    sub toolbarRoomFlagHash
+        { my $self = shift; return %{$self->{toolbarRoomFlagHash}}; }
+
     sub menuToolItemHash
         { my $self = shift; return %{$self->{menuToolItemHash}}; }
-
-    sub toolbarCurrentSet
-        { $_[0]->{toolbarCurrentSet} }
-    sub toolbarSetCount
-        { $_[0]->{toolbarSetCount} }
-    sub toolbarSwitchIcon
-        { $_[0]->{toolbarSwitchIcon} }
-    sub toolbarMainSeparator
-        { $_[0]->{toolbarMainSeparator} }
-    sub toolbarButtonHash
-        { my $self = shift; return %{$self->{toolbarButtonHash}}; }
 
     sub hPaned
         { $_[0]->{hPaned} }
@@ -40661,6 +46284,12 @@
         { my $self = shift; return %{$self->{drawnOrnamentHash}}; }
     sub drawnLabelHash
         { my $self = shift; return %{$self->{drawnLabelHash}}; }
+    sub drawnCheckedDirHash
+        { my $self = shift; return %{$self->{drawnCheckedDirHash}}; }
+    sub colouredSquareHash
+        { my $self = shift; return %{$self->{colouredSquareHash}}; }
+    sub colouredRectHash
+        { my $self = shift; return %{$self->{colouredRectHash}}; }
     sub delayDrawFlag
         { $_[0]->{delayDrawFlag} }
 
@@ -40690,6 +46319,18 @@
 
     sub freeClickMode
         { $_[0]->{freeClickMode} }
+    sub ctrlKeyFlag
+        { $_[0]->{ctrlKeyFlag} }
+    sub bgColourMode
+        { $_[0]->{bgColourMode} }
+    sub bgColourChoice
+        { $_[0]->{bgColourChoice} }
+    sub bgRectXPos
+        { $_[0]->{bgRectXPos} }
+    sub bgRectYPos
+        { $_[0]->{bgRectYPos} }
+    sub bgAllLevelFlag
+        { $_[0]->{bgAllLevelFlag} }
     sub exitSensitivity
         { $_[0]->{exitSensitivity} }
     sub exitBendSize
@@ -40706,6 +46347,11 @@
         { $_[0]->{showChar} }
     sub painterFlag
         { $_[0]->{painterFlag} }
+
+    sub graffitiModeFlag
+        { $_[0]->{graffitiModeFlag} }
+    sub graffitiHash
+        { my $self = shift; return %{$self->{graffitiHash}}; }
 
     sub constVectorHash
         { my $self = shift; return %{$self->{constVectorHash}}; }
@@ -40742,6 +46388,8 @@
         { my $self = shift; return %{$self->{preDrawnLongExitHash}}; }
     sub preDrawnSquareExitHash
         { my $self = shift; return %{$self->{preDrawnSquareExitHash}}; }
+    sub preCountCheckedHash
+        { my $self = shift; return %{$self->{preCountCheckedHash}}; }
 
     sub constMagnifyList
         { my $self = shift; return @{$self->{constMagnifyList}}; }
@@ -40754,8 +46402,12 @@
         { $_[0]->{dragModeFlag} }
     sub dragFlag
         { $_[0]->{dragFlag} }
+    sub dragContinueFlag
+        { $_[0]->{dragContinueFlag} }
     sub dragCanvasObj
         { $_[0]->{dragCanvasObj} }
+    sub dragCanvasObjList
+        { my $self = shift; return @{$self->{dragCanvasObjList}}; }
     sub dragModelObj
         { $_[0]->{dragModelObj} }
     sub dragModelObjType
@@ -40768,8 +46420,8 @@
         { $_[0]->{dragCurrentXPos} }
     sub dragCurrentYPos
         { $_[0]->{dragCurrentYPos} }
-    sub dragFakeRoomObj
-        { $_[0]->{dragFakeRoomObj} }
+    sub dragFakeRoomList
+        { my $self = shift; return @{$self->{dragFakeRoomList}}; }
     sub dragBendNum
         { $_[0]->{dragBendNum} }
     sub dragBendInitXPos
@@ -40784,6 +46436,19 @@
         { $_[0]->{dragBendTwinInitYPos} }
     sub dragExitDrawMode
         { $_[0]->{dragExitDrawMode} }
+
+    sub selectBoxFlag
+        { $_[0]->{selectBoxFlag} }
+    sub selectBoxCanvasObj
+        { $_[0]->{selectBoxCanvasObj} }
+    sub selectBoxInitXPos
+        { $_[0]->{selectBoxInitXPos} }
+    sub selectBoxInitYPos
+        { $_[0]->{selectBoxInitYPos} }
+    sub selectBoxCurrentXPos
+        { $_[0]->{selectBoxCurrentXPos} }
+    sub selectBoxCurrentYPos
+        { $_[0]->{selectBoxCurrentYPos} }
 }
 
 # Package must return true

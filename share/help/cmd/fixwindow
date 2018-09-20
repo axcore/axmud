@@ -15,8 +15,8 @@ fwn / fixwindow               Fixes a window at its current size/position
          zones on a desktop is called a 'zonemap'. 
       Only 'grid' windows (including the 'main' window, task windows and the 
          automapper window) are arranged on the workspace grid. Temporary 
-         windows, including the GUI window and all edit, preference, wizard and
-         dialogue windows, are not affected.
+         windows, including the object viewer window and all edit, preference,
+         wizard and dialogue windows, are not affected.
 
       This command can be used with any window on Axmud's workspace grids. Users 
          are free to drag 'grid' windows around the desktop, to resize them

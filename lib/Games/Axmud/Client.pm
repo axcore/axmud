@@ -90,6 +90,9 @@
             aboutWin                    => undef,       # Set by $self->set_aboutWin
             # The Error Console window (only one can be open at a time)
             consoleWin                  => undef,       # Set by $self->set_consoleWin
+            # A 'dialogue' window created by a call to GA::Generic::Win->showBusyWin, e.g. the
+            #   'Loading...' window created by $self->start
+            busyWin                     => undef,       # Set by $self->set_busyWin
 
             # Instance variable constants
             # ---------------------------
@@ -256,6 +259,7 @@
                 'trigger'               => undef,
                 'tts'                   => undef,
                 'usercomm'              => undef,
+                'viewer'                => undef,
                 'window'                => undef,
                 'winmap'                => undef,
                 'winmaps'               => undef,
@@ -325,7 +329,7 @@
             emergencySaveFlag           => TRUE,
             #
             # Auto-save. Flag set to TRUE if auto-save is turned on, FALSE if not
-            autoSaveFlag                => FALSE,       # [config]
+            autoSaveFlag                => TRUE,       # [config]
             # When auto-save is turned on, the number of minutes between saves. (Each GA::Session
             #   has an ->autoSaveCheckTime IV, the time at which to do the next auto-save). Min
             #   value 1 minute; values must be integers
@@ -336,6 +340,36 @@
             #   user can manually restore the previous version. If this flag is set to FALSE, the
             #   backup is destroyed as soon as the save process is complete.
             autoRetainFileFlag          => TRUE,        # [config]
+            #
+            # Auto-backup (a process which creates a .tgz or .zip of the entire Axmud data
+            #   directory)
+            # Auto-backup mode: 'no_backup' (don't do auto-backups'), 'all_start' (do an auto-backup
+            #   whenever Axmud starts), 'all_stop' (do an auto-backup whenever Axmud stops),
+            #   'interval_start' (do an auto-backup at regular intervals, performed when Axmud
+            #   first starts after the interval has passed), 'interval_stop' (do an auto backup at
+            #   regular intervals, when Axmud stops)
+            autoBackupMode              => 'no_backup', # [config]
+            # The directory in which the backup is saved. If 'undef' or an empty string, the user
+            #   is prompted for a directory each time
+            autoBackupDir               => undef,       # [config]
+            # For auto-backup mode 'interval_start' and 'interval_stop', the number of days between
+            #   successive backups. 1 means do daily backups, 8 means do weekly backups, 366 means
+            #   backup once a year. 0 means stop doing backups temporarily (but remember when the
+            #   last backup occured, so when the interval is change back to a positive integer, that
+            #   interval is applied to the time since the last backup). Range 0-366
+            autoBackupInterval          => 8,           # [config]
+            # The time of the last successful auto-backup, set a string returned by $self->localDate
+            #   (in the form 'Thu Dec 18, 2010'). 'undef' or an empty string if no auto-backup has
+            #   ever been performed, or if auto-backup mode is currently 'no_backup', 'all_start' or
+            #   'all_stop'. The value is not modified if the user performs a manual backup using the
+            #   ';backupdata' command
+            autoBackupDate              => undef,           # [config]
+            # Auto-backup file type: 'tar' to use a .tgz file, 'zip' to use a .zip file, 'default'
+            #   to use a convenient file type for the system (.tgz for Linux, .zip for MS Windows)
+            autoBackupFileType          => 'default',   # [config]
+            # Flag set to TRUE if the time should be appended to auto-backups and to manual backups
+            #   using the ';backupdata' command
+            autoBackupAppendFlag        => FALSE,       # [config]
             #
             # GA::Session->setupProfiles can optionally create a 'Loading...' popup window by
             #   calling GA::Generic::Win->showBusyWin, if the file(s) it's loading are above a
@@ -663,11 +697,11 @@
                         'TestModel',
                     'QuickInput',
                     'SimulateWorld', 'SimulatePrompt', 'SimulateCommand', 'SimulateHook',
-                    'DebugToggle', 'DebugConnection', 'Restart', 'Peek', 'Poke',
+                    'DebugToggle', 'DebugConnection', 'Restart', 'Peek', 'Poke', 'PeekHelp',
                 '@Client commands',
                     'Help', 'Hint', 'QuickHelp', 'SearchHelp', 'ListReserved',
                     'About', 'OpenAboutWindow', 'CloseAboutWindow',
-                    'EditClient', 'EditSession',
+                    'EditQuick', 'EditClient', 'EditSession',
                     'SwitchSession', 'MaxSession', 'ListSession', 'SetSession',
                     'Connect', 'Reconnect', 'XConnect', 'Telnet', 'SSH', 'SSL',
                     'Login',
@@ -689,10 +723,12 @@
                     'CommandBuffer', 'SetCommandBuffer', 'EditCommandBuffer', 'DumpCommandBuffer',
                     'SaveBuffer', 'LoadBuffer', 'ReplayBuffer', 'HaltReplay', 'SetAutoComplete',
                         'ToggleWindowKey', 'ToggleMainWindow', 'ToggleLabel', 'ToggleIrreversible',
+                        'TogglePopup',
                     'ShowFile', 'DisableSaveLoad', 'DisableSaveWorld', 'Save', 'Load',
                         'AutoSave', 'EmergencySave',
                     'ExportFiles', 'ImportFiles', 'ExportData', 'ImportData',
-                    'RetainBackups',
+                    'RetainFileCopy',
+                    'BackupData', 'RestoreData', 'AutoBackup',
                     'LoadPlugin', 'EnablePlugin', 'DisablePlugin', 'TestPlugin', 'ListPlugin',
                     'AddInitialPlugin', 'DeleteInitialPlugin', 'ListInitialPlugin',
                     'SetTelnetOption', 'SetMUDProtocol', 'SetTermType', 'MSDP', 'MSSP', 'MXP',
@@ -706,13 +742,16 @@
                         'PermAlert', 'ListAttribute', 'AddConfig', 'CloneConfig', 'EditConfig',
                         'ModifyConfig', 'DeleteConfig', 'ListConfig',
                 '@Other windows',
-                    'OpenGUIWindow', 'CloseGUIWindow',
+                    'OpenObjectViewer', 'CloseObjectViewer',
                     'OpenAutomapper', 'CloseAutomapper', 'ToggleAutomapper',
                     'LocatorWizard',
                 '@Dictionaries',
                     'AddDictionary', 'SetDictionary', 'CloneDictionary', 'EditDictionary',
                         'DeleteDictionary', 'ListDictionary', 'SetLanguage', 'SwitchLanguage',
                     'AddWord', 'QuickAddWord', 'DeleteWord', 'ListWord',
+                    'ModifyPrimary', 'AddSecondary', 'ModifySecondary', 'DeleteSecondary',
+                        'ListDirection',
+                    'SetAutoSecondary', 'ListAutoSecondary',
                     'AddSpeedWalk', 'DeleteSpeedWalk', 'ListSpeedWalk',
                     'AddModifierChar', 'DeleteModifierChar', 'ListModifierChar',
                 '@Profiles - general',
@@ -724,7 +763,7 @@
                 '@Profiles - world profiles',
                     'AddWorld', 'SetWorld', 'CloneWorld', 'EditWorld', 'DeleteWorld', 'ListWorld',
                         'SetFavouriteWorld', 'ListFavouriteWorld', 'RestoreWorld',
-                        'ListRestoreWorld', 'UpdateWorld', 'ListOtherWorld',
+                        'ListRestoreWorld', 'UpdateWorld', 'ListBasicWorld',
                     'ToggleHistory', 'ClearHistory', 'ShowHistory',
                 '@Profiles - other profiles',
                     'AddGuild', 'SetGuild', 'UnsetGuild', 'CloneGuild', 'EditGuild', 'DeleteGuild',
@@ -749,8 +788,8 @@
                     'AddTimer', 'ModifyTimer', 'DeleteTimer', 'ListTimer',
                     'AddHook', 'ModifyHook', 'DeleteHook', 'ListHook',
                 '@Keycodes',
-                    'AddKeycodeObject', 'SetKeycodeObject', 'EditKeycodeObject',
-                        'CloneKeycodeObject', 'ResetKeycodeObject', 'DeleteKeycodeObject',
+                    'AddKeycodeObject', 'SetKeycodeObject', 'CloneKeycodeObject',
+                        'EditKeycodeObject', 'ResetKeycodeObject', 'DeleteKeycodeObject',
                         'ListKeycodeObject',
                     'GetKeycode', 'SetKeycode', 'ResetKeycode', 'ListKeycode',
                         'ListKeycodeAlternative',
@@ -829,6 +868,9 @@
                 '@Attack task',
                     'Kill', 'KKill', 'KillAll', 'KillMall', 'Interact', 'IInteract', 'InteractAll',
                         'InteractMall',
+                '@Channels and Divert tasks',
+                    'AddChannelPattern', 'DeleteChannelPattern', 'ListChannelPattern',
+                        'EmptyChannelsWindow', 'EmptyDivertWindow',
                 '@Chat task',
                     'ChatListen', 'ChatIgnore', 'AddContact', 'EditContact', 'DeleteContact',
                         'ListContact',
@@ -840,12 +882,9 @@
                         'ChatSetIcon',
                     'AddSmiley', 'DeleteSmiley', 'ListSmiley', 'ResetSmiley',
                 '@Compass task',
-                    'Compass', 'PermCompass',
+                    'Compass', 'PermCompass', 'WorldCompass',
                 '@Debugger task',
                     'SetDebuggerMode',
-                '@Divert task',
-                    'AddDivertPattern', 'DeleteDivertPattern', 'ListDivertPattern',
-                        'EmptyDivertWindow',
                 '@Inventory / Condition tasks',
                     'ActivateInventory', 'DisactivateInventory',
                     'ProtectObject', 'UnprotectObject', 'ListProtectObject',
@@ -853,7 +892,7 @@
                     'SellAll', 'DropAll', 'UseAll',
                 '@Locator task',
                     'MoveDirection', 'RelayDirection', 'Teleport', 'AddTeleport', 'DeleteTeleport',
-                        'InsertLook', 'ListTeleport', 'ResetLocatorTask',
+                        'ListTeleport', 'InsertLook', 'InsertFailedExit', 'ResetLocatorTask',
                     'AddExitPattern', 'DeleteExitPattern', 'ListExitPattern',
                     'CollectUnknownWords', 'EmptyUnknownWords', 'ListUnknownWords',
                     'CollectContentsLines', 'EmptyContentsLines', 'ListContentsLines',
@@ -868,14 +907,19 @@
                         'EditRegionmap', 'EmptyRegion', 'DeleteRegion', 'DeleteTemporaryRegion',
                         'DeleteRoom', 'DeleteModelObject', 'ListModel', 'ListOrphan', 'DumpModel',
                         'EditModel', 'UpdateModel', 'ModelReport', 'ListSourceCode',
+                    'AddLabelStyle', 'EditLabelStyle', 'RenameLabelStyle', 'DeleteLabelStyle',
+                        'ListLabelStyle',
                     'AddPlayerCharacter', 'DeletePlayerCharacter', 'ListPlayerCharacter',
                     'AddMinionString', 'DeleteMinionString', 'ListMinionString',
                     'SetLightList', 'ResetLightList', 'SetLightStatus',
-                    'SetRoom', 'ResetRoom', 'SetOfflineRoom', 'LocateRoom', 'EditRoomComponent',
-                        'ListRoomComponent', 'EditPainter',
+                    'SetRoom', 'ResetRoom', 'SetOfflineRoom', 'LocateRoom',
+                    'EditRoomComponent', 'ListRoomComponent',
+                    'EditPainter',
                     'SetAssistedMoves', 'SetProtectedMoves',
+                    'RoomCommand', 'IgnoreRoomCommand', 'NoticeRoomCommand', 'ListRoomCommand',
                 '@Exit model commands',
                     'AddExit', 'EditExit', 'DeleteExit', 'ListExitModel', 'DumpExitModel',
+                    'AllocateExit',
             ],
             # An ordered list of commands, initially set to $self->constClientCmdPrettyList, and
             #   modified when plugins are loaded, enabled or disabled in order to show (or remove)
@@ -1103,8 +1147,11 @@
             #   active 'internal' window's command entry box; set to FALSE otherwise
             # (NB GA::Client->autoCompleteMode must also be set to 'auto')
             useCompleteKeysFlag         => TRUE,            # [config]
-            # Flag set to TRUE if the CTRL+TAB key combination should switch between tabs in a pane
-            #   object (GA::Table::Pane) in the active 'internal' window; set to FALSE otherwise
+            # Flag set to TRUE if the TAB key should switch between tabs in a pane object
+            #   (GA::Table::Pane) in the active 'internal' window; set to FALSE otherwise
+            # If the window contains an entry strip object (GA::Strip::Entry), the TAB key is used
+            #   in auto-completion, so CTRL+TAB is required to switch tabs. If there's no entry
+            #   strip object, TAB will do the job
             useSwitchKeysFlag           => TRUE,            # [config]
 
             # The instruction buffer for the client. Every instruction processed by any session is
@@ -1232,82 +1279,125 @@
             #   $worldProfHash{unique_string_name} = blessed_reference_to_profile_object
             worldProfHash               => {},      # [config] [worldprof]
             #
-            # Axmud comes with some pre-configured world profiles. A constant registry list of those
-            #   profiles
-            constWorldList              => [
-                'aardwolf',         # Aardwolf MUD / aardmud.org 40000
-                'achaea',           # Achaea / achaea.com 23
-                'aetolia',          # Aetolia / aetolia.com 23
-                'alteraeon',        # Alter Aeon / alteraeon.com 3000
-                'anguish',          # Ancient Anguish / ancient.anguish.org 2222
-                'archipelago',      # Archipelago MUD / the-firebird.net 8000
-                'arctic',           # ArcticMud / mud.arctic.org 2700
-                'ateraan',          # New Worlds: Ateraan / www.ateraan.com 4002
-                'avalonrpg',        # Avalon; The Legend Lives / avalon-rpg.com 23
-                'avatarmud',        # Avatar MUD / avatar.outland.org 3000
-                'batmud',           # BatMUD / batmud.bat.org 23
-                'bedlam',           # Bedlam / mud.playbedlam.com 9000
-                'burningmud',       # Burning MUD / burningmud.com 4000
-                'clok',             # CLOK / clok.contrarium.net 4000
-                'coffeemud',        # CoffeeMud / coffeemud.net 23
-                'cryosphere',       # Cryosphere / cryosphere.org 6666
-                'darkrealms',       # Dark Realms: City of Syne / 173.244.70.250 1138
-                'dartmud',          # DartMUD / dartmud.com 2525
-                'dawn',             # Dawn / 23.241.198.57 3000
-                'discworld',        # Discworld MUD / discworld.starturtle.net 23
-                'dsdev',            # Dead Souls development mud / dead-souls.net 8000
-                'dslands',          # Dark and Shattered Lands / dsl-mud.org 4000
-                'dslocal',          # Local installation of Dead Souls mudlib / localhost 6666
-                'dsprime',          # Dead Souls game mud / dead-souls.net 6666
-                'dunemud',          # DuneMUD / dune.servint.com 6789
-                'duris',            # Duris: Land of BloodLust / mud.durismud.com 7777
-                'elephantmud',      # Elephant MUD / elephant.org 23
-                'empire',           # EmpireMUD 2.0 / empiremud.net 4000
-                'eotl',             # End of the Line / eotl.org 2010
-                'fourdims',         # 4Dimensions / 4dimensions.org 6000
-                'genesis',          # Genesis / mud.genesismud.org 3011
-                'holyquest',        # HolyQuest / holyquest.org 8080
-                'iberia',           # Iberia MUD / iberiamud.com 5900
-                'icesus',           # Icesus / icesus.org 23
-                'ifmud',            # ifMUD / ifmud.port4000.com 4000
-                'imperian',         # Imperian: Sundered Heavens / imperian.com 23
-                'islands',          # Islands / islands.genesismuds.com 3000
-                'kallisti',         # Legends of Kallisti / legendsofkallisti.com 4000
-                'lambda',           # LambdaMOO / lambda.moo.mud.org 8888
-                'legendmud',        # LegendMUD / mud.legendmud.org 9999
-                'lostsouls',        # Lost Souls / lostsouls.org 23
-                'luminari',         # Luminari MUD / luminarimud.com 4100
-                'lusternia',        # Lusternia / lusternia.com 23
-                'magica',           # Materia Magica / materiamagica.com 4000
-                'medievia',         # Medievia / medievia.com 4000
-                'merentha',         # Merentha / mud.merentha.com 10000
-                'morgengrauen',     # MorgenGrauen / mg.mud.de 23
-                'mud1',             # MUD1 (British Legends) / british-legends.com 27750
-                'mud2',             # MUD2 (Canadian server) / mud2.com 23
-                'mudii',            # MUD2 (UK server) / mud2.com 23
-                'nanvaent',         # Nanvaent / nanvaent.org 23
-                'nodeka',           # Nodeka / nodeka.com 23
-                'nuclearwar',       # Nuclear War / nuclearwarmudusa.com 4000
-                'penultimate',      # Penultimate Destination / penultimatemush.com 9500
-                'pict',             # Pict MUD / pict.genesismuds.com 4200
-                'reinos',           # Reinos de Leyenda / rlmud.org 5001
-                'retromud',         # RetroMUD / retromud.org 3000
-                'rodespair',        # Realms of Despair / realmsofdespair.com 23
-                'rupert',           # Rupert / rupert.twyst.org 9040
-                'slothmud',         # SlothMUD III / slothmud.org 6101
-                'stonia',           # Stonia / stonia.ttu.ee 4000
-                'swmud',            # Star Wars Mud / swmud.org 6666
-                'tempora',          # Tempora Heroica / login1.ibiblio.org 2895
-                'threekingdoms',    # 3Kingdoms / 3k.org 3000
-                'threescapes',      # 3Scapes / 3scapes.org 3200
-                'torilmud',         # TorilMUD / torilmud.org 9999
-                'valhalla',         # Valhalla MUD / valhalla.com 4242
-                'vikingmud',        # Viking MUD / connect.vikingmud.org 2001
-                'wotmud',           # The Wheel of Time MUD / game.wotmud.org 2224
-                'zombiemud',        # ZombieMUD / zombiemud.org 23
-                # Pre-configured worlds from earlier releases, now defunct
-#                'midkemia',         # Midkemia Online / closed 2016
-            ],
+            # Axmud comes with some pre-configured world profiles. A constant registry hash of those
+            #   world profiles, and the Axmud version in which they were introduced
+            # If the user is using a newer version of Axmud, this IV is consulted and any new
+            #   pre-configured worlds are imported into Axmud's data directories
+            constWorldHash              => {
+                'aardwolf'          => '1.0.140', # Aardwolf MUD / aardmud.org 40000
+                'achaea'            => '1.0.050', # Achaea / achaea.com 23
+                'advun'             => '1.1.138', # Adventures Unlimited / tharel.net 5005
+                'aetolia'           => '1.0.376', # Aetolia / aetolia.com 23
+                'alteraeon'         => '1.0.140', # Alter Aeon / alteraeon.com 3000
+                'anguish'           => '1.0.050', # Ancient Anguish / ancient.anguish.org 2222
+                'aochaos'           => '1.1.050', # Age of Chaos / aoc.pandapub.com 4000
+                'archipelago'       => '1.0.140', # Archipelago MUD / the-firebird.net 8000
+                'arctic'            => '1.1.0',   # ArcticMud / mud.arctic.org 2700
+                'ateraan'           => '1.1.0',   # New Worlds: Ateraan / www.ateraan.com 4002
+                'avalonmud'         => '1.1.050', # Avalon (Germany) / avalon.mud.de 7777
+                'avalonrpg'         => '1.1.0',   # Avalon; The Legend Lives / avalon-rpg.com 23
+                'avatarmud'         => '1.1.0',   # Avatar MUD / avatar.outland.org 3000
+                'batmud'            => '1.0.140', # BatMUD / batmud.bat.org 23
+                'bedlam'            => '1.0.140', # Bedlam / mud.playbedlam.com 9000
+                'burningmud'        => '1.1.0',   # Burning MUD / burningmud.com 4000
+                'bylins'            => '1.1.138', # Bylins MUD / bylins.su 4000
+                'carrion'           => '1.1.050', # Carrion Fields / carrionfields.net 4449
+                'clessidra'         => '1.1.138', # Clessidra MUD / mud.clessidra.it 4000
+                'clok'              => '1.0.275', # CLOK / clok.contrarium.net 4000
+                'coffeemud'         => '1.1.0',   # CoffeeMud / coffeemud.net 23
+                'cryosphere'        => '1.0.376', # Cryosphere / cryosphere.org 6666
+                'cyberassault'      => '1.1.050', # CyberASSAULT / cyberassault.org 11111
+                'darkrealms'        => '1.1.0',   # Dark Realms: City of Syne / 173.244.70.250 1138
+                'dartmud'           => '1.1.0',   # DartMUD / dartmud.com 2525
+                'dawn'              => '1.1.0',   # Dawn / 23.241.198.57 3000
+                'discworld'         => '1.0.140', # Discworld MUD / discworld.starturtle.net 23
+                'dragonstone'       => '1.1.138', # DragonStone / dragonstone.mudmagic.com 2345
+                'dsdev'             => '1.0.0',   # Dead Souls development mud / dead-souls.net 8000
+                'dslands'           => '1.0.0',   # Dark and Shattered Lands / dsl-mud.org 4000
+                'dslocal'           => '1.0.0',   # Local installation of Dead Souls mudlib
+                                                  #     / localhost 6666
+                'dsprime'           => '1.0.0',   # Dead Souls game mud / dead-souls.net 6666
+                'dunemud'           => '1.1.0',   # DuneMUD / dune.servint.com 6789
+                'duris'             => '1.0.0',   # Duris: Land of BloodLust / mud.durismud.com 7777
+                'edmud'             => '1.1.138', # Eternal Darkness / edmud.net 9700
+                'elephantmud'       => '1.1.0',   # Elephant MUD / elephant.org 23
+                'elysium'           => '1.1.050', # Elysium RPG / elysium-rpg.com 7777
+                'empire'            => '1.1.0',   # EmpireMUD 2.0 / empiremud.net 4000
+                'eotl'              => '1.1.0',   # End of the Line / eotl.org 2010
+                'fourdims'          => '1.0.050', # 4Dimensions / 4dimensions.org 6000
+                'genesis'           => '1.0.0',   # Genesis / mud.genesismud.org 3011
+                'hellmoo'           => '1.1.050', # HellMOO / hellmoo.org 7777
+                'hexonyx'           => '1.1.138', # HexOnyx / mud.hexonyx.com 7777
+                'holyquest'         => '1.1.0',   # HolyQuest / holyquest.org 8080
+                'iberia'            => '1.0.0',   # Iberia MUD / iberiamud.com 5900
+                'icesus'            => '1.1.0',   # Icesus / icesus.org 23
+                'ifmud'             => '1.0.275', # ifMUD / ifmud.port4000.com 4000
+                'imperian'          => '1.0.376', # Imperian: Sundered Heavens / imperian.com 23
+                'islands'           => '1.1.0',   # Islands / islands.genesismuds.com 3000
+                'kallisti'          => '1.1.0',   # Legends of Kallisti / legendsofkallisti.com 4000
+                'lambda'            => '1.1.0',   # LambdaMOO / lambda.moo.mud.org 8888
+                'legendmud'         => '1.0.275', # LegendMUD / mud.legendmud.org 9999
+                'lostsouls'         => '1.1.0',   # Lost Souls / lostsouls.org 23
+                'luminari'          => '1.1.0',   # Luminari MUD / luminarimud.com 4100
+                'lusternia'         => '1.0.0',   # Lusternia / lusternia.com 23
+                'magica'            => '1.0.140', # Materia Magica / materiamagica.com 4000
+                'medievia'          => '1.1.0',   # Medievia / medievia.com 4000
+                'merentha'          => '1.0.050', # Merentha / mud.merentha.com 10000
+                'miriani'           => '1.1.050', # Miriani / toastsoft.net 1234
+                'morgengrauen'      => '1.1.0',   # MorgenGrauen / mg.mud.de 23
+                'mud1'              => '1.1.0',   # MUD1 (British Legends)
+                                                  #     / british-legends.com 27750
+                'mud2'              => '1.1.0',   # MUD2 (Canadian server) / mud2.com 23
+                'mudii'             => '1.1.0',   # MUD2 (UK server) / mud2.com 23
+                'mume'              => '1.1.050', # MUME / mume.org 23
+                'nanvaent'          => '1.0.0',   # Nanvaent / nanvaent.org 23
+                'nodeka'            => '1.0.275', # Nodeka / nodeka.com 23
+                'nuclearwar'        => '1.0.140', # Nuclear War / nuclearwarmudusa.com 4000
+                'penultimate'       => '1.1.0',   # Penultimate Destination
+                                                  #     / penultimatemush.com 9500
+                'pict'              => '1.0.140', # Pict MUD / pict.genesismuds.com 4200
+                'ravenmud'          => '1.1.138', # RavenMUD / ravenmud.com 6060
+                'realmsmud'         => '1.1.138', # RealmsMUD / realmsmud.org 1501
+                'reinos'            => '1.1.0',   # Reinos de Leyenda / rlmud.org 5001
+                'retromud'          => '1.1.0',   # RetroMUD / retromud.org 3000
+                'rodespair'         => '1.1.0',   # Realms of Despair / realmsofdespair.com 23
+                'roninmud'          => '1.1.050', # RoninMUD / game.roninmud.org 5000
+                'rupert'            => '1.0.275', # Rupert / rupert.twyst.org 9040
+                'slothmud'          => '1.0.140', # SlothMUD III / slothmud.org 6101
+                'stonia'            => '1.0.376', # Stonia / stonia.ttu.ee 4000
+                'swmud'             => '1.1.0',   # Star Wars Mud / swmud.org 6666
+                'tempora'           => '1.0.0',   # Tempora Heroica / login1.ibiblio.org 2895
+                'threekingdoms'     => '1.1.0',   # 3Kingdoms / 3k.org 3000
+                'threescapes'       => '1.1.0',   # 3Scapes / 3scapes.org 3200
+                'torilmud'          => '1.1.0',   # TorilMUD / torilmud.org 9999
+                'tsunami'           => '1.1.050', # Tsunami / tsunami.thebigwave.net 23
+                'twotowers'         => '1.1.138', # Two Towers / t2tmud.org 9999
+                'valhalla'          => '1.0.0',   # Valhalla MUD / valhalla.com 4242
+                'vikingmud'         => '1.0.050', # Viking MUD / connect.vikingmud.org 2001
+                'waterdeep'         => '1.1.138', # Waterdeep / waterdeep.org 4200
+                'wotmud'            => '1.1.0',   # The Wheel of Time MUD / game.wotmud.org 2224
+                'zombiemud'         => '1.1.0',   # ZombieMUD / zombiemud.org 23
+                # Pre-configured worlds from earlier releases => '1.1.0', now defunct
+#               'midkemia'          => '1.0.376', # Midkemia Online / closed 2016
+                # New release
+            },
+            # Constant registry hash of pre-configured world profiles that must be patched (because
+            #   of serious problems), and the most recent Axmud version whose saved data requires
+            #   the patch
+            constWorldPatchHash         => {
+                'avalonrpg'         => '1.1.012',
+                'discworld'         => '1.1.012',
+                'swmud'             => '1.1.012',
+            },
+            # Constant registry list of pre-configured world profiles; all the keys in
+            #   $self->constWorldList, sorted alphabetically
+            constWorldList              => [],      # Set below
+            # The Axmud version found the last time the user ran Axmud. If the user is now using a
+            #   newer version of Axmud, the code uses this IV to decide which new pre-configured
+            #   worlds to insert into Axmud's data directory
+            # The literal value stored below is the version number of Axmud's first public release.
+            #   This IV was introduced in v1.1.021
+            prevClientVersion           => '1.0.0', # [config]
             # List of the user's 'favourite' worlds, which appear at the top of the Connections
             #   window's list (in the same order they appear here)
             favouriteWorldList          => [],      # [config]
@@ -1323,379 +1413,541 @@
             # World models
             # ------------
 
-            # Constant registry list of values used to initialise room filters in world models
-            #   (GA::Obj::WorldModel)
+            # Constant registry list of room filters in a standard order
             constRoomFilterList         => [
-                'markers', 0,
-                'navigation', 0,
-                'commercial', 0,
-                'buildings', 0,
-                'structures', 0,
-                'terrain', 0,
-                'objects', 0,
-                'light', 0,
-                'guilds', 0,
-                'quests', 0,
-                'attacks', 0,
+                'markers',
+                'custom',
+                'navigation',
+                'commercial',
+                'buildings',
+                'structures',
+                'terrain',
+                'objects',
+                'light',
+                'guilds',
+                'quests',
+                'attacks',
             ],
             # Constant registry list of values used to initialise room flags in world models
             constRoomFlagList           => [
                 # Markers
+                # -------
+                # blocked_room - Set if this room shouldn't be available to pathfinding functions
+                #   (or similar code)
                 'blocked_room' , 'Bl', 'markers',
                     '#A6483C',  # Dark red
-                    'Room blocked',
+                    'Room is blocked',
+                # interesting - Set if this room is marked as interesting
                 'interesting', 'In', 'markers',
                     '#EC7171',  # Pink
                     'Room is interesting',
+                # investigate - Set if this room is marked as worth coming back later to investigate
                 'investigate', 'Iv', 'markers',
                     '#F37E1B',  # Orange
                     'Room worth investigating',
+                # unexplored - Set if this room hasn't been visited yet
                 'unexplored', 'Ux', 'markers',
                     '#AE5463',  # Dull dark red
                     'Room not visited yet',
+                #   unspecified - Set if this room has an 'unspecified' room statement
                 'unspecified', 'Un', 'markers',
                     '#84885C',  # Very pale green
                     'Unspecified room statement',
+                # avoid_room - Set if this room is marked as worth avoiding
                 'avoid_room' , 'Av', 'markers',
                     '#E15835',  # Orange-red
                     'Room worth avoiding',
+                # mortal_danger - Set if entering this room will probably get the character killed
                 'mortal_danger', 'Md', 'markers',
                     '#FF0000',  # Default red
                     'Room is extremely dangerous',
+                # danger - Set if entering this room is dangerous
                 'danger', 'Dg', 'markers',
                     '#A12C1C',  # Dark red
                     'Room is dangerous',
+                # dummy_room - Set if this room is not actually accessible
                 'dummy_room', 'Dr', 'markers',
                     '#A4A4A4',  # Grey
                     'Inaccessible (dummy) room',
+                # rent_room - Set if this room is where the character can rent (store stuff)
                 'rent_room', 'Rt', 'markers',
                     '#CACA84',  # Pale brown/yellow
                     'Room for renting',
+                # camp_room - Set if this room is where the character can camp
                 'camp_room', 'Cm', 'markers',
                     '#909044',  # Darker brown/yellow
                     'Room for camping',
+                # stash_room - Set if this room is where you like to leave things temporarily
                 'stash_room', 'St', 'markers',
                     '#C1722B',  # Dirty orange
                     'Room for stashing things',
+                # hide_room - Set if this room is where you like to hide
                 'hide_room', 'Hd', 'markers',
                     '#AE8B6A',  # Grey-brown
                     'Room for hiding',
+                # random_room - Set if this room was randomly generated (by the world)
                 'random_room', 'Rn', 'markers',
                     '#A7B455',  # Yellow-green
                     'Randomly-generated room',
+                # immortal_room - Set if this room is only accessible to admin users
                 'immortal_room', 'Im', 'markers',
                     '#FF2161',  # Red-purple
                     'Room not accessible to mortals',
+
+                # Custom
+                # ------
+                # (all room flags added by the user are in this filter)
+
                 # Navigation
+                # ----------
+                # world_centre - Set if this room has been designated the centre of the world
                 'world_centre', 'Mc', 'navigation',
                     '#FB922C',  # Orange
                      'Room is centre of world',
+                # world_start - Set if this room is the room where new players start
                 'world_start', 'Ms', 'navigation',
                     '#57FF6A',  # Lilac green
                      'Start room for new players',
+                # meet_point - Set if this room has been designated as a meeting point (usually a
+                #   room in the world at the centre of a town, near shops)
                 'meet_point', 'Mp', 'navigation',
                     '#D77EC7',  # Light purple
                     'Room is a meetpoint',
+                # main_route - Set if this is a main route
                 'main_route', 'Mr', 'navigation',
                     '#A0959F',  # Dark grey
                     'Room is on a main route',
+                # minor_route - Set if this is a minor route
                 'minor_route', 'mr', 'navigation',
                     '#CDC4CD',  # Light grey
                     'Room is on a minor route',
+                # cross_route - Set if this is where two or more routes meet
                 'cross_route', 'Cr', 'navigation',
                     '#F0B68F',  # Light orange
                     'Room is at an intersection',
+                # arrow_route - Set if this room leads in the right direction
                 'arrow_route', 'Aw', 'navigation',
                     '#ECD24E',  # Gold
                     'Room leads in right direction',
+                # wrong_route - Set if this room leads in the wrong direction
                 'wrong_route', 'Br', 'navigation',
                     '#A55B2A',  # Brown
                     'Room leads in wrong direction',
+                # portal - Set if this room contains some kind of portal
                 'portal', 'Pl', 'navigation',
                     '#88FFE7',  # Bright cyan
                     'Room contains some kind of portal',
+                # sign_post - Set if this room contains a signpost
                 'sign_post', 'Sp', 'navigation',
                     '#B58870',  # Pale brown
                     'Room contains a signpost',
+                # bus_stop - Set if this room is a stop along a moving vehicle's route
+                'bus_stop', 'Bs', 'navigation',
+                    '#6F6F6F',  # Darker grey
+                    'Room has a bus stop',
+                # moving_boat - Set if this room is on a (moving) boat
                 'moving_boat', 'Bt', 'navigation',
                     '#3CD1C8',  # Cyan
                     'Room is a (moving) boat',
+                # vehicle - Set if this room is on a (moving) vehicle
                 'vehicle', 'Vh', 'navigation',
                     '#869D9B',  # Grey-cyan
                     'Room is a (moving) vehicle',
+                # fixed_boat - Set if this room is on a (stationary) boat
                 'fixed_boat', 'Fb', 'navigation',
                     '#237974',  # Darkish blue
                     'Room is on a (stationary) boat',
+                # swim_room - Set if this room is in water, so the character needs to swim
                 'swim_room', 'Sw', 'navigation',
                     '#2656C6',  # Blue
                     'Character needs to swim here',
+                # fly_room - Set if this room is in the air, so the character needs to fly
                 'fly_room', 'Fl', 'navigation',
                     '3A79F7',   # Sky blue
                     'Character needs to fly here',
+
                 # Commercial
+                # ----------
+                # shop_general - Set if this room is a general store
                 'shop_general', 'Sh', 'commercial',
                     '#F7FF65',  # Light yellow
                     'Room is a general store',
+                # shop_weapon - Set if this room is a weapon shop
                 'shop_weapon', 'Ws', 'commercial',
                     '#F97F20',  # Orange
                     'Room is a weapon shop',
+                # shop_armour - Set if this room is an armour shop
                 'shop_armour', 'Wa', 'commercial',
                     '#DA440C',  # Slightly darker orange
                     'Room is an armour shop',
+                # shop_clothes - Set if this room is a clothes shop
                 'shop_clothes', 'Wc', 'commercial',
                     '#DAA10C',  # Yellow-gold
                     'Room is a clothes shop',
+                # shop_player - Set if this room is a player-controlled shop
+                'shop_player', 'Sy', 'commercial',
+                    '#FFA966',   # Light orange
+                    'Room is a player-controlled shop',
+                # shop_special - Set if this room is some other kind of shop
                 'shop_special', 'Ss', 'commercial',
                     '#3AFF34',  # Green
                     'Room is another kind of shop',
+                # shop_empty - Set if this room is an empty shop
                 'shop_empty', 'Se', 'commercial',
                     '#8DFF89',  # Pale greeen
                     'Room is an empty shop',
+                # smithy - Set if this room is a smithy
                 'smithy', 'Sm', 'commercial',
                     '#D58111',  # Light brown
                     'Room is a smithy',
+                # bank - Set if this room is a bank
                 'bank', 'Bn', 'commercial',
                     '#8E0E3F',  # Purple
                     'Room is a bank',
+                # pub - Set if this room is some kind of pub
                 'pub', 'Pb', 'commercial',
                     '#1730F5',  # Blue
                     'Room is a pub',
+                # cafe - Set if this room is some kind of cafeteria (like a pub, but with non-
+                #   alcoholic drinks)
+                'cafe', 'Cf', 'commercial',
+                    '#3196CA',  # Dark cyan
+                    'Room is a cafeteria',
+                # restaurant - Set if this room is some kind of restaurant (where the character can
+                #   eat)
                 'restaurant', 'Re', 'commercial',
                     '#487F9B',  # Murky blue
                     'Room is a restaurant',
+                # takeaway - Set if this room is some kind of takeaway (where the character can
+                #   buy food to carry)
                 'takeaway', 'Ta', 'commercial',
                     '#A9C1F4',  # Very light blue
                     'Room is a takeaway',
+                # auction - Set if this room is an auction house
                 'auction', 'Au', 'commercial',
                     '#CA1E4D',  # Red
                     'Room is an auction house',
+                # post_office - Set if this room is a post office
                 'post_office', 'Po', 'commercial',
                     '#8CB583',  # Dull green
                     'Room is a post office',
+
                 # Buildings
+                # ---------
+                # library - Set if this room is where books, parchments, signs, notice boards and so
+                #   on are available
                 'library', 'Lb', 'buildings',
                     '#DEF3CC',  # Very pale green
                     'Room is a library',
+                # theatre - Set if this room is a theatre or performance venue
                 'theatre', 'Th', 'buildings',
                     '#2DD06C',  # Turquoise
                     'Room is a theatre',
+                # temple - Set if this room is some kind of temple or shrine
                 'temple', 'Te', 'buildings',
                     '#7C6365',  # Very dull red
                     'Room is a temple',
+                # church - Set if this room is a church or cathedral
                 'church', 'Ch', 'buildings',
                     '#C17D80',  # Pale red
                     'Room is a church/cathedral',
+                # hotel - Set if this room is a hotel
                 'hotel', 'Hl', 'buildings',
                     '#B0B167',  # Dull yellow
                     'Room is a hotel',
+                # storage - Set if this room is somewhere you can store things
                 'storage', 'St', 'buildings',
                     '#996712',  # Green-brown
                     'Room is a storage facility',
+                # office - Set if this room is an office
                 'office', 'Of', 'buildings',
                     '#A36C6C',  # Dull red
                     'Room is an office',
+                # jail - Set if this room is a jail or dungeon
                 'jail', 'Jl', 'buildings',
                     '#C46F47',  # Pale brown
                     'Room is a jail or dungeon',
+                # hospital - Set if this room is some kind of hospital
                 'hospital', 'Ho', 'buildings',
                     '#ED0C60',  # Red-purple
                     'Room is a hospital',
+                # stable - Set if this room is a room where animals are stored
                 'stable', 'St', 'buildings',
                     '#DF9F4B',  # Straw orange
                     'Room is a stable for animals',
+                # tent - Set if this room is inside a tent
                 'tent', 'Tt', 'buildings',
                     '#D2B380',  # Canvas
                     'Room is a tent',
+                # house - Set if this room is an ordinary house or home
                 'house', 'Hs', 'buildings',
                     '#3B7E55',  # Dark green
                     'Room is a house or home',
+                # ord_building - Set if this room is an ordinary building
                 'ord_building', 'Ob', 'buildings',
                     '#82E1CA',  # Light cyan
                     'Room is an ordinary building',
+                # bulletin_board - Set if this room contains some kind of bulletin board
                 'bulletin_board', 'Bb', 'buildings',
                     '#A47AB8',  # Light purple
                     'Room contains a bulletin board',
+
                 # Structures
+                # ----------
+                # building - Set if this is any kind of building
                 'building', 'Bu', 'structures',
                     '#B7764F',  # Pale brown
                     'Room is any kind of building',
+                # gate - Set if this is at (or outside) a city gate
                 'gate', 'Ga', 'structures',
                     '#87BDC6',  # Pale blue
                     'Room is at a city gate',
+                # wall - Set if this is on (or alongside) a city wall
                 'wall', 'Wl', 'structures',
                     '#C9D3D5',  # Blue-grey
                     'Room is on/outside a city wall',
+                # tower - Set if this is on (or inside) a tower
                 'tower', 'Tw', 'structures',
                     '#B1A27F',  # Dull yellow
                     'Room is on/inside a tower',
+                # staircase - Set if this is on a staircase
                 'staircase', 'Sc', 'structures',
                     '#FFB47C',  # Sandy yellow
                     'Room is on a staircase',
+                # tunnel - Set if this is in a tunnel
                 'tunnel', 'Tu', 'structures',
                     '#C4897D',  # Dull pink
                     'Room is in a tunnel',
+                # bridge - Set if this is a on a bridge
                 'bridge', 'Br', 'structures',
                     '#A9631F',  # Brown
                     'Room is on a bridge',
+                # fountain - Set if this room has a fountain
                 'fountain', 'Fn', 'structures',
                     '#35BDD8',  # Bright blue
                     'Room contains a fountain',
+                # well - Set if this is a well or water source
                 'well', 'We', 'structures',
                     '#76A1D3',  # Light blue
                     'Room is a well',
+                # farm - Set if this is a farm
                 'farm', 'Fa', 'structures',
                     '#A84100',  # Brown
                     'Room is on a farm',
+                # field - Set if this is a field
                 'field', 'Fi', 'structures',
                     '#75B256',  # Paler green
                     'Room is in a field',
+                # park - Set if this is a park/garden
                 'park', 'Pa', 'structures',
                     '#00FF00',  # (Pure) green
                     'Room is in a garden/park',
+                # graveyard - Set if this is a graveyard
                 'graveyard', 'Gy', 'structures',
                     '#CBA5AE',  # Dull pink
                     'Room is in a graveyard',
+                # port - Set if this is a port/harbour/jetty
                 'port', 'Pt', 'structures',
                     '#117311',  # Bottle green
                     'Room is in a port/harbour/jetty',
+                # maze - Set if this is a maze
                 'maze', 'Mz', 'structures',
                     '#D30027',  # Headache red
                     'Room is in a maze',
+
                 # Terrain
+                # -------
+                # forest - Set if this is a forest/wood
                 'forest', 'Fo', 'terrain',
                     '#227122',  # Dark green
                      'Room is in a forest/wood',
+                # clearing - Set if this is a clearing
                 'clearing', 'Cl', 'terrain',
                     '#68E568',  # Pale green
                      'Room is a clearing',
+                # grassland - Set if this is a grassland/plain
                 'grassland', 'Gl', 'terrain',
                     '#BFED57',  # Yellow-green
                     'Room is in a grassland/plain',
+                # swamp - Set if this is a swamp/marsh
                 'swamp', 'Sw', 'terrain',
                     '#6F9956',  # Dirty green
                     'Room is in a swamp/marsh',
+                # desert - Set if this is a desert
                 'desert', 'De', 'terrain',
                     '#F5F72B',  # Yellow
                     'Room is in a desert',
+                # beach - Set if this is a beach/coast
                 'beach', 'Be', 'terrain',
                     '#F7922B',  # Red-orange
                     'Room is on a beach/coastline',
+                # river - Set if this is a river/stream
                 'river', 'Rv', 'terrain',
                     '#61C3EB',  # Light blue
                     'Room is in a river/stream',
+                # lake - Set if this is a lake
                 'lake', 'Lk', 'terrain',
                     '#A9E6FF',  # Very light blue
                     'Room is in a lake',
+                # sea - Set if this is a sea/ocean
                 'sea', 'Se', 'terrain',
                     '#216D8C',  # Darker blue
                     'Room is in a sea/ocean',
+                # cave - Set if this is a cave
                 'cave', 'Cv', 'terrain',
                     '#849DAD',  # Grey-blue
                      'Room is in a cave',
+                # mountain - Set if this is a mountainous area
                 'mountain', 'Mn', 'terrain',
                     '#CDDDE7',  # Blue-white
                     'Room is in a mountainous area',
+                # rocky - Set if this is rocky landscape
                 'rocky', 'Rc', 'terrain',
                     '#C5AC95',  # Brown-grey
                     'Room is in a rocky landscape',
+                # icy - Set if this is icy landscape
                 'icy', 'Ic', 'terrain',
                     '#96BFC3',  # Very pale blue
                     'Room is in an icy landscape',
+                # hill - Set if this is a hill
                 'hill', 'Hi', 'terrain',
                     '#7ADA97',  # Light green
                     'Room is on a hill',
+                # pit - Set if this is next to (or inside) a pit or hole
                 'pit', 'Pi', 'terrain',
                     '#A7B179',  # Dull yellow-green
-                    'Room is in a pit',
+                    'Room is in a pit or contains one',
+
                 # Objects
+                # -------
+                # weapon - Set if the room contains a weapon
                 'weapon', 'Wp', 'objects',
                     '#A87389',  # Pale purple
                     'Room contains a weapon',
+                # armour - Set if the room contains an armour
                 'armour', 'Ar', 'objects',
                     '#82405C',  # Dark pale purple
                     'Room contains an armour',
+                # garment - Set if the room contains a garment
                 'garment', 'Gr', 'objects',
                     '#FF74AE',  # Purple-pink
                     'Room contains a garment',
+                # major_npc - Set if the room contains an important NPC
                 'major_npc', 'Np', 'objects',
                     '#3BCC2F',  # Green
                     'Room contains an important NPC',
+                # talk_npc - Set if the room contains a talking NPC
                 'talk_npc', 'Tn', 'objects',
                     '#086800',  # Dark green
                     'Room contains a talking NPC',
+                # npc - Set if the room contains any NPC
                 'npc', 'Np', 'objects',
                     '#7FEE75',  # Light green
                     'Room contains an NPC',
+                # portable - Set if the room contains a portable object
                 'portable', 'Pr', 'objects',
                     '#262FD8',  # Dark blue
                     'Room contains a portable object',
+                # decoration - Set if the room contains a decoration object
                 'decoration', 'Dc', 'objects',
                     '#10EBA1',  # Light cyan
                     'Room contains a decoration object',
+                # money - Set if the room contains money
                 'money', 'My', 'objects',
                     '#FFE63B',  # Gold
                     'Room contains money',
+                # treasure - Set if the room contains a valuable object
                 'treasure', 'Tr', 'objects',
                     '#FF673B',  # Red-orange
                     'Room treasure or valuable objects',
+                # collectable - Set if the room contains a collectable object
                 'collectable', 'Cl', 'objects',
                     '#FF9900',  # Orange
                     'Room contains collectable objects',
+
                 # Light
+                # -----
+                # outside - Set if this room is outside
                 'outside', 'Ou', 'light',
                     '#77C4E4',  # Sky blue
                     'Room is outside',
+                # inside - Set if this room is inside
                 'inside', 'In', 'light',
                     '#D38D36',  # Light brown
                     'Room is inside',
+                # overground - Set if this room is above ground
                 'overground', 'Ov', 'light',
                     '#36D355',  # Green
                     'Room is above ground',
+                # underground - Set if this room is underground
                 'underground', 'Un', 'light',
                     '#CDCDCD',  # Grey
                     'Room is underground',
+                # torch - Set if average player needs a torch in this room
                 'torch', 'To', 'light',
                     '#E1D139',  # Yellow
                     'Room usually needs a torch',
+                # always_dark - Set if this room is always dark
                 'always_dark', 'Ad', 'light',
                     '#977E6A',  # Pale brown
                     'Room is always dark',
+
                 # Guilds
+                # ------
+                # guild_entrance - Set if this room is an entrance to a guild (possibly guarded)
                 'guild_entrance', 'Ge', 'guilds',
                     '#8F2AF9',  # Purple-blue
                     'Entrance to a guild',
+                # guild_main - Set if this is a room inside the guild where a character can advance
+                #   skills and/or join the guild
                 'guild_main', 'Gm', 'guilds',
                     '#DAA0FB',  # Light purple
                     'Guild room for advancing skills',
+                # guild_practice - Set if this room is where a character can practice guild skills
                 'guild_practice', 'Gp', 'guilds',
                     '#DB0C89',  # Red-purple
                     'Guild room for practicing skills',
+                # guild_shop - Set if this is a room inside the guild where a character can buy
+                #   guild-specific items
                 'guild_shop', 'Gs', 'guilds',
                     '#CE4DF7',  # Purple
                     'Guild room for shopping',
+                # guild_other - Set if this is a room inside the guild where a character can't
+                #   advance skills or buy guild-specific items
                 'guild_other', 'Go', 'guilds',
                     '#89679C',  # Grey-purple
                     'Other kind of guild room',
+
                 # Quests
+                # ------
+                # quest_room - Set if this room is important in a quest
                 'quest_room' , 'Qr', 'quests',
                     '#F4E637',  # Yellow
                     'Room used in quest',
+                # quest_begin - Set if this room is the start of a quest
                 'quest_begin', 'Qb', 'quests',
                     '#58FF57',  # Green
                     'Quest begins in room',
+                # quest_end - Set if this room is the end of a quest
                 'quest_end', 'Qe', 'quests',
                     '#FF6957',  # Red
                     'Quest ends in room',
+
                 # Attacks
+                # -------
+                # peaceful - Set if the world doesn't allow fights in this room
                 'peaceful', 'Pf', 'attacks',
                     '#9CE3DD',  # Light cyan
                     'World forbids attacks in room',
+                # recovery - Set if this room lets the character recover from fights more quickly
                 'recovery', 'Ry', 'attacks',
                     '#E9DC3D',  # Yellow
                     'Character recovers quickly in room',
+                # char_dead - Set if any character has ever died in this room
                 'char_dead', 'Cd', 'attacks',
                     '#FF361E',  # Red
                     'Any character has died in room',
+                # char_pass_out - Set if any character has ever been knocked out in this room
                 'char_pass_out', 'Cp', 'attacks',
                     '#ED22BE',  # Purple
                     'Any character has passed out in room',
@@ -1983,6 +2235,7 @@
             constTaskPackageHash        => {
                 'advance_task'          => 'Games::Axmud::Task::Advance',
                 'attack_task'           => 'Games::Axmud::Task::Attack',
+                'channels_task'         => 'Games::Axmud::Task::Channels',
                 'chat_task'             => 'Games::Axmud::Task::Chat',
                 'compass_task'          => 'Games::Axmud::Task::Compass',
                 'condition_task'        => 'Games::Axmud::Task::Condition',
@@ -2017,6 +2270,9 @@
                 'advance'               => 'advance_task',
                 'att'                   => 'attack_task',
                 'attack'                => 'attack_task',
+                'chan'                  => 'channels_task',
+                'channel'               => 'channels_task',
+                'channels'              => 'channels_task',
                 'chat'                  => 'chat_task',
                 'comp'                  => 'compass_task',
                 'compass'               => 'compass_task',
@@ -2107,7 +2363,7 @@
                 'customName'            => undef,
                 'category'              => undef,
                 'descrip'               => undef,
-                'taskList'              => undef,
+                'taskType'              => undef,
                 'profName'              => undef,
                 'profCategory'          => undef,
                 'shortCutIV'            => undef,
@@ -2277,12 +2533,13 @@
             #   GA::Obj::Component->type)
             constComponentTypeList      => [
                 'anchor',
-                'ignore_line',
                 'verb_title', 'verb_descrip', 'verb_exit', 'verb_content', 'verb_special',
                 'brief_title', 'brief_exit', 'brief_title_exit', 'brief_exit_title',
                 'brief_content',
                 'room_cmd',
                 'mudlib_path',
+                'weather',
+                'ignore_line',
                 'custom',
             ],
             # Object parsing sanity check (in case someone creates a room containing a billion
@@ -2359,8 +2616,9 @@
                 'descrips'              => TRUE,
                 'contents'              => TRUE,
                 'attack'                => FALSE,
-                'divert'                => TRUE,
+                'channels'              => TRUE,
                 'chat'                  => TRUE,
+                'divert'                => TRUE,
                 'sleep'                 => TRUE,
                 'passout'               => TRUE,
                 'dead'                  => TRUE,
@@ -2368,8 +2626,8 @@
             # A list of GA::Session logfiles in a standard order, for use in the world profile's
             #   'edit' window
             constSessionLogOrderList    => [
-                'receive', 'display', 'rooms', 'descrips','contents', 'attack', 'divert', 'chat',
-                'sleep', 'passout', 'dead',
+                'receive', 'display', 'rooms', 'descrips','contents', 'attack', 'channels', 'chat',
+                'divert', 'sleep', 'passout', 'dead',
             ],
 
             # Parallel hash of short descriptions for each type of logfile, for use in the
@@ -2404,10 +2662,12 @@
                     => 'Logs all room contents strings processed by the Locator task',
                 'attack'
                     => 'Logs all attacks processed by the Attack task',
-                'divert'
-                    => 'Logs all text processed by the Divert task',
+                'channels'
+                    => 'Logs all text processed by the Channels task',
                 'chat'
                     => 'Logs all conversations with chat contacts',
+                'divert'
+                    => 'Logs all text processed by the Divert task',
                 'sleep'
                     => 'Logs lines leading up to the character falling asleep',
                 'passout'
@@ -3961,8 +4221,8 @@
             #   workspace grids if this flag and GA::Obj::Desktop->gridPermitFlag are both TRUE
             activateGridFlag            => TRUE,            # [config]
             # Constant hash of standard 'grid' window types (any type of window that can be put onto
-            #   a workspace grid; includes 'external' windows, but doesn't include the GUI window,
-            #   'edit' windows, 'pref' windows, 'dialogue' windows etc)
+            #   a workspace grid; includes 'external' windows, but doesn't include the object viewer
+            #   window, 'edit' windows, 'pref' windows, 'dialogue' windows etc)
             # NB 'Internal' windows are a sub-class of 'grid' window handled by GA::Win::Internal,
             #   consisting of the window types 'main', 'protocol' and 'custom'
             # Hash in the form
@@ -3995,8 +4255,8 @@
             #   $constFreeWinTypeHash{window_type} = 'undef'
             # ...where 'window_type' matches GA::Generic::FreeWin->winType
             constFreeWinTypeHash        => {
-                # The GUI window
-                'gui'                   => undef,
+                # The object viewer window
+                'viewer'                => undef,
                 # All 'edit' windows
                 'edit'                  => undef,
                 # All preference windows (collectively, 'edit' and 'pref' windows are called
@@ -4337,7 +4597,8 @@
             #
             # Constant default colour scheme for the pane objects (GA::Table::Pane), each of which
             #   displays a Gtk2::TextView in an 'internal' windows
-            # (These values never changes; each value is a standard colour tag)
+            # (These values never change; each value MUST be a standard colour tag, not an Xterm or
+            #   RGB colour tag)
             constTextColour             => 'white',
             constUnderlayColour         => 'ul_black',
             constBackgroundColour       => 'black',
@@ -4410,9 +4671,10 @@
             # Constant list of icon sizes (these values never change; in pixels)
             constIconSizeList           => [16, 32, 48, 64, 128],
 
-            # If you want to extend the GUI window for this session with your own 'edit' window
-            #   - using code you've written in your own plugin - this flag gets set to TRUE; the
-            #   custom 'edit' window defined by the plugin can then be called by the GUI menu
+            # If you want to extend the object viewer window for this session with your own 'edit'
+            #   window - using code you've written in your own plugin - this flag gets set to TRUE;
+            #   the custom 'edit' window defined by the plugin can then be called by the object
+            #   viewer window's menu
             guiPrivateFlag              => FALSE,
             # If you want, in addition, the GUI menu to have its 'Private' column for code you've
             #   written yourself, set this flag to TRUE
@@ -4530,12 +4792,6 @@
                     ';resetlocator',
                     TRUE,                       # Requires current session
                     TRUE,                       # Requires connection to world
-                'open_gui',
-                    'Open GUI window',
-                    'watermark_table.png',
-                    ';openguiwindow',
-                    TRUE,                       # Requires current session
-                    TRUE,                       # Requires connection to world
                 # separator
                 'separator',
                 'active_int',
@@ -4582,8 +4838,14 @@
                     TRUE,                       # Requires connection to world
                 # separator
                 'separator',
+                'edit_quick',
+                    'Set quick preferences',
+                    'book_edit.png',
+                    ';editquick',
+                    TRUE,                       # Requires current session
+                    TRUE,                       # Requires connection to world
                 'edit_client',
-                    'Edit Axmud client preferences',
+                    'Set Axmud client preferences',
                     'application_edit.png',
                     ';editclient',
                     TRUE,                       # Requires current session
@@ -4592,6 +4854,12 @@
                     'Edit current world profile',
                     'world_edit.png',
                     ';editworld',
+                    TRUE,                       # Requires current session
+                    TRUE,                       # Requires connection to world
+                'open_viewer',
+                    'Open object viewer window',
+                    'watermark_table.png',
+                    ';openobjectviewer',
                     TRUE,                       # Requires current session
                     TRUE,                       # Requires connection to world
                 # separator
@@ -4782,12 +5050,18 @@
             # (Thus, a single installation of Axmud can be used by two users, one with a visual
             #   impairment and one without)
             systemAllowTTSFlag          => FALSE,                   # [config]
-            # Constant list of TTS engines that Axmud currently supports - eSpeak, Flite, Festival,
-            #   Swift (using Cepstral) and a dummy engine, 'none', which produces no speech when
-            #   specified
+            # Constant list of TTS engines that Axmud currently supports - eSpeak, espeak-ng, Flite,
+            #   Festival, Swift (using Cepstral) and a dummy engine, 'none', which produces no
+            #   speech when specified
             constTTSList                => [
-                'espeak', 'flite', 'festival', 'swift', 'none',
+                'espeak', 'esng', 'flite', 'festival', 'swift', 'none',
             ],
+            # Constant list of TTS engines that Axmud supports on this operating system
+            constTTSCompatList          => [],                      # Set below
+            # On MS Windows, the path to the eSpeak engine (if installed) depends on the age of the
+            #   system. This IV is set by $self->start to the correct path for the user's system, or
+            #   left as 'undef' if eSpeak is not installed on it
+            eSpeakPath                  => undef,
             # Allow TTS smoothing, which inserts an artificial full stop at the end of lines which
             #   don't end with one, if the next line begins with a capital letter (makes the voice
             #   sound more natural)
@@ -4799,6 +5073,12 @@
             constTtsDefaultList         => [
                 'espeak',
                     'english_rp',       # Male voice
+                    150,
+                    undef,
+                    50,
+                    undef,
+                'esng',
+                    'en',               # Male voice
                     150,
                     undef,
                     50,
@@ -4818,9 +5098,9 @@
                 'swift',
                     'David',
                     undef,
-                    1,
-                    1,
-                    1,
+                    undef,
+                    undef,
+                    undef,
                 'none',                 # Doesn't actually read anything
                     undef,
                     undef,
@@ -4834,6 +5114,7 @@
             constTtsObjHash             => {
                 # Default TTS settings
                 'espeak'                => 'espeak',    # Default for each TTS engine
+                'esng'                  => 'esng',
                 'flite'                 => 'flite',
                 'festival'              => 'festival',
                 'swift'                 => 'swift',
@@ -4850,6 +5131,7 @@
                 # Default TTS settings for various built-in tasks
                 'attack'                => 'espeak',
                 'chat'                  => 'espeak',
+                'channels'              => 'espeak',
                 'divert'                => 'espeak',
                 'locator'               => 'espeak',
                 'status'                => 'espeak',
@@ -4858,6 +5140,7 @@
             # Constant hash of TTS configuration objects which cannot be removed
             constTtsPermObjHash         => {
                 'espeak'                => undef,
+                'esng'                  => undef,
                 'flite'                 => undef,
                 'festival'              => undef,
                 'swift'                 => undef,
@@ -4870,6 +5153,7 @@
             #   used as default values for other configuration object IVs
             constTtsFixedObjHash        => {
                 'espeak'                => undef,
+                'esng'                  => undef,
                 'flite'                 => undef,
                 'festival'              => undef,
                 'swift'                 => undef,
@@ -4942,6 +5226,8 @@
                 'fight'                 => 'attack_task',       # Turn on/off automatic kill reading
                 'interact'              => 'attack_task',       # ...interaction reading
                 'interaction'           => 'attack_task',       # ...interaction reading
+                # Channels task
+                'channels'              => 'channels_task',     # Turn on/off reading diverted msgs
                 # Chat task
                 'chat'                  => 'chat_task',         # Turns on/off reading all messages
                 'chatout'               => 'chat_task',         # ...only sent messages
@@ -4983,16 +5269,16 @@
             # NB Each GA::Session contains a customisable hash, as for $self->constTtsAttribHash
             constTtsAlertAttribHash     => {
                 # Status task
-                'healthup'      => 'status_task',       # HP recovers to minimum level
-                'healthdown'    => 'status_task',       # ...falls to maximum level
-                'magicup'       => 'status_task',       # Magic points recover to minimum level
-                'magicdown'     => 'status_task',       # ...falls to maximum level
-                'energyup'      => 'status_task',       # Energy points recover to minimum level
-                'energydown'    => 'status_task',       # ...falls to maximum level
-                'guildup'       => 'status_task',       # Guild points recover to minimum level
-                'guilddown'     => 'status_task',       # ...falls to maximum level
-                'socialup'      => 'status_task',       # Social points recover to minimum level
-                'socialdown'    => 'status_task',       # ...falls to maximum level
+                'healthup'              => 'status_task',       # HP recovers to minimum level
+                'healthdown'            => 'status_task',       # ...falls to maximum level
+                'magicup'               => 'status_task',       # Magic points recover to min level
+                'magicdown'             => 'status_task',       # ...falls to maximum level
+                'energyup'              => 'status_task',       # Energy points recover to min level
+                'energydown'            => 'status_task',       # ...falls to maximum level
+                'guildup'               => 'status_task',       # Guild points recover to min level
+                'guilddown'             => 'status_task',       # ...falls to maximum level
+                'socialup'              => 'status_task',       # Social points recover to min level
+                'socialdown'            => 'status_task',       # ...falls to maximum level
                 # ...
             },
             # Hash of TTS alert attributes, initially set identical to ->constTtsAlertAttribHash,
@@ -5087,6 +5373,13 @@
             startClockString            => undef,
             startDateString             => undef,
 
+            # Axmud usually terminates via a call to Gtk2->main_quit in GA::Client->stop. Doing
+            #   this, rather than using the standard Perl exit, prevents a segfault
+            # However, in certain situations, we may need to use exit after all (e.g. when
+            #   GA::Obj::Workspace->stop closes a spare 'main' window). In those cases, the code can
+            #   set this flag to TRUE
+            forceExitFlag               => FALSE,
+
             # When text is received from the world that doesn't end in a newline character, we wait
             #   a short time before treating it as a prompt. If nothing else is received in that
             #   time, it's a prompt.
@@ -5114,6 +5407,9 @@
             #   visible. Flag set to TRUE if an icon should be drawn, FALSE if an asterisk should be
             #   drawn instead
             irreversibleIconFlag        => FALSE,       # [config]
+            # Flag set to TRUE if the popup window created by GA::Generic::Win->showBusyWin should
+            #   not be shown at all; FALSE if it can be shown (when required)
+            allowBusyWinFlag            => TRUE,        # [config]
             # Flag set to TRUE if a session's 'main' window urgency hint should be set, when text
             #   is received from the world
             mainWinUrgencyFlag          => FALSE,       # [config]
@@ -5214,6 +5510,10 @@
             # If the flag above is TRUE, GA::Obj::File->setupConfigFile sets this flag to TRUE,
             #   which is the signal to GA::Client->start to open the Setup 'wiz' window
             showSetupWizWinFlag         => FALSE,
+            # Flag that can be set to TRUE by any code (by calling $self->set_blockWorldHintFlag)
+            #   to stop the GA::Session displaying a 'dialogue' window with the world profile's
+            #   ->worldHint, when the session starts
+            blockWorldHintFlag          => FALSE,
         };
 
         # Bless the object into existence
@@ -5228,6 +5528,11 @@
         $self->{clientCmdPrettyList}    = [$self->constClientCmdPrettyList];
 
         $self->{cmdSep}                 = $self->constCmdSep;
+
+        $self->{constWorldList}         = [
+                                            sort {lc($a) cmp lc($b)}
+                                                ($self->ivKeys('constWorldHash'))
+                                          ];
 
         $self->{cageTypeList}           = [$self->constCageTypeList];
 
@@ -5320,6 +5625,12 @@
         }
 
         $self->{customSoundHash}        = {%soundHash};
+
+        if ($^O eq 'MSWin32') {
+            $self->{constTTSCompatList} = ['espeak', 'esng', 'swift', 'none'];
+        } else {
+            $self->{constTTSCompatList} = [$self->constTTSList];
+        }
 
         $self->{ttsAttribHash}          = {$self->constTtsAttribHash};
         $self->{ttsFlagAttribHash}      = {$self->constTtsFlagAttribHash};
@@ -5683,8 +5994,8 @@
 
         # Local variables
         my (
-            $warningFlag, $tempDir, $keycodeObjName, $keycodeObj, $desktopObj, $dialogueWin, $host,
-            $port, $world, $profObj, $taskObj,
+            $warningFlag, $tempDir, $keycodeObjName, $keycodeObj, $desktopObj, $host, $port, $world,
+            $profObj, $taskObj,
             @list,
         );
 
@@ -5702,19 +6013,34 @@
         $self->ivPoke('startDateString', $self->localDateString());
 
         # In Axmud blind mode, TTS is always enabled
-        # (NB Not implemented on MSWin yet)
-        if ($axmud::BLIND_MODE_FLAG && $^O ne 'MSWin32') {
+        if ($axmud::BLIND_MODE_FLAG) {
 
             $self->ivPoke('systemAllowTTSFlag', TRUE);
         }
 
-        # Load the expanded mudlist, and store the data in GA::Obj::BasicWorld objects. The data
+        # On MS Windows, see if an eSpeak engine is installed, and set the IV
+        if ($^O eq 'MSWin32') {
+
+            if (-e "C:\\Program Files\\espeak\\command_line\\espeak.exe") {
+
+                $self->ivPoke('eSpeakPath', "C:\\Program Files\\espeak\\command_line\\espeak");
+
+            } elsif (-e "C:\\Program Files (x86)\\espeak\\command_line\\espeak.exe") {
+
+                $self->ivPoke(
+                    'eSpeakPath',
+                    "C:\\Program Files (x86)\\espeak\\command_line\\espeak",
+                );
+            }
+        }
+
+        # Load the basic mudlist, and store the data in GA::Obj::BasicWorld objects. The data
         #   isn't important, so don't disable loading/saving of data files if the operation fails
         if (! $self->loadBasicWorlds()) {
 
             $warningFlag = TRUE;
             $self->writeWarning(
-                'Could not load expanded mudlist (files possible corrupted)',
+                'Could not load basic mudlist (files possible corrupted)',
                 $self->_objClass . '->start',
             );
         }
@@ -5879,15 +6205,35 @@
             }
         }
 
+        # Perform an auto-backup of Axmud's data directory, if required
+        if (
+            $self->autoBackupMode eq 'all_start'
+            || (
+                $self->autoBackupMode eq 'interval_start' && $self->checkBackupInterval()
+            )
+        ) {
+            $self->doAutoBackup();
+        }
+
         # Display a 'dialogue' window while loading data files/plugins
         if (! $axmud::TEST_MODE_FLAG && ! $axmud::BLIND_MODE_FLAG) {
 
-            $dialogueWin = $self->mainWin->showBusyWin();
+            $self->mainWin->showBusyWin();
+        }
+
+        # If the user is using a new version of Axmud, check if there are any new pre-configured
+        #   worlds in this version. If so, insert them into Axmud's data directory
+        if (
+            $self->convertVersion($axmud::VERSION) > $self->convertVersion($self->prevClientVersion)
+        ) {
+            $self->insertPreConfigWorlds();
+            # Don't perform this operation again until the next Axmud release
+            $self->ivPoke('prevClientVersion', $axmud::VERSION);
         }
 
         # Load world profiles, creating a file object for each (if allowed, and if there are any to
         #   load)
-        if ($self->loadDataFlag && $self->configWorldProfList) {
+        if ($self->loadDataFlag && $self->configWorldProfList && ! $axmud::TEST_PRE_CONFIG_FLAG) {
 
             if (! $self->loadWorldProfs() ) {
 
@@ -5923,7 +6269,7 @@
 
             # (Allow writing to something other than GA::Session - there are no sessions yet)
             return $self->writeError(
-                'Could not initialise ' . $axmud::SCRIPT . ' commands',
+                'Could not initialise ' . $axmud::SCRIPT . ' client commands',
                 $self->_objClass . '->start',
             );
         }
@@ -5958,10 +6304,10 @@
             }
         }
 
-        # Hide the 'dialogue' window
-        if ($dialogueWin) {
+        # Close the 'dialogue' window and reset the Client IV that stores it
+        if ($self->busyWin) {
 
-            $self->mainWin->closeDialogueWin($dialogueWin);
+            $self->mainWin->closeDialogueWin($self->busyWin);
         }
 
         # Start the client loop
@@ -6037,8 +6383,9 @@
                     );
                 }
             }
+        }
 
-        } elsif ($self->showSetupWizWinFlag) {
+        if ($self->showSetupWizWinFlag) {
 
             # When Axmud runs for the first time (specifically, when there is no Axmud config file)
             #   this flag will be set to TRUE, instructing us to open the Setup 'wiz' window so the
@@ -6050,7 +6397,10 @@
                 $self->addGlobalInitTask('status_task');
                 $self->addGlobalInitTask('locator_task');
 
-            } elsif ($axmud::BLIND_MODE) {
+                # Don't show the setup window twice
+                $self->set_showSetupWizWinFlag(FALSE);
+
+            } elsif ($axmud::BLIND_MODE_FLAG) {
 
                 # In Axmud blind mode, don't show the Setup window at all; instead, insert a few
                 #   tasks into the global initial tasklist, and modify a few of their settings
@@ -6076,24 +6426,32 @@
                 $taskObj = $self->addGlobalInitTask('divert_task');
                 if ($taskObj) {
 
+                    $taskObj->set_requireWinFlag(FALSE);
                     $taskObj->set_startWithWinFlag(FALSE);
                     # Turn off sound effects, since TTS is used instead
                     $taskObj->ivUndef('tellAlertSound');
                     $taskObj->ivUndef('socialAlertSound');
                     $taskObj->ivUndef('customAlertSound');
                     $taskObj->ivUndef('warningAlertSound');
+                    $taskObj->ivUndef('otherAlertSound');
                 }
+
+                # Don't show the setup window twice
+                $self->set_showSetupWizWinFlag(FALSE);
 
             } else {
 
                 # Open the setup window. When it closes, it will open the Connections window for us
                 $self->mainWin->quickFreeWin('Games::Axmud::WizWin::Setup');
+
+                # Don't show the setup window twice
+                $self->set_showSetupWizWinFlag(FALSE);
+
+                return 1;
             }
+        }
 
-            # Don't show the setup window twice
-            $self->set_showSetupWizWinFlag(FALSE);
-
-        } elsif ($axmud::BLIND_MODE_FLAG) {
+        if ($axmud::BLIND_MODE_FLAG) {
 
             # In Axmud blind mode, open a series of standard 'dialogue' windows, allowing the
             #   visually-impaired user to select/create a world and/or character
@@ -6103,17 +6461,21 @@
 
             # In Axmud test mode, connect to a world which is assumed to be running on the local
             #   machine
-            $self->startSession(
-                $axmud::TEST_MODE_LOGIN_LIST[0],        # World
-                $axmud::TEST_MODE_LOGIN_LIST[1],        # Host
-                $axmud::TEST_MODE_LOGIN_LIST[2],        # Post
-                $axmud::TEST_MODE_LOGIN_LIST[3],        # Character
-                $axmud::TEST_MODE_LOGIN_LIST[4],        # Password
-                undef,                                  # Account
-                undef,                                  # Default protocol
-                undef,                                  # No login mode
-                $axmud::TEST_MODE_LOGIN_LIST[5],        # Offline flag
-            );
+            if (
+                ! $self->startSession(
+                    $axmud::TEST_MODE_LOGIN_LIST[0],        # World
+                    $axmud::TEST_MODE_LOGIN_LIST[1],        # Host
+                    $axmud::TEST_MODE_LOGIN_LIST[2],        # Post
+                    $axmud::TEST_MODE_LOGIN_LIST[3],        # Character
+                    $axmud::TEST_MODE_LOGIN_LIST[4],        # Password
+                    undef,                                  # Account
+                    undef,                                  # Default protocol
+                    undef,                                  # No login mode
+                    $axmud::TEST_MODE_LOGIN_LIST[5],        # Offline flag
+                )
+            ) {
+                return undef;
+            }
 
         } else {
 
@@ -6157,6 +6519,16 @@
         #   window, rather than just disengaging it)
         $self->ivPoke('shutdownFlag', TRUE);
 
+        # Perform an auto-backup of Axmud's data directory, if required
+        if (
+            $self->autoBackupMode eq 'all_stop'
+            || (
+                $self->autoBackupMode eq 'interval_stop' && $self->checkBackupInterval()
+            )
+        ) {
+            $self->doAutoBackup();
+        }
+
         # Fire any hooks in any session that are using the 'close_disconnect' hook event
         foreach my $sessionObj ($self->listSessions()) {
 
@@ -6198,8 +6570,16 @@
             unlink($_);
         }
 
-        # Because of a Gtk issue, using 'exit' will cause a segfault
-        Gtk2->main_quit();
+        # Because of a Gtk issue, using 'exit' will cause a segfault. However, in certain (rare)
+        #   situations, we do actually need to use 'exit' or we'll get a Gtk2-CRITICAL error
+        if (
+            ! $self->forceExitFlag
+            || (! $axmud::BLIND_MODE_FLAG && ! $self->sessionCount)
+        ) {
+            Gtk2->main_quit();
+        } else {
+            exit;
+        }
 
         return 1;
     }
@@ -6209,8 +6589,8 @@
     sub loadBasicWorlds {
 
         # Called by $self->start
-        # Loads data from the expanded mudlist and stores it in GA::Obj::BasicWorld objects, ready
-        #   for the Connections window to display
+        # Loads data from the basic mudlist and stores it in GA::Obj::BasicWorld objects, ready for
+        #   the Connections window to display
         #
         # Expected arguments
         #   (none besides $self)
@@ -6276,11 +6656,11 @@
         # Store the data
         do {
 
-            my ($longName, $name, $address, $port, $adultFlag, $language, $obj);
+            my ($longName, $name, $host, $port, $adultFlag, $language, $obj);
 
             $longName = shift @list;
             $name = shift @list;
-            $address = shift @list;
+            $host = shift @list;
             $port = shift @list;
             $adultFlag = shift @list;
             $language = shift @list;
@@ -6307,7 +6687,7 @@
             $obj = Games::Axmud::Obj::BasicWorld->new(
                 $name,
                 $longName,
-                $address,
+                $host,
                 $port,
                 $adultFlag,
                 $language,
@@ -6413,11 +6793,15 @@
 
                 my $line = <$fileHandle>;
 
+                # Without this line, the Russian phrasebook is gibberish
+                $line = Encode::decode('utf8', $line);
+
                 if (! defined $line) {
 
                     $exitFlag = TRUE;
 
-                } elsif ($line =~ m/^\w/) {
+#                } elsif ($line =~ m/^\w/) {
+                } elsif ($line =~ m/^\s*[[:alnum:]]/) {
 
                     # Ignore empty lines and lines starting with a #
                     chomp $line;
@@ -6503,7 +6887,7 @@
             # There shouldn't be anything left
             if (@lineList) {
 
-                return undef;
+               return undef;
             }
 
             # Store the data in a phrasebook object
@@ -7175,255 +7559,280 @@
         return 1;
     }
 
-    sub copyPreConfigWorlds {
+    sub copyPreConfigWorld {
 
         # Called by GA::Obj::File->setupConfigFile when a new 'config' file is created
-        # Copies pre-configured world profiles from Axmud's base sub-directories into its data
-        #   directories, and updates this object's IVs, ready for the file object to create a
-        #   'config' file that includes the pre-configured worlds
+        # Also called by $self->insertPreConfigWorlds when the user is using a newer version of
+        #   Axmud
+        #
+        # Copies a pre-configured world profile from Axmud's base sub-directories into its data
+        #   directories
+        # If called by ->setupConfigFile, creates a dummy entry in $self->worldProfHash, ready for
+        #   the file object to create a 'config' file that includes the pre-configured worlds
+        # If called by ->insertPreConfigWorlds, doesn't create a dummy entry, but otherwise the
+        #   operation is identical
+        #
         # If, by any chance, Axmud's data directories already contain a world profile with the same
-        #   name, don't replace them (but still update this object's IVs)
+        #   name, don't replace them (but still update $self->worldProfHash)
         #
         # Expected arguments
-        #   (none besides $self)
+        #   $world      - The name of the pre-configured world profile
+        #
+        # Optional arguments
+        #   $setupFlag  - TRUE if called by GA::Obj::File->setupConfigFile; FALSE (or 'undef') if
+        #                   called by anything else
         #
         # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
+        #   'undef' on improper arguments or if there's a serious error (meaning that no further
+        #       pre-configured worlds can be copied)
+        #   Otherwise returns a string: 'success' if the pre-configured world is succesfully
+        #       copied, 'fail' if the world can't be copied (but it's safe to continue copying
+        #       other worlds)
 
-        my ($self, $check) = @_;
+        my ($self, $world, $setupFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $importPath, $extractObj, $tempDir, $newDir, $origLogo, $newLogo, $hashRef, $fileObj,
+            @fileList,
+            %fileHash, %loadHash, %dictHash,
+        );
 
         # Check for improper arguments
-        if (defined $check) {
+        if (! defined $world || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->copyPreConfigWorlds', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->copyPreConfigWorld', @_);
         }
 
-        OUTER: foreach my $world ($self->constWorldList) {
+        # Pre-configured world test mode: When preparing for a release, the authors set this flag to
+        #   TRUE to stop Axmud complaining about missing pre-configured worlds
+        if ($axmud::TEST_PRE_CONFIG_FLAG) {
 
-            my (
-                $importPath, $extractObj, $tempDir, $newDir, $origLogo, $newLogo, $hashRef,
-                $fileObj,
-                @fileList,
-                %fileHash, %loadHash, %dictHash,
-            );
+            return 'success';
+        }
 
-            # If a directory for the pre-configured world exists and a data directory for a world
-            #   with the same name doesn't exist...
-              if (
-                -e $axmud::SHARE_DIR . '/items/worlds/' . $world
-                && ! (-e $axmud::DATA_DIR . '/data/worlds/' . $world)
-            ) {
-                # Copy the pre-configured worlds into the data directories (code adapted from
-                #   GA::Cmd::ImportFiles->do)
-                $importPath = $axmud::SHARE_DIR . '/items/worlds/' . $world . '/' . $world . '.tgz';
-                if (! -e $importPath) {
+        # If a directory for the pre-configured world exists and a data directory for a world with
+        #   the same name doesn't exist...
+        if (
+            -e $axmud::SHARE_DIR . '/items/worlds/' . $world
+            && ! (-e $axmud::DATA_DIR . '/data/worlds/' . $world)
+        ) {
+            # Copy the pre-configured worlds into the data directories (code adapted from
+            #   GA::Cmd::ImportFiles->do)
+            $importPath = $axmud::SHARE_DIR . '/items/worlds/' . $world . '/' . $world . '.tgz';
+            if (! -e $importPath) {
 
-                    # Pre-configured world archive missing; so move on to the next one
-                    next OUTER;
-                }
+                $self->writeWarning(
+                    'General error importing pre-configured worlds (archive missing for \''
+                    . $world . '\' world)',
+                    $self->_objClass . '->copyPreConfigWorld',
+                );
 
-                # Build an Archive::Extract object
-                $extractObj = Archive::Extract->new(archive => $importPath);
-                if (! $extractObj) {
+                return 'fail';
+            }
 
-                    return $self->writeError(
-                        'General error importing pre-configured worlds (archive error)',
-                        $self->_objClass . '->copyPreConfigWorlds',
-                    );
-                }
+            # Build an Archive::Extract object
+            $extractObj = Archive::Extract->new(archive => $importPath);
+            if (! $extractObj) {
 
-                # Extract the object to a temporary directory (if it doesn't already exist,
-                #   create it)
-                $tempDir = $axmud::DATA_DIR . '/data/temp/import';
-                if (! $extractObj->extract(to => $tempDir)) {
+                return $self->writeError(
+                    'General error importing pre-configured worlds (archive error)',
+                       $self->_objClass . '->copyPreConfigWorld',
+                );
+            }
 
-                    return $self->writeError(
-                        'General error importing pre-configured worlds (extraction error)',
-                        $self->_objClass . '->copyPreConfigWorlds',
-                    );
-                }
+            # Extract the object to a temporary directory (if it doesn't already exist, create it)
+            $tempDir = $axmud::DATA_DIR . '/data/temp/import';
+            if (! $extractObj->extract(to => $tempDir)) {
 
-                # All the files are now in /data/temp/import. Get a list of paths, relative to
-                #   $tempDir, of all the extracted files
-                @fileList = @{$extractObj->files};  # e.g. export/tasks.axm
-                # Convert all the paths into absolute paths. Check they are real Axmud files and, if
-                #   so, store them in a hash
-                INNER: foreach my $file (@fileList) {
+                return $self->writeError(
+                    'General error importing pre-configured worlds (extraction error)',
+                    $self->_objClass . '->copyPreConfigWorld',
+                );
+            }
 
-                    my (
-                        $fileType, $filePath,
-                        %headerHash,
-                    );
+            # All the files are now in /data/temp/import. Get a list of paths, relative to $tempDir,
+            #   of all the extracted files
+            @fileList = @{$extractObj->files};  # e.g. export/tasks.axm
+            # Convert all the paths into absolute paths. Check they are real Axmud files and, if so,
+            #   store them in a hash
+            foreach my $file (@fileList) {
 
-                    $filePath = $tempDir . '/' . $file;
+                my (
+                    $fileType, $filePath,
+                    %headerHash,
+                );
 
-                    %headerHash
-                        = Games::Axmud::Obj::File->examineDataFile($filePath, 'return_header');
-                    if (! %headerHash) {
+                $filePath = $tempDir . '/' . $file;
 
-                        $self->writeWarning(
-                            'General error importing pre-configured worlds (archive contains'
-                            . ' invalid file)',
-                            $self->_objClass . '->copyPreConfigWorlds',
-                        );
+                %headerHash = Games::Axmud::Obj::File->examineDataFile($filePath, 'return_header');
+                if (! %headerHash) {
 
-                        next INNER;
-
-                    } else {
-
-                        $fileType = $headerHash{'file_type'};
-                        $fileHash{$fileType} = $filePath;
-                    }
-                }
-
-                # Now we can check that we have the right three files ('worldprof', 'otherprof' and
-                #   'worldmodel')
-                if (
-                    ! exists $fileHash{'worldprof'}
-                    || ! exists $fileHash{'otherprof'}
-                    || ! exists $fileHash{'worldmodel'}
-                    || scalar (keys %fileHash) != 3
-                ) {
                     $self->writeWarning(
-                        'General error importing pre-configured worlds (incorrect archive for \''
-                        . $world . '\' world)',
-                        $self->_objClass . '->copyPreConfigWorlds',
+                        'General error importing pre-configured worlds (archive contains invalid'
+                        . ' file)',
+                        $self->_objClass . '->copyPreConfigWorld',
                     );
 
-                    next OUTER;
-                }
+                    return 'fail';
 
-                # Create the data sub-directory
-                $newDir = $axmud::DATA_DIR . '/data/worlds/' . $world . '/';
-                if (! mkdir ($newDir, 0755)) {
+                } else {
+
+                    $fileType = $headerHash{'file_type'};
+                    $fileHash{$fileType} = $filePath;
+                }
+            }
+
+            # Now we can check that we have the right three files ('worldprof', 'otherprof' and
+            #   'worldmodel')
+            if (
+                ! exists $fileHash{'worldprof'}
+                || ! exists $fileHash{'otherprof'}
+                || ! exists $fileHash{'worldmodel'}
+                || scalar (keys %fileHash) != 3
+            ) {
+                $self->writeWarning(
+                    'General error importing pre-configured worlds (incorrect archive for \''
+                    . $world . '\' world)',
+                    $self->_objClass . '->copyPreConfigWorld',
+                );
+
+                return 'fail';
+            }
+
+            # Create the data sub-directory
+            $newDir = $axmud::DATA_DIR . '/data/worlds/' . $world . '/';
+            if (! mkdir ($newDir, 0755)) {
+
+                $self->writeWarning(
+                    'General error importing pre-configured worlds (could not copy files)',
+                    $self->_objClass . '->copyPreConfigWorld',
+                );
+
+                return 'fail';
+            }
+
+            # Copy the files into the sub-directory
+            foreach my $file (keys %fileHash) {
+
+                my $filePath = $fileHash{$file};
+
+                if (! File::Copy::copy($filePath, $newDir . $file . '.axm')) {
+
+                    # Give up importing this pre-configured world; destroy its data sub-directory
+                    unlink $newDir;
 
                     $self->writeWarning(
                         'General error importing pre-configured worlds (could not copy files)',
-                        $self->_objClass . '->copyPreConfigWorlds',
+                        $self->_objClass . '->copyPreConfigWorld',
                     );
 
-                    next OUTER;
+                    return 'fail';
                 }
+            }
 
-                # Copy the files into the sub-directory
-                foreach my $file (keys %fileHash) {
+            # When this function was called by GA::Obj::File->setupConfigFile, add a dummy entry to
+            #   the this object's profile registry so the calling function,
+            #   GA::Obj::File->setupConfigFile, can add the world to the 'config' file it's about to
+            #   create (the dummy entry will be removed by that function)
+            if ($setupFlag) {
 
-                    my $filePath = $fileHash{$file};
-
-                    if (! File::Copy::copy($filePath, $newDir . $file . '.axm')) {
-
-                        $self->writeWarning(
-                            'General error importing pre-configured worlds (could not copy files)',
-                            $self->_objClass . '->copyPreConfigWorlds',
-                        );
-
-                        # Give up importing this pre-configured world; destroy its data
-                        #   sub-directory
-                        unlink $newDir;
-                        next OUTER;
-                    }
-                }
-
-                # Add a dummy entry to the this object's profile registry so the calling function,
-                #   GA::Obj::File->setupConfigFile, can add the world to the 'config' file it's
-                #   about to create (the dummy entry will be removed by that function)
                 $self->ivAdd('worldProfHash', $world, undef);
+            }
 
-                # If a logo for this world exists, and if the equivalent logo doesn't exist in the
-                #   data directory, copy it
-                $origLogo = $axmud::SHARE_DIR . '/items/worlds/' . $world . '/' . $world . '.png';
-                $newLogo = $axmud::DATA_DIR . '/logos/' . $world . '.png';
+            # If a logo for this world exists, and if the equivalent logo doesn't exist in the data
+            #   directory, copy it
+            $origLogo = $axmud::SHARE_DIR . '/items/worlds/' . $world . '/' . $world . '.png';
+            $newLogo = $axmud::DATA_DIR . '/logos/' . $world . '.png';
 
-                if (-e $origLogo && ! (-e $newLogo)) {
+            if (-e $origLogo && ! (-e $newLogo)) {
 
-                    File::Copy::copy($origLogo, $newLogo);
+                File::Copy::copy($origLogo, $newLogo);
+            }
+
+            # Now, try to import the corresponding file containing the world's dictionary
+            $importPath = $axmud::SHARE_DIR . '/items/worlds/' . $world . '/' . $world . '.amx';
+            if (! -e $importPath) {
+
+                # Pre-configured dictionary archive missing; so move on to the next world
+                $self->writeWarning(
+                    'General error importing pre-configured worlds (dictionary archive not found)',
+                    $self->_objClass . '->copyPreConfigWorld',
+                );
+
+                return 'fail';
+            }
+
+            # We can't call GA::Obj::File->importDataFile because it expects a GA::Session as an
+            #   argument
+            # Instead, we'll use a modified version of ->importDataFile and ->extractData
+
+            # Load all the data into an anonymous hash
+            eval { $hashRef = Storable::lock_retrieve($importPath); };
+            if (! $hashRef) {
+
+                return $self->writeError(
+                    'General error importing pre-configured worlds (lockfile error)',
+                    $self->_objClass . '->copyPreConfigWorld',
+                );
+            }
+
+            # Convert the anonymous hash referenced by $hashRef into a named hash
+            %loadHash = %{$hashRef};
+
+            # Before v1.0.868, Axmud had a different name. Update all header data
+            if (
+                defined $loadHash{'script_version'}
+                && $self->convertVersion($loadHash{'script_version'}) < 1_000_868
+            ) {
+                %loadHash = Games::Axmud::Obj::File->updateHeaderAfterRename(%loadHash);
+            }
+
+            if (
+                # Check the header is valid
+                ! defined $loadHash{'file_type'} || ! defined $loadHash{'script_name'}
+                || ! defined $loadHash{'script_version'} || ! defined $loadHash{'save_date'}
+                || ! defined $loadHash{'save_time'} || ! exists $loadHash{'assoc_world_prof'}
+                # Check it's the right kind of file
+                || $loadHash{'file_type'} ne 'dicts'
+                # Check the file was created by a compatible programme
+                || ! Games::Axmud::Obj::File->checkCompatibility($loadHash{'script_name'})
+            ) {
+                $self->writeWarning(
+                    'General error importing pre-configured worlds (dictionary archive invalid)',
+                    $self->_objClass . '->copyPreConfigWorld',
+                );
+
+                return 'fail';
+            }
+
+            # Import the dictionary objects stored in the file
+            %dictHash = %{$loadHash{'dict_hash'}};
+            if (%dictHash) {
+
+                foreach my $dictObj (values %dictHash) {
+
+                    # Before v1.0.868, Axmud had a different name. Update the dictionary object
+                    $dictObj = Games::Axmud::Obj::File->update_obj_dict($dictObj);
+
+                    $self->ivAdd('dictHash', $dictObj->name, $dictObj);
                 }
 
-                # Now, try to import the corresponding file containing the world's dictionary
-                $importPath
-                    = $axmud::SHARE_DIR . '/items/worlds/' . $world . '/' . $world . '.amx';
-                if (! -e $importPath) {
-
-                    # Pre-configured dictionary archive missing; so move on to the next world
-                    $self->writeWarning(
-                        'General error importing pre-configured worlds (dictionary archive'
-                        . ' not found)',
-                        $self->_objClass . '->copyPreConfigWorlds',
-                    );
-
-                    next OUTER;
-                }
-
-                # We can't call GA::Obj::File->importDataFile because it expects a GA::Session as an
-                #   argument
-                # Instead, we'll use a modified version of ->importDataFile and ->extractData
-
-                # Load all the data into an anonymous hash
-                eval { $hashRef = Storable::lock_retrieve($importPath); };
-                if (! $hashRef) {
-
-                    # ->lock_retrieve() failed
-                    return undef;
-                }
-
-                # Convert the anonymous hash referenced by $hashRef into a named hash
-                %loadHash = %{$hashRef};
-
-                # Before v1.0.868, Axmud had a different name. Update all header data
-                if (
-                    defined $loadHash{'script_version'}
-                    && $self->convertVersion($loadHash{'script_version'}) < 1_000_868
-                ) {
-                    %loadHash = Games::Axmud::Obj::File->updateHeaderAfterRename(%loadHash);
-                }
-
-                if (
-                    # Check the header is valid
-                    ! defined $loadHash{'file_type'} || ! defined $loadHash{'script_name'}
-                    || ! defined $loadHash{'script_version'} || ! defined $loadHash{'save_date'}
-                    || ! defined $loadHash{'save_time'} || ! exists $loadHash{'assoc_world_prof'}
-                    # Check it's the right kind of file
-                    || $loadHash{'file_type'} ne 'dicts'
-                    # Check the file was created by a compatible programme
-                    || ! Games::Axmud::Obj::File->checkCompatibility($loadHash{'script_name'})
-                ) {
-                    $self->writeWarning(
-                        'General error importing pre-configured worlds (dictionary archive'
-                        . ' invalid)',
-                        $self->_objClass . '->copyPreConfigWorlds',
-                    );
-
-                    next OUTER;
-                }
-
-                # Import the dictionary objects stored in the file
-                %dictHash = %{$loadHash{'dict_hash'}};
-                if (%dictHash) {
-
-                    foreach my $dictObj (values %dictHash) {
-
-                        # Before v1.0.868, Axmud had a different name. Update the dictionary object
-                        $dictObj = Games::Axmud::Obj::File->update_obj_dict($dictObj);
-
-                        $self->ivAdd('dictHash', $dictObj->name, $dictObj);
-                    }
-
-                    # The data stored in this IV is saved in the 'dicts' file
-                    $self->setModifyFlag('dicts', TRUE, $self->_objClass . '->copyPreConfigWorlds');
-                    # Because dictionary objects may contain new IVs (or other changes), we need
-                    #   to call the file object's ->updateExtractedData (this happens elsewhere,
-                    #   for the 'worldprof', 'otherprof' and 'worldmodel' files, but for the
-                    #   'dicts' file, we must do it now)
-                    $fileObj = $self->ivShow('fileObjHash', 'dicts');
-                    $fileObj->updateExtractedData(
-                        $self->convertVersion($loadHash{'script_version'}),
-                    );
-                }
+                # The data stored in this IV is saved in the 'dicts' file
+                $self->setModifyFlag('dicts', TRUE, $self->_objClass . '->copyPreConfigWorld');
+                # Because dictionary objects may contain new IVs (or other changes), we need to call
+                #   the file object's ->updateExtractedData (this happens elsewhere, for the
+                #   'worldprof', 'otherprof' and 'worldmodel' files, but for the 'dicts' file, we
+                #   must do it now)
+                $fileObj = $self->ivShow('fileObjHash', 'dicts');
+                $fileObj->updateExtractedData(
+                    $self->convertVersion($loadHash{'script_version'}),
+                );
             }
         }
 
-        return 1;
+        # Operation complete
+        return 'success';
     }
 
     sub cleanPreConfigWorlds {
@@ -7456,6 +7865,78 @@
 
                 $self->ivDelete('worldProfHash', $world);
                 $self->ivPush('configWorldProfList', $world);
+            }
+        }
+
+        return 1;
+    }
+
+    sub insertPreConfigWorlds {
+
+        # Called by $self->start when the user is using a new version of Axmud
+        # Checks whether any pre-configured worlds have been added since the version of Axmud last
+        #   used by the user (i.e. the version that created the Axmud data directory we're using)
+        # If any are found, inserts them into Axmud's data directory
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's a serious error (after which, this function
+        #       gives up inserting pre-configured worlds)
+        #   1 on success or if there are only minor errors (this function continued trying to
+        #       insert pre-configured worlds after the minor error)
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $prevVersion,
+            %alreadyHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->insertPreConfigWorlds', @_);
+        }
+
+        # Convert version, e.g. '1.1.0' to '1_001_000'
+        $prevVersion = $self->convertVersion($self->prevClientVersion);
+        # Compile a hash of world profiles which (should) already exist (none of which have been
+        #   loaded by $self->start yet)
+        foreach my $world ($self->configWorldProfList) {
+
+            $alreadyHash{$world} = undef;
+        }
+
+        # Only insert pre-configured worlds that are newer than the version of Axmud the user was
+        #   using last time
+        # Also don't import a pre-configured world if a world profile with the same name (created by
+        #   the user) already exists
+        foreach my $world ($self->constWorldList) {
+
+            my ($worldVersion, $result);
+
+            if (! exists $alreadyHash{$world} && $self->ivExists('constWorldHash', $world)) {
+
+                $worldVersion = $self->convertVersion($self->ivShow('constWorldHash', $world));
+
+                if ($worldVersion > $prevVersion) {
+
+                    $result = $self->copyPreConfigWorld($world);
+                    if (! defined $result) {
+
+                        # Serious error. Give up inserting pre-configured worlds
+                        return undef;
+
+                    } elsif ($result = 'success') {
+
+                        # No minor error reported, so tell the calling function to load this world
+                        #   profile
+                        $self->ivPush('configWorldProfList', $world);
+                    }
+                }
             }
         }
 
@@ -8054,8 +8535,6 @@
 
                     } elsif (length ($descrip) > 32) {
 
-                        print "client 5818 length " . length ($descrip) . "\n";
-                        print "client 5818 descrip *$descrip*\n";
                         $self->writeWarning(
                             'Invalid default toolbar button description (button \'' . $name . '\')',
                             $self->_objClass . '->initialiseToolbar',
@@ -8073,7 +8552,6 @@
                             $sessionFlag,
                             $connectFlag,
                         );
-
 
                         if (! $obj) {
 
@@ -8110,8 +8588,9 @@
 
         # Local variables
         my (
-            $newWorldString, $newCharString, $choice, $connectWorld, $connectWorldObj, $connectHost,
-            $connectPort, $loginMode, $connectChar, $connectPwd, $connectAccount, $startFlag,
+            $newWorldString, $newCharString, $title, $choice, $connectWorld, $connectWorldObj,
+            $connectHost, $connectPort, $loginMode, $connectChar, $connectPwd, $connectAccount,
+            $startFlag,
             @faveList, @visitedList, @otherList, @comboList, @comboList2, @comboList3,
             %worldHash, %nameHash, %checkHash, %loginHash,
         );
@@ -8218,9 +8697,15 @@
             push (@comboList, $nameHash{$worldObj->name});
         }
 
-        # Open the 'dialogue' window
+        # Open the 'dialogue' window. Don't use the welcome message more than once
+        if (! $self->sessionCount) {
+            $title = 'Welcome to ' . $axmud::SCRIPT;
+        } else {
+            $title = 'Connect to a world';
+        }
+
         $choice = $self->mainWin->showComboDialogue(
-            "Welcome to " . $axmud::SCRIPT,
+            $title,
             "Please use your cursor keys to select a world,\n"
             . "and your tab and enter keys to click OK",
             TRUE,                       # Show only a single OK button
@@ -8488,6 +8973,8 @@
 
         # Set the standard IV (normally done by GA::Generic::Task->setParentFileObj)
         $taskObj->{_parentFile} = 'tasks';
+        # Set the task type (normally done in the call to $taskObj->new)
+        $taskObj->{taskType} = 'initial';
 
         # Update the global initial tasklist (normally done by GA::Generic::Task->updateTaskLists)
         # Give task a unique name within the global initial tasklist
@@ -8823,12 +9310,12 @@
         $self->writeText(
             'Because of the Perl error, ' . $axmud::SCRIPT . ' internal processes have been'
             . ' suspended across all sessions. (This will prevent you from seeing the same'
-            . ' error message again and again, and potentially protect your stored data'
+            . ' error message again and again, and will perhaps protect your stored data'
             . ' from getting corrupted.)',
         );
         $self->writeText(' ');
         $self->writeText(
-            'Most errors of this kind are caused by invalid patterns (regular expression)'
+            'Most errors of this kind are caused by invalid patterns (regular expressions)'
             . ' in your interfaces (triggers, aliases, macros, timers and hooks). You can'
             . ' often correct them by opening an \'edit\' window and by replacing the'
             . ' invalid pattern with a valid one or by deleting it altogether.',
@@ -8840,10 +9327,16 @@
             . ' itself should be reported to the authors.',
         );
         $self->writeText(' ');
-            $self->writeText(
-                'When you are ready, you can use the \';restart\' command to return '
-                . $axmud::SCRIPT . ' to a more-or-less functional state.',
-            );
+        $self->writeText(
+            'When you are ready, you can use the \';restart\' command to return '
+            . $axmud::SCRIPT . ' to a more-or-less functional state.',
+        );
+        $self->writeText(' ');
+        $self->writeText('---');
+        $self->writeText(' ');
+        $self->writeText(
+            'Too long, didn\'t read? Just type:   ;restart',
+        );
         $self->writeText(' ');
 
         return 1;
@@ -9104,7 +9597,7 @@
         #
         # Return values
         #   'undef' on improper arguments or if the GA::Session object can't be created or started
-        #   1 otherwise
+        #   The new GA::Session object on success
 
         my (
             $self, $world, $host, $port, $char, $pass, $account, $protocol, $loginMode,
@@ -9112,12 +9605,29 @@
         ) = @_;
 
         # Local variables
-        my ($actualCount, $worldObj, $newSession, $index);
+        my ($actualCount, $tempName, $successFlag, $worldObj, $newSession, $index);
 
         # Check for improper arguments
         if (! defined $world || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->startSession', @_);
+        }
+
+        # In blind mode, only one session is allowed. To allow the user to use ';reconnect', and
+        #   so on, terminate the existing session which is not connected to a world before
+        #   creating a new one
+        if ($axmud::BLIND_MODE_FLAG) {
+
+            foreach my $session ($self->listSessions()) {
+
+                if (
+                    $session->status eq 'waiting'
+                    || $session->status eq 'offline'
+                    || $session->status eq 'disconnected'
+                ) {
+                    $self->stopSession($session);
+                }
+            }
         }
 
         # Count the number of active sessions
@@ -9162,6 +9672,38 @@
             );
 
             return undef;
+        }
+
+        # For temporary profiles, check a world profile with the same name doesn't already exist
+        #   and, if so, rename the temporary profile
+        if ($tempFlag && $self->ivExists('worldProfHash', $world)) {
+
+            # (Give up after too many renaming attempts)
+            OUTER: for (my $count = 2; $count < 999; $count++) {
+
+                $tempName = $world . $count;        # e.g. 'deathmud2'
+
+                # Max length of a profile is 16 chars
+                if (length ($tempName) <= 16 && ! $self->ivExists('worldProfHash', $tempName)) {
+
+                    $world = $tempName;
+                    $successFlag = TRUE;
+                    last OUTER;
+                }
+            }
+
+            if (! $successFlag) {
+
+                $self->mainWin->showMsgDialogue(
+                    'Bad temporary world',
+                    'error',
+                    'Attempted to create a temporary world profile, but a world profile called \''
+                    . $world . '\' already exists, and Axmud could not find an alternative name',
+                    'ok',
+                );
+
+                return undef;
+            }
         }
 
         # If $host and/or $port were not specified, use generic values
@@ -9211,13 +9753,16 @@
         if (! $newSession->start()) {
             return undef;
         } else {
-            return 1;
+            return $newSession;
         }
     }
 
     sub stopSession {
 
         # Called by GA::Cmd::StopSession->do, $self->disablePlugin and GA::Session->del_winObj
+        # Also called by $self->startSession in blind mode, to remove the existing disconnected
+        #   session
+        #
         # Stops a GA::Session
         #
         # Expected arguments
@@ -10244,7 +10789,8 @@
             # Private plugins begin with an alpha-numeric character and end .pm; all other .pm files
             #   in the directory must begin with an underline character
             # Remove all non-plugin files from the list
-            if ($path =~ m/private[\\\/][A-Za-z0-9][A-Za-z0-9\_\ ]*\.pm$/) {
+#            if ($path =~ m/private[\\\/][A-Za-z0-9][A-Za-z0-9\_\ ]*\.pm$/) {
+            if ($path =~ m/private[\\\/][[:alnum:]][[:word:]\s]*\.pm$/) {
 
                 push (@modList, $path);
             }
@@ -12033,8 +12579,9 @@
         # Can be called by anything
         # Translate one of the standard colour tags used by Axmud (e.g. 'white') or an xterm colour
         #   tag (e.g. 'x255') into an RGB colour tag (e.g. '#FFFFFF')
-        # If an RGB colour tag is supplied, returns it unmodified. If the standard/xterm colour tag
-        #   isn't recognised, returns a default colour
+        # If an RGB colour tag is supplied, returns it unmodified
+        # If the standard/xterm colour tag isn't recognised, returns a failsafe RGB tag based on
+        #   either $self->constTextColour or $self->constBackgroundColour
         #
         # Expected arguments
         #   $tag    - the Axmud colour tag to translate
@@ -12045,14 +12592,21 @@
 
         my ($self, $tag, $check) = @_;
 
+        # Local variables
+        my ($defaultText, $defaultBackground);
+
         # Check for improper arguments
         if (! defined $tag || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->returnRGBColour', @_);
         }
 
+        # Get some failsafe RGB tags to use in case $tag isn't recognised
+        $defaultText = $self->ivShow('colourTagHash', $self->constTextColour);
+        $defaultBackground = $self->ivShow('colourTagHash', $self->constBackgroundColour);
+
         # If we have been supplied with an RGB colour tag, we must return it unmodified
-        if ($tag =~ m/^\#[A-Fa-f0-9]{6}$/) {
+        if ($tag =~ m/^[Uu]?\#[A-Fa-f0-9]{6}$/) {
 
             return $tag;
 
@@ -12069,7 +12623,7 @@
             } else {
 
                 # Invalid (normal) underlay colour tag. Use the default background colour instead
-                return $self->constBackgroundColour;
+                return $defaultBackground;
             }
 
         } elsif (substr($tag, 0, 3) eq 'UL_') {
@@ -12083,7 +12637,7 @@
             } else {
 
                 # Invalid (bold) underlay colour tag. Use the default background colour instead
-                return $self->constBackgroundColour;
+                return $defaultBackground;
             }
 
         } elsif ($self->ivExists('colourTagHash', $tag)) {
@@ -12111,7 +12665,7 @@
         } else {
 
             # Invalid colour tag. Use the (global) default text colour instead
-            return $self->constTextColour;
+            return $defaultText;
         }
     }
 
@@ -12243,8 +12797,8 @@
 
         # Local variables
         my (
-            $cmd, $begin, $end, $rateFlag, $pitchFlag, $volumeFlag, $ttsObj, $server,
-            @lineList, @modList, @finalList,
+            $cmd, $begin, $end, $rateFlag, $pitchFlag, $volumeFlag, $ttsObj, $param,
+            @lineList, @modList, @finalList, @msWinList,
         );
 
         # Check for improper arguments
@@ -12401,191 +12955,325 @@
 
         # Prepare the system command to use. If $engine is set to the dummy engine 'none', then we
         #   don't prepare a system command at all
-        if ($engine eq 'espeak') {
 
-            # With eSpeak, we can set the voice, speed and pitch, but not rate or volume
+        # Prepare a system command on MS Windows
+        if ($^O eq 'MSWin32') {
 
-            $cmd = 'espeak "' . $text . '"';
+            if ($engine eq 'espeak') {
 
-            if (defined $voice) {
+                # With eSpeak, we can set the voice, speed and pitch, but not rate or volume
+                if (! $self->eSpeakPath) {
 
-                $cmd .= ' -v ' . $voice;
-            }
-
-            if ($self->floatCheck($speed, 10, 200)) {
-
-                $cmd .= ' -s ' . $speed;
-            }
-
-            if ($self->floatCheck($pitch, 0, 99)) {
-
-                $cmd .= ' -p ' . $pitch;
-            }
-
-        } elsif ($engine eq 'flite') {
-
-            # With Flite, we can set the voice, but not speed, rate, pitch or volume
-            $cmd = 'flite -t "' . $text . '"';
-
-            if (defined $voice) {
-
-                $cmd .= ' -voice ' . $voice;
-            }
-
-        } elsif ($engine eq 'festival') {
-
-            # When the specified engine is Festival, we try using the Festival server if possible;
-            #   otherwise, we default to using the Festival engine from the command line
-            # With Festival server, we can set the voice, rate, pitch and volume, but not speed
-            # With Festival command line, we can't set the voice, speed, rate pitch of volume
-
-            # Start the Festival server (if required)
-            if ($self->ttsFestivalServerMode eq 'waiting' && $self->ttsStartServerFlag) {
-
-                # Attempt to start the Festival server
-                $self->ttsStartServer();
-
-                # We're now waiting for the first successful connection
-                $self->set_ttsFestivalServerMode('connecting');
-            }
-
-            # Connect to the Festival server (if required)
-            if ($self->ttsFestivalServerMode eq 'connecting') {
-
-                if (! $self->ttsFestivalServerPort) {
-
-                    # Cannot connect to the server without a port
-                    $self->set_ttsFestivalServerMode('connected');
+                    # No eSpeak engine found in the system
+                    return undef;
 
                 } else {
 
-                    # Attempt to connect to the Festival server
-                    $server = IO::Socket::INET->new(
-                        Proto     => 'tcp',
-                        PeerAddr  => '127.0.0.1',
-                        PeerPort  => $self->ttsFestivalServerPort,
-                    );
-
-                    if ($server) {
-
-                        # Connected; store it as an IV
-                        $self->set_ttsFestivalServer($server);
-                        $self->set_ttsFestivalServerMode('connected');
-
-                    } elsif (! $self->ttsStartServerFlag) {
-
-                        # We didn't start the server. If the connection failed, give up after the
-                        #   first attempt (if we did start the server, keep trying)
-                        $self->set_ttsFestivalServerMode('connected');
-                    }
+                    push (@msWinList,
+                        $self->eSpeakPath,
+                        $text,
+                       );
                 }
-            }
 
-            # Prepare the system command, depending on whether we're using the Festival server, or
-            #   not
-            if ($self->ttsFestivalServer) {
+                if (defined $voice) {
 
-                # Use Festival server
-                $cmd = "(let ((utt (Utterance Text \"$text\")))";
+                    push (@msWinList, '-v', $voice);
+                }
+
+                if ($self->floatCheck($speed, 10, 200)) {
+
+                    push (@msWinList, '-s', $speed);
+                }
+
+                if ($self->floatCheck($pitch, 0, 99)) {
+
+                    push (@msWinList, '-p', $pitch);
+                }
+
+            } elsif ($engine eq 'esng') {
+
+                # With espeak-ng, we can set the voice, speed, pitch and volume, but not rate
+                push (@msWinList,
+                    "C:\\Program Files\\eSpeak NG\\espeak-ng",
+                    $text,
+                );
+
+                if (defined $voice) {
+
+                    push (@msWinList, '-v', $voice);
+                }
+
+                if ($self->floatCheck($speed, 10, 200)) {
+
+                    push (@msWinList, '-s', $speed);
+                }
+
+                if ($self->floatCheck($pitch, 0, 99)) {
+
+                    push (@msWinList, '-p', $pitch);
+                }
+
+                if ($self->floatCheck($volume, 0, 200)) {
+
+                    push (@msWinList, '-a', $volume);
+                }
+
+            } elsif ($engine eq 'flite' || $engine eq 'festival') {
+
+                # Flite not available on MS Windows
+                # Festival has been ported to MS Windows, but with little or no documentation
+                return undef;
+
+            } elsif ($engine eq 'swift') {
+
+                # With Swift on MS Windows (using Cepstral), we can set the voice, speed, pitch and
+                #   volume, but not rate
+                push (@msWinList, "C:\\Program Files\\Cepstral\\bin\\swift");
+
                 if ($voice) {
 
-                    $cmd .= " (begin ($voice)";
+                    push (@msWinList, '-n', $voice);
+                }
 
-                    if ($self->floatCheck($rate, 0.5, 2)) {
+                if ($self->floatCheck($speed, 100, 400)) {
 
-                        $cmd .= " (Parameter.set 'Duration_Stretch $rate)";
+                    $param = 'speech/rate=' . $speed
+                }
+
+                if ($self->floatCheck($pitch, 0.1, 5)) {
+
+                    if (! $param) {
+                        $param = 'speech/pitch/shift=' . $pitch;
+                    } else {
+                        $param .= ',speech/pitch/shift=' . $pitch;
+                    }
+                }
+
+                if ($self->floatCheck($volume, 0, 100)) {
+
+                    if (! $param) {
+                        $param = 'audio/volume=' . $volume;
+                    } else {
+                        $param .= ',audio/volume=' . $volume;
+                    }
+                }
+
+                if ($param) {
+
+                    push (@msWinList, '-p', $param);
+                }
+
+                push (@msWinList, $text);
+            }
+
+            # Convert the text to speech
+            if ($engine eq 'festival' && $self->ttsFestivalServer) {
+
+                # (If using Festival server, we contact it directly; otherwise use the standard
+                #   Perl system command)
+                $self->ttsFestivalServer->print($cmd);
+
+            } elsif ($configuration ne 'none') {
+
+                system (@msWinList);
+            }
+
+            # Inform the calling session (if any) which type of message was most recently converted
+            #   to speech
+            if ($session) {
+
+                $session->set_ttsLastType($type);
+            }
+
+        # Prepare a system command on Linux
+        } else {
+
+            if ($engine eq 'espeak') {
+
+                # With eSpeak, we can set the voice, speed and pitch, but not rate or volume
+                $cmd = 'espeak "' . $text . '"';
+
+                if (defined $voice) {
+
+                    $cmd .= ' -v ' . $voice;
+                }
+
+                if ($self->floatCheck($speed, 10, 200)) {
+
+                    $cmd .= ' -s ' . $speed;
+                }
+
+                if ($self->floatCheck($pitch, 0, 99)) {
+
+                    $cmd .= ' -p ' . $pitch;
+                }
+
+            } elsif ($engine eq 'esng') {
+
+                # With espeak-ng, we can set the voice, speed, pitch and volume, but not rate
+                $cmd = 'espeak-ng "' . $text . '"';
+
+                if (defined $voice) {
+
+                    $cmd .= ' -v ' . $voice;
+                }
+
+                if ($self->floatCheck($speed, 10, 200)) {
+
+                    $cmd .= ' -s ' . $speed;
+                }
+
+                if ($self->floatCheck($pitch, 0, 99)) {
+
+                    $cmd .= ' -p ' . $pitch;
+                }
+
+                if ($self->floatCheck($volume, 0, 200)) {
+
+                    $cmd .= ' -a ' . $volume;
+                }
+
+            } elsif ($engine eq 'flite') {
+
+                # With Flite, we can set the voice, but not speed, rate, pitch or volume
+                $cmd = 'flite -t "' . $text . '"';
+
+                if (defined $voice) {
+
+                    $cmd .= ' -voice ' . $voice;
+                }
+
+            } elsif ($engine eq 'festival') {
+
+                # When the specified engine is Festival, we try using the Festival server if
+                #   possible; otherwise, we default to using the Festival engine from the command
+                #   line
+                # With Festival server, we can set the voice, rate, pitch and volume, but not speed
+                # With Festival command line, we can't set the voice, speed, rate pitch of volume
+
+                # Start the Festival server (if required)
+                if ($self->ttsFestivalServerMode eq 'waiting' && $self->ttsStartServerFlag) {
+
+                    # Attempt to start the Festival server
+                    $self->ttsStartServer();
+
+                    # We're now waiting for the first successful connection
+                    $self->set_ttsFestivalServerMode('connecting');
+                }
+
+                # Connect to the Festival server (if required)
+                if ($self->ttsFestivalServerMode eq 'connecting') {
+
+                    $self->ttsConnectServer();
+                }
+
+                # Prepare the system command, depending on whether we're using the Festival server,
+                #   or not
+                if ($self->ttsFestivalServer) {
+
+                    # Use Festival server
+                    $cmd = "(let ((utt (Utterance Text \"$text\")))";
+                    if ($voice) {
+
+                        $cmd .= " (begin ($voice)";
+
+                        if ($self->floatCheck($rate, 0.5, 2)) {
+
+                            $cmd .= " (Parameter.set 'Duration_Stretch $rate)";
+                        }
+
+                        if ($self->floatCheck($volume, 0.33, 6)) {
+
+                            $cmd .= " (utt.synth utt) (utt.wave.resample utt 8000)"
+                                        . " (utt.wave.rescale utt $volume) (utt.play utt)";
+                        }
+
+                        $cmd .= ")";
                     }
 
-                    if ($self->floatCheck($volume, 0.33, 6)) {
+                    $cmd .= ")\n";
 
-                        $cmd .= " (utt.synth utt) (utt.wave.resample utt 8000)"
-                                    . " (utt.wave.rescale utt $volume) (utt.play utt)";
+                } else {
+
+                    # Don't use Festival server
+                    $cmd = 'echo ' . $text . ' | festival --tts';
+                }
+
+            } elsif ($engine eq 'swift') {
+
+                # With Swift on Linux (using Cepstral), we can set the voice, rate, pitch and
+                #   volume, but not speed
+                $begin = '';
+                $end = '';
+                if ($voice) {
+
+                    $begin .= "swift <voice name=\"$voice\">";
+                    $end = "</voice>" . $end;
+                }
+
+                # (rate, pitch and volume all share an element; only create the element if at least
+                #   one valid value is being used)
+                if ($self->floatCheck($rate, 0.5, 2)) {
+
+                    $rateFlag = TRUE;
+                }
+
+                if ($self->floatCheck($pitch, 0.1, 5)) {
+
+                    $pitchFlag = TRUE;
+                }
+
+                if ($self->floatCheck($volume, 0.33, 6)) {
+
+                    $volumeFlag = TRUE;
+                }
+
+                if ($rateFlag || $pitchFlag || $volumeFlag) {
+
+                    $begin .= "<prosody";
+                    if ($rateFlag) {
+
+                        $begin .= " rate='$rate'";
                     }
 
-                    $cmd .= ")";
+                    if ($pitchFlag) {
+
+                        $begin .= " pitch='$pitch'";
+                    }
+
+                    if ($volumeFlag) {
+
+                        $begin .= " volume='$volume'";
+                    }
+
+                    $begin .= ">";
+                    $end = "</prosody>" . $end;
                 }
 
-                $cmd .= ")\n";
-
-            } else {
-
-                # Don't use Festival server
-                $cmd = 'echo ' . $text . ' | festival --tts';
+                $cmd = $begin . $text . $end;
             }
 
-        } elsif ($engine eq 'swift') {
+            # Convert the text to speech
+            if ($engine eq 'festival' && $self->ttsFestivalServer) {
 
-            # With Swift (using Cepstral), we can set the voice, rate, pitch and volume, but not
-            #   speed
-            $begin = '';
-            $end = '';
-            if ($voice) {
+                # (If using Festival server, we contact it directly; otherwise use the standard
+                #   Perl system command)
+                $self->ttsFestivalServer->print($cmd);
 
-                $begin .= "swift <voice name=\"$voice\">";
-                $end = "</voice>" . $end;
+            } elsif ($configuration ne 'none') {
+
+                system $cmd;
             }
 
-            # (rate, pitch and volume all share an element; only create the element if at least
-            #   one valid value is being used)
-            if ($self->floatCheck($rate, 0.5, 2)) {
+            # Inform the calling session (if any) which type of message was most recently converted
+            #   to speech
+            if ($session) {
 
-                $rateFlag = TRUE;
+                $session->set_ttsLastType($type);
             }
-
-            if ($self->floatCheck($pitch, 0.1, 5)) {
-
-                $pitchFlag = TRUE;
-            }
-
-            if ($self->floatCheck($volume, 0.33, 6)) {
-
-                $volumeFlag = TRUE;
-            }
-
-            if ($rateFlag || $pitchFlag || $volumeFlag) {
-
-                $begin .= "<prosody";
-                if ($rateFlag) {
-
-                    $begin .= " rate='$rate'";
-                }
-
-                if ($pitchFlag) {
-
-                    $begin .= " pitch='$pitch'";
-                }
-
-                if ($volumeFlag) {
-
-                    $begin .= " volume='$volume'";
-                }
-
-                $begin .= ">";
-                $end = "</prosody>" . $end;
-            }
-
-            $cmd = $begin . $text . $end;
         }
 
-        # Convert the text to speech
-        if ($engine eq 'festival' && $self->ttsFestivalServer) {
-
-            # (If using Festival server, we contact it directly; otherwise use the standard
-            #   Perl system command)
-            $self->ttsFestivalServer->print($cmd);
-
-        } elsif ($configuration ne 'none') {
-
-            system $cmd;
-        }
-
-        # Inform the calling session (if any) which type of message was most recently converted to
-        #   speech
-        if ($session) {
-
-            $session->set_ttsLastType($type);
-        }
-
+        # Operation complete
         return 1;
     }
 
@@ -12610,6 +13298,61 @@
         }
 
         system "festival --server &";
+
+        return 1;
+    }
+
+    sub ttsConnectServer {
+
+        # Called by $self->tts
+        # When $self->ttsFestivalServerMode is 'connecting', actually connects to the Festival
+        #   server, changing the mode to 'connected' if successful
+        #
+        # Expected arguments
+        #   (none besides self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $server;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsConnectServer', @_);
+        }
+
+        if (! $self->ttsFestivalServerPort) {
+
+            # Cannot connect to the server without a port
+            $self->set_ttsFestivalServerMode('connected');
+
+        } else {
+
+            # Attempt to connect to the Festival server
+            $server = IO::Socket::INET->new(
+                Proto     => 'tcp',
+                PeerAddr  => '127.0.0.1',
+                PeerPort  => $self->ttsFestivalServerPort,
+            );
+
+            if ($server) {
+
+                # Connected; store it as an IV
+                $self->set_ttsFestivalServer($server);
+                $self->set_ttsFestivalServerMode('connected');
+
+            } elsif (! $self->ttsStartServerFlag) {
+
+                # We didn't start the server. If the connection failed, give up after
+                #   the first attempt (if we did start the server, keep trying)
+                $self->set_ttsFestivalServerMode('connected');
+            }
+        }
 
         return 1;
     }
@@ -13373,13 +14116,242 @@
         }
     }
 
+    # Auto-backup
+
+    sub checkBackupInterval {
+
+        # Called by $self->start when $self->autoBackupMode is 'interval_start', and by $self->stop
+        #   when $self->autoBackupMode is 'interval_stop'
+        # Checks whether it is time to perform an auto-backup
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if it's not yet time to perform an auto-backup
+        #   1 if it is time to perform at auto-backup
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($format, $time, $oldTime, $diff);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkBackupInterval', @_);
+        }
+
+        if (! $self->autoBackupInterval) {
+
+            # Don't do auto-backups for the time being
+            return undef;
+
+        } elsif (! $self->autoBackupDate) {
+
+            # No auto-backup time recorded, so perform an auto-backup now
+            return 1;
+
+        } else {
+
+            # Otherwise, do the calculation
+            $format = '%a %b %d, %Y';           # e.g. 'Thu Dec 18, 2010'
+            $time = Time::Piece->strptime($self->localDate(), $format);
+            $oldTime = Time::Piece->strptime($self->autoBackupDate, $format);
+
+            $diff = $time->julian_day() - $oldTime->julian_day();
+
+            if ($diff < $self->autoBackupInterval) {
+                return undef;
+            } else {
+                return 1;
+            }
+        }
+    }
+
+    sub doAutoBackup {
+
+        # Called by $self->start or $self->stop when it's time to do an auto-backup
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the auto-backup fails
+        #   1 on success
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $dataDir, $ext, $fileName, $backupPath, $zipObj, $tarObj,
+            @fileList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doAutoBackup', @_);
+        }
+
+        # (Code borrowed from GA::Cmd::BackupData, as we don't want client command error messages)
+
+        # Import the Axmud data directory for use in regexes
+        $dataDir = $axmud::DATA_DIR;
+
+        # In 'default' mode, archive to .zip on MS Windows, and to .tgz on Linux
+        if ($self->autoBackupFileType eq 'default') {
+
+            if ($^O eq 'MSWin32') {
+                $ext = 'zip';
+            } else {
+                $ext = 'tgz';
+            }
+
+        } elsif ($self->autoBackupFileType eq 'zip') {
+            $ext = 'zip';
+        } else {
+            $ext = 'tgz';
+        }
+
+        # Set the filename, appending the time if required
+        if (! $axmud::CLIENT->autoBackupAppendFlag) {
+
+            $fileName = $axmud::NAME_FILE . '_backup_' . $axmud::CLIENT->localDateString() . '.'
+                            . $ext;
+
+        } else {
+
+            $fileName = $axmud::NAME_FILE . '_backup_' . $axmud::CLIENT->localDateString() . '_'
+                            . $axmud::CLIENT->localClockString() . '.' . $ext;
+        }
+
+        # If necessary, open a file chooser dialog to decide where to save the exported file
+        if ($self->autoBackupDir && -e $self->autoBackupDir) {
+
+            $backupPath = $self->autoBackupDir;
+
+        } else {
+
+            $backupPath = $self->mainWin->showFileChooser(
+                'Backup ' . $axmud::SCRIPT . ' data',
+                'save',
+                $fileName,
+            );
+        }
+
+        if (! $backupPath) {
+
+            return undef;
+        }
+
+        # Display a 'dialogue' window while backing up data. The 'undef' argument means 'show the
+        #   standard icon'
+        if (! $axmud::BLIND_MODE_FLAG) {
+
+            $self->mainWin->showBusyWin(undef, 'Backing up...');
+        }
+
+        # Get a list of files in the data directory, recursively searching sub-directories
+        File::Find::find(
+            sub { push (@fileList, $File::Find::name); },
+            $dataDir . '/',
+        );
+
+        # Perform the backup
+        if ($ext eq 'zip') {
+
+            # Create a zip object
+            $zipObj = Archive::Zip->new();
+
+            foreach my $file (@fileList) {
+
+                my $modFile;
+
+                if ($file ne $dataDir) {
+
+                    $modFile = $file;
+                    $modFile =~ s/$dataDir//;
+
+                    # 6 is the default compression level
+                    $zipObj->addFile($file, $modFile, 6);
+                }
+            }
+
+            # Save the .zip file. Successful operation returns 0
+            if ($zipObj->writeToFileNamed($backupPath)) {
+
+                # Close the 'dialogue' window and reset the Client IV that stores it
+                if ($self->busyWin) {
+
+                    $self->mainWin->closeDialogueWin($self->busyWin);
+                }
+
+                return undef;
+            }
+
+        } else {
+
+            # Create a tar object
+            $tarObj = Archive::Tar->new();
+
+            foreach my $file (@fileList) {
+
+                if ($file ne $dataDir) {
+
+                    $tarObj->add_files($file);
+                    # Rename each file in the archive to remove the directory structure
+                    $tarObj->rename(substr($file, 1), substr($file, length($dataDir)));
+                }
+            }
+
+            # Save the .tgz file
+            if (
+                ! $tarObj->write(
+                    $backupPath,
+                    Archive::Tar::COMPRESS_GZIP,
+                    $axmud::NAME_SHORT . '-data',
+                )
+            ) {
+                # Close the 'dialogue' window and reset the Client IV that stores it
+                if ($self->busyWin) {
+
+                    $self->mainWin->closeDialogueWin($self->busyWin);
+                }
+
+                return undef;
+            }
+        }
+
+        # Operation successful. Update IVs so the next scheduled auto-backup occurs on time
+        if ($self->autoBackupMode eq 'all_start' || $self->autoBackupMode eq 'all_stop') {
+
+            # No scheduled auto-backups; auto-backups occur when Axmud starts/stops
+            $self->ivUndef('autoBackupDate');
+
+        } else {
+
+            # Scheduled auto-backups
+            $self->ivPoke('autoBackupDate', $self->localDate());
+        }
+
+        # Close the 'dialogue' window and reset the Client IV that stores it
+        if ($self->busyWin) {
+
+            $self->mainWin->closeDialogueWin($self->busyWin);
+        }
+
+        return 1;
+    }
+
     # General-purpose methods
 
     sub nameCheck {
 
         # Checks whether a name for a Perl object matches Axmud's naming rules (namely, must be
         #   between 1 to $maxLength characters, containing letters, numbers and underlines -
-        #   first character can't be a number)
+        #   first character can't be a number. International characters, e.g. those in Cyrillic,
+        #   are accepted)
         # Also checks that the name doesn't clash with one of Axmud's reserved words
         #
         # Expected arguments
@@ -13408,7 +14380,8 @@
         # Perform the check
         $maxLength--;
 
-        if (! ($name =~  m/^[A-Za-z_]{1}[A-Za-z0-9_]{0,$maxLength}$/)) {
+#        if (! ($name =~  m/^[A-Za-z_]{1}[A-Za-z0-9_]{0,$maxLength}$/)) {
+        if (! ($name =~  m/^[[:alpha:]\_]{1}[[:word:]]{0,$maxLength}$/)) {
             return undef;
         } else {
             return 1;
@@ -13796,7 +14769,7 @@
     sub localClock {
 
         # Converts the output from Perl's localtime() function into the following format:
-        #   e.g. 9:17:12
+        #   e.g. 09:17:12
         #
         # Expected arguments
         #   (none besides $self)
@@ -14150,7 +15123,7 @@
         # Uses the JSON module to convert a UTF-8 encoded binary string to a Perl data structure
         #
         # Expected arguments
-        #   $string     - The string to decode
+        #   $data     - The string to decode
         #
         # Return values
         #   'undef' on improper arguments or if the conversion fails
@@ -14170,13 +15143,6 @@
         $obj = JSON->new();
         $obj->allow_nonref();
         $obj->allow_unknown();
-
-        # Legends of Kallisti sends single strings without quotation marks "...", which is not
-        #   allowed in strict JSON, so we have to check for that
-        if ($data =~ m/^[a-zA-Z]\w*$/) {
-
-            $data = "\"$data\"";
-        }
 
         return $obj->utf8->decode($data);
     }
@@ -14380,6 +15346,31 @@
 
         # The data stored in this IV is saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_allowAsciiBellFlag');
+
+        return 1;
+    }
+
+    sub set_allowBusyWinFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_allowBusyWinFlag',
+                @_,
+            );
+        }
+
+        if ($flag) {
+            $self->ivPoke('allowBusyWinFlag', TRUE);
+        } else {
+            $self->ivPoke('allowBusyWinFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_allowBusyWinFlag');
 
         return 1;
     }
@@ -14665,6 +15656,130 @@
         return 1;
     }
 
+    sub set_autoBackupAppendFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_autoBackupAppendFlag',
+                @_,
+            );
+        }
+
+        if ($flag) {
+            $self->ivPoke('autoBackupAppendFlag', TRUE);
+        } else {
+            $self->ivPoke('autoBackupAppendFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_autoBackupAppendFlag');
+
+        return 1;
+    }
+
+    sub set_autoBackupDir {
+
+        my ($self, $dir, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_autoBackupDir', @_);
+        }
+
+        $self->ivPoke('autoBackupDir', $dir);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_autoBackupDir');
+
+        return 1;
+    }
+
+    sub set_autoBackupFileType {
+
+        my ($self, $type, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $type
+            || ($type ne 'default' && $type ne 'tar' && $type ne 'zip')
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_autoBackupFileType', @_);
+        }
+
+        $self->ivPoke('autoBackupFileType', $type);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_autoBackupFileType');
+
+        return 1;
+    }
+
+    sub set_autoBackupInterval {
+
+        my ($self, $number, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_autoBackupInterval', @_);
+        }
+
+        $self->ivPoke('autoBackupInterval', $number);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_autoBackupInterval');
+
+        return 1;
+    }
+
+    sub set_autoBackupMode {
+
+        my ($self, $mode, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $mode
+            || (
+                $mode ne 'no_backup' && $mode ne 'all_start' && $mode ne 'all_stop'
+                && $mode ne 'interval_start' && $mode ne 'interval_stop'
+            ) || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_autoBackupMode', @_);
+        }
+
+        $self->ivPoke('autoBackupMode', $mode);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_autoBackupMode');
+
+        return 1;
+    }
+
+    sub set_blockWorldHintFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_blockWorldHintFlag', @_);
+        }
+
+        if ($flag) {
+            $self->ivPoke('blockWorldHintFlag', TRUE);
+        } else {
+            $self->ivPoke('blockWorldHintFlag', FALSE);
+        }
+
+        return 1;
+    }
+
     sub set_browserCmd {
 
         my ($self, $cmd, $check) = @_;
@@ -14679,6 +15794,22 @@
 
         # The data stored in this IV is saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_browserCmd');
+
+        return 1;
+    }
+
+    sub set_busyWin {
+
+        my ($self, $winObj, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_busyWin', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('busyWin', $winObj);
 
         return 1;
     }
@@ -15900,6 +17031,21 @@
         }
 
         $self->ivDelete('fileObjHash', $obj->name);
+
+        return 1;
+    }
+
+    sub set_forceExitFlag {
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_forceExitFlag', @_);
+        }
+
+        $self->ivPoke('forceExitFlag', TRUE);
 
         return 1;
     }
@@ -18125,6 +19271,8 @@
         { $_[0]->{aboutWin} }
     sub consoleWin
         { $_[0]->{consoleWin} }
+    sub busyWin
+        { $_[0]->{busyWin} }
 
     sub constIVHash
         { my $self = shift; return %{$self->{constIVHash}}; }
@@ -18153,6 +19301,19 @@
         { $_[0]->{autoSaveWaitTime} }
     sub autoRetainFileFlag
         { $_[0]->{autoRetainFileFlag} }
+
+    sub autoBackupMode
+        { $_[0]->{autoBackupMode} }
+    sub autoBackupDir
+        { $_[0]->{autoBackupDir} }
+    sub autoBackupInterval
+        { $_[0]->{autoBackupInterval} }
+    sub autoBackupDate
+        { $_[0]->{autoBackupDate} }
+    sub autoBackupFileType
+        { $_[0]->{autoBackupFileType} }
+    sub autoBackupAppendFlag
+        { $_[0]->{autoBackupAppendFlag} }
 
     sub constLargeFileSize
         { $_[0]->{constLargeFileSize} }
@@ -18395,8 +19556,14 @@
     sub worldProfHash
         { my $self = shift; return %{$self->{worldProfHash}}; }
 
+    sub constWorldHash
+        { my $self = shift; return %{$self->{constWorldHash}}; }
+    sub constWorldPatchHash
+        { my $self = shift; return %{$self->{constWorldPatchHash}}; }
     sub constWorldList
         { my $self = shift; return @{$self->{constWorldList}}; }
+    sub prevClientVersion
+        { $_[0]->{prevClientVersion} }
     sub favouriteWorldList
         { my $self = shift; return @{$self->{favouriteWorldList}}; }
     sub constBasicWorldHash
@@ -19041,6 +20208,10 @@
         { $_[0]->{systemAllowTTSFlag} }
     sub constTTSList
         { my $self = shift; return @{$self->{constTTSList}}; }
+    sub constTTSCompatList
+        { my $self = shift; return @{$self->{constTTSCompatList}}; }
+    sub eSpeakPath
+        { $_[0]->{eSpeakPath} }
     sub ttsSmoothFlag
         { $_[0]->{ttsSmoothFlag} }
 
@@ -19119,6 +20290,9 @@
     sub startDateString
         { $_[0]->{startDateString} }
 
+    sub forceExitFlag
+        { $_[0]->{forceExitFlag} }
+
     sub constPromptWaitTime
         { $_[0]->{constPromptWaitTime} }
     sub promptWaitTime
@@ -19132,6 +20306,8 @@
         { $_[0]->{toolbarLabelFlag} }
     sub irreversibleIconFlag
         { $_[0]->{irreversibleIconFlag} }
+    sub allowBusyWinFlag
+        { $_[0]->{allowBusyWinFlag} }
     sub mainWinUrgencyFlag
         { $_[0]->{mainWinUrgencyFlag} }
     sub mainWinTooltipFlag
@@ -19183,6 +20359,8 @@
         { $_[0]->{allowSetupWizWinFlag} }
     sub showSetupWizWinFlag
         { $_[0]->{showSetupWizWinFlag} }
+    sub blockWorldHintFlag
+        { $_[0]->{blockWorldHintFlag} }
 }
 
 # Package must return true

@@ -10,7 +10,8 @@ azm / addzonemap              Adds a new zonemap
       Axmud provides a number of standard zonemaps, but you can create a new
          zonemap with this command.
       <name> must be no longer than 16 characters, and contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character).
+         underlines and 0-9 (not the first character). Non-Latin alphabets are
+         acceptable.
  
    User commands:
       azm / addzm / addzonemap

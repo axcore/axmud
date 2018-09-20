@@ -1,4 +1,371 @@
-v1.1.0 (31 May 2018)
---------------------
+v1.1.138 (31 Aug 2018)
+--------------------------------------------------------------------------------
 
-This is the first public release of Axmud
+Pre-configured worlds
+- Ten new pre-configured worlds: Adventures Unlimited, Bylins MUD, Clessidra
+    MUD, DragonStone, HexOnyx, Eternal Darkness, RavenMUD, RealmsMUD, Two Towers
+    and Waterdeep
+- Minor improvements to the existing pre-configured worlds: CoffeeMud,
+    Discworld, EmpireMud 2.0. If you want to import the improvements into your
+    existing world profiles, use ';updateworld' (for example
+    ';updatworld discworld'). If you don't want to risk overwriting any changes
+    you've made to those profiles, don't use ';updateworld'
+- The basic mudlist (visible by clicking the planet icon in the Connections
+    window) has been expanded by about 150 worlds
+- This version adds a new 'wilderness' plugin, especially for users of
+    EmpireMUD 2.0, that modifies its world profile to use wilderness mode (see
+    below) in the most effective way and, if loaded a second time, reverts those
+    changes
+
+Major new features
+- Numerous improvements and enhancements to the automapper (see section below)
+- Greatly improved handling of Russian-language worlds. At most of them, the
+    KOI-8 character set is now applied automatically. Cyrillic text, and not
+    gibberish, should now be visible in most of Axmud's windows. Axmud's
+    internal regular expressions now recognise non-Roman characters. Profiles
+    and other Axmud objects (collections of data) can now be given names using
+    non-English characters, so automatic login using a Cyrillic character name
+    is now possible. The Locator and automapper windows have been tested using
+    Russian directions (see the Bylins pre-configured world for a demonstration)
+- Handling of other non-English worlds has also been improved. Axmud's
+    phrasebooks, which are used to create dictionaries in various languages,
+    have been updated. The correct phrasebook is now applied to any world in the
+    basic mudlist, so for most non-English worlds compass directions in the
+    Compass task shouldn't require any configuration
+- The Connections window can now search both lists of worlds. When sorting
+    alphabetically, worlds beginning with articles like 'The' and 'A' are now
+    sorted correctly
+- If you don't want Axmud to display certain colours, you can now modify colour
+    schemes so that those colours are filtered out. You can also specify that
+    only the default text and background colours should be used. This will be
+    useful for those of you who wanted to read black text on a white background,
+    but could not, because the world was using so many different colours. The
+    'edit' window now has buttons for quickly swapping the text/background
+    colours, and for matching the underlay/background colours
+- New Channels task, which works much like the Divert task, but has multiple
+    tabs. Both tasks use the same world profile patterns, so you can use 
+    whichever one you prefer (but you can't run both at the same time)
+- The Divert task used to be limited to four channels ('tell', 'social',
+    'custom' and 'warning'). Both the Channels and Divert task can now use any
+    number of channels
+- The old ';adddivertpattern', ';deletedivertpattern' and ';listdivertpattern'
+    commands have been replaced with ';addchannelpattern',
+    ';deletechannelpattern' and ';listchannelpattern'. The new commands work
+    with both the Channels and Divert tasks. There's also a new
+    ';emptychannelswindow' command
+- If you create a colour scheme called 'divert', the Divert task will use that
+    colour scheme rather than the default one. As a result, you can configure
+    different task windows to use their own colours and fonts, if you like.
+    Changes to a colour scheme are now applied to all windows using that scheme
+    as soon as you click the 'save' or 'OK' button. Several related issues were
+    fixed at the same time
+
+Major fixes
+- Fixed an issue in the Locator wizard which failed at worlds where the exit
+    list was spread across multiple lines
+- Tasks in the global initial tasklist (those that start automatically whenever
+    you connect to a world) could not be configured using their 'edit' windows.
+    Fixed several related issues
+- Axmud is capable of converting invisible text (e.g. black text on a black
+    background) to something visible, but there was no way to turn it on (or
+    off) from any 'edit' or preference window. Fixed
+- Fixed a couple of segfaults
+- Entry boxes in many 'edit' windows only accepted an even number, when they
+    should have accepted a fractional number. Fixed    
+    
+Automapper new features
+- Added graffiti. Temporarily mark rooms you've visited with an X; very useful
+    if you want to check every room in a region. When graffiti mode is turned
+    on, a count of visited and unvisited rooms appears in the automapper
+    window's title bar
+- Multiple toolbars. Use the red plus button to make additional toolbars
+    visible. You can still switch between button sets in the first toolbar at
+    the top of the window. The order of buttons on existing toolbars has been
+    improved a little
+- A toolbar has been added with various buttons for setting the number of
+    character visits in each room. Existing operations to modify those values
+    have been improved, and most of them will now work on multiple rooms at the
+    same time. Those of you who want to keep track of which rooms you've visited
+    and how often you've visited them should find these improvements make it
+    much quicker to modify the stored values, when required
+- Painting rooms in different colours, using room flags, should now be much
+    quicker. There's a new toolbar which you can use to choose your favourite
+    colours (room flags), and to toggle them on and off. The layout of various
+    'edit' windows that use room flags have been greatly improved
+- Rooms can now be automatically painted if their room title, description,
+    exit list, contents or room commands match any patterns that you specify
+    (ideal for worlds like EmpireMud 2.0, which have a small set of room titles
+    corresponding to different terrain types)
+- You can now add and delete your own room flags, if you don't like the default
+    set that Axmud provides. (Only custom room flags can be deleted)
+- Added new room flags for bus stops, player-controlled shops and cafes.     
+- There's another new toolbar which you can use to colour in the background map
+    directly. It's ideal for features like rivers and mountain ranges which
+    exist in the world, but can't be accessed directly by the player. The map is
+    divided into an invisible grid, with one room per grid, and you can paint
+    each gridblock (or a group of gridblocks) any colour you want
+- The organisation of items in the window's menu has been improved in a number
+    of cases. A number of new menu items have been added
+- Labels can now be drawn in different sizes and colours, and even inside a
+    coloured box. You can either customise each label individually, or you can
+    use one of several label styles - one for titles, one for street names, one
+    for bridges, and so on. Four label styles are provided; you can use those,
+    or you can create your own label styles
+- Label styles can be handled with the new commands ';addlabelstyle',
+    ';editlabelstyle', ';renamelabelstyle', ';deletelabelstyle' and
+    ';listlabelstyle'
+- If your labels are spread untidily all around the whole map, you can now ask
+    Axmud to align them either vertically or horizontally (or both)
+- You can now select multiple rooms and labels by holding down your left mouse
+    button and dragging the cursor over the map
+- When multiple rooms are selected, they are now all dragged at the same time
+- You can now move selected rooms/labels by pressing CTRL+C and clicking on
+    a location on the map. CTRL+C can be disabled entirely if you don't want it.
+    (CTRL+V is not necessary, and in fact does nothing)
+- Much better handling of wilderness zones (large areas of the world in which
+    the rooms have no exit lists, because movement is possible in all
+    directions). In these areas it's no longer necessary for your maps to
+    contain exits at all. See the Axmud Guide for a discussion of how
+    wilderness rooms have been implemented
+- Added crafty moves mode for worlds like Discworld, which has a lot of exits
+    that don't appear in a room's exit list (but it's obvious from the minimap
+    that the exits exist). When crafty moves mode is turned on, you can move in
+    any direction, and if the automapper doesn't already know that an exit
+    exists in that direction, it creates a hidden exit for you
+- Added transient exits for worlds like Discworld, which has moving vehicles;
+    when the vehicle is in a room, additional exits appear in the room's exit
+    list. You can now set exits like 'board wagon' as transient exits, so the
+    automapper won't try to draw them and won't get confused if you enter a room
+    containing them
+- For worlds that have a lot of hidden exits, the automapper can now track the
+    direction in which you tried and failed to move, so you can systematically
+    try every direction from every room until you've found every possible hidden
+    exit. Use 'Exits > Exit options > Collect Checked directions' to turn it on.
+    When turned on, the automapper draws checked directions in pink. Model
+    reports can now show how many rooms have been checked in every direction
+- Added a new ';insertfailedexit' command. When you try to move in a direction
+    but the world refuses, you might get a standard refusal message or you might
+    get a different one in every room. An unrecognised refusal message means
+    you have to reset the Locator task and set the current room again; the new
+    command takes care of that in a flash. If you don't like typing, you can use
+    the new toolbar button instead; it's the red 'FE' button
+- The automapper draws exits as an 'X' when they're in non-primary directions.
+    It's up to you, the user, to decide in which direction the exit should be
+    drawn. Normally it's necessary to click on each exit individually, selecting
+    a primary direction one exit at a time. The new ';allocateexit' command
+    makes this process much quicker. For example, in a room with 'kitchen' and
+    'bathroom' exits, you could type ';allocateexit north kitchen' or
+    ';allocateexit se bathroom'. You can even miss out the command word
+    altogether, and just type ';north kitchen' or ';se bathroom'.
+- You were already able to add notes to rooms (right-click a room on the map,
+    select 'Edit room... > Notes'. Any notes you make are now displayed in the
+    room's tooltip, when your mouse is hovering above the room. If you don't
+    want to see them, notes in tooltips can be turned off, leaving the
+    information that was already visible there
+- Saved maps (world models) will now be between 10-25% smaller, depending on
+    what kind of data the model is storing. Load times will improve by the same
+    proportion
+- The ';locateroom' command now selects all matching rooms on the map, so after
+    getting lost it's easier to work out where you are. Some issues with that
+    command have been fixed, so it will now work more reliably
+- The automapper's 'Reposition all maps' operation now sets the visible level
+    back to level 0, as well as resetting magnification and the position of
+    scrollbars
+    
+Automapper fixes
+- Dragging exits was often very difficult because the exit could not be clicked,
+    or immediately unselected itself after being clicked. This has been fixed,
+    and dragging an exit should now be as easy as clicking on it
+- The automapper was not able to track movement in a non-primary direction like
+    'enter cupboard' immediately after a room had been set as a current room.
+    Fixed
+- Fixed a crash caused, in certain circumstances, by selected rooms in the
+    automapper window
+- The automapper sometimes failed to draw twin exits correctly, when one or both
+    were in non-primary directions. Occasionally, this caused a crash. Both
+    issues are now fixed
+- Some error messages caused by the automapper's room painter have been fixed
+- In the automapper window's menu, 'Rooms > Locator task > View Locator room'
+    crashed Axmud. The edit window itself, once opened, also crashed Axmud. Both
+    have been fixed
+- Some inconsistencies in the way the automapper window desensitises (greys out)
+    some of its menu items and buttons have been fixed
+- The room painter incorrectly replaced certain values, such as the room's
+    title, in certain situations. The automapper did not finish creating a new
+    room before trying to paint it. Both issues have been fixed
+- It's no longer necessary to reset the Locator task after the automapper gets
+    lost; you can now set the new current room right away
+- Labels in maps can now contain '&' characters without generating an error
+    message
+    
+Minor new features
+- The layout of the 'edit' window for routes has been improved
+- The Locator task can now capture information about the weather, the time of
+    day (and so on), and display that information in its task window. The
+    information is not stored anywhere in the model. At present, no
+    pre-configured worlds use the new 'weather' component
+- The Locator task used to show the room's contents in its window, main noun
+    first. You can now change that behaviour (using the task's 'edit' window),
+    so the the word order isn't changed. Instead, the noun is highlighted in a
+    different colour
+- The About window now shows this file, and the INSTALL information file
+    included with Axmud's source code
+- The MS Windows installer will now let you install Axmud anywhere you want.
+    Some users have reported problems with this installer. In most cases,
+    running the installer a second time will work. In most cases, if Axmud
+    crashes shortly after it starts for the first time, it won't crash on the
+    second or subsequent occasions
+    
+Minor fixes
+- The Locator task displays the number of room statements (descriptions) it's
+    expecting in its title bar, but this number was not updated frequently
+    enough. The visible number is now updated instantly. The same number is no
+    longer displayed in the automapper's title bar (as there is no longer enough
+    room there)
+- Fixed some issues with MXP room tags and popup menus, which prevented (for
+    example) the automapper from working at DragonStone
+- Improved handling of arkward exit states (extra information about an exit in
+    the room's exit list), which made correct handling of exit states at
+    DragonStone impossible
+- Trying to connect to a world from the basic mudlist, while specifiying a
+    character and password, produced error messages. Fixed
+- ';importfiles' failed to import a world profile exported with an
+    ';exportfiles -w' command. Fixed    
+- Fixed incorrect handling of text in bold white at some worlds
+- Various issues with handling and checking Axmud colour tags have been fixed
+- When Axmud encounters a Perl error, it displays a long error message and
+    tells the user to type ';restart' when they're ready. The error message has
+    been improved so impatient users don't need to read all of it
+- Fixed several issues with GMCP data that caused frequent error messages, for
+    example at Avatar
+- Abbreviations (aka user commands) for several client commands have changed:
+    ';addworld', ';setworld', ';cloneworld', ';editworld', ';deleteworld',
+    ';listworld', ';restoreworld', ';updateworld', ';setstatusevent'
+- The Debugger task's 'edit' window was completely broken. Fixed it
+
+v1.1.050 (31 Jul 2018)
+--------------------------------------------------------------------------------
+
+Pre-configured worlds
+- Ten new pre-configured worlds: Age of Chaos, Avalon (Germany), Carrion Fields,
+    CyberASSAULT, Elysium RPG, HellMOO, Miriani, MUME, RoninMUD, Tsunami
+- Improved handling of new and existing pre-configured worlds for users who have
+    just installed a new version of Axmud
+- Major improvements to the existing pre-configured worlds: Avalon RPG,
+    Discworld and SWMud (if you've ever connected to any of these worlds, you'll
+    be prompted to update them; if not, the world profiles will be automatically
+    updated)
+- Minor improvements to the existing pre-configured worlds: Dead Souls Dev, Dead
+    Souls Local, Dead Souls Prime, DuneMUD, Medievia, MorgenGrauen. If you want
+    to import the improvements into your existing world profiles, use
+    ';updateworld' (for example ';updatworld empire'). If you don't want to risk
+    overwriting any changes you've made to those profiles, don't use
+    ';updateworld'
+
+Major new features
+- New 'quick preferences' window, containing the most useful configuration
+    options, such as changing fonts, turning on sound, etc (hopefully useful for
+    users who couldn't find where they were). In the main window, click the blue
+    book icon to open it
+- The GUI window has been renamed the object viewer window, and expanded to
+    include more kinds of object and more help files. The commands to open/close
+    it are now ';openobjectviewer' and ';closeobjectviewer'
+- New client commands to backup the entire Axmud data directory: 'backupdata',
+    ';restoredata' and, for automated backups ';autobackup'. (This does not
+    affect ordinary data file load/save operations. To avoid confusion,
+    ';retainbackups' has been renamed ';retainfilecopy')
+- A complete list of strings used in peek/poke operations (such as with the
+    client commands ';peek' and ';poke', and with several Axbasic statements
+    including PEEK and POKE) is now available in the About window, in the Axmud
+    Guide and by using the new ';peekhelp' command
+- For worlds that use room commands (such as EmpireMUD 2.0 and Avalon Germany),
+    some new client commands: ';rommcommand', ';ignoreroomcommand',
+    ';noticeroomcommand' and ';listroomcommand'. If the current location has a
+    list of room commands like 'chop, harvest, gather', use ';roomcommand' to
+    cycle through them. For best effect, open the Compass task and assign
+    ';roomcommand' to one of the keys on your keypad
+- New commands, aimed at worlds with a language that's not English, allowing you
+    to set the dictionary's directions from the command line (e.g. at a
+    German-language MUD, to replace 'east' with 'ost'): ';modifyprimary',
+    ';addsecondary', ';modifysecondary', ';deletesecondary',
+    ';setautosecondary', ';listautosecondary', ';listdirection'. Also fixed
+    several problems setting directions in the dictionary's edit window
+
+Major fixes
+- Fixed crash due to problems with clickable links occasionally seen at
+    MXP-heavy worlds
+- Axmud is supposed to be able to recover from a Perl crash, commonly seen if
+    you try to use an invalid regex (pattern) in your triggers and aliases. This
+    wasn't working, which caused the connection to freeze, but it's now fixed
+- Fixed multiple problems with command histories (used when you press the
+    up/down cursor keys to show recent commands in the main window's command
+    entry box)
+- Fixed various ATCP problems which caused numerous error messages at some
+    worlds
+- At a few non-English worlds, the automapper produced a load of errors when
+    leaving a dark room (a room with no light). Fixed
+
+Minor new features
+- The Inventory task can now cope with lines of text containing multiple items
+    of inventory (in addition to the usual code, which could already cope with
+    commas, the word 'and', and so on). Connect to HellMOO to see it in action
+- ';copyrecording' now displays an abbreviated list of world commands, as well
+    as the unabbreviated list
+
+Minor fixes
+- Some task windows (such as the Status task window) didn't have their fonts
+    updated when the user updated fonts generally. Fixed
+- ';playsoundeffect' now plays a random sound effect, if you don't specify one
+- Fixed various problems in the zonemap and winmap edit windows. Fixed issue
+    that prevented user adding winzones to a cloned winmap
+- In the client preferences window, Workspaces > Page 5, fixed the faulty 'Reset
+    Grids' button
+- Autosaves no longer take place when connected to a world in 'offline' mode
+- Fixed a few terminal error messages, occasionally seen when Axmud shuts down
+- When Axmud displayed explicit line numbers and/or colour/style tags in the
+    main window, clickable links appeared in the wrong place. Fixed
+- Could not open the edit window for some room components from the world
+    profile's edit window. Fixed, and in those edit windows there's a new button
+    allowing you to specify RGB colour tags
+- Fixed various problems in edit windows for TTS (text-to-speech) configurations
+- New ';worldcompass' command, complementing the existing ';compass' and
+    ';permcompass', and also improvements to the task's edit window, which make
+    it easier to modify the commands for each keypad key that apply whenever
+    Axmud starts
+- ';listotherworld' has been renamed as ';listbasicworld' for consistency
+- Fixed faulty handling, rarely affecting the user, of the delimiters in exit
+    lists (for example the commas in 'You can go north, south, west'
+- In the Connections window, you can now read English translations of the
+    descriptions of non-English worlds
+
+v1.1.012 (8 Jun 2018)
+--------------------------------------------------------------------------------
+
+Major new features
+- Text-to-speech (TTS) is now enabled on MS Windows. The Windows installer
+    includes the eSpeak engine, so TTS will work out-of-the-box (no screenreader
+    required)
+- Added support for the 'espeak-ng' engine (on both Linux and MS Windows)
+
+Major fixes
+- Fixed issues with ';connect', ';reconnect' and ';xconnect' that especially
+    affected visually-impaired users
+- Fixed several issues on MS Windows. The GUI window will now open, the quick
+    help file can be opened for viewing, and ';searchhelp' works again
+- Autosave is now turned on by default. If you've installed a previous version
+    of Axmud, your previous preferences are retained, so use ';autosave on' to
+    turn on autosaves
+- Fixed problems with clickable links, which caused Axmud to crash instantly
+    when they occur at the end of a line
+- Fixed incorrect handling of UTF-8 which made Russian-language MUDs unplayable
+- Fixed packaging of Perl modules that caused CPAN archive to complain
+- The .deb installer on Linux now adds two items to the Start menu, just like
+    the corresponding MS Windows installer
+
+Minor fixes
+- Numerous minor fixes
+
+v1.1.0 (31 May 2018)
+--------------------------------------------------------------------------------
+
+- This is the first public release of Axmud

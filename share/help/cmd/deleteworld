@@ -1,7 +1,7 @@
-dw / deleteworld              Deletes a world profile
+dwo / deleteworld             Deletes a world profile
  
    Format:
-      ;dw <name>              Deletes the world profile <name>
+      ;dwo <name>             Deletes the world profile <name>
  
    Notes:
       This operation deletes not only the world, but all its associated guild,
@@ -11,4 +11,4 @@ dw / deleteworld              Deletes a world profile
       The operation will fail if <name> is the current world in any session.
  
    User commands:
-      dw / delworld / deleteworld
+      dwo / delworld / deleteworld

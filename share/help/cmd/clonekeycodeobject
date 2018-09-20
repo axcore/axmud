@@ -22,7 +22,8 @@ cko / clonekeycodeobject      Clones a keycode object
          containing the same set of keycodes.
       Keycode object names must be no longer than 16 characters, contain only 
          A-Z, a-z, underlines and 0-9 (not the first character) and not be one 
-         of Axmud's reserved names (see the ';listreserved' command).
+         of Axmud's reserved names (see the ';listreserved' command). Non-Latin
+         alphabets are acceptable.
  
    User commands:
       cko / cloneko / clonekeycodeobject

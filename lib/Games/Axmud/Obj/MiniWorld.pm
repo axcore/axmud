@@ -47,7 +47,8 @@
         #       correspond to an existing world profile)
         #
         #   $worldObj   - The GA::Profile::World object that might be modified by this object's
-        #                   stored data
+        #                   stored data (can also be a GA::Obj::BasicWorld object, if a world
+        #                   profile doesn't exist yet)
         #   $selectChar - The world profile's last connected character (->lastConnectChar), which
         #                   may be 'undef'
         #   $loginAccountMode
@@ -107,7 +108,7 @@
             # IVs
             # ---
 
-            # The GA::Profile::World object and its ->name
+            # The GA::Profile::World object (or GA::Obj::BasicWorld) and its ->name
             name                        => $name,
             worldObj                    => $worldObj,
             # An IV initially set to the world profile's last connected character (might be set

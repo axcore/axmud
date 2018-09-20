@@ -1,5 +1,4 @@
 AXMUD INSTALLATION
-==================
 
 To get the most recent version of Axmud, visit:
 
@@ -9,18 +8,19 @@ Axmud is known to work on MS Windows and Linux. It might be possible to install
 Axmud on other systems, such as macOS and *BSD, but the authors have not been
 able to confirm this yet.
 
-1 Installation on MS Windows
+1 INSTALLATION ON MS WINDOWS
 
 The easiest way to use Axmud on Windows is to download and run the Windows
 installer from the Axmud website.
 
 The installer contains everything you need to run Axmud, including a copy of 
-Strawberry Perl and all the required modules and libraries.
+Strawberry Perl, a text-to-speech engine and all the required modules and
+libraries.
 
 Users who already have Strawberry Perl and/or ActivePerl installed on their
 system can install Axmud manually using any of the following methods. 
 
-1.1 Installation using Strawberry Perl
+1.1 INSTALLATION USING STRAWBERRY PERL
 
 Axmud requires the 32-bit edition of Strawberry Perl, even on a 64-bit computer.
 If you have the 64-bit edition of Strawberry Perl installed on your system,
@@ -61,7 +61,7 @@ installation is standard.
 	gmake install
 	axmud.pl
 
-1.2 Installation using ActivePerl
+1.2 INSTALLATION USING ACTIVEPERL
 
 Axmud is known to work with both 32-bit and 64-bit editions of ActivePerl.
 
@@ -91,7 +91,7 @@ installation is standard.
 	dmake install
 	axmud.pl
 
-1.3 Creating your own MS Windows installer
+1.3 CREATING YOUR OWN MS WINDOWS INSTALLER
 
 The installer described above was created using a script you can find in:
 
@@ -99,12 +99,12 @@ The installer described above was created using a script you can find in:
 
 The script contains instructions for building your own installer.
 
-2 Installation on Linux
+2 INSTALLATION ON LINUX
 
 There are four methods of installation on Linux - install using the .deb 
 package, install from CPAN, install using git, or install from source.
 
-2.1 Install using the .deb package
+2.1 INSTALL USING THE .DEB PACKAGE
 
 The quickest method, if your system supports it, is to download the .deb package
 from the Axmud website.
@@ -112,7 +112,7 @@ from the Axmud website.
 On many modern systems, a .deb package will install itself if you double-click
 on it. 
 
-2.2 Install from CPAN
+2.2 INSTALL FROM CPAN
 
 Axmud can be downloaded and installed directly from the Perl archive site, CPAN.
 
@@ -134,7 +134,7 @@ When installation is complete, start Axmud by typing:
 
 	/usr/local/bin/axmud.pl
 	
-2.3 Install using git
+2.3 INSTALL USING GIT
 
 Unstable (development) versions of Axmud are available from github. 
 
@@ -161,7 +161,7 @@ When installation is complete, start Axmud by typing:
 
 	axmud.pl
 	
-2.4 Install from source
+2.4 INSTALL FROM SOURCE
 
 Manual installation is quite simple. First, download the source code from the
 Axmud website (the most recent file ending .tar.gz).
@@ -190,5 +190,3 @@ Then install Axmud itself:
 When installation is complete, start Axmud by typing:
 
 	axmud.pl	
-
-

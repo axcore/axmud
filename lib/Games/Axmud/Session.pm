@@ -119,9 +119,9 @@
             # Blessed reference to the world model object (GA::Obj::WorldModel) for the current
             #   world profile (always one per session)
             worldModelObj               => undef,       # Saved in file [worldmodel]
-            # Blessed reference to the GUI window (GA::OtherWin::Gui) for this session (only one can
-            #   be opened per session, set to 'undef' when it's not open)
-            guiWin                      => undef,       # Set by $self->set_guiWin
+            # Blessed reference to the object viewer window (GA::OtherWin::Viewer) for this session
+            #   (only one can be opened per session, set to 'undef' when it's not open)
+            viewerWin                   => undef,       # Set by $self->set_viewerWin
             # Blessed reference to any 'wiz' window (inherited from GA::Generic::WizWin) opened by
             #   this session (only one 'wiz' window can be opened per session, set to 'undef' when
             #   no 'wiz' window is open)
@@ -271,9 +271,10 @@
             #   set to FALSE
             disconnectNoSaveFlag        => FALSE,
             #
-            # When auto-saves are turned on (i.e. GA::Client->autoSaveFlag is TRUE), the time
-            #   (matches $self->sessionTime) at which the next auto-save should take place. When
-            #   auto-saves are turned off, set to 0
+            # When auto-saves are turned on (i.e. GA::Client->autoSaveFlag is TRUE and actually
+            #   connected to a world, not in 'offline' mode), the time (matches $self->sessionTime)
+            #   at which the next auto-save should take place. When auto-saves are turned off, set
+            #   to 0
             autoSaveCheckTime           => 0,
             # The last time (matches $self->sessionTime) at which an auto-save took place. Set
             #   to 0 if autosaves are turned off, or if no autosaves have been performed yet
@@ -516,6 +517,7 @@
             #   isn't running)
             advanceTask                 => undef,
             attackTask                  => undef,
+            channelsTask                => undef,
             chatTask                    => undef,   # Only stored the 'lead' Chat task
             compassTask                 => undef,
             conditionTask               => undef,
@@ -758,6 +760,13 @@
             #                       'offline' mode session has finished, or an MXP crosslinking
             #                       operation is in progress)
             status                      => 'waiting',
+            # On disconnection, $self->reactDisconnect might be called before $self->doDisconnect
+            #   has finished (such as during blind mode, when the 'Disconnected' message is still
+            #   being read aloud)
+            # On the call to ->doDisconnect, this flag is set to TRUE. When the call finishes, it is
+            #   set back to FALSE. ->reactDisconnect (if called) won't do anything if this flag ist
+            #   TRUE
+            doDisconnectFlag            => FALSE,
             # On disconnection, $self->reactDisconnect is called from several places in the session
             #   code. In rare circumstances (such as the GA::Net::Telnet object returning TRUE to
             #   an ->eof() call), it might be called more than once
@@ -804,6 +813,13 @@
             #   processed, some text is added to this IV (but nothing is added to ->recvLineText).
             #   This IV is then used to write the 'receive' logfile
             recvImgLineText             => '',
+
+            # When explicit line numbers and explicit colour tags are displayed on a line, in
+            #   between actual portions of text displayed by the world, clickable links appear in
+            #   the wrong place (because the link doesn't know about the added text)
+            # This IV is set and reset by $self->processLineSegment to the length of all explicit
+            #   line numbers/colour tags displayed on the line so far
+            explicitTextLength          => 0,
 
             # Task loop
             # ---------
@@ -974,7 +990,7 @@
             #   restore this flag's value to FALSE
             overruleMoveFlag            => FALSE,
 
-            # Three IVs set so any code can work out how long the user has been idle (in this
+            # Four IVs set so any code can work out how long the user has been idle (in this
             #   session). To work out the user's idle time, subtract these values from
             #   $self->sessionTime
             # The time at which text was last received from the world and displayed in the default
@@ -992,6 +1008,9 @@
             #   have been processed yet)
             # Matches $self->sessionTime, set by $self->updateCmdBuffer
             lastCmdTime                 => undef,
+            # The time at which the last out-of-bounds communication was processed ('undef' if no
+            #   communications have been processed yet)
+            lastOutBoundsTime           => undef,
             # How many seconds should we wait before the 'user_idle' and 'world_idle' hook events
             #   take place (i.e. how many seconds after $self->lastCmdTime or
             #   $self->lastDisplayTime)
@@ -1026,8 +1045,8 @@
             # When there are no file objects in $self->sessionFileObjHash whose ->modifyFlag is set
             #   to TRUE (meaning that none of them need to be saved), this flag is set to FALSE
             # When the first file object has its ->modifyFlag set to TRUE, $self->setModifyFlag
-            #   calls GA::Table::Pane->setTabLabel for each session using the same world profile as
-            #   this one
+            #   calls GA::Table::Pane->setSessionTabLabel for each session using the same world
+            #   profile as this one
             # That function displays an asterisk in the label for the session's default tab. In
             #   addition, this flag gets set to TRUE
             # The flag is set back to FALSE by $self->checkTabLabels when all file objects are saved
@@ -1839,8 +1858,8 @@
             $self->writeText(' ');
         }
 
-        # If a world hint message is set, display it now
-        if ($self->currentWorld->worldHint) {
+        # If a world hint message is set, display it now (unless the blocking flag is set)
+        if (! $axmud::CLIENT->blockWorldHintFlag && $self->currentWorld->worldHint) {
 
             if ($self->currentWorld->longName) {
                 $string = uc($self->currentWorld->longName);
@@ -1864,6 +1883,13 @@
                     'ok',
                 );
             }
+        }
+
+        # If using a charset other than the default one, display it now
+        if ($self->sessionCharSet ne $axmud::CLIENT->constCharSet) {
+
+            $self->writeText('Using charset \'' . $self->sessionCharSet . '\'');
+            $self->writeText(' ');
         }
 
         # When connecting to a world, the 'Connecting...' message will appear on this line, instead
@@ -2023,7 +2049,7 @@
         if (
             $axmud::CLIENT->shareMainWinFlag
             && $self->defaultTabObj
-            && ! $self->defaultTabObj->paneObj->removeTab($self)
+            && ! $self->defaultTabObj->paneObj->removeSessionTab($self)
         ) {
             return $self->writeError(
                 'Could not remove the tab for a session',
@@ -2265,10 +2291,25 @@
         }
 
         # Add a new tab (containing a textview object)
-        if (! $paneObj->notebook && ! $paneObj->tabObjHash) {
-            $tabObj = $paneObj->addSimpleTab($self, TRUE, TRUE, $tabLabelText);
+        if ($axmud::CLIENT->simpleTabFlag && ! $paneObj->tabObjHash) {
+
+            $tabObj = $paneObj->addSimpleTab(
+                $self,
+                undef,              # Use default colour scheme for 'main' windows
+                TRUE,               # Called by this function
+                TRUE,               # Is the session's default tab
+                $tabLabelText,
+            );
+
         } else {
-            $tabObj = $paneObj->addTab($self, TRUE, TRUE, $tabLabelText);
+
+            $tabObj = $paneObj->addTab(
+                $self,
+                undef,              # Use default colour scheme for 'main' windows
+                TRUE,               # Called by this function
+                TRUE,               # Is the session's default tab
+                $tabLabelText,
+            );
         }
 
         if (! $tabObj) {
@@ -3361,8 +3402,8 @@
         # Local variables
         my (
             $worldProfFileObj, $otherProfFileObj, $worldModelFileObj, $dictsFileObj, $result,
-            $saveMode, $worldObj, $dictName, $dictObj, $worldModelObj, $updateCageFlag,
-            $otherSession, $mapObj, $basicObj, $dialogueWin, $otherProfPath, $worldModelPath,
+            $saveMode, $worldObj, $basicObj, $dictName, $dictObj, $worldModelObj, $updateCageFlag,
+            $otherSession, $mapObj, $otherProfPath, $worldModelPath,
             %newHash,
         );
 
@@ -3540,7 +3581,7 @@
                 # Also add the world profile to the client's list of world profiles
                 $axmud::CLIENT->add_worldProf($worldObj);
 
-                # In mode 'start_temp', it's a temporary world profile. Implement this by settings
+                # In mode 'start_temp', it's a temporary world profile. Implement this by setting
                 #   its ->noSaveFlag
                 if ($mode eq 'start_temp') {
 
@@ -3576,10 +3617,26 @@
 
                     $worldObj->ivPoke('longName', $basicObj->longName);
                     $worldObj->ivPoke('adultFlag', $basicObj->adultFlag);
+
+                    # If the basic world object specifies a Russian-language world, automatically
+                    #   set the world profile's charset as KOI-8 (which seems to be more common
+                    #   that UTF-8)
+                    if (
+                        lc($basicObj->language) eq 'russian'
+                        || lc($basicObj->language) eq 'russkiy'
+                    ) {
+                        # Use 'koi8-r', if available, otherwise use 'utf8', if available
+                        if (defined $axmud::CLIENT->ivFind('charSetList', 'koi8-r')) {
+                            $worldObj->ivPoke('worldCharSet', 'koi8-r');
+                        } elsif (defined $axmud::CLIENT->ivFind('charSetList', 'utf8')) {
+                            $worldObj->ivPoke('worldCharSet', 'utf8');
+                        }
+                    }
                 }
             }
 
             # (The rest of this section is re-used in part 4; change this one, change that one)
+
             # Create the new world profile's associated cage
             if (! $self->createCages($worldObj, TRUE)) {
 
@@ -3623,6 +3680,23 @@
 
                     # Update IVs. Add the dictionary object to its registry
                     $axmud::CLIENT->add_dict($dictObj);
+                    # Set its language, if a corresponding basic world object exists
+                    if ($basicObj && $basicObj->language ne 'English') {
+
+                        $dictObj->ivPoke('language', $basicObj->language);
+
+                        # Upload the phrasebook to the dictionary, if a phrasebook exists for this
+                        #   language
+                        OUTER: foreach my $pbObj ($axmud::CLIENT->ivValues('constPhrasebookHash')) {
+
+                            if (lc($basicObj->language) eq lc($pbObj->targetName)) {
+
+                                $dictObj->uploadPhrasebook($pbObj);
+                                last OUTER;
+                            }
+                        }
+                    }
+
                     # Some files have to be saved shortly
                     $saveMode = 'save_dict';
                 }
@@ -3740,6 +3814,10 @@
 
                         # Update IVs. Add the dictionary object to its registry
                         $axmud::CLIENT->add_dict($dictObj);
+
+                        # (In this situation, don't set the language from the corresponding basic
+                        #   world object, and don't upload a phrasebook)
+
                         # Some files have to be saved shortly
                         $saveMode = 'save_dict';
                     }
@@ -3855,7 +3933,7 @@
                         (-e $otherProfPath)
                         && (-s $otherProfPath) > $axmud::CLIENT->constLargeFileSize
                     ) {
-                        $dialogueWin = $self->mainWin->showBusyWin();
+                        $self->mainWin->showBusyWin();
                     }
 
                     if (! $otherProfFileObj->loadDataFile()) {
@@ -3870,11 +3948,11 @@
 
                     $worldModelPath = $axmud::DATA_DIR . $worldModelFileObj->standardPath;
                     if (
-                        ! $dialogueWin
+                        ! $axmud::CLIENT->busyWin
                         && (-e $worldModelPath)
                         && (-s $worldModelPath) > $axmud::CLIENT->constLargeFileSize
                     ) {
-                        $dialogueWin = $self->mainWin->showBusyWin();
+                        $self->mainWin->showBusyWin();
                     }
 
                     if (! $worldModelFileObj->loadDataFile()) {
@@ -3887,9 +3965,9 @@
                         );
                     }
 
-                    if ($dialogueWin) {
+                    if ($axmud::CLIENT->busyWin) {
 
-                        $self->mainWin->closeDialogueWin($dialogueWin);
+                        $self->mainWin->closeDialogueWin($axmud::CLIENT->busyWin);
                     }
                 }
 
@@ -8757,6 +8835,7 @@
         #   crosslinking operation)
         if (
             $axmud::CLIENT->autoSaveFlag
+            && $self->status eq 'connected'
             && $self->autoSaveCheckTime
             && $self->autoSaveCheckTime < $self->sessionTime
             && $self->mxpRelocateMode eq 'none'
@@ -8918,7 +8997,7 @@
         # Change the tab label, if we need to
         if ($changeTabFlag) {
 
-            $self->defaultTabObj->paneObj->setTabLabel(
+            $self->defaultTabObj->paneObj->setSessionTabLabel(
                 $self,
                 $self->getTabLabelText(),
                 $self->showModFlag,      # Show an asterisk, or not
@@ -8962,7 +9041,8 @@
             if ($self->currentChar) {
 
                 $charName = $self->currentChar->name;
-                if (! ($charName =~ m/[A-Z]/)) {
+#                if (! ($charName =~ m/[A-Z]/)) {
+                if (! ($charName =~ m/[[:upper:]]/)) {
 
                     $charName = ucfirst($charName);
                 }
@@ -9640,7 +9720,7 @@
 
                 if ($session->defaultTabObj) {
 
-                    $session->defaultTabObj->paneObj->setTabLabel(
+                    $session->defaultTabObj->paneObj->setSessionTabLabel(
                         $session,
                         $session->getTabLabelText(),
                         $session->showModFlag,              # Show an asterisk, or not
@@ -9724,24 +9804,25 @@
             }
         }
 
-        # If the GUI is open at the tab containing the list of current tasks, re-draw the list
-        if ($self->guiWin) {
+        # If the object viewer window is open at the tab containing the list of current tasks,
+        #   re-draw the list
+        if ($self->viewerWin) {
 
-            $currentTab = $self->guiWin->notebookGetTab();
+            $currentTab = $self->viewerWin->notebookGetTab();
 
             if (defined $currentTab && $currentTab eq 'Current tasklist') {
 
-                # If there are currently any selected lines in the tab's Gtk2::Ex::Simple::List,
+                # If there are currently any selected lines in the tab's GA::Gtk::Simple::List,
                 #   remember them, so we can select them again as soon as the list is redrawn
-                @selectedList = $self->guiWin->notebookGetSelectedLines();
+                @selectedList = $self->viewerWin->notebookGetSelectedLines();
 
                 # Redraw the list
-                $self->guiWin->currentTaskHeader();
+                $self->viewerWin->currentTaskHeader();
 
                 if (@selectedList) {
 
                     # Re-select each selected line
-                    $self->guiWin->notebookSetSelectedLines(@selectedList);
+                    $self->viewerWin->notebookSetSelectedLines(@selectedList);
                 }
             }
         }
@@ -11039,6 +11120,12 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->doDisconnect', @_);
         }
 
+        # On disconnection, $self->reactDisconnect might be called before $self->doDisconnect has
+        #   finished (such as during blind mode, when the 'Disconnected' message is still being read
+        #   aloud). Use a flag to prevent ->reactDisconnect doing anything until this function is
+        #   finished
+        $self->ivPoke('doDisconnectFlag', TRUE);
+
         if ($self->status eq 'connecting' || $self->status eq 'connected') {
 
             # Terminate the connection
@@ -11113,6 +11200,9 @@
                 }
             }
         }
+
+        # Operation complete
+        $self->ivPoke('doDisconnectFlag', FALSE);
 
         return 1;
     }
@@ -11193,7 +11283,8 @@
         #               confirmation message
         #
         # Return values
-        #   'undef' on improper arguments or if this function has already been called
+        #   'undef' on improper arguments, if a call to $self->doDisconnect hasn't finished yet or
+        #       if this function has already been called
         #   1 otherwise
 
         my ($self, $flag, $check) = @_;
@@ -11204,16 +11295,23 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->reactDisconnect', @_);
         }
 
+        # On disconnection, this function might be called before $self->doDisconnect has finished
+        #   (such as during blind mode, when the 'Disconnected' message is still being read aloud).
+        #   Use a flag to prevent this
+        if ($self->doDisconnectFlag) {
+
+            return undef;
+
         # On disconnection, this function is called from several places in the session code. In
         #   rare circumstances (such as the GA::Net::Telnet object returning TRUE to an ->eof()
         #   call), it might be called more than once. Use a flag to ignore subsequent calls
-        if ($self->reactDisconnectFlag) {
+        } elsif ($self->reactDisconnectFlag) {
 
             return undef;
 
         } else {
 
-            # Ignore subsequent calls
+            # Ignore subsequent calls to this function
             $self->ivPoke('reactDisconnectFlag', TRUE);
         }
 
@@ -12670,7 +12768,8 @@
         #   starts an MXP entity
         # Attempts to extract a valid MXP entity in the form &keyword;
         # The entity keyword must start with a letter (A-Za-z) and then consist of letters, numbers
-        #   or underline characters. No other characters are permitted.
+        #   or underline characters. No other characters are permitted (including non-Latin
+        #   alphabets)
         # (This function also recognises entities in the form '&#nnn;' )
         # If a valid entity isn't found, the calling function displays the text 'as is'
         #
@@ -13689,7 +13788,7 @@
 
             my (
                 $textViewObj, $offset, $tagListRef, $nextOffset, $piece, $afterFlag, $string,
-                $numString,
+                $numString, $thisLine,
                 @pieceTagList,
                 %currentTagHash,
             );
@@ -13771,21 +13870,29 @@
                 #   numbers at the beginning of the line
                 if ($axmud::CLIENT->debugLineNumsFlag && $textViewObj->insertNewLineFlag) {
 
-                    # Display the line number and/or explicit tags (in contrasting colours)
+                    # Display the line number (in contrasting colours)
                     $numString = '<' . $self->displayBufferCount . '> ',
                     $textViewObj->insertText($numString, 'RED', 'ul_white', 'echo');
 
-                    # If an incomplete link is being processed, its recorded position in its
-                    #   textview will change because of the insertion of text at this point
-                    if ($self->mxpCurrentLink) {
+                    # If an incomplete link has been completed and added to $self->mxpTempLinkList,
+                    #   but has not yet been processed by GA::Obj::TextView->add_incompleteLink,
+                    #   any link object (GA::Obj::Link) which occurs after the explicit line number
+                    #   will have the wrong offset. Update it
+                    ($thisLine) = $textViewObj->getInsertPosn();
+                    foreach my $linkObj ($self->mxpTempLinkList) {
 
-                        $self->mxpCurrentLink->updatePosn($numString);
+                        if (
+                            $linkObj->lineNum == $thisLine
+                            && $linkObj->posn >= ($offset + $self->explicitTextLength)
+                        ) {
+                            $linkObj->updatePosn($numString);
+                        }
                     }
 
-                    if ($self->mxpCurrentSend) {
-
-                        $self->mxpCurrentSend->updatePosn($numString);
-                    }
+                    $self->ivPoke(
+                        'explicitTextLength',
+                        $self->explicitTextLength + length($numString),
+                    );
                 }
 
                 # When GA::Client->debugLineTagsFlag is set, show explicit colour/style tags
@@ -13798,12 +13905,29 @@
                         $string .= '[' . $tag . ']';
                     }
 
-                    # Display the line number and/or explicit tags (in contrasting colours)
+                    # Display the explicit colour/style tag (in contrasting colours)
                     $textViewObj->insertText(
                         $string,
                         'white',
                         'ul_blue',
                         'echo',
+                    );
+
+                    # Update completed links, as described above
+                    ($thisLine) = $textViewObj->getInsertPosn();
+                    foreach my $linkObj ($self->mxpTempLinkList) {
+
+                        if (
+                            $linkObj->lineNum == $thisLine
+                            && $linkObj->posn >= ($offset + $self->explicitTextLength)
+                        ) {
+                            $linkObj->updatePosn($string);
+                        }
+                    }
+
+                    $self->ivPoke(
+                        'explicitTextLength',
+                        $self->explicitTextLength + length($string),
                     );
                 }
 
@@ -13850,6 +13974,13 @@
             \%mxpFlagTextHash,
         );
 
+        # If a newline character has just been displayed, reset the IV showing how much explicit
+        #   text for explicit line numbers/tags is on the (new) line
+        if ($newLineFlag) {
+
+            $self->ivPoke('explicitTextLength', 0);
+        }
+
         # If text-to-speech conversion is required, add the received text to the TTS buffer, which
         #   will be read aloud when control passes back to $self->incomingDataLoop
         if (
@@ -13873,9 +14004,11 @@
                     $bufferText =~ m/\n$/
                     # The most recent line contains alphanumeric characters but doesn't end with a
                     #   punctuation mark, and is optionally followed by one or more empty lines
-                    && ! ($bufferText =~ m/\w\s*[\.\,\:\;\!\?][\s*\n]+$/)
+#                    && ! ($bufferText =~ m/\w\s*[\.\,\:\;\!\?][\s*\n]+$/)
+                    && ! ($bufferText =~ m/[[:alnum:]]\s*[\.\,\:\;\!\?][\s*\n]+$/)
                     # The new line starts with a capital letter
-                    && $addText =~ m/^\s*[A-Z]/
+#                    && $addText =~ m/^\s*[A-Z]/
+                    && $addText =~ m/^\s*[[:upper:]]/
                 ) {
                     $bufferText =~ s/\n$/\.\n/;
                 }
@@ -16456,8 +16589,6 @@
             return @emptyList;
         }
 
-        print "16459 $origToken\n";
-
         # <FRAME NAME=name [ACTION=action] [TITLE=title] [PARENT=parent] [INTERNAL] [ALIGN=align]
         #   [LEFT=left] [TOP=top] [WIDTH=width] [HEIGHT=height] [SCROLLING=scrolling] [FLOATING]>
         if (
@@ -16890,7 +17021,6 @@
                     'mxp_frame_' . $frameObj->name,
                     # Configuration hash
                     'frame_title'       => $ivHash{'name'},
-                    'no_label_flag'     => TRUE,
                 );
 
                 if (! $newPaneObj) {
@@ -17727,6 +17857,12 @@
                     if (((scalar @cmdList) + 1) == (scalar @optionList)) {
 
                         # The first item in @optionList is the hint; the rest are menu items
+                        $linkObj->ivPoke('hint', shift @optionList);
+
+                    } elsif ((scalar @cmdList) > 1 && (scalar @optionList) == 1) {
+
+                        # The only item in @optionList must be a hint, as there are more commands
+                        #   than hints
                         $linkObj->ivPoke('hint', shift @optionList);
 
                     } elsif ((scalar @cmdList) != (scalar @optionList)) {
@@ -20163,8 +20299,6 @@
             $axmud::CLIENT->writeImproper($self->_objClass . '->processPuebloElement', @_);
             return @emptyList;
         }
-
-        print "20165 $token\n";
 
         # ($token will be modified during this function, but some parts of the function require the
         #   the original token text)
@@ -22610,7 +22744,7 @@
 
         foreach my $tag (@tagList) {
 
-            my ($type, $underlayFlag);
+            my ($type, $underlayFlag, $boldishTag);
 
             # When called by $self->applyTriggerStyle, @tagList can contain bold text colour tags
             #   like 'BLUE'. When called by $self->processLineSegment, @tagList would instead
@@ -22856,10 +22990,24 @@
             } else {
 
                 ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($tag);
-                if ($type && ($type eq 'xterm' || $type eq 'rgb')) {
+                if ($type) {
 
-                    # xterm/RGB colour tags should be case insensitive
-                    $tag = lc($tag);
+                    if ($type eq 'standard') {
+
+                        # We're going to check $tag against the textview's object colour in a
+                        #   moment, which is stored as (for example) 'RED' if it's a bold colour. We
+                        #   need to compare it with 'RED', not 'red', if bold is on
+                        if ($hash{'bold'}) {
+                            $boldishTag = uc($tag);
+                        } else {
+                            $boldishTag = $tag;
+                        }
+
+                    } else {
+
+                        # xterm/RGB colour tags should be case insensitive
+                        $boldishTag = lc($tag);
+                    }
                 }
 
                 # PART 5a: Text colour tags
@@ -22871,7 +23019,7 @@
                     ) {
                         # (The re-occuring tag is ignored)
 
-                    } elsif ($attribsOffFlag && $tag eq $textViewObj->textColour) {
+                    } elsif ($attribsOffFlag && $boldishTag eq $textViewObj->textColour) {
 
                         # After an 'attribs off', if the tag matches the 'main' window's normal text
                         #   colour, let that be the text colour
@@ -22938,7 +23086,7 @@
                     ) {
                         # (The re-occuring tag is ignored)
 
-                    } elsif ($attribsOffFlag && $tag eq $textViewObj->underlayColour) {
+                    } elsif ($attribsOffFlag && $boldishTag eq $textViewObj->underlayColour) {
 
                         # After an 'attribs off', if the tag matches the 'main' window's normal
                         #   underlay colour, let that be the underlay colour
@@ -27037,6 +27185,8 @@
         # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/mcp2.html#startup)
         # NOT IMPLEMENTED
 
+        # Record the time at which the last out-of-bounds communication was received
+        $self->ivPoke('lastOutBoundsTime', $self->sessionTime);
         # Turn on the window blinker, and update IVs
         $self->turnOnBlinker(1);
 
@@ -27170,7 +27320,8 @@
             # Server: IAC SB TELOPT_ATCP Package[.SubPackages][.Message] <data> IAC SE
 
             # Separate the package name and data components
-            if ($parameters =~ m/^([A-Za-z_][A-Za-z0-9_\-\.]*)\s(.*)/) {
+#            if ($parameters =~ m/^([A-Za-z_][A-Za-z0-9_\-\.]*)\s(.*)/) {
+            if ($parameters =~ m/^([[:alpha:]\_][[:word:]\-\.]*)\s(.*)/) {
 
                 $name = lc($1);
                 $data = $2;
@@ -27185,7 +27336,8 @@
             # Server: IAC SB TELOPT_GMCP Package[.SubPackages][.Message] <data> IAC SE
 
             # Separate the package name and data components
-            if ($parameters =~ m/^([A-Za-z_][A-Za-z0-9_\-\.]*)\s(.*)/) {
+#            if ($parameters =~ m/^([A-Za-z_][A-Za-z0-9_\-\.]*)\s(.*)/) {
+            if ($parameters =~ m/^([[:alpha:]\_][[:word:]\-\.]*)\s(.*)/) {
 
                 $name = lc($1);
                 $data = $2;
@@ -27195,6 +27347,8 @@
             }
         }
 
+        # Record the time at which the last out-of-bounds communication was received
+        $self->ivPoke('lastOutBoundsTime', $self->sessionTime);
         # Turn on the window blinker, and update IVs
         $self->turnOnBlinker(1);
 
@@ -28275,7 +28429,8 @@
             );
 
         # Check that $name is in the correct format. If not, we don't send $data, if specified
-        } elsif (! ($name =~ m/^[A-Za-z_][A-Za-z0-9_\-\.]*$/)) {
+#        } elsif (! ($name =~ m/^[A-Za-z_][A-Za-z0-9_\-\.]*$/)) {
+        } elsif (! ($name =~ m/^[[:alpha:]\_][[:word:]\-\.]*$/)) {
 
             $data = undef;
         }
@@ -28373,7 +28528,8 @@
             );
 
         # Check that $name is in the correct format. If not, we don't send $data, if specified
-        } elsif (! ($name =~ m/^[A-Za-z_][A-Za-z0-9_\-\.]*$/)) {
+#        } elsif (! ($name =~ m/^[A-Za-z_][A-Za-z0-9_\-\.]*$/)) {
+        } elsif (! ($name =~ m/^[[:alpha:]\_][[:word:]\-\.]*$/)) {
 
             $data = undef;
         }
@@ -28656,25 +28812,25 @@
 
             # MTTS bitvector:
             #     1 "ANSI"              Client supports all ANSI color codes. . Supporting blink and
-            #                               underline is optional.
+            #                               underline is optional
             $bitVector = 1;
-            #     2 "VT100"             Client supports most VT100 codes.
-            #     4 "UTF-8"             Client is using UTF-8 character encoding.
+            #     2 "VT100"             Client supports most VT100 codes
+            #     4 "UTF-8"             Client is using UTF-8 character encoding
             if ($self->sessionCharSet =~ m/utf/i) {
 
                 $bitVector += 4;
             }
-            #     8 "256 COLORS"        Client supports all xterm 256 color codes.
+            #     8 "256 COLORS"        Client supports all xterm 256 color codes
             $bitVector += 8;
-            #    16 "MOUSE TRACKING"    Client supports xterm mouse tracking.
-            #    32 "OSC COLOR PALETTE" Client supports the OSC color palette.
+            #    16 "MOUSE TRACKING"    Client supports xterm mouse tracking
+            #    32 "OSC COLOR PALETTE" Client supports the OSC color palette
             if ($axmud::CLIENT->oscPaletteFlag) {
 
                 $bitVector += 32;
             }
-            #    64 "SCREEN READER"     Client is using a screen reader.
+            #    64 "SCREEN READER"     Client is using a screen reader
             #   128 "PROXY"             Client is a proxy allowing different users to connect from
-            #                            the same IP address.
+            #                            the same IP address
 
             push (@itemList, 'MTTS ' . $bitVector);
 
@@ -30831,6 +30987,7 @@
         # 'c' can be a single character in the range a-z, or a sequence of characters in the form
         #   (xxx) where 'xxx' is a movement command, or (xxx/yyy) where 'xxx' is a movement command
         #   and 'yyy' is the opposite movement command, or {zzz} where 'zzz' is any comment text
+        # (NB Characters from non-Latin alphabets are acceptable)
         #
         # If 'c' is a single character in the range a-z, this function consults the current
         #   dictionary's ->speedDirHash. If 'c' exists as a key in that hash, the corresponding
@@ -30846,6 +31003,8 @@
         #
         # 'm' can be a single character in the range A-Z, or a sequence of characters in the form
         #   [xxx] or [xxx/yyy]
+        # (NB Characters from non-Latin alphabets are acceptable)
+        #
         # If 'm' is a single character in the range A-Z, this function consults the current
         #   dictionary's ->speedModifierHash. If 'm' exists as a key in that hash, the corresponding
         #   value is handled as a standard command (matching a key GA::Cage::Cmd->cmdHash)
@@ -30989,20 +31148,23 @@
 
             # Extract the 'm' component, a single character in the range A-Z, or a sequence of
             #   characters in the form [xxx] or [xxx/yyy]
-            if ($inputString =~ m/^\[([A-Za-z0-9\_\/]+)\](.*)/) {
+#            if ($inputString =~ m/^\[([A-Za-z0-9\_\/]+)\](.*)/) {
+            if ($inputString =~ m/^\[([[:word:]\/]+)\](.*)/) {
 
                 $modifier = $1;
                 $inputString = $2;
 
                 # Split (xxx/yyy). If there is more than one '/' character, everything after the
                 #   first one is part of the reverse modifier
-                if ($modifier =~ m/^([A-Za-z0-9\_]+)\/([A-Za-z0-9\_]+)/) {
+#                if ($modifier =~ m/^([A-Za-z0-9\_]+)\/([A-Za-z0-9\_]+)/) {
+                if ($modifier =~ m/^([[:word:]]+)\/([[:word:]]+)/) {
 
                     $modifier = $1;
                     $revModifier = $2;
                 }
 
-            } elsif ($inputString =~ m/^([A-Z])(.*)/) {
+#            } elsif ($inputString =~ m/^([A-Z])(.*)/) {
+            } elsif ($inputString =~ m/^([[:upper:]])(.*)/) {
 
                 $modifier = $1;
                 $inputString = $2;
@@ -31022,20 +31184,23 @@
                 $dir = '';
                 $multiple = 0;
 
-            } elsif ($inputString =~ m/^\(([A-Za-z0-9\_\/]+)\)(.*)/) {
+#            } elsif ($inputString =~ m/^\(([A-Za-z0-9\_\/]+)\)(.*)/) {
+            } elsif ($inputString =~ m/^\(([[:word:]\/]+)\)(.*)/) {
 
                 $dir = $1;
                 $inputString = $2;
 
                 # Split (xxx/yyy). If there is more than one '/' character, everything after the
                 #   first one is part of the reverse modifier
-                if ($dir =~ m/^([A-Za-z0-9\_]+)\/([A-Za-z0-9\_]+)/) {
+#                if ($dir =~ m/^([A-Za-z0-9\_]+)\/([A-Za-z0-9\_]+)/) {
+                if ($dir =~ m/^([[:word:]]+)\/([[:word:]]+)/) {
 
                     $dir = $1;
                     $revDir = $2;
                 }
 
-            } elsif ($inputString =~ m/^([a-z])(.*)/) {
+#            } elsif ($inputString =~ m/^([a-z])(.*)/) {
+            } elsif ($inputString =~ m/^([[:lower:]])(.*)/) {
 
                 $dir = $1;
                 $inputString = $2;
@@ -31222,7 +31387,7 @@
 
         # Local variables
         my (
-            $standardCmd, $userCmd, $cmdObj,
+            $standardCmd, $userCmd, $worldCmd, $cmdObj, $result,
             @inputWord,
         );
 
@@ -31250,64 +31415,95 @@
         #   (built-in) client command
         if (! $axmud::CLIENT->ivExists('userCmdHash', $userCmd)) {
 
-            return $self->writeError(
-                'Unrecognised client command \'' . $userCmd . '\'',
-                $self->_objClass . '->clientCmd',
-            );
+            # Special exception - any primary direction (standard or custom, abbreviated or not)
+            #   is converted to ';allocateexit', for example ';north portal' is converted to
+            #   ';allocateexit north portal'
+            # In addition, a world command in that direction is executed (at the end of this
+            #   function)
+            if ($axmud::CLIENT->ivExists('constPrimaryDirList', $userCmd)) {
+
+                # Standard primary direction
+                $worldCmd = $self->currentDict->ivShow('primaryDirHash', $userCmd);
+                unshift (@inputWord, $userCmd);
+                $userCmd = $standardCmd = 'allocateexit';
+
+            } elsif (defined $self->currentDict->checkPrimaryDir($userCmd)) {
+
+                # Custom primary direction
+                $worldCmd = $userCmd;
+                unshift (@inputWord, $userCmd);
+                $userCmd = $standardCmd = 'allocateexit';
+
+            } else {
+
+                return $self->writeError(
+                    'Unrecognised client command \'' . $userCmd . '\'',
+                    $self->_objClass . '->clientCmd',
+                );
+            }
 
         } else {
 
             # Get the corresponding standard (built-in) command
             $standardCmd = $axmud::CLIENT->ivShow('userCmdHash', $userCmd);
+        }
 
-            # Check that a Perl object for this command actually exists (no reason why it shouldn't,
-            #   but we'll check anyway)
-            if (! $axmud::CLIENT->ivExists('clientCmdHash', $standardCmd)) {
+        # Check that a Perl object for this command actually exists (no reason why it shouldn't,
+        #   but we'll check anyway)
+        if (! $axmud::CLIENT->ivExists('clientCmdHash', $standardCmd)) {
 
-                return $self->writeError(
-                    'Missing client command \'' . $userCmd . '\' in registry',
-                    $self->_objClass . '->clientCmd',
-                );
+            return $self->writeError(
+                'Missing client command \'' . $userCmd . '\' in registry',
+                $self->_objClass . '->clientCmd',
+            );
 
-            } else {
+        } else {
 
-                $cmdObj = $axmud::CLIENT->ivShow('clientCmdHash', $standardCmd);
+            $cmdObj = $axmud::CLIENT->ivShow('clientCmdHash', $standardCmd);
+        }
+
+        # Many commands are not available after a disconnection (however, all commands are available
+        #   in 'connect offline' mode)
+        if ($self->status eq 'disconnected' && ! $cmdObj->disconnectFlag) {
+
+            return $self->writeError(
+                '\'' . $standardCmd . '\' command unavailable while disconnected from the'
+                . ' world',
+                $self->_objClass . '->clientCmd',
+            );
+        }
+
+        # For commands whose ->noBracketFlag is TRUE, we have to re-parse $inputString, this time
+        #   ignoring brackets (...) and diamond brackets <...>
+        if ($cmdObj->noBracketFlag) {
+
+            @inputWord = split(m/\s+/, $inputString);
+        }
+
+        # Replace the first word in @inputWord so that it's the standard (built-in) command, not the
+        #   user command actually typed by the user
+        $inputWord[0] = $standardCmd;
+
+        # Call the corresponding command object's ->do function to execute the command
+        $result = $cmdObj->do($self, $inputString, $userCmd, @inputWord);
+        if (! $result) {
+
+            return undef;
+
+        } else {
+
+            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+            $axmud::CLIENT->desktopObj->restrictWidgets();
+
+            # If the user typed a command like ';north portal' which was translated into
+            #   ';allocateexit north portal', execute the corresponding world command
+            if ($worldCmd) {
+
+                $self->worldCmd($worldCmd);
             }
 
-            # Many commands are not available after a disconnection (however, all commands are
-            #   available in 'connect offline' mode)
-            if ($self->status eq 'disconnected' && ! $cmdObj->disconnectFlag) {
+            return 1;
 
-                return $self->writeError(
-                    '\'' . $standardCmd . '\' command unavailable while disconnected from the'
-                    . ' world',
-                    $self->_objClass . '->clientCmd',
-                );
-            }
-
-            # For commands whose ->noBracketFlag is TRUE, we have to re-parse $inputString, this
-            #   time ignoring brackets (...) and diamond brackets <...>
-            if ($cmdObj->noBracketFlag) {
-
-                @inputWord = split(m/\s+/, $inputString);
-            }
-
-            # Replace the first word in @inputWord so that it's the standard (built-in) command,
-            #   not the user command actually typed by the user
-            $inputWord[0] = $standardCmd;
-
-            # Call the corresponding command object's ->do function to execute the command
-            if (! $cmdObj->do($self, $inputString, $userCmd, @inputWord)) {
-
-                return undef;
-
-            } else {
-
-                # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
-                $axmud::CLIENT->desktopObj->restrictWidgets();
-
-                return 1;
-            }
         }
     }
 
@@ -31671,7 +31867,8 @@
             #   most world that recognise 'north' won't recognise 'NORTH')
             # Doesn't apply to forced world comments (starting with the sigil ,,), and passwords
             #   have already been processed by this function (hopefully)
-            if (! $forcedFlag && $axmud::CLIENT->convertWorldCmdFlag && $cmd =~ m/^[A-Z]*$/) {
+#            if (! $forcedFlag && $axmud::CLIENT->convertWorldCmdFlag && $cmd =~ m/^[A-Z]*$/) {
+            if (! $forcedFlag && $axmud::CLIENT->convertWorldCmdFlag && $cmd =~ m/^[[:upper:]]*$/) {
 
                 $cmd = lc($cmd);
             }
@@ -32224,7 +32421,7 @@
         #
         # Expected arguments
         #   $cmd            - The world command to send
-        #   $cage          - The highest-priority command cage
+        #   $cage           - The highest-priority command cage
         #
         # Optional arguments
         #   $bufferObj      - The GA::Buffer::Cmd already created when the calling function is
@@ -32241,7 +32438,7 @@
 
         # Local variables
         my (
-            $stripCmd,
+            $encodeCmd, $decodeCmd, $stripCmd,
             @charList,
         );
 
@@ -32249,6 +32446,20 @@
         if (! defined $cmd || ! defined $cage || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->dispatchCmd', @_);
+        }
+
+        # Deal with non-standard charsets
+        if (
+            $self->sessionCharSet ne $axmud::CLIENT->constCharSet
+            && $self->sessionCharSet ne 'null'
+        ) {
+            $encodeCmd = Encode::encode($self->sessionCharSet, $cmd);
+            $decodeCmd = Encode::decode($self->sessionCharSet, $encodeCmd);
+
+        } else {
+
+            $encodeCmd = $cmd;
+            $decodeCmd = $cmd;
         }
 
         # (If the server hasn't requested that the client stops echoing, or if the client didn't
@@ -32296,13 +32507,13 @@
 
                 if ($axmud::CLIENT->confirmWorldCmdFlag) {
 
-                    $self->currentTabObj->textViewObj->insertCmd($cmd);
+                    $self->currentTabObj->textViewObj->insertCmd($decodeCmd);
 
                 } elsif ($self->promptLine) {
 
                     # Send a newline character to cancel a prompt, so that the next line of text
                     #   received isn't displayed on the same line
-                    $self->currentTabObj->textViewObj->insertCmd($cmd);
+                    $self->currentTabObj->textViewObj->insertCmd($decodeCmd);
                 }
             }
 
@@ -32349,12 +32560,23 @@
             if (! $self->disableWorldCmdFlag) {
 
                 # Telnet specifies that only US-ASCII is allowed. Filter out everything else
-                $stripCmd = '';
-                foreach my $char (split(//, $cmd)) {
+                if (
+                    $self->sessionCharSet ne $axmud::CLIENT->constCharSet
+                    && $self->sessionCharSet ne 'null'
+                ) {
+                    # Exception - if using a non-standard character set, trust the Perl Encode
+                    #   module to take care of that stuff
+                    $stripCmd = $encodeCmd;
 
-                    if (ord($char) >= 0 && ord($char) <= 127) {
+                } else {
 
-                        $stripCmd .= $char;
+                    $stripCmd = '';
+                    foreach my $char (split(//, $cmd)) {
+
+                        if (ord($char) >= 0 && ord($char) <= 127) {
+
+                            $stripCmd .= $char;
+                        }
                     }
                 }
 
@@ -32435,6 +32657,14 @@
         if (! defined $inputString || ! defined $obscureString || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->dispatchPassword', @_);
+        }
+
+        # Deal with non-standard charsets
+        if (
+            $self->sessionCharSet ne $axmud::CLIENT->constCharSet
+            && $self->sessionCharSet ne 'null'
+        ) {
+            $inputString = Encode::encode($self->sessionCharSet, $inputString);
         }
 
         # If the connection is open, send the command to the world
@@ -32724,7 +32954,7 @@
         if ($exitObj) {
 
             # If protected moves are turned on, don't allow a move through an impassable exit
-            if ($self->worldModelObj->protectedMovesFlag && $exitObj->impassFlag) {
+            if ($self->worldModelObj->protectedMovesFlag && $exitObj->exitOrnament eq 'impass') {
 
                 $self->writeText(
                     'PROTECTED MOVES: \'' . $cmd . '\' uses an impassable exit, so it has been'
@@ -32793,8 +33023,12 @@
             # This command was processed as an assisted move
             return 1;
 
-        } elsif ($standard && $self->worldModelObj->protectedMovesFlag) {
-
+        } elsif (
+            $standard
+            && $self->worldModelObj->protectedMovesFlag
+            # Protected moves mode is not required for rooms in wilderness mode
+            && $roomObj->wildMode eq 'normal'
+        ) {
             $self->writeText(
                 'PROTECTED MOVES: \'' . $cmd . '\' does not correspond to a world model exit, so it'
                 . ' has been blocked (use \';setprotectedmoves off\' to stop these messages)',
@@ -32833,7 +33067,7 @@
         #   $keycode    - 'up' or 'down'
         #
         # Return values
-        #   'undef' on improper arguments or if there's an error
+        #   'undef' on improper arguments, if the appropriate buffer is empty or if there's an error
         #   Otherwise returns a buffer object (GA::Buffer::Instruct or GA::Buffer::Cmd)
 
         my ($self, $keycode, $check) = @_;
@@ -32879,7 +33113,12 @@
             }
         }
 
-        if (! defined $posn) {
+        if (! defined $first) {
+
+            # Buffer is still empty
+            return undef;
+
+        } elsif (! defined $posn) {
 
             # Use the last-but-one instruction/world command in the buffer
             $posn = $last - 1;
@@ -33229,7 +33468,7 @@
         # Called by GA::Cmd::Peek->do, Poke->do and various Axbasic statements
         #
         # Axmud uses a system by which the instance variables (IVs) of most Perl objects can be
-        #   accessed by the ';peek' and ';poke' commands (and their equivalents in Axbasic)
+        #   accessed by the ';peek' and ';poke' client commands (and their equivalents in Axbasic)
         # The handful of global variables which Axmud doesn't store as Perl objects can also be
         #   accessed in this way, for convenience
         #
@@ -33242,10 +33481,12 @@
         #       specified, the value of the IV is returned. If no IV part is specified, the blessed
         #       reference is returned
         #
-        #   A complete list of strings that this function can parse appears below
+        #   A complete list of strings that this function can be found in
+        #       .../share/help/misc/peekpoke
+        #
         #   In some cases, the string corresponds to a particular IV in a particular object, e.g.
         #       'world.current' refers to GA::Session->currentWorld
-        #   In some cases, the strings refer to a whole object, e.g. 'dict.current' which refers to
+        #   In some cases, the string refers to a whole object, e.g. 'dict.current' which refers to
         #       GA::Session->currentDict. In those cases, you can add any valid IV to the string,
         #       e.g. 'dict.current.weaponHash'. The IV part is case-sensitive, so
         #       'dict.current.weaponhash' will not work
@@ -33256,11 +33497,11 @@
         #       will return this session's current dictionary, not some other session's current
         #       dictionary
         #
-        #   Although it's possible to directly modify and IV's value with ';poke' (which calls this
+        #   Although it's possible to directly modify an IV's value with ';poke' (which calls this
         #       function), doing so is STRONGLY DISCOURAGED
         #   It is almost always better to use client commands and Axmud's 'edit', 'pref', 'wiz' and
-        #       'gui' windows, which take care of all the complications of modifying a value which
-        #       might not be obvious to you
+        #       'viewer' windows, which take care of all the complications of modifying a value
+        #       which might not be obvious to you
         #   If you do need to modify values directly (for testing purposes, perhaps), you should at
         #       least read the source code for the comments in the object's ->new function
         #   All Axmud objects have a ->_privFlag IV. If the value is TRUE, that object's IVs are
@@ -33271,1151 +33512,6 @@
         #       source code first)
         #   All IVs beginning with an underline, such as ->_privFlag itself, are 'standard' IVs that
         #       can't be modified in any circumstances
-        #
-        #   The strings specified below return the following kinds of value:
-        #       o - object whose ->_privFlag is FALSE (IVs are public)
-        #       O - object whose ->_privFlag is TRUE (IVs are private)
-        #       s - scalar
-        #       S - read-only scalar
-        #       f - scalar flag (always TRUE or FALSE)
-        #       F - read-only scalar flag (always TRUE or FALSE)
-        #       l - list
-        #       L - read-only list
-        #       h - hash
-        #       H - read-only hash
-        #       X - read-only scalar, list or hash (for JSON data structures)
-        #
-        #   ---
-        #
-        # L atcp.list
-        #       - List of (all) ATCP packages received (from GA::Session->atcpDataHash)
-        # L atcp.list.PACKAGE
-        #       - List of ATCP packages received in the form PACKAGE[.subpackage][.message] (from
-        #           GA::Session->atcpDataHash)
-        # L atcp.list.PACKAGE.SUBPACKAGE
-        #       - List of ATCP packages received in the form PACKAGE[.SUBPACKAGE][.message] (from
-        #           GA::Session->atcpDataHash)
-        # S atcp.data.PACKAGE[.SUBPACKAGE][.MESSAGE]
-        #       - Value of undecoded data string in the ATCP package (from
-        #           GA::Session->atcpDataHash)
-        # X atcp.val.PACKAGE[.SUBPACKAGE][.MESSAGE][.json]
-        #       - A value embedded within the JSON data. 'json' is made up of any number of '.INDEX'
-        #           and '.KEY' components, in any order. The returned value is the scalar, list or
-        #           hash value stored within the embedded list/hash references; or 'undef' if
-        #           '.json' doesn't match any embedded scalar value (from GA::Session->atcpDataHash)
-        #
-        #
-        # s buffer.size.display
-        #       - Custom maximum display buffer size (GA::Client->customDisplayBufferSize)
-        # s buffer.size.instruct
-        #       - Custom maximum instruction buffer size (GA::Client->customInstructBufferSize)
-        # s buffer.size.cmd
-        #       - Custom maximum world command buffer size (GA::Client->customCmdBufferSize)
-        # o buffer.client.instruct.NUMBER
-        #       - Client's instruction buffer object NUMBER (from GA::Client->instructBufferHash)
-        # S buffer.client.instruct.count
-        #       - No. instructions processed altogether (GA::Client->instructBufferCount)
-        # S buffer.client.instruct.first
-        #       - NUMBER of earliest surviving buffer object (GA::Client->instructBufferFirst)
-        # S buffer.client.instruct.last
-        #       - NUMBER of most recent buffer object (GA::Client->instructBufferLast)
-        # o buffer.client.cmd.NUMBER
-        #       - Client's world command buffer object NUMBER (from GA::Client->cmdBufferHash)
-        # S buffer.client.cmd.count
-        #       - No. commands processed altogether (GA::Client->cmdBufferCount)
-        # S buffer.client.cmd.first
-        #       - NUMBER of earliest surviving buffer object (GA::Client->cmdBufferFirst)
-        # S buffer.client.cmd.last
-        #       - NUMBER of most recent buffer object (GA::Client->cmdBufferLast)
-        # o buffer.session.display.NUMBER
-        #       - Session's display buffer object NUMBER (from GA::Session->displayBufferHash)
-        # S buffer.session.display.count
-        #       - No. lines processed altogether (GA::Session->displayBufferCount)
-        # S buffer.session.display.first
-        #       - NUMBER of earliest surviving buffer object (GA::Session->displayBufferFirst)
-        # S buffer.session.display.last
-        #       - NUMBER of most recent buffer object (GA::Session->displayBufferLast)
-        # o buffer.session.instruct.NUMBER
-        #       - Session's instruction buffer object NUMBER (from GA::Session->instructBufferHash)
-        # S buffer.session.instruct.count
-        #       - No. instructions processed altogether (GA::Session->instructBufferCount)
-        # S buffer.session.instruct.first
-        #       - NUMBER of earliest surviving buffer object (GA::Session->instructBufferFirst)
-        # S buffer.session.instruct.last
-        #       - NUMBER of most recent buffer object (GA::Session->instructBufferLast)
-        # o buffer.session.cmd.NUMBER
-        #       - Session's world command buffer object NUMBER (from GA::Session->cmdBufferHash)
-        # S buffer.session.cmd.count
-        #       - No. commands processed altogether (GA::Session->cmdBufferCount)
-        # S buffer.session.cmd.first
-        #       - NUMBER of earliest surviving buffer object (GA::Session->cmdBufferFirst)
-        # S buffer.session.cmd.last
-        #       - NUMBER of most recent buffer object (GA::Session->cmdBufferLast)
-        #
-        #
-        # o cage.current.TYPE.CATEGORY
-        #       - Current cage of type 'TYPE' (e.g. 'trigger') associated with the category
-        #           'CATEGORY' (from GA::Session->currentCageHash)
-        # o cage.name.NAME
-        #       - Cage called 'NAME' (from GA::Session->cageHash)
-        # o cage.TYPE.PROF
-        #       - Cage of type 'TYPE' (e.g. 'trigger') associated with the profile called 'PROF'
-        #           (from GA::Session->cageHash)
-        # L cage.type.list
-        #       - Customisable list of cage types (GA::Client->cageTypeList)
-        #
-        #
-        # o char.current
-        #       - Current character profile (GA::Session->currentChar)
-        # o char.NAME
-        #       - Character profile called 'NAME' (from GA::Session->profHash)
-        #
-        #
-        # o chat.contact.NAME
-        #       - Chat contact object called 'NAME' (from GA::Client->chatContactHash)
-        # S chat.name
-        #       - Chat task name to broadcast (GA::Client->chatName)
-        # S chat.email
-        #       - Chat task email to broadcast (GA::Client->chatEmail)
-        # S chat.mode
-        #       - Chat task accept mode (GA::Client->chatAcceptMode)
-        # S chat.icon
-        #       - Chat task icon to broadcast (from GA::Client->chatIcon)
-        #
-        #
-        # S client.name
-        #       - $SCRIPT (Axmud global variable)
-        # S client.name.short
-        #       - $NAME_SHORT (Axmud global variable)
-        # S client.name.article
-        #       - $NAME_ARTICLE (Axmud global variable)
-        # S client.version
-        #       - $VERSION (Axmud global variable)
-        # S client.date
-        #       - $DATE (Axmud global variable)
-        # S client.basic.name
-        #       - $BASIC_NAME (Axmud global variable)
-        # S client.basic.article
-        #       - $BASIC_ARTICLE (Axmud global variable)
-        # S client.basic.version
-        #       - $BASIC_VERSION (Axmud global variable)
-        # S client.authors
-        #       - $AUTHORS (Axmud global variable)
-        # S client.copyright
-        #       - $COPYRIGHT (Axmud global variable)
-        # S client.url
-        #       - $URL (Axmud global variable)
-        # S client.file.name
-        #       - $NAME_FILE (Axmud global variable)
-        # L client.file.list
-        #       - @COMPAT_FILE_LIST (Axmud global variable)
-        # S client.dir.base
-        #       - $BASE_DIR (Axmud global variable)
-        # S client.dir.data
-        #       - $DATA_DIR (Axmud global variable)
-        # L client.dir.list
-        #       - @COMPAT_DIR_LIST (Axmud global variable)
-        # L client.ext.list
-        #       - @COMPAT_EXT_LIST (Axmud global variable)
-        # F client.mode.blind
-        #       - $BLIND_MODE_FLAG (Axmud global variable)
-        # F client.mode.safe
-        #       - $SAFE_MODE_FLAG (Axmud global variable)
-        # F client.mode.test
-        #       - $TEST_MODE_FLAG (Axmud global variable)
-        # L client.license
-        #       - @LICENSE_LIST (Axmud global variable)
-        # L client.credit
-        #       - @CREDIT_LIST (Axmud global variable)
-        #
-        # S client.start.time
-        #       - Client start time (system time, in secs) (GA::Client->startTime)
-        # S client.start.clock
-        #       - Time client started (GA::Client->startClock)
-        # S client.start.date
-        #       - Date client started (GA::Client->startDate)
-        # S client.start.clockstring
-        #       - Time client started, formatted string (GA::Client->startClockString)
-        # S client.start.datestring
-        #       - Date client started, formatted string (GA::Client->startDateString)
-        # S client.delay.prompt
-        #       - Time to wait before using a prompt (GA::Client->promptWaitTime)
-        # S client.delay.login
-        #       - Time to wait before showing login warning (GA::Client->loginWarningTime)
-        # L client.iv
-        #       - List of IVs required in all Perl objects (from GA::Client->constIVHash)
-        # L client.reserved
-        #       - List of reserved names (from GA::Client->constReservedHash)
-        #
-        #
-        # o colour.scheme.NAME
-        # o color.scheme.NAME
-        #       - Colour scheme object called 'NAME' (from GA::Client->colourSchemeHash)
-        # S colour.system.cmd
-        # S color.system.cmd
-        #       - Colour for sent world commands (GA::Client->customInsertCmdColour)
-        # S colour.system.text
-        # S color.system.text
-        #       - Colour for system messages (GA::Client->customShowTextColour)
-        # S colour.system.error
-        # S color.system.error
-        #       - Colour for system error messages (GA::Client->customShowErrorColour)
-        # S colour.system.warning
-        # S color.system.warning
-        #       - Colour for system warning messages (GA::Client->customShowWarningColour)
-        # S colour.system.debug
-        # S color.system.debug
-        #       - Colour for system debug messages (GA::Client->customShowDebugColour)
-        # S colour.system.improper
-        # S color.system.improper
-        #       - Colour for system improper arguments messages
-        #           (GA::Client->customShowImproperColour)
-        # F colour.flag.invisible
-        # F color.flag.invisible
-        #       - Convert text colour if background colour is the same
-        #           (GA::Client->convertInvisibleFlag)
-        # S colour.rgb.TAG
-        # S color.rgb.TAG
-        #       - RGB (e.g. '#ABCDEF') for standard colour TAG (from GA::Client->colourTagHash and
-        #           ->boldColourTagHash)
-        # S colour.misc.xterm
-        # S color.misc.xterm
-        #       - xterm colour cube in use (GA::Client->currentColourCube)
-        # F colour.misc.osc
-        # F color.misc.osc
-        #       - OSC colour paletters allowed (GA::Client->oscPaletteFlag)
-        #
-        #
-        # o custom.current.CATEGORY
-        #       - Current custom profile of category 'CATEGORY' (from GA::Session->currentProfHash)
-        # o custom.NAME
-        #       - Custom profile called 'NAME' (from GA::Session->profHash)
-        #
-        #
-        # F debug.protocol.telnet
-        #       - Show incoming option negotiation info (GA::Client->debugTelnetFlag)
-        # F debug.protocol.telnet.short
-        #       - Show incoming option negotiation short info (GA::Client->debugTelnetMiniFlag)
-        # F debug.protocol.log
-        #       - Write log for incoming option negotiation, telopt.log
-        #           (GA::Client->debugTelnetLogFlag)
-        # F debug.protocol.msdp
-        #       - Show MSDP data sent to Locator/Status tasks (GA::Client->debugMsdpFlag)
-        # F debug.protocol.mxp
-        #       - Show MXP errors (GA::Client->debugMxpFlag)
-        # F debug.protocol.mxp.comment
-        #       - Show MXP comments (GA::Client->debugMxpCommentFlag)
-        # F debug.protocol.pueblo
-        #       - Show Pueblo errors (GA::Client->debugPuebloFlag)
-        # F debug.protocol.peublo.comment
-        #       - Show Pueblo comments (GA::Client->debugPuebloCommentFlag)
-        # f debug.protocol.atcp
-        #       - Show ATCP data (GA::Client->debugAtcpFlag)
-        # f debug.protocol.gmcp
-        #       - Show GMCP data (GA::Client->debugGmcpFlag)
-        # F debug.line.numbers
-        #       - Show explicit line numbers (GA::Client->debugLineNumsFlag)
-        # F debug.line.tags
-        #       - Show explicit colour/style tags (GA::Client->debugLineTagsFlag)
-        # F debug.locator.some
-        #       - Show some Locator debug messages (GA::Client->debugLocatorFlag)
-        # F debug.locator.all
-        #       - Show all Locator debug messages (GA::Client->debugMaxLocatorFlag)
-        # F debug.locator.move
-        #       - Show Locator's movement command list (GA::Client->debugMoveListFlag)
-        # F debug.obj.parse
-        #       - Show debug messages when parsing objects (GA::Client->debugParseObjFlag)
-        # F debug.obj.compare
-        #       - Show debug messages when comparing objects (GA::Client->debugCompareObjFlag)
-        # F debug.error.plugin
-        #       - Show explanatory messages if plugin can't be loaded
-        #           (GA::Client->debugExplainPluginFlag)
-        # F debug.error.iv
-        #       - Show debug message for non-existent IVs (GA::Client->debugCheckIVFlag)
-        # F debug.error.table
-        #       - Show debug message if table object can't be added/resized
-        #           (GA::Client->debugTableFitFlag)
-        # F debug.error.trap
-        #       - Trap Perl errors/warnings in 'main' window (GA::Client->debugTrapErrorFlag)
-        #
-        #
-        # S desktop.panel.left
-        #       - Size of left panel (GA::Client->customPanelLeftSize)
-        # S desktop.panel.right
-        #       - Size of right panel (GA::Client->customPanelRightSize)
-        # S desktop.panel.top
-        #       - Size of top panel (GA::Client->customPanelTopSize)
-        # S desktop.panel.bottom
-        #       - Size of bottom panel (GA::Client->customPanelBottomSize)
-        # S desktop.controls.left
-        #       - Size of left-side window controls (GA::Client->customControlsLeftSize)
-        # S desktop.controls.right
-        #       - Size of right-side window controls (GA::Client->customControlsRightSize)
-        # S desktop.controls.top
-        #       - Size of top-side window controls (GA::Client->customControlsTopSize)
-        # S desktop.controls.bottom
-        #       - Size of bottom-side window controls (GA::Client->customControlsBottomSize)
-        #
-        #
-        # O dict.current
-        #       - Current dictionary object (GA::Session->currentDict)
-        # O dict.NAME
-        #       - Dictionary object called 'NAME' (from GA::Client->dictHash)
-        #
-        #
-        # o exit.number.NUMBER
-        #       - Exit model object with number 'NUMBER' (from GA::Obj::WorldModel->exitModelHash)
-        # o exit.newest
-        #   - Most recently-created exit model object (GA::Obj::WorldModel->mostRecentExitNum)
-        # S exit.count
-        #   - No. exits in model (including deleted exits) (GA::Obj::WorldModel->exitObjCount)
-        # S exit.actual
-        #   - No. exits in model (not including deleted exits)
-        #       (GA::Obj::WorldModel->exitActualCount)
-        #
-        #
-        # S external.browser
-        #       - Command to run a web browser (GA::Client->browserCmd)
-        # S external.email
-        #       - Command to open email app (GA::Client->emailCmd)
-        # S external.audio
-        #       - Command to open audio player (GA::Client->audioCmd)
-        # S external.editor
-        #       - Command to open text editor (GA::Client->textEditCmd)
-        #
-        #
-        # F file.config.load
-        #       - Load config file (GA::Client->loadConfigFlag)
-        # F file.config.save
-        #       - Load config file (GA::Client->saveConfigFlag)
-        # F file.data.load
-        #       - Load data files (GA::Client->loadDataFlag)
-        # F file.data.save
-        #       - Save data files (GA::Client->saveDataFlag)
-        # F file.start.delete
-        #       - Delete config/data files on startup (GA::Client->deleteFilesAtStartFlag)
-        # F file.load.fail
-        #       - File operation failure (GA::Client->fileFailFlag)
-        # F file.save.backup
-        #       - Backup files before saving (GA::Client->autoRetainFileFlag)
-        # F file.save.modify
-        #       - Data saved in any file objects have been modified (GA::Client->showModFlag)
-        # F file.autosave.flag
-        #       - Auto-save turned on (GA::Client->autoSaveFlag)
-        # S file.autosave.time
-        #       - Minutes between autosaves (GA::Client->autoSaveWaitTime)
-        # O file.client.NAME
-        #       - Client file object called NAME (from GA::Client->fileObjHash)
-        # O file.session.NAME
-        #       - Session file object called NAME (from GA::Session->sessionFileObjHash)
-        #
-        #
-        # L gmcp.list
-        #       - List of (all) GMCP packages received (from GA::Session->gmcpDataHash)
-        # L gmcp.list.PACKAGE
-        #       - List of GMCP packages received in the form PACKAGE[.subpackage][.message] (from
-        #           GA::Session->gmcpDataHash)
-        # L gmcp.list.PACKAGE.SUBPACKAGE
-        #       - List of GMCP packages received in the form PACKAGE.SUBPACKAGE[.message] (from
-        #           GA::Session->gmcpDataHash)
-        # S gmcp.data.PACKAGE[.SUBPACKAGE][.MESSAGE]
-        #       - Value of undecoded data string in the GMCP package (from
-        #           GA::Session->gmcpDataHash)
-        # X gmcp.val.PACKAGE[.SUBPACKAGE][.MESSAGE][.json]
-        #       - A value embedded within the JSON data. 'json' is made up of any number of '.INDEX'
-        #           and '.KEY' components, in any order. The returned value is the scalar, list or
-        #           hash value stored within the embedded list/hash references; or 'undef' if
-        #           '.json' doesn't match any embedded scalar value (from GA::Session->gmcpDataHash)
-        #
-        #
-        # o guild.current
-        #       - Current guild profile (GA::Session->currentGuild)
-        # o guild.NAME
-        #       - Guild profile called 'NAME' (from GA::Session->profHash)
-        #
-        #
-        # O iface.name.NAME
-        #       - Active interface called 'NAME' (from GA::Session->interfaceHash)
-        # O iface.number.NUMBER
-        #       - Active interface numbered 'NUMBER' (from GA::Session->interfaceNumHash)
-        #
-        #
-        # O imodel.TYPE
-        #       - Interface model of the type 'TYPE', e.g. 'trigger' (from
-        #           GA::Client->interfaceModelHash)
-        #
-        #
-        # S instruct.sigil.client
-        #       - Instruction sigil for client commands (GA::Client->constClientSigil)
-        # S instruct.sigil.forced
-        #       - Instruction sigil for forced world commands (GA::Client->constForcedSigil)
-        # S instruct.sigil.echo
-        #       - Instruction sigil for echo commands (GA::Client->constEchoSigil)
-        # S instruct.sigil.perl
-        #       - Instruction sigil for Perl commands (GA::Client->constPerlSigil)
-        # S instruct.sigil.script
-        #       - Instruction sigil for script commands (GA::Client->constScriptSigil)
-        # S instruct.sigil.multi
-        #       - Instruction sigil for multi commands (GA::Client->constMultiSigil)
-        # S instruct.sigil.speedwalk
-        #       - Instruction sigil for speedwalk commands (GA::Client->constSpeedSigil)
-        # S instruct.sigil.bypass
-        #       - Instruction sigil for bypass commands (GA::Client->constBypassSigil)
-        # F instruct.enable.echo
-        #       - Echo command sigil enabled (GA::Client->echoSigilFlag)
-        # F instruct.enable.perl
-        #       - Perl command sigil enabled (GA::Client->perlSigilFlag)
-        # F instruct.enable.script
-        #       - Script command sigil enabled (GA::Client->scriptSigilFlag)
-        # F instruct.enable.multi
-        #       - Multi command sigil enabled (GA::Client->multiSigilFlag)
-        # F instruct.enable.speed
-        #       - Speed command sigil enabled (GA::Client->speedSigilFlag)
-        # F instruct.enable.bypass
-        #       - Bypass command sigil enabled (GA::Client->bypassSigilFlag)
-        # S instruct.separator
-        #       - World command separator (GA::Client->cmdSep)
-        # F instruct.world.confirm
-        #       - Confirm world commands in session's default tab (GA::Client->confirmWorldCmdFlag)
-        # F instruct.world.convert
-        #       - Convert capitalised world commands (GA::Client->convertWorldCmdFlag)
-        # F instruct.world.preserve
-        #       - Preserve world commands in entry box (GA::Client->preserveWorldCmdFlag)
-        # F instruct.other.preserve
-        #       - Preserve other commands in entry box (GA::Client->preserveOtherCmdFlag)
-        # F instruct.multi.max
-        #       - Send multi commands to all sessions (GA::Client->maxMultiCmdFlag)
-        # F instruct.complete.mode
-        #       - Auto-complete mode (GA::Client->autoCompleteMode)
-        # F instruct.complete.type
-        #       - Auto-complete navigation type (GA::Client->autoCompleteType)
-        # F instruct.complete.parent
-        #       - Auto-complete registry location (GA::Client->autoCompleteParent)
-        #
-        #
-        # O keycode.obj.current
-        #       - Current keycode object (GA::Client->currentKeycodeObj)
-        # O keycode.obj.NAME
-        #       - Keycode object called 'NAME' (from GA::Client->keycodeObjHash)
-        # S keycode.current.KEYCODE
-        #       - Current value for the standard KEYCODE value (from GA::Obj::Keycode->keycodeHash)
-        # S keycode.default.KEYCODE
-        #       - Default value for the standard KEYCODE value (from GA::CLIENT->constKeycodeHash)
-        #
-        #
-        # F log.allow
-        #       - Logging is enabled (GA::CLIENT->allowLogsFlag)
-        # F log.client.FILE
-        #       - Flag to show whether the client logfile called 'FILE' is being written (from
-        #           GA::Client->logPrefHash)
-        # F log.world.FILE
-        #       - Flag to show whether the world logfile called 'FILE' is being written (from
-        #           GA::Profile::World->logPrefHash)
-        # F log.delete.standard
-        #       - Delete client logfiles when client starts (GA::Client->deleteStandardLogsFlag)
-        # F log.delete.world
-        #       - Delete world logfiles when world becomes current (GA::Client->deleteWorldLogsFlag)
-        # F log.start.day
-        #       - Start new logfile every day (GA::Client->logDayFlag)
-        # F log.start.client
-        #       - Start new logfile when client starts (GA::Client->logClientFlag)
-        # F log.prefix.date
-        #       - Prefix every line with date (GA::Client->logPrefixDateFlag)
-        # F log.prefix.time
-        #       - Prefix every line with time (GA::Client->logPrefixTimeFlag)
-        # F log.image
-        #       - Record images in 'receive' logfile (GA::Client->logImageFlag)
-        # S log.event.before
-        #       - Lines to write before Status task event (GA::Client->statusEventBeforeCount)
-        # S log.event.after
-        #       - Lines to write after Status task event (GA::Client->statusEventAfterCount)
-        #
-        #
-        # S loop.client.time
-        #       - Client loop time (GA::Client->clientTime)
-        # O loop.client.obj
-        #       - Client loop object (GA::Client->clientLoopObj)
-        # F loop.client.spin
-        #       - Client loop is spinning (GA::Client->clientLoopSpinFlag)
-        # S loop.client.delay
-        #       - Client loop delay time (GA::Client->clientLoopDelay)
-        # S loop.session.time
-        #       - Session loop time (GA::Session->sessionTime)
-        # S loop.session.obj
-        #       - Session loop object (GA::Session->sessionLoopObj)
-        # F loop.session.spin
-        #       - Session loop is spinning (GA::Session->sessionLoopSpinFlag)
-        # F loop.session.child
-        #       - Session loop's child loop is spinning (GA::Session->childLoopSpinFlag)
-        # S loop.session.delay
-        #       - Session loop delay time (GA::Session->sessionLoopDelay)
-        #
-        #
-        # L misc.months
-        #       - Customisable list of short months (GA::Client->customMonthList)
-        # L misc.days
-        #       - Customisable list of short days (GA::Client->customDayList)
-        #
-        #
-        # s model.author
-        #       - World model author (GA::Obj::WorldModel->author)
-        # s model.date
-        #       - World model date (GA::Obj::WorldModel->date)
-        # s model.version
-        #       - World model version (GA::Obj::WorldModel->version)
-        # l model.descripList
-        #       - World model description (GA::Obj::WorldModel->descripList)
-        # o model.number.NUMBER
-        #       - World model object with number 'NUMBER' (from GA::Obj::WorldModel->modelHash)
-        # o model.region.NUMBER
-        #       - World model region object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->regionModelHash)
-        # o model.room.NUMBER
-        #       - World model room object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->roomModelHash)
-        # o model.weapon.NUMBER
-        #       - World model weapon object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->weaponModelHash)
-        # o model.armour.NUMBER
-        #       - World model region object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->armourModelHash)
-        # o model.garment.NUMBER
-        #       - World model garment object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->garmentModelHash)
-        # o model.char.NUMBER
-        #       - World model char object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->charModelHash)
-        # o model.minion.NUMBER
-        #       - World model minion object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->minionModelHash)
-        # o model.sentient.NUMBER
-        #       - World model sentient object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->sentientModelHash)
-        # o model.creature.NUMBER
-        #       - World model creature object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->creatureModelHash)
-        # o model.portable.NUMBER
-        #       - World model portable object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->portableModelHash)
-        # o model.decoration.NUMBER
-        #       - World decoration region object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->decorationModelHash)
-        # o model.custom.NUMBER
-        #       - World model custom object with number 'NUMBER' (from
-        #           GA::Obj::WorldModel->customModelHash)
-        # O model.regionmap.NAME
-        #       - World model regionmap called 'NAME' (from GA::Obj::WorldModel->regionmapHash)
-        # o model.kchar.NAME
-        #       - World model known character called 'NAME' (from
-        #           GA::Obj::WorldModel->knownCharHash)
-        # o model.mstring.STRING
-        #       - World model minion string 'STRING' (from GA::Obj::WorldModel->minionStringHash)
-        # o model.tag.TAG
-        #       - World model room object with room tag 'TAG' (from
-        #           GA::Obj::WorldModel->roomTagHash)
-        # o model.newest
-        #       - Most recently-created world model object (GA::Obj::WorldModel->mostRecentNum)
-        # S model.count
-        #       - No. objects in world model (including deleted objects)
-        #           (GA::Obj::WorldModel->modelObjCount)
-        # S model.actual
-        #       - No. objects in world model (not including deleted objects)
-        #           (GA::Obj::WorldModel->modelActualCount)
-        # S model.lightStatus
-        #       - Current light status (GA::Obj::WorldModel->...)
-        # S model.defaultGridWidthBlocks
-        #       - Default grid width (in blocks) (GA::Obj::WorldModel->...)
-        # S model.defaultGridHeightBlocks
-        #       - Default grid height (in blocks) (GA::Obj::WorldModel->...)
-        # S model.defaultBlockWidthPixels
-        #       - Default block width (in pixels) (GA::Obj::WorldModel->...)
-        # S model.defaultBlockHeightPixels
-        #       - Default block height (in pixels) (GA::Obj::WorldModel->...)
-        # S model.defaultRoomWidthPixels
-        #       - Default room width (in pixels) (GA::Obj::WorldModel->...)
-        # S model.defaultRoomHeightPixels
-        #       - Default room width (in pixels) (GA::Obj::WorldModel->...)
-        # S model.maxGridWidthBlocks
-        #       - Max grid width (in blocks) (GA::Obj::WorldModel->...)
-        # S model.maxGridHeightBlocks
-        #       - Max grid height (in blocks) (GA::Obj::WorldModel->...)
-        # S model.maxBlockWidthPixels
-        #       - Max block width (in pixels) (GA::Obj::WorldModel->...)
-        # S model.maxBlockHeightPixels
-        #       - Max block height (in pixels) (GA::Obj::WorldModel->...)
-        # S model.maxRoomWidthPixels
-        #       - Max room width (in pixels) (GA::Obj::WorldModel->...)
-        # S model.maxRoomHeightPixels
-        #       - Max room height (in pixels) (GA::Obj::WorldModel->...)
-        # S model.defaultMapWidthPixels
-        #       - Default map width (in pixels) (GA::Obj::WorldModel->...)
-        # S model.defaultMapHeightPixels
-        #       - Default map height (in pixels) (GA::Obj::WorldModel->...)
-        # S model.currentRoomMode
-        #       - Room drawing mode (GA::Obj::WorldModel->...)
-        # S model.roomInteriorMode
-        #       - Room interior mode (GA::Obj::WorldModel->...)
-        # S model.drawExitMode
-        #       - Exit drawing mode (GA::Obj::WorldModel->...)
-        # F model.drawOrnamentsFlag
-        #       - Draw exit ornaments (GA::Obj::WorldModel->...)
-        # S model.horizontalExitLengthBlocks
-        #       - Length of horizontal exits (in blocks) (GA::Obj::WorldModel->...)
-        # S model.verticalExitLengthBlocks
-        #       - Length of vertical exits (in blocks) (GA::Obj::WorldModel->...)
-        # F model.drawBentExitsFlag
-        #       - Draw bent exits (GA::Obj::WorldModel->...)
-        # F model.matchTitleFlag
-        #       - Match room titles (GA::Obj::WorldModel->...)
-        # F model.matchDescripFlag
-        #       - Match room descriptions (GA::Obj::WorldModel->...)
-        # S model.matchDescripCharCount
-        #       - No. characters to match in descriptions  (GA::Obj::WorldModel->...)
-        # F model.matchExitFlag
-        #       - Match room exits (GA::Obj::WorldModel->...)
-        # F model.analyseDescripFlag
-        #       - Analyse room descriptions (GA::Obj::WorldModel->...)
-        # F model.matchSourceFlag
-        #       - Match room's source code file (GA::Obj::WorldModel->...)
-        # F model.matchVNumFlag
-        #       - Match room's remove vnum (GA::Obj::WorldModel->...)
-        # F model.updateTitleFlag
-        #       - Update room titles (in 'update' mode) (GA::Obj::WorldModel->...)
-        # F model.updateDescripFlag
-        #       - Update room descriptions (GA::Obj::WorldModel->...)
-        # F model.updateExitFlag
-        #       - Update room exits (GA::Obj::WorldModel->...)
-        # F model.updateSourceFlag
-        #       - Update room's source code file (GA::Obj::WorldModel->...)
-        # F model.updateVNumFlag
-        #       - Update room's remote vnum (GA::Obj::WorldModel->...)
-        # F model.updateRoomCmdFlag
-        #       - Update room's room command list (GA::Obj::WorldModel->...)
-        # F model.updateOrnamentFlag
-        #       - Update room's exit ornaments (GA::Obj::WorldModel->...)
-        # F model.assistedMovesFlag
-        #       - Apply assisted moves (GA::Obj::WorldModel->...)
-        # F model.assistedBreakFlag
-        #       - Break down doors (GA::Obj::WorldModel->...)
-        # F model.assistedPickFlag
-        #       - Pick locks (GA::Obj::WorldModel->...)
-        # F model.assistedUnlockFlag
-        #       - Unlock doors (GA::Obj::WorldModel->...)
-        # F model.assistedOpenFlag
-        #       - Open doors (GA::Obj::WorldModel->...)
-        # F model.assistedCloseFlag
-        #       - Close doors (GA::Obj::WorldModel->...)
-        # F model.assistedLockFlag
-        #       - Lock doors (GA::Obj::WorldModel->...)
-        # F model.protectedMovesFlag
-        #       - Protected moves (GA::Obj::WorldModel->...)
-        # F model.superProtectedMovesFlag
-        #       - Super-protected moves (GA::Obj::WorldModel->...)
-        # F model.setTwinOrnamentFlag
-        #       - Set twin exit's ornament (GA::Obj::WorldModel->...)
-        # F model.countVisitsFlag
-        #       - Count character visits (GA::Obj::WorldModel->...)
-        # F model.allowModelScriptFlag
-        #       - Allow model-wide scripts (GA::Obj::WorldModel->...)
-        # F model.allowRoomScriptFlag
-        #       - Allow individual room scripts (GA::Obj::WorldModel->...)
-        # F model.intelligentExitsFlag
-        #       - Use intelligent exits (GA::Obj::WorldModel->...)
-        # F model.autoCompareFlag
-        #       - Auto-compare new rooms (GA::Obj::WorldModel->...)
-        # F model.followAnchorFlag
-        #       - Create new exit object using follow anchor pattern (GA::Obj::WorldModel->...)
-        # F model.capitalisedRoomTagFlag
-        #       - Display room tags in capitals (GA::Obj::WorldModel->...)
-        # F model.showTooltipsFlag
-        #       - Show tooltips (GA::Obj::WorldModel->...)
-        # F model.explainGetLostFlag
-        #       - Explain when automapper gets lost (GA::Obj::WorldModel->...)
-        # F model.disableUpdateModeFlag
-        #       - Disable automapper update mode (GA::Obj::WorldModel->...)
-        # F model.updateExitTagFlag
-        #       - Update region exit tags (GA::Obj::WorldModel->...)
-        # F model.drawRoomEchoFlag
-        #       - Draw room echos (GA::Obj::WorldModel->...)
-        # F model.trackPosnFlag
-        #       - Track position and scroll window (GA::Obj::WorldModel->...)
-        # S model.trackingSensitivity
-        #       - Tracking sensitivity (GA::Obj::WorldModel->...)
-        # F model.avoidHazardsFlag
-        #       - Avoid hazards when pathfinding (GA::Obj::WorldModel->...)
-        # F model.postProcessingFlag
-        #       - Produce smooth paths when pathfinding (GA::Obj::WorldModel->...)
-        # F model.quickPathFindFlag
-        #       - Go to double-clicked room (GA::Obj::WorldModel->...)
-        # F model.autocompleteExitsFlag
-        #       - Auto-complete uncertain exits (GA::Obj::WorldModel->...)
-        # S model.mudlibPath
-        #       - Mudlib directory path (GA::Obj::WorldModel->...)
-        # S model.mudlibExtension
-        #       - Mudlib file extension (GA::Obj::WorldModel->...)
-        # F model.paintAllRoomsFlag
-        #       - Paint existing rooms (GA::Obj::WorldModel->...)
-        # F model.locateRandomInRegionFlag
-        #       - Locate after random region exit (GA::Obj::WorldModel->...)
-        # F model.locateRandomAnywhereFlag
-        #       - Locate after general region exit (GA::Obj::WorldModel->...)
-        # S model.pathFindStepLimit
-        #       - Path-finding step limit (GA::Obj::WorldModel->...)
-        #
-        #
-        # L msdp.generic.list
-        #       - List of generic MSDP variables (from GA::Session->msdpGenericValueHash)
-        # S msdp.generic.VAR
-        #       - Value of generic MSDP variable 'VAR'; if 'VAR' contains space characters, write
-        #           them as underline characters, e.g. 'PAY_FOR_PERKS'
-        #           (from GA::Session->msdpGenericValueHash)
-        # L msdp.custom.list
-        #       - List of custom MSDP variables (from GA::Session->msdpCustomValueHash)
-        # S msdp.custom.VAR
-        #       - Value of custom MSDP variable 'VAR'; if 'VAR' contains space characters, write
-        #           them as underline characters (from GA::Session->msdpCustomValueHash)
-        #
-        #
-        # L mssp.generic.list
-        #       - List of generic MSSP variables 'VAR' (from
-        #           GA::Profile::World->msspGenericValueHash)
-        # S mssp.generic.VAR
-        #       - Value of generic MSSP variable 'VAR'; if 'VAR' contains space characters, write
-        #           them as underline characters (from GA::Profile::World->msspGenericValueHash)
-        # L mssp.custom.list
-        #       - List of custom MSSP variables 'VAR' (from
-        #           GA::Profile::World->msspCustomValueHash)
-        # S mssp.custom.VAR
-        #       - Value of custom MSSP variable 'VAR'; if 'VAR' contains space characters, write
-        #           them as underline characters (from GA::Profile::World->msspCustomValueHash)
-        #
-        #
-        # L mxp.entity.list
-        #       - List of MXP entities (custom entities only)
-        # S mxp.entity.VAR
-        #       - Value of MXP entity 'VAR' (both custom and standard entities) (from
-        #           GA::Session->mxpEntityHash)
-        #
-        #
-        # L plugin.init
-        #       - List of plugins to load at startup (GA::Client->initPluginList)
-        # L plugin.load
-        #       - List of plugins loaded (from GA::Client->pluginHash)
-        # O plugin.NAME
-        #       - Axmud plugin object called 'NAME' (from GA::Client->pluginHash)
-        #
-        #
-        # o prof.NAME
-        #       - Profile called 'NAME' (from GA::Session->profHash, or else
-        #           GA::Client->worldProfHash)
-        # L prof.priority.list
-        #       - Profile priority list in current session (GA::Session->profPriorityList)
-        #
-        #
-        # F protocol.echo
-        #       - Use ECHO protocol (GA::Client->useEchoFlag)
-        # F protocol.sga
-        #       - Use SGA protocol (GA::Client->useSgaFlag)
-        # F protocol.ttype
-        #       - Use TTYPE protocol (GA::Client->useTTypeFlag)
-        # F protocol.eor
-        #       - Use EOR protocol (GA::Client->useEorFlag)
-        # F protocol.naws
-        #       - Use NAWS protocol (GA::Client->useNawsFlag)
-        # F protocol.newenviron
-        #       - Use NEW-ENVIRON protocol (GA::Client->useNewEnvironFlag)
-        # F protocol.charset
-        #       - Use CHARSET protocol (GA::Client->useCharSetFlag)
-        # S protocol.ttype.mode
-        #       - Which termtypes to send during TTYPE/MTTS (GA::Client->termTypeMode)
-        # S protocol.ttype.name
-        #       - Custom client name to send (GA::Client->customClientName)
-        # S protocol.ttype.version
-        #       - Custom client version to send (GA::Client->customClientVersion)
-        # S protocol.ttype.sent
-        #       - Termtype actually sent (GA::Session->specifiedTType)
-        #
-        # F protocol.msdp
-        #       - Use MSDP MUD protocol (GA::Client->useMsdpFlag)
-        # F protocol.mssp
-        #       - Use MSSP MUD protocol (GA::Client->useMsspFlag)
-        # F protocol.mccp
-        #       - Use MCCP MUD protocol (GA::Client->useMccpFlag)
-        # F protocol.msp
-        #       - Use MSP MUD protocol (GA::Client->useMspFlag)
-        # F protocol.mxp
-        #       - Use MXP MUD protocol (GA::Client->useMxpFlag)
-        # F protocol.pueblo
-        #       - Use Pueblo MUD protocol (GA::Client->usePuebloFlag)
-        # F protocol.zmp
-        #       - Use ZMP MUD protocol (GA::Client->useZmpFlag)
-        # F protocol.aard102
-        #       - Use AARDWOLF102 MUD protocol (GA::Client->useAard102Flag)
-        # F protocol.atcp
-        #       - Use ATCP MUD protocol (GA::Client->useAtcpFlag)
-        # F protocol.gmcp
-        #       - Use GMCP MUD protocol (GA::Client->useGmcpFlag)
-        # F protocol.mtts
-        #       - Use MTTS MUD protocol (GA::Client->useMttsFlag)
-        # F protocol.mcp
-        #       - Use MCP MUD protocol (GA::Client->useMcpFlag)
-        #
-        # F protocol.msp.multiple
-        #       - Play simultaneous sound triggers (GA::Client->allowMspMultipleFlag)
-        # F protocol.msp.load
-        #       - Download sound files (GA::Client->allowMspLoadSoundFlag)
-        # F protocol.msp.flexible
-        #       - Recognise MSP tags in middle of line (GA::Client->allowMspFlexibleFlag)
-        #
-        # F protocol.mxp.font
-        #       - Allow font change (GA::Client->allowMxpFontFlag)
-        # F protocol.mxp.image.allow
-        #       - Allow image display (GA::Client->allowMxpImageFlag)
-        # F protocol.mxp.image.load
-        #       - Allow loading images (GA::Client->allowMxpLoadImageFlag)
-        # F protocol.mxp.image.filter
-        #       - Allow image filters (GA::Client->allowMxpFilterImageFlag)
-        # F protocol.mxp.sound.allow
-        #       - Allow sound (GA::Client->allowMxpSoundFlag)
-        # F protocol.mxp.sound.load
-        #       - Allow loading sound files (GA::Client->allowMxpLoadSoundFlag)
-        # F protocol.mxp.gauge
-        #       - Allow gauges (GA::Client->allowMxpGaugeFlag)
-        # F protocol.mxp.frame
-        #       - Allow frames (GA::Client->allowMxpFrameFlag)
-        # F protocol.mxp.interior
-        #       - Allow interior frames (GA::Client->allowMxpInteriorFlag)
-        # F protocol.mxp.crosslink
-        #       - Allow crosslink operations (GA::Client->allowMxpCrosslinkFlag)
-        # F protocol.mxp.room
-        #       - Locator uses MXP room tags exclusively change (GA::Client->allowMxpRoomFlag)
-        #
-        # S protocol.mode.echo
-        #       - Current session's ECHO mode (GA::Session->echoMode)
-        # S protocol.mode.sga
-        #       - Current session's SGA mode (GA::Session->sgaMode)
-        # S protocol.mode.eor
-        #       - Current session's EOR mode (GA::Session->eorMode)
-        # S protocol.mode.naws
-        #       - Current session's NAWS mode (GA::Session->nawsMode)
-        # S protocol.mode.msdp
-        #       - Current session's MSDP mode (GA::Session->msdpMode)
-        # S protocol.mode.mssp
-        #       - Current session's MSSP mode (GA::Session->msspMode)
-        # S protocol.mode.mccp
-        #       - Current session's MCCP mode (GA::Session->mccpMode)
-        # S protocol.mode.msp
-        #       - Current session's MSP mode (GA::Session->mspMode)
-        # S protocol.mode.mxp
-        #       - Current session's MXP mode (GA::Session->mxpMode)
-        # S protocol.mode.pueblo
-        #       - Current session's Pueblo mode (GA::Session->puebloMode)
-        # S protocol.mode.atcp
-        #       - Current session's ATCP mode (GA::Session->atcpMode)
-        # S protocol.mode.gmcp
-        #       - Current session's GMCP mode (GA::Session->gmcpMode)
-        #
-        #
-        # o race.current
-        #       - Current race profile (GA::Session->currentRace)
-        # o race.NAME
-        #       - Race profile called 'NAME' (from GA::Session->profHash)
-        #
-        #
-        # F recording.active
-        #       - Recording currently in progress (GA::Session->recordingFlag)
-        # F recording.paused
-        #       - Recording currently paused (GA::Session->recordingPausedFlag)
-        # L recording.current
-        #       - Current recording, a list of strings (GA::Session->recordingList)
-        # F recording.position
-        #       - Current recording position (GA::Session->recordingPosn)
-        #
-        #
-        # S regex.url
-        #       - Regex matching valid web links (GA::Client->constUrlRegex)
-        # S regex.email
-        #       - Regex matching valid email addresses (GA::Client->constEmailRegex)
-        #
-        #
-        # L script.init.list
-        #       - List of scripts that start in every session (GA::Client->initScriptOrderList)
-        # S script.init.NAME
-        #       - Run mode for the initial script NAME (from GA::Client->initScriptHash)
-        #
-        #
-        # O session.obj.NUMBER
-        #       - Session object NUMBER (from GA::Client->sessionHash)
-        # S session.max
-        #       - Maximum sessions allowed (GA::Client->sessionMax)
-        #
-        # S session.number
-        #       - Current session number (GA::Session->number)
-        # O session.mainwin
-        #       - Current 'main' window object (GA::Session->mainWin)
-        # O session.tab.default
-        #       - Current session's default tab object (GA::Session->defaultTabObj)
-        # O session.tab.current
-        #       - Current session's current tab object (GA::Session->currentTabObj)
-        # S session.tab.width
-        #       - Default tab width (GA::Session->textViewWidthChars)
-        # S session.tab.height
-        #       - Default tab height in chars (GA::Session->textViewHeightChars)
-        # O session.mapwin
-        #       - Current session's automapper window (GA::Session->mapWin)
-        # O session.map
-        #       - Current session's automapper object (GA::Session->mapObj)
-        # O session.model
-        #       - Current session's world model (GA::Session->worldModelObj)
-        # O session.history
-        #       - Current session's connection history object (GA::Session->connectHistoryObj)
-        # S session.charset
-        #       - Current session's character set (GA::Session->sessionCharSet)
-        # F session.login
-        #       - Current session's login flag (GA::Session->loginFlag)
-        # O session.mission
-        #       - Current session's current mission (GA::Session->currentMission)
-        # S session.queue
-        #       - Number of queued (excess) world commands (from GA::Session->excessCmdList)
-        # F session.quit
-        #       - Flag set if delayed quit IVs set (from GA::Session->delayedQuitTime)
-        # F session.freeze
-        #       - Flag set if task loop frozen (GA::Session->freezeTaskLoopFlag)
-        # S session.host
-        #       - Host address actually used (GA::Session->host)
-        # S session.port
-        #       - Port actually used (GA::Session->port)
-        # S session.protocol
-        #       - Connection protocol used (GA::Session->protocol)
-        # S session.status
-        #       - Session status (GA::Session->status)
-        # S session.packets
-        #       - No. packets received from world during session (GA::Session->packetCount)
-        # S session.time.display
-        #       - Time text last received from world (GA::Session->lastDisplayTime)
-        # S session.time.instruct
-        #       - Time last instruction processed (GA::Session->lastInstructTime)
-        # S session.time.cmd
-        #       - Time last world command processed (GA::Session->lastCmdTime)
-        # S session.redirect.mode
-        #       - Redirect mode (GA::Session->redirectMode)
-        # S session.redirect.string
-        #       - Redirect mode string (GA::Session->redirectString)
-        #
-        #
-        # L sound.format
-        #       - List of supported audio file formats (from GA::Client->constSoundFormatHash)
-        # F sound.allow
-        #       - Allow sound effects (GA::Client->allowSoundFlag)
-        # F sound.ascii
-        #       - Allow ASCII bells (GA::Client->allowAsciiBellFlag)
-        # L sound.effect.list
-        #       - List of sound effects (from GA::Client->customSoundHash)
-        # L sound.effect.NAME
-        #       - Full file path to sound effect file NAME (from GA::Client->customSoundHash)
-        #
-        #
-        # O task.name.NAME
-        #       - Current task with unique name 'NAME', e.g. 'status_task_5' (from
-        #           GA::Session->currentTaskHash)
-        # O task.recent.NAME
-        #       - Most recently-created current task with formal name 'NAME', e.g. 'status_task'
-        #           (from GA::Session->currentTaskNameHash)
-        # O task.init.NAME
-        #       - Global initial tasklist task called 'NAME' (from GA::Client->initTaskHash)
-        # O task.custom.NAME
-        #       - Custom task called 'NAME' (from GA::Client->customTaskHash)
-        # S task.package.NAME
-        #       - Customisable task package name 'NAME' (from GA::Client->taskPackageHash)
-        # S task.label.LABEL
-        #       - Customisable task label 'LABEL' (from GA::Client->taskLabelHash)
-        # L task.runlist.first
-        #       - Customisable task run-first runlist (GA::Client->taskRunFirstList)
-        # L task.runlist.last
-        #       - Customisable task run-last runlist (GA::Client->taskRunLastList)
-        # O task.current.advance
-        #       - Current Advance task (GA::Session->advanceTask)
-        # O task.current.attack
-        #       - Current Attack task (GA::Session->attackTask)
-        # O task.current.chat
-        #       - Lead Chat task (GA::Session->chatTask)
-        # O task.current.compass
-        #       - Current Compass task (GA::Session->compassTask)
-        # O task.current.condition
-        #       - Current Condition task (GA::Session->conditionTask)
-        # O task.current.debugger
-        #       - Current Debugger task (GA::Session->debuggerTask)
-        # O task.current.divert
-        #       - Current Divert task (GA::Session->divertTask)
-        # O task.current.inventory
-        #       - Current Inventory task (GA::Session->inventoryTask)
-        # O task.current.launch
-        #       - Current Launch task (GA::Session->launchTask)
-        # O task.current.locator
-        #       - Current Locator task (GA::Session->locatorTask)
-        # O task.current.notepad
-        #       - Current Notepad task (GA::Session->notepadTask)
-        # O task.current.rawtext
-        #       - Current RawText task (GA::Session->rawTextTask)
-        # O task.current.rawtoken
-        #       - Current RawToken task (GA::Session->rawTokenTask)
-        # O task.current.status
-        #       - Current Status task (GA::Session->statusTask)
-        # O task.current.tasklist
-        #       - Current TaskList task (GA::Session->taskListTask)
-        # O task.current.watch
-        #       - Current Watch task (GA::Session->watchTask)
-        #
-        #
-        # o template.NAME
-        #       - Profile template called 'NAME' (from GA::Session->templateHash)
-        #
-        #
-        # o toolbar.NAME
-        #       - Toolbar button object called NAME (from GA::Client->toolbarHash)
-        # L toolbar.list
-        #       - Ordered of toolbar button object names (GA::Client->toolbarList)
-        #
-        #
-        # F tts.flag.allow
-        #       - Allow text-to-speech/TTS (GA::Client->customAllowTTSFlag)
-        # F tts.flag.smooth
-        #       - Allow TTS smoothing (GA::Client->ttsSmoothFlag)
-        # L tts.engine.list
-        #       - List of supported TTS engines (GA::Client->constTTSList)
-        # L tts.obj.list
-        #       - List of TTS configuration objects (from GA::Client->ttsObjHash)
-        # o tts.obj.NAME
-        #       - TTS configuration object called NAME (from GA::Client->ttsObjHash)
-        # F tts.enable.receive
-        #       - Convert text received from world (GA::Client->ttsReceiveFlag)
-        # F tts.flag.login
-        #       - Don't convert text received before login (GA::Client->ttsLoginFlag)
-        # F tts.enable.system
-        #       - Convert system messages (GA::Client->ttsSystemFlag)
-        # F tts.enable.error
-        #       - Convert system error messages (GA::Client->ttsSystemErrorFlag)
-        # F tts.enable.cmd
-        #       - Convert world commands (GA::Client->ttsWorldCmdFlag)
-        # F tts.enable.dialogue
-        #       - Convert 'dialogue' windows (GA::Client->ttsDialogueFlag)
-        # F tts.enable.task
-        #       - Convert (some) task window text (GA::Client->ttsTaskFlag)
-        #
-        #
-        # F window.main.share
-        #       - Share 'main' windows (GA::Client->shareMainWinFlag)
-        # S window.main.width
-        #       - Default width for 'main' windows (GA::Client->customMainWinWidth)
-        # S window.main.height
-        #       - Default height for 'main' windows (GA::Client->customMainWinHeight)
-        # S window.grid.width
-        #       - Default width for other 'grid' windows (GA::Client->customGridWinWidth)
-        # S window.grid.height
-        #       - Default height for other 'grid' windows (GA::Client->customGridWinHeight)
-        # O window.grid.NUMBER
-        #       - 'grid' window NUMBER (from GA::Obj::Desktop->gridWinHash)
-        # O window.free.NUMBER
-        #       - 'free' window NUMBER (from GA::Obj::Desktop->freeWinHash)
-        # S window.text.size
-        #       - Maximum lines is a textview (GA::Client->customTextBufferSize)
-        # S window.charset.current
-        #       - Current character set (GA::Client->charSet)
-        # L window.charset.list
-        #       - Ordered list of available character sets (GA::Client->charSetList)
-        # S window.mode.tab
-        #       - Session tab mode (GA::Client->sessionTabMode)
-        # F window.mode.xterm
-        #       - Use xterm titles in tabs (GA::Client->xTermTitleFlag)
-        # F window.mode.long
-        #       - Use long world name in tabs (GA::Client->longTabLabelFlag)
-        # F window.mode.simple
-        #       - Allow simple tabs (GA::Client->simpleTabFlag)
-        # F window.mode.toolbar
-        #       - Show toolbar button labels in 'main' and automapper windows
-        #           (GA::Client->toolbarLabelFlag)
-        # F window.mode.irreversible
-        #       - Show icon for irreversible actions in 'edit' windows
-        #           (GA::Client->irreversibleIconFlag)
-        # F window.mode.urgency
-        #       - Show 'main' window urgency hints (GA::Client->mainWinUrgencyFlag)
-        # F window.mode.tooltip
-        #       - Show tooltips in session's default tab (GA::Client->mainWinTooltipFlag)
-        # F window.confirm.close
-        #       - Prompt user before click-close 'main' window (GA::Client->confirmCloseMainWinFlag)
-        # F window.confirm.tab
-        #       - Prompt user before click-close tab (GA::Client->confirmCloseTabFlag)
-        # F window.keys.scroll
-        #       - Page up/down/home/end keys scrolls window pane (GA::Client->useScrollKeysFlag)
-        # F window.keys.smooth
-        #       - Smooth window pane scrolling (GA::Client->smoothScrollKeysFlag)
-        # F window.keys.split
-        #       - Page up/down/home/end keys enage split screen mode (GA::Client->autoSplitKeysFlag)
-        # F window.keys.complete
-        #       - Tab/cursor up/down keys autocomplete instructions
-        #           (GA::Client->useCompleteKeysFlag)
-        # F window.keys.switch
-        #       - CTRL+TAB switches window pane tabs (GA::Client->useSwitchKeysFlag)
-        #
-        #
-        # O winmap.NAME
-        #       - Winmap object called 'NAME' (from GA::Client->winmapHash)
-        # S winmap.default.enabled
-        #       - Default winmap name for 'main' windows when workspace grids enabled
-        #           (GA::Client->defaultEnabledWinmap)
-        # S winmap.default.disabled
-        #       - Default winmap name for 'main' windows when workspace grids disabled
-        #           (GA::Client->defaultDisabledWinmap)
-        # S winmap.default.internal
-        #       - Default winmap name for other 'grid' windows (GA::Client->defaultInternalWinmap)
-        #
-        #
-        # S workspace.dir
-        #       - Direction of workspace use (GA::Client->initWorkspaceDir)
-        # S workspace.init.count
-        #       - Number of initial workspaces (from GA::Client->initWorkspaceHash)
-        # S workspace.init.NUMBER
-        #       - Default zonemap name for initial workspace NUMBER (from
-        #           GA::Client->initWorkspaceHash)
-        # F workspace.grid.activate
-        #       - Activate workspace grids (GA::Client->activateGridFlag)
-        # F workspace.grid.permit
-        #       - Permit workspace grids (GA::Obj::Desktop->gridPermitFlag)
-        # S workspace.grid.block
-        #       - Size of gridblocks, in pixels (from GA::Client->gridBlockSize)
-        # S workspace.grid.gap
-        #       - Maximum size of grid gaps, in blocks (GA::Client->gridGapMaxSize)
-        # F workspace.grid.adjust
-        #       - Grid adjustment flag (GA::Client->gridAdjustmentFlag)
-        # F workspace.grid.correct
-        #       - Edge correction flag (GA::Client->gridEdgeCorrectionFlag)
-        # F workspace.grid.reshuffle
-        #       - Grid reshuffle flag (GA::Client->gridReshuffleFlag)
-        # F workspace.grid.invisible
-        #       - Grid invisible window flag (GA::Client->gridInvisWinFlag)
-        # O workspace.obj.NUMBER
-        #       - Workspace object NUMBER (from GA::Obj::Desktop->workspaceHash)
-        # O workspace.grid.NUMBER
-        #       - Workspace grid NUMBER (from GA::Obj::Desktop->gridHash)
-        #
-        #
-        # o world.current
-        #       - Current world profile (GA::Session->currentWorld)
-        # o world.NAME
-        #       - World profile called 'NAME' (from GA::Client->worldProfHash)
-        # L world.list.favourite
-        # L world.list.favorite
-        #       - Favourite world list (GA::Client->favouriteWorldList)
-        # L world.list.basic
-        #       - Basic world list (from GA::Client->constBasicWorldHash)
-        # F world.flag.history
-        #       - Store connection history in world profile (GA::Client->connectHistoryFlag)
-        #
-        #
-        # O zonemap.NAME
-        #       - Zonemap object called 'NAME' (from GA::Client->zonemapHash)
-        #
-        #   ---
         #
         # Return values
         #   An empty list on improper arguments
@@ -37811,6 +36907,8 @@
                 'session.time.display'  => 'lastDisplayTime',
                 'session.time.instruct' => 'lastInstructTime',
                 'session.time.cmd'      => 'lastCmdTime',
+                'session.time.outbounds'
+                                        => 'lastOutBoundsTime',
                 'session.redirect.mode' => 'redirectMode',
                 'session.redirect.string'
                                         => 'redirectString',
@@ -38208,6 +37306,7 @@
 
             # O task.current.advance
             # O task.current.attack
+            # O task.current.channels
             # O task.current.chat
             # O task.current.compass
             # O task.current.condition
@@ -38233,12 +37332,12 @@
                 } else {
 
                     if (
-                        $third eq 'advance' || $third eq 'attack' || $third eq 'chat'
-                        || $third eq 'compass' || $third eq 'condition' || $third eq 'debugger'
-                        || $third eq 'divert' || $third eq 'inventory' || $third eq 'launch'
-                        || $third eq 'locator' || $third eq 'notepad' || $third eq 'rawtext'
-                        || $third eq 'rawtoken' || $third eq 'status' || $third eq 'tasklist'
-                        || $third eq 'watch'
+                        $third eq 'advance' || $third eq 'attack' || $third eq 'channels'
+                        || $third eq 'chat' || $third eq 'compass' || $third eq 'condition'
+                        || $third eq 'debugger' || $third eq 'divert' || $third eq 'inventory'
+                        || $third eq 'launch' || $third eq 'locator' || $third eq 'notepad'
+                        || $third eq 'rawtext' || $third eq 'rawtoken' || $third eq 'status'
+                        || $third eq 'tasklist' || $third eq 'watch'
                     ) {
                         if ($third eq 'rawtext') {
                             $taskIV = 'rawText';
@@ -39415,20 +38514,20 @@
         return 1;
     }
 
-    sub set_guiWin {
+    sub set_viewerWin {
 
-        # Called by GA::OtherWin::GUI->winEnable and ->winDestroy
+        # Called by GA::OtherWin::Viewer->winEnable and ->winDestroy
 
         my ($self, $winObj, $check) = @_;
 
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_guiWin', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_viewerWin', @_);
         }
 
         # Update IVs
-        $self->ivPoke('guiWin', $winObj);
+        $self->ivPoke('viewerWin', $winObj);
 
         return 1;
     }
@@ -40475,8 +39574,8 @@
         { $_[0]->{mapObj} }
     sub worldModelObj
         { $_[0]->{worldModelObj} }
-    sub guiWin
-        { $_[0]->{guiWin} }
+    sub viewerWin
+        { $_[0]->{viewerWin} }
     sub wizWin
         { $_[0]->{wizWin} }
 
@@ -40637,6 +39736,8 @@
         { $_[0]->{advanceTask} }
     sub attackTask
         { $_[0]->{attackTask} }
+    sub channelsTask
+        { $_[0]->{channelsTask} }
     sub chatTask
         { $_[0]->{chatTask} }
     sub compassTask
@@ -40768,6 +39869,8 @@
         { $_[0]->{packetCount} }
     sub status
         { $_[0]->{status} }
+    sub doDisconnectFlag
+        { $_[0]->{doDisconnectFlag} }
     sub reactDisconnectFlag
         { $_[0]->{reactDisconnectFlag} }
 
@@ -40787,6 +39890,9 @@
         { $_[0]->{recvWholeLineText} }
     sub recvImgLineText
         { $_[0]->{recvImgLineText} }
+
+    sub explicitTextLength
+        { $_[0]->{explicitTextLength} }
 
     sub taskLoopDelay
         { $_[0]->{taskLoopDelay} }
@@ -40881,6 +39987,8 @@
         { $_[0]->{lastInstructTime} }
     sub lastCmdTime
         { $_[0]->{lastCmdTime} }
+    sub lastOutBoundsTime
+        { $_[0]->{lastOutBoundsTime} }
     sub constHookIdleTime
         { $_[0]->{constHookIdleTime} }
     sub disableUserIdleFlag

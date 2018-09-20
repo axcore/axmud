@@ -1,7 +1,7 @@
-lw / listworld                Lists all world profiles
+lwo / listworld               Lists all world profiles
  
    Format:
-      ;lw                     Lists world profiles
+      ;lwo                    Lists world profiles
 
    Notes:
       All world profiles are loaded from file and stored in memory, even those 
@@ -10,4 +10,4 @@ lw / listworld                Lists all world profiles
          world profile.
  
    User commands:
-      lw / listworld
+      lwo / listworld

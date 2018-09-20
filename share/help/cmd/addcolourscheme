@@ -14,9 +14,10 @@ acs / addcolourscheme         Adds a colour scheme
          schemes used in windows normally depends on the winmap, so you should 
          see the help for ';addwinmap' too.
   
-      Colour scheme must be no longer than 16 characters, contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
-         reserved names (see the ';listreserved' command).
+      The colour scheme's <name> must be no longer than 16 characters, contain
+         only A-Z, a-z, underlines and 0-9 (not the first character) and not be
+         one of Axmud's reserved names (see the ';listreserved' command).
+         Non-Latin alphabets are acceptable.
       <switches> are optional, and can be any of the following switch options, 
          in any order:
 
@@ -30,5 +31,15 @@ acs / addcolourscheme         Adds a colour scheme
 
       If colours/fonts are not specified, then default colours/fonts are used.
 
+      If you add a colour scheme with the same name as a task, the colour scheme
+         is applied to the task automatically whenever it starts. For example,
+         if you want to apply a colour scheme to every Divert task you start,
+         name the scheme 'divert' (or use the task's internal name,
+         'divert_task'. Note that the <name> must be all lower-case letters, and
+         abbreviations such as 'div' won't work.)
+      The <underlay> colour, if specified, is ignored by task windows which
+         operate in so-called monochrome mode, such as the Status and Divert
+         tasks (but not the Locator task.)
+         
    User commands:
       acs / addscheme / addcolorscheme / addcolourscheme

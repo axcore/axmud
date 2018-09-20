@@ -69,7 +69,7 @@ tp / teleport                 Teleports to another part of the world
       If the world uses a different teleportation command then you'll have to
          modify the command cages, replacing the word 'teleport' with the
          required command. ('edit' windows for command cages can be opened from 
-         Axmud's GUI window.)
+         Axmud's object viewer window.)
 
       See also the help for the ';deleteteleport' and ';listteleport' commands.
  

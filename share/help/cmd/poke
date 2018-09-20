@@ -56,9 +56,8 @@ poke / poke                   Modifies Axmud internal data
             key, value, key, value...
             
       Because this is a debugging command, a full list of recognised <string>s 
-         is not given here. You'll find one in the Axmud manual; technically-
-         minded users may wish to consult the source code file /lib/session.pm 
-         for the function ->parsePeekPoke.
+         is not given here, but you can see the list by typing the ';peekhelp'
+         command (which can also be written as ';pokehelp'. 
 
    User commands:
       poke

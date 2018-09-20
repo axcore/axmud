@@ -176,8 +176,8 @@
 
     sub updatePosn {
 
-        # Called by GA::Session->processLineSegment, when it displays an explicit line number while
-        #   a link object is being processed
+        # Called by GA::Session->processLineSegment, when it displays an explicit line number and/or
+        #   explicit colour/style tags while a link object is being processed
         # Updates the link's offset in the line
         #
         # Expected arguments

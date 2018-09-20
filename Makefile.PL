@@ -10,6 +10,7 @@ install_share 'share';
 my %prereqHash = (
     'Archive::Extract'      => '0',
     'Archive::Tar'          => '0',
+    'Archive::Zip'          => '0',
     'Compress::Zlib'        => '0',
     'Encode'                => '0',
     'Fcntl'                 => '0',
@@ -43,6 +44,7 @@ my %prereqHash = (
     'Symbol'                => '0',
     'Storable'              => '0',
     'Time::HiRes'           => '0',
+    'Time::Piece'           => '0',
 );
 
 if ($^O eq 'MSWin32') {

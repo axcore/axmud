@@ -404,6 +404,11 @@
                 # The automapper object is lost
                 $self->ivPoke('lastKnownRoom', $oldRoomObj);
 
+                # We can save the user the bother of having to reset the Locator task, before
+                #   setting a new current room, by resetting the list of room statements the task
+                #   is expecting
+                $taskObj->resetMoveList();
+
                 # Display a warning in the 'main' window...
                 $moveCount = $taskObj->ivNumber('moveList');
                 $text = 'MAP: Automapper has lost track of the current location';
@@ -752,17 +757,18 @@
         #   $cmdObj     - The GA::Buffer::Cmd object that stores the movement command
         #
         # Return values
-        #   'undef' on improper arguments or if no changes are made to $self->currentRoom
+        #   'undef' on improper arguments, if no changes are made to $self->currentRoom or if
+        #       a called function return 'undef'
         #   1 otherwise
 
         my ($self, $cmdObj, $check) = @_;
 
         # Local variables
         my (
-            $dir, $dictObj, $parentRegion, $regionmapObj, $standardDir, $mapDir, $customDir,
-            $dirType, $exitNum, $exitObj, $existRoomObj, $number, $vectorRef, $exitLength,
-            $xPosBlocks, $yPosBlocks, $zPosBlocks, $primaryFlag, $twoWayFlag, $destRoomObj,
-            $oppExitObj,
+            $dictObj, $parentRegion, $regionmapObj, $dir, $exitObj, $standardDir, $mapDir,
+            $customDir, $dirType, $primaryFlag, $exitNum, $destRoomObj, $vectorRef, $exitLength,
+            $xPosBlocks, $yPosBlocks, $zPosBlocks, $number, $existRoomObj, $oppExitObj,
+            $destWildMode,
         );
 
         # Check for improper arguments
@@ -774,6 +780,8 @@
         # Import the current dictionary (for convenience)
         $dictObj = $self->session->currentDict;
 
+        # PART 1    - basic checks
+        #
         # Do nothing if:
         #   1. The Automapper window is open and is in 'wait' mode
         #   2. The Automapper window isn't open, and $self->trackAloneFlag is FALSE
@@ -786,6 +794,8 @@
             return undef;
         }
 
+        # PART 2    - get current room's region
+        #
         # Get the current room's parent region and, from there, the regionmap
         $parentRegion = $self->worldModelObj->ivShow('modelHash', $self->currentRoom->parent);
         if ($parentRegion) {
@@ -796,9 +806,22 @@
         if (! $regionmapObj) {
 
             # The current room doesn't appear to be in a region - so nothing we can do
-            return undef;
+            if ($self->worldModelObj->explainGetLostFlag) {
+
+                $self->session->writeText(
+                    'MAP: Lost due to internal error (cannot find regionmap)',
+                );
+            }
+
+            # The presence of a second argument means 'the character is lost'
+            return $self->setCurrentRoom(
+                undef,
+                $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+            );
         }
 
+        # PART 3    - get direction of movement
+        #
         # Set $dir, the direction of movement, so that we can work out which exit object is being
         #   used. For assisted moves, we already know the exit object used (which will save us some
         #   time)
@@ -820,12 +843,14 @@
             $dir = $cmdObj->moveDir;
         }
 
+        # PART 4    - identify an exit object (GA::Obj::Exit) matching the direction
+        #
         #   $dir can be any of the following:
-        #   (1) The original command used in an assisted move
+        #   (i) The original command used in an assisted move
         #           - $standardDir, $mapDir and $customDir are set directly from the buffer object
         #               (but $customDir is only set if it's a primary direction)
         #
-        #   (2) A custom primary direction - one of the values in GA::Obj::Dict->primaryDirHash
+        #   (ii) A custom primary direction - one of the values in GA::Obj::Dict->primaryDirHash
         #           (e.g. 'nord', sud') or ->primaryAbbrevHash (e.g. 'n', 's')
         #           - $standardDir/$mapDir are set to the equivalent key (the words 'north', 'up'
         #               etc)
@@ -834,7 +859,7 @@
         #           - If $dir is abbreviated, it is unabbreviated (so its value is the same as
         #               $customDir)
         #
-        #   (3) A recognised secondary direction - one of the values in
+        #   (iii) A recognised secondary direction - one of the values in
         #           GA::Obj::Dict->secondaryDirHash (e.g. 'out') or ->secondaryAbbrevHash
         #               (e.g. 'o')
         #           - $standardDir is set to the equivalent key (the words 'in', 'entrance',
@@ -844,12 +869,12 @@
         #           - If $dir is abbreviated, it is unabbreviated (so its value is the same as
         #               $standardDir)
         #
-        #   (4) A direction not stored in the dictionary, such as 'enter well'
+        #   (iv) A direction not stored in the dictionary, such as 'enter well'
         #           - Neither $standardDir nor $customDir are set
 
         if ($cmdObj->assistedFlag) {
 
-            # (1) The original command used in an assisted move
+            # (i) The original command used in an assisted move
             $standardDir = $cmdObj->assistedPrimary;
             $mapDir = $cmdObj->assistedPrimary;
             $customDir = $cmdObj->assistedExitObj->dir;
@@ -869,7 +894,7 @@
                 $dirType = $dictObj->ivShow('combDirHash', $dir);
                 $standardDir = $dictObj->ivShow('combRevDirHash', $dir);
 
-                # (2) Customised primary direction
+                # (ii) Customised primary direction
                 if ($dirType eq 'primaryDir' || $dirType eq 'primaryAbbrev') {
 
                     $mapDir = $standardDir;
@@ -879,7 +904,7 @@
                     # For the benefit of basic mapping mode, set a flag
                     $primaryFlag = TRUE;
 
-                # (3) Recognised secondary direction
+                # (iii) Recognised secondary direction
                 } elsif ($dirType eq 'secondaryDir' || $dirType eq 'secondaryAbbrev') {
 
                     # Make sure $dir isn't the abbreviated version of the direction
@@ -915,8 +940,40 @@
             }
         }
 
+        # PART 5   - In crafty moves mode, if an exit matching the direction $dir doesn't exist,
+        #               create a hidden exit right now (even if the world itself doesn't include the
+        #               exit in its exit lists - I'm looking at you, Discworld!)
+        if (
+            ! $exitObj
+            && $self->mapWin
+            && $self->mapWin->mode eq 'update'
+            && $self->worldModelObj->craftyMovesFlag
+            && ! $self->worldModelObj->protectedMovesFlag
+            # Don't do this when departing from wilderness rooms
+            && $self->currentRoom->wildMode eq 'normal'
+        ) {
+            $exitObj = $self->worldModelObj->addExit(
+                $self->session,
+                FALSE,              # Don't update Automapper window yet
+                $self->currentRoom,
+                $dir,
+                $mapDir,
+            );
+
+            if ($exitObj) {
+
+                $self->worldModelObj->setHiddenExit(
+                    FALSE,              # Don't update Automapper window yet
+                    $exitObj,
+                    TRUE,               # Hidden exit
+                );
+            }
+        }
+
+        # PART 6    - deal with impassable, random, unallocated and unallocated exits
+        #
         # If the character is using an exit marked as impassable, then we're now lost
-        if ($exitObj && $exitObj->impassFlag) {
+        if ($exitObj && $exitObj->exitOrnament eq 'impass') {
 
             # Show an explanation, if allowed
             if ($self->worldModelObj->explainGetLostFlag) {
@@ -926,7 +983,7 @@
                 );
             }
 
-            # The TRUE argument means 'the character is lost'
+            # The presence of a second argument means 'the character is lost'
             return $self->setCurrentRoom(
                 undef,
                 $self->_objClass . '->moveKnownDirSeen',    # Defined string marks character as lost
@@ -939,13 +996,7 @@
             #   the world model's IVs)
             return $self->reactRandomExit($exitObj);
 
-        # If an exit matching $dir exists, and it leads to a known room, we can use the room
-        } elsif ($exitObj && $exitObj->destRoom) {
-
-            $existRoomObj = $self->worldModelObj->ivShow('modelHash', $exitObj->destRoom);
-
-        # Same is true if the player attemps to move through an unallocated exit, or an
-        #   unallocatable exit which doesn't have a destination room
+        # If the character attemps to move through an unallocated exit, we are now lost
         } elsif ($exitObj && $exitObj->drawMode eq 'temp_alloc') {
 
             # Show an explanation, if allowed
@@ -956,12 +1007,14 @@
                 );
             }
 
-            # The TRUE argument means 'the character is lost'
+            # The presence of a second argument means 'the character is lost'
             return $self->setCurrentRoom(
                 undef,
                 $self->_objClass . '->moveKnownDirSeen',    # Defined string marks character as lost
             );
 
+        # If the character attempts to move through an unallocatable exit which doesn't have a
+        #   destination room, we are now lost
         } elsif ($exitObj && $exitObj->drawMode eq 'temp_unalloc' && ! $exitObj->destRoom) {
 
             # Show an explanation, if allowed
@@ -973,232 +1026,316 @@
                 );
             }
 
-            # The TRUE argument means 'the character is lost'
+            # The presence of a second argument means 'the character is lost'
             return $self->setCurrentRoom(
                 undef,
                 $self->_objClass . '->moveKnownDirSeen',    # Defined string marks character as lost
             );
+        }
 
-        # Otherwise, if the Automapper window is open and in 'update' mode...
-        } elsif ($self->mapWin && $self->mapWin->mode eq 'update') {
+        # PART 7    - deal ordinary exits whose destination room is already set
+        #
+        # If an exit matching $dir exists, and it leads to a known room, we can use the room
+        if ($exitObj && $exitObj->destRoom) {
 
-            # In Basic mapping mode - for worlds in which room statements don't include a list
-            #   of exits - if the character moves in a primary direction, we must create a new
-            #   exit in that direction. (When basic mapping mode is off, the automapper gets
-            #   lost, instead)
-            # This also applies if the room statement was a follow anchor pattern, caused by the
-            #   character following someone to a new room, and no new room statement is expected
-            #   (but only if the world model flag permits it)
-            if (
-                ! $exitObj
-                && (
-                    $self->session->currentWorld->basicMappingMode
-                    || ($cmdObj->followAnchorFlag && $self->worldModelObj->followAnchorFlag)
-                )
-                && $primaryFlag
-                && $self->mapWin->mode eq 'update'
-            ) {
-                $exitObj = $self->worldModelObj->addExit(
-                    $self->session,
-                    FALSE,              # Don't update Automapper window yet
+            $destRoomObj = $self->worldModelObj->ivShow('modelHash', $exitObj->destRoom);
+            if ($destRoomObj) {
+
+                return $self->useExistingRoom(
                     $self->currentRoom,
+                    $destRoomObj,
                     $dir,
-                    $mapDir,
+                    $customDir,
+                    $exitObj,
                 );
+            }
+        }
 
-                # If the destination room is about to be created, this new exit will be one-way.
-                #   If ->autocompleteExitsFlag is set, it's nicer to create a two-way exit; set a
-                #   flag to remind us to do that, later in the function
-                if ($self->worldModelObj->autocompleteExitsFlag) {
+        # PART 8    - check the location where we would expect a destination room to be placed for
+        #               movement in the direction $dir, and see if a room exists there
+        #
+        # For primary directions, check the gridblock to which the exit is supposed to lead and see
+        #   see if there's already a room at that location
+        if ($standardDir && $customDir) {
 
-                    $twoWayFlag = TRUE;
-                }
+            # Work out the location's coordinates on the map
+            $vectorRef = $self->mapWin->ivShow('constSpecialVectorHash', $standardDir);
+
+            if ($standardDir eq 'up' || $standardDir eq 'down') {
+                $exitLength = $self->worldModelObj->verticalExitLengthBlocks;
+            } else {
+                $exitLength = $self->worldModelObj->horizontalExitLengthBlocks;
             }
 
-            # For primary directions, check the gridblock to which the exit is supposed to lead and
-            #   see if there's already a room at that location
-            if ($standardDir && $customDir) {
+            $xPosBlocks = $self->currentRoom->xPosBlocks + ($$vectorRef[0] * $exitLength);
+            $yPosBlocks = $self->currentRoom->yPosBlocks + ($$vectorRef[1] * $exitLength);
+            $zPosBlocks = $self->currentRoom->zPosBlocks + ($$vectorRef[2] * $exitLength);
 
-                # Work out the potential new room's location on the grid
-                $vectorRef = $self->mapWin->ivShow('constSpecialVectorHash', $standardDir);
+        # For non-primary directions for which the exit has been allocated a map direction (stored
+        #   in ->mapDir), work out the gridblock to which the exit is supposed to lead
+        } elsif ($exitObj && $exitObj->mapDir) {
 
-                if ($standardDir eq 'up' || $standardDir eq 'down') {
-                    $exitLength = $self->worldModelObj->verticalExitLengthBlocks;
-                } else {
-                    $exitLength = $self->worldModelObj->horizontalExitLengthBlocks;
+            # Work out the location's coordinates on the map
+            $vectorRef = $self->mapWin->ivShow('constSpecialVectorHash', $exitObj->mapDir);
+            $exitLength = $self->worldModelObj->getExitLength($exitObj);
+            $xPosBlocks = $self->currentRoom->xPosBlocks + ($$vectorRef[0] * $exitLength);
+            $yPosBlocks = $self->currentRoom->yPosBlocks + ($$vectorRef[1] * $exitLength);
+            $zPosBlocks = $self->currentRoom->zPosBlocks + ($$vectorRef[2] * $exitLength);
+        }
+
+        if (defined $xPosBlocks) {
+
+            # Check that location actually fits on the map
+            if (! $regionmapObj->checkGridBlock($xPosBlocks, $yPosBlocks, $zPosBlocks)) {
+
+                # The Automapper window can't draw rooms outside the map, so the character is now
+                #   lost. Display an explanation, if allowed
+                if ($self->worldModelObj->explainGetLostFlag) {
+
+                    $self->session->writeText(
+                        'MAP: Lost because new room\'s location is outside the region\'s'
+                        . ' boundaries (after a move in a primary direction)',
+                    );
                 }
 
-                $xPosBlocks = $self->currentRoom->xPosBlocks + ($$vectorRef[0] * $exitLength);
-                $yPosBlocks = $self->currentRoom->yPosBlocks + ($$vectorRef[1] * $exitLength);
-                $zPosBlocks = $self->currentRoom->zPosBlocks + ($$vectorRef[2] * $exitLength);
-
-                # Check that the new room's location actually fits on the map
-                if (! $regionmapObj->checkGridBlock($xPosBlocks, $yPosBlocks, $zPosBlocks)) {
-
-                    # The Automapper window can't draw rooms outside the map, so the character is
-                    #   now lost
-                    # Display an explanation, if allowed
-                    if ($self->worldModelObj->explainGetLostFlag) {
-
-                        $self->session->writeText(
-                            'MAP: Lost because new room\'s location is outside the region\'s'
-                            . ' boundaries (after a move in a primary direction)',
-                        );
-                    }
-
+                # The presence of a second argument means 'the character is lost'
                 return $self->setCurrentRoom(
                     undef,
                     $self->_objClass . '->moveKnownDirSeen',    # Character now lost
                 );
 
-                } else {
+            } else {
 
-                    # Otherwise, if there is a room at that location, we can use it
-                    $number = $regionmapObj->fetchRoom($xPosBlocks, $yPosBlocks, $zPosBlocks);
-                    if (defined $number) {
+                # Otherwise, if there is a room at that location, we can use it
+                $number = $regionmapObj->fetchRoom($xPosBlocks, $yPosBlocks, $zPosBlocks);
+                if (defined $number) {
 
-                        $existRoomObj = $self->worldModelObj->ivShow('modelHash', $number);
-                    }
+                    $existRoomObj = $self->worldModelObj->ivShow('modelHash', $number);
+                }
+            }
+        }
+
+        # PART 9    - deal with movement between rooms, when one (or both) rooms is in wilderness
+        #               mode
+        if ($existRoomObj) {
+
+            # A room exists where we'd expect to find a destination room
+
+            if (
+                ($self->currentRoom->wildMode eq 'normal' && $existRoomObj->wildMode eq 'border')
+                || ($self->currentRoom->wildMode eq 'border' && $existRoomObj->wildMode eq 'normal')
+            ) {
+                # Between 'normal' and 'border' rooms (in either direction), when the automapper
+                #   exists and is in 'update' mode, create an exit if one doesn't already exist
+                if (
+                    ! $exitObj
+                    && $self->mapWin
+                    && $self->mapWin->mode eq 'update'
+                    && $primaryFlag
+                ) {
+                    $exitObj = $self->worldModelObj->addExit(
+                        $self->session,
+                        FALSE,              # Don't update Automapper window yet
+                        $self->currentRoom,
+                        $dir,
+                        $mapDir,
+                    );
                 }
 
-            # For non-primary directions for which the exit has been allocated a map direction
-            #   (stored in ->mapDir), work out the gridblock to which the exit is supposed to lead
-            } elsif ($exitObj && $exitObj->mapDir) {
+                if (! $exitObj) {
 
-                # Work out the potential new room's location on the grid
-                $vectorRef = $self->mapWin->ivShow('constSpecialVectorHash', $exitObj->mapDir);
-                $exitLength = $self->worldModelObj->getExitLength($exitObj);
-                $xPosBlocks = $self->currentRoom->xPosBlocks + ($$vectorRef[0] * $exitLength);
-                $yPosBlocks = $self->currentRoom->yPosBlocks + ($$vectorRef[1] * $exitLength);
-                $zPosBlocks = $self->currentRoom->zPosBlocks + ($$vectorRef[2] * $exitLength);
-
-                # Check that the new room's location actually fits on the map
-                if (! $regionmapObj->checkGridBlock($xPosBlocks, $yPosBlocks, $zPosBlocks)) {
-
-                    # The automapper can't draw rooms outside the map, so the character is now lost
-                    # Display an explanation, if allowed
+                    # Between 'normal' and 'border' rooms, an exit object is required, so the
+                    #   character is now lost. Display an explanation, if allowed
                     if ($self->worldModelObj->explainGetLostFlag) {
 
                         $self->session->writeText(
-                           'MAP: Lost because new room\'s location is outside the region\'s'
-                           . ' boundaries (after a move in a non-primary direction)',
+                            'MAP: Lost because no exit object exists between a normal room and a'
+                            . ' wilderness border room',
                         );
                     }
 
+                    # The presence of a second argument means 'the character is lost'
+                    return $self->setCurrentRoom(
+                        undef,
+                        $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+                    );
+                }
+
+                # If an exit from the destination room in the opposite direction already exists,
+                #   find it
+                OUTER: foreach my $number ($existRoomObj->ivValues('exitNumHash')) {
+
+                    my $otherExitObj = $self->worldModelObj->ivShow('exitModelHash', $number);
+
+                    if (
+                        $otherExitObj->mapDir
+                        && $otherExitObj->mapDir eq $dictObj->ivShow('primaryOppHash', $mapDir)
+                        # (Don't leave using an exit attached to a shadow exit; leave via the shadow
+                        #   exit instead)
+                        && (! $otherExitObj->shadowExit)
+                    ) {
+                        $oppExitObj = $otherExitObj;
+                        last OUTER;
+                    }
+                }
+
+                # Otherwise, if ->autocompleteExitsFlag is set, create an exit in the opposite
+                #   direction and make them two-way exits
+                if (! $oppExitObj && $self->worldModelObj->autocompleteExitsFlag) {
+
+                    # Create an opposite exit from the destination room, pointing back to the
+                    #   current room
+                    $oppExitObj = $self->worldModelObj->addExit(
+                        $self->session,
+                        FALSE,                  # Don't update Automapper window yet
+                        $existRoomObj,
+                        $dictObj->ivShow('primaryOppHash', $mapDir),
+                        $axmud::CLIENT->ivShow('constOppDirHash', $mapDir),
+                    );
+                }
+
+                # Mark the exit from the 'normal' room leading to the 'border' room as a hidden exit
+                #   (it may or may not be hidden in the room statement, depending on the world;
+                #   marking it hidden takes care of both situations)
+                if ($self->currentRoom->wildMode eq 'normal') {
+
+                    $self->worldModelObj->setHiddenExit(
+                        FALSE,              # Don't update Automapper window yet
+                        $exitObj,
+                        TRUE,               # Hidden exit
+                    );
+
+                } elsif ($existRoomObj->wildMode eq 'normal' && $oppExitObj) {
+
+                    $self->worldModelObj->setHiddenExit(
+                        FALSE,              # Don't update Automapper window yet
+                        $oppExitObj,
+                        TRUE,               # Hidden exit
+                    );
+                }
+
+                # Use the existing room as the destination room
+                return $self->useExistingRoom(
+                    $self->currentRoom,
+                    $existRoomObj,
+                    $dir,
+                    $customDir,
+                    $exitObj,
+                );
+
+            } elsif (
+                $self->currentRoom->wildMode ne 'normal'
+                && $existRoomObj->wildMode ne 'normal'
+            ) {
+                # Between 'border' and 'wild' rooms (in either direction), use the existing room as
+                #   the destination room
+                return $self->useExistingRoom(
+                    $self->currentRoom,
+                    $existRoomObj,
+                    $dir,
+                    $customDir,
+                    undef,              # No exit is drawn between 'wild' and 'border' rooms
+                );
+            }
+
+        } elsif (! $existRoomObj && $self->mapWin && $self->mapWin->mode eq 'update') {
+
+            # A room exists where we'd expect to find a destination room, but the automapper window
+            #   is open and in 'update' mode, so we can create one
+
+            # Set the wilderness mode for the new destination room. If the painter is enabled, use
+            #   the mode it specifies; otherwise use the default mode
+            if ($self->mapWin->painterFlag) {
+                $destWildMode = $self->worldModelObj->painterObj->wildMode;
+            } else {
+                $destWildMode = 'normal';
+            }
+
+            if (
+                ($self->currentRoom->wildMode eq 'normal' && $destWildMode eq 'border')
+                || ($self->currentRoom->wildMode eq 'border' && $destWildMode eq 'normal')
+            ) {
+                # Between 'normal' and 'border' rooms (in either direction), create an exit
+                #   departing from the current room, if one doesn't already exist
+                if (! $exitObj && $primaryFlag) {
+
+                    $exitObj = $self->worldModelObj->addExit(
+                        $self->session,
+                        FALSE,              # Don't update Automapper window yet
+                        $self->currentRoom,
+                        $dir,
+                        $mapDir,
+                    );
+                }
+
+                if (! $exitObj) {
+
+                    # Between 'normal' and 'border' rooms, an exit object is required, so the
+                    #   character is now lost. Display an explanation, if allowed
+                    if ($self->worldModelObj->explainGetLostFlag) {
+
+                        $self->session->writeText(
+                            'MAP: Lost because no exit object exists between a normal and a'
+                            . ' wilderness border room',
+                        );
+                    }
+
+                    # The presence of a second argument means 'the character is lost'
+                    return $self->setCurrentRoom(
+                        undef,
+                        $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+                    );
+                }
+
+                # Create a destination room at the specified location, but don't give it the
+                #   properties of the Locator task's current room and don't update the map yet
+                # NB Call ->createNewRoom directly, rather than calling it indirectly via a call to
+                #   $self->autoProcessNewRoom; in this situation, we're not concerned about the
+                #   special cases that ->autoProcessNewRoom handles. Also, a call to
+                #   ->autoProcessNewRoom will cause a one-way exit to be drawn on the map window,
+                #   then quickly redrawn as a two-way exit, which is very annoying
+                $destRoomObj = $self->createNewRoom(
+                    $regionmapObj,          # Use the same region as the current room
+                    $xPosBlocks,            # Co-ordinates of room on the region's grid
+                    $yPosBlocks,
+                    $zPosBlocks,
+                    undef,                  # Don't change GA::Win::Map->mode
+                    FALSE,                  # New room is not current room (yet)
+                    FALSE,                  # New room doesn't take properties from Locator (yet)
+                    FALSE,                  # Don't update Automapper windows now
+                );
+
+                if (! $destRoomObj) {
+
+                    if ($self->worldModelObj->explainGetLostFlag) {
+
+                        $self->session->writeText(
+                            'MAP: Lost due to internal error (cannot create new room)',
+                        );
+                    }
+
+                    # The presence of a second argument means 'the character is lost'
                     return $self->setCurrentRoom(
                         undef,
                         $self->_objClass . '->moveKnownDirSeen',    # Character now lost
                     );
 
-                } else {
-
-                    # Otherwise, if there is a room at that location, we can use it
-                    $number = $regionmapObj->fetchRoom($xPosBlocks, $yPosBlocks, $zPosBlocks);
-                    if (defined $number) {
-
-                        $existRoomObj = $self->worldModelObj->ivShow('modelHash', $number);
-                    }
-                }
-            }
-        }
-
-        # Now, if there is an existing destination room...
-        if ($existRoomObj) {
-
-            # Use it
-            return $self->useExistingRoom(
-                $self->currentRoom,
-                $existRoomObj,
-                $dir,
-                $customDir,
-                $exitObj,
-            );
-
-        # If there is not an existing room...
-        } else {
-
-            if (! $self->mapWin) {
-
-                # New rooms can't be created when the Automapper window isn't open, so the
-                #   character is now lost
-                # Display an explanation, if allowed
-                if ($self->worldModelObj->explainGetLostFlag) {
-
-                    $self->session->writeText(
-                        'MAP: Lost because new rooms can\'t be added to the world model when the'
-                        . ' Automapper window isn\'t open',
-                    );
+                    return undef;
                 }
 
-                return $self->setCurrentRoom(
-                    undef,
-                    $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+                # Set the destination room's ->wildMode...
+                $destRoomObj->ivPoke('wildMode', $destWildMode);
+                # ...and now we can update its properties from the Locator task's current room,
+                #   because the exits are no longer copied
+                $self->worldModelObj->updateRoom(
+                    $self->session,
+                    FALSE,                  # Don't update Automapper windows now
+                    $destRoomObj,
                 );
 
-            } elsif (! $exitObj) {
-
-                # Can't connect a departure room to an arrival room, if we don't know which exit
-                #   is being used - it may be the result of a world command like 'move box', which
-                #   has been interpreted (incorrectly) as a movement command. The character is now
-                #   lost
-                if ($self->worldModelObj->explainGetLostFlag) {
-
-                    $self->session->writeText(
-                        'MAP: Lost because of a departure in an unknown direction',
-                    );
-                }
-
-                return $self->setCurrentRoom(
-                    undef,
-                    $self->_objClass . '->moveKnownDirSeen',    # Character now lost
-                );
-
-            } elsif ($self->mapWin->mode eq 'follow') {
-
-                # The automapper can't create new rooms in 'follow' mode, so the character is now
-                #   lost
-                # Display an explanation, if allowed
-                if ($self->worldModelObj->explainGetLostFlag) {
-
-                    $self->session->writeText(
-                        'MAP: Lost because the Automapper window can\'t create new rooms in'
-                        . ' \'follow\' mode',
-                    );
-                }
-
-                return $self->setCurrentRoom(
-                    undef,
-                    $self->_objClass . '->moveKnownDirSeen',    # Character now lost
-                );
-
-            } elsif ($self->mapWin->mode eq 'update') {
-
-                # In basic mapping mode when ->autocompleteExitsFlag is set, create a destination
-                #   room directly, give it an opposite exit, then link the two new exits
-                if ($twoWayFlag) {
-
-                    # Create a new room at the specified location and give it the properties of the
-                    #   Locator task's current room, but don't update the map yet
-                    # NB Call ->createNewRoom directly, rather than calling it indirectly via a
-                    #    call to $self->autoProcessNewRoom; in basic mapping mode, we're not
-                    #   concerned about the special cases that ->autoProcessNewRoom handles. Also,
-                    #   a call to ->autoProcessNewRoom will cause a one-way exit to be drawn on the
-                    #   map window, then quickly redrawn as a two-way exit, which is very annoying
-                    $destRoomObj = $self->mapWin->createNewRoom(
-                        $regionmapObj,          # Use the same region as the current room
-                        $xPosBlocks,            # Co-ordinates of room on the region's grid
-                        $yPosBlocks,
-                        $zPosBlocks,
-                        undef,                  # Don't change $self->mode
-                        FALSE,                  # New room is not current room (yet)
-                        TRUE,                   # New room takes properties from Locator
-                        FALSE,                  # Don't update Automapper windows now
-                    );
-
-                    if (! $destRoomObj) {
-
-                        return undef;
-                    }
+                # If ->autocompleteExitsFlag is set, create an exit in the opposite direction and
+                #   make them two-way exits
+                if ($self->worldModelObj->autocompleteExitsFlag) {
 
                     # Create an opposite exit from the destination room, pointing back to the
                     #   current room
@@ -1212,40 +1349,274 @@
 
                     if (! $oppExitObj) {
 
-                        return undef;
+                        if ($self->worldModelObj->explainGetLostFlag) {
 
-                    } else {
+                            $self->session->writeText(
+                                'MAP: Lost due to internal error (cannot create new exit)',
+                            );
+                        }
 
-                        # Connect the two rooms together, creating a two-way exit between them, and
-                        #   make the destination room the new current room
-                        return $self->useExistingRoom(
-                            $self->currentRoom,
-                            $destRoomObj,
-                            $dir,
-                            $customDir,
-                            $exitObj,
+                        # The presence of a second argument means 'the character is lost'
+                        return $self->setCurrentRoom(
+                            undef,
+                            $self->_objClass . '->moveKnownDirSeen',    # Character now lost
                         );
-                    }
 
-                } else {
-
-                    # Not in basic mapping mode. Perform checks on the new room, before calling the
-                    #   right function to process it
-                    if (
-                        ! $self->autoProcessNewRoom(
-                            $dir,
-                            $regionmapObj,
-                            $xPosBlocks,
-                            $yPosBlocks,
-                            $zPosBlocks,
-                            $mapDir,
-                            $customDir,
-                            $exitObj,
-                        )
-                    ) {
                         return undef;
                     }
                 }
+
+                # Use the destination room as the new current room, connecting the two rooms
+                #   together (with a one-way or two-way exit, as appropriate)
+                return $self->useExistingRoom(
+                    $self->currentRoom,
+                    $destRoomObj,
+                    $dir,
+                    $customDir,
+                    $exitObj,
+                );
+
+            } elsif ($self->currentRoom->wildMode ne 'normal' && $destWildMode ne 'normal') {
+
+                # Between 'border' and 'wild' rooms (in either direction), create a new room with
+                #   no exits
+                $destRoomObj = $self->createNewRoom(
+                    $regionmapObj,          # Use the same region as the current room
+                    $xPosBlocks,            # Co-ordinates of room on the region's grid
+                    $yPosBlocks,
+                    $zPosBlocks,
+                    undef,                  # Don't change GA::Win::Map->mode
+                    FALSE,                  # New room is not current room (yet)
+                    FALSE,                  # New room doesn't take properties from Locator (yet)
+                    FALSE,                  # Don't update Automapper windows now
+                );
+
+                # Set the destination room's ->wildMode...
+                $destRoomObj->ivPoke('wildMode', $destWildMode);
+                # ...and now we can update its properties from the Locator task's current room,
+                #   because the exits are no longer copied
+                $self->worldModelObj->updateRoom(
+                    $self->session,
+                    FALSE,                  # Don't update Automapper windows now
+                    $destRoomObj,
+                );
+
+                # Use the destination room as the new current room without connecting the two rooms
+                #   together
+                return $self->useExistingRoom(
+                    $self->currentRoom,
+                    $destRoomObj,
+                    $dir,
+                    $customDir,
+                    undef,                  # Definitely no exit object
+                );
+            }
+        }
+
+        # PART 10   - in basic mapping mode and when the character is following someone/something,
+        #               we can create an exit right now, if one doesn't already exist (assuming
+        #               that the automapper window is open and in 'update' mode)
+        #
+        # In Basic mapping mode - for worlds in which room statements don't include a list of exits
+        #   - if the character moves in a primary direction, we must create a new exit in that
+        #   direction
+        # This also applies if the room statement was a follow anchor pattern, caused by the
+        #   character following someone to a new room, and no new room statement is expected
+        #   (but only if the world model flag permits it)
+        if (
+            ! $exitObj
+            && $self->mapWin
+            && $self->mapWin->mode eq 'update'
+            && $primaryFlag
+            && (
+                $self->session->currentWorld->basicMappingFlag
+                || ($cmdObj->followAnchorFlag && $self->worldModelObj->followAnchorFlag)
+            )
+        ) {
+            $exitObj = $self->worldModelObj->addExit(
+                $self->session,
+                FALSE,              # Don't update Automapper window yet
+                $self->currentRoom,
+                $dir,
+                $mapDir,
+            );
+
+            # If the destination room is about to be created, this new exit will be one-way. If
+            #   ->autocompleteExitsFlag is set, it's nicer to create a two-way exit
+            if ($self->worldModelObj->autocompleteExitsFlag) {
+
+                # Create a destination room at the specified location and give it the properties of
+                #   the Locator task's current room, but don't update the map yet
+                # NB Call ->createNewRoom directly, rather than calling it indirectly via a call to
+                #   $self->autoProcessNewRoom; in this situation, we're not concerned about the
+                #   special cases that ->autoProcessNewRoom handles. Also, a call to
+                #   ->autoProcessNewRoom will cause a one-way exit to be drawn on the map window,
+                #   then quickly redrawn as a two-way exit, which is very annoying
+                $destRoomObj = $self->createNewRoom(
+                    $regionmapObj,          # Use the same region as the current room
+                    $xPosBlocks,            # Co-ordinates of room on the region's grid
+                    $yPosBlocks,
+                    $zPosBlocks,
+                    undef,                  # Don't change GA:Map::Win->mode
+                    FALSE,                  # New room is not current room (yet)
+                    TRUE,                   # New room takes properties from Locator
+                    FALSE,                  # Don't update Automapper windows now
+                );
+
+                if (! $destRoomObj) {
+
+                    if ($self->worldModelObj->explainGetLostFlag) {
+
+                        $self->session->writeText(
+                            'MAP: Lost due to internal error (cannot create new room)',
+                        );
+                    }
+
+                    # The presence of a second argument means 'the character is lost'
+                    return $self->setCurrentRoom(
+                        undef,
+                        $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+                    );
+                }
+
+                # Create an opposite exit from the destination room, pointing back to the
+                #   current room
+                $oppExitObj = $self->worldModelObj->addExit(
+                    $self->session,
+                    FALSE,                  # Don't update Automapper window yet
+                    $destRoomObj,
+                    $dictObj->ivShow('primaryOppHash', $mapDir),
+                    $axmud::CLIENT->ivShow('constOppDirHash', $mapDir),
+                );
+
+                if (! $oppExitObj) {
+
+                    if ($self->worldModelObj->explainGetLostFlag) {
+
+                        $self->session->writeText(
+                            'MAP: Lost due to internal error (cannot create new exit)',
+                        );
+                    }
+
+                    # The presence of a second argument means 'the character is lost'
+                    return $self->setCurrentRoom(
+                        undef,
+                        $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+                    );
+
+                } else {
+
+                    # Connect the two rooms together, creating a two-way exit between them, and
+                    #   make the destination room the new current room
+                    return $self->useExistingRoom(
+                        $self->currentRoom,
+                        $destRoomObj,
+                        $dir,
+                        $customDir,
+                        $exitObj,
+                    );
+                }
+            }
+        }
+
+        # PART 11   - if we identified a possible destination room in PART 7, we can use it
+        if ($existRoomObj) {
+
+            # Use it
+            return $self->useExistingRoom(
+                $self->currentRoom,
+                $existRoomObj,
+                $dir,
+                $customDir,
+                $exitObj,
+            );
+        }
+
+        # PART 12   - no possible destination room exists; either create a new room, or mark the
+        #               character as being lost
+        if (! $self->mapWin) {
+
+            # New rooms can't be created when the Automapper window isn't open, so the character is
+            #   now lost. Display an explanation, if allowed
+            if ($self->worldModelObj->explainGetLostFlag) {
+
+                $self->session->writeText(
+                    'MAP: Lost because new rooms can\'t be added to the world model when the'
+                    . ' Automapper window isn\'t open',
+                );
+            }
+
+            # The presence of a second argument means 'the character is lost'
+            return $self->setCurrentRoom(
+                undef,
+                $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+            );
+
+        } elsif (! $exitObj) {
+
+            # Can't connect a departure room to an arrival room, if we don't know which exit is
+            #   being used - it may be the result of a world command like 'move box', which has been
+            #   interpreted (incorrectly) as a movement command. The character is now lost
+            #   lost
+            if ($self->worldModelObj->explainGetLostFlag) {
+
+                $self->session->writeText(
+                    'MAP: Lost because of a departure in an unknown direction',
+                );
+            }
+
+            # The presence of a second argument means 'the character is lost'
+            return $self->setCurrentRoom(
+                undef,
+                $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+            );
+
+        } elsif ($self->mapWin->mode eq 'follow') {
+
+            # The automapper can't create new rooms in 'follow' mode, so the character is now lost.
+            #   Display an explanation, if allowed
+            if ($self->worldModelObj->explainGetLostFlag) {
+
+                $self->session->writeText(
+                    'MAP: Lost because the Automapper window can\'t create new rooms in'
+                    . ' \'follow\' mode',
+                );
+            }
+
+            # The presence of a second argument means 'the character is lost'
+            return $self->setCurrentRoom(
+                undef,
+                $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+            );
+
+        } elsif ($self->mapWin->mode eq 'update') {
+
+            # Not in basic mapping mode and the character is not following someone/something
+            # Check that we can create a new room and, if so, create it
+            if (
+                ! $self->autoProcessNewRoom(
+                    $dir,
+                    $regionmapObj,
+                    $xPosBlocks,
+                    $yPosBlocks,
+                    $zPosBlocks,
+                    $mapDir,
+                    $customDir,
+                    $exitObj,
+                )
+            ) {
+                if ($self->worldModelObj->explainGetLostFlag) {
+
+                    $self->session->writeText(
+                        'MAP: Lost due to internal error (cannot process new room)',
+                    );
+                }
+
+                # The presence of a second argument means 'the character is lost'
+                return $self->setCurrentRoom(
+                    undef,
+                    $self->_objClass . '->moveKnownDirSeen',    # Character now lost
+                );
             }
         }
 
@@ -1418,9 +1789,6 @@
 
         # Called by GA::Task::Locator->processLine->main (at stage 3) when the character fails to
         #   move (because a known failed exit pattern is seen)
-        # Only called when a failed exit pattern defined by the current world profile is seen. The
-        #   automapper doesn't need to know if the character failed to move due to a failed exit
-        #   pattern specific to the current room (because it's assumed to be temporary)
         #
         # Expected arguments
         #   $pattern     - One of the patterns from the world profile's ->doorPatternList or
@@ -1442,7 +1810,7 @@
 
         # Local variables
         my (
-            $worldObj, $customDir, $standard,
+            $worldObj, $dictObj, $primSecFlag, $standard,
             @redrawList,
         );
 
@@ -1467,14 +1835,15 @@
             return undef;
         }
 
-        # Import the current world profile
+        # Import the current world profile and current dictionary (for convenience)
         $worldObj = $self->session->currentWorld;
+        $dictObj = $self->session->currentDict;
 
         # If $dir is a primary/secondary direction, but abbreviated, unabbreviate it
-        $customDir = $self->session->currentDict->unabbrevDir($dir);
-        if ($customDir) {
+        if ($dictObj->checkPrimaryDir($dir) || $dictObj->checkSecondaryDir($dir)) {
 
-            $dir = $customDir;
+            $primSecFlag = TRUE;
+            $dir = $dictObj->unabbrevDir($dir);
         }
 
         # Find the current room's exit object corresponding to the direction $dir
@@ -1495,7 +1864,7 @@
                         $self->worldModelObj->setExitOrnament(
                             FALSE,       # Don't update Automapper windows now
                             $exitObj,
-                            'lockFlag',
+                            'lock',
                         );
 
                     } elsif (defined $worldObj->ivFind('doorPatternList', $pattern)) {
@@ -1504,7 +1873,7 @@
                         $self->worldModelObj->setExitOrnament(
                             FALSE,       # Don't update Automapper windows now
                             $exitObj,
-                            'openFlag',
+                            'open',
                         );
                     }
                 }
@@ -1548,6 +1917,21 @@
 
                 return 1;
             }
+        }
+
+        # No exit object exists in the direction $dir
+        # For primary/secondary directions, make a record of the failed exit, if allowed to do so
+        #   (in Axmud terminology this is called a checked direction)
+        if ($primSecFlag && $self->worldModelObj->collectCheckedDirsFlag) {
+
+            if ($self->currentRoom->ivExists('checkedDirHash', $dir)) {
+                $self->currentRoom->ivIncHash('checkedDirHash', $dir);
+            } else {
+                $self->currentRoom->ivAdd('checkedDirHash', $dir, 1);
+            }
+
+            # Mark the room to be redrawn (in every Automapper window)
+            $self->worldModelObj->updateMaps('room', $self->currentRoom);
         }
 
         # Corresponding exit object not found
@@ -1709,14 +2093,6 @@
                                 );
                             }
 
-                            # Paint the room, if required to do so
-                            if (
-                                $self->mapWin->painterFlag
-                                && $self->worldModelObj->paintAllRoomsFlag
-                            ) {
-                                $self->mapWin->paintRoom($oppRoomObj);
-                            }
-
                             # Update the number of character visits to this room (if allowed)
                             $self->worldModelObj->updateVisitCount(
                                 $self->session,
@@ -1726,9 +2102,22 @@
                                 $oppRoomObj->number,
                             );
 
+                            # Tell the automapper window to graffiti the room (when graffiti mode is
+                            #   on)
+                            $self->mapWin->add_graffiti($oppRoomObj);
+
                             # Update the existing room to give it the same properties as the
                             #   Locator's non-model room (where appropriate)
                             $self->updateRoom($oppRoomObj);
+
+                            # Paint the room, if required to do so
+                            if (
+                                $self->mapWin->painterFlag
+                                && $self->worldModelObj->paintAllRoomsFlag
+                            ) {
+                                $self->mapWin->paintRoom($oppRoomObj);
+                            }
+
                             # The call to ->updateRoom marks $oppRoomObj as needing to be redrawn in
                             #   every Automapper window; make sure $self->currentRoom is also
                             #   redrawn in every Automapper window
@@ -1903,12 +2292,12 @@
             #   specified location, make it the current room, give it the properties of the
             #   Locator task's current room, and update the map
             if (
-                ! $self->mapWin->createNewRoom(
+                ! $self->createNewRoom(
                     $regionmapObj,          # Use the same region as the current room
                     $xPosBlocks,            # Co-ordinates of room on the region's grid
                     $yPosBlocks,
                     $zPosBlocks,
-                    undef,                  # Don't change $self->mode
+                    undef,                  # Don't change GA::Win::Map->mode
                     TRUE,                   # New room is current room
                     TRUE,                   # New room takes properties from Locator
                     $self->currentRoom,
@@ -1931,6 +2320,223 @@
         }
 
         return 1;
+    }
+
+    sub createNewRoom {
+
+        # Called by $self->moveKnownDirSeen and ->autoProcessNewRoom
+        # Also called by GA::Win::Map->enableCanvasPopupMenu, ->canvasEventHandler,
+        #   ->addFirstRoomCallback, ->addRoomAtBlockCallback
+        # Creates a new room - adding a new object to the world model. At the moment, new rooms can
+        #   only be created when the automapper window is open, but this function checks for that
+        #   (just in case of future changes)
+        # If the process fails, deletes the world model object (if already created) and displays an
+        #   error
+        #
+        # Expected arguments
+        #   $regionmapObj   - The GA::Obj::Regionmap in which the new room will be created. Usually
+        #                       (but not always) matches the regionmap visible in the automapper
+        #                       window for this session
+        #   $xPosBlocks, $yPosBlocks, $zPosBlocks
+        #                   - The coordinates of the new room on the regionmap's grid
+        #
+        # Optional arguments
+        #   $mode           - The new automapper window's ->mode after the room has been created. If
+        #                       'undef', the window's ->mode isn't changed
+        #   $currentFlag    - If set to TRUE, the new room is made the current location (if FALSE
+        #                       or 'undef', the current location isn't changed)
+        #   $updateFlag     - If set to TRUE, the room's properties are updated to match those of
+        #                       the Locator task's current room (depending on certain flags, and
+        #                       only when $currentFlag is TRUE; otherwise set to FALSE or 'undef')
+        #   $connectRoomObj - The room from which the character just departed ('undef' if not known)
+        #   $dir            - The command used to move (e.g. 'n', 'enter well' - matches
+        #                       GA::Obj::Exit->dir) ('undef' if unknown)
+        #   $mapDir         - How the exit is drawn on the map - one of Axmud's standard primary
+        #                       directions (e.g. 'north', 'south', 'up) ('undef' if unknown)
+        #   $exitObj        - The GA::Obj::Exit through which the character moved (if 'undef', a new
+        #                       exit object can be created)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the new room isn't created
+        #   Otherwise returns the GA::ModelObj::Room created
+
+        my (
+            $self, $regionmapObj, $xPosBlocks, $yPosBlocks, $zPosBlocks, $mode, $currentFlag,
+            $updateFlag, $connectRoomObj, $dir, $mapDir, $exitObj, $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            $text, $result, $roomObj, $filePath, $virtualPath,
+            @matchList, @selectList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $regionmapObj || ! defined $xPosBlocks || ! defined $yPosBlocks
+            || ! defined $zPosBlocks || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->createNewRoom', @_);
+        }
+
+        if ($updateFlag && $self->worldModelObj->autoCompareFlag && $self->mapWin) {
+
+            # Before creating the new room, compare the Locator's current room against all rooms
+            #   already in the region, looking for matches - in case we're about to create a
+            #   duplicate room
+            @matchList = $self->autoCompareLocatorRoom($regionmapObj);
+            if (@matchList) {
+
+                # Select all the matching rooms
+                # GA::Win::Map->setSelectedObj expects a list in the form
+                #   (room_object, 'room', room_object, 'room', ...)
+                foreach my $obj (@matchList) {
+
+                    push (@selectList, $obj, 'room');
+                }
+
+                # First unselect all selected objects, then selecting just the matching rooms
+                if ($self->mapWin->currentRegionmap) {
+
+                    $self->mapWin->setSelectedObj();
+                    $self->mapWin->setSelectedObj(
+                        \@selectList,
+                        TRUE,           # Select multiple objects
+                    );
+                }
+
+                # Show a 'dialogue' window as a warning
+                if (@matchList == 1) {
+                    $text = 'The Locator\'s current room matches 1 room';
+                } else {
+                    $text = 'The Locator\'s current room matches ' . scalar @matchList . ' rooms';
+                }
+
+                $text .= ' in the current region. Do you want to continue?';
+
+                $result = $self->mapWin->showMsgDialogue(
+                    'Add new room',
+                    'warning',
+                    $text,
+                    'yes-no',
+                );
+
+                if ($result ne 'yes') {
+
+                    # If there is a current room, mark the automapper as lost
+                    if ($self->currentRoom) {
+
+                        return $self->setCurrentRoom(
+                            undef,
+                            $self->_objClass . '->createNewRoom',    # Character now lost
+                        );
+
+                        # Display an explanatory message, if necessary
+                        if ($self->worldModelObj->explainGetLostFlag) {
+
+                            $self->session->writeText(
+                                'MAP: Lost after user declined to create a new room',
+                            );
+                        }
+                    }
+
+                    # Don't create the new room
+                    return undef;
+                }
+            }
+        }
+
+        # Create the room object. Tell the world model not to update automappers immediately - we
+        #   might want to mark the room as current
+        $roomObj = $self->worldModelObj->addRoom(
+            $self->session,
+            TRUE,               # Update Automapper windows now
+            $regionmapObj->name,
+            $xPosBlocks,
+            $yPosBlocks,
+            $zPosBlocks,
+        );
+
+        if (! $roomObj) {
+
+            # Operation failed
+            if ($self->mapWin) {
+
+                $self->mapWin->showMsgDialogue(
+                    'New room',
+                    'error',
+                    'Could not create the new room',
+                    'ok',
+                );
+
+            } else {
+
+                $self->session->writeText('MAP: Could not create a new room');
+            }
+
+            return undef;
+        }
+
+        # Set the automapper's mode, if a new mode was specified
+        if ($mode && $self->mapWin) {
+
+            $self->mapWin->setMode($mode);
+        }
+
+        # Set the current location (which causes both the previous current location, if there was
+        #   one, and the new current location to be redrawn)
+        if ($currentFlag) {
+
+            # Update the number of character visits to this room, if allowed
+            $self->worldModelObj->updateVisitCount(
+                $self->session,
+                # Don't update Automapper windows now (the call to ->updateRoom will do that)
+                FALSE,
+                $roomObj->number,
+            );
+
+            # Mark this room with graffiti (when graffiti mode is on)
+            if ($self->mapWin) {
+
+                $self->mapWin->add_graffiti($roomObj);
+            }
+
+            # If necessary, give the new room the properties of the Locator task's current room
+            if ($updateFlag) {
+
+                $self->updateRoom($roomObj, $connectRoomObj, $exitObj, $mapDir);
+            }
+
+            # Paint the room, if required to do so
+            if ($self->mapWin && $self->mapWin->painterFlag) {
+
+                $self->mapWin->paintRoom($roomObj);
+            }
+
+            # If the previous room is known, connect it to this room
+            if ($connectRoomObj && $dir) {
+
+                $self->worldModelObj->connectRooms(
+                    $self->session,
+                    TRUE,       # Update Automapper windows now (for the benefit of $connectRoomObj)
+                    $connectRoomObj,
+                    $roomObj,
+                    $dir,
+                    $mapDir,
+                    $exitObj,
+                );
+            }
+
+            # Set the current location
+            $self->setCurrentRoom($roomObj);
+
+        } else {
+
+            # Just draw the new room (in every Automapper window)
+            $self->worldModelObj->updateMaps('room', $roomObj);
+        }
+
+        return $roomObj;
     }
 
     sub useExistingRoom {
@@ -1976,12 +2582,14 @@
         }
 
         # If the Locator task has created a non-model room object for the current room, see if
-        #   it matches $arriveRoomObj. The second argument is only ever set by a call from this
-        #   function; if set to TRUE, we have to display a message, explaining why the automapper
-        #   is now lost
+        #   it matches $arriveRoomObj
+        # The TRUE argument means that a dark or unspecified non-model room matches any model room
+        # The second return value is only ever set after a call from this function; if set to TRUE,
+        #   we have to display a message, explaining why the automapper is now lost
         ($result, $msg) = $self->worldModelObj->compareRooms(
             $self->session,
             $arriveRoomObj,
+            TRUE,
         );
 
         if (! $result) {
@@ -2006,22 +2614,21 @@
 
                 # Connect the two rooms if they're not already connected (and if they are, make
                 #   the exit between them two-way exits)
-                $self->worldModelObj->connectRooms(
-                    $self->session,
-                    TRUE,       # Update Automapper windows now (for the benefit of $departRoomObj)
-                    $departRoomObj,
-                    $arriveRoomObj,
-                    $dir,
-                    $standardDir,
-                    $exitObj,
-                );
-
-                # Paint the room, if required to do so
+                # NB Don't connect two rooms if either one is in wilderness mode
                 if (
-                    $self->mapWin->painterFlag
-                    && $self->worldModelObj->paintAllRoomsFlag
+                    ($departRoomObj->wildMode eq 'normal' && $arriveRoomObj->wildMode ne 'wild')
+                    || ($arriveRoomObj->wildMode eq 'normal' && $departRoomObj->wildMode ne 'wild')
                 ) {
-                    $self->mapWin->paintRoom($arriveRoomObj);
+
+                    $self->worldModelObj->connectRooms(
+                        $self->session,
+                        TRUE,       # Update Automapper windows now (for benefit of $departRoomObj)
+                        $departRoomObj,
+                        $arriveRoomObj,
+                        $dir,
+                        $standardDir,
+                        $exitObj,
+                    );
                 }
             }
 
@@ -2033,9 +2640,27 @@
                 $arriveRoomObj->number,
             );
 
+            # Tell the automapper window to graffiti the room (when graffiti mode is on)
+            if (
+                $self->mapWin
+                && ($self->mapWin->mode eq 'follow' || $self->mapWin->mode eq 'update')
+            ) {
+                $self->mapWin->add_graffiti($arriveRoomObj);
+            }
+
             # Update the arrival room to give it the same properties as the Locator's non-model
             #   room (where appropriate)
             $self->updateRoom($arriveRoomObj);
+
+            # Paint the room, if required to do so
+            if (
+                $self->mapWin->painterFlag
+                && $self->worldModelObj->paintAllRoomsFlag
+                && $self->mapWin
+                && $self->mapWin->mode eq 'update'
+            ) {
+                $self->mapWin->paintRoom($arriveRoomObj);
+            }
 
             # $arriveRoomObj is the new location
             $self->setCurrentRoom($arriveRoomObj);
@@ -2254,9 +2879,9 @@
 
     sub updateRoom {
 
-        # Called by $self->moveKnownDirSeen, $self->lookGlanceSeen and GA::Win::Map->createNewRoom
-        #   in order to update the properties of a room object in the world model to match those of
-        #   the Locator task's non-model current room
+        # Called by $self->moveKnownDirSeen, $self->lookGlanceSeen and $self->createNewRoom in order
+        #   to update the properties of a room object in the world model to match those of the
+        #   Locator task's non-model current room
         # If the Automapper window is open and is in 'update' mode, GA::Obj::WorldModel is called
         #   to do the bulk of the updating
         #
@@ -2266,9 +2891,9 @@
         #
         # Optional arguments
         #   $connectRoomObj, $connectExitObj, $mapDir
-        #       - When called by GA::Win::Map->createNewRoom, the room from which we arrived and
-        #           the exit/standard direction used to depart from it (if known). Used when
-        #           temporarily allocating primary directions to unallocated exits
+        #       - When called by $self->createNewRoom, the room from which we arrived and the exit/
+        #           standard direction used to depart from it (if known). Used when temporarily
+        #           allocating primary directions to unallocated exits
         #
         # Return values
         #   'undef' on improper arguments
@@ -2308,6 +2933,58 @@
 
         # Update complete
         return 1;
+    }
+
+    sub autoCompareLocatorRoom {
+
+        # Called by $self->createNewRoom
+        # Compares the Locator's current room against all rooms in the same regionmap. Returns a
+        #   list of all the matching rooms
+        #
+        # Expected arguments
+        #   $regionmapObj  - The GA::Obj::Regionmap containing the current room
+        #
+        # Return values
+        #   An empty list on improper arguments or if there are no matching rooms
+        #   Otherwise returns a list of blessed references to matching GA::ModelObj::Room objects
+
+        my ($self, $regionmapObj, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @roomList, @returnList);
+
+        # Check for improper arguments
+        if (! defined $regionmapObj || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->autoCompareLocatorRoom', @_);
+            return @emptyList;
+        }
+
+        # Don't do anything if the Locator task isn't running or doesn't know about the current room
+        if (! $self->session->locatorTask || ! $self->session->locatorTask->roomObj) {
+
+            return @emptyList;
+        }
+
+        # Get a list of rooms in the same regionmap
+        @roomList = $regionmapObj->ivValues('gridRoomHash');
+        foreach my $roomNum (@roomList) {
+
+            my ($roomObj, $result);
+
+            $roomObj = $self->worldModelObj->ivShow('modelHash', $roomNum);
+
+            # Compare the two rooms. The TRUE argument means that all rooms that have never been
+            #   matched before are matches
+            ($result) = $self->worldModelObj->compareRooms($self->session, $roomObj, undef, TRUE);
+            if (! $result) {
+
+                # $roomRef matches the Locator's current room
+                push (@returnList, $roomObj);
+            }
+        }
+
+        return @returnList;
     }
 
     # 'Connect offline' session mode functions
@@ -2809,12 +3486,15 @@
 
         # In 'connect offline' mode, movements through exits which are marked impassable, which are
         #   random exits or which have no destination room mean that the character is now 'lost'
-        } elsif ($exitObj->impassFlag || $exitObj->randomType ne 'none' || ! $exitObj->destRoom) {
-
+        } elsif (
+            $exitObj->exitOrnament eq 'impass'
+            || $exitObj->randomType ne 'none'
+            || ! $exitObj->destRoom
+        ) {
             # Show an explanation, if allowed
             if ($self->worldModelObj->explainGetLostFlag) {
 
-                if ($exitObj->impassFlag) {
+                if ($exitObj->exitOrnament eq 'impass') {
 
                     $msg = 'MAP: Lost because the character used an exit marked as \'impassable\'';
 

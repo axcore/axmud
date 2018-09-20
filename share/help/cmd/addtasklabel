@@ -24,7 +24,8 @@ atl / addtasklabel            Adds task labels
       The operation will also fail if any of the labels in <label_list> already
          exist (even if they correspond to a different task).
       Task label names must be no longer than 16 characters, and contain only
-         A-Z, a-z, underlines and 0-9 (not the first character).
+         A-Z, a-z, underlines and 0-9 (not the first character). Non-Latin
+         alphabets are acceptable.
  
    User commands:
       atl / addtl / addlabel / addtasklabel

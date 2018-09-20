@@ -292,6 +292,20 @@
             $axmud::CLIENT->writeWarning($msg, $self->_objClass . '->stop');
         }
 
+        # In certain (rare) circumstances (such as when Axmud starts in blind mode, and the user
+        #   manually closes the dialogue window created by GA::Client->connectBlind), the spare
+        #   'main' window will still exist. If it does, close it now to prevent an error
+        if (
+            $axmud::CLIENT->mainWin
+            && $axmud::CLIENT->mainWin->owner eq $axmud::CLIENT
+            && $axmud::CLIENT->mainWin->workspaceObj eq $self
+        ) {
+            $axmud::CLIENT->mainWin->winDestroy();
+            # GA::Client->stop must not call Gtk2->main_quit(), as it normally does, as this will
+            #   produce a Gtk-CRITICAL error. Instead, tell it to exit
+            $axmud::CLIENT->set_forceExitFlag();
+        }
+
         return 1;
     }
 

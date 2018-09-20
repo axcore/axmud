@@ -99,7 +99,7 @@
             # Zones can specify that only certain window types can be placed in them, or can specify
             #   that all window types may be placed in them.
             # Hash in the form
-            #   $gridHash{number} = blessed_reference_to_workspace_grid_object
+            #   $gridHash{unique_number} = blessed_reference_to_workspace_grid_object
             gridHash                    => {},
             # Number of workspace grid objects ever created for this workspace (used to give every
             #   workspace grid object a unique number)
@@ -179,8 +179,8 @@
             #   used - 'external' windows keep their own icons)
             externalWinIconList         => [],
 
-            # A list of Gtk2::Gdk::Pixbufs for 'gui' windows
-            guiWinIconList              => [],
+            # A list of Gtk2::Gdk::Pixbufs for 'viewer' windows
+            viewerWinIconList           => [],
             # A list of Gtk2::Gdk::Pixbufs for 'edit' windows
             editWinIconList             => [],
             # A list of Gtk2::Gdk::Pixbufs for 'pref' windows
@@ -2434,8 +2434,8 @@
     sub externalWinIconList
         { my $self = shift; return @{$self->{externalWinIconList}}; }
 
-    sub guiWinIconList
-        { my $self = shift; return @{$self->{guiWinIconList}}; }
+    sub viewerWinIconList
+        { my $self = shift; return @{$self->{viewerWinIconList}}; }
     sub editWinIconList
         { my $self = shift; return @{$self->{editWinIconList}}; }
     sub prefWinIconList

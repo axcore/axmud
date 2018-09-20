@@ -10,7 +10,8 @@ sr / setrace                  Sets the current race
       The current character profile will also be informed of the change.
       Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
          underlines and 0-9 (not the first character) and not be one of Axmud's 
-         reserved names (see the ';listreserved' command).
+         reserved names (see the ';listreserved' command). Non-Latin alphabets
+         are acceptable.
       The operation will fail if <name> is invalid or if there is no current
          character (use the ';setchar' command to set one first).
  

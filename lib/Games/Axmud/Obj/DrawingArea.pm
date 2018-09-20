@@ -30,7 +30,7 @@
 
     sub new {
 
-        # Called by GA::Generic::ConfigWin->addDrawingArea
+        # Called by GA::Generic::Win->addDrawingArea
         # Creates a new instance of the drawing area object which handles a Gtk2::Gdk::DrawingArea
         #   (usually used in an 'edit' or 'pref' window)
         #

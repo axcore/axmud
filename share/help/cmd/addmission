@@ -13,7 +13,7 @@ amn / addmission              Adds a new mission using the current recording
       Missions are stored in the current world profile. Mission names must be no
          longer than 16 characters, contain only A-Z, a-z, underlines and 0-9 
          (not the first character) and not be one of Axmud's reserved names (see 
-         the ';listreserved' command).
+         the ';listreserved' command). Non-Latin alphabets are acceptable.
       If you specify <descrip>, make sure you enclose it with diamond brackets
          e.g. ';addmission test <Just a little test mission>'
       See the help for ';startmission' for more information about missions.

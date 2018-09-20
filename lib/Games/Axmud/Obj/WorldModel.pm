@@ -34,7 +34,7 @@
         # Create a new instance of the (main) world model object
         #
         # Expected arguments
-        #   $session    - The parent GA::Session (not stored as an IV)
+        #   $session    - The calling GA::Session (not stored as an IV)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -298,6 +298,27 @@
             showToolbarFlag             => TRUE,
             showTreeViewFlag            => TRUE,
             showCanvasFlag              => TRUE,
+            # The automapper window can show one or more toolbars, each with a set of buttons
+            # A list specifying how many toolbars should be shown, besides the (compulsory) first
+            #   one. The list comprises the names of the button sets to use in each additional
+            #   toolbar. (This list is updated whenever the user adds/removes button sets, so it's
+            #   remembered between sessions)
+            # The list can contain 0, 1 or more of the button set names specified by
+            #   GA::Win::Map->constButtonSetList, except for 'default'
+            # When the list is empty, only one toolbar is shown. If the list contains one item, two
+            #   are shown (and so on)
+            buttonSetList               => [],
+            # The automapper window's 'painting' toolbar can show buttons, each corresponding to a
+            #   room flag, that are applied to the window's painter when turned on
+            # A list of room flags that should be shown (can be an empty list, but should not
+            #   contain duplicates)
+            preferRoomFlagList          => [],
+            # The automapper window's 'background' toolbar can show buttons, each corresponding to
+            #   an RGB colour, that is used to colour in the map's background
+            # A list of RGB colours that should be shown, in addition to a button for the default
+            #   colour, which is always shown (can be an empty list, but should not contain
+            #   duplicates)
+            preferBGColourList          => [],
 
             # Default and maximum sizes/colours.
 
@@ -332,6 +353,7 @@
             defaultNoBackgroundColour   => '#FFFFFF',   # White - no map
             defaultRoomColour           => '#FFFFFF',   # White - room
             defaultRoomTextColour       => '#000000',   # Black - text inside room
+            defaultSelectBoxColour      => '#0088FF',   # Blue - selection box
             defaultBorderColour         => '#000000',   # Black - room border
             defaultCurrentBorderColour  => '#FF0000',   # Red - current location
                                                         #   (update mode)
@@ -367,6 +389,7 @@
                                         => '#DD7422',   # Orange - selected exit's shadow exit
             defaultRandomExitColour     => '#FF0000',   # Red - random exit (type 3 only)
             defaultImpassableExitColour => '#FF00FF',   # Magenta - impassable exit
+            defaultCheckedDirColour     => '#FF96AA',   # Pink - checked direction
             defaultDragExitColour       => '#FF0000',   # Red - draggable exit
             defaultExitTagColour        => '#000000',   # Black - exit tag
             defaultSelectExitTagColour  => '#0088FF',   # Blue - selected exit tag
@@ -378,6 +401,7 @@
             noBackgroundColour          => undef,       # Set below
             roomColour                  => undef,
             roomTextColour              => undef,
+            selectBoxColour             => undef,
             borderColour                => undef,
             currentBorderColour         => undef,
             currentFollowBorderColour   => undef,
@@ -400,237 +424,103 @@
             selectExitShadowColour      => undef,
             randomExitColour            => undef,
             impassableExitColour        => undef,
+            checkedDirColour            => undef,
             dragExitColour              => undef,
             exitTagColour               => undef,
             selectExitTagColour         => undef,
             mapLabelColour              => undef,
             selectMapLabelColour        => undef,
 
-            # Room flags - a collection of flags used by room model object
-            # If any of the keys listed below exist in room model object's ->roomFlagHash, we use
-            #   the colours and short labels defined by this object to draw the room
-            # The list/hash IVs below are initialised using GA::Client->constRoomFilterList and
-            #   GA::Client->constRoomFlagList
-            # NB Changing the contents of the list/hash IVs below will automatically update features
-            #   in the automapper window (GA::Win::Map)
-            #
-            # MARKERS
-            #   blocked_room
-            #               - Set if this room shouldn't be available to pathfinding functions (or
-            #                   similar code)
-            #   interesting - Set if this room is marked as interesting
-            #   investigate - Set if this room is marked as worth coming back later to investigate
-            #   unexplored
-            #               - Set if this room hasn't been visited yet
-            #   unspecified - Set if this room has an 'unspecified' room statement
-            #   avoid_room  - Set if this room is marked as worth avoiding
-            #   mortal_danger
-            #               - Set if entering this room will probably get the character killed
-            #   danger      - Set if entering this room is dangerous
-            #   dummy_room  - Set if this room is not actually accessible
-            #   rent_room   - Set if this room is where the character can rent (store stuff)
-            #   camp_room   - Set if this room is where the character can camp
-            #   stash_room  - Set if this room is where you like to leave things temporarily
-            #   hide_room   - Set if this room is where you like to hide
-            #   random_room - Set if this room is randomly-generated
-            #   immortal_room
-            #               - Set if this room is only accessible to administrative users
-            #
-            # NAVIGATION
-            #   world_centre
-            #               - Set if this room has been designated the centre of the world
-            #   world_start
-            #               - Set if this room is the room where new players start
-            #   meet_point  - Set if this room has been designated as a meeting point (usually a
-            #                   room in the world at the centre of a town, near shops)
-            #   main_route  - Set if this is a main route
-            #   minor_route - Set if this is a minor route
-            #   cross_route - Set if this is where two or more routes meet
-            #   arrow_route - Set if this room leads in the right direction
-            #   wrong_route - Set if this room leads in the wrong direction
-            #   portal      - Set if this room contains some kind of portal
-            #   sign_post   - Set if this room contains a signpost
-            #   moving_boat - Set if this room is on a (moving) boat
-            #   vehicle     - Set if this room is on a (moving) vehicle
-            #   fixed_boat  - Set if this room is on a (stationary) boat
-            #   swim_room   - Set if this room is in water, so the character needs to swim
-            #   fly_room    - Set if this room is in the air, so the character needs to fly
-            #
-            # COMMERCIAL
-            #   shop_general
-            #               - Set if this room is a general store
-            #   shop_weapon - Set if this room is a weapon shop
-            #   shop_armour - Set if this room is an armour shop
-            #   shop_clothes
-            #               - Set if this room is a clothes shop
-            #   shop_special
-            #               - Set if this room is some other kind of shop
-            #   shop_empty  - Set if this room is an empty shop
-            #   smithy      - Set if this room is a smithy
-            #   bank        - Set if this room is a bank
-            #   pub         - Set if this room is some kind of pub
-            #   restaurant  - Set if this room is some kind of restaurant (where the character can
-            #                   eat)
-            #   takeaway    - Set if this room is some kind of takeaway (where the character can buy
-            #                   food to carry)
-            #   auction     - Set if this room is an auction house
-            #   post_office - Set if this room is a post office
-            #
-            # BUILDINGS
-            #   library     - Set if this room is where books, parchments, signs, notice boards and
-            #                   so on are available
-            #   theatre     - Set if this room is a theatre or performance venue
-            #   temple      - Set if this room is some kind of temple or shrine
-            #   church      - Set if this room is a church or cathedral
-            #   hotel       - Set if this room is a hotel
-            #   storage     - Set if this room is somewhere you can store things
-            #   office      - Set if this room is an office
-            #   jail        - Set if this room is a jail or dungeon
-            #   hospital    - Set if this room is some kind of hospital
-            #   stable      - Set if this room is a room where animals are stored
-            #   tent        - Set if this room is inside a tent
-            #   house       - Set if this room is an ordinary house or home
-            #   ord_building
-            #               - Set if this room is an ordinary building
-            #   bulletin_board
-            #               - Set if this room contains some kind of bulleting board
-            #
-            # STRUCTURES
-            #   building    - Set if this is any kind of building
-            #   gate        - Set if this is at (or outside) a city gate
-            #   wall        - Set if this is on (or alongside) a city wall
-            #   tower       - Set if this is on (or inside) a tower
-            #   staircase   - Set if this is on a staircase
-            #   tunnel      - Set if this is in a tunnel
-            #   bridge      - Set if this is a on a bridge
-            #   fountain    - Set if this room has a fountain
-            #   well        - Set if this is a well or water source
-            #   farm        - Set if this is a farm
-            #   field       - Set if this is a field
-            #   park        - Set if this is a park/garden
-            #   graveyard   - Set if this is a graveyard
-            #   port        - Set if this is a port/harbour/jetty
-            #   maze        - Set if this is a maze
-            #
-            # TERRAIN
-            #   forest      - Set if this is a forest/wood
-            #   clearing    - Set if this is a clearing
-            #   grassland   - Set if this is a grassland/plain
-            #   swamp       - Set if this is a swamp/marsh
-            #   desert      - Set if this is a desert
-            #   beach       - Set if this is a beach/coast
-            #   river       - Set if this is a river/stream
-            #   lake        - Set if this is a lake
-            #   sea         - Set if this is a sea/ocean
-            #   cave        - Set if this is a cave
-            #   mountain    - Set if this is a mountainous area
-            #   rocky       - Set if this is rocky landscape
-            #   icy         - Set if this is icy landscape
-            #   hill        - Set if this is a hill
-            #   pit         - Set if this is next to (or inside) a pit or hole
-            #
-            # OBJECTS
-            #   weapon      - Set if the room contains a weapon
-            #   armour      - Set if the room contains an armour
-            #   garment     - Set if the room contains a garment
-            #   major_npc
-            #               - Set if the room contains an important NPC
-            #   talk_npc    - Set if the room contains a talking NPC
-            #   npc         - Set if the room contains any NPC
-            #   portable    - Set if the room contains a portable object
-            #   decoration  - Set if the room contains a decoration object
-            #   money       - Set if the room contains money
-            #   treasure    - Set if the room contains a valuable object
-            #   collectable - Set if the room contains a collectable object
-            #
-            # LIGHT
-            #   outside     - Set if this room is outside
-            #   inside      - Set if this room is inside
-            #   overground  - Set if this room is above ground
-            #   underground - Set if this room is underground
-            #   torch       - Set if average player needs a torch in this room
-            #   always_dark - Set if this room is always dark
-            #
-            # GUILDS
-            #   guild_entrance
-            #               - Set if this room is an entrance to a guild (possibly guarded)
-            #   guild_main  - Set if this is a room inside the guild where a character can advance
-            #                   skills and/or join the guild
-            #   guild_practice
-            #               - Set if this room is where a character can practice guild skills
-            #   guild_shop  - Set if this is a room inside the guild where a character can buy
-            #                   guild-specific items
-            #   guild_other - Set if this is a room inside the guild where a character can't advance
-            #                   skills or buy guild-specific items
-            #
-            # QUESTS
-            #   quest_room  - Set if this room is important in a quest
-            #   quest_begin - Set if this room is the start of a quest
-            #   quest_end   - Set if this room is the end of a quest
-            #
-            # ATTACKS
-            #   peaceful    - Set if the world doesn't allow fights in this room
-            #   recovery    - Set if this room lets the character recover from fights more quickly
-            #
-            #   char_dead   - Set if any character has ever died in this room
-            #   char_pass_out
-            #               - Set if any character has ever been knocked out in this room
-            #
-            # Default IVs set up from the constant GA::Client IVs
-            # A list of room filters, in the standard order
-            defaultRoomFilterList       => [],          # Set by $self->setupRoomFlags
-            # Whether each filter is released, or not
-            #   e.g. $hash{'markers'} = TRUE            # -> 'markers' filter released
-            #   e.g. $hash{'terrain'} = FALSE           # -> 'terrain' filter applied
-            defaultRoomFilterHash       => {},
-            # Which room flag text to display in the room's interior
-            #   e.g. $hash{'stash_room'} = 'St',
-            defaultRoomFlagTextHash     => {},
-            # Which room colour takes priority - the lower the value, the higher the priority its
-            #   its matching key takes
-            #   e.g. $hash{'stash_room'} = 11,
-            defaultRoomFlagPriorityHash => {},
-            # Which flag belongs to which filter
-            #   e.g. $hash{'stash_room'} = 'markers'
-            defaultRoomFlagFilterHash   => {},
-            # What colour the room should be drawn
-            #   e.g. $hash{'stash_room'} = '#CEAAAD'
-            defaultRoomFlagColourHash   => {},
-            # How each flag is described in the menu
-            #   e.g. $hash{'stash_room'} = 'Room for stashing things'
-            defaultRoomFlagDescripHash  => {},
-            # A list of keys from the hashes above, in a standard order
-            #   e.g. ['stash_room', 'hide_room', 'interesting', ...]
-            defaultRoomFlagOrderedList  => [],
-            # A hash showing which filters apply to which flags. The key is a room filter; the value
-            #   is a reference to a list containing all the flags matching the filter
-            #   e.g. $hash{'markers'} = ['stash_room', 'hide_room', 'interesting', 'investigate'..]
-            defaultRoomFlagReverseHash  => {},
+            # Hash of map label style objects. Each object defines attributes like text colour,
+            #   italics, and so on, that can be applied to multiple map labels
+            # Hash in the form
+            #   $mapLabelStyleHash{style_name} = blessed_reference_to_style_object
+            mapLabelStyleHash           => {},          # Set below
+            # The name of the map label style that should be used for new labels, set whenever a
+            #   label is added to the automapper window
+            mapLabelStyle               => undef,       # Set below
+            # Flag set to TRUE if all labels should be aligned horizontally (in the middle of a
+            #   grid block or at its edge), FALSE if labels can be placed with any horizontal
+            #   alignment
+            mapLabelAlignXFlag          => FALSE,
+            # Flag set to TRUE if all labels should be aligned vertically (in the middle of a
+            #   grid block or at its edge), FALSE if labels can be placed with any vertical
+            #   alignment
+            mapLabelAlignYFlag          => FALSE,
 
-            # IVs initially copied from the default IVs above
-            roomFilterList              => [],      # Set below
-            roomFilterHash              => {},
-            roomFlagTextHash            => {},
-            roomFlagPriorityHash        => {},
-            roomFlagFilterHash          => {},
-            roomFlagColourHash          => {},
-            roomFlagDescripHash         => {},
-            roomFlagOrderedList         => [],
-            roomFlagReverseHash         => {},
+            # Room flags - a collection of flags used by room model objects, organised into groups
+            #   called room filters and used mainly by the automapper window to set the colour of
+            #   the room, with one colour for each room flag
+            # (NB There is no rule which says an RGB colour must be unique to a room flag, but
+            #   obviously using the same colour with multiple room flags is a bad idea)
+            # The room model object (GA::ModelObj::Room) stores a hash of room flags. In each room,
+            #   every room flag is either 'on' or 'off'. A room can have zero, one or multiple
+            #   room flags
+            #
+            # Hash of room filters, showing which are currently applied (TRUE) and which are not
+            #   applied. Room filters can't be added or removed by the user, so they keys in this
+            #   hash are those specified by GA::Client->constRoomFilterList
+            roomFilterApplyHash         => {},          # Set by $self->setupRoomFlags
+            # A hash of room flag objects (GA::Obj::RoomFlag), one for each room flag specified by
+            #   GA::Client->constRoomFlagList. Hash in the form
+            #   $roomFlagHash{room_flag_name} = blessed_reference_to_room_flag_object
+            roomFlagHash                => {},          # Set by $self->setupRoomFlags
+            # A list of room flag names, sorted by its priority (highest-priority room flag object
+            #   has its ->priority set to 1, the lowest-priority has its ->priority set to a value
+            #   in the 100s. Used for quick lookup, so this list must be updated whenever
+            #   $self->roomFlagHash or an individual room flag object is updated
+            # e.g. ( 'stash_room', 'hide_room', 'interesting', ... )
+            roomFlagOrderedList         => [],          # Set by $self->setupRoomFlags
             # A single flag which, when set to TRUE, releases all filters, overriding the contents
-            #   of ->roomFilterHash (set to FALSE otherwise)
+            #   of ->roomFilterApplyHash (set to FALSE otherwise)
             allRoomFiltersFlag          => TRUE,
-
             # MSDP can supply a 'TERRAIN' variable for each room. If so, those variables are
             #   collected initially in this hash, in the form
             #       $roomTerrainInitHash{terrain_type} = undef
             roomTerrainInitHash         => {},
             # The user can then allocate a terrain to one of Axmud's room flags (in which case new
             #   rooms have their room flags set automatically, as if the painter was on), or choose
-            #   to ignore the terrain type. Hash of allocated terrain types, in the form
+            #   to ignore the terrain type
+            # NB Room flags in this hash are exclusive. If a room's room flag is set using one of
+            #   the room flags in ->roomTerrainHash, all other room flags which are also found in
+            #   ->roomTerrainHash are unset in the room, regardless of whether the user set them
+            #   manually or not
+            # Hash of allocated terrain types, in the form
             #       $roomTerrainHash{terrain_type} = room_flag
             #       $roomTerrainHash{terrain_type} = undef (to ignore the terrain type)
             roomTerrainHash             => {},
+
+            # The following IVs work in a similar way. When the painter is on, rooms are allocated
+            #   a room flag if text in the room title/description/exit/content list matches one of
+            #   the patterns in the following hashes
+            # Hashes in the form
+            #   $hash{pattern} = room_flag
+            #
+            # Patterns that match text in the room's title (tested against every room title in the
+            #   room's ->titleList IV)
+            # NB A restriction applies to ->paintFromTitleHash, but not the other ->paintFrom...
+            #   IVs
+            # When painting because of titles matching a pattern in ->paintFromTitleHash, room flags
+            #   in the room are set for every matching pattern
+            # When that operation is complete, any room flags which are found in
+            #   ->paintFromTitleHash, but which were not set during that operation, are then unset
+            # This restriction prevents problems at worlds like EmpireMUD 2.0, whose room titles
+            #   change as you chop down trees and dig up crops
+            paintFromTitleHash          => {},
+            # Patterns that match text in the room's description (tested against every description
+            #   in the room's ->descripHash IV)
+            paintFromDescripHash        => {},
+            # Patterns that match one of the room's exits (tested against every exit stored as a key
+            #   in the room's ->exitNumHash)
+            paintFromExitHash           => {},
+            # Patterns that match one of the objects in the room's temporary contents list, set for
+            #   the non-model room object used by the Locator task. The objects are stored in the
+            #   room's ->tempObjList. Patterns are tested against each of those objects'
+            #   ->baseString IV, if it is set, or its ->noun IV otherwise
+            paintFromObjHash            => {},
+            # Patterns that match one of the room's room commands (tested against every string in
+            #   the room's ->roomCmdList)
+            paintFromRoomCmdHash        => {},
 
             # How rooms are drawn
             # Current room mode
@@ -649,6 +539,7 @@
             #   'none' - Draw nothing
             #   'shadow_count' - Draw shadow/unallocated exit counts
             #   'region_count' - Draw region/super-region exit counts
+            #   'checked_count' - Draw checked/checkable direction counts
             #   'room_content' - Draw room contents
             #   'hidden_count' - Draw hidden objects counts
             #   'temp_count' - Draw temporary contents counts
@@ -702,7 +593,7 @@
             #   entire verbose description)
             matchDescripCharCount       => 100,
             # Match exits, if set to TRUE (set to FALSE otherwise). Ignored if the current world
-            #   profile's ->basicMappingMode is not 0 (meaning, don't use basic mapping)
+            #   profile's ->basicMappingFlag is not FALSE (meaning, don't use basic mapping)
             matchExitFlag               => TRUE,
             # If this flag is set to TRUE, whenever $self->updateRoom is called to update the
             #   properties of a room model object, the room's verbose description is compared with
@@ -750,13 +641,26 @@
             # Flag set to TRUE if protected moves mode is turned on (for example, if the user types
             #   'south' and assisted moves are on, but the world model has no exit with its ->mapDir
             #   drawn south, the world command is not sent, and the user sees a warning message
-            #   instead; set to FALSE otherwise). Ignore when assisted moves are not turned on
+            #   instead; set to FALSE otherwise)
+            # Ignored when $self->assistedMovesFlag is FALSE
             protectedMovesFlag          => FALSE,
             # Flag set to TRUE if super protected moves turned on; after the first warning message,
             #   all unprocessed commands are removed, so (for example) in 'north;get torch', if
             #   the 'north' command fails, 'get torch' is never processed. Ignored if
             #   ->proctedMovesFlag is FALSE
             superProtectedMovesFlag     => FALSE,
+            # Flag to deal with worlds like Discworld, which have some kind of pseudo-wilderness
+            #   areas - neighbouring rooms have no exits leading into them, but nevertheless those
+            #   exits exist and can be used
+            # Flag set to TRUE if crafty moves mode is turned on - for example, when the automapper
+            #   window is open and in 'update' mode, if the user tries to leave the current room in
+            #   a direction for which there isn't an exit, draws a (hidden) exit in that direction
+            #   if a new room statement (rather than a fail exit message) is received
+            # If set to FALSE, no new exit (hidden or otherwise) is drawn in that situation, and the
+            #   character becomes lost
+            # Ignored when if ->protectedMovesFlag is TRUE (the value of ->assistedMovesFlag
+            #   doesn't matter)
+            craftyMovesFlag             => FALSE,
 
             # Flag set to TRUE when, if setting an exit ornament (from Exits > Set ornaments...),
             #   the exit's twin exit should have the same ornament set (set to FALSE otherwise)
@@ -795,6 +699,8 @@
             # Flag set to TRUE if the automapper, when about to create a new room, should
             #   automatically check it against other rooms in the region - and produce a warning if
             #   it finds a match (set to FALSE otherwise)
+            # NB The check is only performed when the automapper window is open (currently, new
+            #   rooms are only created when that window is open)
             autoCompareFlag             => FALSE,
             # Flag set to TRUE if the automapper should create a new exit object when the character
             #   moves, and the move is detected by the Locator task using a 'follow anchor' pattern.
@@ -804,6 +710,9 @@
             capitalisedRoomTagFlag      => TRUE,
             # Flag set to TRUE if tooltips should be visible (set to FALSE otherwise)
             showTooltipsFlag            => TRUE,
+            # Flag set to TRUE if room notes should be visible in tooltips (set to FALSE otherwise,
+            #   and ignored if ->showTooltipsFlag is FALSE)
+            showNotesFlag               => TRUE,
             # Flag set to TRUE when a message should be displayed, whenever the call to
             #   $self->compareRooms from GA::Obj::Map->useExistingRoom returns a false value,
             #   meaning that the automapper is now lost (set to FALSE otherwise)
@@ -824,6 +733,9 @@
             #   in 'dialogue' windows; set to FALSE if only the usual eight compass directions (inc.
             #   north and northeast) plus up/down should be shown in 'dialogue' windows
             showAllPrimaryFlag          => FALSE,
+            # Flag set to TRUE if CTRL+C should initiate a 'move rooms to click' operation, FALSE if
+            #   CTRL+C should be ignored
+            allowCtrlCopyFlag           => TRUE,
 
             # The last filepath entered - so that, for source code files stored in the same
             #   directory, the user doesn't have to type the entire path again ('undef' if none
@@ -858,10 +770,33 @@
             quickPathFindFlag           => TRUE,
             # Flag set to TRUE if uncertain exits should automatically be converted into 2-way exits
             #   (set to FALSE if not)
-            # NB If basic mapping mode (GA::Profile::World->basicMappingMode) is on, travelling from
+            # NB If basic mapping mode (GA::Profile::World->basicMappingFlag) is on, travelling from
             #   one room to a new room normally creates a one-way exit. When the user prefers to
             #   create two-way exits instead, they can set this flag to TRUE
+            # NB When moving between normal and wilderness border rooms, a one-way exit is normally
+            #   created. When they user prefers to create two-way exits instead, they can set this
+            #   flag to TRUE
             autocompleteExitsFlag       => FALSE,
+            # When the character attempts to move in a direction but we get a failed exit message
+            #   in response, and if there is no exit in the direction, we can store that direciton
+            #   as a checked direction (an entry in the room object's ->checkedDirHash)
+            # Flag set to TRUE if checked directions should be collected, FALSE if not
+            # If TRUE, checked directions are collected even if the automapper window (when open) is
+            #   in 'follow' mode
+            collectCheckedDirsFlag      => FALSE,
+            # Flag set to TRUE if checked directions should be drawn in the automapper window, FALSE
+            #   if not
+            drawCheckedDirsFlag         => TRUE,
+            # Checkable direction mode - when the room's interior text is showing the number of
+            #   checked directions (and checkable primary directions), this mode determines how many
+            #   directions are counted when working out the checkable directions
+            # (A checkable direction is a primary direction for which there is is no exit object
+            #   and no checked direction)
+            #       'simple'    - north, south, west, east
+            #       'diku'      - the above, plus up/down
+            #       'lp'        - the above, plus northwest/northeast/southwest/southeast
+            #       'complex'   - all primary directions (including eastnortheast, etc)
+            checkableDirMode            => 'diku',
 
             # Boundary updates. When an existing region exit is modified in any way, or deleted, or
             #   an exit becomes a region exit, it is added to this hash, so that the parent
@@ -911,7 +846,8 @@
             # Scalar and list IVs in the current room are replaced by their equivalents in the
             #   painter - but hash IVs are merged. (If the same key exists in both objects, the
             #   painter's key-value pair is used)
-            painterIVList               => [
+            constPainterIVList          => [
+                'wildMode',
                 'titleList',
                 'descripHash',
                 'exclusiveFlag',
@@ -995,6 +931,7 @@
         $self->{noBackgroundColour}     = $self->{defaultNoBackgroundColour};
         $self->{roomColour}             = $self->{defaultRoomColour};
         $self->{roomTextColour}         = $self->{defaultRoomTextColour};
+        $self->{selectBoxColour}        = $self->{defaultSelectBoxColour};
         $self->{borderColour}           = $self->{defaultBorderColour};
         $self->{currentBorderColour}    = $self->{defaultCurrentBorderColour};
         $self->{currentFollowBorderColour}
@@ -1021,24 +958,22 @@
         $self->{selectExitShadowColour} = $self->{defaultSelectExitShadowColour};
         $self->{randomExitColour}       = $self->{defaultRandomExitColour};
         $self->{impassableExitColour}   = $self->{defaultImpassableExitColour};
+        $self->{checkedDirColour}       = $self->{defaultCheckedDirColour};
         $self->{dragExitColour}         = $self->{defaultDragExitColour};
         $self->{exitTagColour}          = $self->{defaultExitTagColour};
         $self->{selectExitTagColour}    = $self->{defaultSelectExitTagColour};
         $self->{mapLabelColour}         = $self->{defaultMapLabelColour};
         $self->{selectMapLabelColour}   = $self->{defaultSelectMapLabelColour};
 
-        # Set room flags and room filters
-        $self->setupRoomFlags();
+        # Create some map label styles
+        $self->addLabelStyle($session, 'Style 1', $self->{defaultMapLabelColour});
+        $self->addLabelStyle($session, 'Style 2', '#FF40E0');
+        $self->addLabelStyle($session, 'Style 3', '#000000', undef, 2);
+        $self->addLabelStyle($session, 'Style 4', '#000000', undef, 4);
+        $self->{mapLabelStyle}          = 'Style 1';
 
-        $self->{roomFilterList}         = $self->{defaultRoomFilterList};
-        $self->{roomFilterHash}         = $self->{defaultRoomFilterHash};
-        $self->{roomFlagTextHash}       = $self->{defaultRoomFlagTextHash};
-        $self->{roomFlagPriorityHash}   = $self->{defaultRoomFlagPriorityHash};
-        $self->{roomFlagFilterHash}     = $self->{defaultRoomFlagFilterHash};
-        $self->{roomFlagColourHash}     = $self->{defaultRoomFlagColourHash};
-        $self->{roomFlagDescripHash}    = $self->{defaultRoomFlagDescripHash};
-        $self->{roomFlagOrderedList}    = $self->{defaultRoomFlagOrderedList};
-        $self->{roomFlagReverseHash}    = $self->{defaultRoomFlagReverseHash};
+        # Set room filters and room flags
+        $self->setupRoomFlags($session);
 
         # Create a painter object - a non-model GA::ModelObj::Room used to 'paint' other rooms
         #   by copying its IVs into theirs
@@ -1049,201 +984,6 @@
 
     ##################
     # Methods
-
-    # Methods called by ->new
-
-    sub setupRoomFlags {
-
-        # Called by $self->new to set the contents of several default IVs for room flags
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $priority,
-            @filterList, @flagList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupRoomFlags', @_);
-        }
-
-        # Import the two compounds IVs, which we use to setup the remaining default IVs
-        @filterList = $axmud::CLIENT->constRoomFilterList;
-        @flagList = $axmud::CLIENT->constRoomFlagList;
-
-        # Set up the default room filter IVs
-        do {
-
-            my $filter = shift @filterList;
-            my $setting = shift @filterList;
-
-            $self->ivPush('defaultRoomFilterList', $filter);
-            $self->ivAdd('defaultRoomFilterHash', $filter, $setting);
-
-        } until (! @filterList);
-
-        # Set up the default room flag IVs
-        $priority = 0;
-        do {
-
-            my (
-                $flag, $short, $filter, $colour, $descrip, $miniListRef,
-                @miniList,
-            );
-
-            $flag = shift @flagList;
-            $short = shift @flagList;
-            $filter = shift @flagList;
-            $colour = shift @flagList;
-            $descrip = shift @flagList;
-
-            $self->ivAdd('defaultRoomFlagTextHash', $flag, $short);
-            $priority++;
-            $self->ivAdd('defaultRoomFlagPriorityHash', $flag, $priority);
-            $self->ivAdd('defaultRoomFlagFilterHash', $flag, $filter);
-            $self->ivAdd('defaultRoomFlagColourHash', $flag, $colour);
-            $self->ivAdd('defaultRoomFlagDescripHash', $flag, $descrip);
-            $self->ivPush('defaultRoomFlagOrderedList', $flag);
-
-            if ($self->ivExists('defaultRoomFlagReverseHash', $filter)) {
-
-                $miniListRef = $self->ivShow('defaultRoomFlagReverseHash', $filter);
-                push (@$miniListRef, $flag);
-                $self->ivAdd('defaultRoomFlagReverseHash', $filter, $miniListRef);
-
-            } else {
-
-                push (@miniList, $flag);
-                $self->ivAdd('defaultRoomFlagReverseHash', $filter, \@miniList);
-            }
-
-        } until (! @flagList);
-
-        return 1;
-    }
-
-    sub updateRoomFlags {
-
-        # Called by GA::Obj::File->updateExtractedData in order to update the room flags stored in
-        #   this world model to those used in a more recent version of Axmud
-        #
-        # Expected arguments
-        #   $session    - The calling function's GA::Session
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $session, $check) = @_;
-
-        # Local variables
-        my $tempObj;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateRoomFlags', @_);
-        }
-
-        # Create a temporary GA::Obj::WorldModel object
-        $tempObj = Games::Axmud::Obj::WorldModel->new($session);
-
-        # Copy all room flag IVs from the temporary object to this one
-        $self->ivPoke('defaultRoomFilterList', $tempObj->defaultRoomFilterList);
-        $self->ivPoke('defaultRoomFilterHash', $tempObj->defaultRoomFilterHash);
-        $self->ivPoke('defaultRoomFlagTextHash', $tempObj->defaultRoomFlagTextHash);
-        $self->ivPoke('defaultRoomFlagPriorityHash', $tempObj->defaultRoomFlagPriorityHash);
-        $self->ivPoke('defaultRoomFlagFilterHash', $tempObj->defaultRoomFlagFilterHash);
-        $self->ivPoke('defaultRoomFlagColourHash', $tempObj->defaultRoomFlagColourHash);
-        $self->ivPoke('defaultRoomFlagDescripHash', $tempObj->defaultRoomFlagDescripHash);
-        $self->ivPoke('defaultRoomFlagOrderedList', $tempObj->defaultRoomFlagOrderedList);
-        $self->ivPoke('defaultRoomFlagReverseHash', $tempObj->defaultRoomFlagReverseHash);
-
-        $self->ivPoke('roomFilterList', $tempObj->roomFilterList);
-        $self->ivPoke('roomFilterHash', $tempObj->roomFilterHash);
-        $self->ivPoke('roomFlagTextHash', $tempObj->roomFlagTextHash);
-        $self->ivPoke('roomFlagPriorityHash', $tempObj->roomFlagPriorityHash);
-        $self->ivPoke('roomFlagFilterHash', $tempObj->roomFlagFilterHash);
-        $self->ivPoke('roomFlagDescripHash', $tempObj->roomFlagDescripHash);
-        $self->ivPoke('roomFlagOrderedList', $tempObj->roomFlagOrderedList);
-        $self->ivPoke('roomFlagReverseHash', $tempObj->roomFlagReverseHash);
-        $self->ivPoke('allRoomFiltersFlag', $tempObj->allRoomFiltersFlag);
-
-        # The user may have made their own modifications to ->roomFlagColourHash. Keep the original
-        #   hash, but make sure any new room flags have been added, and that any old ones are
-        #   removed
-        foreach my $roomFlag ($tempObj->ivKeys('roomFlagColourHash')) {
-
-            my $colour = $tempObj->ivShow('roomFlagColourHash', $roomFlag);
-
-            if (! $self->ivExists('roomFlagColourHash', $roomFlag)) {
-
-                # It's a new room flag
-                $self->ivAdd('roomFlagColourHash', $roomFlag, $colour);
-            }
-        }
-
-        foreach my $roomFlag ($self->ivKeys('roomFlagColourHash')) {
-
-            if (! $tempObj->ivExists('roomFlagColourHash', $roomFlag)) {
-
-                # It's an old room flag, which should be removed
-                $self->ivDelete('roomFlagColourHash', $roomFlag);
-            }
-        }
-
-        # Operation complete
-        return 1;
-    }
-
-    sub resetPainter {
-
-        # Called by $self->new to create a painter object, or by any other function to reset the
-        #   painter object, which is a non-model GA::ModelObj::Room
-        # (The object is 'reset' by discarding the old non-model room object and replacing it with a
-        #   new one)
-        #
-        # Expected arguments
-        #   $session        - The calling function's GA::Session
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   Otherwise, returns the non-model room object created
-
-        my ($self, $session, $check) = @_;
-
-        # Local variables
-        my $roomObj;
-
-        # Check for improper arguments
-        if (! defined $session || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetPainter', @_);
-        }
-
-        # Create a new non-model room
-        $roomObj = Games::Axmud::ModelObj::Room->new($session, 'world model painter', FALSE);
-        if ($roomObj) {
-
-            $self->ivPoke('painterObj', $roomObj);
-            return $roomObj;
-
-        } else {
-
-            $self->ivUndef('painterObj');
-            return undef;
-        }
-    }
 
     # Methods called by GA::Session->spinMaintainLoop
 
@@ -1950,7 +1690,7 @@
             }
 
             # Check that the exit is passable
-            if ($exitObj->impassFlag) {
+            if ($exitObj->exitOrnament eq 'impass') {
 
                 return undef;
             }
@@ -2171,7 +1911,7 @@
         return 1
     }
 
-    # Other region path methods
+    # Region path methods
 
     sub recalculateRegionPaths {
 
@@ -2361,6 +2101,313 @@
         return $count;
     }
 
+    # Add non-model objects
+
+    sub addLabelStyle {
+
+        # Called by $self->new and GA::Cmd::AddLabelStyle->do
+        # Adds a new map label style object (GA::Obj::MapLabelStyle)
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $name           - A name for the label style (any characters, max length 16)
+        #
+        # Optional arguments
+        #   $text           - The text colour, an RGB colour tag (case-insensitive). If 'undef', no
+        #                       text colour is set by this function
+        #   $underlay       - The underlay colour, a normal RGB colour tag like '#ABCDEF', not an
+        #                       Axmud underlay RGB tag like 'u#ABCDEF. If 'undef', no underlay
+        #                       colour is set by this function
+        #   $relSize        - The relative size. If specified, a value in the range 0.5-10
+        #
+        # Return values
+        #   'undef' on improper arguments, if an invalid value for $text, $underlay and/or $relSize
+        #       is specified, or if the map label style object can't be created
+        #   Otherwise returns the map label style object created
+
+        my ($self, $session, $name, $text, $underlay, $relSize, $check) = @_;
+
+        # Local variables
+        my ($type, $underlayFlag, $styleObj);
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $name || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addLabelStyle', @_);
+        }
+
+        # Check specified values are valid
+        if (length ($name) > 16) {
+
+            return undef;
+        }
+
+        if (defined $text) {
+
+            ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($text);
+            if (! defined $type || $type ne 'rgb' || $underlayFlag) {
+
+                return undef;
+            }
+        }
+
+        if (defined $underlay) {
+
+            ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($underlay);
+            if (! defined $type || $type ne 'rgb' || $underlayFlag) {
+
+                return undef;
+            }
+        }
+
+        if (defined $relSize && ! $axmud::CLIENT->floatCheck($relSize, 0.5, 10)) {
+
+            return undef;
+        }
+
+        # Create the map label style object
+        $styleObj = Games::Axmud::Obj::MapLabelStyle->new(
+            $session,
+            $name,
+            $text,
+            $underlay,
+            $relSize,
+        );
+
+        if (! $styleObj) {
+
+            return undef;
+
+        } else {
+
+            $self->ivAdd('mapLabelStyleHash', $name, $styleObj);
+
+            return $styleObj;
+        }
+    }
+
+    sub deleteLabelStyle {
+
+        # Called by anything
+        # Deletes the specified map label style
+        #
+        # Expected arguments
+        #   $updateFlag     - Flag set to TRUE if all Automapper windows using this world model
+        #                       should be updated now, FALSE if not (in which case, they can be
+        #                       updated later by the calling function, when it is ready)
+        #   $name           - The name of the map label style to delete
+        #
+        # Return values
+        #   'undef' on improper arguments or if the map label style doesn't exist
+        #   1 otherwise
+
+        my ($self, $updateFlag, $name, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $updateFlag || ! defined $name || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteLabelStyle', @_);
+        }
+
+        if (! $self->ivExists('mapLabelStyleHash', $name)) {
+
+            return undef;
+        }
+
+        $self->ivDelete('mapLabelStyleHash', $name);
+
+        # Any label using that style should be set to use custom IVs
+        foreach my $regionmapObj ($self->ivValues('regionmapHash')) {
+
+            foreach my $labelObj ($regionmapObj->ivValues('gridLabelHash')) {
+
+                if (defined $labelObj->style && $labelObj->style eq $name) {
+
+                    $labelObj->reset_style();
+                }
+            }
+        }
+
+        # Update automapper windows, if required
+        if ($updateFlag) {
+
+            $self->updateMapLabels();
+        }
+
+        return 1;
+    }
+
+    sub renameLabelStyle {
+
+        # Called by GA::Win::Map->renameStyleCallback and GA::Cmd::RenameLabelStyle->do
+        # Renames the specified label style (in case the user wants to swap the default name for
+        #   a different one, without modifying a large number of labels)
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $oldName        - The name of an existing map label style
+        #   $newName        - The new name for that style
+        #
+        # Return values
+        #   'undef' on improper arguments or if $oldName or $newName are invalid
+        #   1 otherwise
+
+        my ($self, $session, $oldName, $newName, $check) = @_;
+
+        # Local variables
+        my $obj;
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $oldName || ! defined $newName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->renameLabelStyle', @_);
+        }
+
+        # Check specified values are valid
+        if (
+            length ($newName) > 16
+            || ! $self->ivExists('mapLabelStyleHash', $oldName)
+            || $self->ivExists('mapLabelStyleHash', $newName)
+        ) {
+            return undef;
+        }
+
+        # Get the style object, and rename it
+        $obj = $self->ivShow('mapLabelStyleHash', $oldName);
+        $obj->ivPoke('name', $newName);
+
+        # Update our IVs
+        $self->ivDelete('mapLabelStyleHash', $oldName);
+        $self->ivAdd('mapLabelStyleHash', $newName, $obj);
+        if (defined $self->mapLabelStyle && $self->mapLabelStyle eq $oldName) {
+
+            $self->ivPoke('mapLabelStyle', $newName);
+        }
+
+        # Any label that uses this style must be updated
+        foreach my $regionmapObj ($self->ivValues('regionmapHash')) {
+
+            foreach my $labelObj ($regionmapObj->ivValues('gridLabelHash')) {
+
+                if (defined $labelObj->style && $labelObj->style eq $oldName) {
+
+                    $labelObj->set_style($session, $newName);
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub toggleLabelAlignment {
+
+        # Called by GA::Win::Map->toggleLabelAlignment or any other function
+        # Toggles alignment of map labels in horizontal or vertical directions (using the edge of
+        #   a gridblock and the middle of it)
+        # When turning on alignment, the position of all existing labels is changed to either the
+        #   middle of the gridblock or the edge of it; new labels are placed in the same way
+        # When turning off alignment, all existing labels remain in their current positions, but
+        #   new labels are placed in the exact position on the map that the user clicks
+        #
+        # Expected arguments
+        #   $session    - The calling function's GA::Session
+        #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
+        #                   be updated now, FALSE if not (in which case, they can be updated later
+        #                   by the calling function, when it is ready). Ignored when turning off
+        #                   alignment as no label positions change
+        #   $type       - Which type of alignment to toggle - 'horizontal' or 'vertical'
+        #
+        # Return values
+        #   'undef' on improper arguments, if a region with the specified name already exists, if
+        #       an invalid parent region is specified or if either the region object or the
+        #       regionmap object can't be created
+        #   Otherwise returns the region object created
+
+        my ($self, $session, $updateFlag, $type, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $session
+            || ! defined $updateFlag
+            || ! defined $type
+            || ($type ne 'horizontal' && $type ne 'vertical')
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggleLabelAlignment', @_);
+        }
+
+        if ($type eq 'horizontal') {
+
+            if ($self->mapLabelAlignXFlag) {
+
+                # Turn off horizontal alignment
+                $self->ivPoke('mapLabelAlignXFlag', FALSE);
+
+            } else {
+
+                # Turn on horizontal alignment
+                $self->ivPoke('mapLabelAlignXFlag', TRUE);
+
+                # Update the position of every label
+                foreach my $regionmapObj ($self->ivValues('regionmapHash')) {
+
+                    # Half a block width is usually fractional, e.g. width 51, half is 25.5
+                    my $halfWidth = $regionmapObj->blockWidthPixels / 2;
+
+                    foreach my $labelObj ($regionmapObj->ivValues('gridLabelHash')) {
+
+                        # Round the label's position to the nearest half gridblock
+                        my $xPos = $halfWidth * sprintf(
+                            '%.0f',
+                            ($labelObj->xPosPixels / $halfWidth),
+                        );
+
+                        $labelObj->ivPoke('xPosPixels', int($xPos));
+                    }
+                }
+            }
+
+        } else {
+
+            if ($self->mapLabelAlignYFlag) {
+
+                # Turn off vertical alignment
+                $self->ivPoke('mapLabelAlignYFlag', FALSE);
+
+            } else {
+
+                # Turn on vertical alignment
+                $self->ivPoke('mapLabelAlignYFlag', TRUE);
+
+                # Update the position of every label
+                foreach my $regionmapObj ($self->ivValues('regionmapHash')) {
+
+                    # Half a block height is usually fractional, e.g. height 51, half is 25.5
+                    my $halfHeight = $regionmapObj->blockHeightPixels / 2;
+
+                    foreach my $labelObj ($regionmapObj->ivValues('gridLabelHash')) {
+
+                        # Round the label's position to the nearest half gridblock
+                        my $yPos = $halfHeight * sprintf(
+                            '%.0f',
+                            ($labelObj->yPosPixels / $halfHeight),
+                        );
+
+                        $labelObj->ivPoke('yPosPixels', int($yPos));
+                    }
+                }
+            }
+        }
+
+        # Update automapper windows, if required
+        if ($updateFlag) {
+
+            $self->updateMapLabels();
+        }
+
+        return 1;
+    }
+
     # Add model objects
 
     sub addRegion {
@@ -2471,7 +2518,7 @@
 
     sub addRoom {
 
-        # Called by GA::Win::Map->createNewRoom or by any other function
+        # Called by GA::Obj::Map->createNewRoom or by any other function
         # Creates a new GA::ModelObj::Room object, adds it to the world model, and updates any
         #   Automapper windows using this model
         #
@@ -2597,7 +2644,7 @@
         #
         # Optional arguments
         #   $connectRoomObj, $connectExitObj, $standardDir
-        #       - When the calling function was in turn called by GA::Win::Map->createNewRoom, the
+        #       - When the calling function was in turn called by GA::Obj::Map->createNewRoom, the
         #           room from which the character arrived and the exit obj/standard direction used
         #           (if known). Used when temporarily allocating primary directions to unallocated
         #           exits
@@ -2614,8 +2661,8 @@
 
         # Local variables
         my (
-            $taskObj, $taskRoomObj, $name, $terrain,
-            @list,
+            $taskObj, $taskRoomObj, $name, $terrain, $roomFlag,
+            @titleList, @patternList, @drawList,
         );
 
         # Check for improper arguments
@@ -2643,18 +2690,18 @@
 
             # Each description in the Locator room's title list should be added to the model room's
             #   title list, but don't add duplicates
-            @list = $modelRoomObj->titleList;
-            if (! @list) {
+            @titleList = $modelRoomObj->titleList;
+            if (! @titleList) {
 
                 # The model room's title list is empty, so simply copy the Locator room's title list
                 #   across (even if it, too, is empty)
-                $modelRoomObj->ivPoke('titleList', $taskRoomObj->titleList)
+                $modelRoomObj->ivPoke('titleList', $taskRoomObj->titleList);
 
             } else {
 
                 OUTER: foreach my $taskTitle ($taskRoomObj->titleList) {
 
-                    foreach my $modelTitle (@list) {
+                    foreach my $modelTitle (@titleList) {
 
                         if ($taskTitle eq $modelTitle) {
 
@@ -2664,11 +2711,11 @@
                     }
 
                     # The model room doesn't already have this room title
-                    push (@list, $taskTitle);
+                    push (@titleList, $taskTitle);
                 }
 
                 # Store the combined list of brief descriptions
-                $modelRoomObj->ivPoke('titleList', @list);
+                $modelRoomObj->ivPoke('titleList', @titleList);
             }
         }
 
@@ -2719,7 +2766,9 @@
         }
 
         # Update exits (if we're allowed)
-        if ($self->updateExitFlag) {
+        # For wilderness rooms, we don't check any exits that have been added to the map (since we
+        #   assume the world has sent a room statement with no exit list)
+        if ($self->updateExitFlag && $modelRoomObj->wildMode eq 'normal') {
 
             # An exit's nominal direction is the one we'd expect to find in a room statement
             #   (e.g. 'Obvious exits are: east, south, north') and are stored in the exit object's
@@ -2729,7 +2778,19 @@
             # ...and a list, with the nominal directions sorted in a standard order
             # Any nominal directions in the Locator room's hash which don't exist in the map's
             #   hash are added to the world model as new exits. Any that already exist are updated
-            foreach my $exitObj ($taskRoomObj->ivValues('exitNumHash')) {
+            # Ignore transient exits (those which appear from time to time in various locations, for
+            #   example the entrance to a moving wagon)
+            @patternList = $session->currentWorld->transientExitPatternList;
+            OUTER: foreach my $exitObj ($taskRoomObj->ivValues('exitNumHash')) {
+
+                INNER: foreach my $pattern (@patternList) {
+
+                    if ($exitObj->dir =~ m/$pattern/) {
+
+                        # A transient exit; don't add it to the model room
+                        next OUTER;
+                    }
+                }
 
                 $self->updateExit(
                     $session,
@@ -2747,10 +2808,10 @@
             #   all sixteen cardinal directions are in use, the exit object's ->mapDir remains set
             #   to 'undef' (and isn't explicity drawn in the map)
             # (When this function is called by GA::Obj::Map->updateRoom which was, in turn, called
-            #   by $self->createNewRoom when moving from an existing departure room to a new arrival
-            #   room, we pass information about the departure room to the function so that, if we
-            #   moved using an allocated exit, any unallocated exits in the arrival room can be
-            #   drawn in the opposite direction)
+            #   by GA::Obj::Map->createNewRoom when moving from an existing departure room to a new
+            #   arrival room, we pass information about the departure room to the function so that,
+            #   if we moved using an allocated exit, any unallocated exits in the arrival room can
+            #   be drawn in the opposite direction)
             foreach my $number ($modelRoomObj->ivValues('exitNumHash')) {
 
                 my $exitObj = $self->ivShow('exitModelHash', $number);
@@ -2806,10 +2867,24 @@
 
                 } else {
 
-                    $modelRoomObj->ivAdd(
-                        'roomFlagHash',
-                        $self->ivShow('roomTerrainHash', $terrain),
-                    );
+                    # If the terrain type should be ignored, $roomFlag will be set to 'undef'
+                    $roomFlag = $self->ivShow('roomTerrainHash', $terrain);
+                    if ($roomFlag) {
+
+                        # Add the corresponding room flag to the room, and remove any room flags
+                        #   which belong to a differen terrain
+                        $modelRoomObj->ivAdd('roomFlagHash', $roomFlag, undef);
+
+                        foreach my $otherTerrain ($self->ivKeys('roomTerrainHash')) {
+
+                            my $otherFlag = $self->ivShow('roomTerrainHash', $otherTerrain);
+
+                            if ($otherFlag ne $roomFlag) {
+
+                                $modelRoomObj->ivDelete('roomFlagHash', $otherFlag);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -2826,10 +2901,10 @@
             # Compile a list of rooms to be marked for drawing (if $connectRoomObj is not on the
             #   visible region level, it won't get drawn, so there's no danger in marking it to be
             #   drawn here)
-            @list = ('room', $modelRoomObj);
+            @drawList = ('room', $modelRoomObj);
             if ($connectRoomObj) {
 
-                push (@list, 'room', $connectRoomObj);
+                push (@drawList, 'room', $connectRoomObj);
             }
 
             foreach my $mapWin ($self->collectMapWins()) {
@@ -2841,7 +2916,7 @@
                     && $mapWin->currentRegionmap->currentLevel == $modelRoomObj->zPosBlocks
                 ) {
                     # ...mark the room(s) to be drawn
-                    $mapWin->markObjs(@list);
+                    $mapWin->markObjs(@drawList);
                 }
             }
         }
@@ -3065,6 +3140,9 @@
             }
         }
 
+        # If a checked direction in this (primary or secondary) direction existed, remove its entry
+        $roomObj->ivDelete('checkedDirHash', $exitObj->dir);
+
         # Set the exit type (e.g. 'primaryDir', 'primaryAbbrev', etc)
         $exitObj->ivPoke(
             'exitType',
@@ -3173,57 +3251,26 @@
             }
         }
 
-        # Update the model exit with the non-model exit's flags (specifically: if the non-model
-        #   exit has its flag set to TRUE, then so must the model exit)
-        if ($taskExitObj->breakFlag) {
-
-            $modelExitObj->ivPoke('breakFlag', TRUE);
-        }
-
-        if ($taskExitObj->pickFlag) {
-
-            $modelExitObj->ivPoke('pickFlag', TRUE);
-        }
-
-        if ($taskExitObj->lockFlag) {
-
-            $modelExitObj->ivPoke('lockFlag', TRUE);
-        }
-
-        if ($taskExitObj->openFlag) {
-
-            $modelExitObj->ivPoke('openFlag', TRUE);
-        }
-
-        if ($taskExitObj->impassFlag) {
-
-            $modelExitObj->ivPoke('impassFlag', TRUE);
-        }
-
-        if ($taskExitObj->ornamentFlag) {
-
-            $modelExitObj->ivPoke('ornamentFlag', TRUE);
-        }
+        # Update the model exit's ornament
+        $modelExitObj->ivPoke('exitOrnament', $taskExitObj->exitOrnament);
 
         # If the non-model exit has its ->exitState set, we can also use that to update the model
-        #   exit's ornaments (if this behavious is allowed by the setting of
-        #   $self->updateOrnamentFlag, but don't overrule the existing ornament, if any)
+        #   exit's ornament (if this behaviour is allowed by the setting of
+        #   $self->updateOrnamentFlag, but don't overrule the existing ornament, if set)
         if (
-            ! $modelExitObj->ornamentFlag
+            ! $modelExitObj->exitOrnament ne 'none'
             && $self->updateOrnamentFlag
             && $taskExitObj->exitState
         ) {
             if ($taskExitObj->exitState eq 'impass') {
 
-                $modelExitObj->ivPoke('impassFlag', TRUE);
-                $modelExitObj->ivPoke('ornamentFlag', TRUE);
+                $modelExitObj->ivPoke('exitOrnament', 'impass');
 
             } elsif (
                 $taskExitObj->exitState eq 'locked'
                 || $taskExitObj->exitState eq 'secret_locked'
             ) {
-                $modelExitObj->ivPoke('lockFlag', TRUE);
-                $modelExitObj->ivPoke('ornamentFlag', TRUE);
+                $modelExitObj->ivPoke('exitOrnament', 'lock');
 
             } elsif (
                 $taskExitObj->exitState eq 'open'
@@ -3231,15 +3278,14 @@
                 || $taskExitObj->exitState eq 'secret_open'
                 || $taskExitObj->exitState eq 'secret_closed'
             ) {
-                $modelExitObj->ivPoke('openFlag', TRUE);
-                $modelExitObj->ivPoke('ornamentFlag', TRUE);
+                $modelExitObj->ivPoke('exitOrnament', 'open');
             }
         }
 
         # Also set the exit info, if it was collected
-        if ($taskExitObj->info) {
+        if ($taskExitObj->exitInfo) {
 
-            $modelExitObj->ivPoke('info', $taskExitObj->info);
+            $modelExitObj->ivPoke('exitInfo', $taskExitObj->exitInfo);
         }
 
         # Update any GA::Win::Map objects using this world model (if allowed)
@@ -3281,6 +3327,11 @@
         #   $level          - The regionmap level on which the label is drawn
         #   $labelText      - The label text
         #
+        # Optional arguments
+        #   $style      - The name of the map label style to use (a GA::Obj::MapLabelStyle). If
+        #                   defined, that style is applied to the label's text. If not defined,
+        #                   the style depends on IVs in this object
+        #
         # Return values
         #   'undef' on improper arguments, if the map coordinates are invalid or if the label can't
         #       be created
@@ -3288,11 +3339,11 @@
 
         my (
             $self, $session, $updateFlag, $regionmapObj, $xPosPixels, $yPosPixels, $level,
-            $labelText, $check,
+            $labelText, $style, $check,
         ) = @_;
 
         # Local variables
-        my $labelObj;
+        my ($halfWidth, $halfHeight, $labelObj);
 
         # Check for improper arguments
         if (
@@ -3313,12 +3364,32 @@
             return undef;
         }
 
+        # If label alignment is turned on, adjust the label's horizontal and or vertical position
+        if ($self->mapLabelAlignXFlag) {
+
+            # Half a block width is usually fractional, e.g. width 51, half is 25.5
+            $halfWidth = $regionmapObj->blockWidthPixels / 2;
+            # Round the label's position to the nearest half gridblock
+            $xPosPixels = $halfWidth * sprintf('%.0f', ($xPosPixels / $halfWidth));
+        }
+
+        if ($self->mapLabelAlignYFlag) {
+
+            # Half a block height is usually fractional, e.g. height 51, half is 25.5
+            $halfHeight = $regionmapObj->blockHeightPixels / 2;
+            # Round the label's position to the nearest half gridblock
+            $yPosPixels = $halfHeight * sprintf('%.0f', ($yPosPixels / $halfHeight));
+        }
+
         # Create the new map label object
         $labelObj = Games::Axmud::Obj::MapLabel->new(
             $session,
             $labelText,
             $regionmapObj->name,
-            $xPosPixels, $yPosPixels, $level,
+            $xPosPixels,
+            $yPosPixels,
+            $level,
+            $style,
         );
 
         if (! $labelObj) {
@@ -4087,6 +4158,9 @@
 
         my ($self, $session, $updateFlag, @regionList) = @_;
 
+        # Local variables
+        my @graffitiList;
+
         # Check for improper arguments
         if (! defined $session || ! defined $updateFlag) {
 
@@ -4125,6 +4199,7 @@
                     && $session->mapObj->currentRoom eq $childObj
                 ) {
                     $session->mapObj->setCurrentRoom();
+                    push (@graffitiList, $childObj);
                 }
             }
 
@@ -4143,6 +4218,9 @@
         if ($updateFlag) {
 
             OUTER: foreach my $mapWin ($self->collectMapWins()) {
+
+                # Any deleted rooms should no longer be graffitied
+                $mapWin->del_graffiti(@graffitiList);
 
                 INNER: foreach my $regionObj (@regionList) {
 
@@ -4333,6 +4411,9 @@
         if ($updateFlag) {
 
             foreach my $mapWin ($self->collectMapWins()) {
+
+                # Any deleted rooms should no longer be graffitied
+                $mapWin->del_graffiti(@roomList);
 
                 foreach my $roomObj (@roomList) {
 
@@ -6110,57 +6191,6 @@
         return 1;
     }
 
-    sub removeRoomFlags {
-
-        # Called by GA::Win::Map->removeRoomFlagsCallback
-        # Removes a room flag from every room in an existing region, and redraws the region
-        #
-        # Expected arguments
-        #   $regionmapObj   - The GA::Obj::Regionmap whose counts should be reset
-        #   $roomFlag       - The room flag to remove (matches a key in $self->roomFlagTextHash)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   Otherwise returns the number of modified rooms (may be 0)
-
-        my ($self, $regionmapObj, $roomFlag, $check) = @_;
-
-        # Local variables
-        my $count;
-
-        # Check for improper arguments
-        if (! defined $regionmapObj || ! defined $roomFlag || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeRoomFlags', @_);
-        }
-
-        # Remove the room flag from any room in the specified region which uses it
-        $count = 0;
-
-        foreach my $roomNum ($regionmapObj->ivValues('gridRoomHash')) {
-
-            my $roomObj = $self->ivShow('modelHash', $roomNum);
-
-            if ($roomObj->ivExists('roomFlagHash', $roomFlag)) {
-
-                $roomObj->ivDelete('roomFlagHash', $roomFlag);
-                $count++;
-            }
-        }
-
-        # Update each Automapper window
-        foreach my $mapWin ($self->collectMapWins()) {
-
-            if ($mapWin->currentRegionmap eq $regionmapObj) {
-
-                # Redraw the region to update the modified rooms
-                $mapWin->drawRegion();
-            }
-        }
-
-        return $count;
-    }
-
     sub emptyRegion {
 
         # Called by GA::Win::Map->emptyRegionCallback
@@ -6451,7 +6481,7 @@
 
             if ($oppExitObj) {
 
-                if ($oppExitObj->impassFlag || $oppExitObj->randomType ne 'none') {
+                if ($oppExitObj->exitOrnament eq 'impass' || $oppExitObj->randomType ne 'none') {
 
                     # The opposite exit is impassable, so it can't be made a twin (or it is a random
                     #   exit, and it should remain a random exit)
@@ -6848,6 +6878,36 @@
         return 1;
     }
 
+    sub updateMapMenuToolbars {
+
+        # Can be called by anything in the automapper object (GA::Obj::Map) and the Automapper
+        #   window (GA::Win::Map) to update every Automapper window using this world model
+        # Also called by the painter's edit window, when ->saveChanges is applied
+        # Redraws the menu bars and/or toolbars in all automapper windows using this world model
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateMapMenuToolbars', @_);
+        }
+
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            $mapWin->redrawWidgets('menu_bar', 'toolbar');
+        }
+
+        return 1;
+    }
+
     sub updateMapExit {
 
         # Called by several of this object's functions to update a single exit (and its twin) in
@@ -6897,10 +6957,51 @@
         return 1;
     }
 
+    sub updateMapLabels {
+
+        # Called by GA::EditWin::MapLabelStyle->saveChanges and $self->deleteLabelStyle to redraw
+        #   all labels in every Automapper using this world model (assuming that the map label style
+        #   has been modified)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateMapLabels', @_);
+        }
+
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            if ($mapWin->currentRegionmap) {
+
+                foreach my $labelObj ($mapWin->currentRegionmap->ivValues('gridLabelHash')) {
+
+                    push (@list, 'label', $labelObj);
+                }
+
+                # Mark the objects to be drawn
+                $mapWin->markObjs(@list);
+            }
+        }
+
+        return 1;
+    }
+
     sub connectRooms {
 
         # Called by GA::Obj::Map->autoProcessNewRoom, ->useExistingRoom,
-        #   GA::Win::Map->createNewRoom, $self->connectRegions or any other function
+        #   GA::Obj::Map->createNewRoom, $self->connectRegions or any other function
         # Given two room objects in the world model, and the command we use to move from one to the
         #   other, connect the rooms by modifying their exit object's IVs
         #
@@ -6994,7 +7095,7 @@
 
                 # If it's not a primary direction, then the new exit is drawn as 'unallocated' (and
                 #   this function call returns 'undef')
-                $standardDir = $session->currentDict->checkPrimaryDir($dir);
+                $standardDir = $session->currentDict->checkStandardDir($dir);
 
                 # Add a new incomplete exit, using what information we have
                 $exitObj = $self->addExit(
@@ -7218,7 +7319,7 @@
         # When an exit is connected to a room, it loses its impassable status (if set). Don't
         #   specify the flag for the twin exit, because if the twin exit has a different kind of
         #   exit ornament, we don't want to lose it
-        if ($departExitObj->impassFlag) {
+        if ($departExitObj->exitOrnament eq 'impass') {
 
             $self->setExitOrnament(
                 FALSE,              # Don't update Automapper windows yet
@@ -7227,7 +7328,7 @@
         }
 
         # The twin exit object (if any) also loses its impassable status
-        if ($arriveExitObj && $arriveExitObj->impassFlag) {
+        if ($arriveExitObj && $arriveExitObj->exitOrnament eq 'impass') {
 
             $self->setExitOrnament(
                 FALSE,              # Don't update Automapper windows yet
@@ -7441,6 +7542,75 @@
         return 1;
     }
 
+    sub resetCheckedDirs {
+
+        # Called by GA::Win::Map->resetCheckedDirCallback
+        # Resets (i.e. removes) checked directions for rooms in a region, or in all regions
+        #
+        # Expected arguments
+        #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
+        #                       be updated now, FALSE if not (in which case, they can be updated
+        #                       later by the calling function, when it is ready)
+        #
+        # Optional arguments
+        #   $region     - A region name. If 'undef', checked directions for rooms in every region
+        #                   are reset
+        #
+        # Return values
+        #   'undef' on improper arguments or if no checked direction(s) are reset
+        #   1 otherwise
+
+        my ($self, $updateFlag, $region, $check) = @_;
+
+        # Local variables
+        my ($regionmapObj, $regionObj);
+
+        # Check for improper arguments
+        if (! defined $updateFlag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetCheckedDirs', @_);
+        }
+
+        if (! $region) {
+
+            foreach my $roomObj ($self->ivValues('roomModelHash')) {
+
+                $roomObj->ivEmpty('checkedDirHash');
+            }
+
+        } else {
+
+            $regionmapObj = $self->ivShow('regionmapHash', $region);
+            if (! $regionmapObj) {
+
+                # Nothing more we can do
+                return undef;
+            }
+
+            $regionObj = $self->ivShow('modelHash', $regionmapObj->number);
+
+            foreach my $number ($regionObj->ivKeys('childHash')) {
+
+                my $childObj = $self->ivShow('roomModelHash', $number);
+                if ($childObj && $childObj->_objName eq 'room') {
+
+                    $childObj->ivEmpty('checkedDirHash');
+                }
+            }
+        }
+
+        # Update any GA::Win::Map objects using this world model (if allowed)
+        if ($updateFlag) {
+
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                $mapWin->drawRegion();
+            }
+        }
+
+        return 1;
+    }
+
     sub resetRemoteData {
 
         # Called by GA::Win::Map->resetRemoteCallback
@@ -7617,138 +7787,6 @@
         }
 
         $roomObj->ivAdd('searchHash', $term, $result);
-
-        return 1;
-    }
-
-    sub toggleRoomFlags {
-
-        # Called by GA::Win::Map->enableRoomsColumn_filterSubMenu
-        # Toggles a room flag in one or more rooms. Redraws the rooms (if permitted) and
-        #   recalculates the regionmap's paths (if necessary)
-        #
-        # Expected arguments
-        #   $session    - The calling function's GA::Session
-        #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
-        #                   be updated now, FALSE if not (in which case, they can be updated later
-        #                   by the calling function, when it is ready)
-        #   $roomFlag   - The room flag to toggle (matches one of the keys in
-        #                   $self->roomFlagTextHash)
-        #
-        # Optional arguments
-        #   @roomList   - A list of room objects to update. If the list is empty, no flags are
-        #                   toggled
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $session, $updateFlag, $roomFlag, @roomList) = @_;
-
-        # Local variables
-        my (
-            $hazardFlag,
-            %regionHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $session || ! defined $updateFlag || ! defined $roomFlag) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggleRoomFlags', @_);
-        }
-
-        # For speed, work out now whether $roomFlag is one of the hazardous room flags, or not
-        if ($axmud::CLIENT->ivExists('constRoomHazardHash', $roomFlag)) {
-
-            $hazardFlag = TRUE;
-        }
-
-        # Update each room in turn
-        foreach my $roomObj (@roomList) {
-
-            my $listRef;
-
-            if ($roomObj->ivExists('roomFlagHash', $roomFlag)) {
-
-                # Unset the flag by deleting the key
-                $roomObj->ivDelete('roomFlagHash', $roomFlag);
-
-            } else {
-
-                # Set the flag by adding the key
-                $roomObj->ivAdd('roomFlagHash', $roomFlag);
-            }
-
-            if ($updateFlag) {
-
-                # Reset the ->lastRoomFlag IV - it'll be set to the correct value (if any)
-                #   when the room is redrawn in a moment
-                $roomObj->ivUndef('lastRoomFlag');
-
-            } else {
-
-                # The room isn't going to be redrawn any time soon, so set the correct value of
-                #   ->lastRoomFlag now
-                $roomObj->ivPoke('lastRoomFlag', $roomFlag);
-            }
-
-            # Keep track of all the affected regions. Use a hash in the form
-            #   ->regionHash{region_number} = reference_to_list_of_room_objects
-            if (exists $regionHash{$roomObj->parent}) {
-
-                $listRef = $regionHash{$roomObj->parent};
-                push (@$listRef, $roomObj);
-
-            } else {
-
-                $regionHash{$roomObj->parent} = [$roomObj];
-            }
-        }
-
-        # If the flag is one of the hazardous room flags, we need to re-calculate each regionmap's
-        #   GA::Obj::RegionPath objects (paths between exits at the boundaries of the region)
-        if ($hazardFlag) {
-
-            foreach my $regionNum (keys %regionHash) {
-
-                my ($regionObj, $listRef);
-
-                $regionObj = $self->ivShow('modelHash', $regionNum);
-                $listRef = $regionHash{$regionNum};
-
-                $self->recalculateSafePaths(
-                    $session,
-                    $self->ivShow('regionmapHash', $regionObj->name),
-                    @$listRef,
-                );
-            }
-        }
-
-        # Update any GA::Win::Map objects using this world model (if allowed)
-        if ($updateFlag) {
-
-            # Update each Automapper window which is showing a region which contains any of the
-            #   rooms in @roomList
-            foreach my $mapWin ($self->collectMapWins()) {
-
-                my (
-                    $roomListRef,
-                    @redrawList,
-                );
-
-                if (exists $regionHash{$mapWin->currentRegionmap->number}) {
-
-                    $roomListRef = $regionHash{$mapWin->currentRegionmap->number};
-                    foreach my $roomObj (@$roomListRef) {
-
-                        push (@redrawList, 'room', $roomObj);
-                    }
-
-                    # Redraw affected rooms in this region
-                    $mapWin->markObjs(@redrawList);
-                }
-            }
-        }
 
         return 1;
     }
@@ -8376,6 +8414,137 @@
 
         # Update the IV
         $exitObj->ivPoke('randomDestList', @modList);
+
+        return 1;
+    }
+
+    sub setWildernessRoom {
+
+        # Can be called by anything
+        # Sets a room's ->wildMode, removing any existing exit objects and redrawing as required
+        #
+        # Expected arguments
+        #   $session    - The calling function's GA::Session
+        #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
+        #                   be updated now, FALSE if not (in which case, they can be updated later
+        #                   by the calling function, when it is ready)
+        #   $mode       - The new wilderness mode, one of the strings 'normal', 'border' or 'wild'
+        #                   (it doesn't matter if any specified room already has that mode)
+        #
+        # Optional arguments
+        #   @roomList   - A list of GA::ModelObj::Room objects to update (can be an empty list)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $session, $updateFlag, $mode, @roomList) = @_;
+
+        # Local variables
+        my (
+            @drawList,
+            %checkHash,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $session
+            || ! defined $updateFlag
+            || ! defined $mode
+            || ($mode ne 'normal' && $mode ne 'border' && $mode ne 'wild')
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setWildernessRoom', @_);
+        }
+
+        foreach my $roomObj (@roomList) {
+
+            my @exitList;
+
+            # For 'wilderness' rooms, remove all existing exits
+            if ($mode eq 'wild') {
+
+                foreach my $number ($roomObj->exitNumHash) {
+
+                    my ($exitObj, $destRoomObj);
+
+                    $exitObj = $self->ivShow('exitModelHash', $number);
+                    if ($exitObj) {
+
+                        push (@exitList, $exitObj);
+
+                        if (defined $exitObj->destRoom) {
+
+                            $destRoomObj = $self->ivShow('modelHash', $exitObj->destRoom);
+                        }
+                    }
+
+                    # Don't mark the same room to be redrawn twice
+                    if ($destRoomObj && ! exists $checkHash{$destRoomObj->number}) {
+
+                        push (@drawList, 'room', $destRoomObj);
+                        $checkHash{$destRoomObj->number} = undef;
+                    }
+                }
+
+            # For 'wilderness border' rooms, remove all existing exits unless they're connected to a
+            #   normal room
+            } elsif ($mode eq 'border') {
+
+                foreach my $number ($roomObj->exitNumHash) {
+
+                    my ($exitObj, $destRoomObj);
+
+                    $exitObj = $self->ivShow('exitModelHash', $number);
+                    if ($exitObj) {
+
+                        if (defined $exitObj->destRoom) {
+
+                            $destRoomObj = $self->ivShow('modelHash', $exitObj->destRoom);
+                        }
+
+                        if (! $destRoomObj || $destRoomObj->wildMode ne 'normal') {
+
+                            push (@exitList, $exitObj);
+                        }
+                    }
+
+
+                    # Don't mark the same room to be redrawn twice
+                    if ($destRoomObj && ! exists $checkHash{$destRoomObj->number}) {
+
+                        push (@drawList, 'room', $destRoomObj);
+                        $checkHash{$destRoomObj->number} = undef;
+                    }
+                }
+            }
+
+            # Delete any exits from rooms that are now 'wilderness' or 'wilderness border' rooms
+            $self->deleteExits(
+                $session,
+                # Deleted exits must be redrawn immediately, regardless of $updateFlag setting
+                TRUE,
+                @exitList,
+            );
+
+            # Now we can actually set the IV
+            $roomObj->ivPoke('wildMode', $mode);
+
+            # Mark this room to be redrawn (unless it's already been marked to be redrawn)
+            if (! exists $checkHash{$roomObj->number}) {
+
+                push (@drawList, 'room', $roomObj);
+                $checkHash{$roomObj->number} = undef;
+            }
+        }
+
+        # Update any GA::Win::Map objects using this world model (if allowed)
+        if ($updateFlag) {
+
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                $mapWin->doDraw(@drawList);
+            }
+        }
 
         return 1;
     }
@@ -10080,8 +10249,7 @@
             }
         }
 
-        # Update the exit. The ornament flags, including ->impassFlag, are set by the calling
-        #   function
+        # Update the exit. The ->exitOrnament IV is set by the calling function
         $exitObj->ivPoke('brokenFlag', FALSE);
         $exitObj->ivPoke('bentFlag', FALSE);
         $exitObj->ivEmpty('bendOffsetList');
@@ -10133,12 +10301,8 @@
     sub setExitOrnament {
 
         # Can be called by anything (especially by $self->setMultipleOrnaments)
-        # Only one of the five GA::Obj::Exit IVs ->breakFlag, ->pickFlag, ->lockFlag, ->openFlag
-        #   or ->impassFlag should be set to TRUE at any time (by default, none of them are set to
-        #   TRUE)
-        # Sets one of the ornament IVs and resets the others (or, resets all of them)
-        # Optionally sets (or resets) the ornament of this exit's twin exit if there is one) to
-        #   match
+        # Sets (or resets) the exit's ornament . Optionally sets (or resets) the ornament of the
+        #   twin exit (if there is one) to match
         #
         # Expected arguments
         #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
@@ -10147,7 +10311,9 @@
         #   $exitObj    - The exit object to modify
         #
         # Optional arguments
-        #   $iv         - The IV to set, e.g. 'breakFlag'. If set to 'undef', all 5 IVs are reset
+        #   $type       - The exit ornament type, one of the permitted values for
+        #                   GA::Obj::Exit->exitOrnament ('none', 'break', 'pick', 'lock', 'open',
+        #                   'impass', 'ornament'). If 'undef', the value 'none' is set
         #   $twinFlag   - If set to TRUE, the twin exit's ornament (if there is a twin exit) is set
         #                   to match
         #
@@ -10155,7 +10321,7 @@
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $updateFlag, $exitObj, $iv, $twinFlag, $check) = @_;
+        my ($self, $updateFlag, $exitObj, $type, $twinFlag, $check) = @_;
 
         # Local variables
         my (
@@ -10167,8 +10333,8 @@
         if (
             ! defined $updateFlag || ! defined $exitObj
             || (
-                defined $iv && $iv ne 'breakFlag' && $iv ne 'pickFlag' && $iv ne 'lockFlag'
-                && $iv ne 'openFlag' && $iv ne 'impassFlag'
+                defined $type && $type ne 'none' && $type ne 'break' && $type ne 'pick'
+                && $type ne 'lock' && $type ne 'open' && $type ne 'impass'
             ) || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setExitOrnament', @_);
@@ -10184,38 +10350,31 @@
             $twinRegionFlag = $twinExitObj->regionFlag;
         }
 
-        # Reset the IVs
-        $exitObj->ivPoke('breakFlag', FALSE);
-        $exitObj->ivPoke('pickFlag', FALSE);
-        $exitObj->ivPoke('lockFlag', FALSE);
-        $exitObj->ivPoke('openFlag', FALSE);
-        $exitObj->ivPoke('impassFlag', FALSE);
-        $exitObj->ivPoke('ornamentFlag', FALSE);
+        # Set (or reset) the IV
+        if (! defined $type) {
+            $exitObj->ivPoke('exitOrnament', 'none');
+        } else {
+            $exitObj->ivPoke('exitOrnament', $type);
+        }
 
-        # Set an IV, if one was specified
-        if ($iv) {
+        # Update impassable exit settings
+        if ($type && $type eq 'impass') {
 
-            $exitObj->ivPoke($iv, TRUE);
-            $exitObj->ivPoke('ornamentFlag', TRUE);
+            # Convert this exit into an incomplete impassable exit
+            $self->setImpassableExit(
+                FALSE,      # Don't update Automapper windows yet
+                $exitObj,
+            );
 
-            if ($iv eq 'impassFlag') {
+        } elsif ($exitObj->exitState eq 'impass') {
 
-                # Convert this exit into an incomplete impassable exit
-                $self->setImpassableExit(
-                    FALSE,      # Don't update Automapper windows yet
-                    $exitObj,
-                );
-
-            } elsif ($exitObj->exitState eq 'impass') {
-
-                # The exit's state is no longer impassable
-                $exitObj->ivPoke('exitState', 'normal');       # State not known
-            }
+            # The exit's state is no longer impassable
+            $exitObj->ivPoke('exitState', 'normal');       # State not known
         }
 
         # The call to ->setImpassableExit updates ->updatePathHash and ->updateBoundaryHash. If it
         #   was not called, those IVs must be updated now
-        if (! $iv || $iv ne 'impassFlag') {
+        if (! $type || $type ne 'impass') {
 
             # Find the parent region
             $roomObj = $self->ivShow('modelHash', $exitObj->parent);
@@ -10231,43 +10390,35 @@
         # Reset the IVs on the twin exit, if necessary
         if ($twinExitObj) {
 
-            $twinExitObj->ivPoke('breakFlag', FALSE);
-            $twinExitObj->ivPoke('pickFlag', FALSE);
-            $twinExitObj->ivPoke('lockFlag', FALSE);
-            $twinExitObj->ivPoke('openFlag', FALSE);
-            $twinExitObj->ivPoke('impassFlag', FALSE);
-            $twinExitObj->ivPoke('ornamentFlag', FALSE);
+            $twinExitObj->ivPoke('exitOrnament', $exitObj->exitOrnament);
 
-            if ($iv) {
+            if ($type && $type eq 'impass') {
 
-                $twinExitObj->ivPoke($iv, TRUE);
-                $twinExitObj->ivPoke('ornamentFlag', TRUE);
+                # Convert this exit into an incomplete impassable exit
+                $self->setImpassableExit(
+                    FALSE,      # Don't update Automapper windows yet
+                    $twinExitObj,
+                );
 
-                if ($iv eq 'impassFlag') {
+            } elsif ($twinExitObj->exitState eq 'impass') {
 
-                    # Convert this exit into an incomplete impassable exit
-                    $self->setImpassableExit(
-                        FALSE,      # Don't update Automapper windows yet
-                        $twinExitObj,
-                    );
-
-                } elsif ($twinExitObj->exitState eq 'impass') {
-
-                    # The exit's state is no longer impassable
-                    $twinExitObj->ivPoke('exitState', 'normal');       # State not known
-                }
+                # The exit's state is no longer impassable
+                $twinExitObj->ivPoke('exitState', 'normal');       # State not known
             }
 
-            # The call to ->setImpassableExit updates ->updatePathHash and ->updateBoundaryHash. If
-            #   it was not called, those IVs must be updated now
-            # Find the parent region
-            $twinRoomObj = $self->ivShow('modelHash', $twinExitObj->parent);
-            $twinRegionObj = $self->ivShow('modelHash', $twinRoomObj->parent);
-            # Update the hashes
-            $self->ivAdd('updatePathHash', $twinExitObj->number, $twinRegionObj->name);
-            if ($twinExitObj->regionFlag) {
+            if (! $type || $type ne 'impass') {
 
-                $self->ivAdd('updateBoundaryHash', $twinExitObj->number, $twinRegionObj->name);
+                # The call to ->setImpassableExit updates ->updatePathHash and ->updateBoundaryHash.
+                #   If it was not called, those IVs must be updated now
+                # Find the parent region
+                $twinRoomObj = $self->ivShow('modelHash', $twinExitObj->parent);
+                $twinRegionObj = $self->ivShow('modelHash', $twinRoomObj->parent);
+                # Update the hashes
+                $self->ivAdd('updatePathHash', $twinExitObj->number, $twinRegionObj->name);
+                if ($twinExitObj->regionFlag) {
+
+                    $self->ivAdd('updateBoundaryHash', $twinExitObj->number, $twinRegionObj->name);
+                }
             }
         }
 
@@ -10292,9 +10443,9 @@
         #                       updated later by the calling function, when it is ready)
         #
         # Optional arguments
-        #   $iv             - The GA::Obj::Exit IV corresponding to the exit ornament (e.g.
-        #                       'pickFlag'). If 'undef', every exit is reset so that it has no
-        #                       ornaments
+        #   $type           - The exit ornament type, one of the permitted values for
+        #                       GA::Obj::Exit->exitOrnament ('none', 'break', 'pick', 'lock',
+        #                       'open', 'impass', 'ornament'). If 'undef', the value 'none' is set
         #   @exitList       - A list of exit objects to modify. If the list is empty, no exits are
         #                       modified
         #
@@ -10302,7 +10453,7 @@
         #   'undef' on improper arguments or if @exitList is empty
         #   1 otherwise
 
-        my ($self, $updateFlag, $iv, @exitList) = @_;
+        my ($self, $updateFlag, $type, @exitList) = @_;
 
         # Local variables
         my %roomHash;
@@ -10343,7 +10494,7 @@
             $self->setExitOrnament(
                 FALSE,                          # Don't update Automapper windows yet
                 $exitObj,
-                $iv,                            # May be 'undef'
+                $type,                            # May be 'undef'
                 $self->setTwinOrnamentFlag,
             );
         }
@@ -10871,7 +11022,7 @@
 
         # Local variables
         my (
-            $regionObj,
+            $customDir, $regionObj,
             @redrawList,
         );
 
@@ -10887,6 +11038,12 @@
         $exitObj->ivPoke('mapDir', $mapDir);
         # Mark the exit as 'allocated'
         $exitObj->ivPoke('drawMode', 'perm_alloc');
+        # Any checked directions in the corresponding custom primary direction are destroyed
+        $customDir = $session->currentDict->ivShow('primaryDirHash', $mapDir);
+        if (defined $customDir) {
+
+            $roomObj->ivDelete('checkedDirHash', $customDir);
+        }
 
         # Find the parent region
         $regionObj = $self->ivShow('modelHash', $roomObj->parent);
@@ -11958,9 +12115,9 @@
 
     # Modify model objects - labels
 
-    sub setLabelName {
+    sub updateLabel {
 
-        # Called by GA::Win::Map->editLabelCallback
+        # Called by GA::Win::Map->setLabelCallback and ->promptConfigLabel
         # Sets the specified label's ->name IV (containing the text displayed) and redraw the label
         #   (if allowed)
         #
@@ -11968,23 +12125,35 @@
         #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
         #                   be updated now, FALSE if not (in which case, they can be updated later
         #                   by the calling function, when it is ready)
+        #   $session    - The calling GA::Session
         #   $labelObj   - The GA::Obj::MapLabel to modify
         #   $name       - The new text for the label
         #
+        # Optional arguments
+        #   $style      - The new map label style (if 'undef', the label starts using its own IVs
+        #                   to set a style)
+        #
         # Return values
-        #   'undef' on improper arguments or if @roomList is empty
+        #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $updateFlag, $labelObj, $name, $check) = @_;
+        my ($self, $updateFlag, $session, $labelObj, $name, $style, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $updateFlag || ! defined $labelObj || ! defined $name || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setLabelName', @_);
+        if (
+            ! defined $updateFlag || ! defined $session || ! defined $labelObj || ! defined $name
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateLabel', @_);
         }
 
-        # Update the label
+        # Update IVs
         $labelObj->ivPoke('name', $name);
+        if (defined $style) {
+            $labelObj->set_style($session, $style);
+        } else {
+            $labelObj->reset_style();
+        }
 
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
@@ -12006,47 +12175,541 @@
         return 1;
     }
 
-    sub setLabelSize {
+    # Room flag methods
 
-        # Called by GA::Win::Map->enableLabelsColumn and ->enableLabelsPopupMenu
-        # Sets the specified label's ->relSize IV (containing the label's relative size, with 1
-        #   being the default value) and redraw the label (if allowed)
+    sub setupRoomFlags {
+
+        # Called by $self->new to initialise the model's room filter and room flag IVs
+        # Also called by $self->resetRoomFlags
         #
         # Expected arguments
+        #   $session    - The calling GA::Session
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $session, $check) = @_;
+
+        # Local variables
+        my (
+            $count,
+            @initList, @orderedList,
+        );
+
+        # Check for improper arguments
+        if (! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupRoomFlags', @_);
+        }
+
+        # Set up ->roomFilterApplyHash, with no filters applied by default
+        foreach my $filter ($axmud::CLIENT->constRoomFilterList) {
+
+            $self->ivPoke('roomFilterApplyHash', $filter, FALSE);
+        }
+
+        # Create room flag objects, one for each room flag
+        $count = 0;
+        @initList = $axmud::CLIENT->constRoomFlagList;
+        do {
+
+            my ($name, $short, $filter, $colour, $descrip, $newObj);
+
+            $count++;
+
+            $name = shift @initList;
+            $short = shift @initList;
+            $filter = shift @initList;
+            $colour = shift @initList;
+            $descrip = shift @initList;
+
+            $newObj = Games::Axmud::Obj::RoomFlag->new(
+                $session,
+                $name,
+                FALSE,          # Not a custom room flag
+            );
+
+            if ($newObj) {
+
+                $newObj->ivPoke('shortName', $short);
+                $newObj->ivPoke('descrip', $descrip);
+                $newObj->ivPoke('priority', $count);
+                $newObj->ivPoke('filter', $filter);
+                $newObj->ivPoke('colour', $colour);
+
+                $self->ivAdd('roomFlagHash', $name, $newObj);
+                push (@orderedList, $name);
+            }
+
+        } until (! @initList);
+
+        $self->ivPoke('roomFlagOrderedList', @orderedList);
+
+        # Operation complete
+        return 1;
+    }
+
+    sub resetRoomFlags {
+
+        # Called by GA::EditWin::WorldModel->roomFlags1Tab
+        # Resets the world model's room flags to their default state, eliminating any custom room
+        #   flags
+        # Checks every room in the model, removing any room flags that no longer exist
+        #
+        # Expected arguments
+        #   $session    - The calling function's GA::Session
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $session, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetRoomFlags', @_);
+        }
+
+        # Reset the IVs
+        $self->setupRoomFlags($session);
+
+        # Check every room in the model, eliminating custom room flags that no longer exist
+        foreach my $roomObj ($self->ivValues('roomModelHash')) {
+
+            foreach my $roomFlag ($roomObj->ivKeys('roomFlagHash')) {
+
+                if (! $self->ivExists('roomFlagHash', $roomFlag)) {
+
+                    $roomObj->ivDelete('roomFlagHash', $roomFlag);
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub updateRoomFlags {
+
+        # Called by GA::Obj::File->updateExtractedData in order to update the room flags stored in
+        #   this world model to those used in a more recent version of Axmud
+        #
+        # Expected arguments
+        #   $session    - The calling function's GA::Session
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $session, $check) = @_;
+
+        # Local variables
+        my (
+            @initList,
+            %newApplyHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateRoomFlags', @_);
+        }
+
+        # Update $self->roomFilterApplyHash. Add any new filters, and remove any defunct filters
+        #   (the latter will probably never happen, but there's no harm in checking)
+        foreach my $filter ($axmud::CLIENT->constRoomFilterList) {
+
+            if ($self->ivExists('roomFilterApplyHash', $filter)) {
+
+                # Keep the current setting
+                $newApplyHash{$filter} = $self->ivShow('roomFilterApplyHash', $filter);
+
+            } else {
+
+                # New filter
+                $newApplyHash{$filter} = FALSE;
+            }
+        }
+
+        $self->ivPoke('roomFilterApplyHash', %newApplyHash);
+
+        # Update $self->roomFlagHash and ->roomFlagOrderedList. Add any new room flag objects, but
+        #   don't remove any defunct room flags (as the rooms in this world model might be using
+        #   them)
+        @initList = $axmud::CLIENT->constRoomFlagList;
+        do {
+
+            my ($name, $short, $filter, $colour, $descrip, $count, $index, $newObj);
+
+            $name = shift @initList;
+            $short = shift @initList;
+            $filter = shift @initList;
+            $colour = shift @initList;
+            $descrip = shift @initList;
+
+            if (! $self->ivExists('roomFlagHash', $name)) {
+
+                # Go through the existing ordered list of room flags, and find the position of the
+                #   last room flag using the same filter
+                $count = 0;
+                foreach my $name ($self->roomFlagOrderedList) {
+
+                    my $oldObj;
+
+                    $oldObj = $self->ivShow('roomFlagHash', $name);
+                    $count++;
+
+                    if ($oldObj->filter eq $filter) {
+
+                        $index = $count;
+                    }
+                }
+
+                if (! $index) {
+
+                    # This room flag seems to be using a unique filter (for some reason). Insert
+                    #   the new room flag at the end of the list
+                    $index = scalar ($self->roomFlagOrderedList);
+                }
+
+                # Create a new room flag object
+                $newObj = Games::Axmud::Obj::RoomFlag->new(
+                    $session,
+                    $name,
+                    FALSE,          # Not a custom room flag
+                );
+
+                # Insert it at the specified position
+                if ($newObj) {
+
+                    $newObj->ivPoke('shortName', $short);
+                    $newObj->ivPoke('descrip', $descrip);
+                    $newObj->ivPoke('priority', $index + 1);
+                    $newObj->ivPoke('filter', $filter);
+                    $newObj->ivPoke('colour', $colour);
+
+                    $self->ivAdd('roomFlagHash', $name, $newObj);
+                    $self->ivSplice('roomFlagOrderedList', $index, 0, $name);
+
+                    # Update every room flag object's ->priority IV
+                    $count = 0;
+                    foreach my $name ($self->roomFlagOrderedList) {
+
+                        my $thisObj = $self->ivShow('roomFlagHash', $name);
+
+                        $count++;
+                        $thisObj->ivPoke('priority', $count);
+                    }
+                }
+            }
+
+        } until (! @initList);
+
+        # Operation complete
+        return 1;
+    }
+
+    sub addRoomFlag {
+
+        # Called by GA::EditWin::WorldModel->roomFlags1Tab
+        # Adds a new custom room flag and updates the priority list for all room flags
+        #
+        # Expected arguments
+        #   $session    - The calling function's GA::Session
+        #   $name       - The room flag name (max 16 characters, must be unique among room flag
+        #                   names)
+        #   $shortName  - The short name (max 2 characters; should ideally be unique among short
+        #                   names, but that's not a hard rule)
+        #   $descrip    - The room flag description (any text, but at least 1 character)
+        #   $colour     - The colour used to draw the room, when this room flag is the highest-
+        #                   priority room flag in the room. An RGB tag, e.g. '#ABCDEF' (case-
+        #                   insensitive)
+        #
+        # Return values
+        #   'undef' on improper arguments, if $name, $shortName and/or $descrip are not the right
+        #       length, if a room flag called $name already exists or if $colour is not a valid RGB
+        #       tag
+        #   1 otherwise
+
+        my ($self, $session, $name, $shortName, $descrip, $colour, $check) = @_;
+
+        # Local variables
+        my ($type, $lastMarker, $lastCustom, $priority, $newObj, $count);
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $name || ! defined $shortName || ! defined $descrip
+            || ! defined $colour || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addRoomFlag', @_);
+        }
+
+        # Check the lengths of the text arguments
+        if (
+            length($name) < 1 || length($name) > 16
+            || length($shortName) != 2
+            || length($descrip) < 1
+        ) {
+            return undef;
+        }
+
+        # Check a room flag called $name doesn't already exist
+        if ($self->ivExists('roomFlagHash', $name)) {
+
+            return undef;
+        }
+
+        # Check $colour is a valid RGB tag
+        ($type) = $axmud::CLIENT->checkColourTags($colour, 'rgb');
+        if (! $type) {
+
+            return undef;
+        }
+
+        # Decide the room flag's position in the priority list
+        # Position it after the last 'custom' room flag or, if there are none, after the last
+        #   'markers' room tag
+        # (In the default list, all 'markers' room flags come first, followed by all 'custom' room
+        #   flags)
+        foreach my $roomFlagObj ($self->ivValues('roomFlagHash')) {
+
+            if (
+                $roomFlagObj->filter eq 'markers'
+                && (! defined $lastMarker || $lastMarker < $roomFlagObj->priority)
+            ) {
+                $lastMarker = $roomFlagObj->priority;
+
+            } elsif (
+                $roomFlagObj->filter eq 'custom'
+                && (! defined $lastCustom || $lastCustom < $roomFlagObj->priority)
+            ) {
+                $lastCustom = $roomFlagObj->priority;
+            }
+        }
+
+        if (defined $lastCustom) {
+            $priority = $lastCustom + 1;
+        } elsif (defined $lastMarker) {
+            $priority = $lastMarker + 1;
+        } else {
+            $priority = 1;                  # Failsafe - should never be used
+        }
+
+        # Create a new room flag object
+        $newObj = Games::Axmud::Obj::RoomFlag->new(
+            $session,
+            $name,
+            TRUE,           # Custom room flag
+        );
+
+        if ($newObj) {
+
+            $self->ivAdd('roomFlagHash', $name, $newObj);
+
+            # Set the object's IVs
+            $newObj->ivPoke('shortName', $shortName);
+            $newObj->ivPoke('descrip', $descrip);
+            $newObj->ivPoke('priority', $priority);
+            $newObj->ivPoke('filter', 'custom');
+            $newObj->ivPoke('colour', $colour);
+
+            # Insert it at the right position in the room flag priority list
+            $self->ivSplice('roomFlagOrderedList', ($priority - 1), 0, $name);
+
+            # Update every room flag object's ->priority IV
+            $count = 0;
+            foreach my $name ($self->roomFlagOrderedList) {
+
+                my $thisObj = $self->ivShow('roomFlagHash', $name);
+
+                $count++;
+                $thisObj->ivPoke('priority', $count);
+            }
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub deleteRoomFlag {
+
+        # Called by GA::EditWin::WorldModel->roomFlags1Tab
+        # Deletes custom room flag and updates the priority list for all room flags
+        # (Room flags belonging to other filters can't be deleted)
+        #
+        # Expected arguments
+        #   $name       - The room flag name to delete
+        #
+        # Return values
+        #   'undef' on improper arguments, if the room flag doesn't exist or if it isn't a custom
+        #       room flag
+        #   1 otherwise
+
+        my ($self, $name, $check) = @_;
+
+        # Local variables
+        my ($roomFlagObj, $count);
+
+        # Check for improper arguments
+        if (! defined $name) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteRoomFlag', @_);
+        }
+
+        # Check the flag exists and is a custom room flag
+        $roomFlagObj = $self->ivShow('roomFlagHash', $name);
+        if (! $roomFlagObj || $roomFlagObj->filter ne 'custom') {
+
+            return undef;
+
+        } else {
+
+            $self->ivDelete('roomFlagHash', $name);
+
+            # Remove it from the room flag priority list
+            $self->ivSplice('roomFlagOrderedList', ($roomFlagObj->priority - 1), 1);
+
+            # Update every room flag object's ->priority IV
+            $count = 0;
+            foreach my $name ($self->roomFlagOrderedList) {
+
+                my $thisObj = $self->ivShow('roomFlagHash', $name);
+
+                $count++;
+                $thisObj->ivPoke('priority', $count);
+            }
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub toggleRoomFlags {
+
+        # Called by GA::Win::Map->enableRoomsColumn_filterSubMenu
+        # Toggles a room flag in one or more rooms. Redraws the rooms (if permitted) and
+        #   recalculates the regionmap's paths (if necessary)
+        #
+        # Expected arguments
+        #   $session    - The calling function's GA::Session
         #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
         #                   be updated now, FALSE if not (in which case, they can be updated later
         #                   by the calling function, when it is ready)
-        #   $labelObj   - The GA::Obj::MapLabel to modify
-        #   $size       - The new relative size for the label
+        #   $roomFlag   - The room flag to toggle (matches one of the keys in
+        #                   $self->roomFlagHash)
+        #
+        # Optional arguments
+        #   @roomList   - A list of room objects to update. If the list is empty, no flags are
+        #                   toggled
         #
         # Return values
-        #   'undef' on improper arguments or if @roomList is empty
+        #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $updateFlag, $labelObj, $size, $check) = @_;
+        my ($self, $session, $updateFlag, $roomFlag, @roomList) = @_;
+
+        # Local variables
+        my (
+            $hazardFlag,
+            %regionHash,
+        );
 
         # Check for improper arguments
-        if (! defined $updateFlag || ! defined $labelObj || ! defined $size || defined $check) {
+        if (! defined $session || ! defined $updateFlag || ! defined $roomFlag) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setLabelSize', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggleRoomFlags', @_);
         }
 
-        # Update the label
-        $labelObj->ivPoke('relSize', $size);
+        # For speed, work out now whether $roomFlag is one of the hazardous room flags, or not
+        if ($axmud::CLIENT->ivExists('constRoomHazardHash', $roomFlag)) {
+
+            $hazardFlag = TRUE;
+        }
+
+        # Update each room in turn
+        foreach my $roomObj (@roomList) {
+
+            my $listRef;
+
+            if ($roomObj->ivExists('roomFlagHash', $roomFlag)) {
+
+                # Unset the flag by deleting the key
+                $roomObj->ivDelete('roomFlagHash', $roomFlag);
+
+            } else {
+
+                # Set the flag by adding the key
+                $roomObj->ivAdd('roomFlagHash', $roomFlag);
+            }
+
+            if ($updateFlag) {
+
+                # Reset the ->lastRoomFlag IV - it'll be set to the correct value (if any)
+                #   when the room is redrawn in a moment
+                $roomObj->ivUndef('lastRoomFlag');
+
+            } else {
+
+                # The room isn't going to be redrawn any time soon, so set the correct value of
+                #   ->lastRoomFlag now
+                $roomObj->ivPoke('lastRoomFlag', $roomFlag);
+            }
+
+            # Keep track of all the affected regions. Use a hash in the form
+            #   ->regionHash{region_number} = reference_to_list_of_room_objects
+            if (exists $regionHash{$roomObj->parent}) {
+
+                $listRef = $regionHash{$roomObj->parent};
+                push (@$listRef, $roomObj);
+
+            } else {
+
+                $regionHash{$roomObj->parent} = [$roomObj];
+            }
+        }
+
+        # If the flag is one of the hazardous room flags, we need to re-calculate each regionmap's
+        #   GA::Obj::RegionPath objects (paths between exits at the boundaries of the region)
+        if ($hazardFlag) {
+
+            foreach my $regionNum (keys %regionHash) {
+
+                my ($regionObj, $listRef);
+
+                $regionObj = $self->ivShow('modelHash', $regionNum);
+                $listRef = $regionHash{$regionNum};
+
+                $self->recalculateSafePaths(
+                    $session,
+                    $self->ivShow('regionmapHash', $regionObj->name),
+                    @$listRef,
+                );
+            }
+        }
 
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
+            # Update each Automapper window which is showing a region which contains any of the
+            #   rooms in @roomList
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->name eq $labelObj->region
-                    && $mapWin->currentRegionmap->currentLevel == $labelObj->level
-                ) {
-                    # ...mark the label to be drawn
-                    $mapWin->markObjs('label', $labelObj);
+                my (
+                    $roomListRef,
+                    @redrawList,
+                );
+
+                if (exists $regionHash{$mapWin->currentRegionmap->number}) {
+
+                    $roomListRef = $regionHash{$mapWin->currentRegionmap->number};
+                    foreach my $roomObj (@$roomListRef) {
+
+                        push (@redrawList, 'room', $roomObj);
+                    }
+
+                    # Redraw affected rooms in this region
+                    $mapWin->markObjs(@redrawList);
                 }
             }
         }
@@ -12054,14 +12717,319 @@
         return 1;
     }
 
+    sub getDefaultRoomFlag {
+
+        # Can be called by anything
+        # Quick and dirty method of accessing a room flag's default settings, as specified by
+        #   GA::Client->constRoomFlagList
+        # Finds the right settings, then creates a temporary room flag object (GA::Obj::RoomFlag) to
+        #   store them, and returns the object
+        # Note that custom room flags, added by the user, have no default settings and so this
+        #   function returns 'undef'
+        #
+        # Expected arguments
+        #   $session        - The calling GA::Session
+        #   $name           - The name of a non-custom room flag
+        #
+        # Return values
+        #   'undef' on improper arguments or if a non-custom or non-existent room flag name is
+        #       specified
+        #   Otherwise, returns a temporary room flag object whose IVs contain the default settings
+        #       for that room flag
+
+        my ($self, $session, $name, $check) = @_;
+
+        # Local variables
+        my (
+            $count,
+            @initList,
+        );
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $name || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->getDefaultRoomFlag', @_);
+        }
+
+        $count = 0;
+        @initList = $axmud::CLIENT->constRoomFlagList;
+        do {
+
+            my ($thisName, $short, $filter, $colour, $descrip, $tempObj);
+
+            $count++;
+
+            $thisName = shift @initList;
+            $short = shift @initList;
+            $filter = shift @initList;
+            $colour = shift @initList;
+            $descrip = shift @initList;
+
+            if ($thisName eq $name) {
+
+                # Create the temporary room flag object
+                $tempObj = Games::Axmud::Obj::RoomFlag->new(
+                    $session,
+                    $name,
+                    FALSE,          # Not a custom room flag
+                );
+
+                if ($tempObj) {
+
+                    # These are the default settings for the room flag, including its default
+                    #   position in the priority list
+                    $tempObj->ivPoke('shortName', $short);
+                    $tempObj->ivPoke('descrip', $descrip);
+                    $tempObj->ivPoke('priority', $count);
+                    $tempObj->ivPoke('filter', $filter);
+                    $tempObj->ivPoke('colour', $colour);
+
+                    return $tempObj;
+                }
+            }
+
+        } until (! @initList);
+
+        # No matching room flag found in the default list
+        return undef;
+    }
+
+    sub getRoomFlagsInFilter {
+
+        # Can be called by anything
+        # Returns a list of room flag (names, not objects) belonging to the specified room filter
+        # The list is sorted in priority order
+        #
+        # Expected arguments
+        #   $filter     - The room filter name (one of the items in GA::Client->constRoomFilterList
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns the list of room flags, which might be empty (especially if the
+        #       specified $filter is 'custom', and the user hasn't added any custom room flags yet)
+
+        my ($self, $filter, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @list, @sortedList, @returnList);
+
+        # Check for improper arguments
+        if (! defined $filter || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->getRoomFlagsInFilter', @_);
+            return @emptyList;
+        }
+
+        # Weed out all room flags without a matching ->filter
+        foreach my $flagObj ($self->ivValues('roomFlagHash')) {
+
+            if ($flagObj->filter eq $filter) {
+
+                push (@list, $flagObj);
+            }
+        }
+
+        # Sort by priority
+        @sortedList = sort {$a->priority <=> $b->priority} (@list);
+
+        # Convert room flag objects to room flag names
+        foreach my $flagObj (@sortedList) {
+
+            push (@returnList, $flagObj->name);
+        }
+
+        # Operation complete
+        return @returnList;
+    }
+
+    sub moveRoomFlag {
+
+        # Can be called by anything, but mostly called by the world model's edit window
+        # Moves the specified room flag to a new position in the priority list, updating IVs for
+        #   all other room flags
+        #
+        # Expected arguments
+        #   $name       - The name of the room flag to move
+        #   $type       - The type of move: 'above' to move the room flag up one position, 'below'
+        #                   to move it down one position, 'top' to move it to the top of the
+        #                   priority list, 'bottom' to move it to the bottom of the priority list
+        #
+        # Return values
+        #   'undef' on improper arguments or if the specified room flag object can't be found
+        #   1 otherwise
+
+        my ($self, $name, $type, $check) = @_;
+
+        # Local variables
+        my (
+            $flagObj, $posn, $count,
+            @priorityList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $name
+            || ! defined $type
+            || ($type ne 'above' && $type ne 'below' && $type ne 'top' && $type ne 'bottom')
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->moveRoomFlag', @_);
+        }
+
+        # Get the corresponding room flag object
+        $flagObj = $self->ivShow('roomFlagHash', $name);
+        if (! $flagObj) {
+
+            return undef;
+        }
+
+        # Import the current priority list
+        @priorityList = $self->roomFlagOrderedList;
+        # Work out the room flag's new position in that list
+        if ($type eq 'above') {
+
+            $posn = $flagObj->priority - 2;
+            if ($posn < 0) {
+
+                $posn = 0;
+            }
+
+        } elsif ($type eq 'below') {
+
+            $posn = $flagObj->priority;
+            if ($posn >= (scalar @priorityList)) {
+
+                $posn = (scalar @priorityList) - 1;
+            }
+
+        } elsif ($type eq 'top') {
+
+            $posn = 0;
+
+        } elsif ($type eq 'bottom') {
+
+            $posn = (scalar @priorityList) - 1;
+        }
+
+        # Remove the flag from that list...
+        splice(@priorityList, ($flagObj->priority - 1), 1);
+        # ...and insert it at its new position
+        splice(@priorityList, $posn, 0, $flagObj->name);
+
+        # Update IVs
+        $self->ivPoke('roomFlagOrderedList', @priorityList);
+        # Update every room flag object's ->priority IV
+        $count = 0;
+        foreach my $name (@priorityList) {
+
+            my $thisObj = $self->ivShow('roomFlagHash', $name);
+
+            $count++;
+            $thisObj->ivPoke('priority', $count);
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub removeRoomFlagInRegion {
+
+        # Called by GA::Win::Map->removeRoomFlagsCallback
+        # Removes a room flag from every room in an existing region, and redraws the region
+        #
+        # Expected arguments
+        #   $regionmapObj   - The GA::Obj::Regionmap whose counts should be reset
+        #   $roomFlag       - The room flag to remove (matches a key in $self->roomFlagHash)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the number of modified rooms (may be 0)
+
+        my ($self, $regionmapObj, $roomFlag, $check) = @_;
+
+        # Local variables
+        my $count;
+
+        # Check for improper arguments
+        if (! defined $regionmapObj || ! defined $roomFlag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeRoomFlagInRegion', @_);
+        }
+
+        # Remove the room flag from any room in the specified region which uses it
+        $count = 0;
+
+        foreach my $roomNum ($regionmapObj->ivValues('gridRoomHash')) {
+
+            my $roomObj = $self->ivShow('modelHash', $roomNum);
+
+            if ($roomObj->ivExists('roomFlagHash', $roomFlag)) {
+
+                $roomObj->ivDelete('roomFlagHash', $roomFlag);
+                $count++;
+            }
+        }
+
+        # Update each Automapper window
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            if ($mapWin->currentRegionmap eq $regionmapObj) {
+
+                # Redraw the region to update the modified rooms
+                $mapWin->drawRegion();
+            }
+        }
+
+        return $count;
+    }
+
     # Other functions called by GA::Obj::Map and GA::Win::Map
+
+    sub resetPainter {
+
+        # Called by $self->new to create a painter object, or by any other function to reset the
+        #   painter object, which is a non-model GA::ModelObj::Room
+        # (The object is 'reset' by discarding the old non-model room object and replacing it with a
+        #   new one)
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise, returns the non-model room object created
+
+        my ($self, $session, $check) = @_;
+
+        # Local variables
+        my $roomObj;
+
+        # Check for improper arguments
+        if (! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetPainter', @_);
+        }
+
+        # Create a new non-model room
+        $roomObj = Games::Axmud::ModelObj::Room->new($session, 'world model painter', FALSE);
+        if ($roomObj) {
+
+            $self->ivPoke('painterObj', $roomObj);
+            return $roomObj;
+
+        } else {
+
+            $self->ivUndef('painterObj');
+            return undef;
+        }
+    }
 
     sub compareRooms {
 
         # Called by GA::Obj::Map->useExistingRoom to compare the current location according to
         #   the Locator task (GA::Task::Locator->roomObj, a non-model room object), with the current
         #   location according to the automapper (which is in the world model)
-        # Also called by GA::Win::Map->autoCompareLocatorRoom
+        # Also called by GA::Obj::Map->autoCompareLocatorRoom and GA::Cmd::LocateRoom->do
         # How the rooms are compared depends on the values of various flags
         #
         # Expected arguments
@@ -12069,8 +13037,10 @@
         #   $modelRoomObj   - A GA::ModelObj::Room somewhere in the world model
         #
         # Optional arguments
-        #   $noBlanksFlag   - Set to TRUE when called by ->autoCompareLocatorRoom. Doesn't allow
-        #                       matching with empty, dark or unspecified rooms
+        #   $darkFlag       - Set to TRUE when called by ->useExistingRoom, in which case the model
+        #                       room matches any dark or unspecified rooms
+        #   $blankFlag      - Set to TRUE when called by ->autoCompareLocatorRoom. A blank model
+        #                       room (which has just been created) matches anything
         #
         # Return values
         #   An empty list on improper arguments
@@ -12080,13 +13050,13 @@
         #       - 'error_message' is a string to display on failure; otherwise 'error_message' is
         #           'undef'
 
-        my ($self, $session, $modelRoomObj, $noBlanksFlag, $check) = @_;
+        my ($self, $session, $modelRoomObj, $darkFlag, $blankFlag, $check) = @_;
 
         # Local variables
         my (
             $taskObj, $matchFlag,
-            @emptyList,
-            %modelExitHash, %taskExitHash,
+            @emptyList, @patternList,
+            %modelExitHash, %taskExitHash, %taskModHash,
         );
 
         # Check for improper arguments
@@ -12097,7 +13067,7 @@
         }
 
         # If a blank room has been added to the map, it always matches any Locator room
-        if (! $noBlanksFlag && ! $modelRoomObj->everMatchedFlag) {
+        if ($blankFlag && ! $modelRoomObj->everMatchedFlag) {
 
             # This should happen only once for each world model room
             $modelRoomObj->ivPoke('everMatchedFlag', TRUE);
@@ -12114,10 +13084,9 @@
             return (undef, 'Lost because Locator doesn\'t exist or current location not known');
         }
 
-        # Dark rooms and unspecified rooms are a match for any rooms (unless the $noBlanksFlag
-        #   is set)
+        # if $darkFlag is set, dark and unspecified rooms are a match for any room
         if (
-            ! $noBlanksFlag
+            $darkFlag
             && ($taskObj->roomObj->unspecifiedFlag || $taskObj->roomObj->currentlyDarkFlag)
         ) {
             return (1, undef);  # No error message
@@ -12198,8 +13167,13 @@
         }
 
         # Compare exits (if allowed)
-        if ($self->matchExitFlag && ! $session->currentWorld->basicMappingMode) {
-
+        # For wilderness rooms, we don't check any exits that have been added to the map (since we
+        #   assume the world has sent a room statement with no exit list)
+        if (
+            $self->matchExitFlag
+            && ! $session->currentWorld->basicMappingFlag
+            && $modelRoomObj->wildMode eq 'normal'
+        ) {
             $matchFlag = FALSE;
 
             # Import hashes of exits, in the form
@@ -12207,6 +13181,24 @@
             #   $exitNumHash{direction} = exit_object (non-model rooms)
             %modelExitHash = $modelRoomObj->exitNumHash;
             %taskExitHash = $taskObj->roomObj->exitNumHash;
+
+            # From the latter hash, remove any transient exits (those which appear from time to
+            #   time in various locations, for example the entrance to a moving wagon)
+            @patternList = $session->currentWorld->transientExitPatternList;
+            OUTER: foreach my $dir (keys %taskExitHash) {
+
+                INNER: foreach my $pattern (@patternList) {
+
+                    if ($dir =~ m/$pattern/) {
+
+                        # A transient exit; don't compare it to the model room
+                        next OUTER;
+                    }
+                }
+
+                # Not a transient exit
+                $taskModHash{$dir} = $taskExitHash{$dir};
+            }
 
             # Compare the keys in both hashes. Delete matching exits from each hash; if there are
             #   any exits left (or missing), the rooms don't match
@@ -12221,9 +13213,9 @@
                     # The Exit should exist here
                     delete $modelExitHash{$dir};
                     # The exit shouldn't exist here - delete it anyway, just in case
-                    delete $taskExitHash{$dir};
+                    delete $taskModHash{$dir};
 
-                } elsif (! exists $taskExitHash{$dir}) {
+                } elsif (! exists $taskModHash{$dir}) {
 
                     # Missing exit in the Locator's current room, so the rooms don't match
                     return (
@@ -12238,17 +13230,17 @@
 
                     # Exit exists in both hashes (and isn't hidden)
                     delete $modelExitHash{$dir};
-                    delete $taskExitHash{$dir};
+                    delete $taskModHash{$dir};
                 }
             }
 
-            if (%taskExitHash) {
+            if (%taskModHash) {
 
                 # Missing exit in the model's room, so the rooms don't match
                 return (
                     undef,
                     'Lost because of missing exit(s) in the automapper\'s current room: '
-                    . join(', ', keys %taskExitHash) . ' (room #' . $modelRoomObj->number . ')',
+                    . join(', ', keys %taskModHash) . ' (room #' . $modelRoomObj->number . ')',
                 );
             }
         }
@@ -12278,174 +13270,6 @@
 
         # The rooms match
         return (1, undef);  # No error message
-    }
-
-    sub locateRoom {
-
-        # Variation on $self->compareRooms, but called only by
-        #   GA::Win::Map->locateCurrentRoomCallback and GA::Obj::Map->reactRandomExit
-        # Compares a specified world model room against the Locator's current room.
-        # Unlike ->compareRooms, which is restricted in which components it can compare (according
-        #   to the current settings of GA::Obj::WorldModel->matchTitleFlag, etc), this function
-        #   compares all components and inspects the whole (verbose) description as well as the
-        #   source code path (if set)
-        #
-        # Expected arguments
-        #   $session        - The calling function's GA::Session
-        #   $mapRoomObj     - A GA::ModelObj::Room somewhere in the world model
-        #
-        # Return values
-        #   'undef' on improper arguments or if the rooms don't match
-        #   1 if the rooms do match
-
-        my ($self, $session, $mapRoomObj, $check) = @_;
-
-        # Local variables
-        my (
-            $taskRoomObj, $count, $matchFlag,
-            %mapExitHash, %taskExitHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $session || ! defined $mapRoomObj || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->locateRoom', @_);
-        }
-
-        # The calling function should have checked that the Locator task exists and that it knows
-        #   about the current location; it should also have checked that the Locator task's
-        #   current room isn't dark or unspecified. We'll assume none of these are the case. (No
-        #   point repeating the check if this function will be called many times in succession)
-
-        # Import the Locator task's current room
-        $taskRoomObj = $session->locatorTask->roomObj;
-
-        # Check that both rooms have either a room title we can compare, or that both have a
-        #   (verbose) description we can compare
-        $count = 0;
-        if (! $taskRoomObj->titleList || ! $mapRoomObj->titleList) {
-
-            $count++;
-        }
-
-        if (! $taskRoomObj->descripHash || ! $mapRoomObj->descripHash) {
-
-            $count++;
-        }
-
-        if ($count > 1) {
-
-            # There's no title or description to compare, so these rooms can't be matched
-            return undef;
-        }
-
-        # Compare room titles (if present in both rooms)
-        if ($taskRoomObj->titleList && $mapRoomObj->titleList) {
-
-            OUTER: foreach my $mapTitle ($mapRoomObj->titleList) {
-
-                INNER: foreach my $taskTitle ($taskRoomObj->titleList) {
-
-                    if ($mapTitle eq $taskTitle) {
-
-                        $matchFlag = TRUE;
-                        last OUTER;
-                    }
-                }
-            }
-
-            if (! $matchFlag) {
-
-                # The two rooms titles don't match
-                return undef;
-            }
-        }
-
-        # Compare verbose descriptions (if present in both rooms)
-        if ($taskRoomObj->descripHash && $mapRoomObj->descripHash) {
-
-            $matchFlag = FALSE;
-
-            OUTER: foreach my $mapDescrip ($mapRoomObj->ivValues('descripHash')) {
-
-                INNER: foreach my $taskDescrip ($taskRoomObj->ivValues('descripHash')) {
-
-                    if ($mapDescrip eq $taskDescrip) {
-
-                        $matchFlag = TRUE;
-                        last OUTER;
-                    }
-                }
-            }
-
-            if (! $matchFlag) {
-
-                # The two rooms's verbose descriptions don't match
-                return undef;
-            }
-        }
-
-        # Compare exits (but not in 'basic mapping' mode, where the exits are not immediately
-        #   available)
-        if (! $session->currentWorld->basicMappingMode) {
-
-            $matchFlag = FALSE;
-            # Import hashes of exits. Each hash is in the form
-            #   $hash{nominal_direction) = blessed_reference_to_exit_object
-            %mapExitHash = $mapRoomObj->exitNumHash;
-            %taskExitHash = $taskRoomObj->exitNumHash;
-
-            # Compare the keys in both hashes. Delete matching exits from each hash; if there are
-            #   any exits left (or missing), the rooms don't match
-            foreach my $exitDir (keys %mapExitHash) {
-
-                my ($exitNum, $exitObj);
-
-                $exitNum = $mapExitHash{$exitDir};
-                $exitObj = $self->ivShow('exitModelHash', $exitNum);
-
-                # Ignore exits marked as hidden - they won't appear in the Locator room's list of
-                #   exits
-                if ($exitObj->hiddenFlag) {
-
-                    # Exit should exist here
-                    delete $mapExitHash{$exitDir};
-                    # Exit shouldn't exist here - delete it anyway, just in case
-                    delete $taskExitHash{$exitDir};
-
-                } elsif (! exists $taskExitHash{$exitDir}) {
-
-                    # Missing exit in the Locator's current room, so the rooms don't match
-                    return undef;
-
-                } else {
-
-                    delete $mapExitHash{$exitDir};
-                    delete $taskExitHash{$exitDir};
-                }
-            }
-
-            if (%taskExitHash) {
-
-                # Missing exit in the map's room, so the rooms don't match
-                return undef;
-            }
-        }
-
-        # Compare source code paths (if present in both rooms. This step is probably unnecessary,
-        #   since if we knew $taskRoomObj's source code path, we wouldn't be trying to locate
-        #   the equivalent room in the map. But, for consistency, we'll check anyway)
-        if ($taskRoomObj->sourceCodePath && $mapRoomObj->sourceCodePath) {
-
-            if ($taskRoomObj->sourceCodePath ne $mapRoomObj->sourceCodePath) {
-
-                # The two rooms titles don't match
-                return undef;
-            }
-        }
-
-        # The rooms match
-        return 1;
     }
 
     sub checkOppPrimary {
@@ -12665,6 +13489,12 @@
                 $cardinalDir,
             );
 
+            # Allocating the primary direction destroys the checked direction, if present
+            $roomObj->ivDelete(
+                'checkedDirHash',
+                $session->currentDict->ivShow('primaryDirHash', $cardinalDir),
+            );
+
             return $cardinalDir;
         }
 
@@ -12731,6 +13561,12 @@
             #   exit object temporarily (it's up to the user to make it permanent)
             $exitObj->ivPoke('mapDir', $cardinalDir);
             $exitObj->ivPoke('drawMode', 'temp_alloc');
+
+            # Allocating the primary direction destroys the checked direction, if present
+            $roomObj->ivDelete(
+                'checkedDirHash',
+                $session->currentDict->ivShow('primaryDirHash', $cardinalDir),
+            );
 
             return $cardinalDir;
 
@@ -13474,9 +14310,9 @@
         }
 
         if ($flag) {
-            $self->ivAdd('roomFilterHash', $filter, TRUE);
+            $self->ivAdd('roomFilterApplyHash', $filter, TRUE);
         } else {
-            $self->ivAdd('roomFilterHash', $filter, FALSE);
+            $self->ivAdd('roomFilterApplyHash', $filter, FALSE);
         }
 
         # Update every Automapper window using this world model
@@ -13761,6 +14597,7 @@
             $regionmapObj->ivPoke('magnification', 1);
             $regionmapObj->ivPoke('scrollXPos', 0.5);
             $regionmapObj->ivPoke('scrollYPos', 0.5);
+            $regionmapObj->ivPoke('currentLevel', 0);
         }
 
         # Update every Automapper window using this world model
@@ -13772,6 +14609,8 @@
                 $mapWin->zoomCallback(1);
                 # Reset the scrollbars
                 $mapWin->setMapPosn(0.5, 0.5);
+                # Redraw the map to make sure the default level is visible
+                $mapWin->setCurrentLevel(0);
             }
         }
 
@@ -13960,6 +14799,135 @@
         return 1;
     }
 
+    # (Called from GA::Win::Map menu, 'Exits' column)
+
+    sub setCheckableDirMode {
+
+        # Called by anonymous function in GA::Win::Map->enableModeColumn
+        # Updates the world model's ->checkableDirMode and updates each Automapper window using
+        #   this world model
+        #
+        # Expected arguments
+        #   $mode   - The new value of the IV - 'simple', 'diku', 'lp' or 'complex'
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $mode, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $mode || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setCheckableDirMode', @_);
+        }
+
+        # Update the IV
+        $self->ivPoke('checkableDirMode', $mode);
+
+        # Update every Automapper window using this world model
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            my $menuItem;
+
+            $mapWin->set_ignoreMenuUpdateFlag(TRUE);
+
+            # Update the menu item
+            if (
+                $mode eq 'simple'
+                && $mapWin->ivExists('menuToolItemHash', 'checkable_dir_simple')
+            ) {
+                $menuItem = $mapWin->ivShow('menuToolItemHash', 'checkable_dir_simple');
+                $menuItem->set_active(TRUE);
+            } elsif (
+                $mode eq 'diku'
+                && $mapWin->ivExists('menuToolItemHash', 'checkable_dir_diku')
+            ) {
+                $menuItem = $mapWin->ivShow('menuToolItemHash', 'checkable_dir_diku');
+                $menuItem->set_active(TRUE);
+            } elsif (
+                $mode eq 'lp'
+                && $mapWin->ivExists('menuToolItemHash', 'checkable_dir_lp')
+            ) {
+                $menuItem = $mapWin->ivShow('menuToolItemHash', 'checkable_dir_lp');
+                $menuItem->set_active(TRUE);
+            } elsif (
+                $mode eq 'complex'
+                && $mapWin->ivExists('menuToolItemHash', 'checkable_dir_complex')
+            ) {
+                $menuItem = $mapWin->ivShow('menuToolItemHash', 'checkable_dir_complex');
+                $menuItem->set_active(TRUE);
+            }
+
+            $mapWin->set_ignoreMenuUpdateFlag(FALSE);
+
+            # If interior counts are currently showing checked/checkable directions, redraw the
+            #   region to update those counts
+            if ($self->roomInteriorMode eq 'checked_count') {
+
+                $mapWin->drawRegion();
+            }
+        }
+
+        return 1;
+    }
+
+    sub getCheckableDirs {
+
+        # Called by GA::Win::Map->prepareCheckedCounts, once per drawing cycle. Also called by
+        #   GA::Cmd::ModelReport->do
+        # $self->roomInteriorMode specifies which primary directions should be checked, when
+        #   using checkable directions. This function compiles the list of primary directions, and
+        #   converts them from their standard to custom forms, which is how they are stored in
+        #   GA::ModelObj::Room->checkedDirHash
+        #
+        # Expected arguments
+        #   $session    - The calling GA::Session
+        #
+        # Return values
+        #   An empty hash on improper arguments
+        #   Otherwise returns a hash (never empty), in the form
+        #       $hash{custom_primary_direction} = undef
+
+        my ($self, $session, $check) = @_;
+
+        # Local variables
+        my (
+            $dictObj,
+            @standardList,
+            %emptyHash, %returnHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $session || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->getCheckableDirs', @_);
+            return %emptyHash;
+        }
+
+        # Import the current dictionary (for convenience)
+        $dictObj = $session->currentDict;
+
+        if ($self->checkableDirMode eq 'complex') {
+            @standardList = $axmud::CLIENT->constPrimaryDirList;
+        } elsif ($self->checkableDirMode eq 'lp') {
+            @standardList = $axmud::CLIENT->constShortPrimaryDirList;
+        } elsif ($self->checkableDirMode eq 'diku') {
+            @standardList = qw(north south east west up down);
+        } else {
+            @standardList = qw(north south east west);      # ->roomInteriorMode is 'simple'
+        }
+
+        foreach my $standard (@standardList) {
+
+            my $custom = $dictObj->ivShow('primaryDirHash', $standard);
+            $returnHash{$custom} = undef;
+        }
+
+        # Operation complete
+        return %returnHash;
+    }
+
     # A* algorithm functions (used to find a path between two rooms in the same region)
 
     sub findPath {
@@ -14019,7 +14987,7 @@
         %hazardHash = $self->compileRoomHazards($avoidHazardsFlag, @otherHazardList);
 
         # Create the open list, using a binomial heap
-        $openListObj = Heap::Binomial->new();
+        $openListObj = Games::Axmud::Obj::BinomialHeap->new();
         # Create a reference to a hash of nodes, in the form
         #   $nodeHash{room_object} = node
         # ...where 'room_object' is a GA::ModelObj::Room, and 'node' is a GA::Node::AStar object
@@ -14979,7 +15947,7 @@
         #   always 0) to get the shortest path between the initial and target rooms
 
         # Create the open list, using a binomial heap
-        $openListObj = Heap::Binomial->new();
+        $openListObj = Games::Axmud::Obj::BinomialHeap->new();
         # Create a reference to a hash of nodes, in the form
         #   $nodeHashRef{exit_object} = node
         # ...where 'exit_object' is a GA::Obj::Exit, and node is a GA::Node::Djikstra object
@@ -15643,7 +16611,7 @@
         #   h-score is always 0) to get the shortest path between the initial and target rooms
 
         # Create the open list, using a binomial heap
-        $openListObj = Heap::Binomial->new();
+        $openListObj = Games::Axmud::Obj::BinomialHeap->new();
         # Create a reference to a hash of nodes, in the form
         #   $hash{room_tag} = djikstra_node
         $nodeHashRef = {};
@@ -18347,6 +19315,215 @@
         return 1;
     }
 
+    sub add_buttonSet {
+
+        # Called by GA::Win::Map->addToolbar
+
+        my ($self, $set, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $set || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_buttonSet', @_);
+        }
+
+        $self->ivPush('buttonSetList', $set);
+
+        return 1;
+    }
+
+    sub del_buttonSet {
+
+        # Called by GA::Win::Map->removeToolbar
+
+        my ($self, $set, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (! defined $set || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->del_buttonSet', @_);
+        }
+
+        foreach my $item ($self->buttonSetList) {
+
+            if ($item ne $set) {
+
+                push (@list, $item);
+            }
+        }
+
+        $self->ivPoke('buttonSetList', @list);
+
+        return 1;
+    }
+
+    sub set_buttonSetList {
+
+        # Called by GA::Win::Map->enableToolbar
+
+        my ($self, @list) = @_;
+
+        # (No improper arguments to check)
+
+        $self->ivPoke('buttonSetList', @list);
+
+        return 1;
+    }
+
+    sub add_preferRoomFlag {
+
+        # Called by GA::Win::Map->addRoomFlagButton
+
+        my ($self, $roomFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $roomFlag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_preferRoomFlag', @_);
+        }
+
+        # Don't add duplicate room flags. The calling code should take care of this, but we'll
+        #   check anyway
+        foreach my $item ($self->preferRoomFlagList) {
+
+            if ($item eq $roomFlag) {
+
+                return undef;
+            }
+        }
+
+        # Update the list
+        $self->ivPush('preferRoomFlagList', $roomFlag);
+
+        return 1;
+    }
+
+    sub del_preferRoomFlag {
+
+        # Called by GA::Win::Map->addRoomFlagButton
+
+        my ($self, $roomFlag, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (! defined $roomFlag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->del_preferRoomFlag', @_);
+        }
+
+        foreach my $item ($self->preferRoomFlagList) {
+
+            if ($item ne $roomFlag) {
+
+                push (@list, $item);
+            }
+        }
+
+        $self->ivPoke('preferRoomFlagList', @list);
+
+        return 1;
+    }
+
+    sub reset_preferRoomFlagList {
+
+        # Called by GA::Win::Map->removeRoomFlagButton
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->reset_preferRoomFlagList',
+                @_,
+            );
+        }
+
+        $self->ivEmpty('preferRoomFlagList');
+
+        return 1;
+    }
+
+    sub add_preferBGColour {
+
+        # Called by GA::Win::Map->addBGColourButton
+
+        my ($self, $colour, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $colour || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_preferBGColour', @_);
+        }
+
+        # Don't add duplicate colours
+        foreach my $item ($self->preferBGColourList) {
+
+            if ($item eq $colour) {
+
+                return undef;
+            }
+        }
+
+        # Update the list
+        $self->ivPush('preferBGColourList', $colour);
+
+        return 1;
+    }
+
+    sub del_preferBGColour {
+
+        # Called by GA::Win::Map->removeBGColourButton
+
+        my ($self, $colour, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (! defined $colour || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->del_preferBGColour', @_);
+        }
+
+        foreach my $item ($self->preferBGColourList) {
+
+            if ($item ne $colour) {
+
+                push (@list, $item);
+            }
+        }
+
+        $self->ivPoke('preferBGColourList', @list);
+
+        return 1;
+    }
+
+    sub reset_preferBGColourList {
+
+        # Called by GA::Win::Map->removeBGColourButton
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->reset_preferBGColourList',
+                @_,
+            );
+        }
+
+        $self->ivEmpty('preferBGColourList');
+
+        return 1;
+    }
+
     sub toggle_componentFlag {
 
         # Called by GA::Cmd::ToggleAutomapper->do
@@ -18421,6 +19598,24 @@
         }
 
         $self->ivPoke('lightStatusList', @list);
+
+        return 1;
+    }
+
+    sub set_mapLabelStyle {
+
+        # Called by GA::Win::Map->addLabelAtBlockCallback, ->addLabelAtClickCallback and
+        #   ->setLabelCallback
+
+        my ($self, $style, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $style || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_mapLabelStyle', @_);
+        }
+
+        $self->ivPoke('mapLabelStyle', $style);
 
         return 1;
     }
@@ -18683,6 +19878,12 @@
         { $_[0]->{showTreeViewFlag} }
     sub showCanvasFlag
         { $_[0]->{showCanvasFlag} }
+    sub buttonSetList
+        { my $self = shift; return @{$self->{buttonSetList}}; }
+    sub preferRoomFlagList
+        { my $self = shift; return @{$self->{preferRoomFlagList}}; }
+    sub preferBGColourList
+        { my $self = shift; return @{$self->{preferBGColourList}}; }
 
     sub defaultGridWidthBlocks
         { $_[0]->{defaultGridWidthBlocks} }
@@ -18723,6 +19924,8 @@
         { $_[0]->{defaultRoomColour} }
     sub defaultRoomTextColour
         { $_[0]->{defaultRoomTextColour} }
+    sub defaultSelectBoxColour
+        { $_[0]->{defaultSelectBoxColour} }
     sub defaultBorderColour
         { $_[0]->{defaultBorderColour} }
     sub defaultCurrentBorderColour
@@ -18767,6 +19970,8 @@
         { $_[0]->{defaultRandomExitColour} }
     sub defaultImpassableExitColour
         { $_[0]->{defaultImpassableExitColour} }
+    sub defaultCheckedDirColour
+        { $_[0]->{defaultCheckedDirColour} }
     sub defaultDragExitColour
         { $_[0]->{defaultDragExitColour} }
     sub defaultExitTagColour
@@ -18786,6 +19991,8 @@
         { $_[0]->{roomColour} }
     sub roomTextColour
         { $_[0]->{roomTextColour} }
+    sub selectBoxColour
+        { $_[0]->{selectBoxColour} }
     sub borderColour
         { $_[0]->{borderColour} }
     sub currentBorderColour
@@ -18830,6 +20037,8 @@
         { $_[0]->{randomExitColour} }
     sub impassableExitColour
         { $_[0]->{impassableExitColour} }
+    sub checkedDirColour
+        { $_[0]->{checkedDirColour} }
     sub dragExitColour
         { $_[0]->{dragExitColour} }
     sub exitTagColour
@@ -18841,50 +20050,38 @@
     sub selectMapLabelColour
         { $_[0]->{selectMapLabelColour} }
 
-    sub defaultRoomFilterList
-        { my $self = shift; return @{$self->{defaultRoomFilterList}}; }
-    sub defaultRoomFilterHash
-        { my $self = shift; return %{$self->{defaultRoomFilterHash}}; }
-    sub defaultRoomFlagTextHash
-        { my $self = shift; return %{$self->{defaultRoomFlagTextHash}}; }
-    sub defaultRoomFlagPriorityHash
-        { my $self = shift; return %{$self->{defaultRoomFlagPriorityHash}}; }
-    sub defaultRoomFlagFilterHash
-        { my $self = shift; return %{$self->{defaultRoomFlagFilterHash}}; }
-    sub defaultRoomFlagColourHash
-        { my $self = shift; return %{$self->{defaultRoomFlagColourHash}}; }
-    sub defaultRoomFlagDescripHash
-        { my $self = shift; return %{$self->{defaultRoomFlagDescripHash}}; }
-    sub defaultRoomFlagOrderedList
-        { my $self = shift; return @{$self->{defaultRoomFlagOrderedList}}; }
-    sub defaultRoomFlagReverseHash
-        { my $self = shift; return %{$self->{defaultRoomFlagReverseHash}}; }
+    sub mapLabelStyleHash
+        { my $self = shift; return %{$self->{mapLabelStyleHash}}; }
+    sub mapLabelStyle
+        { $_[0]->{mapLabelStyle} }
+    sub mapLabelAlignXFlag
+        { $_[0]->{mapLabelAlignXFlag} }
+    sub mapLabelAlignYFlag
+        { $_[0]->{mapLabelAlignYFlag} }
 
-    sub roomFilterList
-        { my $self = shift; return @{$self->{roomFilterList}}; }
-    sub roomFilterHash
-        { my $self = shift; return %{$self->{roomFilterHash}}; }
-    sub roomFlagTextHash
-        { my $self = shift; return %{$self->{roomFlagTextHash}}; }
-    sub roomFlagPriorityHash
-        { my $self = shift; return %{$self->{roomFlagPriorityHash}}; }
-    sub roomFlagFilterHash
-        { my $self = shift; return %{$self->{roomFlagFilterHash}}; }
-    sub roomFlagColourHash
-        { my $self = shift; return %{$self->{roomFlagColourHash}}; }
-    sub roomFlagDescripHash
-        { my $self = shift; return %{$self->{roomFlagDescripHash}}; }
+    sub roomFilterApplyHash
+        { my $self = shift; return %{$self->{roomFilterApplyHash}}; }
+    sub roomFlagHash
+        { my $self = shift; return %{$self->{roomFlagHash}}; }
     sub roomFlagOrderedList
         { my $self = shift; return @{$self->{roomFlagOrderedList}}; }
-    sub roomFlagReverseHash
-        { my $self = shift; return %{$self->{roomFlagReverseHash}}; }
     sub allRoomFiltersFlag
         { $_[0]->{allRoomFiltersFlag} }
-
     sub roomTerrainInitHash
         { my $self = shift; return %{$self->{roomTerrainInitHash}}; }
     sub roomTerrainHash
         { my $self = shift; return %{$self->{roomTerrainHash}}; }
+
+    sub paintFromTitleHash
+        { my $self = shift; return %{$self->{paintFromTitleHash}}; }
+    sub paintFromDescripHash
+        { my $self = shift; return %{$self->{paintFromDescripHash}}; }
+    sub paintFromExitHash
+        { my $self = shift; return %{$self->{paintFromExitHash}}; }
+    sub paintFromObjHash
+        { my $self = shift; return %{$self->{paintFromObjHash}}; }
+    sub paintFromRoomCmdHash
+        { my $self = shift; return %{$self->{paintFromRoomCmdHash}}; }
 
     sub currentRoomMode
         { $_[0]->{currentRoomMode} }
@@ -18952,6 +20149,8 @@
         { $_[0]->{protectedMovesFlag} }
     sub superProtectedMovesFlag
         { $_[0]->{superProtectedMovesFlag} }
+    sub craftyMovesFlag
+        { $_[0]->{craftyMovesFlag} }
 
     sub setTwinOrnamentFlag
         { $_[0]->{setTwinOrnamentFlag} }
@@ -18977,6 +20176,8 @@
         { $_[0]->{capitalisedRoomTagFlag} }
     sub showTooltipsFlag
         { $_[0]->{showTooltipsFlag} }
+    sub showNotesFlag
+        { $_[0]->{showNotesFlag} }
     sub explainGetLostFlag
         { $_[0]->{explainGetLostFlag} }
     sub disableUpdateModeFlag
@@ -18989,6 +20190,8 @@
         { $_[0]->{allowTrackAloneFlag} }
     sub showAllPrimaryFlag
         { $_[0]->{showAllPrimaryFlag} }
+    sub allowCtrlCopyFlag
+        { $_[0]->{allowCtrlCopyFlag} }
 
     sub lastFilePath
         { $_[0]->{lastFilePath} }
@@ -19006,6 +20209,12 @@
         { $_[0]->{quickPathFindFlag} }
     sub autocompleteExitsFlag
         { $_[0]->{autocompleteExitsFlag} }
+    sub collectCheckedDirsFlag
+        { $_[0]->{collectCheckedDirsFlag} }
+    sub drawCheckedDirsFlag
+        { $_[0]->{drawCheckedDirsFlag} }
+    sub checkableDirMode
+        { $_[0]->{checkableDirMode} }
 
     sub updateBoundaryHash
         { my $self = shift; return %{$self->{updateBoundaryHash}}; }
@@ -19025,8 +20234,8 @@
 
     sub painterObj
         { $_[0]->{painterObj} }
-    sub painterIVList
-        { my $self = shift; return @{$self->{painterIVList}}; }
+    sub constPainterIVList
+        { my $self = shift; return @{$self->{constPainterIVList}}; }
     sub paintAllRoomsFlag
         { $_[0]->{paintAllRoomsFlag} }
 

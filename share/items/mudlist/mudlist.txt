@@ -1,4 +1,4 @@
-# Axmud list of all worlds, created Thu May 31, 2018
+# Axmud list of all worlds, created Fri Aug 31, 2018
 
 Aabahran, The Forsaken Lands
 aabahran
@@ -56,6 +56,13 @@ abattoir.ebonyfortress.com
 0
 English
 
+Abandoned Codex
+abcodex
+abandonedcodex.net
+4000
+0
+English
+
 Abandoned Reality
 abreality
 64.22.103.201
@@ -77,6 +84,13 @@ realms.reichel.net
 0
 English
 
+Accursed Lands
+accursed
+mud.accursed-lands.com
+8000
+0
+English
+
 Achaea, Dreams of Divine Lands
 achaea
 achaea.com
@@ -90,6 +104,34 @@ actofwar.com
 4000
 0
 English
+
+Act of War
+actofwarmud
+actofwarmud.com
+4000
+0
+English
+
+Adaka
+adaka
+adaka.dyndns.org
+5555
+0
+English
+
+Adamant MUD: World Of The Rings
+adamant
+mud.a-mud.ru
+4000
+0
+Russkiy
+
+AdamantMUD
+adamantmud
+adan.ru
+4000
+0
+Russkiy
 
 AddictMUD
 addictmud
@@ -105,6 +147,20 @@ adeptbbs.com
 0
 English
 
+AderonMUD
+aderon
+aderonmud.genesismuds.com
+3200
+0
+English
+
+Arrant Destiny
+admud
+admud.com
+1999
+0
+English
+
 Adults Only
 adults
 adults.mushpark.com
@@ -113,7 +169,7 @@ adults.mushpark.com
 English
 
 Adventures Unlimited
-adventun
+advun
 tharel.net
 5005
 0
@@ -146,6 +202,20 @@ atp.pedia.szote.u-szeged.hu
 3000
 0
 English
+
+Akanbar
+akanbar
+akanbar.com
+23
+0
+English
+
+Aladon MUD
+aladon
+aladon.sovintel.ru
+9000
+0
+Russkiy
 
 Aldebaran
 aldebaran
@@ -217,6 +287,13 @@ angalon.net
 0
 English
 
+Angelic Layer MUSH
+anglayer
+angelic.genesismuds.com
+7705
+0
+English
+
 Ancient Anguish
 anguish
 ancient.anguish.org
@@ -238,6 +315,13 @@ animemud
 0
 English
 
+Anime Planet
+animeplanet
+animeplanet.co
+3334
+0
+English
+
 AnotherMUX
 anothermux
 anothermux.org
@@ -249,6 +333,13 @@ Ansible MOO
 ansible
 ansiblemoo.org
 8888
+0
+English
+
+AnsibleMOO
+ansiblemoo
+ansiblemoo.org
+6000
 0
 English
 
@@ -322,6 +413,13 @@ arcanenites.com
 0
 English
 
+Arcane Ages
+arcaneages
+arcaneages.com
+4000
+0
+English
+
 Castle Arcanum
 arcanum
 castlearcanum.com
@@ -342,6 +440,20 @@ mud.arctic.org
 2700
 0
 English
+
+Arda
+arda
+79.98.143.118
+4000
+0
+Russkiy
+
+Arda MUD
+ardamud
+arda.pp.ru
+7000
+0
+Russkiy
 
 Areth
 areth
@@ -364,6 +476,13 @@ carlnet.ee
 0
 English
 
+Arkadia
+arkadia
+arkadia.rpg.pl
+23
+0
+Polski
+
 Armageddon MUD
 armageddon
 ginka.armageddon.org
@@ -375,6 +494,13 @@ Arthnor
 arthnor
 q.geek.nz
 8888
+0
+English
+
+Arx, After the Reckoning
+arxmush
+play.arxmush.org
+3000
 0
 English
 
@@ -434,6 +560,13 @@ astro.astromud.net
 0
 English
 
+After the Breaking MUD
+atbmud
+atbmud.dune.net
+4000
+0
+English
+
 New Worlds: Ateraan
 ateraan
 www.ateraan.com
@@ -452,6 +585,13 @@ AtlantisMUX
 atlantismux
 atlantis.mushpark.com
 7777
+0
+English
+
+AustinMUD
+austinmud
+mud.austinmud.dk
+4000
 0
 English
 
@@ -474,7 +614,7 @@ avalonmud
 avalon.mud.de
 7777
 0
-English
+Deutsch
 
 Avalon: The Legend Lives
 avalonrpg
@@ -504,6 +644,13 @@ avpmud.com
 0
 English
 
+Awakened Worlds
+awakened
+awakenedworlds.net
+4000
+0
+English
+
 Aydindril 2
 aydindril
 redstreak.no-ip.org
@@ -523,6 +670,13 @@ babylon
 babylon.monolithwebsystems.com
 2259
 0
+English
+
+Bad Moon Rising MUSH
+badmoon
+badmoonrising.aresmush.com
+2511
+1
 English
 
 Bad Trip
@@ -546,6 +700,20 @@ bakhara.org
 0
 English
 
+Balderdash
+balderdash
+mud.khakassia.ru
+9000
+0
+Russkiy
+
+BalderDash MUD
+baldermud
+balderdash.ru
+9000
+0
+Russkiy
+
 Balzhur
 balzhur
 balzhur.genesismuds.com
@@ -559,6 +727,13 @@ barren.barrenrealmsmud.com
 8000
 0
 English
+
+Barsawia
+barsawia
+mud.barsawia.pl
+23
+0
+Polski
 
 BatMUD
 batmud
@@ -581,10 +756,24 @@ spodzone.com
 0
 English
 
+The Beast Within: Returns!
+beastwithin
+tmud.guam.net
+5353
+0
+English
+
 Bedlam
 bedlam
 bedlam.mudportal.com
 9000
+0
+English
+
+Beleriand
+beleriand
+middleearth.net
+4739
 0
 English
 
@@ -670,7 +859,7 @@ brutusmud
 brutusmud.net
 4444
 0
-Cesky
+English
 
 Battletech: The Frontier Lands
 btfrontier
@@ -683,6 +872,13 @@ Battletech: 3065
 btmux
 btmux.com
 3065
+0
+English
+
+Beyond the Veil of Shadows
+btvos
+btvos.wolfpaw.net
+9000
 0
 English
 
@@ -713,6 +909,13 @@ burningmud.com
 4000
 0
 English
+
+Bylins MUD
+bylins
+bylins.su
+4000
+0
+Russkiy
 
 Carinus
 carinus
@@ -770,6 +973,13 @@ centralperk.us
 0
 English
 
+Realm of Cernunnos
+cernunnos
+50.36.65.107
+5555
+0
+English
+
 Chalacyn Nights MUD
 chalacyn
 mud.chalacyn.com
@@ -781,6 +991,13 @@ Champions MUSH
 champions
 championsmush.com
 6363
+0
+English
+
+Chaos Mud
+chaosmud
+173.230.134.240
+1111
 0
 English
 
@@ -826,6 +1043,13 @@ cod.mudmagic.com
 0
 English
 
+Clessidra MUD
+clessidra
+mud.clessidra.it
+4000
+0
+Italiano
+
 CLOK
 clok
 clok.contrarium.net
@@ -865,6 +1089,13 @@ Sheltering Sky: Colorado by Night
 colorado
 mush.shelteringcolorado.com
 2601
+0
+English
+
+Comic Adventures MUX
+comicadvent
+galaxy.silvren.com
+4220
 0
 English
 
@@ -1029,6 +1260,13 @@ darkblade.icecoolcode.com
 0
 English
 
+Dark City
+darkcity
+178.79.173.99
+3000
+0
+English
+
 DarkeMud
 darkemud
 live.darkemud.com
@@ -1120,6 +1358,13 @@ darkscapes.oliekoets.nl
 0
 English
 
+Dark Skies
+darkskies
+pulsar.dune.net
+2001
+0
+English
+
 Legends of the Darkstone
 darkstone
 www.darkstonemud.com
@@ -1169,6 +1414,13 @@ www.advent-truth.com
 0
 English
 
+Dragonball Arena
+dbarena
+mud.morchronium.com
+7770
+0
+English
+
 Dragonball Z: Epic
 dbepic
 dbzepic.org
@@ -1204,6 +1456,13 @@ capsulecorp.org
 0
 English
 
+Dragonball New Universe: Hopes Beginning
+dbnu
+dbnu.mudhosting.net
+4321
+0
+English
+
 DB: Sphere of Fantasy
 dbsphere
 mud.themudhost.net
@@ -1218,10 +1477,24 @@ zeno.biyg.org
 0
 English
 
+DragonBall: Tournament
+dbtournament
+dbt.mudhaven.net
+2500
+0
+English
+
 Dragonball: Uprising
 dbuprising
 199.180.250.22
 3074
+0
+English
+
+DragonBall Z FE
+dbzfe
+dbzfe.com
+4000
 0
 English
 
@@ -1294,6 +1567,13 @@ desolation.org
 7878
 0
 English
+
+Dangerous Fantasy: Dream of the God
+dfantasy
+mud.df2.ru
+4000
+0
+Russkiy
 
 Dragonheart MUD
 dhmud
@@ -1379,6 +1659,13 @@ deadofnight.org
 0
 English
 
+DownMOO
+downmoo
+downmoo.sloth.org
+8888
+0
+English
+
 Dragon Age MUSH
 dragonage
 arbitraryorder.com
@@ -1404,6 +1691,13 @@ DragonsFire
 dragonsfire
 dragonsfiremoo.com
 5440
+0
+English
+
+DragonStone
+dragonstone
+dragonstone.mudmagic.com
+2345
 0
 English
 
@@ -1442,6 +1736,13 @@ firstmagic.com
 0
 English
 
+DreamLand
+dreamland
+dreamland.rocks
+9000
+0
+Russkiy
+
 DREAMPIECE
 dreampiece
 mud.dreampiece.com
@@ -1453,6 +1754,27 @@ DreamScapes MMOFRPG
 dreamscapes
 dreamscapes.dyn.dhs.org
 4500
+0
+English
+
+Dreams
+dreamsmud
+mud.dreamsmud.com
+3000
+0
+English
+
+Dreamverse
+dreamverse
+mud.dreamverse.org
+9600
+0
+English
+
+Dreamwalk MUSH
+dreamwalk
+dreamwa.lk
+1736
 0
 English
 
@@ -1528,7 +1850,7 @@ English
 
 DuneMUD
 dunemud
-dune.servint.com
+dunemud.com
 6789
 0
 English
@@ -1547,6 +1869,13 @@ mud.durismud.com
 0
 English
 
+DustMARE
+dustmare
+winds.org
+4000
+0
+English
+
 Dark Wizardry
 dwizardry
 darkwiz.cjoffline.com
@@ -1558,6 +1887,13 @@ DynamixMUSH
 dynamix
 dynamix.socialmush.com
 4200
+0
+English
+
+Eaxia Online
+eaxia
+game.eaxia.com
+347
 0
 English
 
@@ -1575,7 +1911,7 @@ drakkos.co.uk
 0
 English
 
-2001's Eternal Darkness
+Eternal Darkness
 edmud
 edmud.net
 9700
@@ -1687,6 +2023,13 @@ edgeofcreation.net
 0
 English
 
+The Evolution of Esos Mud
+eoemud
+eoemud.com
+8888
+0
+English
+
 Edge of Midnight
 eomidnight
 edgeofmidnight.org
@@ -1705,6 +2048,13 @@ End of Time
 eotmud
 eotmud.com
 4000
+0
+English
+
+Edge of Twilight
+eotwilight
+edgeoftwilight.net
+2004
 0
 English
 
@@ -1729,10 +2079,24 @@ mush.equestriandawn.com
 0
 English
 
+Equilibrium MUD
+eqmud
+server.equilibrium-mud.org
+4000
+0
+Italiano
+
 EquestriaMUCK
 equestria
 equestria.kaitain.org
 2700
+0
+English
+
+Erimand
+erimand
+erimand.pocketmud.com
+23
 0
 English
 
@@ -1757,6 +2121,20 @@ keep.quarteredcircle.net
 0
 English
 
+Eternal Visions
+etvisions
+www.eternalvisions.net
+1200
+0
+English
+
+Evennia Demo MUD
+evenniademo
+silvren.com
+4280
+0
+English
+
 Everdark
 everdark
 everdark.org
@@ -1768,6 +2146,13 @@ The Lands of Evermore
 evermore
 mud.evermore.org
 23
+0
+English
+
+Everwar Rebirth Redux
+everwar
+everwarmud.com
+4242
 0
 English
 
@@ -1803,6 +2188,13 @@ Eye of the World MUD
 eyemud
 wot.eyemud.com
 2222
+0
+English
+
+Fading Suns: Star Crusade
+fadingsuns
+mush.fadingsuns.org
+5001
 0
 English
 
@@ -1847,6 +2239,13 @@ divineright.org
 5051
 0
 English
+
+Forgotten Dungeon
+fdungeon
+home.saboteur.com.ua
+4001
+0
+Russkiy
 
 FeatherMUCK
 feathermuck
@@ -2072,6 +2471,13 @@ garoumush.org
 0
 English
 
+Gates of Krynn
+gateskrynn
+gatesofkrynn.com
+4500
+0
+English
+
 GATEWAY - The MU* Community
 gateway
 scrozzle.noderunner.net
@@ -2163,6 +2569,13 @@ mud.themudhost.net
 0
 English
 
+GNSmud
+gnsmud
+gnsmud.org
+8989
+0
+English
+
 Game of Bones
 gobones
 granitefallsmush.com
@@ -2226,6 +2639,13 @@ grimwood.ddns.net
 0
 English
 
+Ground Zero II
+groundzero
+groundzero2.org
+4000
+0
+English
+
 Galactic Trader
 gtrader
 gt.gamingmuseum.com
@@ -2254,6 +2674,13 @@ en.mudmagic.com
 0
 English
 
+Haelrahv
+haelrahv
+haelrahv.com
+3001
+0
+English
+
 Halcyon
 halcyon
 halcyon.bluecows.com
@@ -2265,6 +2692,13 @@ A Harper's Tale
 harpers
 moo.harpers-tale.com
 7007
+0
+English
+
+Harshlands
+harshlands
+mud.harshlands.net
+5555
 0
 English
 
@@ -2338,10 +2772,31 @@ moo.hellyeah.com
 0
 English
 
+Hexahedron
+hexahedron
+hexahedronmud.ddns.net
+5500
+0
+English
+
 HexOnyx
 hexonyx
 mud.hexonyx.com
 7777
+0
+English
+
+Hiervard
+hiervard
+hiervard.ru
+4000
+0
+Russkiy
+
+Highlands III
+highlands3
+mud.highlands3.org
+9001
 0
 English
 
@@ -2370,6 +2825,13 @@ HoloTrek
 holotrek
 holotrek.org
 1701
+0
+English
+
+Holy Mission 99 - Resurrected
+holymission
+wildsau.holy-mission.org
+6666
 0
 English
 
@@ -2450,6 +2912,13 @@ empiredirectory.net
 0
 English
 
+Imperial v3.5
+imperial
+imperial.modeemi.fi
+6969
+0
+English
+
 Imperian: Sundered Heavens
 imperian
 imperian.com
@@ -2513,6 +2982,13 @@ intermush.pennmush.org
 0
 English
 
+Intrepid
+intrepid
+intrepidmud.com
+4020
+0
+English
+
 Islands of Myth
 iomyth
 islandsofmyth.org
@@ -2524,6 +3000,13 @@ Ironclaw Online
 ironclaw
 ironclaw.skotos.net
 443
+0
+English
+
+Isengard
+isengard
+isengard.nazgul.com
+4040
 0
 English
 
@@ -2625,6 +3108,13 @@ midmud.kidpub.com
 0
 English
 
+Killer MUD
+killermud
+killer.mud.pl
+4000
+0
+Polski
+
 Kingdoms of the Lost
 kinglost
 kotl.org
@@ -2636,6 +3126,13 @@ Kinslayer MUD
 kinslayer
 www.kinslayermud.org
 2222
+0
+English
+
+KitsuMUCK
+kitsumuck
+kitsumuck.com
+8888
 0
 English
 
@@ -2659,6 +3156,13 @@ labmush.mushpark.com
 3939
 1
 English
+
+Lac
+lac
+lac.pl
+4000
+0
+Polski
 
 LambdaMOO
 lambda
@@ -2758,6 +3262,13 @@ rooky.looney.com
 0
 English
 
+Lords and Legends
+lordslegends
+jupe.ddns.net
+4000
+0
+English
+
 Lands of Redemption
 loredemption
 landsofredemption.com
@@ -2813,6 +3324,20 @@ lost.wishes.net
 5555
 0
 English
+
+Legend of the Nobles
+lotn
+lotn.gatihnargaming.com
+5400
+0
+English
+
+Lumen et Umbra
+lumenumbra
+mclmud.mclink.it
+6000
+0
+Italiano
 
 Luminari MUD
 luminari
@@ -2905,6 +3430,13 @@ MahouMUSH.com
 0
 English
 
+Malevolence
+malevolence
+mudpuddle.shwaine.com
+3000
+0
+English
+
 Castle Marrach
 marrach
 marrach.skotos.net
@@ -2989,6 +3521,13 @@ fatedtoend.com
 0
 English
 
+Medieval MOO
+medievalmoo
+moo.medievalmoo.nl
+1111
+0
+Nederlands
+
 Medievia
 medievia
 medievia.com
@@ -3024,6 +3563,13 @@ mud.merging.org
 0
 English
 
+Moosehead SLED II
+mhsled
+mhsled.com
+4000
+0
+English
+
 MicroMUSE
 micromuse
 micromuse.duckdns.org
@@ -3045,6 +3591,13 @@ midianmud.com
 0
 English
 
+MidMUD
+midmud
+midmud.com
+5555
+0
+English
+
 Midnight Sun
 midnightsun
 midnightsun2.org
@@ -3056,6 +3609,13 @@ Ministry
 ministry
 carcosa.org
 6969
+0
+English
+
+Minstrel Hall
+minstrelhall
+minstrelhall.com
+221
 0
 English
 
@@ -3084,6 +3644,27 @@ Moments of Hatred
 mohatred
 godwars.net
 3500
+0
+English
+
+A Moment in Tyme
+momenttyme
+tymemud.com
+6969
+0
+English
+
+MOO Canada, Eh?
+moocanada
+moo.ca
+7777
+0
+English
+
+Moomellow
+moomellow
+moomellow.com
+7777
 0
 English
 
@@ -3164,6 +3745,13 @@ mudii.co.uk
 0
 English
 
+NaughtyMuffin MUSH
+muffinmush
+muffinmush.club
+2469
+1
+English
+
 MULTI MUD
 multimud
 multimud.net
@@ -3185,6 +3773,13 @@ mume.org
 0
 English
 
+O Mundo de Arkadia
+mundoarkadia
+arkadiamud.com.br
+2442
+0
+Portugues
+
 M*U*S*H
 mushmush
 mush.pennmush.org
@@ -3196,6 +3791,27 @@ Mutant Genesis Marvel MUX
 mutantgen
 mutantgenesismux.com
 2017
+0
+English
+
+Myelin: Escape The Spire
+myelin
+myelin.space
+4000
+0
+English
+
+Myrradel
+myrradel
+myrradel.com
+4000
+0
+English
+
+Mystic Adventure
+mysticadv
+mud.mystic-adventure.org
+4000
 0
 English
 
@@ -3290,6 +3906,13 @@ neronis.ru
 0
 Russkiy
 
+NetherWorld
+netherworld
+mud.envy.com
+3666
+0
+English
+
 NewHopeMUSH
 newhope
 www.newhopemush.com
@@ -3299,7 +3922,7 @@ English
 
 New Moon
 newmoon
-eclipse.cs.pdx.edu
+newmoonmud.org
 7680
 0
 English
@@ -3346,6 +3969,13 @@ mucks.cyberleo.net
 0
 English
 
+NoMUD
+nomud
+nomud.net
+4096
+0
+English
+
 No Reality
 noreality
 noreality.org
@@ -3357,6 +3987,13 @@ Northern Crossroads MUD
 northern
 ncmud.net
 9000
+0
+English
+
+NostalgiaMUD
+nostalgiamud
+nostalgiamud.l-w.ca
+4000
 0
 English
 
@@ -3444,6 +4081,13 @@ mud.stack.nl
 0
 English
 
+Renegade Outpost 5
+outpostfive
+renegadeoutpost.com
+9999
+0
+English
+
 Overdrive
 overdrive
 overdrive.overdrivemud.net
@@ -3465,10 +4109,24 @@ paradise.muxnexus.com
 0
 English
 
+ParallelRPI
+parallelrpi
+parallelrpi.com
+4500
+0
+English
+
 Paris:LFDM
 parislfdm
 firstmagic.com
 8991
+0
+English
+
+Pegasus
+pegasus
+pegasusmuck.com
+4242
 0
 English
 
@@ -3528,6 +4186,13 @@ pixiemud.com
 0
 English
 
+PKmud
+pkmud
+pkmud.net
+5000
+0
+English
+
 Port of Dreams
 podreams
 phaze.ca
@@ -3563,6 +4228,13 @@ primaldarkness.com
 0
 English
 
+Promage
+promage
+promage.hopto.org
+4000
+0
+English
+
 Prometheus: The Eternal Wars
 prometheus
 prometheus-enterprises.com
@@ -3591,6 +4263,13 @@ puggy.mushpark.com
 0
 English
 
+Ragnarok
+ragnarokmud
+rag.com
+2222
+0
+English
+
 Roma Aeterna Mux
 ramux
 romagame.pw
@@ -3602,6 +4281,13 @@ RanvierMUD
 ranvier
 mud.ranviermud.com
 4000
+0
+English
+
+Rauvyon
+rauvyon
+rauvyon.com
+7075
 0
 English
 
@@ -3626,7 +4312,14 @@ realms.fur.com
 0
 English
 
-Realmsmud
+Realmsmud Classic
+realmsclassic
+realmsmud.org
+1998
+0
+English
+
+RealmsMUD
 realmsmud
 realmsmud.org
 1501
@@ -3808,6 +4501,13 @@ rubberoom.org
 0
 English
 
+Realm of Utopian Dreams
+rudmud
+rudmud.com
+1701
+0
+English
+
 Rupert
 rupert
 rupert.twyst.org
@@ -3836,10 +4536,24 @@ dune.net
 0
 English
 
+Tempora Sanguinis 2
+sanguinis
+mud.temporasanguinis.it
+4000
+0
+Italiano
+
 The Savage Soul
 savsould
 savsoul.com
 6666
+0
+English
+
+Scarlet
+scarletcitadel
+scarlet-citadel.co.uk
+2000
 0
 English
 
@@ -3871,6 +4585,13 @@ mud.seattle2064.net
 0
 English
 
+Second Contract
+secondcontract
+game.second-contract.com
+6666
+0
+English
+
 SerenityMUSH
 serenity
 serenitymush.com
@@ -3878,10 +4599,24 @@ serenitymush.com
 0
 English
 
+Cost of Seven Incarnations
+seveninc
+mud.c7i.ru
+3000
+0
+Russkiy
+
 The 7th Plane
 seventh
 7thplane.net
 8888
+0
+English
+
+ShadowGate Re-Imagined
+sgmud
+www.sgmud.com
+4016
 0
 English
 
@@ -3899,10 +4634,24 @@ shadowmudii.genesismuds.com
 0
 English
 
+Shadow Realms
+shadowrealms
+mud.df2.ru
+9000
+0
+Russkiy
+
 Shadowrun - Denver
 shadowrun
 aelfhame.net
 1999
+0
+English
+
+Shadow Siege
+shadowsiege
+shadowsiege.com
+4080
 0
 English
 
@@ -3911,6 +4660,13 @@ shangrila
 shangrilamux.com
 9999
 1
+English
+
+SharpMOO
+sharpmoo
+sharpmoo.com
+4000
+0
 English
 
 Shattered Kingdoms
@@ -3955,10 +4711,31 @@ mud.silberland.at
 0
 Deutsch
 
+Silmarillia MUD
+silmarillia
+mud.silmarillia.com
+4000
+0
+Italiano
+
+Simauria
+simauria
+mud.simauria.org
+23
+0
+Espanol
+
 Sindome
 sindome
 moo.sindome.org
 5555
+0
+English
+
+Shattered Isles
+sisles
+shatteredisles.net
+5900
 0
 English
 
@@ -3980,6 +4757,13 @@ Sleepless Nights
 sleepless
 sleepless.cheese.org
 6789
+0
+English
+
+Slice and Dice Dungeon
+slicedice
+sndd.io
+23
 0
 English
 
@@ -4025,10 +4809,24 @@ bttl.ga
 0
 English
 
+SneezyMUD
+sneezymud
+sneezymud.org
+7900
+0
+English
+
 Snowplains
 snowplains
 snowplains.org
 3456
+0
+English
+
+Solar Eclipse
+solareclipse
+solareclipse.genesismuds.com
+4321
 0
 English
 
@@ -4038,6 +4836,13 @@ soulruins.com
 5000
 0
 English
+
+Sphere of Worlds MUD
+sphereworlds
+sowmud.ru
+5555
+0
+Russkiy
 
 Spindizzy
 spindizzy
@@ -4050,6 +4855,13 @@ Sociopolitical Ramifications
 sprmuck
 muck.sprmuck.org
 23
+0
+English
+
+Shattered Realms
+srealms
+mud.themudhost.net
+8081
 0
 English
 
@@ -4085,6 +4897,13 @@ StarMUD
 starmud
 home.starmud.com
 4000
+0
+English
+
+Static Chaos - Still Alive
+staticchaos
+staticchaos.mudhosting.net
+1982
 0
 English
 
@@ -4144,10 +4963,24 @@ sh.ackmud.net
 0
 English
 
+Star Trek: Phoenix Rising
+stphoenix
+game.phxrising.org
+1701
+0
+English
+
 StrangeMUD
 strangemud
 strangemud.net
 9332
+0
+English
+
+StuphMUD
+stuphmud
+stuphmud.net
+2112
 0
 English
 
@@ -4256,6 +5089,13 @@ starwarsmush.com
 0
 English
 
+Star Wars: Omens
+swomens
+pulsar.dune.net
+7827
+0
+English
+
 Star Wars: Rebirth Mush
 swrebirth
 game.starwarsrebirth.com
@@ -4291,6 +5131,13 @@ galacticunrest.co.uk
 0
 English
 
+Synergy
+synergy
+synergy.org
+2000
+0
+English
+
 Tamedhon
 tamedhon
 mud.tamedhon.at
@@ -4303,6 +5150,13 @@ tapestries
 tapestries.fur.com
 2069
 1
+English
+
+Tauros
+tauros
+taurosmud.com
+5005
+0
 English
 
 The Builder Academy
@@ -4445,11 +5299,25 @@ theland.notroot.com
 0
 English
 
+The Underworld
+theuw
+mud.theuw.net
+5000
+0
+English
+
 The Void
 thevoid
 void.greenfinch.com
 1234
 1
+English
+
+Thieves World
+thievesworld
+tw.genesismuds.com
+6000
+0
 English
 
 Threads of Pern
@@ -4476,7 +5344,7 @@ English
 Threshold RPG
 threshold
 thresholdrpg.com
-23
+3333
 0
 English
 
@@ -4505,6 +5373,13 @@ Otherworld, the realm of Tirn Aill
 tirnaill
 tirnaill.com
 4000
+0
+English
+
+Time of Darkness
+todmud
+todmud.com
+7710
 0
 English
 
@@ -4557,6 +5432,13 @@ mud.themudhost.net
 0
 English
 
+TrollAttack
+trollattack
+trollattack.com
+4000
+0
+English
+
 Trona
 trona
 tronarpg.com
@@ -4575,6 +5457,13 @@ The Sea of Storms
 tsosmud
 tsosmud.org
 7070
+0
+English
+
+Tsunami
+tsunami
+tsunami.thebigwave.net
+23
 0
 English
 
@@ -4603,6 +5492,13 @@ Turiel
 turiel
 Turiel.kydance.net
 6669
+0
+English
+
+The Turning Point III
+turningpoint
+tp.org
+9999
 0
 English
 
@@ -4641,6 +5537,13 @@ t2tmud.org
 0
 English
 
+Typhon Accords TrekMU
+typhonaccords
+startrekkin.net
+1701
+0
+English
+
 Unbridled Desires
 ubdesires
 hercules.mthelicon.com
@@ -4662,10 +5565,10 @@ uglymug.org.uk
 0
 English
 
-The Underworld
+Shadows of the Underworld
 underworld
-mud.theuw.net
-5000
+godwars.net
+3560
 0
 English
 
@@ -4725,6 +5628,13 @@ mud.valheru.com
 0
 English
 
+MUD Valinor
+valinor
+mud.valinor.com.br
+4000
+0
+Portugues
+
 Valorous Dominion
 valorous
 71.171.93.80
@@ -4739,10 +5649,24 @@ new.vampire-wars.com
 0
 English
 
+VanciaMUD
+vancia
+vanciamud.fr
+4000
+0
+Francais
+
 Vecterian Realms
 vecterian
 vecterian.genesismuds.com
 5555
+0
+English
+
+Verrator's Empiremud
+vempire
+reecepc.zapto.org
+4000
 0
 English
 
@@ -4788,6 +5712,13 @@ vroma.org
 0
 English
 
+Vampire Wars: The Final Sunset
+vwfsunset
+www.godwars.net
+4888
+0
+English
+
 Wacky MOO
 wackymoo
 wackymoo.jellybean.co.uk
@@ -4820,6 +5751,13 @@ Waterpoint
 waterpoint
 waterpoint.moo.mud.org
 8301
+0
+English
+
+Wing Commander: New Horizon
+wcnhorizon
+wcmush.com
+2199
 0
 English
 
@@ -4872,12 +5810,26 @@ wk.fi
 0
 English
 
+WinterMoon
+wintermoon
+wintermoon.servebeer.com
+4003
+0
+English
+
 Winter Night: Shadow Dreams
 winternight
 winter.nigthshadow.com
 5555
 0
 English
+
+The Witcher: The Last World
+witcher
+game.mudlast.ru
+2700
+0
+Russkiy
 
 Winter's Oasis
 woasis
@@ -4893,6 +5845,13 @@ wocmud.org
 0
 English
 
+World of Naruto
+worldnaruto
+wonmud.com
+9000
+0
+English
+
 Worlds United MUX
 worldsutd
 pulsar.dune.net
@@ -4904,6 +5863,13 @@ World Tree Mush
 worldtree
 worldtreemush.com
 4099
+0
+English
+
+Star Wars: Way Of The Force
+wotf
+wotf.org
+23
 0
 English
 
@@ -4949,11 +5915,39 @@ xmenrevolution.com
 0
 English
 
+Xyllomer
+xyllomer
+xyllomer.de
+3000
+0
+English
+
+Yggdrasil: Horse of the Hanged
+yggdrasil
+north.mudhosting.net
+9500
+0
+English
+
+YibMOO
+yibmoo
+yibmoo.dyndns.org
+7777
+0
+English
+
 YorMUSH
 yormush
 yormush.com
 9988
 1
+English
+
+Zee MUD
+zeemud
+mud.zeemud.org
+4000
+0
 English
 
 ZombieMUD

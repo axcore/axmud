@@ -147,7 +147,7 @@
             # Set to TRUE on the first call to $self->setMonochromeMode which changes the textview's
             #   background colour to a specified colour, and chooses suitable text/underlay colours
             #   (for example, specify 'blue' for white text on a blue background). The colours can
-            #   be changed any time with further calls to ->applyMonochrome
+            #   be changed any time with further calls to ->setMonochromeMode
             # When TRUE, calls to ->insertText and ->showText ignore any Axmud colour tags that are
             #   specified (but not Axmud style tags, which are processed as usual). Calls to
             #   ->insertCmd, ->showError, ->showWarning, ->showDebug, ->showImproper do not use
@@ -159,6 +159,21 @@
             #   scheme stored in $self->colourScheme is applied (it might have changed since this
             #   flag was first set to TRUE)
             monochromeFlag              => FALSE,
+            # In monochrome mode, we need to know when the colours used are the same as those
+            #   specified by the colour scheme, and when they're different (because if the colour
+            #   scheme's colours change, by the time $self->objUpdate is called, there is no way
+            #   of comparing the colour scheme's previous colours to the colours currently used in
+            #   this textview)
+            # Flag set whenever ->monochromeFlag is set to TRUE (and reset if ->monochromeFlag is
+            #   set to FALSE)
+            # When ->setMonochromeMode is called, this flag checks the textview's current
+            #   background colour against the background specified by the colour scheme (we don't
+            #   check the text colour, because it's normally set automatically to match the
+            #   background)
+            # If the background colours are different, this flag is set to TRUE. If they're the
+            #   same, this flag is set to FALSE
+            # When ->resetMonochromeMode is called, this flag is set back to FALSE
+            monochromeModFlag           => FALSE,
             # Flag set to TRUE if existing text in the textview(s) should be overwritten by new
             #   text, FALSE if new text should be inserted between existing text (only matters
             #   when text is being inserted somewhere other than at the end of the buffer, and
@@ -187,7 +202,7 @@
             insertNewLineFlag           => TRUE,
             # The default behaviour for calls to $self->insertText (but not to ->showText)
             #   'before'    - prepends a newline character to the text
-            #   'after'     - prepends a newline character to the text
+            #   'after'     - appends a newline character to the text
             #   'nl'        - same behaviour as 'after'
             #   'echo'      - does not prepend/append a newline character by default
             newLineDefault              => 'after',
@@ -521,6 +536,11 @@
         $self->ivPoke('startMark', $startMark);
         $self->ivPoke('endMark', $endMark);
 
+        # Gtk2::TextTags might not exist for any RGB tags that have just been copied to
+        #   $self->textColour and/or $self->underlayColour, and $self->interpretTags won't have the
+        #   opportunity to create them, so create them right away
+        $self->updateRGBTags();
+
         if ($self->splitScreenMode eq 'single') {
             return $scroll;
         } else {
@@ -530,7 +550,7 @@
 
     sub objDestroy {
 
-        # Called by GA::Table::Pane->objDestroy and ->removeTab
+        # Called by GA::Table::Pane->objDestroy, ->removeSessionTab and ->removeTab
         #
         # Expected arguments
         #   (none besides $self)
@@ -582,7 +602,7 @@
 
         # Local variables
         my (
-            $colourSchemeObj,
+            $colourSchemeObj, $backgroundColour, $textColour,
             @list,
         );
 
@@ -600,21 +620,61 @@
 
                 return undef;
 
-            } elsif (! $self->monochromeFlag) {
+            } else {
 
                 # Make sure the colour scheme's colour/font values are acceptable, to avoid getting
                 #   nasty Gtk errors
                 $colourSchemeObj->repair();
 
-                # Update IVs (changes to colour schemes aren't applied in monochrome mode)
+                # Update IVs. When the colour scheme is updated, the scheme's colours aren't applied
+                #   in monochrome mode with modified colours (because some code, usually a task,
+                #   specifically requested those colours)
                 $self->ivPoke('colourScheme', $colourSchemeObj->name);
-                $self->ivPoke('textColour', $colourSchemeObj->textColour);
-                $self->ivPoke('underlayColour', $colourSchemeObj->underlayColour);
-                $self->ivPoke('backgroundColour', $colourSchemeObj->backgroundColour);
+
+                if (! $self->monochromeFlag) {
+
+                    $self->ivPoke('textColour', $colourSchemeObj->textColour);
+                    $self->ivPoke('underlayColour', $colourSchemeObj->underlayColour);
+                    $self->ivPoke('backgroundColour', $colourSchemeObj->backgroundColour);
+
+                } elsif (! $self->monochromeModFlag) {
+
+                    $backgroundColour = $colourSchemeObj->backgroundColour;
+
+                    if ($axmud::CLIENT->ivExists('constMonochromeHash', $backgroundColour)) {
+
+                        # Choose a text colour to match the background colour in the standard way,
+                        #   ignoring the text colour specified by the colour scheme
+                        $textColour = $axmud::CLIENT->ivShow(
+                            'constMonochromeHash',
+                            $backgroundColour,
+                        );
+
+                    } else {
+
+                        # Non-standard background colour tag, in which case use the colour specified
+                        #   by the colour scheme itself, rather than choosing a matching colour
+                        # (It's up to the person who edits the colour scheme to choose a suitable
+                        #   colour)
+                        $textColour = $colourSchemeObj->textColour;
+                    }
+
+                    # In monochrome mode, the underlay colour is always the same as the background
+                    $self->ivPoke('textColour', $textColour);
+                    $self->ivPoke('underlayColour', undef);
+                    $self->ivPoke('backgroundColour', $backgroundColour);
+                }
+
+                # The fonts are applied in all situations
                 $self->ivPoke('font', $colourSchemeObj->font);
                 $self->ivPoke('fontSize', $colourSchemeObj->fontSize);
             }
         }
+
+        # Gtk2::TextTags might not exist for any RGB tags that have just been copied to
+        #   $self->textColour and/or $self->underlayColour, and $self->interpretTags won't have the
+        #   opportunity to create them, so create them right away
+        $self->updateRGBTags();
 
         # Set the Gtk2 external style for a Gtk2::TextView and its Gtk2::TextBuffer
         $axmud::CLIENT->desktopObj->setTextViewStyle(
@@ -1495,8 +1555,8 @@
 
         # Local variables
         my (
-            $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour, $beep,
-            $mark, $iter,
+            $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour,
+            $monochromeFlag, $beep, $mark, $iter,
             @styleTags,
         );
 
@@ -1505,11 +1565,17 @@
         # Interpret the list of @args
         ($emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour, @styleTags)
             = $self->interpretTags($self->newLineDefault, @args);
+        # Apply any colour overrides specified by the colour scheme or by this object's own
+        #   monochrome mode
+        ($monochromeFlag, $textColour, $underlayColour) = $self->modifyColourTags(
+            $textColour,
+            $underlayColour,
+        );
 
         # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored)
         if (! $textColour) {
 
-             $textColour = $self->textColour;
+            $textColour = $self->textColour;
         }
 
         if (! $underlayColour) {
@@ -1610,11 +1676,13 @@
         }
 
         # Insert the text into the Gtk2::TextBuffer
-        if ($self->monochromeFlag) {
+        if (! $monochromeFlag) {
 
             $iter = $self->insertWithTags(
                 $iter,
                 $text,
+                $textColour,
+                $underlayColour,
                 @styleTags,
             );
 
@@ -1623,8 +1691,6 @@
             $iter = $self->insertWithTags(
                 $iter,
                 $text,
-                $textColour,
-                $underlayColour,
                 @styleTags,
             );
         }
@@ -1823,7 +1889,7 @@
         # A combination of $self->clearBuffer and ->insertText, intended for task windows and the
         #   like which want to frequently replace the contents of the textview with a single
         #   string, and don't need to use Axmud colour/style tags or links (probably because
-        #   $self->monochromeFlag is TRUE)
+        #   $self->monochromeFlag is TRUE or the current colour scheme's ->overrideAllFlag is TRUE)
         # Empties the buffer and replaces it with a string, which can contain multiple newline
         #   characters. No newline characters are prepended/appended by this function
         #
@@ -1901,7 +1967,7 @@
         my ($self, $cmd, $check) = @_;
 
         # Local variables
-        my ($textColour, $mark, $noNewLineFlag, $iter);
+        my ($colourSchemeObj, $monochromeFlag, $textColour, $mark, $noNewLineFlag, $iter);
 
         # Check for improper arguments
         if (! defined $cmd || defined $check) {
@@ -1909,8 +1975,15 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->insertCmd', @_);
         }
 
-        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored)
-        $textColour = $axmud::CLIENT->customInsertCmdColour;
+        # Import the colour scheme in use
+        $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored,
+        #   but in this case we don't any apply overrides specified by the colour scheme)
+        if ($self->monochromeFlag || ($colourSchemeObj && $colourSchemeObj->overrideAllFlag)) {
+            $monochromeFlag = TRUE;
+        } else {
+            $textColour = $axmud::CLIENT->customInsertCmdColour;
+        }
 
         # Set the insertion point
         if ($self->insertMark) {
@@ -1936,11 +2009,11 @@
             #   character. Must insert an artificial newline character, and display $text after
             #   that
             $iter = $self->buffer->get_iter_at_mark($self->systemInsertMark);
-           $iter = $self->insertNewLine($iter);
+            $iter = $self->insertNewLine($iter);
         }
 
         # Insert the text into the Gtk2::TextBuffer
-        if ($self->monochromeFlag) {
+        if ($monochromeFlag) {
             $iter = $self->insertWithTags($iter, $cmd);
         } else {
             $iter = $self->insertWithTags($iter, $cmd, $textColour);
@@ -2017,8 +2090,8 @@
 
         # Local variables
         my (
-            $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour, $modText,
-            $beep, $iter,
+            $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour,
+            $colourSchemeObj, $monochromeFlag, $modText, $beep, $iter,
             @styleTags
         );
 
@@ -2028,15 +2101,25 @@
         ($emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour, @styleTags)
             = $self->interpretTags('after', @args);
 
-        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored)
-        if (! $textColour) {
+        # Import the colour scheme in use
+        $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored,
+        #   but in this case we don't any apply overrides specified by the colour scheme)
+        if ($self->monochromeFlag || ($colourSchemeObj && $colourSchemeObj->overrideAllFlag)) {
 
-            $textColour = $axmud::CLIENT->customShowTextColour;
-        }
+            $monochromeFlag = TRUE;
 
-        if (! $underlayColour) {
+        } else {
 
-            $underlayColour = $self->underlayColour;
+            if (! $textColour) {
+
+                $textColour = $axmud::CLIENT->customShowTextColour;
+            }
+
+            if (! $underlayColour) {
+
+                $underlayColour = $self->underlayColour;
+            }
         }
 
         # Empty the buffer before writing text, if required
@@ -2101,7 +2184,7 @@
         }
 
         # Insert the text into the Gtk2::TextBuffer
-        if ($self->monochromeFlag) {
+        if ($monochromeFlag) {
 
             $iter = $self->insertWithTags(
                 $iter,
@@ -2233,7 +2316,7 @@
         my ($self, $text, $func, $check) = @_;
 
         # Local variables
-        my ($textColour, $msg, $mode, $iter, $beforeFlag);
+        my ($colourSchemeObj, $monochromeFlag, $textColour, $msg, $mode, $iter, $beforeFlag);
 
         # Check for improper arguments
         if (defined $check) {
@@ -2241,8 +2324,16 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showError', @_);
         }
 
-        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored)
-        $textColour = $axmud::CLIENT->customShowErrorColour;
+        # Import the colour scheme in use
+        $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored,
+        #   but in this case we don't any apply overrides specified by the colour scheme)
+        if ($self->monochromeFlag || ($colourSchemeObj && $colourSchemeObj->overrideAllFlag)) {
+            $monochromeFlag = TRUE;
+        } else {
+            $textColour = $axmud::CLIENT->customShowErrorColour;
+        }
+
         # Call to ->writeLog requires a TRUE/FALSE value
         $beforeFlag = FALSE;
 
@@ -2310,7 +2401,7 @@
                 $iter = $self->insertNewLine($iter);
             }
 
-            if ($self->monochromeFlag) {
+            if ($monochromeFlag) {
                 $iter = $self->insertWithTags($iter, $msg);
             } else {
                 $iter = $self->insertWithTags($iter, $msg, $textColour);
@@ -2407,7 +2498,7 @@
         my ($self, $text, $func, $check) = @_;
 
         # Local variables
-        my ($textColour, $msg, $mode, $iter, $beforeFlag);
+        my ($colourSchemeObj, $monochromeFlag, $textColour, $msg, $mode, $iter, $beforeFlag);
 
         # Check for improper arguments
         if (defined $check) {
@@ -2415,8 +2506,16 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showWarning', @_);
         }
 
-        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored)
-        $textColour = $axmud::CLIENT->customShowWarningColour;
+        # Import the colour scheme in use
+        $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored,
+        #   but in this case we don't any apply overrides specified by the colour scheme)
+        if ($self->monochromeFlag || ($colourSchemeObj && $colourSchemeObj->overrideAllFlag)) {
+            $monochromeFlag = TRUE;
+        } else {
+            $textColour = $axmud::CLIENT->customShowWarningColour;
+        }
+
         # Call to ->writeLog requires a TRUE/FALSE value
         $beforeFlag = FALSE;
 
@@ -2484,7 +2583,7 @@
                 $iter = $self->insertNewLine($iter);
             }
 
-            if ($self->monochromeFlag) {
+            if ($monochromeFlag) {
                 $iter = $self->insertWithTags($iter, $msg);
             } else {
                 $iter = $self->insertWithTags($iter, $msg, $textColour);
@@ -2581,7 +2680,7 @@
         my ($self, $text, $func, $check) = @_;
 
         # Local variables
-        my ($textColour, $msg, $mode, $iter, $beforeFlag);
+        my ($colourSchemeObj, $monochromeFlag, $textColour, $msg, $mode, $iter, $beforeFlag);
 
         # Check for improper arguments
         if (defined $check) {
@@ -2589,8 +2688,16 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showDebug', @_);
         }
 
-        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored)
-        $textColour = $axmud::CLIENT->customShowDebugColour;
+        # Import the colour scheme in use
+        $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored,
+        #   but in this case we don't any apply overrides specified by the colour scheme)
+        if ($self->monochromeFlag || ($colourSchemeObj && $colourSchemeObj->overrideAllFlag)) {
+            $monochromeFlag = TRUE;
+        } else {
+            $textColour = $axmud::CLIENT->customShowDebugColour;
+        }
+
         # Call to ->writeLog requires a TRUE/FALSE value
         $beforeFlag = FALSE;
 
@@ -2658,7 +2765,7 @@
                 $iter = $self->insertNewLine($iter);
             }
 
-            if ($self->monochromeFlag) {
+            if ($monochromeFlag) {
                 $iter = $self->insertWithTags($iter, $msg);
             } else {
                 $iter = $self->insertWithTags($iter, $msg, $textColour);
@@ -2754,7 +2861,7 @@
         my ($self, $func, @args) = @_;
 
         # Local variables
-        my ($textColour, $msg, $mode, $iter, $beforeFlag);
+        my ($colourSchemeObj, $monochromeFlag, $textColour, $msg, $mode, $iter, $beforeFlag);
 
         # Check for improper arguments
         if (! defined $func) {
@@ -2764,8 +2871,16 @@
             return undef;
         }
 
-        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored)
-        $textColour = $axmud::CLIENT->customShowImproperColour;
+        # Import the colour scheme in use
+        $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+        # Choose which colour tags to use (in monochrome mode, text/underlay colours are ignored,
+        #   but in this case we don't any apply overrides specified by the colour scheme)
+        if ($self->monochromeFlag || ($colourSchemeObj && $colourSchemeObj->overrideAllFlag)) {
+            $monochromeFlag = TRUE;
+        } else {
+            $textColour = $axmud::CLIENT->customShowImproperColour;
+        }
+
         # Call to ->writeLog requires a TRUE/FALSE value
         $beforeFlag = FALSE;
 
@@ -2832,7 +2947,7 @@
                 $iter = $self->insertNewLine($iter);
             }
 
-            if ($self->monochromeFlag) {
+            if ($monochromeFlag) {
                 $iter = $self->insertWithTags($iter, $msg);
             } else {
                 $iter = $self->insertWithTags($iter, $msg, $textColour);
@@ -3538,6 +3653,88 @@
         return 1;
     }
 
+    sub updateRGBTags {
+
+        # Called by $self->objEnable and ->objUpdate (only)
+        # When a colour scheme is applied to this textview, $self->textColour and/or
+        #   ->underlayColour might be set
+        # Gtk2::TextTags are usually created only as needed by $self->interpretTags, but that
+        #   function won't have a chance to create Gtk2::TextTags if $self->textColour and/or
+        #   ->underlayColour are now set to RGB colour tags like '#ABCDEF and 'u#ABCDEF'
+        # Check which (if any) Gtk2::TextTags must be created, and create them
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($textColour, $underlayColour, $type, $ulFlag);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateRGBTags', @_);
+        }
+
+        if ($self->textColour) {
+
+            $textColour = $self->textColour;
+
+            ($type, $ulFlag) = $axmud::CLIENT->checkColourTags($textColour, 'rgb');
+            if (defined $type && ! $self->buffer->get_tag_table->lookup($textColour)) {
+
+                if (! $ulFlag) {
+
+                    $self->buffer->create_tag(
+                        $textColour,                                    # e.g. '#FFFFFF'
+                        'foreground' => $textColour,                    # e.g. '#FFFFFF'
+                    );
+
+                } else {
+
+                    # This should never be executed, but it's better to be safe than sorry
+                    $self->buffer->create_tag(
+                        $textColour,                                    # e.g. 'u#FFFFFF'
+                        'background' => substr($textColour, 1),         # e.g. '#FFFFFF'
+                    );
+                }
+            }
+        }
+
+        if ($self->underlayColour) {
+
+            $underlayColour = $self->underlayColour;
+
+            ($type, $ulFlag) = $axmud::CLIENT->checkColourTags($underlayColour, 'rgb');
+            if (defined $type && ! $self->buffer->get_tag_table->lookup($underlayColour)) {
+
+                if ($ulFlag) {
+
+                    $self->buffer->create_tag(
+                        $underlayColour,                                # e.g. 'u#FFFFFF'
+                        'background' => substr($underlayColour, 1),     # e.g. '#FFFFFF'
+                    );
+
+                } else {
+
+                    # This should never be executed, but it's better to be safe than sorry
+                    $self->buffer->create_tag(
+                        $underlayColour,                                # e.g. '#FFFFFF'
+                        'foreground' => $underlayColour,                # e.g. '#FFFFFF'
+                    );
+
+                }
+            }
+        }
+
+        return 1;
+    }
+
     sub createStyleTags {
 
         # Called by $self->objEnable
@@ -3671,7 +3868,7 @@
         my ($self, $backgroundColour, $textColour, $check) = @_;
 
         # Local variables
-        my ($colourSchemeObj, $type, $underlayFlag);
+        my ($colourSchemeObj, $defaultFlag, $type, $underlayFlag);
 
         # Check for improper arguments
         if (defined $check) {
@@ -3679,17 +3876,19 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setMonochromeMode', @_);
         }
 
+        $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+
         # If no $backgroundColour was specified, use the background colour from $self->colourScheme
         if (! defined $backgroundColour) {
 
-            $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
             if ($colourSchemeObj) {
 
                 $backgroundColour = $colourSchemeObj->backgroundColour;
+                $defaultFlag = TRUE;
 
             } else {
 
-                # Emergency fallback
+                # Emergency fallback colour
                 $backgroundColour = 'black';
             }
 
@@ -3710,7 +3909,7 @@
 
                 $textColour = $axmud::CLIENT->ivShow('constMonochromeHash', $backgroundColour);
 
-            } else {
+            } elsif (! $defaultFlag) {
 
                 # Non-standard background colour tag. Use a fallback text colour; if it doesn't
                 #   match the background colour well, that's the fault of the calling function for
@@ -3720,6 +3919,17 @@
                 } else {
                     $textColour = 'WHITE';
                 }
+
+            } elsif ($colourSchemeObj) {
+
+                # Non-standard background colour tag supplied by the colour scheme, so use the text
+                #   colour supplied by the colour scheme
+                $textColour = $colourSchemeObj->textColour;
+
+            } else {
+
+                # Emergency fallback colour
+                $backgroundColour = 'white';
             }
         }
 
@@ -3728,6 +3938,12 @@
         $self->ivUndef('underlayColour');
         $self->ivPoke('backgroundColour', $backgroundColour);
         $self->ivPoke('monochromeFlag', TRUE);
+
+        if (! $colourSchemeObj || $colourSchemeObj->backgroundColour eq $backgroundColour) {
+            $self->ivPoke('monochromeModFlag', FALSE);
+        } else {
+            $self->ivPoke('monochromeModFlag', TRUE);
+        }
 
         # Apply the monochrome colour scheme
         return $self->objUpdate();
@@ -3763,6 +3979,8 @@
         } else {
 
             $self->ivPoke('monochromeFlag', FALSE);
+            $self->ivPoke('monochromeModFlag', FALSE);
+
             return $self->objUpdate($self->colourScheme);
         }
     }
@@ -4883,10 +5101,10 @@
                 # It's an RGB colour tag for the underlay
                 if (! $underlayColour) {
 
-                    $tag = substr($item, 1);        # Strip away the initial 'u'
+                    $tag = substr($item, 1);                    # Strip away the initial 'u'
                     if ($tag =~ m/^\#[A-Fa-f0-9]{6}$/) {
 
-                        # (GTK2 expects an upper-case string like '#FFFFFF')
+                        # (Gtk2 expects an upper-case string like '#FFFFFF')
                         $underlayColour = 'u' . uc($tag);
                         # There are 16.7 million possible RGB colour tags, so we take the pragmatic
                         #   approach and create a Gtk2::TextTag for each one, only when it is needed
@@ -4921,9 +5139,6 @@
             } else {
 
                 # It's presumably an Axmud colour tag
-
-                # This call returns 2 for standard underlay tags, 1 for standard text tags but
-                #   'undef' for everything else
                 ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($item, 'standard');
                 if ($type) {
 
@@ -4963,6 +5178,76 @@
             $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour,
             @styleTags,
         );
+    }
+
+    sub modifyColourTags {
+
+        # Called by $self->insertText after an earlier call to $self->interpretTags
+        # Imports the colour scheme in use, then applies any colour overrides specified by that
+        #   colour scheme or by this object's own monochrome mode
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $textColour     - The text colour tag that's going to be inserted into the
+        #                       Gtk2::TextView (or 'undef' if no colour tag is going to be used)
+        #   $underlayColour - The underlay colour tag that's going to be inserted into the
+        #                       Gtk2::TextView (or 'undef' if no colour tag is going to be used)
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns a list in the form
+        #       (monochrome_flag, text_colour, underlay_colour)
+        #   ...where 'text_colour' and 'underlay_colour' are the modified (or unmodified) values,
+        #       and 'monochrome_flag' is TRUE is no colours can be used at all, FALSE otherwise
+
+        my ($self, $textColour, $underlayColour, $check) = @_;
+
+        # Local variables
+        my (
+            $colourSchemeObj, $monochromeFlag,
+            @emptyList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->insertWithTags', @_);
+            return @emptyList;
+        }
+
+        # Import the colour scheme in use
+        $colourSchemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+        # Apply any colour overrides specified by the colour scheme or by this object's own
+        #   monochrome mode
+        if ($self->monochromeFlag || ($colourSchemeObj && $colourSchemeObj->overrideAllFlag)) {
+
+            $monochromeFlag = TRUE;
+
+        } else {
+
+            $monochromeFlag = FALSE;
+
+            if ($colourSchemeObj) {
+
+                if (
+                    defined $textColour
+                    && $colourSchemeObj->ivExists('overrideHash', $textColour)
+                ) {
+                    $textColour = $colourSchemeObj->ivShow('overrideHash', $textColour);
+                }
+
+                if (
+                    defined $underlayColour
+                    && $colourSchemeObj->ivExists('overrideHash', $underlayColour)
+                ) {
+                    $underlayColour = $colourSchemeObj->ivShow('overrideHash', $underlayColour);
+                }
+            }
+        }
+
+        return ($monochromeFlag, $textColour, $underlayColour);
     }
 
     sub insertWithTags {
@@ -5482,13 +5767,24 @@
         my ($self, $linkObj, $check) = @_;
 
         # Local variables
-        my ($listRef, $startIter, $length, $endPosn, $stopIter);
+        my ($listRef, $startIter, $length, $stopPosn, $stopIter, $endIter);
 
         # Check for improper arguments
         if (! defined $linkObj || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->add_incompleteLink', @_);
         }
+
+        # DEBUG
+        # Temporary fix for (rare) problem of links placed after a line has finished, which causes
+        #   Gtk2 to crash
+        my $checkIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, 0);
+        if ($checkIter->get_chars_in_line() <= $linkObj->posn) {
+
+            # Don't apply this link
+            return undef;
+        }
+        # DEBUG
 
         if ($linkObj->number != -1) {
 
@@ -5518,15 +5814,20 @@
             # Need to check that the 'link_off' is going at the right place; if the line is too
             #   short, Axmud will crash
             $length = $startIter->get_chars_in_line();
-            $endPosn = $linkObj->posn + length ($linkObj->text);
-            if ($endPosn > $length) {
+            $stopPosn = $linkObj->posn + length ($linkObj->text);
+            if ($stopPosn > $length) {
 
-                $endPosn = $length;
+                $endIter = $self->buffer->get_end_iter();
+                if ($endIter->get_line() == $startIter->get_line()) {
+                    $stopPosn = $length;
+                } else {
+                    $stopPosn = $length - 1;
+                }
             }
 
             $stopIter = $self->buffer->get_iter_at_line_offset(
                 $linkObj->lineNum,
-                $endPosn,
+                $stopPosn,
             );
 
             if ($startIter && $stopIter) {
@@ -5811,6 +6112,8 @@
         { $_[0]->{fontSize} }
     sub monochromeFlag
         { $_[0]->{monochromeFlag} }
+    sub monochromeModFlag
+        { $_[0]->{monochromeModFlag} }
     sub overwriteFlag
         { $_[0]->{overwriteFlag} }
 

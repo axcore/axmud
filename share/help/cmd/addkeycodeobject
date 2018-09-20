@@ -20,7 +20,8 @@ ako / addkeycodeobject        Adds a new keycode object
       This command adds a new keycode object.
       Keycode object names must be no longer than 16 characters, contain only 
          A-Z, a-z, underlines and 0-9 (not the first character) and not be one 
-         of Axmud's reserved names (see the ';listreserved' command).
+         of Axmud's reserved names (see the ';listreserved' command). Non-Latin
+         alphabets are acceptable.
  
    User commands:
       ako / addko / addkeycodeobject

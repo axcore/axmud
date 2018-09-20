@@ -276,6 +276,7 @@
                 'locator'               => TRUE,
                 'attack'                => FALSE,
                 'compass'               => FALSE,
+                'channels'              => FALSE,
                 'divert'                => FALSE,
                 'inventory'             => FALSE,
                 'launch'                => FALSE,
@@ -407,7 +408,7 @@
         }
 
         # Add initial tasks (if any) in a set order
-        @taskList = qw(status locator attack compass divert inventory launch notepad);
+        @taskList = qw(status locator attack compass channels divert inventory launch notepad);
         foreach my $name (@taskList) {
 
             my $taskObj;
@@ -1011,12 +1012,19 @@
             undef,
             $self->ivShow('taskInitHash', 'divert'),
             TRUE,
-            2, 6, 12, 13);
-        $checkButton8->set_label('Divert task');
+            2, 4, 12, 13);
+        $checkButton8->set_label('Channels task, or');
+        my $checkButton9 = $self->addCheckButton(
+            $self->table,
+            undef,
+            $self->ivShow('taskInitHash', 'divert'),
+            TRUE,
+            4, 6, 12, 13);
+        $checkButton9->set_label('Divert task');
         $self->addLabel(
             $self->table,
             "<i>Diverts social messages and tells to a separate\n"
-            . "task window.</i>",
+            . "task window. Channels tasks have multiple tabs.</i>",
             2, 6, 13, 14);
 
         # (Right column)
@@ -1026,13 +1034,13 @@
             undef,
             7, 8, 8, 9);
 
-        my $checkButton9 = $self->addCheckButton(
+        my $checkButton10 = $self->addCheckButton(
             $self->table,
             undef,
             $self->ivShow('taskInitHash', 'inventory'),
             TRUE,
             8, 12, 8, 9);
-        $checkButton9->set_label('Inventory task');
+        $checkButton10->set_label('Inventory task');
         $self->addLabel(
             $self->table,
             "<i>Keeps track of the character's inventory and\n"
@@ -1045,13 +1053,13 @@
             undef,
             7, 8, 10, 11);
 
-        my $checkButton10 = $self->addCheckButton(
+        my $checkButton11 = $self->addCheckButton(
             $self->table,
             undef,
             $self->ivShow('taskInitHash', 'launch'),
             TRUE,
             8, 12, 10, 11);
-        $checkButton10->set_label('Launch task');
+        $checkButton11->set_label('Launch task');
         $self->addLabel(
             $self->table,
             "<i>A convenient method for selecting and running\n"
@@ -1064,13 +1072,13 @@
             undef,
             7, 8, 12, 13);
 
-        my $checkButton11 = $self->addCheckButton(
+        my $checkButton12 = $self->addCheckButton(
             $self->table,
             undef,
             $self->ivShow('taskInitHash', 'notepad'),
             TRUE,
             8, 12, 12, 13);
-        $checkButton11->set_label('Notepad task');
+        $checkButton12->set_label('Notepad task');
         $self->addLabel(
             $self->table,
             "<i>Write your notes here. They will be waiting for\n"
@@ -1088,9 +1096,10 @@
                 $checkButton6->set_active(TRUE);
                 $checkButton7->set_active(TRUE);
                 $checkButton8->set_active(TRUE);
-                $checkButton9->set_active(TRUE);
+                $checkButton9->set_active(FALSE);
                 $checkButton10->set_active(TRUE);
                 $checkButton11->set_active(TRUE);
+                $checkButton12->set_active(TRUE);
 
                 # Next button click is 'Select none'
                 $button->set_label('Select none');
@@ -1110,6 +1119,7 @@
                 $checkButton9->set_active(FALSE);
                 $checkButton10->set_active(FALSE);
                 $checkButton11->set_active(FALSE);
+                $checkButton12->set_active(FALSE);
 
                 # Next button click is 'Select all'
                 $button->set_label('Select all');
@@ -1122,10 +1132,11 @@
             $checkButton4   => 'locator',
             $checkButton6   => 'attack',
             $checkButton7   => 'compass',
-            $checkButton8   => 'divert',
-            $checkButton9   => 'inventory',
-            $checkButton10  => 'launch',
-            $checkButton11  => 'notepad',
+            $checkButton8   => 'channels',
+            $checkButton9   => 'divert',
+            $checkButton10  => 'inventory',
+            $checkButton11  => 'launch',
+            $checkButton12  => 'notepad',
         );
 
         do {
@@ -1155,7 +1166,23 @@
 
                 } else {
 
-                    $self->ivAdd('taskInitHash', $key, TRUE);
+                    if ($key eq 'channels' && $widget eq $checkButton8) {
+
+                        # If Channels selected, don't select Divert
+                        $checkButton9->set_active(FALSE);
+                        $self->ivAdd('taskInitHash', 'channels', TRUE);
+                        $self->ivAdd('taskInitHash', 'divert', FALSE);
+
+                    } elsif ($key eq 'divert' && $widget eq $checkButton9) {
+
+                        $checkButton8->set_active(FALSE);
+                        $self->ivAdd('taskInitHash', 'divert', TRUE);
+                        $self->ivAdd('taskInitHash', 'channels', FALSE);
+
+                    } else {
+
+                        $self->ivAdd('taskInitHash', $key, TRUE);
+                    }
                 }
             });
 
@@ -4456,8 +4483,9 @@
 
         # Does this component occur before the anchor line?
         if ($indexList[-1] < $anchorLineIndex) {
-
             $beforeAnchorFlag = TRUE;
+        } else {
+            $beforeAnchorFlag = FALSE;      # Need defined value for a function call
         }
 
         # Get a list of the GA::Buffer::Display objects in this component
@@ -4536,7 +4564,7 @@
             #   component has a fixed size of 1
             if ((scalar @indexList) > 1) {
 
-                $matchFlag = $self->checkVerbExitSize ($beforeAnchorFlag, @indexList);
+                $matchFlag = $self->checkVerbExitSize($beforeAnchorFlag, @indexList);
             }
 
             if ($matchFlag || (scalar @indexList) == 1) {
@@ -4832,7 +4860,7 @@
                     $self->profileUpdatePush('verboseExitRightMarkerList', $pattern);
                 }
 
-                $self->profileUpdatePush('verboseExitDelimiterList', @delimList);
+                $self->profileUpdatePushSort('verboseExitDelimiterList', @delimList);
             }
 
         } elsif (
@@ -4958,7 +4986,7 @@
                     $self->profileUpdatePush('briefExitRightMarkerList', quotemeta($stopText));
                 }
 
-                $self->profileUpdatePush('briefExitDelimiterList', @delimList);
+                $self->profileUpdatePushSort('briefExitDelimiterList', @delimList);
 
             } else {
 
@@ -5211,7 +5239,7 @@
         # Check for improper arguments
         if (! defined $beforeAnchorFlag || ! @indexList) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkOutsideGroups', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkVerbExitSize', @_);
         }
 
         # Is this 'verb_exit' component the last one (besides 'outside_statement' components?)
@@ -5709,6 +5737,60 @@
             push (@$listRef, $newItem);
         }
 
+        $self->ivAdd('profUpdateHash', $iv, $listRef);
+
+        return 1;
+    }
+
+    sub profileUpdatePushSort {
+
+        # Called by $self->analysisPage and analyseComponent
+        # Companion to $self->profileUpdatePush, called for delimiter lists which need to be
+        #   sorted, longest first
+        #
+        # Expected arguments
+        #   $iv         - A list IV (a key in $self->profUpdateHash)
+        #
+        # Optional arguments
+        #   @itemList   - A list of items to add to the corresponding value in $self->profUpdateHash
+        #                   (can be an empty list)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $iv, @itemList) = @_;
+
+        # Local variables
+        my $listRef;
+
+        # Check for improper arguments
+        if (! defined $iv) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->profileUpdatePush', @_);
+        }
+
+        if ($self->ivExists('profUpdateHash', $iv)) {
+
+            $listRef = $self->ivShow('profUpdateHash', $iv);
+        }
+
+        OUTER: foreach my $newItem (@itemList) {
+
+            INNER: foreach my $oldItem (@$listRef) {
+
+                if ($newItem eq $oldItem) {
+
+                    # Don't add the duplicate
+                    next OUTER;
+                }
+            }
+
+            # Not a duplicate
+            push (@$listRef, $newItem);
+        }
+
+        @$listRef = sort {length($b) <=> length($a)} (@$listRef);
         $self->ivAdd('profUpdateHash', $iv, $listRef);
 
         return 1;

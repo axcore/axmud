@@ -1,8 +1,8 @@
-uw / updateworld              Updates the current world profile
+uwo / updateworld             Updates the current world profile
  
    Format:
-      ;uw                     Updates the profile
-      ;uw <file>              Updates the profile using <file>
+      ;uwo                    Updates the profile
+      ;uwo <file>             Updates the profile using <file>
  
    Notes:
       This command can be used when you want to update the current world profile
@@ -39,4 +39,4 @@ uw / updateworld              Updates the current world profile
          someone has offered to share.
 
    User commands:
-      uw / updateworld
+      uwo / updateworld

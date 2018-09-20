@@ -93,6 +93,23 @@
             # The font and fontsize
             font                        => $axmud::CLIENT->constFont,
             fontSize                    => $axmud::CLIENT->constFontSize,
+
+            # The user can specify that certain Axmud colour tags (standard, xterm or RGB) can be
+            #   overridden with a different tag or ignored altogether, when displayed in a textview
+            #   object (GA::Obj::TextView)
+            # The overrides do not apply to the textview object's default text, underlay and
+            #   background colours, stored in GA::Obj::TextView->textColour, ->underlayColour and
+            #   ->backgroundColour. These default colours might have been set from a colour scheme
+            #   like this one, or might have been set when applying/releasing the textview object's
+            #   monochrome mode
+            # In this hash, the key is any Axmud colour tag (xterm and RGB tags should be converted
+            #   to upper-case). The corresponding value is the replacement colour tag, or 'undef'
+            #   if the colour tag should be ignored altogether
+            overrideHash                => {},
+            # Flag set to TRUE if all Axmud colour tags should be ignored altogether, leaving the
+            #   textview object able to use only its default text, underlay and background colours
+            overrideAllFlag             => FALSE,
+
         };
 
         # Bless the object into existence
@@ -158,9 +175,9 @@
             $self->ivPoke('backgroundColour', '#FFFFFF');
             $self->ivPoke('font', $axmud::CLIENT->constFont);
 
-            if ($self->name eq 'gui') {
+            if ($self->name eq 'viewer') {
 
-                # (Fit a little more help text into the GUI window)
+                # (Fit a little more help text into the object viewer window)
                 $self->ivPoke('fontSize', ($axmud::CLIENT->constFontSize - 1));
 
             } else {
@@ -202,7 +219,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($mode, $underlayFlag);
+        my ($type, $underlayFlag);
 
         # Check for improper arguments
         if (defined $check) {
@@ -216,8 +233,8 @@
 
         } else {
 
-            ($mode, $underlayFlag) = $axmud::CLIENT->checkColourTags($self->textColour);
-            if (! $mode) {
+            ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($self->textColour);
+            if (! $type) {
 
                 # Invalid colour tag
                 $self->ivPoke('textColour', $axmud::CLIENT->constTextColour);
@@ -235,8 +252,8 @@
 
         } else {
 
-            ($mode, $underlayFlag) = $axmud::CLIENT->checkColourTags($self->underlayColour);
-            if (! $mode) {
+            ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($self->underlayColour);
+            if (! $type) {
 
                 # Invalid colour tag
                 $self->ivPoke('underlayColour', $axmud::CLIENT->constUnderlayColour);
@@ -254,8 +271,8 @@
 
         } else {
 
-            ($mode, $underlayFlag) = $axmud::CLIENT->checkColourTags($self->backgroundColour);
-            if (! $mode) {
+            ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($self->backgroundColour);
+            if (! $type) {
 
                 # Invalid colour tag
                 $self->ivPoke('backgroundColour', $axmud::CLIENT->constBackgroundColour);
@@ -301,6 +318,11 @@
         { $_[0]->{font} }
     sub fontSize
         { $_[0]->{fontSize} }
+
+    sub overrideHash
+        { my $self = shift; return %{$self->{overrideHash}}; }
+    sub overrideAllFlag
+        { $_[0]->{overrideAllFlag} }
 }
 
 # Package must return true

@@ -1933,6 +1933,19 @@
 
         $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
+        my $menuItem_quickPrefs = Gtk2::ImageMenuItem->new(
+            '_Quick preferences...',
+        );
+        my $menuImg_quickPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
+        $menuItem_quickPrefs->set_image($menuImg_quickPrefs);
+        $menuItem_quickPrefs->signal_connect('activate' => sub {
+
+            $self->winObj->visibleSession->pseudoCmd('editquick', $mode);
+        });
+        $menuColumn_edit->append($menuItem_quickPrefs);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'edit_quick_prefs', $menuItem_quickPrefs);
+
         my $menuItem_clientPrefs = Gtk2::ImageMenuItem->new(
             $axmud::SCRIPT . ' pr_eferences...',
         );
@@ -2005,6 +2018,99 @@
 
         $menuColumn_tasks->append(Gtk2::SeparatorMenuItem->new());  # Separator
 
+            # 'Channels task' submenu
+            my $subMenu_channelsTask = Gtk2::Menu->new();
+
+            my $menuItem_channelsTask_addPattern = Gtk2::MenuItem->new('Add _channel pattern...');
+            $menuItem_channelsTask_addPattern->signal_connect('activate' => sub {
+
+                my ($pattern, $channel);
+
+                # Prompt the user for a pattern/channel
+                ($pattern, $channel) = $self->winObj->showDoubleEntryDialogue(
+                    'Add channel pattern',
+                    'Enter a pattern (regex)',
+                    'Enter a channel (1-16 chars)',
+                );
+
+                if (defined $pattern && defined $channel) {
+
+                    $self->winObj->visibleSession->pseudoCmd(
+                        'addchannelpattern <' . $channel . '> <' . $pattern . '>',
+                        $mode,
+                    );
+                }
+            });
+            $subMenu_channelsTask->append($menuItem_channelsTask_addPattern);
+
+            my $menuItem_channelsTask_addException = Gtk2::MenuItem->new(
+                'Add _exception pattern...',
+            );
+            $menuItem_channelsTask_addException->signal_connect('activate' => sub {
+
+                # Prompt the user for a pattern
+                my $pattern = $self->winObj->showEntryDialogue(
+                    'Add exception pattern',
+                    'Enter a pattern (regex)',
+                );
+
+                if (defined $pattern) {
+
+                    $self->winObj->visibleSession->pseudoCmd(
+                        'addchannelpattern -e <' . $pattern . '>',
+                        $mode,
+                    );
+                }
+            });
+            $subMenu_channelsTask->append($menuItem_channelsTask_addException);
+
+            my $menuItem_channelsTask_listPattern = Gtk2::MenuItem->new('_List patterns');
+            $menuItem_channelsTask_listPattern->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd('listchannelpattern', $mode);
+            });
+            $subMenu_channelsTask->append($menuItem_channelsTask_listPattern);
+
+            $subMenu_channelsTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+            my $menuItem_channelsTask_emptyWindow = Gtk2::MenuItem->new('_Empty Channels _window');
+            $menuItem_channelsTask_emptyWindow->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd('emptychannelswindow', $mode);
+            });
+            $subMenu_channelsTask->append($menuItem_channelsTask_emptyWindow);
+
+            $subMenu_channelsTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+            my $menuItem_channelsTask_editTask = Gtk2::ImageMenuItem->new('_Edit current task...');
+            my $menuImg_channelsTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            $menuItem_channelsTask_editTask->set_image($menuImg_channelsTask_editTask);
+            $menuItem_channelsTask_editTask->signal_connect('activate' => sub {
+
+                my $session = $self->winObj->visibleSession;
+
+                # Open up a task 'edit' window to edit the task, with the 'main' window as the
+                #   parent
+                $self->winObj->createFreeWin(
+                    'Games::Axmud::EditWin::Task',
+                    $self->winObj,
+                    $session,
+                    'Edit ' . $session->channelsTask->prettyName . ' task',
+                    $session->channelsTask,
+                    FALSE,                          # Not temporary
+                    # Config
+                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
+                );
+            });
+            $subMenu_channelsTask->append($menuItem_channelsTask_editTask);
+
+        my $menuItem_channelsTask = Gtk2::MenuItem->new('Channe_ls task');
+        $menuItem_channelsTask->set_submenu($subMenu_channelsTask);
+        $menuColumn_tasks->append($menuItem_channelsTask);
+        # (Requires a visible session whose status is 'connected' or 'offline' and is running a
+        #   Channels task)
+        $self->ivAdd('menuItemHash', 'channels_task', $menuItem_channelsTask);
+
             # 'Chat task' submenu
             my $subMenu_chatTask = Gtk2::Menu->new();
 
@@ -2067,26 +2173,26 @@
             my $menuItem_chatTask_chatMM = Gtk2::MenuItem->new('Chat using _MudMaster...');
             $menuItem_chatTask_chatMM->signal_connect('activate' => sub {
 
-                my ($address, $port);
+                my ($host, $port);
 
-                # Prompt the user for an address and port
-                ($address, $port) = $self->winObj->showDoubleEntryDialogue(
+                # Prompt the user for a host and port
+                ($host, $port) = $self->winObj->showDoubleEntryDialogue(
                     'Chat using MudMaster',
                     'Enter a DNS/IP address',
                     '(Optional) enter the port',
                 );
 
-                if ($address) {
+                if ($host) {
 
                     if (! $port) {
 
                         # (Don't use an empty string as the port)
-                        $self->winObj->visibleSession->pseudoCmd('chatmcall ' . $address, $mode);
+                        $self->winObj->visibleSession->pseudoCmd('chatmcall ' . $host, $mode);
 
                     } else {
 
                         $self->winObj->visibleSession->pseudoCmd(
-                            'chatmcall ' . $address . ' ' . $port,
+                            'chatmcall ' . $host . ' ' . $port,
                             $mode,
                         );
                     }
@@ -2097,26 +2203,26 @@
             my $menuItem_chatTask_chatZChat = Gtk2::MenuItem->new('Chat using _zChat...');
             $menuItem_chatTask_chatZChat->signal_connect('activate' => sub {
 
-                my ($address, $port);
+                my ($host, $port);
 
                 # Prompt the user for an address and port
-                ($address, $port) = $self->winObj->showDoubleEntryDialogue(
+                ($host, $port) = $self->winObj->showDoubleEntryDialogue(
                     'Chat using zChat',
                     'Enter a DNS/IP address',
                     '(Optional) enter the port',
                 );
 
-                if ($address) {
+                if ($host) {
 
                     if (! $port) {
 
                         # (Don't use an empty string as the port)
-                        $self->winObj->visibleSession->pseudoCmd('chatzcall ' . $address, $mode);
+                        $self->winObj->visibleSession->pseudoCmd('chatzcall ' . $host, $mode);
 
                     } else {
 
                         $self->winObj->visibleSession->pseudoCmd(
-                            'chatzcall ' . $address . ' ' . $port,
+                            'chatzcall ' . $host . ' ' . $port,
                             $mode,
                         );
                     }
@@ -2281,60 +2387,51 @@
             # 'Divert task' submenu
             my $subMenu_divertTask = Gtk2::Menu->new();
 
-            my $menuItem_divertTask_addPattern = Gtk2::MenuItem->new('_Add pattern...');
+            my $menuItem_divertTask_addPattern = Gtk2::MenuItem->new('Add _channel pattern...');
             $menuItem_divertTask_addPattern->signal_connect('activate' => sub {
 
-                my (
-                    $pattern, $type,
-                    @list, @comboList,
-                    %hash,
+                my ($pattern, $channel);
+
+                # Prompt the user for a pattern/channel
+                ($pattern, $channel) = $self->winObj->showDoubleEntryDialogue(
+                    'Add channel pattern',
+                    'Enter a pattern (regex)',
+                    'Enter a channel (1-16 chars)',
                 );
 
-                @list = (
-                    '\'Tell\' pattern'              => '-t',
-                    '\'Tell\' pattern exception'    => '-e',
-                    'Social pattern'                => '-s',
-                    'Social pattern exception'      => '-o',
-                    'Gagged custom pattern'         => '-c',
-                    'Ungagged custom pattern'       => '-u',
-                    'Custom pattern exception'      => '-x',
-                );
-
-                do {
-
-                    my ($pat, $sw);
-
-                    $pat = shift @list;
-                    $sw = shift @list;
-
-                    push (@comboList, $pat);
-                    $hash{$pat} = $sw;
-
-
-                } until (! @list);
-
-                # Prompt the user for a pattern
-                ($pattern, $type) = $self->winObj->showDoubleComboDialogue(
-                    'Add Divert pattern',
-                    'New pattern',
-                    'Pattern type',
-                    \@comboList,
-                );
-
-                if (defined $pattern && defined $type && exists $hash{$type}) {
+                if (defined $pattern && defined $channel) {
 
                     $self->winObj->visibleSession->pseudoCmd(
-                        'adddivertpattern ' . $hash{$type} . ' <' . $pattern . '>',
+                        'addchannelpattern <' . $channel . '> <' . $pattern . '>',
                         $mode,
                     );
-                };
+                }
             });
             $subMenu_divertTask->append($menuItem_divertTask_addPattern);
+
+            my $menuItem_divertTask_addException = Gtk2::MenuItem->new('Add _exception pattern...');
+            $menuItem_divertTask_addException->signal_connect('activate' => sub {
+
+                # Prompt the user for a pattern
+                my $pattern = $self->winObj->showEntryDialogue(
+                    'Add exception pattern',
+                    'Enter a pattern (regex)',
+                );
+
+                if (defined $pattern) {
+
+                    $self->winObj->visibleSession->pseudoCmd(
+                        'addchannelpattern -e <' . $pattern . '>',
+                        $mode,
+                    );
+                }
+            });
+            $subMenu_divertTask->append($menuItem_divertTask_addException);
 
             my $menuItem_divertTask_listPattern = Gtk2::MenuItem->new('_List patterns');
             $menuItem_divertTask_listPattern->signal_connect('activate' => sub {
 
-                $self->winObj->visibleSession->pseudoCmd('listdivertpattern', $mode);
+                $self->winObj->visibleSession->pseudoCmd('listchannelpattern', $mode);
             });
             $subMenu_divertTask->append($menuItem_divertTask_listPattern);
 
@@ -2910,16 +3007,16 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'open_automapper', $menuItem_openAutomapper);
 
-        my $menuItem_openGUI = Gtk2::ImageMenuItem->new('Open _GUI window');
-        my $menuImg_openGUI = Gtk2::Image->new_from_stock('gtk-jump-to', 'menu');
-        $menuItem_openGUI->set_image($menuImg_openGUI);
-        $menuItem_openGUI->signal_connect('activate' => sub {
+        my $menuItem_openViewer = Gtk2::ImageMenuItem->new('Open _object viewer');
+        my $menuImg_openViewer = Gtk2::Image->new_from_stock('gtk-jump-to', 'menu');
+        $menuItem_openViewer->set_image($menuImg_openViewer);
+        $menuItem_openViewer->signal_connect('activate' => sub {
 
-            $self->winObj->visibleSession->pseudoCmd('openguiwindow', $mode);
+            $self->winObj->visibleSession->pseudoCmd('openobjectviewer', $mode);
         });
-        $menuColumn_display->append($menuItem_openGUI);
+        $menuColumn_display->append($menuItem_openViewer);
         # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'open_gui_window', $menuItem_openGUI);
+        $self->ivAdd('menuItemHash', 'open_object_viewer', $menuItem_openViewer);
 
         $menuColumn_display->append(Gtk2::SeparatorMenuItem->new());    # Separator
 
@@ -2960,7 +3057,7 @@
                 #   $self->workspaceGridObj because 'main' windows might appear on several
                 #   workspaces
                 my $gridObj
-                    = $self->winObj->workspaceObj->findWorkspaceGrid($self->visibileSession);
+                    = $self->winObj->workspaceObj->findWorkspaceGrid($self->visibleSession);
 
                 if ($gridObj) {
 
@@ -2986,7 +3083,7 @@
 
                 my ($gridObj, $result);
 
-                $gridObj = $self->winObj->workspaceObj->findWorkspaceGrid($self->visibileSession);
+                $gridObj = $self->winObj->workspaceObj->findWorkspaceGrid($self->visibleSession);
 
                 if ($gridObj) {
 
@@ -7677,7 +7774,7 @@
             # For 'main' windows, when GA::Client->autoCompleteMode = 'auto', the first time the
             #   user presses the 'up' or 'down' arrow key, this IV is set to the contents of the
             #   entry box (even if it's an empty string). The IV is set back to 'undef' as soon as
-            #   the user presses the RETURN key
+            #   the user presses the ENTER key
             originalEntryText           => undef,
             # Any code can temporarily desensitise the entry box, when required, by calling
             #   $self->captureEntry, which adds an entry to this hash IV

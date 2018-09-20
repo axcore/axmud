@@ -1,5 +1,5 @@
 # Polish phrasebook (from https://pl.wikipedia.org/wiki/Strony_%C5%9Bwiata)
-# Accented characters converted so that entry boxes will show them
+# Accented characters converted (in accordance with standard MU* practice)
 #
 # English name for language (lower-case)
 polish

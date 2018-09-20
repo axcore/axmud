@@ -10,10 +10,7 @@
 
     use Glib qw(TRUE FALSE);
 
-    our @ISA = qw(
-        Games::Axmud::Generic::Plugin::PrivateCmd Games::Axmud::Generic::Plugin::Cmd
-        Games::Axmud::Generic::Cmd Games::Axmud
-    );
+    our @ISA = qw(Games::Axmud::Generic::Plugin::Cmd Games::Axmud::Generic::Cmd Games::Axmud);
 
     ##################
     # Constructors

@@ -1,5 +1,5 @@
 # Swedish phrasebook (from https://sv.wikipedia.org/wiki/V%C3%A4derstreck)
-# Accented characters converted so that entry boxes will show them
+# Accented characters converted (in accordance with standard MU* practice)
 #
 # English name for language (lower-case)
 swedish

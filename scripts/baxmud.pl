@@ -36,13 +36,13 @@ use vars qw(
     $SCRIPT $VERSION $DATE $NAME_SHORT $NAME_ARTICLE $BASIC_NAME $BASIC_ARTICLE $BASIC_VERSION
     $AUTHORS $COPYRIGHT $URL $NAME_FILE @COMPAT_FILE_LIST @COMPAT_DIR_LIST @COMPAT_EXT_LIST
     $BLIND_MODE_FLAG $SAFE_MODE_FLAG $TEST_MODE_FLAG @TEST_MODE_LOGIN_LIST $TEST_MODE_CMD_FLAG
-    $TEST_TERM_MODE_FLAG $TEST_GLOB_MODE_FLAG @LICENSE_LIST @CREDIT_LIST $SHARE_DIR $DATA_DIR
-    $CLIENT
+    $TEST_TERM_MODE_FLAG $TEST_GLOB_MODE_FLAG $TEST_PRE_CONFIG_FLAG @LICENSE_LIST @CREDIT_LIST
+    $SHARE_DIR $DATA_DIR $CLIENT
 );
 
 $SCRIPT = 'Axmud';              # Name used in system messages
-$VERSION = '1.1.0';             # Version number for this client
-$DATE = '31 May 2018';
+$VERSION = '1.1.138';           # Version number for this client
+$DATE = '31 Aug 2018';
 $NAME_SHORT = 'axmud';          # Lower-case version of $SCRIPT; same as the package name above
 $NAME_ARTICLE = 'an Axmud';     # Name with an article
 $BASIC_NAME = 'Axbasic';        # Name of Axmud's built-in scripting library
@@ -89,6 +89,9 @@ $TEST_TERM_MODE_FLAG = FALSE;
 #   operation (not including the config file) tests data for this problem, before saving it, writing
 #   the output to the terminal
 $TEST_GLOB_MODE_FLAG = FALSE;
+# Pre-configured world test mode: When preparing for a release, the authors set this flag to TRUE to
+#   stop Axmud complaining about missing pre-configured worlds
+$TEST_PRE_CONFIG_FLAG = FALSE;
 
 @LICENSE_LIST = (
     'This program is free software; you can redistribute it and/or modify it under',
@@ -125,6 +128,7 @@ $TEST_GLOB_MODE_FLAG = FALSE;
 # External dependencies (Glib is commented out as it's already been used)
 use Archive::Extract;
 use Archive::Tar;
+use Archive::Zip;
 use Compress::Zlib;
 use Encode qw(decode encode encodings find_encoding from_to);
 use Fcntl qw(:flock);
@@ -163,12 +167,16 @@ use Socket qw(AF_INET SOCK_STREAM inet_aton sockaddr_in);
 use Symbol qw(qualify);
 use Storable qw(lock_nstore lock_retrieve);
 use Time::HiRes qw(gettimeofday);
+use Time::Piece;
 
 # Internal dependencies
 use Games::Axmud;
-use Gtk2::Ex::Simple::List;     # packaged inside /lib so Axmud will work in MS Windows
-use Heap::Binomial;             # packaged inside /lib so Axmud will work in MS Windows
 use Language::Axbasic;
+use Language::Axbasic::Expression;  # Due to way original Language::Basic was written,
+use Language::Axbasic::Function;    #   quickest way to integrate it is to 'use' all the Axbasic
+use Language::Axbasic::Statement;   #   source code files here
+use Language::Axbasic::Subroutine;
+use Language::Axbasic::Variable;
 
 # All files required after the Axmud script has been compiled are stored in /share
 $SHARE_DIR = File::ShareDir::dist_dir('Games-Axmud');
@@ -180,17 +188,6 @@ push (@INC,
     $SHARE_DIR . '/plugins',
     $SHARE_DIR . '/private',
 );
-
-# Create the main GA::Client object
-$CLIENT = Games::Axmud::Client->new();
-# Start the client. If this fails, terminate the script
-if (! $CLIENT || ! $CLIENT->start()) {
-
-    exit 1;
-}
-
-# Start Gtk2's main loop
-Gtk2->main();
 
 # Standard Perl error/warning trapping
 $SIG{__DIE__} = sub {
@@ -249,6 +246,17 @@ $SIG{__WARN__} = sub {
         }
     }
 };
+
+# Create the main GA::Client object
+$CLIENT = Games::Axmud::Client->new();
+# Start the client. If this fails, terminate the script
+if (! $CLIENT || ! $CLIENT->start()) {
+
+    exit 1;
+}
+
+# Start Gtk2's main loop
+Gtk2->main();
 
 END {
 

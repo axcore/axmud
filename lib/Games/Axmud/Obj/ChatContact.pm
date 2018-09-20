@@ -35,8 +35,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this chat contact (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, GA::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   GA::CLIENT->constReservedHash)
         #   $protocol   - Which chat protocol to use by default with this contact (currently 0 for
         #                   MudMaster, 1 for zChat)
         #
@@ -95,7 +96,9 @@
             # ---
 
             #  A unique name for the chat contact (hopefully the same one that the contacts
-            #   themselves are broadcasting, max 16 chars)
+            #   themselves are broadcasting) (max 16 chars, containing A-Za-z0-9_ - 1st char can't
+            #   be number, non-Latin alphabets acceptable. Must not exist as a key in the global
+            #   hash of reserved names, GA::CLIENT->constReservedHash)
             name                        => $name,
             # Which chat protocol to use by default with this contact (currently 0 for MudMaster, 1
             #   for zChat)

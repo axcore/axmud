@@ -242,21 +242,14 @@
             # The exit model number of the shadow exit (or 'undef' if no shadow exit)
             shadowExit                  => undef,
 
-            # Exit ornament flags
-            # Flag set to TRUE if this is a door which can be broken down (if locked), FALSE if not
-            breakFlag                   => FALSE,
-            # Flag set to TRUE if this exit is a pickable lock, FALSE if not
-            pickFlag                    => FALSE,
-            # Flag set to TRUE if this exit is some kind of lockable door, FALSE if not
-            lockFlag                    => FALSE,
-            # Flag set to TRUE if this exit is some kind of door (is openable), FALSE if not
-            openFlag                    => FALSE,
-            # Flag set to TRUE if this exit is completely impassable, FALSE if not
-            impassFlag                  => FALSE,
-            # Flag set to TRUE if any of the ornament flags are set to TRUE (for quick checking),
-            #   FALSE if not
-            ornamentFlag                => FALSE,
-
+            # What type of exit ornament this exit has:
+            #   'none' - has no ornament
+            #   'break' - exit is a door which can be broken down (if locked)
+            #   'pick' - exit is some kind of lockable door, that has a pickable lock
+            #   'lock' - exit is some kind of lockable door
+            #   'open' - exit is some kind of openable door
+            #   'impass' - exit is completely impassable
+            exitOrnament                => 'none',
             # The exit's current state, if known. Possible values are 'normal' (exit is passable or
             #   state not known), 'open' (exit is an open door), 'closed' (exit is a closed door),
             #   'locked' (exit is a locked door), 'secret' (exit is secret, not normally visible),
@@ -274,7 +267,7 @@
             #   occasionally the destination type). Set only if one of the patterns in
             #   GA::Profile::World->exitInfoPatternList matches the exit, when it appears in a room
             #   statement exit list; the first backreference (if any) is used to set this IV
-            info                        => undef,
+            exitInfo                    => undef,
 
             # Hash of commands used during assisted moves, in the form
             #   $assistedHash{profile_name} = sequence_of_commands
@@ -286,79 +279,18 @@
             #   else fails, the value of $self->dir is used (see the comments in
             #   $self->getAssisted() for a full explanation)
             assistedHash                => {},
-
-            # Hashes that can be used by the automapper in 'assisted moves' mode to automatically
-            #   get through openable/lockable doors
-            # Each hash is usually empty, or contains a single key-value pair. If it contains
-            #   multiple key-value pairs, the automapper will try them all
-
-            # Hash of model objects required to break down the door (empty if it's not breakable),
-            #   in the form
-            #       $breakHash{world_model_obj_number} = 'command_to_break_down_door'
-            # Usually contains a single key-value pair. If the value is 'undef', the standard
-            #   'break_with' command (defined in the command cage) is used instead
-            breakHash                   => {},
-            # Hash of model objects required to pick the door lock (empty if it's not pickable), in
-            #   the form
-            #       $pickHash{world_model_obj_number} = 'command_to_pick_lock'
-            # Usually contains a single key-value pair. If the value is 'undef', the standard
-            #   'pick_with' command (defined in the command cages) is used instead
-            pickHash                    => {},
-            # Hash of model objects required to unlock the door (empty if it's not lockable), in the
-            #   form
-            #       $unlockHash{world_model_obj_number} = 'command_to_unlock'
-            # Usually contains a single key-value pair. If the value is 'undef', the standard
-            #   'unlock_with' command (defined in the command cages) is used instead
-            unlockHash                  => {},
-            # Hash of model objects required to open the door (empty if it's not openable), in the
-            #   form
-            #       $openHash{world_model_obj_number} = 'command_to_open'
-            # Usually contains a single key-value pair. If the value is 'undef', the standard
-            #   'open_dir' command (defined in the command cages) is used instead
-            openHash                    => {},
-            # Hash of model objects required to close the door (empty if it's not openable), in the
-            #   form
-            #       $closeHash{world_model_obj_number} = 'command_to_close'
-            # Usually contains a single key-value pair. If the value is 'undef', the standard
-            #   'close_dir' command (defined in the command cages) is used instead
-            closeHash                   => {},
-            # Hash of model objects required to lock the door (empty if it's not lockable), in the
-            #   form
-            #       $lockHash{world_model_obj_number} = 'command_to_lock'
-            # Usually contains a single key-value pair. If the value is 'undef', the standard
-            #   'lock_with' command (defined in the command cages) is used instead
-            lockHash                    => {},
-
-            # Command to break down the door - a simple string, if you don't want to go to the
-            #   trouble of defining model objects (e.g. 'break door with crowbar') - if
-            #   $self->breakHash is empty, this command is used instead. If this IV is set to
-            #   'undef', the standard 'break' command (defined in the command cages) is used
-            breakCmd                    => undef,
-            # Command to pick the door lock - a simple string, if you don't want to go to the
-            #   trouble of defining model objects (e.g. 'pick north door with red lockpick') - if
-            #   $self->pickHash is empty, this command is used instead. If this IV is set to
-            #   'undef', the standard 'pick' command (defined in the command cages) is used
-            pickCmd                     => undef,
-            # Command to unlock the door - a simple string, if you don't want to go to the trouble
-            #   of defining model objects (e.g. 'unlock north door with red key') - if
-            #   $self->unlockHash is empty, this command is used instead. If this IV is set to
-            #   'undef', the standard 'unlock' command (defined in the command cages) is used
-            unlockCmd                   => undef,
-            # Command to open the door - a simple string, if you don't want to go to the trouble of
-            #   defining model objects (e.g. 'open north door') - if $self->openHash is empty, this
-            #   command is used instead. If this IV is set to 'undef', the standard 'open_dir'
-            #   command (defined in the command cages) is used
-            openCmd                     => undef,
-            # Command to close the door - a simple string, if you don't want to go to the trouble of
-            #   defining model objects (e.g. 'close north door') - if $self->openHash is empty, this
-            #   command is used instead. If this IV is set to 'undef', the standard 'close_dir'
-            #   command (defined in the command cages) is used
-            closeCmd                    => undef,
-            # Command to unlock the door - a simple string, if you don't want to go to the trouble
-            #   of defining model objects (e.g. 'lock north door with red key') - if $self->lockHash
-            #   is empty, this command is used instead. If this IV is set to 'undef', the standard
-            #   'lock' command (defined in the command cages) is used
-            lockCmd                     => undef,
+            # Commands to get past a door. The hash is empty by default, meaning that the standard
+            #   break/pick/unlock/open/close/lock command, defined by command cages, is used
+            # Otherwise it contains one or more key-value pairs in the general form
+            #   $doorHash{door_type} = command_to_get_through_the_door
+            # 'door_type' can be any of the following
+            #   break       e.g. 'break door with crowbar'
+            #   pick        e.g. 'pick north door with red lockpick'
+            #   unlock      e.g. 'unlock north door with red key'
+            #   open        e.g. 'open north door'
+            #   close       e.g. 'close north door'
+            #   lock        e.g. 'lock north door with red key'
+            doorHash                    => {},
         };
 
         # Bless the object into existence
@@ -377,9 +309,8 @@
         #
         # The IVs are checked in the order
         #   1. ->assistedHash
-        #   2. ->breakHash, ->pickHash, ->unlockHash, ->openHash, ->closeHash, ->lockHash
-        #   3. ->breakCmd, ->pickCmd, ->unlockCmd, ->openCmd, ->closeCmd, ->lockCmd
-        #   4. ->dir
+        #   2. ->doorHash
+        #   3. ->dir
         #
         # Expected arguments
         #   $session    - The calling function's GA::Session
@@ -392,7 +323,7 @@
 
         # Local variables
         my (
-            $wmObj, $cmdString, $cmd,
+            $wmObj, $cmd, $cmdString,
             @priorityList, @breakList, @pickList, @unlockList, @openList, @closeList, @lockList,
             @cmdList,
         );
@@ -423,150 +354,120 @@
             }
         }
 
-        # 2. ->breakHash, ->pickHash, etc
-        # -------------------------------
-
-        # These IVs should contain, ideally, only one key-value pair; if they contain more than
-        #   one pair, use them all (hoping one command sequence will work)
-
-        if ($wmObj->assistedBreakFlag && $self->breakFlag && $self->breakHash) {
-
-            push (@breakList, $self->ivValues('breakHash'));
-        }
-
-        if ($wmObj->assistedPickFlag && $self->pickFlag && $self->pickHash) {
-
-            push (@pickList, $self->ivValues('pickHash'));
-        }
-
-        if ($wmObj->assistedUnlockFlag && $self->lockFlag && $self->unlockHash) {
-
-            push (@unlockList, $self->ivValues('unlockHash'));
-        }
-
-        if ($wmObj->assistedOpenFlag && $self->openFlag && $self->openHash) {
-
-            push (@openList, $self->ivValues('openHash'));
-        }
-
-        if ($wmObj->assistedCloseFlag && $self->openFlag && $self->closeHash) {
-
-            push (@closeList, $self->ivValues('closeHash'));
-        }
-
-        if ($wmObj->assistedLockFlag && $self->lockFlag && $self->lockHash) {
-
-            push (@lockList, $self->ivValues('lockHash'));
-        }
-
-        # 3. ->breakCmd, ->pickCmd, etc
-        # -----------------------------
+        # 2. ->doorHash
+        # -------------
 
         # Only consult the IVs for which the corresponding part 2 IVs yielded nothing
 
-        if ($wmObj->assistedBreakFlag && $self->breakFlag && ! @breakList) {
+        if ($wmObj->assistedBreakFlag && $self->exitOrnament eq 'break' && ! @breakList) {
 
-            if ($self->breakCmd) {
+            $cmd = $self->ivShow('doorHash', 'break');
+            if (defined $cmd) {
 
-                push (@breakList, $self->breakCmd);
+                push (@breakList, $cmd);
 
             } else {
 
                 # Use the command cage's standard 'break' command, if it is set
                 $cmd = $session->prepareCmd('break', 'direction', $self->dir);
-                if ($cmd) {
+                if (defined $cmd) {
 
                     push (@breakList, $cmd);
                 }
             }
         }
 
-        if ($wmObj->assistedPickFlag && $self->pickFlag && ! @pickList) {
+        if ($wmObj->assistedPickFlag && $self->exitOrnament eq 'pick' && ! @pickList) {
 
-            if ($self->pickCmd) {
+            $cmd = $self->ivShow('doorHash', 'pick');
+            if (defined $cmd) {
 
-                push (@pickList, $self->pickCmd);
+                push (@breakList, $cmd);
 
             } else {
 
                 # Use the command cage's standard 'pick' command, if it is set
                 $cmd = $session->prepareCmd('pick', 'direction', $self->dir);
-                if ($cmd) {
+                if (defined $cmd) {
 
                     push (@pickList, $cmd);
                 }
             }
         }
 
-        if ($wmObj->assistedUnlockFlag && $self->lockFlag && ! @unlockList) {
+        if ($wmObj->assistedUnlockFlag && $self->exitOrnament eq 'lock' && ! @unlockList) {
 
-            if ($self->unlockCmd) {
+            $cmd = $self->ivShow('doorHash', 'unlock');
+            if (defined $cmd) {
 
-                push (@unlockList, $self->unlockCmd);
+                push (@breakList, $cmd);
 
             } else {
 
                 # Use the command cage's standard 'unlock' command, if it is set
-                $cmd = $session->prepareCmd('unclock', 'direction', $self->dir);
-                if ($cmd) {
+                $cmd = $session->prepareCmd('unlock', 'direction', $self->dir);
+                if (defined $cmd) {
 
                     push (@unlockList, $cmd);
                 }
             }
         }
 
-        if ($wmObj->assistedOpenFlag && $self->openFlag && ! @openList) {
+        if ($wmObj->assistedOpenFlag && $self->exitOrnament eq 'open' && ! @openList) {
 
-            if ($self->openCmd) {
+            $cmd = $self->ivShow('doorHash', 'open');
+            if (defined $cmd) {
 
-                push (@openList, $self->openCmd);
+                push (@breakList, $cmd);
 
             } else {
 
                 # Use the command cage's standard 'open_dir' command, if it is set
                 $cmd = $session->prepareCmd('open_dir', 'direction', $self->dir);
-                if ($cmd) {
+                if (defined $cmd) {
 
                     push (@openList, $cmd);
                 }
             }
         }
 
-        if ($wmObj->assistedCloseFlag && $self->openFlag && ! @closeList) {
+        if ($wmObj->assistedCloseFlag && $self->exitOrnament eq 'open' && ! @closeList) {
 
-            if ($self->closeCmd) {
+            $cmd = $self->ivShow('doorHash', 'close');
+            if (defined $cmd) {
 
-                push (@closeList, $self->closeCmd);
+                push (@breakList, $cmd);
 
             } else {
 
                 # Use the command cage's standard 'close_dir' command, if it is set
                 $cmd = $session->prepareCmd('close_dir', 'direction', $self->dir);
-                if ($cmd) {
+                if (defined $cmd) {
 
                     push (@closeList, $cmd);
                 }
             }
         }
 
-        if ($wmObj->assistedLockFlag && $self->lockFlag && ! @lockList) {
+        if ($wmObj->assistedLockFlag && $self->exitOrnament eq 'lock' && ! @lockList) {
 
-            if ($self->lockCmd) {
+            $cmd = $self->ivShow('doorHash', 'lock');
+            if (defined $cmd) {
 
-                push (@lockList, $self->lockCmd);
+                push (@breakList, $cmd);
 
             } else {
 
                 # Use the command cage's standard 'lock' command, if it is set
                 $cmd = $session->prepareCmd('lock', 'direction', $self->dir);
-                if ($cmd) {
+                if (defined $cmd) {
 
                     push (@lockList, $cmd);
                 }
             }
         }
 
-        # 4. ->dir
+        # 3. ->dir
         # --------
 
         # Now, combine the six lists into a single list and insert the actual direction of movement,
@@ -667,52 +568,17 @@
     sub shadowExit
         { $_[0]->{shadowExit} }
 
-    sub breakFlag
-        { $_[0]->{breakFlag} }
-    sub pickFlag
-        { $_[0]->{pickFlag} }
-    sub lockFlag
-        { $_[0]->{lockFlag} }
-    sub openFlag
-        { $_[0]->{openFlag} }
-    sub impassFlag
-        { $_[0]->{impassFlag} }
-    sub ornamentFlag
-        { $_[0]->{ornamentFlag} }
-
+    sub exitOrnament
+        { $_[0]->{exitOrnament} }
     sub exitState
         { $_[0]->{exitState} }
-    sub info
-        { $_[0]->{info} }
+    sub exitInfo
+        { $_[0]->{exitInfo} }
 
     sub assistedHash
         { my $self = shift; return %{$self->{assistedHash}}; }
-
-    sub breakHash
-        { my $self = shift; return %{$self->{breakHash}}; }
-    sub pickHash
-        { my $self = shift; return %{$self->{pickHash}}; }
-    sub unlockHash
-        { my $self = shift; return %{$self->{unlockHash}}; }
-    sub openHash
-        { my $self = shift; return %{$self->{openHash}}; }
-    sub closeHash
-        { my $self = shift; return %{$self->{closeHash}}; }
-    sub lockHash
-        { my $self = shift; return %{$self->{lockHash}}; }
-
-    sub breakCmd
-        { $_[0]->{breakCmd} }
-    sub pickCmd
-        { $_[0]->{pickCmd} }
-    sub unlockCmd
-        { $_[0]->{unlockCmd} }
-    sub openCmd
-        { $_[0]->{openCmd} }
-    sub closeCmd
-        { $_[0]->{closeCmd} }
-    sub lockCmd
-        { $_[0]->{lockCmd} }
+    sub doorHash
+        { my $self = shift; return %{$self->{doorHash}}; }
 }
 
 # Package must return true

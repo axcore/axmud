@@ -1,8 +1,8 @@
-rw / restoreworld             Restores pre-configured worlds
+rwo / restoreworld            Restores pre-configured worlds
  
    Format:
-      ;rw                     Restores all pre-configured worlds
-      ;rw <name>              Restores the pre-configured world <name>
+      ;rwo                    Restores all pre-configured worlds
+      ;rwo <name>             Restores the pre-configured world <name>
  
    Notes:
       Axmud comes with a number of pre-configured worlds. When Axmud starts for
@@ -26,4 +26,4 @@ rw / restoreworld             Restores pre-configured worlds
          addition, ';updateworld' can be used while conneceted to a world.
 
    User commands:
-      rw / restoreworld
+      rwo / restoreworld

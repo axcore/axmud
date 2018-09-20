@@ -10,7 +10,7 @@ mrp / modelreport             Compiles a report on the world model
          display its maps.
       This command generates a statistical report on the world model, helping 
          you to keep track of various kinds of things, as well as checking for 
-         things that still need to be done while compiling your maps.
+         things that still need to be done while perfecting your maps.
 
       <switch options> can be used as follows:
          ;mrp                    - General report
@@ -38,7 +38,12 @@ mrp / modelreport             Compiles a report on the world model
          ;mrp -m -r <region>     - Report on rooms in <region> 
  
          ;mrp -x                 - Report on exits in all regions
-         ;mrp -x -r <region>     - Report on exits in <region>    
+         ;mrp -x -r <region>     - Report on exits in <region>
+
+         ;mrp -h                 - Report on checked directions in all regions
+                                      (directions that have been checked, and
+                                      produced a failed exit message)
+         ;mrp -h -r <region>     - Report on checked directions in <region>
 
          ;mrp -q                 - Quick report on the current region
  

@@ -12,8 +12,8 @@ rwn / restorewindow           Restores windows to their former size/position
          zones on a desktop is called a 'zonemap'. 
       Only 'grid' windows (including the 'main' window, task windows and the 
          automapper window) are arranged on the workspace grid. Temporary
-         windows, including the GUI window and all edit, preference, wizard and
-         dialogue windows, are not affected.
+         windows, including the object viewer window and all edit, preference,
+         wizard and dialogue windows, are not affected.
 
       Users are free to drag 'grid' windows around the desktop, to resize them
          manually or even to move them to other workspaces. This command 

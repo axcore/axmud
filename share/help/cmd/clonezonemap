@@ -12,7 +12,8 @@ czm / clonezonemap            Clones a zonemap
          you can use this command to create a clone, and the clone can be 
          modified freely.
       <new> must be no longer than 16 characters, and contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character).
+         underlines and 0-9 (not the first character). Non-Latin alphabets are
+         acceptable.
       The MXP protocol, if enabled, can create temporary zonemaps to arrange 
          windows in the way the world specifies. Temporary zonemaps cannot be
          cloned.

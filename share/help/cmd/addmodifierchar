@@ -23,7 +23,7 @@ amc / addmodifierchar         Adds a speedwalk modifier character
          .Ow            > open west door
       
       <char> can be any letter in the range A-Z (the character is automatically
-         converted to upper case for you).
+         converted to upper case for you). Non-Latin alphabets are acceptable.
       
       <cmd> should be one of the standard commands used by Axmud's command
          cages.

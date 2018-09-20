@@ -1,8 +1,8 @@
-sse / setstatusevent          Handles settings for Status task events
+sev / setstatusevent          Handles settings for Status task events
  
    Format:
-      ;sse                    Shows current settings for Status task events
-      ;sse <switches>         Modifies settings for Status task events
+      ;sev                    Shows current settings for Status task events
+      ;sev <switches>         Modifies settings for Status task events
       
    Notes:
       A Status task event occurs when the Status task notices that your
@@ -22,4 +22,4 @@ sse / setstatusevent          Handles settings for Status task events
          before (or after) the event are not written at all. 
 
    User commands:
-      sse / setevent / setstatusevent
+      sev / setevent / setstatusevent

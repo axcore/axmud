@@ -36,8 +36,9 @@
         # Expected arguments
         #   $session    - The GA::Session which called this function (not stored as an IV)
         #   $name       - A unique string name for this mission (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash)
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Optional arguments
         #   $descrip    - A short description for the mission (max 64 chars) ('undef' if not
@@ -196,11 +197,11 @@
         #
         # Optional arguments
         #   $name       - A unique string name for this mission (max 16 chars, containing
-        #                   A-Za-z0-9_ - 1st char can't be number. Must not exist as a key in the
-        #                   global hash of reserved names, $axmud::CLIENT->constReservedHash). If
-        #                   not specified (because the cloned mission is to be stored in
-        #                   GA::Session->currentMission), the clone has the same name as the
-        #                   original
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash). If not specified (because the cloned
+        #                   mission is to be stored in GA::Session->currentMission), the clone has
+        #                   the same name as the original
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid (when specified)

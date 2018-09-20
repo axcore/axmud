@@ -10079,7 +10079,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($paintExp, $paint, $mode, $taskObj);
+        my ($paintExp, $paint, $type, $taskObj);
 
         # Check for improper arguments
         if (defined $check) {
@@ -10108,8 +10108,8 @@
                 # Evaluate the expression
                 $paint = $paintExp->evaluate();
                 # Is it a valid Axmud standard colour tag (not xterm or RGB)?
-                ($mode) = $axmud::CLIENT->checkColourTags($paint, 'standard');
-                if (! $mode) {
+                ($type) = $axmud::CLIENT->checkColourTags($paint, 'standard');
+                if (! $type) {
 
                     return $self->scriptObj->setError(
                         'invalid_colour_tag_TAG',

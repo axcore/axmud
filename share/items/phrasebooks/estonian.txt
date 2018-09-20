@@ -1,5 +1,5 @@
 # Estonian phrasebook (from https://et.wikipedia.org/wiki/Ilmakaared)
-# Accented characters converted so that entry boxes will show them
+# Accented characters converted (in accordance with standard MU* practice)
 # No idea how to translate 'northnortheast' - but 'ne' and 'nne' are the correct abbreviations
 #
 # English name for language (lower-case)

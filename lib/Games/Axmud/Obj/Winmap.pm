@@ -262,7 +262,7 @@
             $count++;
         }
 
-        $self->ivPoke('zoneCount', $count);
+        $clone->ivPoke('zoneCount', $count);
 
         return $clone;
     }
@@ -411,19 +411,14 @@
 
 
                 $zone->{'initHash'} = {
-                    # 'main' windows might use a simple tab or a normal tab with a label...
-                    'no_label_flag'     => $axmud::CLIENT->simpleTabFlag,
-                    # ...and a textview object that expects split screen mode to be set to 'split'
+                    # A textview object that expects split screen mode to be set to 'split'
                     'split_mode'        => 'hidden',
                 };
 
             } else {
 
                 $zone->{'initHash'} = {
-                    # ...but other 'internal' windows should use a simple tab
-                    'no_label_flag'     => TRUE,
-                    # ...and a textview object that doesn't expect split screen mode to be set to
-                    #   'split'
+                    # A textview object that doesn't expect split screen mode to be set to 'split'
                     'split_mode'        => 'single',
                 };
             }
@@ -449,7 +444,6 @@
             $zone->{'packageName'} = 'Games::Axmud::Table::Pane';
 
             $zone->{'initHash'} = {
-                'no_label_flag'     => $axmud::CLIENT->simpleTabFlag,
                 'split_mode'        => 'hidden',
             };
 
@@ -476,7 +470,6 @@
             $zone->{'packageName'} = 'Games::Axmud::Table::Pane';
 
             $zone->{'initHash'} = {
-                'no_label_flag'     => TRUE,
                 'split_mode'        => 'single',
             };
 

@@ -12,8 +12,8 @@ dgr / disactivategrid         Disactivates (turns off) workspace grids
          zones on a desktop is called a 'zonemap'. 
       Only 'grid' windows (including the 'main' window, task windows and the 
          automapper window) are arranged on the workspace grid. Temporary
-         windows, including the GUI window and all edit, preference, wizard and
-         dialogue windows, are not affected.
+         windows, including the object viewer window and all edit, preference,
+         wizard and dialogue windows, are not affected.
 
       If a workspace <num>ber is specified, workspace grids are turned off for
          that workspace only (use ';listworkspace' to get a list of workpace

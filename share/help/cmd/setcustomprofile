@@ -12,7 +12,8 @@ scp / setcustomprofile        Sets a current custom profile
          number of custom profiles marked as a current profile.
       Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
          underlines and 0-9 (not the first character) and not be one of Axmud's 
-         reserved names (see the ';listreserved' command).
+         reserved names (see the ';listreserved' command). Non-Latin alphabets
+         are acceptable.
       If the custom profile <name> doesn't already exist, it is created (but, in
          that case, <template> must be specified).
  

@@ -35,9 +35,9 @@
         #
         # Expected arguments
         #   $name       - A unique string name for this toolbar button object (max 16 chars,
-        #                   containing A-Za-z0-9_ - 1st char can't be number. Must not exist as a
-        #                   key in the global hash of reserved names,
-        #                   $axmud::CLIENT->constReservedHash)
+        #                   containing A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets
+        #                   acceptable. Must not exist as a key in the global hash of reserved
+        #                   names, $axmud::CLIENT->constReservedHash)
         #   $descrip    - A short description, e.g. 'Do something' (max 32 chars)
         #   $customFlag - Flag set to TRUE if this is a custom toolbar button (can be modified by
         #                   the user), set to FALSE if this is one of the default toolbar buttons

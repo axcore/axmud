@@ -20,7 +20,8 @@ awk / addspeedwalk            Adds a speedwalk character
          the movement commands 'north', 'east' and 'south'
       This command can be used to add a new speedwalk character to the current
          dictionary (or to modify an existing one). 
-      <char> can be any letter in the range a-z. 
+      <char> can be any letter in the range a-z. Non-Latin alphabets are
+        acceptable.
       <cmd> should be a movement command. Any type of movement command can be
          added (e.g. 'enter', 'exit', 'portal'). If the movement command
          contains spaces, it should be surrounded by diamond brackets:

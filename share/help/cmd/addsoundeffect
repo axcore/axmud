@@ -16,7 +16,8 @@ ase / addsoundeffect          Adds a new sound effect
          later date.
       Sound effect names must be no longer than 16 characters, contain only A-Z, 
          a-z, underlines and 0-9 (not the first character) and not be one of 
-         Axmud's reserved names (see the ';listreserved' command).
+         Axmud's reserved names (see the ';listreserved' command). Non-Latin
+         alphabets are acceptable.
       If a sound effect called <name> already exists, it will be replaced.
       You can use the ';resetsoundeffect' command to restore the default sound
          effects bank. See the help for ';sound' for more information about the
