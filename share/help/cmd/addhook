@@ -34,8 +34,12 @@ ahk / addhook                 Adds a hook
                      - 'send_cmd' (fires when a world command is sent)
                      - 'msdp' (fires when MSDP data is received from the world)
                      - 'mssp' (fires when MSSP data is received from the world)
+                     - 'zmp' (fires when ZMP data is received from the world)
+                     - 'aard102' (fires when AARD102 data is received from the
+                          world)
                      - 'atcp' (fires when ATCP data is received from the world)
                      - 'gmcp' (fires when GMCP data is received from the world)
+                     - 'mcp' (fires when MCP data is received from the world)
                      - 'current_session' (fires when this session becomes the
                           one visible in the 'main' window that has focus)
                      - 'not_current' (fires when a different session becomes the

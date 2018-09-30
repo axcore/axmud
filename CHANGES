@@ -1,9 +1,98 @@
+v1.1.174 (30 Sep 2018)
+--------------------------------------------------------------------------------
+
+Major new features
+- Axmud can now be run on on *BSD
+- Axmud releases are now available as an .RPM package
+- The installation guide (the INSTALL file) has been greatly expanded
+- The Axmud Guide and the Quick Help document have been converted to HTML, and
+    can now be read on the Axmud website. Markdown versions of the text can also
+    be found in /share/docs. The PDF/ODT version of the Axmud Guide have been
+    removed
+- Added support for ZMP (Zenith Mud protocol). The new 'zmptest' plugin
+    demonstrates how additional ZMP packages can be written. New client commands
+    ';zmp', 'sendzmp' and ';imputzmp'
+- Added support for AARD102 (Aardwolf 102 channels). New client command
+    ';aardwolf'
+- Added full support for MCP v2.1 (Mud Client Protocol). The implementation
+    includes the 'dns-org-mud-moo-simpleedit' package. The new 'mcptest' plugin
+    demonstrates how additional MCP packages can be written. New client command
+    ';mcp'
+- New hook events for these protocols - 'zmp', 'aard102' and 'mcp'
+- 'Free' windows (such as the Connections window, edit and preference windows)
+    were too small on some popular Linux distros and on *BSD. Axmud now
+    attempts to increase the default size of these windows, if it thinks the
+    default size isn't big enough. You can now set the default size yourself, if
+    you need to, using the ';setwindowsize' command (or in the client preference
+    window). The layout of the Connections window has been rearranged so that
+    increasing the default the size is necessary on fewer systems
+- Window tiling is still disabled on MS Windows. Axmud now remembers the size
+    and position of each type of window, so you only need to rearrange windows
+    on your desktop once. On Linux and *BSD, this functionality is turned off by
+    default, but can be turned on if you want to disactive window tiling
+    (using the ';disactivategrid' command). New client commands are available:
+    ';togglewindowstorage', ';applywindowstorage', ';dumpwindowstorage' and
+    ';clearwindowstorage'
+- A new type of random exit. When an exit leads to a randomly-generated area
+    every time you go through it, you can now set the exit so that Axmud
+    automatically creates a temporary region. Axmud will also try to detect
+    when you've arrived back at the original room and, at that point, the
+    temporary region is deleted
+
+Major fixes
+- Pueblo frames were 100% non-functional in the previous release. Fixed
+- Fixed crash in some Axbasic scripts that try to CALL a SUBroutine
+- Problems with clicking on exits in the automapper window were fixed in the
+    previous release, but apparently made the problems worse. Another fix has
+    been applied
+- Buttons in the automapper window's toolbar were not desensitised (greyed out)
+    correctly. Fixed throughout
+- World commands are normally echoed in the main window, in green. This can be
+    turned off, but handling of world commands in this situation was broken. The
+    problem has been fixed; in addition, echoing of world commands can now be
+    enabled/disabled in the Quick Preferences window (as well as in the client
+    preference window, as usual)
+
+Minor new features
+- The code handling incoming text from the world has been rewritten and
+    optimised somewhat. If you're connected to a world with dozens of colour
+    changes per line, you might notice a considerable performance improvement
+- The Debugger task has been renamed as the System task, and can now divert all
+    system messages (including ordinary yellow system messages) into its task
+    window. The colour of system messages is now preserved in the task window
+    (this behaviour can be turned off, if not wanted). The ';setdebuggermode'
+    command has been renamed as ';setsystemmode'
+- Regions can now be created with a generic name, e.g. 'unnamed_7',
+    'temporary_9'. When you're prompted for a name, just leave the box empty.
+    Temporary regions in the list on the left-hand side of the automapper window
+    are now drawn in italics, and separately from all other regions
+
+Minor fixes
+- Fixed incorrect handling of ATCP/GMCP data in ';simulatehook'
+- Fixed error in the Connections window caused when typing a replacement host
+    name
+- The ';axbasichelp' command now accepts keywords and function names in capital
+    letters (since they appear in all-caps throughout the documentation)
+- Fixed several buttons in the Object Viewer window, which were not able to
+    view handle various buffer lines correctly
+- When drawing 'wilderness' rooms, the first room in a region was incorrectly
+    drawn with exits. Fixed
+- The basic mudlist (the long list of worlds visible in the Connections window)
+    now names the Russian language using Cyrillic text
+- The default size for 'main' windows was not loaded from its data file. Fixed
+- Fixed problems with the aliases for ';allocateexit', e.g. ';north',
+    ';southwest', ';up', seen whenever the commands are typed with the wrong
+    arguments
+- Fixed several crashes seen when the automapper is tracking the current
+    location while the automapper window isn't open
+- Several other minor fixes
+
 v1.1.138 (31 Aug 2018)
 --------------------------------------------------------------------------------
 
 Pre-configured worlds
 - Ten new pre-configured worlds: Adventures Unlimited, Bylins MUD, Clessidra
-    MUD, DragonStone, HexOnyx, Eternal Darkness, RavenMUD, RealmsMUD, Two Towers
+    MUD, DragonStone, Eternal Darkness, HexOnyx, RavenMUD, RealmsMUD, Two Towers
     and Waterdeep
 - Minor improvements to the existing pre-configured worlds: CoffeeMud,
     Discworld, EmpireMud 2.0. If you want to import the improvements into your
@@ -43,7 +132,7 @@ Major new features
     'edit' window now has buttons for quickly swapping the text/background
     colours, and for matching the underlay/background colours
 - New Channels task, which works much like the Divert task, but has multiple
-    tabs. Both tasks use the same world profile patterns, so you can use 
+    tabs. Both tasks use the same world profile patterns, so you can use
     whichever one you prefer (but you can't run both at the same time)
 - The Divert task used to be limited to four channels ('tell', 'social',
     'custom' and 'warning'). Both the Channels and Divert task can now use any
@@ -71,8 +160,8 @@ Major fixes
     off) from any 'edit' or preference window. Fixed
 - Fixed a couple of segfaults
 - Entry boxes in many 'edit' windows only accepted an even number, when they
-    should have accepted a fractional number. Fixed    
-    
+    should have accepted a fractional number. Fixed
+
 Automapper new features
 - Added graffiti. Temporarily mark rooms you've visited with an X; very useful
     if you want to check every room in a region. When graffiti mode is turned
@@ -98,7 +187,7 @@ Automapper new features
     corresponding to different terrain types)
 - You can now add and delete your own room flags, if you don't like the default
     set that Axmud provides. (Only custom room flags can be deleted)
-- Added new room flags for bus stops, player-controlled shops and cafes.     
+- Added new room flags for bus stops, player-controlled shops and cafes.
 - There's another new toolbar which you can use to colour in the background map
     directly. It's ideal for features like rivers and mountain ranges which
     exist in the world, but can't be accessed directly by the player. The map is
@@ -171,7 +260,7 @@ Automapper new features
 - The automapper's 'Reposition all maps' operation now sets the visible level
     back to level 0, as well as resetting magnification and the position of
     scrollbars
-    
+
 Automapper fixes
 - Dragging exits was often very difficult because the exit could not be clicked,
     or immediately unselected itself after being clicked. This has been fixed,
@@ -197,7 +286,7 @@ Automapper fixes
     lost; you can now set the new current room right away
 - Labels in maps can now contain '&' characters without generating an error
     message
-    
+
 Minor new features
 - The layout of the 'edit' window for routes has been improved
 - The Locator task can now capture information about the weather, the time of
@@ -215,7 +304,7 @@ Minor new features
     running the installer a second time will work. In most cases, if Axmud
     crashes shortly after it starts for the first time, it won't crash on the
     second or subsequent occasions
-    
+
 Minor fixes
 - The Locator task displays the number of room statements (descriptions) it's
     expecting in its title bar, but this number was not updated frequently
@@ -230,7 +319,7 @@ Minor fixes
 - Trying to connect to a world from the basic mudlist, while specifiying a
     character and password, produced error messages. Fixed
 - ';importfiles' failed to import a world profile exported with an
-    ';exportfiles -w' command. Fixed    
+    ';exportfiles -w' command. Fixed
 - Fixed incorrect handling of text in bold white at some worlds
 - Various issues with handling and checking Axmud colour tags have been fixed
 - When Axmud encounters a Perl error, it displays a long error message and

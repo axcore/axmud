@@ -303,5 +303,5 @@
         { $_[0]->{spinTime} }
 }
 
-# Package must return true
+# Package must return a true value
 1

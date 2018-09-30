@@ -11,11 +11,14 @@ spt / setmudprotocol          Enables/disables MUD protocols
       ;spt -y                 Enables/disables MSP (Mud Sound Protocol)
       ;spt -x                 Enables/disables MXP (Mud Extension Protocol)
       ;spt -p                 Enables/disables Pueblo
+      ;spt -z                 Enables/disables ZMP (Zenith Mud Protocol)
+      ;spt -r                 Enables/disables AARD102 (Aardwolf 102 channel)
       ;spt -a                 Enables/disables ATCP (Achaea Telnet Client 
                                  Protocol)
       ;spt -g                 Enables/disables GMCP (Generic MUD Communication
                                  Protocol) 
       ;spt -t                 Enables/disables MTTS (Mud Terminal Type Standard)
+      ;spt -m                 Enables/disables MCP (Mud Client Protocol)
  
    Notes:
       Some worlds use protocols to exchange (negotiate) information which the 
@@ -32,8 +35,8 @@ spt / setmudprotocol          Enables/disables MUD protocols
          are currently connected. This data is also available for your scripts
          and can be viewed with the ';showmssp' command.
       MCCP compresses data sent to and from the world.
-      MSP, MXP and Pueblo all serve to enhance the game experience in worlds 
-         that implement those protocols.
+      MSP, MXP, Pueblo, ZMP, AARD102 and MCP all serve to enhance the game
+         experience in worlds that implement those protocols.
       MTTS exchanges some information about the enhanced features Axmud 
          supports.
 
@@ -44,9 +47,6 @@ spt / setmudprotocol          Enables/disables MUD protocols
          protocol after disabling it, the protocol will still be disabled in 
          existing connections; the change will be applied to all future 
          connections.
-         
-      AMud's code uses variables for ZMP, AARDWOLF-102 and MCP, but these
-         protocols haven't been implemented yet.         
       See also the help for ';settelnetoption'.
 
    User commands:

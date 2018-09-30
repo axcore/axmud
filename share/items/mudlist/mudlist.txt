@@ -1,4 +1,4 @@
-# Axmud list of all worlds, created Fri Aug 31, 2018
+# Axmud list of all worlds, created Sun Sep 30, 2018
 
 Aabahran, The Forsaken Lands
 aabahran
@@ -124,14 +124,14 @@ adamant
 mud.a-mud.ru
 4000
 0
-Russkiy
+Русский
 
 AdamantMUD
 adamantmud
 adan.ru
 4000
 0
-Russkiy
+Русский
 
 AddictMUD
 addictmud
@@ -203,6 +203,13 @@ atp.pedia.szote.u-szeged.hu
 0
 English
 
+Age of Heroes - Fire, Iron and Blood
+ageofheroes
+ianshirm.genesismuds.com
+2250
+0
+English
+
 Akanbar
 akanbar
 akanbar.com
@@ -215,7 +222,7 @@ aladon
 aladon.sovintel.ru
 9000
 0
-Russkiy
+Русский
 
 Aldebaran
 aldebaran
@@ -446,14 +453,14 @@ arda
 79.98.143.118
 4000
 0
-Russkiy
+Русский
 
 Arda MUD
 ardamud
 arda.pp.ru
 7000
 0
-Russkiy
+Русский
 
 Areth
 areth
@@ -705,14 +712,14 @@ balderdash
 mud.khakassia.ru
 9000
 0
-Russkiy
+Русский
 
 BalderDash MUD
 baldermud
 balderdash.ru
 9000
 0
-Russkiy
+Русский
 
 Balzhur
 balzhur
@@ -915,7 +922,7 @@ bylins
 bylins.su
 4000
 0
-Russkiy
+Русский
 
 Carinus
 carinus
@@ -1337,6 +1344,13 @@ darkmists.org
 0
 English
 
+Darkness of Time
+darknesstime
+the3beers.com
+4000
+0
+English
+
 Dark Realms: City of Syne
 darkrealms
 173.244.70.250
@@ -1573,7 +1587,7 @@ dfantasy
 mud.df2.ru
 4000
 0
-Russkiy
+Русский
 
 Dragonheart MUD
 dhmud
@@ -1640,7 +1654,7 @@ English
 
 Days of Dragons
 dodragons
-jupe.ddns.net
+the3beers.com
 4040
 0
 English
@@ -1741,7 +1755,7 @@ dreamland
 dreamland.rocks
 9000
 0
-Russkiy
+Русский
 
 DREAMPIECE
 dreampiece
@@ -2023,6 +2037,13 @@ edgeofcreation.net
 0
 English
 
+The Edge of Darkness
+eodarkness
+eod.ath.cx
+2001
+0
+English
+
 The Evolution of Esos Mud
 eoemud
 eoemud.com
@@ -2245,7 +2266,7 @@ fdungeon
 home.saboteur.com.ua
 4001
 0
-Russkiy
+Русский
 
 FeatherMUCK
 feathermuck
@@ -2791,7 +2812,7 @@ hiervard
 hiervard.ru
 4000
 0
-Russkiy
+Русский
 
 Highlands III
 highlands3
@@ -3056,6 +3077,13 @@ Jellybean III
 jellybean
 jupe.ddns.net
 2360
+1
+English
+
+JellyBean III
+jellybean3
+the3beers.com
+4444
 1
 English
 
@@ -3549,6 +3577,13 @@ megamanmush.com
 0
 English
 
+Mek City
+mekcity
+mekcity.com
+3067
+0
+English
+
 Merentha
 merentha
 mud.merentha.com
@@ -3904,7 +3939,7 @@ neronis
 neronis.ru
 9000
 0
-Russkiy
+Русский
 
 NetherWorld
 netherworld
@@ -4174,7 +4209,7 @@ English
 
 Pict MUD
 pict
-pict.genesismuds.com
+136.62.89.155
 4200
 0
 English
@@ -4604,7 +4639,7 @@ seveninc
 mud.c7i.ru
 3000
 0
-Russkiy
+Русский
 
 The 7th Plane
 seventh
@@ -4639,7 +4674,7 @@ shadowrealms
 mud.df2.ru
 9000
 0
-Russkiy
+Русский
 
 Shadowrun - Denver
 shadowrun
@@ -4842,7 +4877,7 @@ sphereworlds
 sowmud.ru
 5555
 0
-Russkiy
+Русский
 
 Spindizzy
 spindizzy
@@ -5156,6 +5191,13 @@ Tauros
 tauros
 taurosmud.com
 5005
+0
+English
+
+Tavern at the End of the Universe
+tavernend
+tavern.pocketmud.com
+23
 0
 English
 
@@ -5682,7 +5724,7 @@ virtustan
 mud.kharkov.org
 8888
 0
-Russkiy
+Русский
 
 Void of Reality
 voidreality
@@ -5829,7 +5871,7 @@ witcher
 game.mudlast.ru
 2700
 0
-Russkiy
+Русский
 
 Winter's Oasis
 woasis

@@ -10,8 +10,11 @@ shk / simulatehook            Simulates an Axmud hook event
       ;shk -s <cmd>           Simulates the 'send_cmd' hook event
       ;shk -m <var> <val>     Simulates the 'msdp' hook event
       ;shk -n <var> <val>     Simulates the 'mssp' hook event
-      ;shk -a <pack> <data>   Simulates the 'atcp' hook event
-      ;shk -y <pack> <data>   Simulates the 'gmcp' hook event
+      ;shk -z <pack>          Simulates the 'zmp' hook event
+      ;shk -q <status>        Simulates the 'aard102' hook event
+      ;shk -a <pack>          Simulates the 'atcp' hook event
+      ;shk -y <pack>          Simulates the 'gmcp' hook event
+      ;shk -b <name>          Simulates the 'mcp' hook event
       ;shk -u                 Simulates the 'current_session' hook event
       ;shk -o <num>           Simulates the 'not_current' hook event
       ;shk -h <num>           Simulates the 'change_current' hook event
@@ -51,9 +54,15 @@ shk / simulatehook            Simulates an Axmud hook event
       The 'msdp', 'mssp' events fire when the world sends MSDP or MSSP data.
          <var> and <val> specify the variable/value pair that would have been
          received.
+      The 'zmp' event fires when the world sends a ZMP command. <pack> is a
+         string in the form PACKAGE[.SUBPACKAGE].COMMAND.
+      The 'aard102' event fires when the world sends an AARD102 status update.
+         <status> is the string 'tick' or one of Axmud's AARD102 status values,
+         e.g. 'player_active'.
       The 'atcp' and 'gmcp' events fire when the world sends ATCP or GMCP data.
          <pack> is the package name, in the form PACKAGE[.SUBPACKAGE][.MESSAGE].
-         <data>, if specified, is the json data in a string format.
+      The 'mcp' event fires when the world sends an MCP message. <msg> is the
+         message name, e.g. 'mcp-negotiate-can'.
       The 'current_session' event fires when this session becomes the current 
          session. 'not_current' fires when this session is replaced as the 
          current session; the new current session's number is <num>. 

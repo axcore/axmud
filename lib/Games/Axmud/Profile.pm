@@ -188,7 +188,7 @@
 #               'mxp'                   => undef,           # GA::Client->useMxpFlag
 #               'pueblo'                => undef,           # GA::Client->usePuebloFlag
 #               'zmp'                   => undef,           # GA::Client->useZmpFlag
-#               'aard_102'              => undef,           # GA::Client->useAard102Flag
+#               'aard102'               => undef,           # GA::Client->useAard102Flag
 #               'atcp'                  => undef,           # GA::Client->useAtcpFlag
 #               'gmcp'                  => undef,           # GA::Client->useGmcpFlag
 #               'mtts'                  => undef,           # GA::Client->useMttsFlag
@@ -4941,5 +4941,5 @@
     # Accessors - get
 }
 
-# Package must return true
+# Package must return a true value
 1

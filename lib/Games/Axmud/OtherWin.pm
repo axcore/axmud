@@ -94,6 +94,9 @@
             %configHash,
         ) = @_;
 
+        # Local variables
+        my ($widthPixels, $heightPixels);
+
         # Check for improper arguments
         if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
 
@@ -105,6 +108,20 @@
 
             $axmud::CLIENT->aboutWin->restoreFocus();
             return undef;
+        }
+
+        # Set the window size. Use a slightly smaller window than the default, unless the user has
+        #   specified their own default size, in which case use that
+        if ($axmud::CLIENT->customFreeWinWidth == $axmud::CLIENT->constFreeWinWidth) {
+            $widthPixels = $axmud::CLIENT->constFreeWinWidth - 50;
+        } else {
+            $widthPixels = $axmud::CLIENT->customFreeWinWidth;
+        }
+
+        if ($axmud::CLIENT->customFreeWinHeight == $axmud::CLIENT->constFreeWinHeight) {
+            $heightPixels = $axmud::CLIENT->constFreeWinHeight - 50;
+        } else {
+            $heightPixels = $axmud::CLIENT->customFreeWinHeight;
         }
 
         # Setup
@@ -171,8 +188,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => ($axmud::CLIENT->constFreeWinWidth - 50),
-            heightPixels                => ($axmud::CLIENT->constFreeWinHeight - 50),
+            widthPixels                 => $widthPixels,
+            heightPixels                => $heightPixels,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -680,6 +697,9 @@
             %configHash,
         ) = @_;
 
+        # Local variables
+        my ($widthPixels, $heightPixels);
+
         # Check for improper arguments
         if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
 
@@ -692,6 +712,22 @@
             $axmud::CLIENT->connectWin->restoreFocus();
             return undef;
         }
+
+        # Set the window size. Use a slightly smaller window than the default, unless the user has
+        #   specified their own default size, in which case use that
+        if ($axmud::CLIENT->customFreeWinWidth == $axmud::CLIENT->constFreeWinWidth) {
+
+            $widthPixels = $axmud::CLIENT->customFreeWinWidth + 50;
+
+        } else {
+
+            # (Adjust the additional 50 pixels by the same ratio)
+            $widthPixels = $axmud::CLIENT->customFreeWinWidth + (
+                50 * int($axmud::CLIENT->customFreeWinWidth / $axmud::CLIENT->constFreeWinWidth)
+            );
+        }
+
+        $heightPixels = $axmud::CLIENT->customFreeWinHeight;
 
         # Setup
         my $self = {
@@ -767,8 +803,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => ($axmud::CLIENT->constFreeWinWidth + 50),
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $widthPixels,
+            heightPixels                => $heightPixels,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -835,10 +871,10 @@
             # The size of the image containing each world's icon (or the default icon)
             imageWidth                  => 300,
             imageHeight                 => 200,
-            # Standard size of the Gtk2::Table used (a 12x13 table, with a spare cell around every
+            # Standard size of the Gtk2::Table used (a 12x12 table, with a spare cell around every
             #   border)
             tableWidth                  => 13,
-            tableHeight                 => 14,
+            tableHeight                 => 13,
 
             # A hash linking all the world names listed in the treeview to their corresponding
             #   world profile object. Hash in the form
@@ -1332,9 +1368,6 @@
             );
         });
 
-        my $separator3 = Gtk2::SeparatorToolItem->new();
-        $self->hBox->pack_start($separator3, TRUE, TRUE, 0);
-
         my $button8 = Gtk2::Button->new();
         $self->hBox->pack_start($button8, FALSE, FALSE, 0);
 
@@ -1398,11 +1431,11 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->createTableWidgets', @_);
         }
 
-        $self->addLabel($self->table, '<i><u>Connection settings</u></i>',
-            1, 12, 1, 2);
+        $self->addLabel($self->table, '<i><u>World connection settings</u></i>',
+            1, 8, 1, 2);
 
         # GA::Profile::World ->name
-        $self->addLabel($self->table, 'World name',
+        $self->addLabel($self->table, 'Name',
             1, 4, 2, 3);
 
         my $entry = $self->addEntry($self->table, undef, undef, TRUE,
@@ -1433,7 +1466,7 @@
         );
 
         # ->dns, ->ipv4 or ->ipv6
-        $self->addLabel($self->table, 'Host address',
+        $self->addLabel($self->table, 'Host',
             1, 4, 3, 4);
         my $entry2 = $self->addEntry($self->table, undef, undef, TRUE,
             4, 12, 3, 4);
@@ -1465,7 +1498,7 @@
         $self->addLabel($self->table, 'Port',
             1, 4, 4, 5);
         my $entry3 = $self->addEntry($self->table, undef, undef, TRUE,
-            4, 12, 4, 5, 5, 5);
+            4, 8, 4, 5, 5, 5);
         $self->tooltips->set_tip($entry3, 'e.g. 5000');
         $entry3->signal_connect('changed' => sub {
 
@@ -1481,25 +1514,33 @@
             }
         });
 
-        my ($group, $radioButton) = $self->addRadioButton(
-            $self->table, undef, undef, 'Default protocol', TRUE, TRUE,
+        # ->protocol
+        $self->addLabel($self->table, 'Protocol',
             1, 4, 5, 6);
+
+        my ($group, $radioButton) = $self->addRadioButton(
+            $self->table, undef, undef, 'Default', TRUE, TRUE,
+            4, 6, 5, 6);
 
         my ($group2, $radioButton2) = $self->addRadioButton(
             $self->table, undef, $group, 'Telnet', FALSE, TRUE,
-            4, 6, 5, 6);
+            6, 8, 5, 6);
 
         my ($group3, $radioButton3) = $self->addRadioButton(
             $self->table, undef, $group2, 'SSH', FALSE, TRUE,
-            6, 8, 5, 6);
+            8, 10, 5, 6);
 
         my ($group4, $radioButton4) = $self->addRadioButton(
             $self->table, undef, $group3, 'SSL', FALSE, TRUE,
-            8, 10, 5, 6);
+            10, 12, 5, 6);
 
-        # ->loginMode (etc)
+        # ->passwordHash, ->accountHash, ->lastConnectChar, ->loginMode (etc)
+        $self->addLabel($self->table, 'Character',
+            1, 4, 6, 7);
+        my $comboBox = $self->resetComboBox();
+
         my $checkButton = $self->addCheckButton($self->table, undef, FALSE, TRUE,
-            10, 12, 5, 6, 0, 0.5);      # Right-justified
+            8, 12, 6, 7);
         $checkButton->set_label('No auto-login');
         $checkButton->signal_connect('toggled' => sub {
 
@@ -1511,39 +1552,29 @@
             }
         });
 
-        $self->addLabel($self->table, '<i><u>Optional settings</u></i>',
-            1, 12, 6, 7);
-
-        # ->passwordHash, ->accountHash, ->lastConnectChar
-        $self->addLabel($self->table, 'Character',
-            1, 4, 7, 8);
-        my $comboBox = $self->resetComboBox();
-
         my $addCharButton = $self->addButton(
             $self->table,
             \&addCharCallback,
             'Add',
             'Add a new character profile',
-            9, 10, 7, 8);
+            4, 6, 7, 8);
 
         my $editPwdButton = $self->addButton(
             $self->table,
             \&editPasswordCallback,
-            'Pwd',
+            'Password',
             'Edit the selected character\'s password',
-            10, 11, 7, 8);
+            6, 8, 7, 8);
 
         my $editAccButton = $self->addButton(
             $self->table,
             \&editAccountCallback,
-            'Account',
+            'Account name',
             'Edit the selected character\'s associated account name',
-            11, 12, 7, 8);
+            8, 12, 7, 8);
 
-        $self->addLabel($self->table, '<i><u>Information</u></i>',
-            1, 12, 8, 9);
         my $websiteLabel = $self->addLabel($self->table, $self->noWebsiteString,
-            1, 12, 9, 10);
+            1, 12, 8, 9);
         $websiteLabel->signal_connect('activate-link' => sub {
 
             my $link = $websiteLabel->get_current_uri();
@@ -1554,18 +1585,16 @@
         });
 
         my $connectionLabel = $self->addLabel($self->table, $self->noConnectString,
-            1, 12, 10, 11);
+            1, 12, 9, 10);
 
-        # ->worldDescrip. Give the textview a bit of extra space (which adds a couple of lines) by
-        #   setting a minimum height
+        # ->worldDescrip
         my $descripTextView = $self->addTextView(
             $self->table,
             undef,
             undef,
             undef,
             FALSE,
-            1, 12, 11, 12,
-            -1, 150);
+            1, 12, 10, 11);
         my $descripBuffer = $descripTextView->get_buffer();
         # Don't want horizontal scrolling
         $descripTextView->set_wrap_mode('word-char');
@@ -1575,7 +1604,7 @@
             undef,
             'Create world',
             'Create a world profile',
-            1, 4, 12, 13);
+            1, 5, 11, 12);
         $createWorldButton->signal_connect('clicked' => sub {
 
             if (! $self->worldObj || $self->otherWorldButton->get_active()) {
@@ -1591,14 +1620,14 @@
             'Reset world',
             'Reset the values displayed in this window to those actually stored by the selected'
             . ' world profile',
-            4, 7, 12, 13);
+            5, 7, 11, 12);
 
         my $offlineButton = $self->addButton(
             $self->table,
             undef,
             'Connect offline',
             'Connect to this world in \'offline\' mode',
-            7, 10, 12, 13);
+            7, 10, 11, 12);
         $offlineButton->signal_connect('clicked' => sub {
 
             $self->connectWorldCallback(TRUE);
@@ -1607,9 +1636,9 @@
         my $connectButton = $self->addButton(
             $self->table,
             undef,
-            'Connect to world',
+            'Connect',
             'Connect to this world',
-            10, 12, 12, 13);
+            10, 12, 11, 12);
         $connectButton->signal_connect('clicked' => sub {
 
             $self->connectWorldCallback(FALSE);
@@ -2408,7 +2437,7 @@
         # Create a new combobox
         unshift (@charList, $self->noCharString);
         my $comboBox = $self->addComboBox($self->table, undef, \@charList, undef,
-            4, 9, 7, 8);
+            4, 8, 6, 7);
 
         # If the current mini-world object specifies a character, make that the combobox's active
         #   item. Otherwise, make the '<no character>' string the active item
@@ -2530,7 +2559,7 @@
 
             } else {
 
-                $worldObj->ivPoke('host', $host);
+                $worldObj->ivPoke('dns', $host);
             }
         }
 
@@ -4032,6 +4061,331 @@
         { $_[0]->{textView} }
     sub buffer
         { $_[0]->{buffer} }
+}
+
+{ package Games::Axmud::OtherWin::McpSimpleEdit;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::Generic::OtherWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Called by GA::Mcp::SimpleEdit->msg
+        # Creates a new instance of the MCP Simple Edit window (an 'other' window). The window
+        #   contains a textview in which the user can type text, and some widgets that specify what
+        #   should be done with the text
+        #
+        # Expected arguments
+        #   $number         - Unique number for this window object
+        #   $workspaceObj   - The GA::Obj::Workspace handling the workspace in which this window
+        #                       should be created
+        #   $owner          - The owner; a 'grid' window object (but not an 'external' window) or a
+        #                       'free' window object. When this window opens/closes, the owner is
+        #                       informed via calls to its ->add_childFreeWin / ->del_childFreeWin
+        #                       functions
+        #
+        # Optional arguments
+        #   $session        - The GA::Session from which this function was called. 'undef' if the
+        #                       calling function didn't specify a session and $owner's ->session IV
+        #                       is also 'undef'
+        #   $title          - Ignored if set (all 'other' windows define their own title)
+        #   $editObj        - Ignored if set
+        #   $tempFlag       - Ignored if set
+        #   %configHash     - Hash containing any number of key-value pairs needed for this
+        #                       particular 'other' window; set to an empty hash if not required
+        #                   - This type of window object recognises these initialisation settings:
+        #
+        #                       'mcp_reference' - Supplied by the server's MCP message; a machine-
+        #                           readable string that identifies the text to be sent back to the
+        #                           server
+        #                       'mcp_name' - Supplied by the server's MCP message; a human-readable
+        #                           string to show the user what text is being edited
+        #                       'mcp_content' - Supplied by the server's MCP message; the text to
+        #                           edit; a string containing one or more lines joined with single
+        #                           newline characters
+        #                       'mcp_type' - The type of text being edited - 'string-list' or
+        #                           'moo-code' for multiple lines (this window isn't called for
+        #                           'string')
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my (
+            $class, $number, $workspaceObj, $owner, $session, $title, $editObj, $tempFlag,
+            %configHash,
+        ) = @_;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        # Setup
+        my $self = {
+            _objName                    => 'other_win_' . $number,
+            _objClass                   => $class,
+            _parentFile                 => undef,       # No parent file object
+            _parentWorld                => undef,       # No parent file object
+            _privFlag                   => TRUE,        # All IVs are private
+
+            # Standard window object IVs
+            # --------------------------
+
+            # Unique number for this window object
+            number                      => $number,
+            # The window category - 'grid' or 'free'
+            winCategory                 => 'free',
+            # The window type, any of the keys in GA::Client->constFreeWinTypeHash
+            winType                     => 'other',
+            # A name for the window (can be unique to this type of window object, or can be the
+            #   same as ->winType)
+            winName                     => 'other',
+            # The GA::Obj::Workspace object for the workspace in which this window is created
+            workspaceObj                => $workspaceObj,
+            # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
+            #   object. When this window opens/closes, the owner is informed via calls to its
+            #   ->add_childFreeWin / ->del_childFreeWin functions
+            owner                       => $owner,
+            # The GA::Session from which this function was called. 'undef' if the calling function
+            #   didn't specify a session and $owner's ->session IV is also 'undef'
+            session                     => $session,
+            # When GA::Session->pseudoCmd is called to execute a client command, the mode in which
+            #   it should be called (usually 'win_error' or 'win_only', which causes errors to be
+            #   displayed in a 'dialogue' window)
+            pseudoCmdMode               => 'win_error',
+
+            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk2::Window
+            # The code should use this IV when it wants to do something to the window itself
+            #   (minimise it, make it active, etc)
+            winWidget                   => undef,
+            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            #   the parent GA::Table::PseudoWin table object
+            # The code should use this IV when it wants to add, modify or remove widgets inside the
+            #   window itself
+            winBox                      => undef,
+            # The Gnome2::Wnck::Window, if known
+            wnckWin                     => undef,
+            # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
+            #   FALSE if not
+            enabledFlag                 => FALSE,
+            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
+            visibleFlag                 => TRUE,
+            # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
+            #   is the parent, a subset of GA::Obj::Desktop->freeWinHash. Hash in the form
+            #       $childFreeWinHash{unique_number} = blessed_reference_to_window_object
+            childFreeWinHash            => {},
+            # When a child 'free' window (excluding 'dialogue' windows) is destroyed, this parent
+            #   window is informed via a call to $self->del_childFreeWin
+            # When the child is destroyed, this window might want to call some of its own functions
+            #   to update various widgets and/or IVs, in which case this window adds an entry to
+            #   this hash; a hash in the form
+            #       $childDestroyHash{unique_number} = list_reference
+            # ...where 'unique_number' is the child window's ->number, and 'list_reference' is a
+            #   reference to a list in groups of 2, in the form
+            #       (sub_name, argument_list_ref, sub_name, argument_list_ref...)
+            childDestroyHash            => {},
+
+            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
+            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            #   area)
+            packingBox                  => undef,
+
+            # Standard IVs for 'free' windows
+
+            # The window's default size, in pixels
+            widthPixels                 => int($axmud::CLIENT->constFreeWinWidth * 0.66),
+            heightPixels                => int($axmud::CLIENT->constFreeWinHeight * 0.66),
+            # Default border/item spacing sizes used in the window, in pixels
+            borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
+            spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
+
+            # A string to use as the window title
+            title                       => 'MCP edit: ' . $configHash{'mcp_name'},
+            # Hash containing any number of key-value pairs needed for this particular 'config'
+            #   window; for example, for example, GA::PrefWin::TaskStart uses it to specify a task
+            #   name and type. Set to an empty hash if not required
+            configHash                  => {%configHash},
+        };
+
+        # Bless the object into existence
+        bless $self, $class;
+
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winEnable {}        # Inherited from GA::Generic::FreeWin
+
+#   sub winDesengage {}     # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}       # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}       # Inherited from GA::Generic::Win
+
+    sub drawWidgets {
+
+        # Called by $self->winSetup
+        # Sets up the Gtk2::Window by drawing the window's widgets
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $title;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->drawWidgets', @_);
+        }
+
+        # Create a packing box
+        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        $self->winBox->add($packingBox);
+        $packingBox->set_border_width(0);
+
+        # At the top, create a textview
+        my $scroller = Gtk2::ScrolledWindow->new(undef, undef);
+        $packingBox->pack_start($scroller, TRUE, TRUE, 0);
+        $scroller->set_shadow_type('etched-out');
+        $scroller->set_policy('automatic', 'automatic');
+        $scroller->set_border_width(0);
+
+        # Create a textview with default colours/fonts
+        $axmud::CLIENT->desktopObj->getTextViewStyle($self->winType);
+        my $textView = Gtk2::TextView->new();
+        $scroller->add($textView);
+        my $buffer = Gtk2::TextBuffer->new();
+        $textView->set_buffer($buffer);
+        $textView->set_editable(TRUE);
+        $textView->set_cursor_visible(TRUE);
+        # ->signal_connect appears below
+
+        # Set the initial contents of the textview
+        $buffer->set_text($self->ivShow('configHash', 'mcp_content'));
+
+        # At the bottom, create a button strip in a horizontal packing box
+        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->pack_end($hBox, FALSE, FALSE, 0);
+
+        # Create some buttons
+        my $cancelButton = Gtk2::Button->new('Cancel');
+        $hBox->pack_start($cancelButton, TRUE, TRUE, $self->borderPixels);
+        $cancelButton->signal_connect('clicked' => sub {
+
+            $self->winDestroy();
+        });
+        $cancelButton->set_sensitive(FALSE);
+
+        my $saveButton = Gtk2::Button->new('Save');
+        $hBox->pack_start($saveButton, TRUE, TRUE, $self->borderPixels);
+        $saveButton->signal_connect('clicked' => sub {
+
+            $self->doSave($buffer);
+            $cancelButton->set_sensitive(FALSE);
+        });
+
+        my $saveCloseButton = Gtk2::Button->new('Save and close');
+        $hBox->pack_end($saveCloseButton, TRUE, TRUE, $self->borderPixels);
+        $saveCloseButton->signal_connect('clicked' => sub {
+
+            $self->doSave($buffer);
+            $self->winDestroy();
+        });
+
+        # ->signal_connect from above
+        $buffer->signal_connect('changed' => sub {
+
+            $cancelButton->set_sensitive(TRUE);
+        });
+
+        # Update IVs (not worth storing widgets other than the main packing box)
+        $self->ivPoke('packingBox', $packingBox);
+
+        return 1;
+    }
+
+#   sub redrawWidgets {}    # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub doSave {
+
+        # Called by $self->drawWidgets
+        # 'Saves' the contents of the window by sending an MSP message to the world
+        #
+        # Expected arguments
+        #   $buffer     - The window's Gtk2::Buffer
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $buffer, $check) = @_;
+
+        # Local variables
+        my (
+            $text,
+            @list,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->doSave', @_);
+        }
+
+        $text = $axmud::CLIENT->desktopObj->bufferGetText($buffer);
+        @list = split(/\n/, $text);
+
+        # Send the MCP message (one or more multiline parts)
+        $self->session->mcpSendMultiLine(
+            'dns-org-mud-moo-simpleedit-set',
+                'reference',
+                $self->ivShow('configHash', 'mcp_reference'),
+                'content',
+                \@list,
+                'type',
+                $self->ivShow('configHash', 'mcp_type'),
+        );
+
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
 }
 
 { package Games::Axmud::OtherWin::QuickInput;
@@ -5616,8 +5970,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -6106,8 +6460,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             # (A border width of 1 pixel or more would leave the background photo exposed)
             borderPixels                => 0,
@@ -16618,7 +16972,7 @@
         @dataList = @$dataRef;
         # The line number is the first item of data
         $number = $dataList[0];
-        if (! $number) {
+        if (! defined $number) {
 
             # Can't continue
             return undef;
@@ -16691,7 +17045,7 @@
         @dataList = @$dataRef;
         # The line number is the first item of data
         $number = $dataList[0];
-        if (! $number) {
+        if (! defined $number) {
 
             # Can't continue
             return undef;
@@ -17000,7 +17354,7 @@
         @dataList = @$dataRef;
         # The line number is the first item of data
         $number = $dataList[0];
-        if (! $number) {
+        if (! defined $number) {
 
             # Can't continue
             return undef;
@@ -17207,7 +17561,7 @@
         @dataList = @$dataRef;
         # The line number is the first item of data
         $number = $dataList[0];
-        if (! $number) {
+        if (! defined $number) {
 
             # Can't continue
             return undef;
@@ -19148,5 +19502,5 @@
         { $_[0]->{dummyScriptObj} }
 }
 
-# Package must return true
+# Package must return a true value
 1

@@ -22,6 +22,8 @@
     use diagnostics;
 
     use Glib qw(TRUE FALSE);
+    # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
+    use Archive::Tar;
 
     our @ISA = qw(Games::Axmud);
 
@@ -365,7 +367,8 @@
             #   ';backupdata' command
             autoBackupDate              => undef,           # [config]
             # Auto-backup file type: 'tar' to use a .tgz file, 'zip' to use a .zip file, 'default'
-            #   to use a convenient file type for the system (.tgz for Linux, .zip for MS Windows)
+            #   to use a convenient file type for the system (.tgz for Linux/*BSD, .zip for MS
+            #   Windows)
             autoBackupFileType          => 'default',   # [config]
             # Flag set to TRUE if the time should be appended to auto-backups and to manual backups
             #   using the ';backupdata' command
@@ -732,7 +735,8 @@
                     'LoadPlugin', 'EnablePlugin', 'DisablePlugin', 'TestPlugin', 'ListPlugin',
                     'AddInitialPlugin', 'DeleteInitialPlugin', 'ListInitialPlugin',
                     'SetTelnetOption', 'SetMUDProtocol', 'SetTermType', 'MSDP', 'MSSP', 'MXP',
-                        'MSP', 'ATCP',  'GMCP', 'SendATCP', 'SendGMCP',
+                        'MSP', 'ZMP', 'SendZMP', 'InputZMP', 'Aardwolf', 'ATCP', 'SendATCP', 'GMCP',
+                        'SendGMCP', 'MCP',
                     'Log',
                 '@Sound and text-to-speech',
                     'Sound', 'ASCIIBell',
@@ -822,6 +826,8 @@
                     'ActivateGrid', 'DisactivateGrid', 'SetGrid', 'ResetGrid', 'EditGrid',
                         'ListGrid',
                     'SetLayer', 'LayerUp', 'LayerDown',
+                    'ToggleWindowStorage', 'ApplyWindowStorage', 'ClearWindowStorage',
+                        'DumpWindowStorage',
                 '@Winmaps and winzones',
                     'AddWinmap', 'CloneWinmap', 'EditWinmap', 'ModifyWinmap', 'DeleteWinmap',
                         'ResetWinmap', 'SetDefaultWinmap', 'ListWinmap',
@@ -883,8 +889,6 @@
                     'AddSmiley', 'DeleteSmiley', 'ListSmiley', 'ResetSmiley',
                 '@Compass task',
                     'Compass', 'PermCompass', 'WorldCompass',
-                '@Debugger task',
-                    'SetDebuggerMode',
                 '@Inventory / Condition tasks',
                     'ActivateInventory', 'DisactivateInventory',
                     'ProtectObject', 'UnprotectObject', 'ListProtectObject',
@@ -900,6 +904,8 @@
                     'ActivateStatusTask', 'DisactivateStatusTask', 'ResetCounter',
                         'AddStatusCommand', 'DeleteStatusCommand', 'ListStatusCommand', 'SetWimpy',
                         'SetLife', 'SetStatusEvent', 'ShowStatusGauge',
+                '@System task',
+                    'SetSystemMode',
                 '@Watch task',
                     'EmptyWatchWindow',
                 '@World model commands',
@@ -1355,7 +1361,7 @@
                 'nuclearwar'        => '1.0.140', # Nuclear War / nuclearwarmudusa.com 4000
                 'penultimate'       => '1.1.0',   # Penultimate Destination
                                                   #     / penultimatemush.com 9500
-                'pict'              => '1.0.140', # Pict MUD / pict.genesismuds.com 4200
+                'pict'              => '1.0.140', # Pict MUD / 136.62.89.155 4200
                 'ravenmud'          => '1.1.138', # RavenMUD / ravenmud.com 6060
                 'realmsmud'         => '1.1.138', # RealmsMUD / realmsmud.org 1501
                 'reinos'            => '1.1.0',   # Reinos de Leyenda / rlmud.org 5001
@@ -1380,13 +1386,15 @@
                 # Pre-configured worlds from earlier releases => '1.1.0', now defunct
 #               'midkemia'          => '1.0.376', # Midkemia Online / closed 2016
                 # New release
+                #   ...
             },
             # Constant registry hash of pre-configured world profiles that must be patched (because
-            #   of serious problems), and the most recent Axmud version whose saved data requires
-            #   the patch
+            #   of serious problems, or because the IP/DNS/port has changed), and the most recent
+            #   Axmud version whose saved data requires the patch
             constWorldPatchHash         => {
                 'avalonrpg'         => '1.1.012',
                 'discworld'         => '1.1.012',
+                'pict'              => '1.1.174',
                 'swmud'             => '1.1.012',
             },
             # Constant registry list of pre-configured world profiles; all the keys in
@@ -2239,7 +2247,6 @@
                 'chat_task'             => 'Games::Axmud::Task::Chat',
                 'compass_task'          => 'Games::Axmud::Task::Compass',
                 'condition_task'        => 'Games::Axmud::Task::Condition',
-                'debugger_task'         => 'Games::Axmud::Task::Debugger',
                 'divert_task'           => 'Games::Axmud::Task::Divert',
                 'frame_task'            => 'Games::Axmud::Task::Frame',
                 'inventory_task'        => 'Games::Axmud::Task::Inventory',
@@ -2250,6 +2257,7 @@
                 'raw_token_task'        => 'Games::Axmud::Task::RawToken',
                 'script_task'           => 'Games::Axmud::Task::Script',
                 'status_task'           => 'Games::Axmud::Task::Status',
+                'system_task'           => 'Games::Axmud::Task::System',
                 'tasklist_task'         => 'Games::Axmud::Task::TaskList',
                 'watch_task'            => 'Games::Axmud::Task::Watch',
             },
@@ -2278,8 +2286,6 @@
                 'compass'               => 'compass_task',
                 'cond'                  => 'condition_task',
                 'condition'             => 'condition_task',
-                'debug'                 => 'debugger_task',
-                'debugger'              => 'debugger_task',
                 'div'                   => 'divert_task',
                 'divert'                => 'divert_task',
                 'frame'                 => 'frame_task',
@@ -2301,6 +2307,8 @@
                 'script'                => 'script_task',
                 'stat'                  => 'status_task',
                 'status'                => 'status_task',
+                'sys'                   => 'system_task',
+                'system'                => 'system_task',
                 'task'                  => 'tasklist_task',
                 'tasks'                 => 'tasklist_task',
                 'tasklist'              => 'tasklist_task',
@@ -2559,8 +2567,8 @@
             #   'errors'    - Logs all kinds of system error message (including debug, warning and
             #                   improper argument messages) across all sessions
             # Several logfiles are stored in /logs/standard:
-            #   'system'    - Logs every system message (from GA::Obj::TextView->showText) across
-            #                   all sessions
+            #   'system'    - Logs every system message (from GA::Obj::TextView->showSystemText)
+            #                   across all sessions
             #   'error'     - Logs every system error message (from GA::Obj::TextView->showError)
             #                   across all sessions
             #   'warning'   - Logs every system warning message (from
@@ -3405,8 +3413,8 @@
                 'TELOPT_MCCP2'          => 86,
                 'TELOPT_MSP'            => 90,
                 'TELOPT_MXP'            => 91,
-                'TELOPT_ZMP'            => 93,      # Not implemented
-                'TELOPT_AARDWOLF'       => 102,     # Not implemented
+                'TELOPT_ZMP'            => 93,
+                'TELOPT_AARD102'        => 102,
                 'TELOPT_ATCP'           => 200,
                 'TELOPT_GMCP'           => 201,
                 # MSDP
@@ -3436,7 +3444,7 @@
                 90                      => 'TELOPT_MSP',
                 91                      => 'TELOPT_MXP',
                 93                      => 'TELOPT_ZMP',
-                102                     => 'TELOPT_AARDWOLF',
+                102                     => 'TELOPT_AARD102',
                 200                     => 'TELOPT_ATCP',
                 201                     => 'TELOPT_GMCP',
             },
@@ -3499,14 +3507,11 @@
             usePuebloFlag               => TRUE,        # [config]
             # Use ZMP (Zenith Mud Protocol
             #   - http://discworld.starturtle.net/external/protocols/zmp.html)
-            # NOT IMPLEMENTED. Axmud refuses all ZMP requests, regardless of the value of this flag
-            useZmpFlag                  => FALSE,       # [config]
-            # Use AARDWOLF102 (Aardwolf 102 channel
+            useZmpFlag                  => TRUE,        # [config]
+            # Use AARD102 (Aardwolf 102 channel)
             #   - http://www.aardwolf.com/blog/2008/07/10/
             #       telnet-negotiation-control-mud-client-interaction/
-            # NOT IMPLEMENTED. Axmud refuses all AARDWOLF102 requests, regardless of the value of
-            #   this flag
-            useAard102Flag              => FALSE,       # [config]
+            useAard102Flag              => TRUE,        # [config]
             # Use ATCP (Achaea Telnet Client Protocol)
             #   - https://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html
             useAtcpFlag                 => TRUE,        # [config]
@@ -3514,9 +3519,10 @@
             useGmcpFlag                 => TRUE,        # [config]
             # Use MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.net/mtts/)
             useMttsFlag                 => TRUE,        # [config]
-            # Use MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/mcp2.html#startup)
-            # NOT IMPLEMENTED. Axmud refuses all MCP requests, regardless of the value of this flag
-            useMcpFlag                  => FALSE,       # [config]
+            # Use MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/). Only MCP version 2.1 is
+            #   supported. Axmud provides the MCP packages 'mcp-negotiate', 'mcp-cord' and
+            #   'dns-org-mud-moo-simpleedit'
+            useMcpFlag                  => TRUE,        # [config]
 
             # Constant hash of official MSSP variables
             constMsspVarHash            => {},          # Set below
@@ -3808,7 +3814,7 @@
             # Constant hash of MXP entity names
             #   (from http://www.gammon.com.au/mushclient/mxpentities.htm)
             # NB Does not include entities in the form '&#nnn;' - these are implemented directly by
-            #   GA::Session->extractMxpEntity and ->processMxpEntity
+            #   GA::Session->extractMxpPuebloEntity and ->processMxpEntity
             constMxpEntityHash          => {
                 'Aacute'                => chr(193),
                 'aacute'                => chr(225),
@@ -4094,6 +4100,48 @@
                 'U'                     => undef,
             },
 
+            # Hash of ZMP package objects (GA::Obj::Zmp), in the form
+            #   $zmpPackageHash{object_name} = blessed_reference_to_package_object
+            # ...where 'object_name' is in the form 'PackageName@WorldName' for a ZMP package that
+            #   should be available for any session connected to the world name 'WorldName', or
+            #   'PackageName@' for a ZMP package that should be available for all sessions
+            # ZMP package objects should be created by plugins. Creating the object by calling
+            #   GA::Obj::Zmp->new automatically updates this hash
+            # The hash is not saved in any data file. Package objects cannot be modified once
+            #   created, and must not be removed from this hash once created - you must edit the
+            #   plugin that created and then restart Axmud, instead
+            zmpPackageHash              => {},
+
+            # Constant list of MCP packages supported by Axmud by default, and the package versions
+            #   that are supported. List in groups of 4, in the form
+            #       (mcp_package_name, perl_package_name, minimum_version, maximum_version, ...)
+            #   ...where 'minimum_version' and 'maximum_version' refer to the version of the
+            #   package itself, not the version of MCP that Axmud uses (2.1)
+            constMcpPackageList         => [
+                # Official packages
+                'mcp-negotiate',
+                    'Games::Axmud::Mcp::NegotiateCan',
+                        '1.0',
+                        '2.0',
+                'mcp-cord',
+                    'Games::Axmud::Mcp::Cord',
+                        '1.0',
+                        '1.0',
+                # Non-official packages
+                'dns-org-mud-moo-simpleedit',
+                    'Games::Axmud::Mcp::SimpleEdit',
+                        '1.0',
+                        '1.0',
+            ],
+            # Hash of MCP package objects, inheriting from GA::Generic::MCP. The hash includes
+            #   the packages specified in $self->constMcpPackageList, as well as any MCP package
+            #   pbjects added by plugins (via a call to $self->addPluginMcpPackages)
+            # When a GA::Session wants to use a plugin, it clones the MCP package object, placing
+            #   the clone into its own ->mcpPackageHash IV
+            # Hash in the form
+            #   $mcpPackageHash{package_name} = blessed_reference_to_package_object
+            mcpPackageHash              => {},
+
             # Constant list of terminal types currently supported by Axmud. The first item in the
             #   list also serves as the 'default' terminal type, if it is needed. The last item in
             #   the list must be 'unknown', and is sent to the server during telnet option
@@ -4124,7 +4172,7 @@
             #   name, followed by either the world profile's ->termType (if set) or 'xterm'
             #   (if not set), followed by the MTTS message
             # NB This IV, as well as ->customClientName and ->customClientVersion, are also used by
-            #   MXP
+            #   MXP and ZMP
             termTypeMode                => 'send_client',   # [config]
             # In mode 'send_custom_client' (or when $self->useMttsFlag is TRUE), the customised
             #   client name to send (if 'undef' or an empty string, it is not sent, instead the
@@ -4159,12 +4207,18 @@
             # Debugging flag set to TRUE if Pueblo comment elements should be displayed as 'debug'
             #   messages, FALSE otherwise
             debugPuebloCommentFlag      => FALSE,       # [config]
+            # Debugging flag set to TRUE if ZMP data should be displayed as 'debug' messages, FALSE
+            #   otherwise
+            debugZmpFlag                => FALSE,       # [config]
             # Debugging flag set to TRUE if incoming ATCP data should be displayed as 'debug'
             #   messages, FALSE otherwise
             debugAtcpFlag               => FALSE,       # [config]
             # Debugging flag set to TRUE if incoming GMCP data should be displayed as 'debug'
             #   messages, FALSE otherwise
             debugGmcpFlag               => FALSE,       # [config]
+            # Debugging flag set to TRUE if MCP errors should be displayed as 'debug' messages,
+            #   FALSE otherwise
+            debugMcpFlag                => FALSE,       # [config]
 
             # Desktop and display settings
             # ----------------------------
@@ -4190,8 +4244,8 @@
             #   hashes of windows. This feature is experimental, so in general comments don't
             #   mention them
             #
-            # There are two modes for handling windows for multiple sessions, according to the
-            #   setting of this flag
+            # There are two modes for handling windows in multiple sessions, according to the
+            #   setting of this flag:
             #       TRUE (traditional) : All sessions share a single 'main' window. The 'main'
             #           window's Gtk2::Table contains one table object, a pane object
             #           (GA::Table::Pane) which displays text received from each session's world
@@ -4215,11 +4269,40 @@
             restartShareMainWinFlag     => undef,           # [config]
             # Workspace grids can be available, or not. GA::Obj::Desktop->gridPermitFlag is set to
             #   FALSE if workspace grids are not available at all (because the desktop is too small,
-            #   etc)
+            #   because Axmud is running on MS Windows or running in blind mode, etc)
             # Independent of that flag is this one, which the user can set with
             #   ';activategrid' and ';disactivategrid'. When Axmud starts, it tries to create
             #   workspace grids if this flag and GA::Obj::Desktop->gridPermitFlag are both TRUE
             activateGridFlag            => TRUE,            # [config]
+            # When workspace grids are not available, Axmud can try to remember the size and
+            #   position of its 'grid' windows. Users (especially MS Windows users) can adjust the
+            #   size/positions manually, and have those settings applied in future sessions
+            # Flag set to TRUE if Axmud should try to the size and position of 'grid' windows, FALSE
+            #   if not (can be TRUE even if workspace grids are available)
+            storeGridPosnFlag           => undef,           # [config] Set below
+            # When ->storeGridPosnFlag is TRUE, Axmud uses this hash to store the size/position of
+            #   each 'grid' window with a unique ->winName (e.g. 'main', 'status_task', 'map').
+            #   When it's FALSE, this hash is not updated at all
+            # A key-value pair is created when a 'grid' window is created, if there's not already a
+            #   matching entry in the hash
+            # If a 'grid' window is created when workspace grids are not available, and if there's
+            #   an entry in this hash with the same ->winName, that entry is used for the size and
+            #   position of the new 'grid' window. If, on the other hand, workspace grids are
+            #   available, then the new window's size and position is set by the workspace grid code
+            # If a 'grid' window is resized (by code or manually by the user) and it's either the
+            #   only window with the same ->winName open, or the first one of that ->winName that
+            #   was opened, then the entry in this hash is updated
+            # 'External' windows are never added to this hash
+            # Hash in the form
+            #   ->storeGridPosnHash{window_name} = list_reference
+            # ...where 'list_reference' is a reference to a list in the form (x y width height). At
+            #   least one of the four values must be defined. When a 'grid' window is created and
+            #   workspace grids aren't available, the posn is only used if both 'x' and 'y' are
+            #   defined, and the size is only used if both 'width' and 'height' are defined. Those
+            #   are the minimum requirements; in actual use, Axmud's code almost certainly delivers
+            #   an entry with all four values defined
+            storeGridPosnHash           => {},              # [config]
+            #
             # Constant hash of standard 'grid' window types (any type of window that can be put onto
             #   a workspace grid; includes 'external' windows, but doesn't include the object viewer
             #   window, 'edit' windows, 'pref' windows, 'dialogue' windows etc)
@@ -4545,6 +4628,9 @@
             #   change. Min: 100, max: ->constWorkspaceMaxWidth / ->constWorkspaceMaxHeight)
             constFreeWinWidth           => 700,
             constFreeWinHeight          => 500,
+            # Customisable default size for 'free' windows
+            customFreeWinWidth          => undef,           # [config] Set below
+            customFreeWinHeight         => undef,           # [config] Set below
             # Constant default spacing values for 'free' windows (in pixels)
             constFreeBorderPixels       => 5,
             constFreeSpacingPixels      => 5,
@@ -4931,12 +5017,18 @@
                 'xed "%s" &',                               # xed
             ],
             # Constant registry list of external application commands for MS Windows
-            # (No MS Windows packages are actively supported yet)
             constMSWinCmdList           => [
                 'start iexplore.exe %s',                    # Internet Explorer
                 'start outlook.exe /c ipm.note /m %s',      # Outlook Express
                 'start wmplayer.exe /play %s',              # Windows Media Player
                 'start notepad.exe /A %s',                  # Notepad
+            ],
+            # Constant registry list of external application commands for *BSD
+            constBSDCmdList             => [
+                'firefox "%s" &',                           # Firefox
+                'thunderbird -compose "to=\'%s\'" &',       # Thunderbird
+                'play -q "%s" &',                           # play from SoX package
+                'pluma "%s" &',                             # Pluma
             ],
             # The command to run a web browser. %s is substituted for a URL
             browserCmd                  => undef,           # [config] set below
@@ -5570,6 +5662,12 @@
 
         $self->{constMsspVarHash}       = \%msspHash;
 
+        if ($^O eq 'MSWin32') {
+            $self->{storeGridPosnFlag} = TRUE;
+        } else {
+            $self->{storeGridPosnFlag} = FALSE;
+        }
+
         $self->{defaultEnabledWinmap}   = $self->constDefaultEnabledWinmap;
         $self->{defaultDisabledWinmap}  = $self->constDefaultDisabledWinmap;
         $self->{defaultInternalWinmap}  = $self->constDefaultInternalWinmap;
@@ -5583,6 +5681,8 @@
         $self->{customMainWinHeight}    = $self->constMainWinHeight;
         $self->{customGridWinWidth}     = $self->constGridWinWidth;
         $self->{customGridWinHeight}    = $self->constGridWinHeight;
+        $self->{customFreeWinWidth}     = $self->constFreeWinWidth;
+        $self->{customFreeWinHeight}    = $self->constFreeWinHeight;
 
         $self->{customInsertCmdColour}  = $self->constInsertCmdColour;
         $self->{customShowTextColour}   = $self->constShowTextColour;
@@ -5602,6 +5702,8 @@
             @cmdList = $self->constLinuxCmdList;
         } elsif ($^O eq 'MSWin32') {
             @cmdList = $self->constMSWinCmdList;
+        } elsif ($^O =~ m/bsd/i) {                          # 'freebsd', 'openbsd'
+            @cmdList = $self->constBSDCmdList;
         }
 
         $self->{customDisplayBufferSize}
@@ -5627,8 +5729,13 @@
         $self->{customSoundHash}        = {%soundHash};
 
         if ($^O eq 'MSWin32') {
+
             $self->{constTTSCompatList} = ['espeak', 'esng', 'swift', 'none'];
+
         } else {
+
+            # Not sure what TTS engines are available on (all) BSDs, if any, so just use the Linux
+            #   list
             $self->{constTTSCompatList} = [$self->constTTSList];
         }
 
@@ -6120,6 +6227,8 @@
         $self->createStandardWinmaps();
         # Create standard colour schemes
         $self->createStandardColourSchemes();
+        # Set up supported MCP packages
+        $self->createSupportedMcpPackages();
 
         # Create a (default) current keycode object
         $keycodeObjName = 'my_keycodes';
@@ -6631,6 +6740,9 @@
         do {
 
             my $line = <$fileHandle>;
+
+            # Without this line, Cyrillic text is read as gibberish
+            $line = Encode::decode('utf8', $line);
 
             if (! defined $line) {
 
@@ -7555,6 +7667,80 @@
                 $self->_objClass . '->createStandardColourSchemes',
             );
         }
+
+        return 1;
+    }
+
+    sub createSupportedMcpPackages {
+
+        # Called by $self->start
+        # Creates MCP package objects (inheriting from Games::Axmud::Generic::Mcp) for all
+        #   MCP packages supported by Axmud (before any initial plugins have defined new ones)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if one of the supported MCP package objects can't be
+        #       created
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->createSupportedMcpPackages',
+                @_,
+            );
+        }
+
+        @list = $self->constMcpPackageList;
+        if (! @list) {
+
+            # No supported packages to add
+            return 1;
+        }
+
+        # Create an MCP package object for each supported package
+        do {
+
+            my ($name, $perlPackage, $min, $max, $obj);
+
+            $name = shift @list;
+            $perlPackage = shift @list;
+            $min = shift @list;
+            $max = shift @list;
+
+            # Obviously we, the authors, aren't going to create duplicate packages, but there's no
+            #   harm in checking
+            if ($self->ivExists('mcpPackageHash', $name)) {
+
+                return $self->writeError(
+                    'Duplicate supported MCP package \'' . $name . '\'',
+                    $self->_objClass . '->createSupportedMcpPackages',
+                );
+            }
+
+            # Create the MCP package object
+            $obj = $perlPackage->new($name, $min, $max);
+            if (! $obj) {
+
+                return $self->writeError(
+                    'Cannot set up supported MCP package \'' . $name . '\'',
+                    $self->_objClass . '->createSupportedMcpPackages',
+                );
+
+            } else {
+
+                $self->ivAdd('mcpPackageHash', $name, $obj);
+            }
+
+        } until (! @list);
 
         return 1;
     }
@@ -11136,7 +11322,7 @@
         # Adds client commands defined in the plugin
         #
         # Expected arguments
-        #   $plugin   - The plugin's main package (declared in the header file)
+        #   $plugin   - The plugin's main package (declared in the file header)
         #
         # Optional arguments
         #   @list     - A list of client commands, grouped thematically (using the same format as
@@ -11277,7 +11463,7 @@
         # Adds tasks defined in the plugin
         #
         # Expected arguments
-        #   $plugin     - The plugin's main package (declared in the header file)
+        #   $plugin     - The plugin's main package (declared in the file header)
         #
         # Optional arguments
         #   @list       - A list containing groups of 3 elements, in the form
@@ -11441,7 +11627,7 @@
         # Adds 'grid' windows defined in the plugin
         #
         # Expected arguments
-        #   $plugin     - The plugin's main package (declared in the header file)
+        #   $plugin     - The plugin's main package (declared in the file header)
         #
         # Optional arguments
         #   @list       - A list of 'grid' window package names (in groups of 1 element). If the
@@ -11492,7 +11678,7 @@
         # Adds 'free' windows defined in the plugin
         #
         # Expected arguments
-        #   $plugin     - The plugin's main package (declared in the header file)
+        #   $plugin     - The plugin's main package (declared in the file header)
         #
         # Optional arguments
         #   @list       - A list of 'free' window package names (in groups of 1 element); should
@@ -11546,7 +11732,7 @@
         #   plugin's strip object does not become available for use
         #
         # Expected arguments
-        #   $plugin         - The plugin's main package (declared in the header file)
+        #   $plugin         - The plugin's main package (declared in the file header)
         #   $stripPackage   - The package name for the strip object, e.g.
         #                       'Games::Axmud::Strip::MyObj'
         #   $descrip        - A short description, e.g. 'Test strip object'
@@ -11597,7 +11783,7 @@
         #   plugin's table object does not become available for use
         #
         # Expected arguments
-        #   $plugin         - The plugin's main package (declared in the header file)
+        #   $plugin         - The plugin's main package (declared in the file header)
         #   $tablePackage   - The package name for the table object, e.g.
         #                       'Games::Axmud::Table::MyObj'
         #   $descrip        - A short description, e.g. 'Test table object'
@@ -11646,7 +11832,7 @@
         # Adds cages defined in the plugin
         #
         # Expected arguments
-        #   $plugin     - The plugin's main package (declared in the header file)
+        #   $plugin     - The plugin's main package (declared in the file header)
         #
         # Optional arguments
         #   @list       - A list containing groups of 3 elements, in the form
@@ -11779,7 +11965,7 @@
         #   enabled)
         #
         # Expected arguments
-        #   $plugin     - The plugin's main package (declared in the header file)
+        #   $plugin     - The plugin's main package (declared in the file header)
         #
         # Optional arguments
         #   $funcRef    - Reference to a function which contain the code to add menu items to a
@@ -11863,7 +12049,7 @@
         # Adds the plugin function that's used to apply MXP file filters
         #
         # Expected arguments
-        #   $plugin     - The plugin's main package (declared in the header file)
+        #   $plugin     - The plugin's main package (declared in the file header)
         #   $funcRef    - Reference to the function that does the conversion
         #
         # Return values
@@ -11892,6 +12078,93 @@
 
         # Update IVs
         $self->ivAdd('pluginMxpFilterHash', $plugin, $funcRef);
+
+        # Operation complete
+        return 1;
+    }
+
+    sub addPluginMcpPackages {
+
+        # Called by any Axmud plugin
+        # Adds the MCP package object (inheriting from GA::Generic::Mcp) defined by the plugin
+        #
+        # Expected arguments
+        #   $plugin         - The plugin's main package (declared in the file header)
+        #   $name           - The name of the MCP package, e.g. 'mcp-negotiate-can'. Must conform to
+        #                       MCP's package name rules (see the MCP spec for more information);
+        #                       this function won't allow you to add 'official' MCP packages whose
+        #                       name starts 'mcp-'
+        #   $perlPackage    - The Perl package for the object, e.g. Games::Axmud::Mcp::MyPackage
+        #   $minVersion     - The minimum package version supported (e.g. '1.0', '2.0' etc). Should
+        #                       ideally be a string (i.e. '1.0' not 1). If not a valid number (any
+        #                       decimal number greater than 0), 1.0 is used
+        #   $maxVersion     - The maximum package version supported (e.g. '1.0', '2.0' etc). Should
+        #                       ideally be a string (i.e. '1.0' not 1). If not a valid number (any
+        #                       decimal number greater than 0), 1.0 is used
+        #
+        # Optional arguments
+        #   @supplantList   - An optional list of MCP package names for which Axmud should prefer to
+        #                       use this MCP package, if the world supports both. Standard MCP
+        #                       packages like 'mcp-negotiate' cannot be supplanted (specifically,
+        #                       any package whose name begins 'mcp-' cannot be supplanted; the name
+        #                       is ignored if present in this list)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the MCP package object can't be added
+        #   1 otherwise
+
+        my ($self, $plugin, $name, $perlPackage, $minVersion, $maxVersion, @supplantList) = @_;
+
+        # Local variables
+        my ($pluginObj, $mcpObj);
+
+        # Check for improper arguments
+        if (
+            ! defined $plugin || ! defined $name || ! defined $perlPackage || ! defined $minVersion
+            || ! defined $maxVersion
+        ) {
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->addPluginMcpPackages', @_);
+        }
+
+        # Find the plugin object
+        $pluginObj = $self->ivShow('pluginHash', $plugin);
+        if (! $pluginObj) {
+
+            # Plugin not found - a very unlikely occurrence for this function, but it's worth
+            #   checking anyway
+            return undef;
+        }
+
+        # Check that an MCP package object with the same name doesn't already exist
+        if ($self->ivExists('mcpPackageHash', $name)) {
+
+            return $self->writeError(
+                'Could not create MCP package \'' . $name . '\' - duplicate package name',
+                $self->_objClass . '->addPluginMcpPackages',
+            );
+        }
+
+        # Don't add 'official' MCP packages (those whose names start 'mcp-')
+        if (substr($name, 0, 4) eq 'mcp-') {
+
+            return $self->writeError(
+                'Cannot create \'official\' MCP package \'' . $name . '\'',
+                $self->_objClass . '->addPluginMcpPackages',
+            );
+        }
+
+        # Create the MCP package object
+        $mcpObj = $perlPackage->new($name, $minVersion, $maxVersion, $plugin, @supplantList);
+        if (! $mcpObj) {
+
+            return $self->writeError(
+                'Could not create MCP package \'' . $name . '\' - internal error',
+                $self->_objClass . '->createSupportedMcpPackages',
+            );
+        }
+
+        # Update IVs
+        $self->ivAdd('mcpPackageHash', $name, $mcpObj);
 
         # Operation complete
         return 1;
@@ -11993,8 +12266,8 @@
     sub writeLog {
 
         # Can be called by any function, but mostly called by:
-        #   GA::Obj::TextView->showText, ->showError, ->showWarning, ->showDebug, ->showImproper
-        #   GA::Session->writeIncomingDataLogs, ->dispatchCmd, ->dispatchPassword
+        #   GA::Obj::TextView->showSystemText, ->showError, ->showWarning, ->showDebug,
+        #   ->showImproper, GA::Session->writeIncomingDataLogs, ->dispatchCmd, ->dispatchPassword
         #
         # Writes some text to one or more logfiles (if allowed)
         #
@@ -12110,8 +12383,8 @@
                 $path .= '_' . $self->startDateString;
             }
 
-            # Logfiles end with .txt under most operating systems, but have no ending under Linux
-            if ($^O ne 'linux') {
+            # Logfiles end with .txt on MS Windows
+            if ($^O eq 'MSWin32') {
 
                 $path .= '.txt';
             }
@@ -13085,7 +13358,7 @@
                 $session->set_ttsLastType($type);
             }
 
-        # Prepare a system command on Linux
+        # Prepare a system command on Linux/*BSD
         } else {
 
             if ($engine eq 'espeak') {
@@ -13902,7 +14175,7 @@
         # Prepare the argument list
         $cmd = $self->audioCmd;
         if (
-            $^O eq 'linux'
+            $^O ne 'MSWin32'
             && (substr($cmd, 0, 4) eq 'sox ' || substr($cmd, 0, 5) eq 'play ')
         ) {
             # Supported audio package, SoX ('-q' for quiet)
@@ -13928,7 +14201,7 @@
         }
 
         # Play the sound
-        $harness = IPC::Run::start( [@args] );
+        $harness = IPC::Run::start(\@args);
         # Create a GA::Obj::Sound object to store the harness details, so we can monitor its
         #   progress
         $session->add_soundHarness(
@@ -13988,7 +14261,7 @@
         # Prepare the argument list
         $cmd = $self->audioCmd;
         if (
-            $^O eq 'linux'
+            $^O ne 'MSWin32'
             && (substr($cmd, 0, 4) eq 'sox ' || substr($cmd, 0, 5) eq 'play ')
         ) {
             # Supported audio package, SoX ('-q' for quiet)
@@ -14011,7 +14284,7 @@
         }
 
         # Play the sound
-        $harness = IPC::Run::start [@args];
+        $harness = IPC::Run::start(\@args);
         # Update the GA::Obj::Sound object with the harness for the new sound (the calling function
         #   should update $soundObj->repeat, if necessary)
         $soundObj->ivPoke('harness', $harness);
@@ -16401,6 +16674,25 @@
         return 1;
     }
 
+    sub set_customFreeWinSize {
+
+        my ($self, $width, $height, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $width || ! defined $height || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_customFreeWinSize', @_);
+        }
+
+        $self->ivPoke('customFreeWinWidth', $width);
+        $self->ivPoke('customFreeWinHeight', $height);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_customFreeWinSize');
+
+        return 1;
+    }
+
     sub set_customGridWinSize {
 
         my ($self, $width, $height, $check) = @_;
@@ -16761,8 +17053,10 @@
                 && $iv ne 'debugMxpCommentFlag'
                 && $iv ne 'debugPuebloFlag'
                 && $iv ne 'debugPuebloCommentFlag'
+                && $iv ne 'debugZmpFlag'
                 && $iv ne 'debugAtcpFlag'
                 && $iv ne 'debugGmcpFlag'
+                && $iv ne 'debugMcpFlag'
             )
             || ! defined $flag
             || defined $check
@@ -16811,8 +17105,10 @@
                 && $iv ne 'debugMxpCommentFlag'
                 && $iv ne 'debugPuebloFlag'
                 && $iv ne 'debugPuebloCommentFlag'
+                && $iv ne 'debugZmpFlag'
                 && $iv ne 'debugAtcpFlag'
                 && $iv ne 'debugGmcpFlag'
+                && $iv ne 'debugMcpFlag'
             ) || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->toggle_debugFlag', @_);
@@ -17944,7 +18240,7 @@
             || (
                 $protocol ne 'msdp' && $protocol ne 'mssp' && $protocol ne 'mccp'
                 && $protocol ne 'msp' && $protocol ne 'mxp' && $protocol ne 'pueblo'
-                && $protocol ne 'zmp' && $protocol ne 'aard_102' && $protocol ne 'atcp'
+                && $protocol ne 'zmp' && $protocol ne 'aard102' && $protocol ne 'atcp'
                 && $protocol ne 'gmcp' && $protocol ne 'mtts' && $protocol ne 'mcp'
             )
         ) {
@@ -17965,7 +18261,7 @@
             $iv = 'usePuebloFlag';
         } elsif ($protocol eq 'zmp') {
             $iv = 'useZmpFlag';
-        } elsif ($protocol eq 'aard_102') {
+        } elsif ($protocol eq 'aard102') {
             $iv = 'useAard102Flag';
         } elsif ($protocol eq 'atcp') {
             $iv = 'useAtcpFlag';
@@ -17994,9 +18290,9 @@
             $self->ivPoke($iv, TRUE);
         }
 
-        # If disabling an option, update every session (except for Pueblo, which can't be turned
-        #   off mid-session)
-        if (! $self->$iv && $iv ne 'pueblo') {
+        # If disabling an option, update every session (except for Pueblo and ZMP, which can't be
+        #   turned off mid-session)
+        if (! $self->$iv && $iv ne 'pueblo' && $iv ne 'zmp') {
 
             foreach my $session ($self->listSessions()) {
 
@@ -18503,6 +18799,113 @@
 
         # The data stored in this IV is saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_statusEvent');
+
+        return 1;
+    }
+
+    sub set_storeGridPosnFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_storeGridPosnFlag', @_);
+        }
+
+        if ($flag) {
+            $self->ivPoke('storeGridPosnFlag', TRUE);
+        } else {
+            $self->ivPoke('storeGridPosnFlag', FALSE);
+        }
+
+        return 1;
+    }
+
+    sub add_storeGridPosn {
+
+        # Called by GA::Win::Internal->setConfigureEvent and GA::Win::Map->setConfigureEvent
+        # Also called by GA::Obj::Workspace->createGridWin and ->createSimpleGridWin
+
+        my ($self, $winObj, $xPos, $yPos, $width, $height, $ignoreFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $winObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_storeGridPosn', @_);
+        }
+
+        # Do nothing if the storage flag isn't set, if it's not a 'grid' window or if it's an
+        #   'external' window
+        # Allow storing of position but not size, or size but not position, but not both
+        if (
+            (! $self->storeGridPosnFlag && ! $ignoreFlag)
+            || $winObj->winCategory ne 'grid'
+            || $winObj->winType eq 'external'
+            || (! defined $xPos && ! defined $yPos && ! defined $width && ! defined $height)
+        ) {
+            return undef;
+        }
+
+        # An entry is added/replaced in $self->storeGridPosnHash for any 'grid' window, but if there
+        #   are several windows with the same ->winName open, only the one which was opened first is
+        #   used
+        foreach my $otherWinObj ($self->desktopObj->ivValues('gridWinHash')) {
+
+            if (
+                $otherWinObj ne $winObj
+                && $otherWinObj->winName eq $winObj->winName
+                && $otherWinObj->number < $winObj->number
+            ) {
+                return undef;
+            }
+        }
+
+        # Update the hash IV
+        $self->ivAdd(
+            'storeGridPosnHash',
+            $winObj->winName,
+            [$xPos, $yPos, $width, $height],
+        );
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->add_storeGridPosn');
+
+        return 1;
+    }
+
+    sub del_storeGridPosn {
+
+        my ($self, $winName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $winName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->del_storeGridPosn', @_);
+        }
+
+        $self->ivDelete('storeGridPosnHash', $winName);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->del_storeGridPosn');
+
+        return 1;
+    }
+
+    sub reset_storeGridPosn {
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->reset_storeGridPosn', @_);
+        }
+
+        $self->ivEmpty('storeGridPosnHash');
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->reset_storeGridPosn');
 
         return 1;
     }
@@ -19217,6 +19620,29 @@
         return 1;
     }
 
+    sub add_zmpPackage {
+
+        my ($self, $obj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $obj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_zmpPackage', @_);
+        }
+
+        # Can't replace an existing package object using one with the same name
+        if ($self->ivExists('zmpPackageHash', $obj->name)) {
+
+            return undef;
+
+        } else {
+
+            $self->ivAdd('zmpPackageHash', $obj->name, $obj);
+
+            return $obj;
+        }
+    }
+
     sub add_zonemap {
 
         my ($self, $obj, $check) = @_;
@@ -19900,6 +20326,14 @@
     sub constPuebloModalHash
         { my $self = shift; return %{$self->{constPuebloModalHash}}; }
 
+    sub zmpPackageHash
+        { my $self = shift; return %{$self->{zmpPackageHash}}; }
+
+    sub constMcpPackageList
+        { my $self = shift; return @{$self->{constMcpPackageList}}; }
+    sub mcpPackageHash
+        { my $self = shift; return %{$self->{mcpPackageHash}}; }
+
     sub constTermTypeList
         { my $self = shift; return @{$self->{constTermTypeList}}; }
     sub termTypeMode
@@ -19925,10 +20359,14 @@
         { $_[0]->{debugPuebloFlag} }
     sub debugPuebloCommentFlag
         { $_[0]->{debugPuebloCommentFlag} }
+    sub debugZmpFlag
+        { $_[0]->{debugZmpFlag} }
     sub debugAtcpFlag
         { $_[0]->{debugAtcpFlag} }
     sub debugGmcpFlag
         { $_[0]->{debugGmcpFlag} }
+    sub debugMcpFlag
+        { $_[0]->{debugMcpFlag} }
 
     sub shareMainWinFlag
         { $_[0]->{shareMainWinFlag} }
@@ -19936,6 +20374,11 @@
         { $_[0]->{restartShareMainWinFlag} }
     sub activateGridFlag
         { $_[0]->{activateGridFlag} }
+    sub storeGridPosnFlag
+        { $_[0]->{storeGridPosnFlag} }
+    sub storeGridPosnHash
+        { my $self = shift; return %{$self->{storeGridPosnHash}}; }
+
     sub constGridWinTypeHash
         { my $self = shift; return %{$self->{constGridWinTypeHash}}; }
     sub constFreeWinTypeHash
@@ -20032,6 +20475,10 @@
         { $_[0]->{constFreeWinWidth} }
     sub constFreeWinHeight
         { $_[0]->{constFreeWinHeight} }
+    sub customFreeWinWidth
+        { $_[0]->{customFreeWinWidth} }
+    sub customFreeWinHeight
+        { $_[0]->{customFreeWinHeight} }
     sub constFreeBorderPixels
         { $_[0]->{constFreeBorderPixels} }
     sub constFreeSpacingPixels
@@ -20180,6 +20627,8 @@
         { my $self = shift; return @{$self->{constLinuxCmdList}}; }
     sub constMSWinCmdList
         { my $self = shift; return @{$self->{constMSWinCmdList}}; }
+    sub constBSDCmdList
+        { my $self = shift; return @{$self->{constBSDCmdList}}; }
     sub browserCmd
         { $_[0]->{browserCmd} }
     sub emailCmd
@@ -20363,5 +20812,5 @@
         { $_[0]->{blockWorldHintFlag} }
 }
 
-# Package must return true
+# Package must return a true value
 1

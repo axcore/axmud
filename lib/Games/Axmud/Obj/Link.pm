@@ -174,32 +174,6 @@
     ##################
     # Methods
 
-    sub updatePosn {
-
-        # Called by GA::Session->processLineSegment, when it displays an explicit line number and/or
-        #   explicit colour/style tags while a link object is being processed
-        # Updates the link's offset in the line
-        #
-        # Expected arguments
-        #   $string     - The string containing a line number (typically '<nnn> ')
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $string, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $string || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->updatePosn', @_);
-        }
-
-        $self->ivPoke('posn', $self->posn + length($string));
-
-        return 1;
-    }
-
     ##################
     # Accessors - set
 
@@ -246,5 +220,5 @@
         { my $self = shift; return @{$self->{popupItemList}}; }
 }
 
-# Package must return true
+# Package must return a true value
 1

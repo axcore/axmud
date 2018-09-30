@@ -205,7 +205,7 @@
             loginConfirmText            => undef,
 
             # When $self->processLineSegment notices some text that looks like a prompt, it
-            #   updates these IVs.
+            #   updates these IVs
             # The number of prompts received during this session and processed by
             #   $self->processPrompt (the total won't include prompts that were processed by
             #   ->dispatchCmd, if the user types a world command before ->processPrompt can act)
@@ -225,12 +225,12 @@
             #   receives the next packet of text
             cmdPromptFlag               => FALSE,
 
-            # Flag set to TRUE when ->processIncomingData processes a newline token in a packet of
-            #   text. Set back to FALSE when the function finds any other token in a packet of text.
-            #   (Used with MSP, to make sure MSP sound triggers are at the start of a line. The
-            #   initial value is TRUE because, at the start of a session, the first text received
+            # Value set whenever $self->tokeniseIncomingData extracts a token, recording the type
+            #   of token that was extracted
+            # (Required by MSP, to make sure MSP sound triggers are at the start of a line. The
+            #   initial value is 'nl' because, at the start of a session, the first text received
             #   follows an imaginary newline character)
-            nlTokenFlag                 => TRUE,
+            lastTokenType               => 'nl',
             # Flag set to TRUE when $self->dispatchPassword sends a password to the world which has
             #   turned oFf ECHO (i.e. $self->echoMode is 'client_agree'). The world is supposed to
             #   supply its own newline character after the password, but many worlds don't, meaning
@@ -249,6 +249,43 @@
             #   empty string, regarding the two tokens (whether sequential or not) as a single
             #   newline token
             crlfMode                    => '',
+            # Hash of Axmud colour tags to use for each type of token, when raw received text is
+            #   display in the RawToken task window
+            constRawHash                => {
+                'nl'                    => 'BLUE',
+                'esc'                   => 'YELLOW',
+                'inv'                   => 'YELLOW',
+                'seq'                   => 'CYAN',
+                'msp'                   => 'RED',
+                'mxp'                   => 'GREEN',
+                'ent'                   => 'MAGENTA',
+                'pueblo'                => 'GREEN',
+                'mcp'                   => 'GREEN',
+                'text'                  => 'white',
+            },
+            # When $self->processIncomingData receives incoming text, it calls
+            #   $self->tokeniseIncomingData to tokenise it. The list of tokens is stored in this IV.
+            #   Tokens are then removed from the list, one by one, to be processed. Any part of the
+            #   code can artificially insert a token at the beginning of the list, if it needs to
+            # List in groups of 2, in the form
+            #   (type, argument, type, argument...)
+            #   - 'type' is one of the strings:
+            #           - 'nl' (newline token)
+            #           - 'esc' (token containing single escape character)
+            #           - 'inv' (token containing invalid escape sequence)
+            #           - 'seq' (token containing valid escape sequence)
+            #           - 'msp' (msp token), 'mxp' (MXP element token)
+            #           - 'ent' (MXP entity token)
+            #           - 'pueblo' (Pueblo element token)
+            #           - 'mcp' (MCP out-of-band line
+            #           - 'nomcp' (token containing #$", the start of an MCP in-band line)
+            #           - 'text' (ordinary text token)
+            #           - 'go' (artificially-inserted newline character)
+            #   - (NB 'part' is used in calls to $self->respondIncomingData to show that an
+            #       incomplete line is to be shown, but it's never added to this IV)
+            #   - 'argument' is usually the token itself. For type 'seq', it's a list reference
+            #       and for 'go', the argument (if defined) is ignored
+            currentTokenList            => [],
 
             # File objects
             # ------------
@@ -521,7 +558,6 @@
             chatTask                    => undef,   # Only stored the 'lead' Chat task
             compassTask                 => undef,
             conditionTask               => undef,
-            debuggerTask                => undef,
             divertTask                  => undef,
             inventoryTask               => undef,
             launchTask                  => undef,
@@ -530,6 +566,7 @@
             rawTextTask                 => undef,
             rawTokenTask                => undef,
             statusTask                  => undef,
+            systemTask                  => undef,
             taskListTask                => undef,
             watchTask                   => undef,
 
@@ -774,51 +811,48 @@
             #   if this flag is TRUE
             reactDisconnectFlag         => FALSE,
 
-            # When $self->processIncomingData receives text from the world, it converts it into
-            #   tokens
-            # Text tokens are stored in this IV, each new token being added to the last one (until
-            #   they are collectively processed by $self->processLinePortion)
-            recvLineText                => '',
-            # The current length of $self->recvLineText
-            recvLineLength              => 0,
-            # Non-text tokens are removed from the received line. Some of them are converted into
-            #   Axmud colour/style tags, and those tags are stored here. Hash in the form
-            #       $recvLineHash{offset} = reference_to_list_of_Axmud_colour_and_style_tags
-            #   ...where 'offset' is a position in $self->recvLineText at which this list of colour/
-            #       style tags applies
+            # $self->processIncomingData tokenises the incoming data, and then processes the tokens,
+            #   one at a time. When it's time to display a complete or partial line, it calls
+            #   $sef->respondIncomingData
+            # However, some tokens (particularly MXP tokens) can't be fully processed while there
+            #   are tokens waiting to be displayed (e.g. when switching between MXP frames)
+            # To cope with that, these IVs are set every time ->processIncomingData processes a
+            #   token, and are reset every time $self->respondIncomingData is called
+            # In that way, when the MXP tag <FRAME> is processed with a call to
+            #   $self->processMxpFrameElement, that function can force all undisplayed tokens to be
+            #   displayed (using a call to $self->respondIncomingData), before processing the
+            #   token containing the <FRAME> tag
+            # The complete or partial line received from the world, before any non-text tokens are
+            #   removed
+            processOrigLine             => '',
+            # The same complete or partial line with all non-text tokens removed
+            processStripLine            => '',
+            # A hash of the stripped Axmud colour/style tags, in the form
+            #   $processTagHash{line_offset} = reference_to_list_of_tags
             # NB To keep the code simple, the hash always contains an entry corresponding to the
-            #   start of the string in $self->recvLineText
-            recvLineHash                => {
+            #   start of the string in $self->processStripLine
+            processTagHash              => {
                 0                       => [],
             },
-            # If a whole line is received (i.e. a line that ends in a newline character), the
-            #   contents of the previous IVs are copied into these IVs, before
-            #   $self->processLinePortion is called
-            # If a partial line is received (i.e. a line that doesn't end in a newline character),
-            #   they are again copied. The next time ->processIncomingData is called, the NEW
-            #   contents of the above IVs are added to the existing contents of the IVs below,
-            #   so that both the whole line, as well as the portion of the line being processed, is
-            #   available to the code
-            recvUsedText                => '',
-            recvUsedLength              => 0,
-            recvUsedHash                => {
-                0                       => [],
-            },
-            # An IV similar to ->recvLineText, in that text tokens are stored in this IV, each new
-            #   token being added to the last one. However, this IV stores the whole of a single
-            #   line, and is reset to an empty string every time a newline is processed
-            # (Used by Pueblo to reduce multiple whitespace characters to a single one)
-            recvWholeLineText           => '',
-            # When text is added ->recvLineText, it's also added to this IV. When an image is
-            #   processed, some text is added to this IV (but nothing is added to ->recvLineText).
-            #   This IV is then used to write the 'receive' logfile
-            recvImgLineText             => '',
+            # When $self->processIncomingData processes tokens, it calls a function to handle each
+            #   type of token. If one of the called functions needs to display a partial line,
+            #   it calls $self->respondIncomingData early
+            # All calls to $self->respondIncomingData set this flag to TRUE, so that the loop in
+            #   $self->processIncomingData knows to update, not replace, the IVs ->processOrigLine,
+            #   ->processStripLine and ->processTagHash
+            processRetainFlag           => FALSE,
 
-            # When explicit line numbers and explicit colour tags are displayed on a line, in
+            # This IV is generally the same as $self->processStripLine, but with a description of
+            #   each image drawn. It's set whenever a text token or image is processed, and only
+            #   reset when $self->processStripLine is reset
+            # The value of the IV is used for writing logs
+            processImageLine            => '',
+
+            # When explicit line numbers and explicit colour/style tags are displayed on a line, in
             #   between actual portions of text displayed by the world, clickable links appear in
             #   the wrong place (because the link doesn't know about the added text)
-            # This IV is set and reset by $self->processLineSegment to the length of all explicit
-            #   line numbers/colour tags displayed on the line so far
+            # This IV is set and reset by $self->processLineSegment and ->displayLinePieces to the
+            #   length of all explicit line numbers/colour tags displayed on the line so far
             explicitTextLength          => 0,
 
             # Task loop
@@ -1314,16 +1348,6 @@
             #   must be followed by an MXP tag <...>; as soon as it's been processed, the value of
             #   ->mxpMode is restored, and the value of this IV is set back to 'undef'
             mxpTempMode                 => undef,
-            # IV set in $self->processIncomingData just before the call to $self->processMxpElement,
-            #   representing all the text that's been processed by $self->processIncomingData, but
-            #   which hasn't been displayed in the textview object yet; reset after the call to
-            #   ->processMxpElement is complete (or when a newline is processed)
-            # Used to display the undisplayed text just before a <FRAME> or <DEST> tag is processed,
-            #   so it's displayed in the right textview
-            # Used by <A> and <SEND> tags to get the positioning of link objects (GA::Obj::Link)
-            #   right, as the link objects created by those tags aren't applied to the textview
-            #   until ->processIncomingData finishes processing the packet of text
-            mxpOrigText                 => undef,
             # When the link object (GA::Obj::Link) is created by the <A> and <SEND> tags, it can't
             #   be applied to the current textview immediately, because there may be some
             #   displayable text before the link which hasn't been displayed yet
@@ -1474,19 +1498,6 @@
             #   'user_tag' - The <USER> tag has been received,
             #   'pwd_tag' - The <PASSWORD> tag has been received (after <USER> was received)
             mxpLoginMode                => 'no_tag',
-            # List of MXP/Pueblo debug messages created when processing a token. A message is added
-            #   to the list by a call to $self->mxpDebug or $self->puebloDebug. When
-            #   $self->processIncomingData is ready, any debug messages are displayed. (Doing it
-            #   this way saves us from some very ugly Gtk2 errors)
-            # List in groups of 4, in the form
-            #   (protocol, token, num, message...)
-            # ...where 'protocol' is the string 'mxp' or 'pueblo', 'token' is the original MXP or
-            #   Pueblo token (e.g. '<H1>'), 'num' is an identifying 4-digit error number and
-            #   'message' is the error message
-            # NBH Currently, MXP errors use the range 1000-4999, Pueblo errors use the range
-            #   6000-8999, mixed MXP/Pueblo errors use the range 6000-6999 and any other code
-            #   (e.g. temporary eror messages) can use the range 9000-9999
-            mxpPuebloDebugList          => [],
 
             # Pueblo mode:
             #   'no_invite' - The server has not suggested Pueblo
@@ -1516,11 +1527,6 @@
             #   the other, each list item will have six spaces. If there are three lists, nine
             #   spaces. (This roughly matches the format of help files)
             puebloColumnSize            => 3,
-            # For the tags </UL>, </OL> and <LI>, $self->processPuebloListElement and
-            #   $self->processPuebloListItemElement create a string that should be inserted into
-            #   the text being processed by $self->processIncomingData; that string is stored here
-            #   until being used
-            puebloInsertString          => '',
             # Flag set to TRUE inside a <P>...</P> construction, and FALSE outside it
             puebloParagraphFlag         => FALSE,
             # Flag set to TRUE inside a <CODE>...</CODE> construction, and FALSE outside it
@@ -1539,6 +1545,46 @@
             #       'wait_loop' - newline character processed, now waiting for next loop inside
             #               $self->processIncomingData
             puebloJustifyMode           => 'normal',
+
+            # ZMP mode:
+            #   'no_invite' - The server has not suggested ZMP yet, but the client is willing
+            #   'client_agree' - The server has suggested ZMP, and the client has agreed
+            #   'client_refuse' - The client refuses to use ZMP
+            zmpMode                     => 'no_invite',
+            # The UTC timestamp received with a 'zmp.time' command. 'undef' if that ZMP command has
+            #   never been received; otherwise a string in the form 'YYYY-MM-SS HH:MM:SS'
+            zmpTimeStamp                => undef,
+            # Flag set to TRUE if the client has sent a 'zmp.ident' command to the server (this
+            #   command must only be sent once)
+            zmpSendIdentFlag            => FALSE,
+            # The server's name, version and description received with a 'zmp.ident' command; any or
+            #   all of which might be 'undef' if the server didn't include the correct number of
+            #   parameters
+            zmpServerName               => undef,
+            zmpServerVersion            => undef,
+            zmpServerDescrip            => undef,
+
+            # AARD102 (Aardwolf 102 channel) mode:
+            #   'no_invite' - The server has not suggested AARD102 yet, but the client is willing
+            #   'client_agree' - The server has suggested AARD102, and the client has agreed
+            #   'client_refuse' - The client refuses to use AARD102
+            aard102Mode                 => 'no_invite',
+            # AARD102 sends sequences in the form of two bytes; the first byte is 100 or 101
+            # For 100, this IV is updated, depending on the value of the second byte:
+            #   100, 1  - 'at_login_screen'   'At login screen, no player yet'
+            #   100, 2  - 'at_motd'           'Player at MOTD or other login sequence'
+            #   100, 3  - 'player_active'     'Player fully active and able to receive MUD commands'
+            #   100, 4  - 'player_afk'        'Player AFK'
+            #   100, 5  - 'note_mode'         'Player in note mode'
+            #   100, 6  - 'edit_mode'         'Player in Building/Edit mode'
+            #   100, 7  - 'page_prompt'       'Player at paged output prompt'
+            #   100, 8  - 'player_rest'       (proposed - possibly never implemented)
+            #   100, 9  - 'code_nine'         (used by Aardwolf, not sure what it represents)
+            #   100, n  - 'unknown_n', where n is any other value (range 1-254)
+            aard102Status               => undef,
+            # For 101, the second byte is always 1, meaning 'the MUD just ticked'. This IV records
+            #   the time (matches $self->sessionTime) at which the last tick took place
+            aard102TickTime             => undef,
 
             # ATCP mode:
             #   'no_invite' - The server has not suggested ATCP yet, but the client is willing
@@ -1561,6 +1607,85 @@
             # NB GMCP package names are case-insensitive; Axmud always converts them to lower case
             #   before storing them in this hash
             gmcpDataHash                => {},
+
+            # MCP mode:
+            #   'no_invite' - The server has not suggested MCP yet, but the client is willing
+            #   'client_agree' - The server has suggested MCP, and the client has agreed
+            #   'client_refuse' - The client refuses to use MCP
+            mcpMode                     => 'no_invite',
+            # The MCP version that Axmud supports
+            constMcpVersion             => 2.1,
+            # During MCP negotiation, $self->generateMcpKey generates a random key, which the server
+            #   must quote in all future MCP messages. The key is stored here
+            mcpAuthKey                  => undef,
+            # For the MCP package 'mcp-negotiate', version 1.0, there is no 'mcp-negotiate-end'
+            #   message. To cope with this, how long (in seconds) we should spend waiting for it,
+            #   after the first MCP out-of-bounds line is received
+            mcpWaitTime                 => 30,
+            # The time (matches $self->sessionTime) at which this time limit expires
+            mcpCheckTime                => undef,
+            # When MCP messages define multiline values, all incoming MCP key/value data is stored
+            #   in an MCP multiline object (GA::Mcp::Obj::MultiLine) until the server has finished
+            #   sending them. Hash in the form
+            #   $mcpMultiObjHash{unique_data_tag} = blessed_reference_to_multiline_object
+            mcpMultiObjHash             => {},
+            # Hash of MCP package objects, inheriting from GA::Generic::MCP
+            # The hash includes some or all of the packages specified in GA::Client->mcpPackageHash,
+            #   which consists of Axmud-supported MCP packages and MCP packages added by plugins
+            # When an MCP package object is added to this hash by $self->detectMCP or
+            #   $self->processMcpMsg, it's cloned from the MCP package object with the same name in
+            #   GA::Client->mcpPackageHash
+            # Hash in the form
+            #   $mcpPackageHash{package_name} = blessed_reference_to_package_object
+            mcpPackageHash              => {},
+            # Hash of MCP package objects which specify alternative MCP packages in their
+            #   ->supplantList IVs
+            # We don't inform the world we support these packages until the world sends
+            #   'mcp-negotiate-end'. At that point, MCP package objects in this hash are either
+            #   copied into $self->mcpPackageHash, or destroyed
+            # For all other packages, we inform the world we support them as soon as we receive the
+            #   initial 'mcp' message
+            # Hash in the form
+            #   $mcpWaitHash{package_name} = blessed_reference_to_package_object
+            mcpWaitHash                 => {},
+            # IVs to handle 'mcp-cord' messages
+            # Hash of MCP cord types recognised by some part of the Axmud code. When the server
+            #   tries to open a cord of a certain type, a message is sent to the function specified
+            #   in this hash
+            # To add an entry to this hash, your code should call $self->add_mcpCordType; to remove
+            #   it, call $self->del_mcpCordType
+            # Hash in the form
+            #   $mcpCordOpenHash{mcp_cord_type} = function_reference
+            mcpCordOpenHash             => {},
+            # Hash of unique MCP cord IDs. When an MCP cord message is received, it is passed on to
+            #   the function specified in this hash
+            # Hash in the form
+            #   $mcpCordIDHash{mcp_cord_id} = function_reference (if a cord is open)
+            #   $mcpCordIDHash{mcp_cord_id} = undef (if a cord was open, but is now closed)
+            # NB 'mcp_cord_id' is the cord ID, with the initial I/R removed (we expect that the
+            #   server sends IDs starting with an initial I, and Axmud always sends IDs starting
+            #   with a letter R)
+            mcpCordIDHash               => {},
+            # Hash of functions that should be notified when the server closes an MCP cord; only
+            #   contains entries for cords that are still open. Hash in the form
+            #   $mcpCordCloseHash{mcp_cord_id} = function_reference
+            # NB 'mcp_cord_id' is the cord ID, with the initial I/R removed
+            mcpCordCloseHash            => {},
+
+            # List of MXP/Pueblo/MCP debug messages created when processing a token. A message is
+            #   added to the list by a call to $self->mxpDebug, $self->puebloDebug or
+            #   $self->mcpDebug. When $self->processIncomingData is ready, any debug messages are
+            #   displayed. (Doing it this way saves us from some very ugly Gtk2 errors)
+            # List in groups of 4, in the form
+            #   (protocol, token, num, message...)
+            # ...where 'protocol' is the string 'mxp', 'pueblo' or 'mcp', 'token' is the original
+            #   MXP, Pueblo or MCP token (e.g. '<H1>'), 'num' is an identifying 4-digit error number
+            #   and 'message' is the error message
+            # NBH Currently, MXP errors use the range 1000-4999, Pueblo errors use the range
+            #   6000-7999, mixed MXP/Pueblo errors use the range 5000-5999, MCP errors use the range
+            #   8000-8999 and any other code (e.g. temporary eror messages) can use the range
+            #   9000-9999
+            protocolDebugList           => [],
 
             # Other IVs
             # ---------
@@ -6456,9 +6581,10 @@
 
             # Work out the colours/styles that would actually be displayed at this offset, storing
             #   it in a hash in the same format as GA::Client->constColourStyleHash
-            %startHash = $self->applyColourStyleTags(
-                \%startHash,
+            %startHash = $textViewObj->applyColourStyleTags(
+                $self,
                 $listRef,
+                %startHash,
             );
        }
 
@@ -6488,9 +6614,10 @@
 
             # Work out the colours/styles that would actually be displayed at this offset, storing
             #   it in a hash in the same format as GA::Client->constColourStyleHash
-            %stopHash = $self->applyColourStyleTags(
-                \%stopHash,
+            %stopHash = $textViewObj->applyColourStyleTags(
+                $self,
                 $listRef,
+                %stopHash,
             );
         }
 
@@ -7136,8 +7263,11 @@
         #   send_cmd            $self->dispatchCmd          The command to be sent
         #   msdp                $self->processMsdpData      The variable/value pair received
         #   mssp                $self->processMsspData      The variable/value pair received
+        #   zmp                 $self->processZmpData       The ZMP package/name command as a string
+        #   aard102             $self->processAard102Data   The AARD102 status or the string 'tick'
         #   atcp                $self->processAtcpData      The ATCP package name
         #   gmcp                $self->processGmcpData      The GMCP package name
+        #   mcp                 $self->processMcpMsg        The MCP message name as a string)
         #   current_session     GA::Client->setCurrentSession
         #                                                   (none)
         #   not_current         GA::Client->setCurrentSession
@@ -7156,7 +7286,7 @@
         #                                                   (none)
         #   lose_focus          GA::Win::Internal->setFocusOutEvent
         #                                                   (none)
-        #   close_disconnect    GA::Client->stop          (none)
+        #   close_disconnect    GA::Client->stop            (none)
         #
         # Checks every active hook interface. Calls $self->checkHooks for every hook that has
         #   fired in response to a specified hook event
@@ -8608,6 +8738,16 @@
         if ($self->connectHistoryObj) {
 
             $self->connectHistoryObj->set_currentTime();
+        }
+
+        # If MCP is enabled and we're waiting for an 'mcp-negotiate-end' message, but we've been
+        #   waiting for too long, insert an artificial one
+        if (
+            $self->mcpMode eq 'client_agree'
+            && defined $self->mcpCheckTime
+            && $self->mcpCheckTime < $self->sessionTime
+        ) {
+            $self->processMcpMsg('#$#mcp-negotiate-end ' . $self->mcpAuthKey);
         }
 
         # In login mode 3/4, if $self->processLineSegment has set the flag, we can complete the
@@ -11053,7 +11193,7 @@
         #   flag is set
         if ($axmud::CLIENT->debugTelnetLogFlag) {
 
-            $connectObj->option_log($axmud::SHARE_DIR . '/telopt.log');
+            $connectObj->option_log($axmud::TOP_DIR . '/telopt.log');
         }
 
         # Prepare telnet options
@@ -11144,7 +11284,7 @@
             #   which we definitely don't want, so check for that
             if ($self->defaultTabObj) {
 
-                $self->defaultTabObj->textViewObj->showText('Disconnected from host');
+                $self->defaultTabObj->textViewObj->showSystemText('Disconnected from host');
             }
 
             # Update IVs (if allowed)
@@ -11325,6 +11465,22 @@
         if ($self->mxpMode eq 'client_agree' && defined $self->mxpLineMode) {
 
             $self->emptyMxpStack();
+        }
+
+        # If MCP is enabled, close any MCP cords that are open
+        foreach my $id ($self->ivKeys('mcpCordCloseHash')) {
+
+            my $funcRef = $self->ivShow('mcpCordCloseHash', $id);
+
+            # Notify the code that MCP cord has been closed, as usual
+            if (defined $funcRef) {
+
+                &$funcRef($self, $id);
+
+                # Update session IVs
+                $self->ivAdd('mcpCordIDHash', $id, undef);
+                $self->ivDelete('mcpCordCloseHash', $id);
+            }
         }
 
         # Display a confirmation message, if necessary
@@ -11661,7 +11817,7 @@
         return 1;
     }
 
-    # Incoming data loop - process incoming data
+    # (Process incoming data)
 
     sub processIncomingData {
 
@@ -11670,8 +11826,9 @@
         #   text received from the world in the meantime
         # Called by GA::Cmd::SimulateWorld->do to simulate text received from the world
         #
-        # Processes the received text, extracting escape sequences and MXP tags and applying Axmud
-        #   triggers (by calling several different functions)
+        # Processes the received text. Calls $self->tokeniseIncomingData to convert into a series
+        #   of tokens, then processes the tokens, before calling $self->respondIncomingData to
+        #   display a complete or partial line
         #
         # Expected arguments
         #   $text           - The received text to process
@@ -11690,7 +11847,7 @@
         my ($self, $text, $noBlinkFlag, $check) = @_;
 
         # Local variables
-        my ($termOutput, $origText);
+        my $spaceString;
 
         # Check for improper arguments
         if (! defined $text || defined $check) {
@@ -11699,58 +11856,21 @@
         }
 
         # Don't process an empty string
-        if (! $text) {
+        if ($text eq '') {
 
             return undef;
+
+        } else {
+
+            $self->ivIncrement('packetCount');
         }
 
-        $self->ivIncrement('packetCount');
-
-        # If the global variable is set, all text received from the world (except out-of-bounds
-        #   text) is also written to the terminal, with non-printable characters like ESC written as
-        #   <27>
-        if ($axmud::TEST_TERM_MODE_FLAG) {
-
-            $termOutput = '';
-
-            foreach my $char (split(//, $text)) {
-
-                if (ord($char) >= 32 && ord($char) <= 127) {
-                    $termOutput .= $char;
-                } elsif ($char eq "\n" || $char eq "\r") {
-                    $termOutput .= $char;
-                } else {
-                    $termOutput .= '<'. ord($char) . '>';
-                }
-            }
-
-            print $termOutput;
-        }
-
-        # Turn on the window blinker (but only if this is the current session), and update IVs
-        #   (unless $noBlinkFlag is set, in which case we're not displaying text that was actually
-        #   received from the world)
+        # Turn on the window blinker (but only if this is the current session), and update blinker
+        #   IVs (unless $noBlinkFlag is set, in which case we're not displaying text that was
+        #   actually received from the world)
         if (! $noBlinkFlag) {
 
             $self->turnOnBlinker(0);
-        }
-
-        # If the RawText task is open, display the received text (including any escape sequences)
-        #   in the task window
-        if ($self->rawTextTask && $self->rawTextTask->taskWinFlag) {
-
-            $self->rawTextTask->insertText('<' . $self->packetCount . '>', 'RED', 'echo');
-            foreach my $string (split(m/\n/, $text)) {
-
-                $self->rawTextTask->insertText($string, 'after');
-            }
-        }
-
-        # If the RawToken task is open, display the packet number immediately, and display each
-        #   token as it's processed later in this function
-        if ($self->rawTokenTask && $self->rawTokenTask->taskWinFlag) {
-
-            $self->rawTokenTask->insertText('<' . $self->packetCount . '>', 'RED');
         }
 
         # If the last text received from the world didn't end with a newline character, it was
@@ -11785,419 +11905,294 @@
             $self->ivPoke('nlEchoFlag', FALSE);
         }
 
-        # On the first line, detect Pueblo (if allowed)
-        if (
-            $axmud::CLIENT->usePuebloFlag
-            && ! $self->currentWorld->ivExists('telnetOverrideHash', 'pueblo')
-            && $self->puebloMode ne 'client_agree'
-            && $text =~ m/This world is Pueblo (\d+\.\d+) Enhanced\./i
-        ) {
-            if ($self->mxpMode eq 'client_agree') {
+        # ANSI control sequences are not implemented yet, but cursor forward (ESC + [nC, where n is
+        #   the number of spaces) is required by Duris opening screens, so we'll do a quick
+        #   implementation here
+        if ($text =~ m/^\x1b\x5b(\d+)C/) {
 
-                # Can't use Pueblo and MXP at the same time
-                $self->ivPoke('puebloMode', 'client_refuse');
-
-            } else {
-
-                # Pueblo allowed
-                $self->ivPoke('puebloMode', 'client_agree');
-                $self->ivPoke('puebloVersion', $1);
-                $self->send('PUEBLOCLIENT 2.01');       # Same response as zMud
-            }
+            $spaceString = ' ' x $1;
+            $text =~ s/^\x1b\x5b(\d+)C/$spaceString/;
         }
 
-        # Split the text into tokens:
-        #   - Tokens consisting of a single newline character, "\n" or "\r"
-        #   - Tokens consisting of a single escape character "\e" immediately followed by an "\e",
-        #       "\n" or "\r" character, or an alphanumeric character (rare, but possible)
-        #   - Tokens consisting of a valid escape sequence, starting with the escape character "\e"
-        #   - If MXP is enabled, tokens which begin with "<", and the rest of an MXP tag
-        #   - If MXP is enabled, tokens which begin with "&" and end ";", representing an MXP
-        #       entity
-        #   - Tokens of text which don't contain "\n", "\r" or "\e", and which don't contain (if
-        #       MXP/Pueblo are enabled) "<" or "&"
-        #   - If MSP is enabled, tokens which begin !!SOUND or !!MUSIC (case-sensitive)
-        # In several situations, an invalid token is sent to $self->updateEmergencyBuffer, which
-        #   decides if it's an incomplete token (we're still waiting for more text), or an
-        #   invalid token, which must be discarded
-        $origText = '';
-        do {
+        # On the first line, detect Pueblo (if allowed)
+        $self->detectPueblo($text);
 
-            my (
-                $nlTokenFlag, $tempMode, $firstChar, $mspString, $tokenFlag, $token, $data, $type,
-                $successFlag, $length, $listRef, $modText, $value, $string, $showText, $colour,
-                $reduceToken, $mspPosn,
-                @tagList, @debugList,
-            );
+        # Detect MCP (if allowed; not necessarily on the first line)
+        $self->detectMCP($text);
 
-            # Remember the current setting of $self->mxpTempMode, so that this code block can
-            #   notice if it has been applied
-            $tempMode = $self->mxpTempMode;
+        # Tokenise the incoming text, storing it in $self->currentTokenList rather than one of this
+        #   function's local variables (so various parts of the code, called from this function, can
+        #   artificially insert tokens if they need to)
+        $self->tokeniseIncomingData($text);
 
-            # When Pueblo list tags are processed during the previous iteration of this loop, they
-            #   specify strings that are to be processed on the following iteration of this loop
-            if ($self->puebloInsertString) {
+        # @tokenList might be empty if only an incomplete token (such as an incomplete MXP tag) was
+        #   found, in which case it's been stored in the emergency buffer, waiting for the next
+        #   packet
+        if ($self->currentTokenList) {
 
-                $text = $self->puebloInsertString . $text;
-                $self->ivPoke('puebloInsertString', '');
-            }
+            # Display the raw $text, if we're required to - in the terminal, in the RawText task
+            #   window and/or in the RawToken task window
+            $self->displayRawIncomingData($text);
 
-            # If Pueblo had been waiting for a new line which has since been processed, we can
-            #   insert the Axmud style tag 'justify_default' on this loop
-            if ($self->puebloJustifyMode eq 'wait_loop') {
+            # Proces the tokens, one a time. Processing the token involves:
+            #   1. Updating GA::Session IVs
+            #   2. Converting non-text tokens into a list of Axmud colour/style tags (or, in some
+            #       cases, some other kind of data)
+            #   3. Displaying a complete or partial line. We wait as long as possible before
+            #       applying triggers and displaying the text: the end of each line, at the latest.
+            #       Some operations require as to display part of a line which we do, if necessary)
+            #
+            # When we come across newline tokens, we try to handle any of the following situations:
+            #       1. CR
+            #       2. LF
+            #       3. CR, LF
+            #       4. LF, CR
+            #       5. CR, <one or more non-text tokens>, LF
+            #       6. LF, <one or more non-text tokens>, CR
+            # In addition, it's sometimes necessary to ignore a newline token
+            # In general, we use the first newline token, ignoring the second (opposite) newline
+            #   token (so CRLF is treated as if it were a single token). Any non-text tokens which
+            #   have been sloppily inserted between them are treated as if they appeared on the next
+            #   line
 
-                if ($self->ivExists('recvLineHash', 0)) {
+            do {
 
-                    # There are already tags stored at this offset
-                    $listRef = $self->ivShow('recvLineHash', 0);
-                    push (@$listRef, 'justify_default');
+                my (
+                    $type, $arg, $origLine, $stripLine, $tempMode, $listRef, $backup, $respondFlag,
+                    $tokenFlag, $value, $reduceToken, $wholeText, $stripLength,
+                    @tagList, @newTagList,
+                    %lineTagHash,
+                );
 
-                } else {
+                # $self->currentTokenList is in the form (type, argument, type, argument...)
+                #   - 'type' is one of the strings 'nl', 'esc', 'inv', 'seq', 'msp', 'mxp', 'ent',
+                #       'pueblo', 'mcp', 'nomcp', 'text' or 'go'
+                #   - (NB 'part' is used in calls to $self->respondIncomingData to show that an
+                #       incomplete line is to be shown, but it's never added to this IV)
+                #   - 'argument' is usually the token itself. For type 'seq', it's a list reference
+                #       and for 'go', the argument (if defined) is ignored
+                $type = $self->ivShift('currentTokenList');
+                $arg = $self->ivShift('currentTokenList');
 
-                    # There are no tags stored at this offset yet
-                    $self->ivAdd('recvLineHash', 0, ['justify_default']);
-                }
+                # At the beginning of every loop, we retrieve these variables. They are set at the
+                #   end of the loop, ready for the next one, but are reset by every call to
+                #   $self->respondIncomingData
+                $origLine = $self->processOrigLine;
+                $stripLine = $self->processStripLine;
+                %lineTagHash = $self->processTagHash;
 
-                $self->ivPoke('puebloJustifyMode', 'normal');
-            }
+                # Remember the current setting of $self->mxpTempMode, so that this code block can
+                #   notice if it has been applied
+                $tempMode = $self->mxpTempMode;
 
-            # ANSI control sequences are not implemented yet, but cursor forward (ESC + [nC, where
-            #   n is the number of spaces) is required by Duris opening screens, so we'll do a quick
-            #   implementation here
-            if ($text =~ m/^\x1b\x5b(\d+)C/) {
+                # If Pueblo had been waiting for a new line which has since been processed, we can
+                #   insert the Axmud style tag 'justify_default' on this loop
+                if ($self->puebloJustifyMode eq 'wait_loop') {
 
-                my $spaces = ' ' x $1;
-                $text =~ s/^\x1b\x5b(\d+)C/$spaces/;
-            }
+                    if (exists $lineTagHash{0}) {
 
-            # Extract tokens
-            $firstChar = substr($text, 0, 1);
-            $mspString = substr($text, 0, 7);
-            if ($firstChar eq "\n" || $firstChar eq "\r") {
-
-                # Newline token found
-                $token = $firstChar;
-                # ($self->nlTokenFlag is set later in the function)
-                $nlTokenFlag = TRUE;
-                # The Axmud colour tag to use in the RawToken task window, if it's running
-                $colour = 'BLUE';
-
-                if (
-                    ($token eq "\n" && $self->crlfMode eq 'cr')
-                    || ($token eq "\r" && $self->crlfMode eq 'lf')
-                ) {
-                    # Second part of a <CR><non-text tokens<LF> or <LF><non-text tokens><CR>
-                    #   sequence, so ignore it
-                    $origText .= $token;
-                    $text = substr($text, length($token));
-
-                    $self->ivPoke('crlfMode', '');
-
-                } else {
-
-                    if ($token eq "\n") {
-                        $self->ivPoke('crlfMode', 'lf');
-                    } else {
-                        $self->ivPoke('crlfMode', 'cr');
-                    }
-
-                    if ($self->mxpIgnoreNewLineFlag || $self->mxpRelocateQuietLineFlag) {
-
-                        # Ignore this newline character (but not the next one)
-                        $self->ivPoke('mxpIgnoreNewLineFlag', FALSE);
-                        $self->ivPoke('mxpRelocateQuietLineFlag', FALSE);
-                        $origText .= $token;
-                        $text = substr($text, length($token));
-
-                    } elsif ($self->mxpParagraphFlag || $self->mxpRelocateQuietFlag) {
-
-                        # Ignore this newline token (and any subsequent ones until the </P> tags is
-                        #   processed, or the MXP crosslinking operation is complete)
-                        $origText .= $token;
-                        $text = substr($text, length($token));
-
-                    } elsif ($self->puebloActiveFlag && ! $self->puebloLiteralFlag) {
-
-                        # Ignore all newline characters when Pueblo is active
-                        $origText .= $token;
-                        $text = substr($text, length($token));
+                        # There are already tags stored at this offset
+                        $listRef = $lineTagHash{0};
+                        push (@$listRef, 'justify_default');
 
                     } else {
 
-                        # Process the newline token
-                        $text = substr($text, length($token));
-                        @tagList = $self->processEndLine($origText, $token);
-                        $origText = '';     # (Original text not required any more)
+                        # There are no tags stored at this offset yet
+                        $lineTagHash{0} = ['justify_default'];
                     }
+
+                    $self->ivPoke('puebloJustifyMode', 'normal');
                 }
 
-            } elsif ($firstChar eq "\e") {
+                # 1. Tokens consisting of a single newline character, "\n" or "\r"
+                if ($type eq 'nl') {
 
-                if ($text =~ m/\e[\e\n\r\w]/) {
+                    $origLine .= $arg;
+                    # This function calls various functions to process tokens. If one of those
+                    #   called functions needs to call $self->respondIncomingData before processing
+                    #   the token, then the value store in $origLine will be out of date, by the
+                    #   time it's stored in $self->processOrigLine (later in this function)
+                    # Make a backup copy of the token that's being processed on this loop, so
+                    #   we can create an $origLine containing just this token, if we need to
+                    $backup = $arg;
 
-                    # Escape character followed immediately by an escape/newline character, or an
-                    #   alphanumeric character. Definitely not a valid escape sequence, so use the
-                    #   first "\e" as a token
-                    $token = $firstChar;
-                    $origText .= $token;
-                    $text = substr($text, length($token));
-                    @tagList = $self->processEscChar($token);
-
-                    $colour = 'YELLOW';
-
-                } else {
-
-                    # Attempt to extract a valid escape sequence
-                    ($token, $data, $type) = $self->extractEscSequence($text);
-                    if (! defined $token) {
-
-                        # Not a valid escape sequence; if there are no further newline/escape
-                        #   characters, wait until the next packet arrives
-                        $modText = $self->updateEmergencyBuffer($text, 'escape');
-                        $origText .= substr($text, 0, (length($text) - length($modText)));
-                        $text = $modText;
+                    if (
+                        ($arg eq "\n" && $self->crlfMode eq 'cr')
+                        || ($arg eq "\r" && $self->crlfMode eq 'lf')
+                    ) {
+                        # This is the final part of situations 3-6. One newline character has
+                        #   already been added, so we don't need to add the second
+                        $self->ivPoke('crlfMode', '');
 
                     } else {
 
-                        $origText .= $token;
-                        $text = substr($text, length($token));
-                        @tagList = $self->processEscSequence($token, $data, $type);
+                        # Situations 1-2, or the first part of situations 3-6
+                        if ($arg eq "\n") {
+                            $self->ivPoke('crlfMode', 'lf');
+                        } else {
+                            $self->ivPoke('crlfMode', 'cr');
+                        }
 
-                        $colour = 'CYAN';
-                    }
-                }
+                        if ($self->mxpIgnoreNewLineFlag || $self->mxpRelocateQuietLineFlag) {
 
-            } else {
+                            # Ignore this newline character (but not the next one)
+                            $self->ivPoke('mxpIgnoreNewLineFlag', FALSE);
+                            $self->ivPoke('mxpRelocateQuietLineFlag', FALSE);
 
-                # (From here, set $tokenFlag if a token is found, to keep the code simple)
-
-                if (
-                    ($axmud::CLIENT->allowMspFlexibleFlag || $self->nlTokenFlag)
-                    && ($self->mspMode eq 'client_agree' || $self->mspMode eq 'client_simulate')
-                    && ($mspString eq '!!SOUND' || $mspString eq '!!MUSIC')
-                ) {
-                    # Attempt to extract a valid MSP sound trigger. If the sound trigger is invalid,
-                    #   it's treated as normal text
-                    ($successFlag, $length) = $self->extractMspSoundTrigger($text);
-                    if ($successFlag) {
-
-                        # Valid MSP sound trigger. Process its parameters; if this process fails,
-                        #   treat the token as normal text, instead
-                        $token = substr($text, 0, $length);
-                        if ($self->processMspSoundTrigger($token)) {
-
-                            # Parameters were valid
-                            $tokenFlag = TRUE;
-                            $origText .= $token;
-                            $text = substr($text, $length);
-
-                            $colour = 'RED';
+                        } elsif (
+                            ! $self->mxpParagraphFlag
+                            && ! $self->mxpRelocateQuietFlag
+                            && (! $self->puebloActiveFlag || $self->puebloLiteralFlag)
+                        ) {
+                            # Don't ignore the newline character. Tell the code below to call
+                            #   ->respondIncomingData
+                            $respondFlag = TRUE;
                         }
                     }
-                }
 
-                if (! $tokenFlag) {
+                # 2. Tokens consisting of a single escape character "\e" immediately followed by an
+                #   "\e", "\n" or "\r" character, or an alphanumeric character (rare, but possible)
+                } elsif ($type eq 'esc') {
 
-                    # Extract MXP/Pueblo elements/entities
-                    # (Don't extract MXP elements/entities in 'locked' line mode)
+                    @tagList = $self->processEscChar($arg);
+                    $origLine .= $arg;
+                    $backup = $arg;
+
+                # 3. Tokens consisting of an invalid escape sequence, starting with the escape
+                #   character "\e"
+                } elsif ($type eq 'inv') {
+
+                    # Invalid escape sequence are ignored
+                    $origLine .= $arg;
+                    $backup = $arg;
+
+                # 4. Tokens consisting of a valid escape sequence, starting with the escape
+                #   character "\e"
+                } elsif ($type eq 'seq') {
+
+                    # In this case (only), $arg is a reference to a list in the form
+                    #   (token, escape_sequence_data, escape_sequence_type)
+                    @tagList = $self->processEscSequence(@$arg);
+                    $origLine .= $$arg[0];
+                    $backup = $$arg[0];
+
+                # 5. MSP tokens, starting '!!SOUND' or '!!MUSIC' (if MSP is enabled)
+                } elsif ($type eq 'msp') {
+
+                    # Process the MSP sound token's parameters
+                    if (! $self->processMspSoundTrigger($arg)) {
+
+                        # Parameter processing failed; treat the token as normal text, instead
+                        $type = 'text';
+
+                    } else {
+
+                        $origLine .= $arg;
+                        $backup = $arg;
+                    }
+
+                # 6. MXP/Pueblo elements (if MXP or Pueblo are enabled)
+                } elsif ($type eq 'mxp' || $type eq 'pueblo') {
+
+                    # Line spacing tags <NOBR>, <P>, </P>, <BR>, <SBR>, as well as the HTML element
+                    #   <HR>, are processed by a dedicated function
+                    # Heading tags <H1>...<H6> are likewise sent to their own function
+                    # Everything else is processed by ->processMxpElement or ->processPuebloElement
                     if (
-                        (
-                            $self->mxpMode eq 'client_agree'
-                            && defined $self->mxpLineMode
-                            && $self->mxpLineMode != 2
-                        ) || $self->puebloMode eq 'client_agree'
+                        $self->mxpMode eq 'client_agree'
+                        && $axmud::CLIENT->ivExists(
+                            'constMxpLineSpacingHash',
+                            uc($arg),
+                        )
                     ) {
-                        if ($firstChar eq "<") {
+                        $self->processMxpSpacingTag($arg);
+                        $origLine .= $arg;
+                        $backup = $arg;
 
-                            $tokenFlag = TRUE;
+                    } elsif (
+                        $self->puebloMode eq 'client_agree'
+                        && uc($arg) =~ m/\<\/?(BODY|BR|P|HR)\s?.*\>/
+                    ) {
+                        $self->processPuebloSpacingTag($arg);
+                        $origLine .= $arg;
+                        $backup = $arg;
 
-                            # Attempt to extract a valid MXP/Pueblo element. If the element is
-                            #   valid, $length contains the length of $text (starting from the
-                            #   beginning) that is the valid element
-                            $length = $self->extractMxpElement($text);
-                            if (! defined $length) {
+                    } elsif (uc($arg) =~ m/\<\/?H[1-6]\s?.*\>/) {
 
-                                # Abnormally terminated element/tag. Treat it as ordinary, non-MXP
-                                #   text
-                                $tokenFlag = FALSE;
+                        @tagList = $self->processMxpHeadingTag($origLine, $arg);
+                        $origLine .= $arg;
+                        $backup = $arg;
 
-                            } elsif ($length == 0) {
+                    } else {
 
-                                # Incomplete element/tag; if there are no further newline/escape
-                                #   characters, wait until the next packet arrives
-                                $modText = $self->updateEmergencyBuffer($text, 'mxp');
-                                $origText .= substr($text, 0, (length($text) - length($modText)));
-                                $text = $modText;
-
-                            } else {
-
-                                if ($self->mxpMode eq 'client_agree') {
-
-                                    # A valid MXP element
-                                    $token = substr($text, 0, $length);
-                                    $text = substr($text, $length);
-
-                                    $colour = 'GREEN';
-
-                                } else {
-
-                                    # A valid Pueblo element
-                                    $token = substr($text, 0, $length);
-                                    $text = substr($text, $length);
-
-                                    $colour = 'GREEN';
-                                }
-
-                                # Line spacing tags <NOBR>, <P>, </P>, <BR>, <SBR> are sent to
-                                #   their own function, as is the HTML element <HR>
-                                if (
-                                    $self->mxpMode eq 'client_agree'
-                                    && $axmud::CLIENT->ivExists(
-                                        'constMxpLineSpacingHash',
-                                        uc($token),
-                                    )
-                                ) {
-                                    # (If the token is converted to a newline character, $origText
-                                    #   will be converted to an empty string)
-                                    $origText = $self->processMxpSpacingTag($origText, $token);
-
-                                } elsif (
-                                    $self->puebloMode eq 'client_agree'
-                                    && uc($token) =~ m/\<\/?(BODY|BR|P|HR)\s?.*\>/
-                                ) {
-                                    # (If the token is converted to a newline character, $origText
-                                    #   will be converted to an empty string)
-                                    $origText = $self->processPuebloSpacingTag($origText, $token);
-
-                                # Heading tags <H1>...<H6> are likewise sent to their own function
-                                } elsif (uc($token) =~ m/\<\/?H[1-6]\s?.*\>/) {
-
-                                    @tagList = $self->processMxpHeadingTag($origText, $token);
-                                    $origText .= $token;
-
-                                # Everything else goes here
-                                } else {
-
-                                    # Set an IV to handle <FRAME>, <DEST>, <A> and <SEND> tags by
-                                    #   making the current value of $origText available to them
-                                    if (defined $origText && $self->recvLineText) {
-
-                                        $self->ivPoke('mxpOrigText', $origText);
-                                    }
-
-                                    # Proces the tag
-                                    if ($self->mxpMode eq 'client_agree') {
-
-                                        ($tokenFlag, @tagList)
-                                            = $self->processMxpElement($token, $origText);
-
-                                    } else {
-
-                                        ($tokenFlag, @tagList)
-                                            = $self->processPuebloElement($token, $origText);
-                                    }
-
-                                    # Reset the IV, whose value is no longer required
-                                    $self->ivPoke('mxpOrigText', undef);
-
-                                    if (! $tokenFlag) {
-
-                                        # Treat this token as ordinary text, restore the changes to
-                                        #   the $text to analyse from just above
-                                        $text = $token . $text;
-                                        $token = '';
-
-                                    } else {
-
-                                        $origText .= $token;
-                                    }
-                                }
-                            }
-
-                        } elsif ($firstChar eq "&") {
-
-                            # Attempt to extract a valid MXP/Pueblo entity (invalid entities are
-                            #   displayed 'as is'; and are processed by the next bit of code with a
-                            #   call to ->processTextToken)
-                            $token = $self->extractMxpEntity($text);
-                            if ($token) {
-
-                                $value = $self->processMxpEntity($token, $text);
-                                if (defined $value) {
-
-                                    # The entity has been substituted for its value. Treat the value
-                                    #   as a normal text token
-                                    $tokenFlag = TRUE;
-                                    $origText .= $token;
-                                    $text = substr($text, length($token));
-                                    $self->processTextToken($value);
-
-                                    $colour = 'MAGENTA';
-                                }
-                            }
+                        # Process the tag
+                        if ($self->mxpMode eq 'client_agree') {
+                            ($tokenFlag, @tagList) = $self->processMxpElement($arg, $origLine);
+                        } else {
+                            ($tokenFlag, @tagList) = $self->processPuebloElement($arg, $origLine);
                         }
-                    }
-                }
 
-                if (! $tokenFlag) {
+                        if (! $tokenFlag) {
 
-                    # The token is everything from the beginning of text up to:
-                    #   - the last character which isn't an "\n", "\r", "\e"
-                    #   - The last character which isn't "<" or "&", when MXP/Pueblo are enabled
-                    #   - The last character before a !!SOUND or !!MUSIC tag, when MSP flexible tag
-                    #       placement is enabled
-                    $self->ivPoke('crlfMode', '');
-
-                    $mspPosn = index($text, '!!SOUND');
-                    if ($mspPosn == -1) {
-
-                        $mspPosn = index($text, '!!MUSIC');
-                    }
-
-                    # (NB We want to guarantee one character; this clunky regex seems to be the only
-                    #   way to do it, while capturing the backref $1)
-                    if (
-                        ($self->mxpMode eq 'client_agree' && defined $self->mxpLineMode)
-                        || $self->puebloMode eq 'client_agree'
-                    ) {
-                        if ($text =~ m/^([^\n\r\e].*?)[\n\r\e\<\&]/) {
-
-                            $token = $1;
+                            # Tag processing failed; treat the token as normal text, instead
+                            $type = 'text';
 
                         } else {
 
-                            # The rest of $text doesn't contain any of those characters, so $text is
-                            #   the whole token
-                            $token = $text;
+                            $origLine .= $arg;
+                            $backup = $arg;
                         }
+                    }
 
-                    } elsif ($text =~ m/^([^\n\r\e].*?)[\n\r\e]/) {
+                # 7. MXP entities (if MXP is enabled)
+                } elsif ($type eq 'ent') {
 
-                        $token = $1;
+                    $value = $self->processMxpEntity($arg, $text);
+                    if (! defined $value) {
+
+                        # The entity was not substituted for its value. Treat the entity as a normal
+                        #   text token
+                        $type = 'text';
 
                     } else {
 
-                        $token = $text;
+                        # The entity has been substituted for its value. Treat the value as a normal
+                        #   text token
+                        $type = 'text';
+                        $arg = $value;
                     }
 
-                    if (
-                        $mspPosn > -1
-                        && $mspPosn < length($token)
-                        && ($self->mspMode eq 'client_agree' || $self->mspMode eq 'client_simulate')
-                        && $axmud::CLIENT->allowMspFlexibleFlag
-                    ) {
-                        $token = substr($text, 0, $mspPosn);
-                    }
+                # 8. MCP tokens, starting '#$#', and non-MCP tokens, starting '#$"' (if MCP is
+                #   enabled)
+                } elsif ($type eq 'mcp') {
 
-                    # When Pueblo is active, reduce multiple whitespace characters to a single
-                    #   space (or none, if there are no characters on the line)
-                    $reduceToken = $token;
+                    $self->processMcpMsg($arg);
+                    $origLine .= $arg;
+                    $backup = $arg;
+
+                } elsif ($type eq 'nomcp') {
+
+                    $origLine .= $arg;
+                    $backup = $arg;
+                }
+
+                # 9. An ordinary text token (possibly converted from some other token in the code
+                #   above)
+                if ($type eq 'text') {
+
+                    # The newline character situations 3-6, detailed above, do not apply
+                    $self->ivPoke('crlfMode', '');
+
+                    # When Pueblo is active, reduce multiple whitespace characters to a single space
+                    #   (or none, if there are no characters on the line)
+                    $reduceToken = $arg;
+                    $wholeText = $self->getPartialLine() . $stripLine;
                     if (
                         $self->puebloActiveFlag
                         && ! $self->puebloLiteralFlag
                         && ! $self->puebloLiteralSampFlag
                     ) {
-                        if (! ($self->recvWholeLineText =~ m/\S/)) {
+                        if (! ($wholeText =~ m/\S/)) {
 
                             $reduceToken =~ s/^\s+//;
                         }
@@ -12205,117 +12200,159 @@
                         $reduceToken =~ s/\s+/ /;
                     }
 
+                    # Update the IV used to write logs showing images files
+                    $self->ivPoke('processImageLine', $self->processImageLine . $reduceToken);
+
+                    # Process the text token (unless an MXP crosslinking operation is in progress,
+                    #   in quiet mode, in which case the token is simply ignored)
                     if (! $self->mxpRelocateQuietFlag && ! $self->mxpRelocateQuietLineFlag) {
 
-                        $origText .= $reduceToken;
-                        $text = substr($text, length($token));
+                        $self->updateTextToken($reduceToken);
 
-                        $self->processTextToken($reduceToken);
+                        $origLine .= $reduceToken;
+                        $stripLine .= $reduceToken;
+
+                        $backup = $reduceToken;
+                    }
+                }
+
+                # Handle MXP temp secure mode, if it is marked as 'on'
+                if (defined $self->mxpTempMode) {
+
+                    push (@tagList, $self->checkMxpSecureMode($text, $tempMode));
+                }
+
+                # $stripLine contains only the combined text tags. Note the positions (offsets) in
+                #   that string at which extracted Axmud colour/style tags must be applied
+                if (@tagList) {
+
+                    $stripLength = length($stripLine);
+                    $listRef = $lineTagHash{$stripLength};
+                    if (! defined $listRef) {
+
+                        # There are no Axmud colour/style tags to be applied at this offset, yet
+                        $lineTagHash{$stripLength} = \@tagList;
 
                     } else {
 
-                        # MXP crosslinking operation is in progress, in quiet mode, so simply
-                        #   discard this token
-                        $text = substr($text, length($token));
+                        # There are already tags to be applied at this offset; add the new tag(s) to
+                        #   the existing ones
+                        push (@$listRef, @tagList);
+                    }
+                }
+
+                # If a newline tag has just been processed (and not ignored), or if some other part
+                #   of the code (e.g. the MXP code) has just signalled that it wants a newline by
+                #   artificially inserting the token type 'go'...
+                if (
+                    ($type eq 'nl' && $respondFlag)
+                    || $type eq 'go'
+                ) {
+                    # Apply triggers to the complete or partial line, and display it
+                    $self->respondIncomingData(
+                        $type,
+                        $origLine,
+                        $stripLine,
+                        %lineTagHash,
+                    );
+
+                    # ($self->processOrigLine, ->processStripLine and ->processTagHash have all been
+                    #   reset, ready for the next line)
+
+                    # Update IVs, and generate a list of Axmud colour/style tags that apply to the
+                    #   beginning of the next line
+                    @newTagList = $self->updateEndLine($type);
+                    if (@newTagList) {
+
+                        $listRef = $self->ivShow('processTagHash', 0);
+                        if (! defined $listRef) {
+
+                            # $self->respondIncomingData should have created an empty list of tags
+                            #   at the offset 0, representing the beginning of the line; but just in
+                            #   case it doesn't exist, create it
+                            $self->ivAdd('processTagHash', 0, \@newTagList);
+
+                        } else {
+
+                            # Add the new tags to the beginning of the line; $listRef should be
+                            #   empty, but just in case it already contains tags, use a push
+                            #   operation
+                            push (@$listRef, @newTagList);
+                        }
                     }
 
-                    $colour = 'white';
-                }
-            }
-
-            # For the benefit of MSP, remember whether the last token processed was a newline token,
-            #   or not
-            if ($nlTokenFlag) {
-                $self->ivPoke('nlTokenFlag', TRUE);
-            } else {
-                $self->ivPoke('nlTokenFlag', FALSE);
-            }
-
-            if ($self->rawTokenTask && $self->rawTokenTask->taskWinFlag) {
-
-                if (! $token) {
-
-#                    # Usually not needed, because it's probably an incomplete escape sequence now
-#                    #   stored in $self->emergencyBuffer
-#                    $self->rawTokenTask->insertText('EMPTY TOKEN', 'red', 'ul_white');
-
-                } elsif ($token =~ m/[\n\r]/) {
-
-                    $self->rawTokenTask->insertText('NEWLINE', $colour);
+                    # $self->processOrigLine, ->processStripLine and ->processTagHash have been
+                    #   reset after the newline token, so we can now discard the contents of
+                    #   $origLine, $stripLine and %lineTagHash
+                    $self->ivPoke('processRetainFlag', FALSE);
 
                 } else {
 
-                    $self->rawTokenTask->insertText($token, $colour);
-                }
-            }
+                    # Store the variables in an IV, so that any code that needs to can force the
+                    #   display of a partial line (e.g. $self->processMxpFrameElement, which needs
+                    #   to display all undisplayed tokens before it can switch to a new frame)
+                    # Exception: if the IVs have just been reset after a call to
+                    #   $self->respondIncomingData, leave them in their reset state
+                    if (! $self->processRetainFlag) {
 
-            # Handle temp secure mode, if it is marked as 'on'
-            if (defined $self->mxpTempMode) {
+                        $self->ivPoke('processOrigLine', $origLine);
+                        $self->ivPoke('processStripLine', $stripLine);
+                        $self->ivPoke('processTagHash', %lineTagHash);
 
-                push (@tagList, $self->checkMxpSecureMode($text, $tempMode));
-            }
-
-            # If any Axmud colour/style tags have been generated, store them
-            if (@tagList) {
-
-                if ($self->ivExists('recvLineHash', $self->recvLineLength)) {
-
-                    # There are already tags stored at this offset
-                    $listRef = $self->ivShow('recvLineHash', $self->recvLineLength);
-                    push (@$listRef, @tagList);
-
-                } else {
-
-                    # There are no tags stored at this offset yet
-                    $self->ivAdd('recvLineHash', $self->recvLineLength, \@tagList);
-                }
-            }
-
-            # If any MXP debug messages have been generated, display them, then display a summary of
-            #   the token that caused the problem
-            if ($self->mxpPuebloDebugList) {
-
-                do {
-
-                    my ($protocol, $token, $num, $msg);
-
-                    $protocol = $self->ivShift('mxpPuebloDebugList');
-                    $token = $self->ivShift('mxpPuebloDebugList');
-                    $num = $self->ivShift('mxpPuebloDebugList');
-                    $msg = $self->ivShift('mxpPuebloDebugList');
-
-                    $self->writeDebug(uc($protocol) . ': ' . $msg . ' (#' . $num . ')');
-                    $self->writeDebug('   Token: ' . $token);
-
-                    # (In this debug message, replace newline characters with visible '\n' and '\r'
-                    #   strings, so that the user can see the first line, plus any newline character
-                    #   which terminates it)
-                    $string = $origText . $text;
-                    if ($string =~ m/(.*[\n\r])/) {
-                        $showText = $1;
                     } else {
-                        $showText = $string;
+
+                        # As suggested above, $self->respondIncomingData was called by one of the
+                        #   function processing this token, so $origLine, $stripLine and
+                        #   %lineTagHash are out of date
+                        # Set their values for the token this loop is processing
+                        $self->ivPoke('processRetainFlag', FALSE);
+
+                        if (defined $backup) {
+
+                            $self->ivPoke('processOrigLine', $self->processOrigLine . $backup);
+
+                            if ($type eq 'text') {
+
+                                $self->ivPoke(
+                                    'processStripLine',
+                                    $self->processStripLine . $backup,
+                                );
+                            }
+                        }
+
+                        if (@tagList) {
+
+                            $listRef = $self->ivShow('processTagHash', 0);
+                            if (! defined $listRef) {
+
+                                $self->ivAdd('processTagHash', 0, \@tagList);
+
+                            } else {
+
+                                push (@$listRef, @tagList);
+                            }
+                        }
                     }
+                }
 
-                    $showText =~ s/[\n]/\\n/;
-                    $showText =~ s/[\r]/\\r/;
+                # If any MXP/Pueblo/MCP debug messages have been generated, display them, then
+                #   display a summary of the token that caused the problem
+                $self->displayProtocolDebug();
 
-                    if ($showText) {
-                        $self->writeDebug('   Line : ' . $showText);
-                    } else {
-                        $self->writeDebug('   Line : (empty line)');
-                    }
+            } until (! $self->currentTokenList);
 
-                } until (! $self->mxpPuebloDebugList);
+            # If there are some text tokens to display (i.e. an incomplete line, not ending with a
+            #   newline character, was received from the world), then display them
+            if ($self->processStripLine ne '') {
+
+                # Apply triggers to partial line, and display it
+                $self->respondIncomingData(
+                    'part',
+                    $self->processOrigLine,
+                    $self->processStripLine,
+                    $self->processTagHash,
+                );
             }
-
-        } until (! $text);
-
-        # If the packet doesn't end with a newline character, but there is text stored in
-        #   $self->recvLineText that hasn't been displayed yet, then display it
-        if ($self->recvLineText) {
-
-            $self->processIncompleteLine($origText);
         }
 
         # Apply any links created by MXP <A> and <SEND> tags to the current textview (if the current
@@ -12330,8 +12367,6 @@
 
         # Update the connection info strip object for any 'internal' windows used by this session
         foreach my $winObj ($axmud::CLIENT->desktopObj->listSessionGridWins($self, TRUE)) {
-
-            my $stripObj;
 
             # Update information stored in each 'internal' window's connection info strip,
             #   if visible
@@ -12364,9 +12399,1946 @@
         return 1;
     }
 
+    sub tokeniseIncomingData {
+
+        # Called by $self->processIncomingData
+        # Tokenises the text received from the world, producing a list in groups of two, in the form
+        #   (type, argument, type, argument...)
+        # Where 'type' is one of the strings 'nl', 'esc', 'inv', 'seq', 'msp', 'mxp', 'ent',
+        #   'pueblo' or 'text', and 'argument' is usually the token, but in the case of an escape
+        #   sequence is a reference to a list of values, the first of which is the token
+        #
+        # The list is stored in $self->currentTokenList, rather than in a local variable in the
+        #   calling function
+        #
+        # Expected arguments
+        #   $text   - The incoming text to tokenise
+        #
+        # Return values
+        #   'undef' on improper arguments or if $text is an empty string
+        #   1 otherwise
+
+        my ($self, $text, $check) = @_;
+
+        # Local variables
+        my (
+            $mspFlag, $mxpPuebloFlag, $nextChar,
+            @tokenList,
+        );
+
+        # Check for improper arguments
+        if (! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->tokeniseIncomingData', @_);
+        }
+
+        # The calling function has already checked that $text isn't an empty string, but we will
+        #   check, too
+        if ($text eq '') {
+
+            return undef;
+        }
+
+        # Check in advance whether MSP is enabled, or not
+        if ($self->mspMode eq 'client_agree' || $self->mspMode eq 'client_simulate') {
+
+            $mspFlag = TRUE;
+        }
+
+        # Check in advance whether MXP/Pueblo are enabled, or not
+        if ($self->mxpMode eq 'client_agree' || $self->puebloMode eq 'client_agree') {
+
+            $mxpPuebloFlag = TRUE;
+        }
+
+        # Tokenise $text, removing each token one by one until $text an empty string
+        do {
+
+            my (
+                $firstChar, $mcpString, $mspString, $token, $data, $type, $offset, $mspPosn,
+                $someText,
+            );
+
+            $firstChar = substr($text, 0, 1);
+            $mcpString = substr($text, 0, 3);
+            $mspString = substr($text, 0, 7);
+
+            # 1. Tokens consisting of a single newline character, "\n" or "\r"
+            if ($firstChar eq "\n" || $firstChar eq "\r") {
+
+                push (@tokenList, 'nl', $firstChar);
+                $text = substr($text, 1);
+                $self->ivPoke('lastTokenType', 'nl');
+
+            # 2. Tokens consisting of a single escape character "\e" immediately followed by an
+            #       "\e", "\n" or "\r" character, or an alphanumeric character (rare, but possible)
+            # 3. Tokens consisting of an invalid escape sequence, starting with the escape
+            #       character "\e"
+            # 4. Tokens consisting of a valid escape sequence, starting with the escape character
+            #       "\e"
+            } elsif ($firstChar eq "\e") {
+
+                if ($text =~ m/\e[\e\n\r\w]/) {
+
+                    # Definitely not a valid escape sequence, so use the "\e" as a separate token
+                    push (@tokenList, 'esc', $firstChar);
+                    $text = substr($text, 1);
+                    $self->ivPoke('lastTokenType', 'esc');
+
+                } else {
+
+                    # Attempt to extract a valid escape sequence
+                    ($token, $data, $type) = $self->extractEscSequence($text);
+                    if (! defined $token) {
+
+                        # Not a valid escape sequence
+
+                        # Find the offset of the first newline or escape character in $text (besides
+                        #   the first character, which we already know is an escape character)
+                        $offset = $self->findNewLineEscape($text);
+
+                        if (! defined $offset) {
+
+                            # No newline/escape characters found
+                            # Assume this is an incomplete escape sequence. Store it in an emergency
+                            #   buffer, and wait until the next packet arrives
+                            if (defined $self->emergencyBuffer) {
+                                $self->ivPoke('emergencyBuffer', $self->emergencyBuffer . $text);
+                            } else {
+                                $self->ivPoke('emergencyBuffer', $text);
+                            }
+
+                            # Tokenisation is complete
+                            $self->ivPoke('currentTokenList', @tokenList);
+
+                            return 1;
+
+                        } else {
+
+                            # Assume this is an invalid escape sequence. Create an invalid token
+                            #   that subsequent code can ignore
+                            push (@tokenList, 'inv', substr($text, 0, $offset));
+                            $text = substr($text, $offset);
+                            $self->ivPoke('lastTokenType', 'inv');
+                        }
+
+                    } else {
+
+                        # Valid escape sequence
+                        push (@tokenList, 'seq', [$token, $data, $type]);
+                        $text = substr($text, length($token));
+                        $self->ivPoke('lastTokenType', 'seq');
+                    }
+                }
+
+            # 5. MSP tokens, starting '!!SOUND' or '!!MUSIC' (if MSP is enabled)
+            } elsif (
+                ($mspString eq '!!SOUND' || $mspString eq '!!MUSIC')
+                && $mspFlag
+                && ($axmud::CLIENT->allowMspFlexibleFlag || $self->lastTokenType eq 'nl')
+            ) {
+                # Attempt to extract a valid MSP sound trigger
+                $token = $self->extractMspSoundTrigger($text);
+                if (! defined $token) {
+
+                    # If the sound trigger is invalid, it's treated as normal text
+                    push (@tokenList, 'text', $mspString);
+                    $text = substr($text, length($mspString));
+                    $self->ivPoke('lastTokenType', 'text');
+
+                } elsif ($token eq '') {
+
+                    # Assume this is an incomplete MSP sound trigger. Store it in an emergency
+                    #   buffer, and wait until the next packet arrives
+                    if (defined $self->emergencyBuffer) {
+                        $self->ivPoke('emergencyBuffer', $self->emergencyBuffer . $text);
+                    } else {
+                        $self->ivPoke('emergencyBuffer', $text);
+                    }
+
+                    # Tokenisation is complete
+                    $self->ivPoke('currentTokenList', @tokenList);
+
+                    return 1;
+
+                } else {
+
+                    push (@tokenList, 'msp', $token);
+                    $text = substr($text, length($token));
+                    $self->ivPoke('lastTokenType', 'msp');
+                }
+
+            # 6. MXP/Pueblo elements (if MXP or Pueblo are enabled)
+            } elsif ($firstChar eq '<' && $mxpPuebloFlag) {
+
+                # Attempt to extract a valid MXP/Pueblo element/tag
+                $token = $self->extractMxpPuebloElement($text);
+                if (! defined $token) {
+
+                    # If it's an abnormally terminated element/tag, it's treated as ordinary text
+                    push (@tokenList, 'text', $firstChar);
+                    $text = substr($text, 1);
+                    $self->ivPoke('lastTokenType', 'text');
+
+                } elsif ($token eq '') {
+
+                    # Assume this is an incomplete element/tag. Store it in an emergency buffer,
+                    #   and wait until the next packet arrives
+                    if (defined $self->emergencyBuffer) {
+                        $self->ivPoke('emergencyBuffer', $self->emergencyBuffer . $text);
+                    } else {
+                        $self->ivPoke('emergencyBuffer', $text);
+                    }
+
+                    # Tokenisation is complete
+                    $self->ivPoke('currentTokenList', @tokenList);
+
+                    return 1;
+
+                } elsif ($self->mxpMode eq 'client_agree') {
+
+                    # A valid MXP element/tag
+                    push (@tokenList, 'mxp', $token);
+                    $text = substr($text, length($token));
+                    $self->ivPoke('lastTokenType', 'mxp');
+
+                } elsif ($self->puebloMode eq 'client_agree') {
+
+                    # A valid Pueblo element/tag
+                    push (@tokenList, 'pueblo', $token);
+                    $text = substr($text, length($token));
+                    $self->ivPoke('lastTokenType', 'pueblo');
+
+                } else {
+
+                    # Emergency fallback (should never be executed) - treat as ordinary text
+                    push (@tokenList, 'text', $token);
+                    $text = substr($text, length($token));
+                    $self->ivPoke('lastTokenType', 'text');
+                }
+
+            # 7. MXP/Pueblo entities (if MXP or Pueblo are enabled)
+            } elsif ($firstChar eq '&' && $mxpPuebloFlag) {
+
+                # Attempt to extract a valid MXP/Pueblo entity
+                $token = $self->extractMxpPuebloEntity($text);
+                if (! defined $token) {
+
+                    # If it's an invalid entity, display it 'as is'
+                    push (@tokenList, 'text', $firstChar);
+                    $text = substr($text, 1);
+                    $self->ivPoke('lastTokenType', 'text');
+
+                } else {
+
+                    # A valid MXP/Pueblo entity
+                    push (@tokenList, 'ent', $token);
+                    $text = substr($text, length($token));
+                    $self->ivPoke('lastTokenType', 'ent');
+                }
+
+            # 8. MCP tokens, starting '#$#', and non-MCP tokens, starting '#$"' (if MCP is enabled)
+            } elsif (
+                ($mcpString eq '#$#' || $mcpString eq '#$"')
+                && $self->mcpMode eq 'client_agree'
+                && ($self->lastTokenType eq 'nl' || $self->lastTokenType eq 'mcp')
+            ) {
+                # For MCP tokens starting '#$#', extract the whole line, including the newline
+                #   character(s) at the end
+                if ($mcpString eq '#$#') {
+
+                    if ($text =~ m/^(\#\$\#[^\n\r]*[\n\r])/) {
+
+                        $token = $1;
+
+                        # Extract a line ending \n\r, \r\n or just \n or \r
+                        $nextChar = substr($text, length($token), 1);
+                        if (
+                            $nextChar ne ''
+                            && (
+                                ($token =~ m/[\n]$/ && $nextChar eq "\r")
+                                || ($token =~ m/[\r]$/ && $nextChar eq "\n")
+                            )
+                        ) {
+                            $token .= $nextChar;
+                        }
+
+                        push (@tokenList, 'mcp', $token);
+                        $text = substr($text, length ($token));
+                        $self->ivPoke('lastTokenType', 'mcp');
+
+                    } else {
+
+                        # No newline characters found
+                        # Assume this is an incomplete MCP message. Store it in an emergency buffer,
+                        #   and wait until the next packet arrives
+                        if (defined $self->emergencyBuffer) {
+                            $self->ivPoke('emergencyBuffer', $self->emergencyBuffer . $text);
+                        } else {
+                            $self->ivPoke('emergencyBuffer', $text);
+                        }
+
+                        # Tokenisation is complete
+                        $self->ivPoke('currentTokenList', @tokenList);
+
+                        return 1;
+                    }
+
+                # For non-MCP tokens starting '#$"', extract that part
+                # The rest of the line is an in-bound line, which should start either '#$#' or
+                #   '#$"'; if either occurs, extract them as an ordinary text token so they're not
+                #   treated as MCP-related
+                } else {
+
+                    push (@tokenList, 'nomcp', substr($text, 0, 3));
+                    $text = substr($text, 3);
+                    $self->ivPoke('lastTokenType', 'nomcp');
+
+                    $mcpString = substr($text, 0, 3);
+                    if ($mcpString eq '#$#' || $mcpString eq '#$"') {
+
+                        push (@tokenList, 'text', $mcpString);
+                        $text = substr($text, 3);
+                        $self->ivPoke('lastTokenType', 'text');
+                    }
+                }
+
+            # 9. An ordinary text token, everything from the beginning of $text up to:
+            #       - The last character which isn't an "\n", "\r", "\e"
+            #       - The last character which isn't "<" or "&", when MXP/Pueblo are enabled
+            #       - The last character before a !!SOUND or !!MUSIC tag, when MSP flexible tag
+            #           placement is enabled
+            #       - The end of $text, if none of the above apply
+            } else {
+
+                # If an MSP sound trigger is present, we don't need to look further than that
+                if (
+                    $mspFlag
+                    && ($axmud::CLIENT->allowMspFlexibleFlag || $self->lastTokenType eq 'nl')
+                ) {
+                    $mspPosn = index($text, '!!SOUND');
+                    if ($mspPosn == -1) {
+
+                        $mspPosn = index($text, '!!MUSIC');
+                    }
+                }
+
+                if (defined $mspPosn && $mspPosn > -1) {
+
+                    $someText = substr($text, 0, $mspPosn);
+
+                } else {
+
+                    $someText = $text;
+                }
+
+                # Check for the end of a token, up to the end of $someText
+                if ($mxpPuebloFlag) {
+
+                    if ($someText =~ m/^([^\n\r\e].*?)[\n\r\e\<\&]/) {
+
+                        $token = $1;
+
+                    } else {
+
+                        # The rest of $someText doesn't contain any of those characters, so the
+                        #   whole token is $someText
+                        $token = $someText;
+                    }
+
+                } elsif ($text =~ m/^([^\n\r\e].*?)[\n\r\e]/) {
+
+                    $token = $1;
+
+                } else {
+
+                    $token = $someText;
+                }
+
+                # Add the text token to the token list
+                push (@tokenList, 'text', $token);
+                $text = substr($text, length($token));
+                $self->ivPoke('lastTokenType', 'text');
+            }
+
+        } until ($text eq '');
+
+        # Operation complete. Store the list as an IV, before returning
+        $self->ivPoke('currentTokenList', @tokenList);
+
+        return 1;
+    }
+
+    sub respondIncomingData {
+
+        # Called by $self->processIncomingData when a newline token is processed (and not ignored),
+        #   or when an artificial newline token is inserted by some part of the code, or when the
+        #   calling function runs out of tokens (meaning that the incoming data didn't end with a
+        #   newline character)
+        # Also called by any token-processing function which needs to display an incomplete line,
+        #   before it can finish processing its token (e.g. by $self->processMxpFrameElement)
+        #
+        # Prepares to display a complete or partial line, and updates some IVs
+        #
+        # Expected arguments
+        #   $type           - 'nl' for a newline token, 'go' for an artificially-inserted newline
+        #                       token or 'part' if the calling function has run out of tokens
+        #   $origLine       - The original text received from the world, before any tokens were
+        #                       extracted
+        #   $stripLine      - $origLine, but with all non-text tokens removed
+        #
+        # Optional arguments
+        #   %lineTagHash    - A hash of the Axmud colour/style tags stripped from $stripLine. A hash
+        #                       in the form
+        #                           $lineTagHash{line_offset} = reference_to_list_of_tags
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $type, $origLine, $stripLine, %lineTagHash) = @_;
+
+        # Local variables
+        my (
+            $bufferObj, $wholeText,
+            @emptyList,
+        );
+
+        # Check for improper arguments
+        if (! defined $type || ! defined $origLine || ! defined $stripLine) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->respondIncomingData', @_);
+        }
+
+        # Add any stripped text already displayed on this line to the stripped text that's about to
+        #   be displayed, so we can check for empty line suppression
+        $wholeText =  $self->getPartialLine() . $stripLine;
+
+        # If an incomplete line (i.e. one not ending in a newline character) is the last
+        # If empty line suppression is turned on (and the character is marked as logged in, when
+        #   required), suppress empty lines, as necessary
+        if (
+            $type ne 'nl'
+            || ! (
+                $self->currentWorld->suppressEmptyLineCount
+                && ($self->currentWorld->suppressBeforeLoginFlag || $self->loginFlag)
+                && $wholeText =~ m/^\s*$/
+                && (
+                    # Suppress all empty lines
+                    $self->currentWorld->suppressEmptyLineCount == 1
+                    # Suppress consecutive empty lines
+                    || $self->checkSuppressLine()
+                )
+            )
+        ) {
+            # Prepare everything that needs to be displayed (after checking it for triggers, and so
+            #   on), and then display it
+            if (! $self->processLinePortion($type, $origLine, $stripLine, %lineTagHash)) {
+
+                # Store the un-displayed text in the emergency buffer, assuming that the next packet
+                #   received will contain the rest of this incomplete line
+                if (defined $self->emergencyBuffer) {
+                    $self->ivPoke('emergencyBuffer', $self->emergencyBuffer . $origLine);
+                } else {
+                    $self->ivPoke('emergencyBuffer', $origLine);
+                }
+            }
+        }
+
+        # Update IVs, which must be reset every time processed tokens are actually displayed
+        $self->ivPoke('processOrigLine', '');
+        $self->ivPoke('processStripLine', '');
+        $self->ivPoke('processImageLine', '');
+        $self->ivEmpty('processTagHash');
+        # Inform $self->processIncomingData that a complete or partial line has been displayed, in
+        #   case it doesn't already know
+        $self->ivPoke('processRetainFlag', TRUE);
+
+        # (Later code is simpler, if hashes of Axmud colour/style tags always have at least one
+        #   entry, representing an empty list at the beginning of the line)
+        $self->ivPoke('processTagHash', 0, \@emptyList);
+
+        return 1;
+    }
+
+    sub processLinePortion {
+
+        # Called by $self->respondIncomingData
+        # A line portion is either a complete line of text, ending in a newline character, or a
+        #   partial line of text (because an earlier portion has already been displayed, or because
+        #   the line doesn't end with a newline character, or both)
+        #
+        # Sometimes the line portion needs to be split into segments, for example if
+        #   - The line portion contains a recognised command prompt, so the line must be split
+        #   - A splitter trigger has fired on this line
+        # If there are multiple segments, they are treated as separate lines
+        #
+        # This function splits the line portion into segments, and then displays each segment
+        #   separately (ordinarily, there's only one segment that's exactly the same as the line
+        #   portion)
+        #
+        # Expected arguments
+        #   $type           - 'nl' if the line portion ends with a newline token, 'go' if the line
+        #                       portion ends with an artificially-inserted newline token or 'part'
+        #                       if the line portion doesn't end with a newline character at all
+        #   $origPortion    - The original line portion received from the world, before any tokens
+        #                       were extracted
+        #   $stripPortion   - $origPortion, but with all non-text tokens removed
+        #   %lineTagHash    - A hash of the Axmud colour/style tags stripped from $stripLine. A hash
+        #                       in the form
+        #                           $lineTagHash{line_offset} = reference_to_list_of_tags
+        #                   - Will not be an empty hash, because when $self->processTagHash is
+        #                       reset, it's always given an entry at offset 0
+        #
+        # Return values
+        #   'undef' on improper arguments or if (in 'strict prompts mode') an unrecognised
+        #       prompt is found, which is assumed to be the first part of a complete line we haven't
+        #       received yet
+        #   1 otherwise
+
+        my ($self, $type, $origPortion, $stripPortion, %lineTagHash) = @_;
+
+        # Local variables
+        my (
+            $newLineFlag, $matchFlag, $previousOffset,
+            @offsetList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $type || ! defined $origPortion || ! defined $stripPortion || ! %lineTagHash
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processLinePortion', @_);
+        }
+
+        if ($type eq 'nl' || $type eq 'go') {
+            $newLineFlag = TRUE;
+        } else {
+            $newLineFlag = FALSE;
+        }
+
+        # Check for strict prompts, if necessary
+        if (
+            $type eq 'part'
+            && $self->currentWorld->strictPromptsMode
+            # If $self->processIncomingData found an incomplete escape sequence at the end of a
+            #   packet, it's been saved in $self->emergencyBuffer. In that case, there is no doubt
+            #   that $stripPortion is not a prompt, so we don't have to check strict prompts
+            && ! $self->emergencyBuffer
+        ) {
+            # GA::Profile::World->cmdPromptPatternList contains a list of patterns which are the
+            #   world's command prompts (prompts don't have a newline character after them, as most
+            #   other lines sent by the world do)
+            # Test the line portion for recognised command prompts. If none are found, divert this
+            #    text into the emergency buffer until some more text is received
+            INNER: foreach my $pattern ($self->currentWorld->cmdPromptPatternList) {
+
+                if ($stripPortion =~ m/$pattern/g) {
+
+                    $matchFlag = TRUE;
+                }
+            }
+
+            if (! $matchFlag) {
+
+                # This line portion and any remaining lines not yet processed by
+                #   $self->processIncomingData will be copied into $self->emergencyBuffer
+                return undef;
+            }
+        }
+
+        # Because of the lack of a newline character in a command prompt, if the user types
+        #   'north;north;north', the command prompt and the following text appear on the same line
+        # Test $stripPortion against known command prompt patterns. If the line portion matches any
+        #   of the patterns, we have to split the line portion at that point (unless the matching
+        #   text occurs at the end of $stripPortion, in which case there's no point in splitting it)
+        # @offsetList contains the offsets of the first character after any matching text
+        #
+        # At the same time we'll check splitter triggers. @offsetList contains the offset of the
+        #   first character after the point at which a line portion is split into two
+        @offsetList = $self->checkLineSplit($stripPortion, $type);
+        if (! @offsetList) {
+
+            # There are no command prompts in the middle of $stripPortion, and no splitter trigger
+            #   has split the line portion into two or more segments, so process the whole line
+            #   portion as a single line segment
+            $self->processLineSegment(
+                $origPortion,
+                $stripPortion,
+                $newLineFlag,
+                FALSE,          # Let the function decide whether the segment is a prompt, or not
+                %lineTagHash,
+            );
+
+        } else {
+
+            # Split the line portion into separate line segments, as if we were inserting a newline
+            #   character at all the positions in @offsetList
+            # This job is complicated by the fact that we also have to divide %lineTagHash,
+            #   adjusting the position of each group of tags
+            $previousOffset = 0;        # Start at the beginning of $stripPortion
+            for (my $offsetCount = 0; $offsetCount <= scalar @offsetList; $offsetCount++) {
+
+                my (
+                    $offset, $segment, $thisNewLineFlag, $promptFlag,
+                    @emptyList,
+                    %thisTagHash,
+                );
+
+                # Get the segment of the line between the last offset used (or the beginning of the
+                #   line portion and this offset, if it's the first offset used) and the end of the
+                #   matching text
+                if ($offsetCount < scalar @offsetList) {
+
+                    # Segment is not at the end of $stripPortion
+                    $offset = $offsetList[$offsetCount];
+                    $segment = substr(
+                        $stripPortion,
+                        $previousOffset,
+                        ($offset - $previousOffset),
+                    );
+
+                    # We treat the segment as if it were a line portion that ended with a newline
+                    #   character
+                    $thisNewLineFlag = TRUE;
+                    # The segment definitely ends with a prompt
+                    $promptFlag = TRUE;
+
+                } else {
+
+                    # The segment is at the end of $stripPortion
+                    $segment = substr($stripPortion, $previousOffset);
+                    # We treat the segment as ending with a newline character, or not, depending on
+                    #   whether the whole line portion ends with a newline character
+                    $thisNewLineFlag = $newLineFlag;
+                    # The segment might end with a prompt, or not; it's up to ->processLineSegment
+                    #   to decide
+                    $promptFlag = FALSE;
+                }
+
+                # Create a new hash of Axmud colour/style tags that occur in the matched text,
+                #   adjusting their positions (offsets) accordingly
+                foreach my $posn (keys %lineTagHash) {
+
+                    my ($listRef, $newPosn);
+
+                    $listRef = $lineTagHash{$posn};
+                    $newPosn = $posn - $previousOffset;
+
+                    if (
+                        $posn >= $previousOffset
+                        && (! defined $offset || $posn < $offset)
+                    ) {
+                        $thisTagHash{$newPosn} = $listRef;
+                    }
+                }
+
+                # %lineTagHash (as well as %thisTagHash) always have a key-value pair at offset 0,
+                #   because it keeps the code simple
+                # If a line has been split into multiple segments, only the first portion will now
+                #   have a tag hash with a key-value pair at offset 0. Add a new key-value pair at
+                #   offset 0 for all segments which now lack it
+                if (! exists $thisTagHash{0}) {
+
+                    $thisTagHash{0} = \@emptyList;
+                }
+
+                # Process the line segment
+                $self->processLineSegment(
+                    $origPortion,
+                    $segment,
+                    $thisNewLineFlag,
+                    $promptFlag,
+                    %thisTagHash,
+                );
+
+                # The next line segment begins after this one
+                $previousOffset = $offset;
+            }
+        }
+
+        if (! $newLineFlag) {
+
+            # $stripPortion (the whole line portion, before it was divided into segments) ends with
+            #   a prompt (i.e., doesn't end with a newline character). If it's a recognised command
+            #   prompt, we have to set $self->cmdPromptFlag
+            OUTER: foreach my $pattern ($self->currentWorld->cmdPromptPatternList) {
+
+                if ($stripPortion =~ m/$pattern$/) {
+
+                    $self->ivPoke('cmdPromptFlag', TRUE);
+                    last OUTER;
+                }
+            }
+        }
+
+        # Write the 'receive' logfile (all other logfiles have already been written by the call to
+        #   $self->processLineSegment)
+        $self->writeReceiveDataLog($stripPortion, $self->processImageLine, $newLineFlag);
+
+        return 1;
+    }
+
+    sub processLineSegment {
+
+        # Called by $self->processLinePortion, which received a complete or partial line of
+        #   received text
+        # If that line portion matched recognised command prompts or matched splitter triggers, it
+        #   will have been split into two or more segments; this function is called for each
+        #   segment
+        # If not, this function is called once, with the segment being the whole line portion
+        #
+        # Expected arguments
+        #   $origPortion    - The original line portion received from the world, before any tokens
+        #                       were extracted
+        #   $segment        - The line segment. After all non-text tokens are extracted from
+        #                       $origPortion, it is divided into one or more segments; this is one
+        #                       of those segments
+        #   $newLineFlag    - Flag set to TRUE if this line segment is to be displayed with a
+        #                       newline character following it, FALSE if it should not be displayed
+        #                       with a newline character following it
+        #   $promptFlag     - Flag set to TRUE if this line segment definitely ends in a prompt; set
+        #                       to FALSE if this function should decide if it ends in a prompt, or
+        #                       not
+        #   %segmentTagHash - A hash of Axmud colour/style tags, in the form:
+        #                       $segmentTagHash{offset} = reference_to_list_of_colour_and_style_tags
+        #                   - Will not be an empty hash, because when $self->processTagHash is
+        #                       reset, it's always given an entry at offset 0
+        #
+        # Return values
+        #   'undef' on improper arguments or if the line is empty, and has been suppressed due to
+        #       line suppression IVs in the current world
+        #   1 otherwise
+
+        my ($self, $origPortion, $segment, $newLineFlag, $promptFlag, %segmentTagHash) = @_;
+
+        # Local variables
+        my (
+            $modSegment, $gagFlag, $gagLogFlag, $instructListRef, $dependentCallListRef, $modFlag,
+            $textViewObj, $bufferText, $addText, $bufferObj, $testLine, $char, $modCmd,
+            @instructList, @dependentCallList, @offsetList, @displayList, @explicitList,
+            @initTagList, @emptyList, @specialList,
+            %modTagHash, %mxpFlagTextHash, %currentTagHash,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $origPortion || ! defined $segment || ! defined $newLineFlag
+            || ! defined $promptFlag || ! %segmentTagHash
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processLineSegment', @_);
+        }
+
+        # Check the segment for valid URLs and valid email addresses. If any are found, modify
+        #   %segmentTagHash to include start start/stop positions of each link
+        $self->extractClickLinks($segment, \%segmentTagHash);
+
+        # Test the segment against triggers. If any of them fire, $self->checkTriggers will return
+        #   a modified version of $segment and %segmentTagHash
+        # (NB Splitter triggers have already been tested against this line portion)
+        ($modSegment, $gagFlag, $gagLogFlag, $instructListRef, $dependentCallListRef, %modTagHash)
+            = $self->checkTriggers($origPortion, $segment, $newLineFlag, %segmentTagHash);
+
+        if (defined $modSegment) {
+
+            # At least one trigger fired
+            $modFlag = TRUE;
+            @instructList = @$instructListRef;
+            @dependentCallList = @$dependentCallListRef;
+
+        } else {
+
+            # No triggers fired
+            $modSegment = $segment;
+            %modTagHash = %segmentTagHash;
+        }
+
+        # Get a sorted list of offsets at which Axmud colour/style tags occur. Even if %modTagHash
+        #   contains no colour/style tags at all, there will still be a key-value pair
+        #   corresponding to position 0 (the beginning of this line segment) - where the key is 0
+        #   and the corresponding value is an empty list
+        @offsetList = sort {$a <=> $b} (keys %modTagHash);
+
+        # Import the hash of stored text appearing between MXP custom elements, and reset the IV
+        #   ready for the next line segment
+        %mxpFlagTextHash = $self->mxpFlagTextStoreHash;
+        $self->ivEmpty('mxpFlagTextStoreHash');
+
+        # Import the current textview (the one in which this piece will be displayed)
+        $textViewObj = $self->currentTabObj->textViewObj;
+        # Import the hash of colour/style tags that apply at the textview's insert position
+        # Every time we display a piece, update this hash; when we've finished displayed pieces (or
+        #   when the current textview changes), update the textview's IV
+        %currentTagHash = $textViewObj->colourStyleHash;
+
+        for (my $offsetCount = 0; $offsetCount < scalar @offsetList; $offsetCount++) {
+
+            my (
+                $offset, $nextOffset, $tagListRef, $piece,
+                @pieceTagList,
+            );
+
+            # If the session's current textview has just changed (possible, but very unlikely),
+            #   display all the pieces we have so far in the previous textview, before updating
+            #   variables to use the new one
+            if (
+                $self->currentTabObj->textViewObj ne $textViewObj
+                && @displayList
+                && (
+                    ($modFlag && ! $gagFlag)    # Trigger fired, but doesn't have 'gag' attribute
+                    || ! $modFlag               # No trigger fired
+                )
+            ) {
+                # If this function is inserting text into the session's default textview object,
+                #   then a GA::Buffer::Display object is going to be created (or updated)
+                # This function should inform the textview object what the number of the
+                #   GA::Buffer::Display object will be, so the the textview object can compare it to
+                #   its internal buffer line number (and, having done that, display appropriate
+                #   tooltips)
+                if ($self->currentTabObj eq $self->defaultTabObj) {
+
+                    # Inform the textview object
+                    $textViewObj->useDisplayBufferNum($self->displayBufferCount);
+                }
+
+                # Display the line pieces we have so far
+                if ($offsetCount == (scalar @offsetList - 1)) {
+
+                    $self->displayLinePieces(
+                        $textViewObj,
+                        # Last offset, so might use 'after' argument in call to
+                        #   GA::Obj::TextView->insertMultipleText
+                        $newLineFlag,
+                        \@displayList,
+                        \@explicitList,
+                    );
+
+                } else {
+
+                    $self->displayLinePieces(
+                        $textViewObj,
+                        # Not last offset, so definitely don't use 'after' argument in call to
+                        #   GA::Obj::TextView->insertMultipleText
+                        FALSE,
+                        \@displayList,
+                        \@explicitList,
+                    );
+                }
+
+                # Reset variables, so we can display any remaining line pieces
+                $textViewObj->set_colourStyleHash(%currentTagHash);
+
+                $textViewObj = $self->currentTabObj->textViewObj;
+                @displayList = ();
+                @explicitList = ();
+            }
+
+            # $offset is the position in $line where one or more Axmud colour/style tags occur, and
+            #   thus the beginning of this line piece
+            $offset = $offsetList[$offsetCount];
+            # $nextOffset is the position in $line where the next set of Axmud colour/style tags
+            #   occur. If there are no more tags after those at position $offset, then we leave
+            #   $nextOffset set to 'undef'
+            if ($offsetCount < (scalar @offsetList - 1)) {
+
+                $nextOffset = $offsetList[$offsetCount + 1];
+            }
+
+            # Get the Axmud colour/style tags that apply to this line piece
+            $tagListRef = $modTagHash{$offset};
+
+            # Update %currentTagHash with the Axmud colour/style tags that occur at the beginning of
+            #   this line piece
+            %currentTagHash = $textViewObj->applyColourStyleTags(
+                $self,
+                $tagListRef,
+                %currentTagHash,
+            );
+
+            # Using the updated hash, get the list of Axmud colour/style tags that apply to the
+            #   line piece (including the tags that applied before the line piece, and which haven't
+            #   been modified/removed)
+            @pieceTagList = $textViewObj->listColourStyleTags(%currentTagHash);
+
+            # Remember which tags applied at the beginning of the line segment, so we can pass it
+            #   to $self->updateDisplayBuffer
+            if ($offset == 0) {
+
+                @initTagList = @pieceTagList;
+            }
+
+            # Get the line piece itself (some text with all non-text tokens removed)
+            if (defined $nextOffset) {
+
+                $piece = substr($modSegment, $offset, ($nextOffset - $offset));
+
+            } else {
+
+                $piece = substr($modSegment, $offset);   # Rest of the $line
+            }
+
+            # So that we display the whole line segment with a single call to
+            #   GA::Obj::TextView->insertText, compile a list of line pieces and the tags that
+            #   apply to them
+            push (@displayList, $piece, \@pieceTagList);
+            # In case GA::Client->debugLineTagsFlag is TRUE, keep a copy of the original colour/
+            #   style tags at each offset, so that explicit colour/style tags can be displayed
+            push (@explicitList, $tagListRef);
+        }
+
+        # If we only have a newline character to display (and no actual line pieces), insert an
+        #   empty string
+        if (! @displayList && $newLineFlag) {
+
+            push (@displayList, '', \@emptyList);
+            push (@explicitList, []);
+        }
+
+        # Display the pieces (if allowed)
+        if (
+            @displayList
+            && (
+                ($modFlag && ! $gagFlag)    # Trigger fired, but doesn't have 'gag' attribute
+                || ! $modFlag               # No trigger fired
+            )
+        ) {
+            # If this function is inserting text into the session's default textview object, then a
+            #   GA::Buffer::Display object is going to be created (or updated)
+            # This function should inform the textview object what the number of the
+            #   GA::Buffer::Display object will be, so the the textview object can compare it to its
+            #   internal buffer line number (and, having done that, display appropriate tooltips)
+            if ($self->currentTabObj eq $self->defaultTabObj) {
+
+                # Inform the textview object
+                $textViewObj->useDisplayBufferNum($self->displayBufferCount);
+            }
+
+            # Display the line pieces
+            $self->displayLinePieces(
+                $textViewObj,
+                $newLineFlag,
+                \@displayList,
+                \@explicitList,
+            );
+        }
+
+        # Update the textview object's IV
+        $textViewObj->set_colourStyleHash(%currentTagHash);
+
+        # Write to logs, if allowed (even for an empty line)
+        if (
+            ($modFlag && ! $gagFlag)   # Trigger fired, but doesn't have 'gag' attribute
+            || ! $modFlag
+        ) {
+            # NB The 'receive' logfile is written by $self->writeReceiveDataLog, which is called by
+            #   $self->processLinePortion, not this function
+            $self->writeIncomingDataLogs($modSegment, $newLineFlag);
+        }
+
+        # Update the received display buffer
+        $self->updateDisplayBuffer(
+            $origPortion,
+            $segment,
+            $modSegment,
+            $newLineFlag,
+            \@offsetList,
+            \%modTagHash,
+            \@initTagList,
+            \%mxpFlagTextHash,
+        );
+
+        # If a newline character has just been displayed, reset the IV showing how much explicit
+        #   text for explicit line numbers/tags is on the (new) line
+        if ($newLineFlag) {
+
+            $self->ivPoke('explicitTextLength', 0);
+        }
+
+        # If text-to-speech conversion is required, add the received text to the TTS buffer, which
+        #   will be read aloud when control passes back to $self->incomingDataLoop
+        if (
+            $axmud::CLIENT->systemAllowTTSFlag
+            && $axmud::CLIENT->ttsReceiveFlag
+            # (Don't bother add any line segments which contain no readable characters, since the
+            #   TTS can't read them and it may mess up the artificial full stop added below)
+            && $modSegment =~ m/\w/
+        ) {
+            $bufferText = $self->ttsBuffer;
+            $addText = $modSegment;
+
+            if ($axmud::CLIENT->ttsSmoothFlag) {
+
+                # To make the text sound more natural, when spoken by the TTS engine, if the
+                #   existing contents of the TTS buffer ends with a newline character which is not
+                #   preceded by a punctuation mark, and if the new text starts with a capital
+                #   letter, insert an artificial full stop
+                if (
+                    # The last line stored in ->ttsBuffer ended with a newline character
+                    $bufferText =~ m/\n$/
+                    # The most recent line contains alphanumeric characters but doesn't end with a
+                    #   punctuation mark, and is optionally followed by one or more empty lines
+#                    && ! ($bufferText =~ m/\w\s*[\.\,\:\;\!\?][\s*\n]+$/)
+                    && ! ($bufferText =~ m/[[:alnum:]]\s*[\.\,\:\;\!\?][\s*\n]+$/)
+                    # The new line starts with a capital letter
+#                    && $addText =~ m/^\s*[A-Z]/
+                    && $addText =~ m/^\s*[[:upper:]]/
+                ) {
+                    $bufferText =~ s/\n$/\.\n/;
+                }
+
+                # If the new segment contains larget gaps (specifically, three or more consecutive
+                #   whitespace characters), also insert an artificial full stop there
+                $addText =~ s/(\w)\s{3,}/$1\. /;
+            }
+
+            $bufferText .= $addText;
+            if ($newLineFlag) {
+
+                $bufferText .= "\n";
+            }
+
+            # Update the buffer (if allowed)
+            if (
+                # Automatic login already processed
+                $self->loginFlag
+                # We Don't have to wait for a login before converting text
+                || ! $axmud::CLIENT->ttsLoginFlag
+                # We do have to wait for a login before converting text, but this is a prompt, and
+                #   prompts are still converted before a login
+                || ! $newLineFlag
+            ) {
+                $self->ivPoke('ttsBuffer', $bufferText);
+            }
+        }
+
+        # Check for an MXP prompt notification
+        if ($self->ivExists('mxpFlagTextHash', 'Prompt')) {
+
+            $promptFlag = TRUE;
+        }
+
+        # Handle prompts generally
+        if ($promptFlag || (! $newLineFlag)) {
+
+            # Record details of the prompt, in case anything needs to react to it. If the last
+            #   batch of text received was also a prompt
+            $self->ivPoke('promptLine', $origPortion);
+            $self->ivPoke('promptStripLine', $origPortion);
+
+            if (! $promptFlag) {
+
+                # If $self->sessionTime reaches this time without any more text being received
+                #   from the world, treat it as a prompt
+                $self->ivPoke(
+                    'promptCheckTime',
+                    $self->sessionTime + $axmud::CLIENT->promptWaitTime,
+                );
+
+            } else {
+
+                # Process the prompt on the next spin of the maintain loop
+                $self->ivPoke('promptCheckTime', $self->sessionTime);
+            }
+        }
+
+        # Perform any instructions created by any triggers that fired, but don't allow Perl
+        #   commands (which should already have been evaluated)
+        foreach my $instruction (@instructList) {
+
+            $self->doInstruct($instruction, TRUE);
+        }
+
+        # For any dependent triggers that fired, call the class and method specified by the fired
+        #   trigger
+        if (@dependentCallList) {
+
+            do {
+
+                my ($listRef, $class, $method);
+
+                $listRef = shift @dependentCallList;
+
+                $class = shift @$listRef;
+                $method = shift @$listRef;
+
+                $class->$method(@$listRef);
+
+            } until ( ! @dependentCallList);
+        }
+
+        # Fire any hooks that are using the 'receive_text' hook event
+        $self->checkHooks('receive_text', $segment);
+
+        # Deal with any login stuff
+        if ($self->displayBufferCount) {
+
+            $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
+            $testLine = $bufferObj->modLine;
+
+            if ($self->loginPromptsMode ne 'none') {
+
+                # Test login patterns against the whole of the most recently-received line (in case
+                #   the line matching a login pattern is split across packets)
+
+                # In login modes 'lp' and 'world_cmd', if we're looking out for login success
+                #   patterns, see if the line matches any of them
+                if ($self->loginSuccessPatternList) {
+
+                    INNER: foreach my $pattern ($self->loginSuccessPatternList) {
+
+                        if ($testLine =~ m/$pattern/) {
+
+                            # Success! Complete the login
+                            $self->doLogin();
+                            last INNER;
+                        }
+                    }
+
+                # In login mode 'tiny', if we're looking out for the text which signals that the
+                #   world is ready to receive the login, set the flag
+                # Likewise for login mode 'world_cmd', but only if ->loginConnectPatternList is set)
+                } elsif (
+                    $self->loginPromptsMode eq 'tiny'
+                    || ($self->loginPromptsMode eq 'world_cmd' && $self->loginConnectPatternList)
+                ) {
+                    INNER: foreach my $pattern ($self->loginConnectPatternList) {
+
+                        if ($testLine =~ m/$pattern/) {
+
+                            # Success! Set the flag that allows $self->spinMaintainLoop to call
+                            #   $self->processCmdLoginMode
+                            $self->ivPoke('loginConnectFoundFlag', TRUE);
+                            last INNER;
+                        }
+                    }
+
+                # In login mode 'mission', a login success pattern interrupts the mission
+                #   immediately
+                } elsif (
+                    $self->loginPromptsMode eq 'mission'
+                    && $self->currentWorld->loginSuccessPatternList
+                ) {
+                    INNER: foreach my $pattern ($self->currentWorld->loginSuccessPatternList) {
+
+                        if ($testLine =~ m/$pattern/) {
+
+                            # Success! Complete the login
+                            $self->doLogin();
+                            last INNER;
+                        }
+                    }
+                }
+
+            } elsif ($self->loginSpecialList && $self->initChar) {
+
+                # Test the patterns in ->loginPatternList against the whole of the most
+                #   recently-received line (in case the line matching a pattern is split across
+                #   packets), initially looking for a line which matches the character's name
+                #   (case-insensitively)
+                $char = $self->initChar;
+                if ($testLine =~ m/$char/i) {
+
+                    # Line matches the character's name. Now, does it match the requirements of
+                    #   ->loginPatternList? A list in groups of 3, in the form
+                    #       (pattern, character_backref, world_command)
+                    @specialList = $self->loginSpecialList;
+                    do {
+
+                        my (
+                            $pattern, $backRef, $worldCmd,
+                            @backRefList,
+                        );
+
+                        $pattern = shift @specialList;
+                        $backRef = shift @specialList;
+                        $worldCmd = shift @specialList;
+
+                        if (@backRefList = ($testLine =~ m/$pattern/i)) {
+
+                            # Line matches one of the specified patterns. Now check that the
+                            #   character name appears in the right place (if required)
+                            # NB In @backRefList, the first backreference is at index 0, so need to
+                            #   subtract one
+                            $backRef--;
+
+                            if (
+                                # Character names appear only once per line, so it doesn't matter
+                                #   where in the line it appears
+                                $backRef == -1
+                                # Character names appear multiple lines per line; the one we need to
+                                #   check is in backreference number $backRef
+                                || lc($backRefList[$backRef]) eq lc($char)
+                            ) {
+                                # Success! Now we can subtitute backreferences
+                                # If the corresponding world command, $worldCmd, is enclosed in
+                                #   double-quotes, it's safe to use the ee modifier which will
+                                #   convert $1, $2 etc into the contents of the matching
+                                #   backreferences (otherwise we could end up executing arbitrary
+                                #   Perl code)
+                                $modCmd = $testLine;
+
+                                if (
+                                    substr($worldCmd, 0, 1) eq '"'
+                                    && substr($worldCmd, -1) eq '"'
+                                ) {
+                                    $modCmd =~ s/$pattern/$worldCmd/iee;
+                                } else {
+                                    $modCmd =~ s/$pattern/$worldCmd/i
+                                }
+                            }
+                        }
+
+                    } until ($modCmd || ! @specialList);
+
+                    # Absolutely no reason why $worldCmd shouldn't be set now, but just to be
+                    #   safe...
+                    if ($modCmd) {
+
+                        # Send the world command, telling the world which character to login
+                        $self->writeText(
+                            'Automatic login: Logging in character \'' . $char . '\', sending world'
+                            . ' command \'' . $modCmd . '\'',
+                        );
+                        $self->worldCmd($modCmd);
+                    }
+
+                    # Stop checking received lines for these patterns
+                    $self->ivEmpty('loginSpecialList');
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub displayLinePieces {
+
+        # Called by $self->processLineSegment
+        # Prepares explicit line numbers and explicit colour/style tags (if required), updates
+        #   positions of any links, then displays one or more line pieces from the calling
+        #   function's line segment
+        #
+        # Expected arguments
+        #   $textViewObj    - This session's current textview object (GA::Obj::TextView)
+        #   $newLineFlag    - Flag set to TRUE if this line segment is to be displayed with a
+        #                       newline character following it, FALSE if it should not be displayed
+        #                       with a newline character following it
+        #   $displayListRef - Reference to a list in groups of 2, in the form
+        #                       (line_piece, reference_to_list_of_Axmud_colour_style_tags, ...)
+        #   $explicitListRef
+        #                   - Reference to a list (in groups of 1). Each item in the list is
+        #                       itself a list reference, containing the original Axmud colour/style
+        #                       tags specified by the world, before they were applied to the
+        #                       textview object. This list is used to display explicit colour/style
+        #                       tags, and contains exactly one item for every pair of items in
+        #                       $displayListRef
+        #
+        # Return values
+        #   'undef' on improper arguments or if the call to GA::Obj::TextView->insertMultipleText
+        #       fails
+        #   1 otherwise
+
+        my ($self, $textViewObj, $newLineFlag, $displayListRef, $explicitListRef, $check) = @_;
+
+        # Local variables
+        my (
+            $thisLine, $thisPosn, $numString, $extraLength, $combLength, $listRef,
+            @modList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $textViewObj || ! defined $newLineFlag || ! defined $displayListRef
+            || ! defined $explicitListRef
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayLinePieces', @_);
+        }
+
+        # Get the current textview's insert position, so we can adjust the position of any links
+        #   correctly
+        ($thisLine, $thisPosn) = $textViewObj->getInsertPosn();
+
+        # When GA::Client->debugLineNumsFlag is set, show explicit display buffer line numbers at
+        #   the beginning of a line
+        if ($axmud::CLIENT->debugLineNumsFlag && $textViewObj->insertNewLineFlag) {
+
+            # Display the line number (in contrasting colours)
+            $numString = '<' . $self->displayBufferCount . '> ',
+            # Display it immediately. Don't include it in the list of line pieces sent to
+            #   Games::Axmud::Obj::TextView->insertMultipleText just below
+            $textViewObj->insertText($numString, 'RED', 'ul_white', 'echo');
+
+            # If an incomplete link has been completed and added to $self->mxpTempLinkList, but has
+            #   not yet been processed by GA::Obj::TextView->add_incompleteLink, any link object
+            #   (GA::Obj::Link) which occurs after the explicit line number will have the wrong
+            #   offset. Update it
+            foreach my $linkObj ($self->mxpTempLinkList) {
+
+                if (
+                    $linkObj->lineNum == $thisLine
+                    && $linkObj->posn >= ($thisPosn + $self->explicitTextLength)
+                ) {
+                    $linkObj->ivPoke('posn', $linkObj->posn + length($numString));
+                }
+            }
+
+            $self->ivPoke(
+                'explicitTextLength',
+                $self->explicitTextLength + length($numString),
+            );
+
+        } else {
+
+            $numString = '';
+        }
+
+        # When GA::Client->debugLineTagsFlag is set, show explicit colour/style tags at the
+        #   beginning of every line piece
+        $extraLength = 0;
+        $combLength = $thisPosn + length($numString);
+
+        if ($axmud::CLIENT->debugLineTagsFlag) {
+
+            do {
+
+                my ($piece, $tagListRef, $origTagListRef, $extraPiece);
+
+                $piece = shift @$displayListRef;
+                $tagListRef = shift @$displayListRef;
+                $origTagListRef = shift @$explicitListRef;
+                $extraPiece = '';
+
+                foreach my $tag (@$origTagListRef) {
+
+                    $extraPiece .= '[' . $tag . ']';
+                }
+
+                push (@modList,
+                    $extraPiece,
+                    ['white', 'ul_blue'],
+                    $piece,
+                    $tagListRef,
+                );
+
+                $extraLength += length($extraPiece);
+
+                # Update completed links, as described above
+                foreach my $linkObj ($self->mxpTempLinkList) {
+
+                    if (
+                        $linkObj->lineNum == $thisLine
+                        && $linkObj->posn >= $combLength
+                    ) {
+                        $linkObj->ivPoke('posn', $linkObj->posn + length($extraPiece));
+                    }
+                }
+
+                $combLength += length($piece) + length($extraPiece);
+
+
+            } until (! @$displayListRef);
+
+            @$displayListRef = @modList;
+        }
+
+        # Set the combined length for explicit line numbers and explicit colour/style tags on this
+        #   line
+        $self->ivPoke(
+            'explicitTextLength',
+            $self->explicitTextLength + $extraLength,
+        );
+
+        # Use a newline character at the end of the final piece, if required; otherwise use an
+        #   'echo' tag to explicitly prevent one
+        $listRef = $$displayListRef[-1];
+        if ($newLineFlag) {
+            push (@$listRef, 'after');
+        } else {
+            push (@$listRef, 'echo');
+        }
+
+        # Display the line pieces all in one go
+        return $textViewObj->insertMultipleText(@$displayListRef);
+    }
+
+    # (->processIncomingData / ->tokeniseIncomingData / ->respondIncomingData etc support functions)
+
+    sub displayRawIncomingData {
+
+        # Called by $self->processIncomingData, straight after the call to ->tokeniseIncomingData
+        # Displays the raw incoming text, in the terminal window, RawText task window and RawToken
+        #   task window (if we're required to)
+        #
+        # Expected arguments
+        #   $text       - The incoming text, before it was tokenised
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $text, $check) = @_;
+
+        # Local variables
+        my (
+            $termOutput,
+            @tokenList,
+        );
+
+        # Check for improper arguments
+        if (! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayRawIncomingData', @_);
+        }
+
+        # If the global variable is set, all text received from the world (except out-of-bounds
+        #   text) is also written to the terminal, with non-printable characters like ESC written as
+        #   <27>
+        if ($axmud::TEST_TERM_MODE_FLAG) {
+
+            $termOutput = '';
+
+            foreach my $char (split(//, $text)) {
+
+                if (ord($char) >= 32 && ord($char) <= 127) {
+                    $termOutput .= $char;
+                } elsif ($char eq "\n" || $char eq "\r") {
+                    $termOutput .= $char;
+                } else {
+                    $termOutput .= '<'. ord($char) . '>';
+                }
+            }
+
+            print $termOutput;
+        }
+
+        # If the RawText task is open, display the received text (including any escape sequences)
+        #   in its task window
+        if ($self->rawTextTask && $self->rawTextTask->taskWinFlag) {
+
+            $self->rawTextTask->insertText('<' . $self->packetCount . '>', 'RED', 'echo');
+            foreach my $string (split(m/\n/, $text)) {
+
+                $self->rawTextTask->insertText($string, 'after');
+            }
+        }
+
+        # If the RawToken task is open, display the packet number and then each token in turn
+        if ($self->rawTokenTask && $self->rawTokenTask->taskWinFlag) {
+
+            $self->rawTokenTask->insertText('<' . $self->packetCount . '>', 'RED');
+
+            @tokenList = $self->currentTokenList;
+
+            do {
+
+                my ($type, $arg, $colour);
+
+                # @tokenList is in the form (type, argument, type, argument...) where 'argument' is
+                #   usually the token itself
+                $type = shift @tokenList;
+                $arg = shift @tokenList;
+
+                $colour = $self->ivShow('constRawHash', $type);
+
+                # If $type is 'seq', then $arg is a reference to a list; otherwise it's a token
+                if ($type eq 'seq') {
+                    $self->rawTokenTask->insertText($$arg[0], $colour);
+                } elsif ($type eq 'nl') {
+                    $self->rawTokenTask->insertText('NEWLINE', $colour);
+                } else {
+                    $self->rawTokenTask->insertText($arg, $colour);
+                }
+
+            } until (! @tokenList);
+        }
+
+        return 1;
+    }
+
+    sub getPartialLine {
+
+        # Called by several token-processing functions, including by $self->processIncomingData
+        #   itself, generally to check for empty lines
+        # If a partial line (one not ending in a newline character) has been displayed, returns the
+        #   stripped text (i.e. the combined text tokens) from that partial line
+        # If the last line displayed ended in a newline character, just returns an empty string
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the string described above
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($bufferObj, $text);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->getPartialLine', @_);
+        }
+
+
+        if ($self->displayBufferLast) {
+
+            $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
+            if ($bufferObj && ! $bufferObj->newLineFlag) {
+
+                return $bufferObj->stripLine;
+            }
+        }
+
+        # Default value if no partial line displayed
+        return '';
+    }
+
+    sub detectPueblo {
+
+        # Called by $self->processIncomingData to detect Pueblo negotations, and to respond
+        #   appropriately
+        #
+        # Expected arguments
+        #   $text   - The incoming data received from the world, before it has been tokenised
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $text, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->detectPueblo', @_);
+        }
+
+        # On the first line, detect Pueblo (if allowed)
+        if (
+            $axmud::CLIENT->usePuebloFlag
+            && ! $self->currentWorld->ivExists('telnetOverrideHash', 'pueblo')
+            && $self->puebloMode ne 'client_agree'
+            && $self->packetCount <= 1
+            && $text =~ m/^\s*This world is Pueblo (\d+\.\d+) Enhanced\./i
+        ) {
+            if ($self->mxpMode eq 'client_agree') {
+
+                # Can't use Pueblo and MXP at the same time
+                $self->ivPoke('puebloMode', 'client_refuse');
+
+            } else {
+
+                # Pueblo allowed
+                $self->ivPoke('puebloMode', 'client_agree');
+                $self->ivPoke('puebloVersion', $1);
+                $self->send('PUEBLOCLIENT 2.01');       # Same response as zMud
+            }
+        }
+
+        return 1;
+    }
+
+    sub detectMCP {
+
+        # Called by $self->processIncomingData to detect MCP negotations, and to respond
+        #   appropriately
+        #
+        # Expected arguments
+        #   $text   - The incoming data received from the world, before it has been tokenised
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $text, $check) = @_;
+
+        # Local variables
+        my (
+            $token, $min, $max, $negotiateObj,
+            @availableList, @list, @list2, @list3,
+            %useHash, %checkHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->detectMCP', @_);
+        }
+
+        # Detect MCP (if allowed; not necessarily on the first line)
+        if (
+            $axmud::CLIENT->useMcpFlag
+            && ! $self->currentWorld->ivExists('telnetOverrideHash', 'mcp')
+            && $self->mcpMode ne 'client_agree'
+            && $text =~ m/(\#\$\#mcp version\: ([0-9\.])* to\: ([0-9\.]*))/
+        ) {
+            # Only MCP version 2.1 is supported
+            $token = $1;
+            $min = $2;
+            $max = $3;
+
+            if ($min <= $self->constMcpVersion && $max >= $self->constMcpVersion) {
+
+                # MCP allowed
+                $self->ivPoke('mcpMode', 'client_agree');
+                # Generate a random authentification key, and send it to the server to indicate the
+                #   client's acceptance of MCP messages
+                $self->generateMcpKey();
+
+                # MCP package objects inherit from GA::Generic::Mcp. GA::Client->mcpPackageHash
+                #   contains a list of MCP package objects supported by Axmud, and MCP package
+                #   objects which are defined by plugins
+                # Eliminate any MCP packages defined by disabled plugins
+                foreach my $mcpObj ($axmud::CLIENT->ivValues('mcpPackageHash')) {
+
+                    my $pluginObj;
+
+                    if (defined $mcpObj->plugin) {
+
+                        $pluginObj = $axmud::CLIENT->ivShow('pluginHash', $mcpObj->plugin);
+                        if ($pluginObj && $pluginObj->enabledFlag) {
+
+                            push (@availableList, $mcpObj);
+                        }
+
+                    } else {
+
+                        push (@availableList, $mcpObj);
+                    }
+                }
+
+                # Some MCP package objects specify a list of MCP package names which are supplanted
+                #   when the former is used by this session, so we need to generate a list of names
+                #   of MCP packages which are supplanted, or which are supplantable
+                #
+                # For MCP package objects which aren't on that list, we inform the world immediately
+                #   that this session supports them
+                # For MCP packages that do appear on the list, we wait until the world sends a
+                #   'mcp-negotiate-end' message, and then we decide which among several alternative
+                #   packages this session will support
+                foreach my $mcpObj (@availableList) {
+
+                    if ($mcpObj->supplantList) {
+
+                        foreach my $name ($mcpObj->name, $mcpObj->supplantList) {
+
+                            $checkHash{$name} = undef;
+                        }
+                    }
+                }
+
+                foreach my $mcpObj (@availableList) {
+
+                    my $cloneObj;
+
+                    # Clone the object (with default settings) in the client's IV into an object
+                    #   (with custom settings) stored in one of this session's IV
+                    $cloneObj = $mcpObj->clone($self);
+                    if ($cloneObj) {
+
+                        if (! exists $checkHash{$cloneObj->name}) {
+
+                            # Use this MCP package object immediately
+                            $self->ivAdd('mcpPackageHash', $cloneObj->name, $cloneObj);
+
+                        } else {
+
+                            # This session might use this package, or it might use an alternative;
+                            #   mark the package as being one we need to decide on later
+                            $self->ivAdd('mcpWaitHash', $cloneObj->name, $cloneObj);
+                        }
+                    }
+                }
+
+                # Inform the world of any MCP package objects we've already decided to use
+                # It's nice to specify 'official' MCP packages first, and then everything else in
+                #   alphabetical order. Compile a list of packages in that order
+                foreach my $mcpObj (@availableList) {
+
+                    if ($mcpObj->name eq 'mcp-negotiate') {
+                        push (@list, $mcpObj);
+                    } elsif (substr($mcpObj->name, 0, 4) eq 'mcp-') {
+                        push (@list2, $mcpObj);
+                    } else {
+                        push (@list3, $mcpObj);
+                    }
+                }
+
+                # (@list contains, at most, one item; no sorting needed)
+                @list2 = sort {lc($a->name) cmp lc($b->name)} (@list2);
+                @list3 = sort {lc($a->name) cmp lc($b->name)} (@list3);
+
+                foreach my $mcpObj (@list, @list2, @list3) {
+
+                    $self->mcpSendMsg(
+                        'mcp-negotiate-can',
+                            'package',
+                             $mcpObj->name,
+                             'min-version',
+                             $mcpObj->minVersion,
+                             'max-version',
+                             $mcpObj->maxVersion,
+                    );
+                }
+
+                # For the MCP package 'mcp-negotiate', version 1.0, no 'mcp-negotiate-can' message
+                #   is sent for the 'mcp-negotiate' package itself; support for it is implicit
+                # Implement this by setting the MCP package object's ->useVersion to 1.0 now, and
+                #   let the world tell the GA::Session to update to version 2.0
+                $negotiateObj = $self->ivShow('mcpPackageHash', 'mcp-negotiate');
+                if ($negotiateObj) {
+
+                    $negotiateObj->set_useVersion('1.0');
+                }
+
+                # In addition, in MCP package 'mcp-negotiate', version 1.0, there is no
+                #   'mcp-negotiate-end' message
+                # Deal with this by setting a time limit, after which if we still haven't received
+                #   the 'mcp-negotiate-end', insert an artifical one (which takes care of all the
+                #   complications)
+                $self->ivPoke('mcpCheckTime', $self->sessionTime + $self->mcpWaitTime);
+
+            } else {
+
+                # MCP versions supported by the server not supported by the client
+                $self->ivPoke('mcpMode', 'client_refuse');
+                $self->mcpDebug(
+                    $token,
+                    'Unsupported MCP version range ' . $min . '-' . $max,
+                    8000,
+                );
+            }
+        }
+
+        return 1;
+    }
+
+    sub findNewLineEscape {
+
+        # Called by $self->tokeniseIncomingData
+        # Finds the position of the first newline or escape character in a string, ignoring the
+        #   first character of that string (which is assumed to be a newline or escape character)
+        #
+        # Expected arguments
+        #   $string     - The string to check
+        #
+        # Return values
+        #   'undef' on improper arguments or if $string doesn't contain any newline or escape
+        #       characters (ignoring the first character of $string)
+        #   Otherwise, returns the offset of the first newline or escape character in $string
+
+        my ($self, $string, $check) = @_;
+
+        # Local variables
+        my ($num, $offset);
+
+        # Check for improper arguments
+        if (! defined $string || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->findNewLineEscape', @_);
+        }
+
+        foreach my $char ("\n", "\r", "\e") {
+
+            my $num = index($string, "\n");
+
+            if ($num > 0) {
+
+                $offset = $num;
+            }
+        }
+
+        # If no newline/escape characters were found (besides the first character), $offset will
+        #   still be 'undef'
+        return $offset;
+    }
+
+    sub checkLineSplit {
+
+        # Called by $self->processLinePortion to work out if a line portion should be split into two
+        #   or more segements, because the line portion matches one of the world profile's command
+        #   prompt patterns, or because it matches a splitter trigger
+        # (This only affects the way Axmud treats received text, after all non-text tokens have been
+        #   extracted by $self->processIncomingData; for example, it doesn't affect MXP at all)
+        #
+        # Returns a list of offsets representing the first character of each segment
+        # It's not possible to split the line portion at the beginning or the end, so the list of
+        #   offsets never contains 0 or n, where n = the length of the line
+        # The list of offsets is returned in ascending order, and there are no duplicate offsets (so
+        #   if a command prompt and a splitter trigger both split the line portion at the same
+        #   place, that offset is only added to the list once)
+        #
+        # Expected arguments
+        #   $type           - 'nl' if the received line of text ended with a newline token (which
+        #                       has since been removed from $stripText), 'go' if the received line
+        #                       of text ended with an artificially-inserted newline token or 'part'
+        #                       if the received line of text didn't end with a newline character at
+        #                       all
+        #   $stripText      - The line portion (containing only combined text tokens)
+        #
+        # Return values
+        #   An empty list on improper arguments or if no command prompt patterns or splitter
+        #       triggers match the line portion
+        #   Otherwise, returns the list of offsets described above
+
+        my ($self, $type, $stripText, $check) = @_;
+
+        # Local variables
+        my (
+            @emptyList, @offsetList, @deleteList,
+            %checkHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $type || ! defined $stripText || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->checkLineSplit', @_);
+            return @emptyList;
+        }
+
+        # First split the line portion, according to the command prompt patterns specified by the
+        #   current world profile
+        foreach my $pattern ($self->currentWorld->cmdPromptPatternList) {
+
+            while ($stripText =~ m/($pattern).+/g) {
+
+                my $offset = $+[1];
+
+                if ($offset != 0 && $offset != length($stripText)) {
+
+                    push (@offsetList, $offset);
+                    # We'll use a hash to eliminate duplicates, once we start checking splitter
+                    #   triggers
+                    $checkHash{$offset} = undef;
+                }
+            }
+        }
+
+        # Check every active trigger interface, in the correct order, looking for splitter triggers
+        #   that match $stripText
+        OUTER: foreach my $number ($self->triggerOrderList) {
+
+            my ($obj, $stimulus, $response, $afterFlag, $ignoreFlag, $count, $copyLine);
+
+            $obj = $self->ivShow('interfaceNumHash', $number);
+
+            # If the trigger isn't a splitter trigger, ignore it
+            # If the trigger is a dependent trigger, don't fire it
+            # If the trigger is disabled, don't fire it
+            # If the trigger requires a received line of text ending with a newline character and
+            #   received line of text doesn't end with a newline character (real or artificial),
+            #   don't fire it
+            # If the trigger requires a login and the character isn't logged in, don't fire it
+            if (
+                ! $obj->ivShow('attribHash', 'splitter')
+                || ! $obj->indepFlag
+                || ! $obj->enabledFlag
+                || ($obj->ivShow('attribHash', 'need_prompt') && $type ne 'part')
+                || ($obj->ivShow('attribHash', 'need_login') && ! $self->loginFlag)
+            ) {
+               next OUTER;
+            }
+
+            $stimulus = $obj->stimulus;
+            $response = $obj->response;
+            $afterFlag = $obj->ivShow('attribHash', 'split_after');
+            $ignoreFlag = $obj->ivShow('attribHash', 'ignore_case');
+            $count = 0;
+
+            # An independent splitter trigger.
+            # The trigger's 'stimulus' attribute must match $stripText for the trigger to fire
+            # (NB Using $stripText in the block breaks the algorithm. No idea why, but a workaround
+            #   is to perform the pattern match on another variable)
+            $copyLine = $stripText;
+            if (
+                (! $ignoreFlag && ($copyLine =~ m/$stimulus/g))
+                || ($ignoreFlag && ($copyLine =~ m/$stimulus/gi))
+            ) {
+                # Now we test the line portion against the trigger's 'response' attribute. We split
+                #   the line portion immediately before the matching portion of text or, if the
+                #   trigger's 'keep_splitting' attribute is TRUE, immediately after it
+                if ($ignoreFlag) {
+
+                    while ($stripText =~ m/($response)/gi) {
+
+                        my $offset = $-[0];             # Split at beginning of matching segment
+
+                        if ($afterFlag) {
+
+                            $offset += length($1) ;     # Split at end of matching segment
+                        }
+
+                        if (
+                            $offset > 0
+                            && $offset < length($stripText)
+                            && ! exists $checkHash{$offset}
+                        ) {
+                            push (@offsetList, $offset);
+                            $checkHash{$offset} = undef;
+                            $count++;
+                        }
+                    }
+
+                } else {
+
+                    while ($stripText =~ m/($response)/g) {
+
+                        my $offset = $-[0];             # Split at beginning of matching segment
+
+                        if ($afterFlag) {
+
+                            $offset += length($1) ;     # Split at end of matching segment
+                        }
+
+                        if (
+                            $offset > 0
+                            && $offset < length($stripText)
+                            && ! exists $checkHash{$offset}
+                        ) {
+                            push (@offsetList, $offset);
+                            $checkHash{$offset} = undef;
+                            $count++;
+                        }
+                    }
+                }
+
+                # The trigger has fired only if both the stimulus and response match $stripText
+                if ($count) {
+
+                    # Temporary triggers should be marked for deletion, after firing for the first
+                    #   time
+                    if ($obj->ivShow('attribHash', 'temporary')) {
+
+                        push (@deleteList, $obj);
+                    }
+
+                    # Should we continue checking other triggers?
+                    if (! $obj->ivShow('attribHash', 'keep_checking')) {
+
+                        # Don't check any more triggers
+                        last OUTER;
+                    }
+                }
+            }
+        }
+
+        # Any temporary triggers which fired can now be deleted
+        foreach my $obj (@deleteList) {
+
+            $self->removeInterface($obj);
+        }
+
+        # Sort the list of offsets, before returning it
+        return (sort {$a <=> $b} (@offsetList));
+    }
+
+    # (Called by ->tokeniseIncomingData to extract tokens)
+
     sub extractEscSequence {
 
-        # Called by $self->processIncomingData when it encounters an "\e" escape character, which
+        # Called by $self->tokeniseIncomingData when it encounters an "\e" escape character, which
         #   probably starts an escape sequence
         # Attempts to extract a valid escape sequence
         #
@@ -12457,19 +14429,68 @@
         }
     }
 
-    sub extractMxpElement {
+    sub extractMspSoundTrigger {
 
-        # Called by $self->processIncomingData when it encounters a "<" character, which probably
-        #   starts an MXP element
-        # Attempts to extract a valid MXP element in the form <...>, which may itself contain
+        # Called by $self->tokeniseIncomingData when it encounters a token starting "!!SOUND" or
+        #   "!!MUSIC", at the start of a line, which probably starts an MSP sound trigger
+        # Attemps to extract a valid MSP sound trigger in the form
+        #   !!SOUND(...)
+        #   !!MUSIC(...)
+        #
+        # Expected arguments
+        #   $text   - The remaining portion of the received text, which in this case starts with
+        #               "!!SOUND" or "!!MUSIC"
+        #
+        # Return values
+        #   'undef' on improper arguments or if it's not a valid MSP sound trigger
+        #   An empty string if it's an incomplete MSP sound trigger
+        #   Otherwise returns the token containing the valid MSP sound trigger
+
+        my ($self, $text, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->extractMspSoundTrigger', @_);
+        }
+
+        # Extract the MSP sound trigger
+        if ($text =~ m/^(\!\!(SOUND|MUSIC)\([^\n\r\e\)]*\))/) {
+
+            # Valid MSP sound trigger
+            return $1;
+
+        } elsif ($text =~ m/^(\!\!(SOUND|MUSIC)\(^\n\r\e\)$)/) {
+
+            # Incomplete MSP sound trigger; append it to the emergency buffer, and wait for the
+            #   next packet
+            return '';
+
+        } else {
+
+            # Invalid MSP sound trigger
+            return undef;
+        }
+    }
+
+    sub extractMxpPuebloElement {
+
+        # Called by $self->tokeniseIncomingData when it encounters a "<" character, which probably
+        #   starts an MXP/Pueblo element
+        # Attempts to extract a valid MXP/Pueblo element in the form <...>, which may itself contain
         #   embedded <...> structures
         #
-        # NB MXP comments are in the form <!-- this is a comment -->. The intermediate section 'this
-        #   is a comment' can contain anything except '-->' itself and the "\n", "\r" and "\e"
+        # MXP comments are in the form <!-- this is a comment -->. The intermediate section 'this is
+        #   a comment' can contain anything except '-->' itself and the "\n", "\r" and "\e"
         #   characters; this function tries to extract an MXP comment, before extracting an MXP
         #   element
-        # NB MXP elements are also abnormally terminated by "\n", "\r" and "\e"
-        # NB The calling function should have checked that MXP is enabled, i.e. $self->mxpMode is
+        # MXP elements are also abnormally terminated by "\n", "\r" and "\e"
+        # The calling function should have checked that MXP is enabled, i.e. $self->mxpMode is
+        #   'client_agree'
+        #
+        # There's no specification for how Pueblo elements are abnormally terminated, so we apply
+        #   the same rules
+        # The calling function should have checked that Pueblo is enabled, i.e. $self->puebloMode is
         #   'client_agree'
         #
         # Expected arguments
@@ -12477,23 +14498,25 @@
         #               "<" character
         #
         # Return values
-        #   'undef' on improper arguments or if an abnormally terminated element is found
-        #   0 if an incomplete element is found (i.e. a valid element has probably been split
-        #       across two packets)
-        #   The length of a valid element otherwise
+        #   'undef' on improper arguments or if it's an abnormally terminated MXP/Pueblo element
+        #   An empty string if it's an incomplete MXP/Pueblo element
+        #   Otherwise returns the token containing the valid MXP/Pueblo element
 
         my ($self, $text, $check) = @_;
 
         # Local variables
         my (
-            $bracketCount, $elemLength, $endPosn, $comment, $nlPosn, $escPosn, $singleFlag,
-            $doubleFlag,
+            $endPosn, $comment, $nlPosn, $escPosn, $origText, $bracketCount, $elemLength,
+            $singleFlag, $doubleFlag,
         );
 
         # Check for improper arguments
         if (! defined $text || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->extractMxpElement', @_);
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->extractMxpPuebloElement',
+                @_,
+            );
         }
 
         # Check there is some text after the initial "<" character
@@ -12505,13 +14528,15 @@
         }
 
         # Extract an MXP comment, if one is found
-        if (substr($text, 0, 4) eq '<!--') {
+        # (There are no Pueblo comments to extract)
+        if ($self->mxpMode eq 'client_agree' && substr($text, 0, 4) eq '<!--') {
 
             $endPosn = index($text, '-->');
             if ($endPosn == -1) {
 
-                # Incomlete MXP comment, probably because it is split across two packets
-                return 0;
+                # Incomplete MXP comment, probably because it is split across two packets. Wait for
+                #   the next packet
+                return '';
             }
 
             $comment = substr($text, 0, ($endPosn + 3));
@@ -12582,18 +14607,19 @@
                 $self->writeDebug('PUEBLO COMMENT: ' . $comment);
             }
 
-            return length($comment);
+            return $comment;
         }
 
         # Remove the first character, which is guaranteed to be a "<"
+        $origText = $text;
         $text = substr($text, 1);
         # The initial "<" character is the first bracket
         $bracketCount = 1;
         # (The length of the element, so far, is 1 character - i.e. the initial '<'
         $elemLength = 1;
 
-        # Go throught the line, increasing $bracketCount for every '<' found, and decreasing it for
-        #   every '>' found until $bracketCount is 0 (or the end of the line is reached)
+        # Go throught $text, increasing $bracketCount for every '<' found, and decreasing it for
+        #   every '>' found until $bracketCount is 0 (or the end of $text is reached)
         # However, we ignore '<' and '>' character inside a set of single '..' or double ".."
         #   quotes. (Literal ' or " quote characters can be specified within element arguments by
         #   using '' or ""; the algorithm takes account of this)
@@ -12657,7 +14683,7 @@
             if (! $type) {
 
                 # Incomplete MXP element, probably because it is split across two packets
-                return 0;
+                return '';
 
             } elsif ($type eq 'left') {
 
@@ -12753,28 +14779,28 @@
         if ($bracketCount) {
 
             # Incomlete MXP element, probably because it is split across two packets
-            return 0;
+            return '';
 
         } else {
 
             # End of the element found
-            return $elemLength;
+            return substr($origText, 0, $elemLength);
         }
     }
 
-    sub extractMxpEntity {
+    sub extractMxpPuebloEntity {
 
         # Called by $self->processIncomingData when it encounters a "&" character, which probably
-        #   starts an MXP entity
-        # Attempts to extract a valid MXP entity in the form &keyword;
+        #   starts an MXP/Pueblo entity
+        # Attempts to extract a valid MXP/Pueblo entity in the form &keyword;
         # The entity keyword must start with a letter (A-Za-z) and then consist of letters, numbers
         #   or underline characters. No other characters are permitted (including non-Latin
         #   alphabets)
         # (This function also recognises entities in the form '&#nnn;' )
         # If a valid entity isn't found, the calling function displays the text 'as is'
         #
-        # NB The calling function should have checked that MXP is enabled, i.e. $self->mxpMode is
-        #   'client_agree'
+        # NB The calling function should have checked that MXP or Pueblo is enabled, i.e.
+        #   $self->mxpMode or $self->puebloMode is 'client_agree'
         #
         # Expected arguments
         #   $text   - The remaining portion of the received text, which in this case starts with a
@@ -12782,14 +14808,14 @@
         #
         # Return values
         #   'undef' on improper arguments or if an invalid entity is found
-        #   Otherwise, returns the portion of $text comprising the entity
+        #   Otherwise returns the token containing the valid entity
 
         my ($self, $text, $check) = @_;
 
         # Check for improper arguments
         if (! defined $text || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->extractMxpEntity', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->extractMxpPuebloEntity', @_);
         }
 
         # Check there is some text after the initial "&" character
@@ -12813,6 +14839,2824 @@
             return undef;
         }
     }
+
+    # (Called by ->processIncomingData to convert a non-text token into a tag list)
+
+    sub updateEndLine {
+
+        # Called by $self->processIncomingData
+        #
+        # After a line portion ending in a newline character has been displayed, updates IVs and
+        #   prepares a list of Axmud colour/style tags that should be applied to the beginning of
+        #   the next line
+        #
+        # Expected arguments
+        #   $type       - The token type, 'nl' for an ordinary newline token or 'go' for an
+        #                   artificially-inserted newline token
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns a list of Axmud colour/style tags that should be applied to the
+        #       beginning of the next line (may be an empty list)
+
+        my ($self, $type, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @tagList);
+
+        # Check for improper arguments
+        if (! defined $type || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->updateEndLine', @_);
+            return @emptyList;
+        }
+
+        if (defined $self->mxpLineMode) {
+
+            # If we're in the middle of a <V>...</V> construction, the construction is abnormally
+            #   terminated
+            if ($self->mxpCurrentVar) {
+
+                $self->mxpDebug(
+                    "\n",
+                    'Variable abnormally terminated by newline character',
+                    1301,
+                );
+
+                $self->ivUndef('mxpCurrentVar');
+            }
+
+            # If we're in the middle of an <A>...</A> construction, the construction is abnormally
+            #   terminated
+            if ($self->mxpCurrentLink) {
+
+                $self->mxpDebug(
+                    "\n",
+                    'Link abnormally terminated by newline character',
+                    1302,
+                );
+
+                $self->ivUndef('mxpCurrentLink');
+            }
+
+            # If we're in the middle of a <SEND>...</SEND> construction, the construction is
+            #   abnormally terminated
+            if ($self->mxpCurrentSend) {
+
+                $self->mxpDebug(
+                    "\n",
+                    'Send abnormally terminated by newline character',
+                    1303,
+                );
+
+                $self->ivUndef('mxpCurrentSend');
+            }
+
+            # All outstanding tags are closed after a newline character (but not after a line
+            #   spacing tag like <BR>, any only in 'open line mode')
+            if ($type eq 'nl' && $self->mxpLineMode == 0) {
+
+                push (@tagList, $self->emptyMxpStack());
+            }
+
+            # Newline characters cause the MXP line mode to be reset to the default mode (but line
+            #   spacing tags like <BR> do not)
+            if ($type eq 'nl') {
+
+                if (! $self->mxpDefaultMode) {
+
+                    # When ->mxpDefaultMode is 0, the default mode is 'open'
+                    push (@tagList, $self->setMxpLineMode(0));
+
+                } else {
+
+                    # ->mxpDefaultMode values of 5-7 correspond to ->mxpLineMode values of 0-2
+                    push (@tagList, $self->setMxpLineMode($self->mxpDefaultMode - 5));
+                }
+            }
+        }
+
+        # If we're in the middle of two matching custom tags which defined tag properties, e.g.
+        #   from the MXP spec, <RName>...</RName>, update the stored text
+        # Represent the newline character as a space, but only if the existing stored text ends with
+        #   a non-whitespace character (an acceptable compromise over textual purity)
+        foreach my $key ($self->ivKeys('mxpFlagTextHash')) {
+
+            my $text = $self->ivShow('mxpFlagTextHash', $key);
+
+            if ($text ne '' && $text =~ m/\S$/) {
+
+                $self->ivAdd('mxpFlagTextHash', $key, $text . ' ');
+            }
+        }
+
+        # If Pueblo is waiting for a new line to insert the Axmud style tag 'justify_default',
+        #   inform $self->processIncomingData that it's now safe to do so
+        if ($self->puebloJustifyMode eq 'wait_newline') {
+
+            $self->ivPoke('puebloJustifyMode', 'wait_loop');
+        }
+
+        return @tagList;
+    }
+
+    sub processEscChar {
+
+        # Called by $self->processIncomingData when it processes an escape token (containing a
+        #   single escape character, i.e. one which doesn't start a valid escape sequence)
+        #
+        # Processes the escape token
+        #
+        # Expected arguments
+        #   $token      - An extracted token containing the escape character
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise, returns a list of Axmud colour/style tags generated by closing any open MXP
+        #       tags (may be an empty list)
+
+        my ($self, $token, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @tagList);
+
+        # Check for improper arguments
+        if (! defined $token || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->processEscChar', @_);
+            return @emptyList;
+        }
+
+        # Update IVs as if this token were a text token (so, the escape character is in fact
+        #   displayed on a subsequent call to $self->processLinePortion)
+
+        if (defined $self->mxpLineMode) {
+
+            # If we're in the middle of a <V>...</V> construction, the construction is abnormally
+            #   terminated
+            if ($self->mxpCurrentVar) {
+
+                $self->mxpDebug(
+                    $token,
+                    'Variable abnormally terminated by escape character',
+                    1401,
+                );
+
+                $self->ivUndef('mxpCurrentVar');
+            }
+
+            # If we're in the middle of an <A>...</A> construction, the construction is abnormally
+            #   terminated
+            if ($self->mxpCurrentLink) {
+
+                $self->mxpDebug(
+                    $token,
+                    'Link abnormally terminated by escape character',
+                    1402,
+                );
+
+                $self->ivUndef('mxpCurrentLink');
+            }
+
+            # If we're in the middle of a <SEND>...</SEND> construction, the construction is
+            #   abnormally terminated
+            if ($self->mxpCurrentSend) {
+
+                $self->mxpDebug(
+                    $token,
+                    'Send abnormally terminated by escape character',
+                    1403,
+                );
+
+                $self->ivUndef('mxpCurrentSend');
+            }
+
+            # All outstanding tags are closed after a newline character (but only in 'open line
+            #   mode')
+            if ($self->mxpLineMode == 0) {
+
+                @tagList = $self->emptyMxpStack();
+            }
+        }
+
+        return @tagList;
+    }
+
+    sub processEscSequence {
+
+        # Called by $self->processIncomingData when it processes an escape sequence token
+        #
+        # For OSC colour palette sequences, stores the newly-defined colour in $self->oscColourHash
+        # For MXP escape sequences, updates IVs
+        # For ANSI escape sequences, converts the sequence into a list of Axmud colour/style tags
+        # For xterm titlebar escape sequences, updates IVs
+        #
+        # NB If we're in the middle of an MXP <V>...</V> construction, a valid escape sequence
+        #   doesn't abnormally terminate the construction (but an invalid escape sequence does,
+        #   handled by ->processEscChar, does)
+        #
+        # Expected arguments
+        #   $token  - An extracted token containing the escape sequence
+        #   $data   - The middle portion of the escape sequence (the x's in 'ESC[Pxxxxxxx' / the #
+        #               in 'ESC[#z' / everything after the '[' character in 'ESC[Value;...;Valuem' /
+        #               the x's in 'ESC]0;xxxBEL' )
+        #   $type   - The type of escape sequence: 'osc', 'mxp', 'ansi', 'xterm'
+        #
+        # Return values
+        #   An empty list on improper arguments or if the escape sequence is invalid
+        #   Otherwise, returns a list of equivalent Axmud colour/style tags, when required (may be
+        #       an empty list)
+
+        my ($self, $token, $data, $type, $check) = @_;
+
+        # Local variables
+        my (
+            $char, $colour, $tag,
+            @emptyList, @valueList, @tagList,
+            %colourHash, %styleHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $token || ! defined $data || ! defined $type || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->processEscSequence', @_);
+            return @emptyList;
+        }
+
+        # Import IVs (for quick lookup)
+        %colourHash = $axmud::CLIENT->constANSIColourHash;
+        %styleHash = $axmud::CLIENT->constANSIStyleHash;
+
+        # Process the escape sequence
+        if ($type eq 'osc') {
+
+            # OSC colour palette escape sequence in the form 'ESC[Pxxxxxxx'
+            # (The earlier call to $self->extractEscSequence checked that OSC colour paletters are
+            #   enabled, i.e. GA::Client->oscPaletteFlag is TRUE)
+
+            # Split the 'xxxxxxx' part into two components
+            $char = substr($data, 0, 1);    # Which basic ANSI colour to change, in the range 0-F
+            $colour = substr($data, 1);     # The RGB colour to use instead, e.g. FF0000
+
+            # Update $self->oscColourHash. If $char is invalid, however, ignore this escape
+            #   sequence
+            $tag = $axmud::CLIENT->ivShow('constOscPaletteHash', uc($char));
+            if (defined $tag) {
+
+                $self->ivAdd('oscColourHash', $tag, '#' . uc($colour));
+            }
+
+        } elsif ($type eq 'mxp') {
+
+            # MXP escape sequences in the form 'ESC[#z'
+            # (The earlier call to $self->extractEscSequence checked that MXP is allowed, i.e.
+            #   $self->mxpMode is 'client_agree')
+
+            # As soon as the first MXP escape sequence is received, the MXP mode IVs must be set to
+            #   their default values
+            if (! defined $self->mxpLineMode) {
+
+                $self->ivPoke('mxpLineMode', 0);
+                $self->ivPoke('mxpDefaultMode', 0);
+                $self->ivPoke('mxpTempMode', undef);
+            }
+
+            # Turn on the window blinker, and update IVs
+            $self->turnOnBlinker(1);
+
+            # $data contains an integer, the '#' in 'ESC[#\'
+            # $data should be a value in the range 0-7, 10-12, 19-99; but it's allowed for
+            #   these values to have leading zeros. Make sure any leading zeros are removed
+            $data += 0;
+            # Check that it's a valid line value
+            if (
+                ! (
+                    ($data >= 0 && $data <= 7)
+                    || ($data >= 10 && $data <= 12)
+                    || ($data >= 19 && $data <= 99)
+                )
+            ) {
+                # Invalid MXP escape sequence; ignore it
+                $self->mxpDebug(
+                    $token,
+                    'Invalid value \'' . $data . '\' in MXP escape sequence (expected 0-7,'
+                    . ' 10-12, 19, 20-99)',
+                    1501,
+                );
+
+                return @emptyList;
+            }
+
+            # Process the sequence (modes 0-7 are the most frequent)
+            if ($data <= 7) {
+
+                # 0-7: Line mode escape sequences
+                if ($data >= 0 && $data <= 2) {
+
+                    # 0 - Open line, 1 - Secure line, 2 - Locked line
+                    push (@tagList, $self->setMxpLineMode($data));
+                    $self->ivUndef('mxpTempMode');
+
+                } elsif ($data == 3) {
+
+                    # 3 - Reset
+                    # Close all open tags
+                    push (@tagList, $self->emptyMxpStack());
+
+                    # Update IVs
+                    push (@tagList, $self->setMxpLineMode(0));
+                    $self->ivPoke('mxpDefaultMode', 0);
+                    $self->ivUndef('mxpTempMode');
+
+                } elsif ($data == 4) {
+
+                    # 4 - Temp secure mode
+                    $self->ivPoke('mxpTempMode', $self->mxpLineMode);
+                    push (@tagList, $self->setMxpLineMode(1, TRUE));
+
+                } elsif ($data >= 5 && $data <= 7) {
+
+                    # 5 - Lock open mode, 6 - Lock secure mode, 7 - Lock locked mode
+                    $self->ivPoke('mxpDefaultMode', $data);
+                    $self->ivUndef('mxpTempMode');
+                    push (@tagList, $self->setMxpLineMode($data - 5));
+                }
+
+            } elsif ($data >=10 && $data <= 12) {
+
+                # Room modes
+                push (@tagList, 'mxpm_' . $data);       # e.g. 'mxpm_10'
+
+            } elsif ($data == 19) {
+
+                # Welcome text
+                push (@tagList, 'mxpm_19');
+                # ...which is not displayed during an MXP relocate operation
+                if ($self->mxpRelocateMode ne 'none') {
+
+                    $self->ivPoke('mxpRelocateQuietLineFlag', TRUE);
+                }
+
+            } elsif ($data >= 20 && $data <= 99) {
+
+                # User-defined modes
+                push (@tagList, 'mxpm_' . $data);       # e.g. 'mxpm_20'
+            }
+
+        } elsif ($type eq 'ansi') {
+
+            # ANSI escape sequences in the form ESC[Value;...;Valuem or ESC[c
+
+            # Split the part after the 'ESC[' into two components
+            # A single character in the range HfABCDsuJKmhIpc
+            $char = substr($data, -1, 1);
+            # A list of integers separated by ';' characters
+            $data = substr($data, 0, (length($data) - 1));
+
+            # $char is a character in the range HfABCDsuJKmhIpc, but Axmud currently ignores all
+            #   sequences that aren't 'Set Graphics Mode' escape sequences
+            if ($char eq 'm') {
+
+                # Some worlds (e.g. Viking MUD) use the escape sequence 'Esc[m' instead of 'Esc[0m'.
+                #   Convert the former to the latter, if found
+                if (! $data) {
+
+                    $data = '0';
+                }
+
+                # $data is in the form 'Value;...;Value'. where Value is in the range 0-1, 3-9,
+                #   22-25, 27-29, 30-39, 40-49
+                @valueList = split(/;/, $data);
+                # It's valid to use 'Value's with leading 0s. Remove the leading zeros
+                foreach my $value (@valueList) {
+
+                    if ($value =~ m/^\d+$/) {
+
+                        $value += 0;
+                    }
+                }
+
+                # NB We're using 'eq' rather than '==' to prevent a Perl error, if we analyse a
+                #   sequence containing 'ESC[1,31m' rather than the correct 'ESC[1;31m', or even if
+                #   the string contains invalid non-numerical characters
+                #
+                # Special case: xterm-256 colours will set @valueList to (38, 5, n) or (48, 5, n)
+                #   (corresponding to escape sequences 'Esc[38;5;nm' and 'Esc[48;5;nm'). In this
+                #   case, @valueList must contain exactly 3 values
+                if ($valueList[0] eq '38' || $valueList[0] eq '48') {
+
+                    # If it's not a valid sequence, ignore it
+                    if (
+                        scalar @valueList == 3
+                        && $valueList[1] eq '5'
+                        && $axmud::CLIENT->ivExists('xTermColourHash', 'x' . $valueList[2])
+                    ) {
+                        if ($valueList[0] eq '38') {
+                            push (@tagList, 'x' . $valueList[2]);       # e.g. 'x255'
+                        } else {
+                            push (@tagList, 'ux' . $valueList[2]);      # e.g. 'ux255'
+                        }
+                    }
+
+                # Otherwise, it's an ANSI escape sequence, which can contain an arbitary number of
+                #   values
+                } else {
+
+                    INNER: foreach my $value (@valueList) {
+
+                        # (Sequences listed roughly in order of popularity)
+
+                        # 0 - All attributes off
+                        if ($value eq '0') {
+
+                            # Use a dummy Axmud style tag
+                            push (@tagList, 'attribs_off');
+
+                        # 1 - Bold on
+                        } elsif ($value eq '1') {
+
+                            # Use a dummy Axmud style tag
+                            push (@tagList, 'bold');
+
+                        # 22 - Bold off
+                        } elsif ($value eq '22') {
+
+                            # Use a dummy Axmud style tag
+                            push (@tagList, 'bold_off');
+
+                        # 30-37 - Text colours
+                        # 40-47 - Underlay colours
+                        } elsif (exists $colourHash{$value}) {
+
+                            push (@tagList, $colourHash{$value});   # e.g. 'red', 'ul_red'
+
+                        # 3 - Italics
+                        # 4 - Underline on
+                        # 5 - Blink (slow) on
+                        # 6 - Blink (rapid) on
+                        } elsif (exists $styleHash{$value}) {
+
+                            push (@tagList, $styleHash{$value});
+
+                        # 7 - Reverse video on
+                        } elsif ($value eq '7') {
+
+                            # Use a dummy Axmud style tag
+                            push (@tagList, 'reverse');
+
+                        # 27 - Reverse video off
+                        } elsif ($value eq '27') {
+
+                            # Use a dummy Axmud style tag
+                            push (@tagList, 'reverse_off');
+
+                        # 8 - Conceal on
+                        } elsif ($value eq '8') {
+
+                            # Use a dummy Axmud style tag
+                            push (@tagList, 'conceal');
+
+                        # 28 - Conceal off
+                        } elsif ($value eq '28') {
+
+                            # Use a dummy Axmud style tag
+                            push (@tagList, 'conceal_off');
+
+                        # 39 - Default text colour
+                        } elsif ($value eq '39') {
+
+                            push (@tagList, $self->session->currentTabObj->textViewObj->textColour);
+
+                        # 49 - Default underlay colour
+                        } elsif ($value eq '49') {
+
+                            push (
+                                @tagList,
+                                $self->session->currentTabObj->textViewObj->underlayColour,
+                            );
+                        }
+                    }
+                }
+            }
+
+        } elsif ($type eq 'xterm') {
+
+            # xterm titlebar escape sequences in the form 'ESC]0;xxxBEL'
+
+            # Update IVs
+            $self->ivPoke('xTermTitleFlag', $data);
+
+            if ($axmud::CLIENT->xTermTitleFlag) {
+
+                # The tab title must be updated (the routine call to $self->checkTabLabels by
+                #   $self->spinMaintainLoop will handle it)
+                $self->ivPoke('showXTermTitleFlag', TRUE);
+            }
+        }
+
+        # Return any Axmud colour/style tags generated (may be an empty list)
+        return @tagList;
+    }
+
+    sub processMspSoundTrigger {
+
+        # Called by $self->processIncomingData when it encounters an MSP sound trigger, in the form
+        #   "!!SOUND(...)" or "!!MUSIC(...)"
+        # Also called by $self->processMxpSoundElement when processing MXP sounds
+        #
+        # Processes the MSP sound trigger, producing a list of parameters which are passed to
+        #   GA::Client->playSoundFile for playing
+        #
+        # Expected arguments
+        #   $token      - An extracted token containing the MSP sound trigger
+        #
+        # Optional arguments
+        #   $mxpFlag    - Set to TRUE for MXP <SOUND> and <MUSIC> tags, to which MXP file filters
+        #                   can be applied; set to FALSE (or 'undef') for MSP sound triggers
+        #
+        # Return values
+        #   'undef' on improper arguments or if the token is invalid, and should be displayed as
+        #       normal text
+        #   1 otherwise
+
+        my ($self, $token, $mxpFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $paramString, $type, $fName, $v, $l, $p, $c, $t, $u, $path, $file, $dir, $ext,
+            $fetchObj, $string, $urlRegex, $convertFlag,
+            @list, @objList,@fileList,
+        );
+
+        # Check for improper arguments
+        if (! defined $token || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processMspSoundTrigger', @_);
+        }
+
+        # Extract the parameter string (everything between the opening and closing brackets)
+        if ($token =~ m/\!\!SOUND\((.*)\)/) {
+
+            $paramString = $1;
+            $type = 'sound';
+
+        } elsif ($token =~ m/\!\!MUSIC\((.*)\)/) {
+
+            $paramString = $1;
+            $type = 'music';
+
+        } else {
+
+            # Invalid MSP sound token
+            return undef;
+        }
+
+        if (! $paramString) {
+
+            # Invalid MSP sound token (empty parameter string is not allowed - first parameter is
+            #   compulsory)
+            return undef;
+        }
+
+        # Extract the individual parameters (which are separated by one or more spaces, but do not
+        #   contain spaces)
+        @list = split(/\s+/, $paramString);
+
+        # The first parameter (file name) is compulsory
+        $fName = shift(@list);
+
+        # FName=OFF is a special case
+        if ($fName eq 'Off') {
+
+            # The file name 'Off' is reserved; must playing sound or music triggers, if no other
+            #   parameters are received
+            if (! @list) {
+
+                @objList = $self->ivValues('soundHarnessHash');
+                foreach my $soundObj (@objList) {
+
+                    if ($type eq $soundObj->type) {
+
+                        # Stop this sound
+                        $soundObj->stop();
+                        # ...and update the registry
+                        $self->ivDelete('soundHarnessHash', $soundObj->number);
+                    }
+                }
+
+                return 1;
+
+            # Otherwise, we expect @list to be in the form (U=some_url) which sets a default
+            #   download URL
+            } else {
+
+                $u = shift @list;
+
+                if (substr($u, 0, 2) ne 'U=') {
+
+                    # Invalid parameter list - play nothing
+                    return 1;
+                }
+
+                $u = substr($u, 2);
+
+                $urlRegex = $axmud::CLIENT->constUrlRegex;
+                if (! ($u =~ m/$urlRegex/)) {
+
+                    # Invalid URL - play nothing
+                    return 1;
+
+                } else {
+
+                    # The code below is a little simpler, if the partial URL ends with a slash
+                    if (substr($u, -1, 1) ne '/') {
+
+                        $u .= '/';
+                    }
+
+                    # Set the default MSP download URL, and play no sound
+                    $self->ivPoke('mspDefaultURL', $u);
+
+                    # Nothing to play, this time
+                    return 1;
+                }
+            }
+        }
+
+        # Remaining parameters are in the form <param-name>=<param-value>, where <param-name> is a
+        #   one-letter upper-case identifier (A-Z)
+        # If any parameters are not specified, use default values
+        $v = 100;
+        $l = 1;
+        $p = 50;
+        $c = 1;
+        $t = '';
+
+        if ($self->mspDefaultURL) {
+            $u = $self->mspDefaultURL;
+        } else {
+            $u = '';
+        }
+
+        # Extract parameter values, and check they're valid values
+        foreach my $item (@list) {
+
+            my ($name, $value);
+
+            if ($item =~ m/(.*)\=(.*)/) {
+
+                $name = $1;
+                $value = $2;
+
+                if ($name eq '' || $value eq '') {
+
+                    # Invalid parameter format - play nothing
+                    return 1;
+
+                } elsif ($type eq 'sound' && $name eq 'C') {
+
+                    # C parameters only used with !!MUSIC - play nothing
+                    return 1;
+
+                } elsif ($type eq 'music' && $name eq 'P') {
+
+                    # P parameters only used with !!SOUND - play nothing
+                    return 1;
+
+                } elsif ($name eq 'V') {
+
+                    # (If the value is invalid, $v remains set to its default value. This is also
+                    #   true for $l, $p and $c)
+                    if (! $axmud::CLIENT->floatCheck($value, 0, 100)) {
+
+                        $v = $value;
+                    }
+
+                } elsif ($name eq 'L') {
+
+                    if (! $axmud::CLIENT->intCheck($value, 1) && $value ne '-1') {
+
+                        $l = $value;
+                    }
+
+                } elsif ($name eq 'P') {
+
+                    if (! $axmud::CLIENT->floatCheck($value, 0, 100)) {
+
+                        $p = $value;
+                    }
+
+                } elsif ($name eq 'C') {
+
+                    if ($value eq '0' || $value eq '1') {
+
+                        $c = $value;
+                    }
+
+                } elsif ($name eq 'T') {
+
+                    $t = $value;
+
+                } elsif ($name eq 'U') {
+
+                    $u = $value;
+
+                } else {
+
+                    # Invalid parameter name - play nothing
+                    return 1;
+                }
+
+            } else {
+
+                # Invalid parameter - play nothing
+                return 1;
+            }
+        }
+
+        # If no file extension is specified, provide one
+        ($file, $dir, $ext) = File::Basename::fileparse($fName, qr/\.[^.]*/);
+        if (! $ext) {
+
+            if ($type eq 'sound') {
+                $fName .= '.wav';
+            } else {
+                $fName .= '.mid';
+            }
+        }
+
+        # Convert $fName into a full filepath ($fName must a relative filepath, pointing at a
+        #   directory used to store sounds for the current world)
+        if ($t) {
+
+            $path = $axmud::DATA_DIR . '/msp/' . $self->currentWorld->name
+                        . '/' . $t . '/' . $fName;
+
+        } else {
+
+            $path = $axmud::DATA_DIR . '/msp/' . $self->currentWorld->name . '/' . $fName;
+        }
+
+        # If this file actually exists, use it. Otherwise...
+        if (! -e $path) {
+
+            # If a partial URL was specified...
+            if ($u) {
+
+                # If we're not allowed to download, then there's nothing to play
+                if (
+                    (! $mxpFlag && ! $axmud::CLIENT->allowMspLoadSoundFlag)
+                    || ($mxpFlag && ! $axmud::CLIENT->allowMxpLoadSoundFlag)
+                ) {
+                    # Play nothing
+                    return 1;
+                }
+
+                # Compile the full URL from which to download
+                if (substr($u, -1, 1) ne '/') {
+
+                    $u .= '/';
+                }
+
+                $u .= $fName;
+
+                # Attempt to download the file
+                ($file, $dir) = File::Basename::fileparse($path);
+                $fetchObj = File::Fetch->new(uri => $u);
+                if (! $fetchObj->fetch(to => $dir)) {
+
+                    # Download error - play nothing
+                    return 1;
+                }
+
+            # Otherwise, if the file doesn't exist, $path may contain wildcards (the MSP spec
+            #   specifies * and ? specifically). Get a list of matching files, and choose a random
+            #   one
+            } else {
+
+                ($file, $dir) = File::Basename::fileparse($path);
+
+                # Convert MSP wildcards into regex equivalents (but only for the file itself, not
+                #   its containing directory)
+                # * must match the remainder of the file name
+                $file =~ s/\*.*/.*/;
+                # ? must match exactly one character
+                $file =~ s/\?/.?/;
+                $path = $dir . $file;
+
+                # Get a list of matching files
+                @fileList = grep {/$path/} glob "$dir*";
+                if (! @fileList) {
+
+                    # No matching file found. If the server specified a relative filepath (e.g.
+                    #   'zone231/room22.wav', and that file (the equivalent of
+                    #   /home/.../axmud-data/msp/world_name/zone231/room22.wav) doesn't exist, we
+                    #   can strip away the subdirectory and look in the main directory instead
+                    #   (i.e., in /home/.../axmud-data/msp/world_name/room22.wav)
+                    $path = $axmud::DATA_DIR . '/msp/' . $self->currentWorld->name . '/' . $file;
+                    $dir = $axmud::DATA_DIR . '/msp/' . $self->currentWorld->name . '/';
+                    @fileList = grep {/$path/} glob "$dir*";
+                }
+
+                if (@fileList == 1) {
+
+                    $path = $fileList[0];
+
+                } else {
+
+                    $path = $fileList[rand(scalar @fileList)];
+                }
+
+                if (! $path) {
+
+                    # No matching sound file - play nothing
+                    return 1;
+                }
+            }
+        }
+
+        # For sound files, Axmud only supports file extensions in GA::Client->constSoundFormatHash
+        ($file, $dir, $ext) = File::Basename::fileparse($path, qr/\.[^.]*/);
+        $ext =~ s/^\.//;
+        if (! $axmud::CLIENT->ivExists('constSoundFormatHash', $ext)) {
+
+            if (! $mxpFlag) {
+
+                # File format not supported
+                return 1;
+
+            } else {
+
+                # For any other file extension, apply the MXP filter (if the world has specified
+                #   one)
+                $path = $self->applyMxpFileFilter($path);
+                if (! $path) {
+
+                    # No MXP file filter supplied, or file conversion failed
+                    return 1;
+                }
+
+                # Check the file format of the converted file is supported
+                ($file, $dir, $ext) = File::Basename::fileparse($path, qr/\.[^.]*/);
+                $ext =~ s/^\.//;
+                if (! $axmud::CLIENT->ivExists('constSoundFormatHash', $ext)) {
+
+                    # File format not supported
+                    return 1;
+
+                } else {
+
+                    $convertFlag = TRUE;
+                }
+            }
+        }
+
+        # We can only play multiple sound triggers concurrently, if the flag is set
+        # We can never play more than one music trigger concurrently
+        @objList = $self->ivValues('soundHarnessHash');
+        foreach my $soundObj (@objList) {
+
+            if (
+                (
+                    # Concurrent sound triggers not allowed (at the moment)
+                    ! $axmud::CLIENT->allowMspMultipleFlag
+                    && $type eq 'sound'
+                    && $soundObj->type eq 'sound'
+                ) || (
+                    # Concurrent music triggers not allowed (ever)
+                    $type eq 'music'
+                    && $soundObj->type eq 'music'
+                )
+            ) {
+                # Stop this sound
+                $soundObj->stop();
+                # ...and update the registry
+                $self->ivDelete('soundHarnessHash', $soundObj->number);
+            }
+        }
+
+        # Apply the sound priority (but not for music triggers)
+        if ($type eq 'sound') {
+
+            @objList = $self->ivValues('soundHarnessHash');
+            foreach my $soundObj (@objList) {
+
+                if ($soundObj->type eq 'sound' && $soundObj->priority < $p) {
+
+                    # This sound has a lower priority, so stop it
+                    $soundObj->stop();
+                    # ...and update the registry
+                    $self->ivDelete('soundHarnessHash', $soundObj->number);
+                }
+            }
+        }
+
+        # Apply the continue flag
+        if ($type eq 'music') {
+
+            @objList = $self->ivValues('soundHarnessHash');
+            foreach my $soundObj (@objList) {
+
+                if ($soundObj->type eq 'music' && $soundObj->path eq $path) {
+
+                    # This music trigger is already playing
+
+                    # C=1
+                    if ($c) {
+
+                        # Allow the existing music trigger to continue playing, but modify its
+                        #   repeat count
+                        if ($soundObj->repeat != -1) {
+
+                            $soundObj->ivPoke('repeat', $soundObj->repeat + $l);
+                        }
+
+                        return 1;
+
+                    # C=0
+                    } else {
+
+                        # Restart the music trigger. In fact, stop the current music trigger, and
+                        #   let the new one start playing in a moment, using the same file.  (The
+                        #   TRUE argument means 'don't delete the sound file itself')
+                        $soundObj->stop(TRUE);
+                        # ...and update the registry
+                        $self->ivDelete('soundHarnessHash', $soundObj->number);
+
+                        # Combine the repeat count for the two duplicate sounds
+                        if ($soundObj->repeat == -1 || $l == -1) {
+
+                            $l = -1;
+
+                        } else {
+
+                            $l = $l + $soundObj->repeat;
+                        }
+                    }
+                }
+            }
+        }
+
+        # Play the sound file, passing any optional parameters
+        $axmud::CLIENT->playSoundFile(
+            $self,
+            $path,
+            $convertFlag,
+            $type,
+            $v,
+            $l,
+            $p,
+            $c,
+        );
+
+        return 1;
+    }
+
+    sub processMxpHeadingTag {
+
+        # Called by $self->processIncomingData
+        #
+        # Process an MXP heading token: <H1>...</H1> - <H6>...</H6>
+        #
+        # Expected arguments
+        #   $origText   - The original text received from the world, before this token was
+        #                   extracted
+        #   $token      - An extracted token containing the MXP element
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns an equivalent list of Axmud colour/style tags otherwise (may be an
+        #       empty list)
+
+        my ($self, $origText, $token, $check) = @_;
+
+        # Local variables
+        my (
+            $flag, $num,
+            @emptyList, @tagList,
+            %stackHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $token || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpHeadingTag', @_);
+            return @emptyList;
+        }
+
+        # In MXP, the format is
+        #   <H1>...</H1>, etc
+        # In Pueblo, the format is
+        #   <H1 align=xxx>...</H1>, etc
+
+        # Extract the forward slash (if present) and the number, removing the diamond brackets and
+        #   ignoring any attributes
+        if ($token =~ m/\<(\/?)H(\d)/) {
+
+            $flag = $1;
+            $num = $2;
+
+        } else {
+
+            # This shouldn't be possible, as the calling function already used a regex
+            return @emptyList;
+        }
+
+        # <H1>, etc
+        if (! $flag) {
+
+            if ($self->mxpHeadingFlag) {
+
+                # In successive <Hx>...<Hx> tags, the second <Hx> tag is treated as though it were
+                #   preceded by a closing </Hx> tag (regardless of whether the number x is the
+                #   same for both tags)
+
+                # Force a line break by inserting an artificial newline token
+                $self->ivUnshift('currentTokenList', 'go', undef);
+
+            } else {
+
+                # Ignore all newline characters until the closing </Hx> tag
+                $self->ivPoke('mxpHeadingFlag', TRUE);
+            }
+
+            # If the client flag is set, the font isn't changed (but the line breaks are used as
+            #   normal)
+            if ($axmud::CLIENT->allowMxpFontFlag) {
+
+                $stackHash{'font_size'} = $axmud::CLIENT->ivShow('constHeadingSizeHash', $num)
+                                            * $axmud::CLIENT->constFontSize;
+                $stackHash{'spacing'} = $axmud::CLIENT->ivShow('constHeadingSpacingHash', $num)
+                                            * $axmud::CLIENT->constFontSize;
+                $stackHash{'font_name'} = $axmud::CLIENT->constFont;
+                $stackHash{'bold_flag'} = TRUE;
+
+                # Create a dummy style tag that $self->applyColourStyleTags can interpret
+                #   e.g. 'mxpf_monospace_bold_12'
+                push (@tagList, $self->createMxpFontTag(%stackHash));
+
+                # Create a new MXP stack object and store it in the current textview object,
+                #   updating the latter's IVs
+                if (
+                    ! $self->currentTabObj->textViewObj->createMxpStackObj(
+                        $self,
+                        'H' . $num,
+                        %stackHash,
+                    )
+                ) {
+                    $self->mxpDebug($token, 'Internal error while processing element', 4101);
+
+                    return @emptyList;
+                }
+            }
+
+            # Operation complete
+            return @tagList;
+
+        # </H1>, etc
+        } else {
+
+            if (! $self->mxpHeadingFlag) {
+
+                # An invalid </Hx>...</Hx> construction
+                $self->mxpDebug($token, '</Hx> tag after earlier closing </Hx> tag', 4102);
+
+                return @emptyList;
+            }
+
+            # Stop ignoring newline characters
+            $self->ivPoke('mxpHeadingFlag', FALSE);
+
+            # Force a line break by inserting an artificial newline token
+            $self->ivUnshift('currentTokenList', 'go', undef);
+
+            # If the client flag is set, restore the previous font
+            if ($axmud::CLIENT->allowMxpFontFlag) {
+
+                return $self->popMxpStack('H' . $num);
+
+            } else {
+
+                return @emptyList;
+            }
+        }
+    }
+
+    sub processMxpElement {
+
+        # Called by $self->processIncomingData when it encounters an MXP element (a tag like '<B>'),
+        #   or by $self->processMxpCustomElement recursively
+        #
+        # Processes the MXP element, updating IVs and returning a corresponding list of Axmud
+        #   colour/style tags, where necessary
+        #
+        # NB If we're in the middle of a <V>...</V> construction, an element that isn't either the
+        #   opening or closing tag doesn't abnormally terminate the construction
+        #
+        # Expected arguments
+        #   $token      - An extracted token containing the MXP element
+        #
+        # Optionl arguments
+        #   $origText   - Specified when called by $self->processIncomingData, representing the
+        #                   received line of text, up to (but not including) the MXP tag
+        #   $parseMode  - Sometimes specified when this function calls itself recursively
+        #               - Set to 'simple' when processing element definitions. Only simple atomic
+        #                   elements like <B> (so don't allow <!ELEMENT> for example), and don't
+        #                   allow closing elements like </B>
+        #               - When set to 'simple_close', the same limitations apply as when set to
+        #                   'simple'. In addition, the element itself isn't processed, instead the
+        #                   corresponding closing element is processed (i.e. if $token is <B>, we
+        #                   process </B>)
+        #   %attHash    - When called by $self->processMxpCustomElement, a hash that specifies any
+        #                   attribute values that apply to this tag
+        #               - For example, in the element '<COLOR &col;>', this function substitutes
+        #                   the '&col;' for the attribute value matching the attribute 'col', where
+        #                   'col' is a key in %attHash, and the attribute value is the key's
+        #                   matching value
+        #               - Both the argument name and value can be substituted; so <COLOR &col;> and
+        #                   <COLOR FORE=&col;> have an identical effect
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns a recognition flag (set to FALSE if the token is nothing to do with
+        #       MXP which should be processed as ordinary text; set to TRUE if it's an MXP tag, even
+        #       an invalid one) followed by an equivalent list of Axmud colour/style tags otherwise
+        #       (may be an empty list)
+
+        my ($self, $token, $origText, $parseMode, %attHash) = @_;
+
+        # Local variables
+        my (
+            $origToken, $firstChar, $tagMode, $keyword,
+            @emptyList, @argList,
+        );
+
+        # Check for improper arguments
+        if (! defined $token) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpElement', @_);
+            return @emptyList;
+        }
+
+        # ($token will be modified during this function, but some parts of the function require the
+        #   the original token text)
+        $origToken = $token;
+
+        # Ignore comments, in the form '<!-- this is a comment -->' ($self->extractMxpPuebloElement
+        #   has already checked that an element beginning with '<!--' ends with a '-->', so we only
+        #   need to check the first part of the string
+        if (substr($token, 0, 4) eq '<!--') {
+
+            # Recognition flag, followed by empty Axmud colour/style tag list
+            return TRUE;
+        }
+
+        # MXP elements are in the form:
+        #   <keyword [args]>            ($tagMode 'open')
+        #   </keyword>                  ($tagMode 'close')
+        #   <!keyword [args]>           ($tagMode 'defn')
+
+        # Remove the initial < followed by optional whitespace, and the final > preceded by optional
+        #   whitespace
+        $token =~ s/^\<\s*//;
+        $token =~ s/\s*\>$//;
+        # In case there's nothing left, don't bother looking for keywords or arguments...
+        if (! $token) {
+
+            $self->mxpDebug($origToken, 'Processed an empty element', 1601);
+
+            # Treat token as ordinary text
+            return @emptyList;
+        }
+
+        # Remove the initial / or !, if present
+        $firstChar = substr($token, 0, 1);
+        if ($firstChar eq '/') {
+
+            # </keyword>
+            $token = substr($token, 1);
+            $tagMode = 'close';
+
+        } elsif ($firstChar eq '!') {
+
+            # <!keyword [args]>
+            $token = substr($token, 1);
+            $tagMode = 'defn';
+
+        } else {
+
+            # <keyword [args]>
+            $tagMode = 'open';
+        }
+
+        # Remove the keyword, which 'must start with a letter (A-Z) and then consist of letters,
+        #   numbers or the underline character'
+        if ($token =~ m/^([A-Za-z][A-Za-z0-9_]*)/) {
+
+            # (Simplify things by converting all keywords to upper-case)
+            $keyword = uc($1);
+            $token = substr($token, length($keyword));
+
+        } else {
+
+            if ($token =~ m/^[\'\"].*[\'\"]$/) {
+
+                # Keyword not found
+                $self->mxpDebug($origToken, 'Element contains quoted keyword', 1611);
+
+                # Recognition flag, followed by empty Axmud colour/style tag list
+                return TRUE;
+
+            } else {
+
+                # Keyword not found
+                $self->mxpDebug($origToken, 'Element contains invalid keyword', 1612);
+
+                # Recognition flag, followed by empty Axmud colour/style tag list
+                return TRUE;
+            }
+        }
+
+        # Some keywords are synonyms of others, e.g. <B>, <BOLD> and <STRONG> are all equivalent
+        if ($axmud::CLIENT->ivExists('constMxpConvertHash', $keyword)) {
+
+            $keyword = $axmud::CLIENT->ivShow('constMxpConvertHash', $keyword);
+        }
+
+        # Check that the keyword is either an official MXP element (e.g. <B>) or a user-defined
+        #   element, stored as a key in $self->mxpElementHash
+        if (
+            # ($keyword is in upper case, but element names are stored in lower case)
+            ! $axmud::CLIENT->ivExists('constMxpOfficialHash', $keyword)
+            && ! $self->ivExists('mxpElementHash', lc($keyword))
+        ) {
+            # Ignore obsolete keywords
+            if ($keyword eq 'SCRIPT') {
+
+                # Recognition flag, followed by empty Axmud colour/style tag list
+                return TRUE;
+
+            } else {
+
+                # Treat token as ordinary text
+                return @emptyList;
+            }
+        }
+
+        # Handle $parseMode, if specified by the calling function
+        if (defined $parseMode) {
+
+            if ($tagMode eq 'close') {
+
+                $self->mxpDebug(
+                    $origToken,
+                    'Malformed element (closing tag not valid in element definitions)',
+                    1621,
+                );
+
+                # Recognition flag, followed by empty Axmud colour/style tag list
+                return TRUE;
+
+            } elsif ($tagMode eq 'defn') {
+
+                $self->mxpDebug(
+                    $origToken,
+                    'Malformed element (non-atomic tag not valid in element definitions)',
+                    1622,
+                );
+
+                # Recognition flag, followed by empty Axmud colour/style tag list
+                return TRUE;
+
+            } elsif ($parseMode eq 'simple_close') {
+
+                # Don't process $token, which is an opening element like <B>; instead process the
+                #   corresponding closing element, which is something like </B>
+                $tagMode = 'close';     # Converts <B> to </B>
+                $token = '';            # Converts <COLOR ...> to </COLOR>
+            }
+        }
+
+        # Most keywords are only allowed in secure line mode
+        if (
+            ! $axmud::CLIENT->ivExists('constMxpModalHash', $keyword)
+            && (! defined $self->mxpLineMode || $self->mxpLineMode != 1)
+        ) {
+            $self->mxpDebug($origToken, 'Secure element used in unsecure line', 1623);
+
+            # Recognition flag, followed by empty Axmud colour/style tag list
+           return TRUE;
+        }
+
+        # Get a list of arguments, separated by one or more whitespace characters
+        # (The whole argument can be single-quoted, or double-quoted, in which case it can contain
+        #   embedded whitespace or the '>' character)
+        if ($token) {
+
+            do {
+
+                my (
+                    $argName, $argValue, $key, $value,
+                    @backRefList,
+                );
+
+                ($token, $argName, $argValue) = $self->extractMxpArgument($token);
+                if (! defined $token) {
+
+                    # Improper arguments, or malformed argument
+                    $self->mxpDebug($origToken, 'Malformed element', 1631);
+
+                    # Recognition flag, followed by empty Axmud colour/style tag list
+                    return TRUE;
+
+                } else {
+
+                    # Substitute the argument name or value, if they match one or more of the
+                    #   attributes specified in %attHash
+                    # e.g. In <COLOR &col;> and <COLOR FORE=&col;>, if there's a key in %attHash
+                    #   called 'col', subsitute the &col% for the key's corresponding value
+                    if (! defined $argValue) {
+
+                        @backRefList = ($argName =~ m/\&(\w+)\;/);
+                        foreach my $backRef (@backRefList) {
+
+                            if (exists $attHash{$backRef}) {
+
+                                $value = $attHash{$backRef};
+                                $argName =~ s/\&\w+\;/$value/g;
+                            }
+                        }
+
+                    } elsif (defined $argValue) {
+
+                        @backRefList = ($argValue =~ m/\&(\w+)\;/);
+                        foreach my $backRef (@backRefList) {
+
+                            if (exists $attHash{$backRef}) {
+
+                                $value = $attHash{$backRef};
+                                $argValue =~ s/\&\w+\;/$value/g;
+                            }
+                        }
+                    }
+
+                    # If the argument is not in the form 'argument_name=argument_value', then
+                    #   $argValue is 'undef', and $argName contains the whole argument
+                    push (@argList, $argName, $argValue);
+
+                    # After removing the 'argument' or the 'argument_name=argument_value'
+                    #   construction, if there's anything left in $token, it must start with a
+                    #   whitespace character
+                    # This ensures that there are whitespace character(s) between each argument,
+                    #   and prevents constructions like: name='value'name='value'
+                    if ($token && $token =~ m/^\S/) {
+
+                        $self->mxpDebug($origToken, 'Malformed element', 1632);
+
+                        # Recognition flag, followed by empty Axmud colour/style tag list
+                        return TRUE;
+                    }
+                }
+
+            } until (! $token);
+        }
+
+        # Process each type of MXP element in its own function
+
+        # Process modal elements: <B> <I> <U> <S> <H> <COLOR> <FONT>
+        if ($axmud::CLIENT->ivExists('constMxpModalHash', $keyword)) {
+
+            return (TRUE, $self->processMxpModalElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process HTML elements: <SMALL> <TT>
+        } elsif ($keyword eq 'SMALL' || $keyword eq 'TT') {
+
+            return (TRUE, $self->processMxpHtmlElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process element definitions: <!ELEMENT>
+        } elsif ($keyword eq 'EL') {
+
+            return (TRUE, $self->processMxpElementDefn($origToken, $tagMode, $keyword, @argList));
+
+        # Process attribute lists for user-defined elements: <!ATTLIST>
+        } elsif ($keyword eq 'AT') {
+
+            return (TRUE, $self->processMxpAttElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process entity element: <!ENTITY>
+        } elsif ($keyword eq 'EN') {
+
+            return (TRUE, $self->processMxpEntElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process direct setting of variable (entity values): <V>...</V>
+        } elsif ($keyword eq 'V') {
+
+            return (TRUE, $self->processMxpVarElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process support requests: <SUPPORT>
+        } elsif ($keyword eq 'SUPPORT') {
+
+            return (
+                TRUE,
+                $self->processMxpSupportElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process frames: <FRAME>
+        } elsif ($keyword eq 'FRAME') {
+
+            return (TRUE, $self->processMxpFrameElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process cursor control: <DEST>...</DEST>
+        } elsif ($keyword eq 'DEST') {
+
+            return (TRUE, $self->processMxpDestElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process direct setting of clickable links: <A>...</A>
+        } elsif ($keyword eq 'A') {
+
+            return (
+                TRUE,
+                $self->processMxpLinkElement($origToken, $tagMode, $keyword, FALSE, @argList),
+            );
+
+        # Process direct setting of send links: <SEND>...</SEND>
+        } elsif ($keyword eq 'SEND') {
+
+            return (
+                TRUE,
+                $self->processMxpSendElement($origToken, $tagMode, $keyword, FALSE, @argList),
+            );
+
+        # Process sounds: <SOUND>, <MUSIC>
+        } elsif ($keyword eq 'SOUND' || $keyword eq 'MUSIC') {
+
+            return (TRUE, $self->processMxpSoundElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process images: <IMAGE>
+        } elsif ($keyword eq 'IMAGE') {
+
+            return (TRUE, $self->processMxpImageElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process sound/image filters: <FILTER>
+        } elsif ($keyword eq 'FILTER') {
+
+            return (TRUE, $self->processMxpFilterElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process gauges: <GAUGE>, <STAT>
+        } elsif ($keyword eq 'GAUGE' || $keyword eq 'STAT') {
+
+            return (TRUE, $self->processMxpGaugeElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process MXP crosslinking: <RELOCATE>
+        } elsif ($keyword eq 'RELOCATE') {
+
+            return (
+                TRUE,
+                $self->processMxpCrosslinkElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process MXP logins: <USER>, <PASSWORD>
+        } elsif ($keyword eq 'USER' || $keyword eq 'PASSWORD') {
+
+            return (TRUE, $self->processMxpLoginElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process other official MXP elements
+        } elsif ($axmud::CLIENT->ivExists('constMxpOfficialHash', $keyword)) {
+
+            return (
+                TRUE,
+                $self->processMxpOfficialElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process custom elements
+        } elsif ($self->ivExists('mxpElementHash', lc($keyword))) {
+
+            return (TRUE, $self->processMxpCustomElement($origToken, $tagMode, $keyword, @argList));
+
+        # (This should never be executed)
+        } else {
+
+            $self->mxpDebug($origToken, 'Internal error while processing element', 1641);
+
+            # Recognition flag, followed by empty Axmud colour/style tag list
+            return TRUE;
+        }
+    }
+
+    sub processPuebloElement {
+
+        # Called by $self->processIncomingData when it encounters a Pueblo element (e.g. '<B>')
+        #
+        # Processes the Pueblo element, updating IVs and returning a corresponding list of Axmud
+        #   colour/style tags, where necessary
+        #
+        # Expected arguments
+        #   $token      - An extracted token containing the Pueblo element
+        #   $origText   - Specified when called by $self->processIncomingData, representing the
+        #                   received line of text, up to (but not including) the Pueblo element
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns a recognition flag (set to FALSE if the token is nothing to do with
+        #       Pueblo which should be processed as ordinary text; set to TRUE if it's a Pueblo
+        #       element, even an invalid one) followed by an equivalent list of Axmud colour/style
+        #       tags otherwise (may be an empty list)
+
+        my ($self, $token, $origText, $check) = @_;
+
+        # Local variables
+        my (
+            $origToken, $firstChar, $tagMode, $keyword,
+            @emptyList, @argList,
+        );
+
+        # Check for improper arguments
+        if (! defined $token) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->processPuebloElement', @_);
+            return @emptyList;
+        }
+
+        # ($token will be modified during this function, but some parts of the function require the
+        #   the original token text)
+        $origToken = $token;
+
+        # Ignore comments, in the form '<!-- this is a comment -->' ($self->extractMxpPuebloElement
+        #   has already checked that an element beginning with '<!--' ends with a '-->', so we only
+        #   need to check the first part of the string
+        if (substr($token, 0, 4) eq '<!--') {
+
+            # Recognition flag, followed by empty Axmud colour/style tag list
+            return TRUE;
+        }
+
+        # Pueblo elements are in the form:
+        #   <keyword [args]>            ($tagMode 'open')
+        #   </keyword>                  ($tagMode 'close')
+
+        # Remove the initial < followed by optional whitespace, and the final > preceded by optional
+        #   whitespace
+        $token =~ s/^\<\s*//;
+        $token =~ s/\s*\>$//;
+        # In case there's nothing left, don't bother looking for keywords or arguments...
+        if (! $token) {
+
+            $self->puebloDebug($origToken, 'Processed an empty element', 6601);
+
+            # Treat token as ordinary text
+            return @emptyList;
+        }
+
+        # Remove the initial /, if present
+        $firstChar = substr($token, 0, 1);
+        if ($firstChar eq '/') {
+
+            # </keyword>
+            $token = substr($token, 1);
+            $tagMode = 'close';
+
+        } else {
+
+            # <keyword [args]>
+            $tagMode = 'open';
+        }
+
+        # Remove the keyword, assuming that the same rules apply that apply to MXP keyword ('must
+        #   start with a letter (A-Z) and then consist of letters, numbers or the underline
+        #   character'
+        if ($token =~ m/^([A-Za-z][A-Za-z0-9_]*)/) {
+
+            # (Simplify things by converting all keywords to upper-case)
+            $keyword = uc($1);
+            $token = substr($token, length($keyword));
+
+        } else {
+
+            if ($token =~ m/^[\'\"].*[\'\"]$/) {
+
+                # Keyword not found
+                $self->puebloDebug($origToken, 'Element contains quoted keyword', 6611);
+
+                # Recognition flag, followed by empty Axmud colour/style tag list
+                return TRUE;
+
+            } else {
+
+                # Keyword not found
+                $self->puebloDebug($origToken, 'Element contains invalid keyword', 6612);
+
+                # Recognition flag, followed by empty Axmud colour/style tag list
+                return TRUE;
+            }
+        }
+
+        # Some keywords are synonyms of others, e.g. <B>, <EM> and <STRONG> are all equivalent
+        if ($axmud::CLIENT->ivExists('constPuebloConvertHash', $keyword)) {
+
+            $keyword = $axmud::CLIENT->ivShow('constPuebloConvertHash', $keyword);
+        }
+
+        # Check that the keyword is an official Pueblo element, whether implemented or not
+        if (! $axmud::CLIENT->ivExists('constPuebloOfficialHash', $keyword)) {
+
+            # Treat token as ordinary text
+            return @emptyList;
+
+        # Ignore unimplemented keywords
+        } elsif (! $axmud::CLIENT->ivExists('constPuebloImplementHash', $keyword)) {
+
+            # Recognition flag, followed by empty Axmud colour/style tag list
+            return TRUE;
+        }
+
+        # Get a list of arguments, separated by one or more whitespace characters
+        # (The whole argument can be single-quoted, or double-quoted, in which case it can contain
+        #   embedded whitespace or the '>' character)
+        if ($token) {
+
+            do {
+
+                my ($argName, $argValue, $key, $value);
+
+                ($token, $argName, $argValue) = $self->extractMxpArgument($token);
+                if (! defined $token) {
+
+                    # Improper arguments, or malformed argument
+                    $self->puebloDebug($origToken, 'Malformed element', 6621);
+
+                    # Recognition flag, followed by empty Axmud colour/style tag list
+                    return TRUE;
+
+                } else {
+
+                    # If the argument is not in the form 'argument_name=argument_value', then
+                    #   $argValue is 'undef', and $argName contains the whole argument
+                    push (@argList, $argName, $argValue);
+
+                    # After removing the 'argument' or the 'argument_name=argument_value'
+                    #   construction, if there's anything left in $token, it must start with a
+                    #   whitespace character
+                    # This ensures that there are whitespace character(s) between each argument,
+                    #   and prevents constructions like: name='value'name='value'
+                    if ($token && $token =~ m/^\S/) {
+
+                        $self->puebloDebug($origToken, 'Malformed element', 6622);
+
+                        # Recognition flag, followed by empty Axmud colour/style tag list
+                        return TRUE;
+                    }
+                }
+
+            } until (! $token);
+        }
+
+        # Process each type of Pueblo element in its own function
+
+        # Process modal elements: <B> <I> <U> <STRIKE>
+        if ($axmud::CLIENT->ivExists('constPuebloModalHash', $keyword)) {
+
+            return (TRUE, $self->processMxpModalElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process HTML element: <TT>
+        } elsif ($keyword eq 'TT') {
+
+            return (TRUE, $self->processMxpHtmlElement($origToken, $tagMode, $keyword, @argList));
+
+        # Process colours: <COLOR>...</COLOR>
+        } elsif ($keyword eq 'COLOR') {
+
+            return (
+                TRUE,
+                $self->processPuebloColourElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process fonts: <FONT>...</FONT>
+        } elsif ($keyword eq 'FONT') {
+
+            return (
+                TRUE,
+                $self->processPuebloFontElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process base font: <BASEFONT>
+        } elsif ($keyword eq 'BASEFONT') {
+
+            return (
+                TRUE,
+                $self->processPuebloBaseFontElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process hyperlinks to send to MUD: <SEND>...</SEND>
+        } elsif ($keyword eq 'SEND') {
+
+            # Not in Pueblo 2.50 spec, so assume it's the same as the MXP tag
+            return (
+                TRUE,
+                $self->processMxpSendElement($origToken, $tagMode, $keyword, FALSE, @argList),
+            );
+
+        # Process direct setting of clickable links: <A>...</A>
+        } elsif ($keyword eq 'A') {
+
+            return (
+                TRUE,
+                $self->processPuebloLinkElement($origToken, $tagMode, $keyword, FALSE, @argList),
+            );
+
+        # Process list: <UL>...</UL>, <OL>...</OL>
+        } elsif ($keyword eq 'UL' || $keyword eq 'OL') {
+
+            return (
+                TRUE,
+                $self->processPuebloListElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process list items: <LI>
+        } elsif ($keyword eq 'LI') {
+
+            return (
+                TRUE,
+                $self->processPuebloListItemElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process text justification: <CENTER>
+        } elsif ($keyword eq 'CENTER') {
+
+            return (
+                TRUE,
+                $self->processPuebloJustifyElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process literal text: <CODE>...</CODE>, <PRE>...</PRE>, <SAMP>...</SAMP>
+        } elsif ($keyword eq 'CODE' || $keyword eq 'PRE' || $keyword eq 'SAMP') {
+
+            return (
+                TRUE,
+                $self->processPuebloLiteralElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process images: <IMG>
+        } elsif ($keyword eq 'IMG') {
+
+            return (
+                TRUE,
+                $self->processPuebloImageElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process panes: <XCH_PANE>
+        } elsif ($keyword eq 'XCH_PANE') {
+
+            return (
+                TRUE,
+                $self->processPuebloPaneElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # Process other implemented MXP elements
+        } elsif ($axmud::CLIENT->ivExists('constPuebloImplementHash', $keyword)) {
+
+            return (
+                TRUE,
+                $self->processPuebloImplementedElement($origToken, $tagMode, $keyword, @argList),
+            );
+
+        # (This should never be executed)
+        } else {
+
+            $self->puebloDebug($origToken, 'Internal error while processing element', 6631);
+
+            # Recognition flag, followed by empty Axmud colour/style tag list
+            return TRUE;
+        }
+    }
+
+    # (Called by ->processIncomingData to convert a non-text token into other data)
+
+    sub processMxpSpacingTag {
+
+        # Called by $self->processIncomingData
+        #
+        # Process an MXP line spacing token: <NOBR>, <P>, </P>, <BR>, <SBR>
+        # Also process one kind of MXP HTML element, <HR>
+        #
+        # Expected arguments
+        #   $token      - An extracted token containing the MXP element
+        #
+        # Return values
+        #   'undef' on improper arguments or if an invalid closing tag like </BR> is used
+        #   1 otherwise
+
+        my ($self, $token, $check) = @_;
+
+        # Local variables
+        my ($origToken, $width, $height, $string, $fontSize);
+
+        # Check for improper arguments
+        if (! defined $token || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpSpacingTag', @_);
+        }
+
+        # Remove the < and > characters
+        $origToken = $token;
+        $token = uc($token);
+        $token =~ s/^\<//;
+        $token =~ s/\>$//;
+
+        # Only the </P> element can be used as a closing tag (e.g. </NOBR> is invalid)
+        if ($token ne '/P' && substr($token, 0, 1) eq '/') {
+
+            $self->mxpDebug($origToken, 'Invalid line spacing tag \'' . $origToken . '\'', 4001);
+        }
+
+        # Process the tag
+        if ($token eq 'BR') {
+
+            # Force a line break by inserting an artificial newline token
+            $self->ivUnshift('currentTokenList', 'go', undef);
+
+        } elsif ($token eq 'NOBR') {
+
+            # Ignore the next newline character
+            $self->ivPoke('mxpIgnoreNewLineFlag', TRUE);
+
+        } elsif ($token eq 'P') {
+
+            if ($self->mxpParagraphFlag) {
+
+                # In successive <P>...<P> tags, the second <P> tag is treated as though it were
+                #   preceded by a closing </P> tag
+
+                # Force a line break by inserting an artificial newline token
+                $self->ivUnshift('currentTokenList', 'go', undef);
+
+            } else {
+
+                # Ignore all newline characters until the closing </P> tag
+                $self->ivPoke('mxpParagraphFlag', TRUE);
+            }
+
+        } elsif ($token eq '/P') {
+
+            if (! $self->mxpParagraphFlag) {
+
+                # An invalid </P>...</P> construction
+                $self->mxpDebug($origToken, '</P> tag after earlier closing </P> tag', 4002);
+
+            } else {
+
+                # Stop ignoring newline characters
+                $self->ivPoke('mxpParagraphFlag', FALSE);
+
+                # Force a line break by inserting an artificial newline token
+                $self->ivUnshift('currentTokenList', 'go', undef);
+            }
+
+        } elsif ($token eq 'SBR') {
+
+            # Axmud doesn't yet implement soft line breaks; treat it as an ordinary space character
+            $self->ivUnshift('currentTokenList', 'text', ' ');
+
+        } elsif ($token eq 'HR') {
+
+            # An HTML element. Draw a poor man's 'horizontal rule' with simple ASCII characters
+
+            # Force a line break by inserting an artificial newline token
+            $self->ivUnshift('currentTokenList', 'go', undef);
+
+            # Adjust the width to take account of different font sizes, especially inside headings
+            #   (<H1>...</H1>, etc)
+            ($width, $height) = $self->getTextViewSize();
+            $fontSize = $self->currentTabObj->textViewObj->ivShow('mxpModalStackHash', 'font_size');
+
+            if ($fontSize ne '' && $fontSize != $axmud::CLIENT->constFontSize) {
+
+                # (Subtracting 1 seems to produce the right answer more often, for unknown reasons)
+                $width = int($width / ($fontSize / $axmud::CLIENT->constFontSize)) - 1;
+            }
+
+            # Draw the horizontal rule, which ends with another newline token
+            $self->ivUnshift(
+                'currentTokenList',
+                    'text',
+                    chr(0x2501) x $width,,
+                    'go',
+                    undef,
+            );
+        }
+
+        return 1;
+    }
+
+    sub processPuebloSpacingTag {
+
+        # Called by $self->processIncomingData
+        #
+        # Process a Pueblo line spacing token: <BODY>, </BODY>, <P>, </P>, <BR>. <HR>
+        #
+        # Expected arguments
+        #   $token      - An extracted token containing the Pueblo element
+        #
+        # Return values
+        #   'undef' on improper arguments or if an invalid closing tag like </BR> is used
+        #   1 otherwise
+
+        my ($self, $token, $check) = @_;
+
+        # Local variables
+        my (
+            $origToken, $wholeText, $bufferObj, $width, $height, $fontSize,
+            @list,
+        );
+
+        # Check for improper arguments
+        if (! defined $token || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->processPuebloSpacingTag',
+                @_,
+            );
+        }
+
+        # Remove the < and > characters
+        $origToken = $token;
+        $token = uc($token);
+        $token =~ s/^\<//;
+        $token =~ s/\>$//;
+        # These Pueblo tags can have attributes, but Axmud ignores those attributes
+        $token =~ s/\s.*//;
+
+        # Only the </BODY> and </P> elements can be used as a closing tag (e.g. </BR> is invalid)
+        if ($token ne '/BODY' && $token ne '/P' && substr($token, 0, 1) eq '/') {
+
+            $self->puebloDebug($origToken, 'Invalid line spacing tag \'' . $origToken . '\'', 7801);
+        }
+
+        # Process the tag
+        if ($token eq 'BODY' || $token eq '/BODY') {
+
+            # The Pueblo spec states that <BODY>...</BODY> is not necessary for world output.
+            #   However, some worlds (e.g. Epoch) display some introductory text before the
+            #   <BODY>...</BODY> construction, so we'll replace both tags with empty lines
+
+            # If the current line contains any non-whitespace characters, we must insert a newline
+            #   token to terminate it
+            $wholeText = $self->getPartialLine() . $self->processStripLine;
+            if ($wholeText =~ m/\S/) {
+
+                $self->ivUnshift('currentTokenList', 'go', undef);
+            }
+
+            # Insert a second newline token to put space between this paragraph, and anything that
+            #   follows it
+            $self->ivUnshift('currentTokenList', 'go', undef);
+
+        } elsif ($token eq 'BR') {
+
+            # Force a line break inside or outside a paragraph
+            $self->ivUnshift('currentTokenList', 'go', undef);
+
+        } elsif ($token eq 'P') {
+
+            # Special case: inside a <PRE>...</PRE> construction, <P> tags are implemented as a
+            #   simple newline
+            if ($self->puebloLiteralFlag) {
+
+                # Force a line break
+                $self->ivUnshift('currentTokenList', 'go', undef);
+            }
+
+            $self->ivPoke('puebloParagraphFlag', TRUE);
+
+            # If the current line contains any non-whitespace characters, we must insert a newline
+            #   token to terminate it
+            $wholeText = $self->getPartialLine() . $self->processStripLine;
+            if ($wholeText =~ m/\S/) {
+
+                $self->ivUnshift('currentTokenList', 'go', undef);
+
+            # If the line before that contained any newline characters, we must insert a newline
+            #   token to put an empty line between the that text, and the beginning of the
+            #   paragraph
+            } elsif (defined $self->displayBufferLast) {
+
+                $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
+                if ($bufferObj->modLine =~ m/\S/) {
+
+                    $self->ivUnshift('currentTokenList', 'go', undef);
+                }
+            }
+
+        } elsif ($token eq '/P') {
+
+            if (! $self->puebloParagraphFlag) {
+
+                # An invalid </P>...</P> construction
+                $self->puebloDebug($origToken, '</P> tag after earlier closing </P> tag', 7811);
+
+            } else {
+
+                $self->ivPoke('puebloParagraphFlag', FALSE);
+
+                # If the current line contains any non-whitespace characters, we must insert a
+                #   newline token to terminate it
+                $wholeText = $self->getPartialLine() . $self->processStripLine;
+                if ($wholeText =~ m/\S/) {
+
+                    $self->ivUnshift('currentTokenList', 'go', undef);
+                }
+
+                # Insert a second newline token to put space between this paragraph, and anything
+                #   that follows it
+                $self->ivUnshift('currentTokenList', 'go', undef);
+            }
+
+        } elsif ($token eq 'HR') {
+
+            # An HTML element. Draw a poor man's 'horizontal rule' with simple ASCII characters
+
+            # Force a line break inside or outside a paragraph. The TRUE argument means 'don't close
+            #   open MXP tags, as we would for a true newline character'
+            push (@list, 'go', undef);
+
+            # Adjust the width to take account of different font sizes, especially inside headings
+            #   (<H1>...</H1>, etc)
+            ($width, $height) = $self->getTextViewSize();
+            $fontSize = $self->currentTabObj->textViewObj->ivShow('mxpModalStackHash', 'font_size');
+            if ($fontSize ne '' && $fontSize != $axmud::CLIENT->constFontSize) {
+
+                # (Subtracting 1 seems to produce the right answer more often, for unknown reasons)
+                $width = int($width / ($fontSize / $axmud::CLIENT->constFontSize)) - 1;
+            }
+
+            # Draw the horizontal rule
+            push (@list, 'text', chr(0x2501) x $width);
+            # ...which ends in another newline character
+            push (@list, 'go', undef);
+
+            $self->ivUnshift('currentTokenList', @list);
+        }
+
+        return 1;
+    }
+
+    sub processMxpEntity {
+
+        # Called by $self->processIncomingData
+        #
+        # Process an MXP entity in the form %...;, replacing it with the named entity's value
+        # For entities in the form '&#nnn;' replaces the nnn with the ASCII character of that value,
+        #   but only for value in the range 32-255
+        #
+        # NB If we're in the middle of a <V>...</V> construction, an entity in the form %...'
+        #   doesn't abnormally terminate the construction. Therefore the following construction is
+        #   valid:
+        #       <V>I have %number; gold coins</V>
+        # ...and results in the variable's ->value being set to something 'I have 100 gold coins'
+        #
+        # Expected arguments
+        #   $token      - The token containing the entity in the form &...;
+        #   $text       - The remaining portion of text, which begins with the entity $token
+        #
+        # Return values
+        #   'undef' on improper arguments or if the entity is unrecognised
+        #   Otherwise returns the entity's value
+
+        my ($self, $token, $text, $check) = @_;
+
+        # Local variables
+        my ($enNum, $enName, $entityObj);
+
+        # Check for improper arguments
+        if (! defined $token || ! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpEntity', @_);
+        }
+
+        # Handle entities in the form '&#nnn;'
+        if ($token =~ m/\&\#([0-9]{1,3})\;/) {
+
+            $enNum = $1;
+            # We'll assume that 'nnn' can be '064' as well as '64'. Convert it to a numeric value
+            $enNum += 0;
+
+            # Ignore numbers not in the range 32-255
+            if ($enNum < 32 || $enNum > 255) {
+
+                return undef;
+
+            } else {
+
+                return chr($enNum);
+            }
+        }
+
+        # Otherwise, get the entity name (the token will have at least three characters, due to the
+        #   regex used in $self->extractMxpPuebloEntity, so there's no need to check for a minimum
+        #   length)
+        $enName = substr($token, 1, (length($token) - 2));
+
+        # Does an entity called $enName exist?
+        if (! $self->ivExists('mxpEntityHash', $enName)) {
+
+            # Standard entity names don't have their own GA::Mxp::Entity object
+            if (! $axmud::CLIENT->ivExists('constMxpEntityHash', $enName)) {
+
+                $self->mxpDebug($token, 'Unrecognised entity \'' . $enName . '\'', 3901);
+
+                return undef;
+
+            } else {
+
+                # Use the standard entity's value (an ASCII character)
+                return $axmud::CLIENT->ivShow('constMxpEntityHash', $enName);
+            }
+
+        } else {
+
+            # Replace the named entity with its value
+            $entityObj = $self->ivShow('mxpEntityHash', $enName);
+            return $entityObj->value;
+        }
+    }
+
+    # (Called by ->processIncomingData to handle a text token)
+
+    sub updateTextToken {
+
+        # Called by $self->processIncomingData
+        # Also called by $self->processMxpSpacingTag when processing a <SBR> or <HR> tag
+        #
+        # Updates IVs after a text token (a string which doesn't contain any of the none-text tokens
+        #   removed by the calling function, such as newline characters, escape sequences, etc) is
+        #   processed
+        #
+        # Expected arguments
+        #   $token      - The token containing the text
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $token, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $token || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateTextToken', @_);
+        }
+
+        # If we're in the middle of a <V>...</V> construction, update the variable's value
+        if ($self->mxpCurrentVar) {
+
+            $self->mxpCurrentVar->ivPoke('value', $self->mxpCurrentVar->value . $token);
+        }
+
+        # If we're in the middle of an <A>...</A> construction, update the link's visible text
+        if ($self->mxpCurrentLink) {
+
+            $self->mxpCurrentLink->ivPoke('text', $self->mxpCurrentLink->text . $token);
+        }
+
+        # If we're in the middle of a <SEND>...</SEND> construction, update the link's visible text
+        if ($self->mxpCurrentSend) {
+
+            $self->mxpCurrentSend->ivPoke('text', $self->mxpCurrentSend->text . $token);
+        }
+
+        # If we're in the middle of two matching custom tags which defined tag properties, e.g.
+        #   from the MXP spec, <RName>...</RName>, update the stored text
+        foreach my $key ($self->ivKeys('mxpFlagTextHash')) {
+
+            $self->ivAdd('mxpFlagTextHash', $key, $self->ivShow('mxpFlagTextHash', $key) . $token);
+        }
+
+        return 1;
+    }
+
+    # (Miscellaneous incoming functions)
+
+    sub writeIncomingDataLogs {
+
+        # Called by $self->processLineSegment to write logs after each line segment (usually
+        #   comprising a whole line) is received from the world, and after any matching triggers
+        #   have fired)
+        # NB $self->writeReceiveDataLog is used to write the 'receive' logfile; this function is
+        #   used to write all other logfiles
+        #
+        # Expected arguments
+        #   $modLine        - A segment of the received text, comprising some or all of a line of
+        #                       text received from a world, which has now been stripped of non-text
+        #                       tokens like newline characters, escape sequences, etc; and then
+        #                       possibly modified after all matching triggers have fired
+        #   $newLineFlag    - Flag set to TRUE if this line segment is to be treated as if it ends
+        #                       with a newline character, FALSE if is to be treated as if it does
+        #                       not end with a newline character
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $modLine, $newLineFlag, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (! defined $modLine || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->writeIncomingDataLogs', @_);
+        }
+
+        # Write logs (if allowed)
+        $axmud::CLIENT->writeLog(
+            $self,
+            TRUE,                           # Not world-specific logs
+            $modLine,
+            FALSE,                          # Don't precede with a newline character
+            $newLineFlag,
+            'main',                         # Write to these files
+        );
+
+        $axmud::CLIENT->writeLog(
+            $self,
+            FALSE,                          # World-specific logs
+            $modLine,                       # After triggers fired
+            FALSE,                          # Don't precede with a newline character
+            $newLineFlag,
+            'display',                      # Write to these files
+        );
+
+        # If we're recording lines in a separate logfile because of a character falling asleep,
+        #   passing out or dying, do that now
+        if ($self->logAsleepUntilLine) {
+
+            @list = ($modLine);
+            if ($self->displayBufferLast >= $self->logAsleepUntilLine) {
+
+                $self->ivUndef('logAsleepUntilLine');
+                push (@list, '--- (End of sleep record) ---');
+            }
+
+            foreach my $item (@list) {
+
+                $axmud::CLIENT->writeLog(
+                    $self,
+                    FALSE,                          # World-specific logs
+                    $item,
+                    FALSE,                          # Don't precede with a newline character
+                    $newLineFlag,
+                    'sleep' ,                       # Write to these files
+                );
+            }
+        }
+
+        if ($self->logPassedOutUntilLine) {
+
+            @list = ($modLine);
+            if ($self->displayBufferLast >= $self->logPassedOutUntilLine) {
+
+                $self->ivUndef('logPassedOutUntilLine');
+                push (@list, '--- (End of passout record) ---');
+            }
+
+            foreach my $item (@list) {
+
+                $axmud::CLIENT->writeLog(
+                    $self,
+                    FALSE,                          # World-specific logs
+                    $item,
+                    FALSE,                          # Don't precede with a newline character
+                    $newLineFlag,
+                    'passout',                      # Write to these files
+                );
+            }
+        }
+
+        if ($self->logDeadUntilLine) {
+
+            @list = ($modLine);
+            if ($self->displayBufferLast >= $self->logDeadUntilLine) {
+
+                $self->ivUndef('logDeadUntilLine');
+                push (@list, '--- (End of dead record) ---');
+            }
+
+            foreach my $item (@list) {
+
+                $axmud::CLIENT->writeLog(
+                    $self,
+                    FALSE,                          # World-specific logs
+                    $item,
+                    FALSE,                          # Don't precede with a newline character
+                    $newLineFlag,
+                    'dead' ,                        # Write to these files
+                );
+            }
+        }
+
+        return 1;
+    }
+
+    sub writeReceiveDataLog {
+
+        # Called by $self->processLinePortion to write the 'receive' logfile
+        # Unlike other logfiles, lines written to 'receive' are not split into multiple lines by
+        #   splitter triggers or by recognised command prompts
+        #
+        # Expected arguments
+        #   $stripLine      - A segment of the received text, comprising some or all of a line of
+        #                       text received from a world, which has now been stripped of non-text
+        #                       tokens like newline characters, escape sequences, etc
+        #   $imgLine        - The same line but with extra text added for any processed images
+        #   $newLineFlag    - Flag set to TRUE if this line portion is to be treated as if it ends
+        #                       with a newline character, FALSE if is to be treated as if it does
+        #                       not end with a newline character
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $stripLine, $imgLine, $newLineFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $stripLine || ! defined $imgLine || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->writeReceiveDataLog', @_);
+        }
+
+        # Write logs (if allowed)
+        if ($axmud::CLIENT->logImageFlag) {
+
+            $axmud::CLIENT->writeLog(
+                $self,
+                FALSE,                          # World-specific logs
+                $imgLine,                       # Additional text representing processed images
+                FALSE,                          # Don't precede with a newline character
+                $newLineFlag,
+                'receive',                      # Write to these files
+            );
+
+        } else {
+
+            $axmud::CLIENT->writeLog(
+                $self,
+                FALSE,                          # World-specific logs
+                $stripLine,                     # No text representing processed images
+                FALSE,                          # Don't precede with a newline character
+                $newLineFlag,
+                'receive',                      # Write to these files
+            );
+        }
+
+        return 1;
+    }
+
+    sub extractClickLinks {
+
+        # Called by $self->processLineSegment
+        # Before testing a received line against triggers, we need to see if there are any valid
+        #   web URLs/email addresses and, if so, note their positions (so they can be used when the
+        #   line is displayed in the current textview object)
+        #
+        # The calling function uses a hash of Axmud colour/style tags, in the form
+        #   $tagHash{position} = reference_to_a_list_of_Axmud_colour_and_style_tags
+        # ...where $position is the position in the line segment at which the colour/style tags
+        #   apply (the first character is position 0)
+        #
+        # For any URLs/email addresses found, adds 'link' and 'link_off' style tags to the hash
+        #
+        # Expected arguments
+        #   $stripText  - A segment of the received text, comprising some or all of a line of text
+        #                   received from a world, which has now been stripped of non-text tokens
+        #                   like newline characters, escape sequences, etc
+        #   $tagHashRef - Reference to the hash of Axmud colour/style tags described above (which
+        #                   this function may modify)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $stripText, $tagHashRef, $check) = @_;
+
+        # Local variables
+        my ($urlRegex, $emailRegex);
+
+        # Check for improper arguments
+        if (! defined $stripText || ! defined $tagHashRef || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->extractClickLinks', @_);
+        }
+
+        # (Don't bother checking for URLs, if there is no command set to open an external web
+        #   browser)
+        if ($axmud::CLIENT->browserCmd) {
+
+            # Import the regexes for recognising URLs
+            $urlRegex = $axmud::CLIENT->constUrlRegex;
+
+            while ($stripText =~ m/($urlRegex)/gi) {
+
+                my ($match, $start, $stop, $listRef);
+
+                $match = $1;
+                $start = length ($`);
+                $stop = $start + length($&);
+
+                # Ignore URLS which already occur between two 'link' tags
+                if ($self->checkLinkTags($tagHashRef, $start, $stop)) {
+
+                    if (exists $$tagHashRef{$start}) {
+
+                        $listRef = $$tagHashRef{$start};
+                        push (@$listRef, 'link');
+
+                    } else {
+
+                        $$tagHashRef{$start} = ['link'];
+                    }
+
+                    if (exists $$tagHashRef{$stop}) {
+
+                        $listRef = $$tagHashRef{$stop};
+                        push (@$listRef, 'link_off');
+
+                    } else {
+
+                        $$tagHashRef{$stop} = ['link_off'];
+                    }
+                }
+            }
+        }
+
+        # (Don't bother checking for email addresses, if there is no command set to open an external
+        #   email application)
+        if ($axmud::CLIENT->emailCmd) {
+
+            # Import the regexes for recognising email addresses
+            $emailRegex = $axmud::CLIENT->constEmailRegex;
+
+            while ($stripText =~ m/($emailRegex)/gi) {
+
+                my ($match, $start, $stop, $listRef);
+
+                $match = $1;
+                $start = length ($`);
+                $stop = $start + length($&);
+
+                # Ignore email addresses which already occurs between two 'link' tags
+                if ($self->checkLinkTags($tagHashRef, $start, $stop)) {
+
+                    if (exists $$tagHashRef{$start}) {
+
+                        $listRef = $$tagHashRef{$start};
+                        push (@$listRef, 'link');
+
+                    } else {
+
+                        $$tagHashRef{$start} = ['link'];
+                    }
+
+                    if (exists $$tagHashRef{$stop}) {
+
+                        $listRef = $$tagHashRef{$stop};
+                        push (@$listRef, 'link_off');
+
+                    } else {
+
+                        $$tagHashRef{$stop} = ['link_off'];
+                    }
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub checkLinkTags {
+
+        # Called by $self->extractClickLinks when a URL or email address is found in some received
+        #   text
+        #
+        # The calling function was supplied with a hash of Axmud colour/style tags, in the form
+        #   $tagHash{position} = reference_to_a_list_of_Axmud_colour_and_style_tags
+        # ...where $position is the position in the line segment at which the colour/style tags
+        #   apply (the first character is position 0)
+        #
+        # This function checks the position of the URL/email address. If the whole URL/email address
+        #   occurs outside of two matching 'link' tags, then it's safe to add new 'link' tags
+        # e.g. ________EMAIL_______<link_tag>URL<link_off_tag>______    < We can add new tags
+        # e.g. ________<link_tag>...EMAIL...<link_off_tag>__________    < We can't add new tags
+        #
+        # Expected arguments
+        #   $tagHashRef     - Reference to the hash of Axmud colour/style tags described above
+        #   $start, $stop   - Offsets for the beginning/end of the newly-found URL or email address
+        #                       ($start is 0, if the URL/email address occurs at the start of the
+        #                       line)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the URL/email address occurs between two matching
+        #       'link' tags
+        #   1 if it's safe to create two new matching 'link' tags
+
+        my ($self, $tagHashRef, $start, $stop, $check) = @_;
+
+        # Local variables
+        my (
+            $prevFlag, $thisStart, $thisStop, $thisOffset,
+            @onOffsetList, @offOffsetList, @sortedList
+        );
+
+        # Check for improper arguments
+        if (! defined $tagHashRef || ! defined $start || ! defined $stop || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkLinkTags', @_);
+        }
+
+        # Get a list of offsets at which 'link' and 'link_off' tags occur
+        foreach my $offset (keys %$tagHashRef) {
+
+            my $listRef = $$tagHashRef{$offset};
+
+            if (grep m/link/, @$listRef) {
+
+                push (@onOffsetList, $offset);
+            }
+
+            if (grep m/link_off/, @$listRef) {
+
+                push (@offOffsetList, $offset);
+            }
+        }
+
+        if (@onOffsetList || @offOffsetList) {
+
+            # Sort the lists
+            if (@onOffsetList) {
+
+                @onOffsetList = sort {$a <=> $b} (@onOffsetList);
+            }
+
+            if (@offOffsetList) {
+
+                @offOffsetList = sort {$a <=> $b} (@offOffsetList);
+            }
+
+            do {
+
+                my ($onOffset, $offOffset, $thisFlag);
+
+                $onOffset = $onOffsetList[0];
+                $offOffset = $offOffsetList[0];
+
+                # Remove 'link' and 'link_off' tags, one by one, in the order in which they occured
+                if (defined $onOffset && defined $offOffset && $offOffset < $onOffset) {
+
+                    $thisOffset = $offOffset;
+                    $thisFlag = FALSE;              # 'link_off'
+                    shift @offOffsetList;
+
+                } elsif (defined $onOffset) {
+
+                    $thisOffset = $onOffset;
+                    $thisFlag = TRUE;               # 'link'
+                    shift @onOffsetList;
+
+                } elsif (defined $offOffset) {
+
+                    $thisOffset = $offOffset;
+                    $thisFlag = FALSE;              # 'link_off'
+                    shift @offOffsetList;
+                }
+
+                # Special case: the first tag found should have been a 'link' tag, but if it was a
+                #   'link_off' tag, implying that a link has been spread over two lines, then the
+                #   URL/email address can't be found before it
+                if (! defined $prevFlag && ! $thisFlag) {
+
+                    if ($start <= $thisOffset) {
+
+                        return undef;
+                    }
+
+                } else {
+
+                    # 'link' tag found
+                    if ($thisFlag) {
+
+                        # Wait for the corresponding 'link_off'. If the previously found tag was
+                        #   also 'link', ignore the new tag (two consecutive 'link' tags shouldn't
+                        #   happen, but just in case, that's what we'll do)
+                        if (! defined $prevFlag) {
+
+                            $thisStart = $thisOffset;
+                            $thisStop = undef;
+                        }
+
+                    # 'link_off' flag found
+                    } else {
+
+                        $thisStop = $thisOffset;
+                        # Does any part of the URL/email address fall between the 'link' and
+                        #   'link_off' tags?
+                        if (
+                            ($start >= $thisStart && $start <= $thisStop)
+                            || ($stop >= $thisStart && $stop <= $thisStop)
+                        ) {
+                            # Either the beginning or the end of the URL/email address occurs
+                            #   between two matching 'link'/'link_off' tags
+                            return undef;
+
+                        } else {
+
+                            # Move on to the next two matching 'link'/'link_off' tags
+                            $thisStart = undef;
+                            $thisStop = undef;
+                        }
+                    }
+                }
+
+                $prevFlag = $thisFlag;
+
+            } until (! @onOffsetList && ! @offOffsetList);
+
+            # If the last tag found was a 'link' tag, then the URL/email address must not occur
+            #   after it
+            if (defined $thisStart && ! defined $thisStop && $start >= $thisOffset) {
+
+                return undef;
+            }
+        }
+
+        # The URL/email address doesn't occur between two matching 'link' tags
+        return 1;
+    }
+
+    sub checkSuppressLine {
+
+        # Called by $self->respondIncomingData when processing a newline character at the end of an
+        #   empty line (i.e. one which contains no text tokens, or only text tokens consisting of
+        #   whitespace)
+        # This function assumes that the current world's ->suppressEmptyLineCount is set to an
+        #   integer greater than 1 (other values are dealt with by the calling function)
+        # Any number of consecutive empty lines below this value are preserved, but any number of
+        #   consecutive empty lines at or above this value are suppresssed (ignored)
+        # e.g. Set to 3; the first two consecutive empty lines are preserved, but the 3rd, 4th and
+        #   5th are suppressed
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the line currently being processed by
+        #       ->processLineSegment shouldn't be suppressed
+        #   1 if the line should be suppressed
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($line, $count, $target);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkSuppressLine', @_);
+        }
+
+        # If the display buffer is empty, there are no previous lines to check
+        if (! $self->displayBufferCount) {
+
+            return undef;
+        }
+
+        $line = $self->displayBufferLast;
+        $count = 1;     # The line being processed is itself empty
+        $target = $self->currentWorld->suppressEmptyLineCount;
+
+        do {
+
+            my $bufferObj;
+
+            $count++;
+
+            $bufferObj = $self->ivShow('displayBufferHash', $line);
+            if (! $bufferObj->emptyFlag) {
+
+                # Not enough consecutive empty lines; don't suppress the current empty line
+                return undef;
+
+            } else {
+
+                # On the next DO loop, check the previous line in the buffer
+                $line--;
+            }
+
+        } until ($count >= $target || $line < $self->displayBufferFirst);
+
+        # There are enough consecutive empty lines; suppress the current empty line
+        return 1;
+    }
+
+    sub processPrompt {
+
+        # Called by $self->spinMaintainLoop after receiving some text that looks like a prompt, and
+        #   after the waiting time has expired
+        # Also called by $self->optCallback after a TELOPT_EOR is received from the server
+        # Processes the next part of an automatic login, if necessary, and causes the 'prompt'
+        #   hook event
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $pattern, $initChar, $initAccount, $initPass,
+            @loginCmdList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processPrompt', @_);
+        }
+
+        $self->ivIncrement('promptCount');
+
+        # In login mode 'lp', 'world_cmd' and 'telnet', we're waiting for prompts so that we can do
+        #   an automatic login
+        if ($self->loginPromptsMode ne 'none') {
+
+            # Mode 'lp' - LP/Diku/AberMUD login (consecutive prompts for character/password)
+            if ($self->loginPromptsMode eq 'lp') {
+
+                if ($self->promptCount == 1) {
+
+                    # Send the character name
+                    $self->worldCmd($self->initChar);
+
+                } elsif ($self->promptCount == 2) {
+
+                    # Send the password. The second argument is the substring in the first argument
+                    #   which should be obscured (the whole string, in this case)
+                    $self->worldCmd($self->initPass, $self->initPass);
+                    # Wait for login success patterns (if there are any), otherwise mark the
+                    #   character as logged in
+                    $self->setLoginPatterns();
+                }
+
+            # Mode 'world_cmd' - send a sequence of world commands at the first prompt
+            } elsif ($self->loginPromptsMode eq 'world_cmd' && $self->promptCount == 1) {
+
+                $self->processCmdLoginMode();
+
+            # Mode 'telnet' - basic telnet login (e.g. 'login:' 'password:')
+            } elsif ($self->loginPromptsMode eq 'telnet' && $self->loginPromptPatternList) {
+
+                $pattern = $self->ivShift('loginPromptPatternList');
+                if ($self->promptStripLine =~ m/$pattern/i) {
+
+                    if ($self->loginPromptPatternList) {
+
+                        # Send the character name
+                        $self->worldCmd($self->initChar);
+
+                    } else {
+
+                        # Send the password. The second argument is the substring in the first
+                        #   argument which should be obscured (the whole string, in this case)
+                        $self->worldCmd($self->initPass, $self->initPass);
+
+                        # Wait for login success patterns (if there are any), otherwise mark the
+                        #   character as logged in
+                        $self->setLoginPatterns();
+                    }
+
+                } else {
+
+                    # The pattern doesn't match this prompt. Re-insert it into the list, so that
+                    #   it can be tested against the next prompt
+                    $self->ivUnshift('loginPromptPatternList', $pattern);
+                }
+            }
+        }
+
+        # Fire any hooks that are using the 'login' hook event
+        $self->checkHooks('prompt', $self->promptStripLine);
+
+        # Cancel the prompt
+        $self->ivUndef('promptLine');
+        $self->ivUndef('promptStripLine');
+        $self->ivUndef('promptCheckTime');
+
+        return 1;
+    }
+
+    # (Process MXP tokens)
 
     sub extractMxpArgument {
 
@@ -13197,1907 +18041,6 @@
         }
 
         return undef;
-    }
-
-    sub extractMspSoundTrigger {
-
-        # Called by $self->processIncomingData when it encounters a token starting "!!SOUND" or
-        #   "!!MUSIC", at the start of a line, which probably starts an MSP sound trigger
-        # Attemps to extract a valid MSP sound trigger in the form
-        #   !!SOUND(...)
-        #   !!MUSIC(...)
-        #
-        # Expected arguments
-        #   $text   - The remaining portion of the received text, which in this case starts with
-        #               "!!SOUND" or "!!MUSIC"
-        #
-        # Return values
-        #   An empty list on improper arguments or if an incomplete MSP sound trigger is found
-        #   Otherwise, returns a list in the form (success_flag, length_of_token), where:
-        #       'success_flag' is TRUE if a valid MSP sound trigger is found, and 'length_of_token'
-        #           is the amount of text the calling function must extract from the beginning of
-        #           $text
-        #       'success_flag' is FALSE if an abnormally terminated MSP sound trigger is found, and
-        #           'length_of_token' is returned as 0 (as it's not required by the calling
-        #           function - for consistency, we return the same kind of data as
-        #           ->processMxpElement returns)
-
-        my ($self, $text, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $text || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->extractMspSoundTrigger', @_);
-        }
-
-        # Extract the MSP sound trigger
-        if ($text =~ m/^(\!\!SOUND\(.*\))/) {
-
-            return (TRUE, length($1));
-
-        } elsif ($text =~ m/^(\!\!MUSIC\(.*\))/) {
-
-            return (TRUE, length($1));
-
-        } else {
-
-            return (FALSE, 0);
-        }
-    }
-
-    sub processIncompleteLine {
-
-        # Called by $self->processIncomingData when a packet of data does not end with a newline
-        #   character
-        #
-        # Calls $self->processLinePortion to display the text we've already received (stored in
-        #   $self->recvLineText, etc), and updates IVs
-        #
-        # Expected arguments
-        #   $origText   - The original text received from the world, before any tokens were
-        #                   extracted (reset to an empty string each time $self->processEndLine is
-        #                   called)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $origText, $check) = @_;
-
-        # Local variables
-        my (
-            $recvUsedText, $recvUsedLength,
-            @emptyList,
-            %recvUsedHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $origText || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->processIncompleteLine', @_);
-        }
-
-        # Backup some IVs, in case the call to ->processLinePortion fails in strict prompts mode
-        $recvUsedText = $self->recvUsedText;
-        $recvUsedLength = $self->recvUsedLength;
-        %recvUsedHash = $self->recvUsedHash;
-
-        # If any text on this line has already been displayed, it is stored in $self->recvUsedText.
-        #   If any tags have already been applied, they are stored in $self->recvUsedHash.
-        # Update IVs, so that ->recvUsedText/->recvUsedHash contains everything that has been
-        #   displayed added to anything we're about to display (in $self->recvLineText and
-        #   ->recvLineHash)
-        $self->combineLineHashes();
-
-        # Prepare everything that needs to be displayed (after checking it for triggers, and so on),
-        #   and then display it. The FALSE means that the received line doesn't with a newline
-        #   character
-        if (! $self->processLinePortion($origText, FALSE)) {
-
-            # Failure because this line isn't a recognised prompt, and 'strict prompts mode' is
-            #   enabled. Restore IVs
-            $self->ivPoke('recvUsedText', $recvUsedText);
-            $self->ivPoke('recvUsedLength', $recvUsedLength);
-            $self->ivPoke('recvUsedHash', %recvUsedHash);
-
-            # Store the un-displayed text in the emergency buffer, assuming that the next packet
-            #   received will contain the rest of this incomplete line
-            $self->updateEmergencyBuffer($origText, 'prompt');
-        }
-
-        # Update IVs ready for the next portion of this line
-        $self->ivPoke('recvLineText', '');
-        $self->ivPoke('recvLineLength', 0);
-        $self->ivEmpty('recvLineHash');
-        $self->ivPoke('recvImgLineText', '');
-
-        # (Later code is simpler, if hashes of Axmud colour/style tags always have at least one
-        #   entry, representing an empty list at the beginning of the line)
-        $self->ivPoke('recvLineHash', 0, \@emptyList);
-
-        return 1;
-    }
-
-    sub processEndLine {
-
-        # Called by $self->processIncomingData when it encounters a single or double newline
-        #    character, i.e. "\n", "\n\r", "\r\n" or "\r"
-        # Also called by $self->processMxpSpacingTag when processing a <BR> or </P> tag
-        #
-        # Processes a newline token. Calls $self->displayLine the display the received line of
-        #   text; then updates IVs ready for the next received line
-        #
-        # Expected arguments
-        #   $origText       - The original text received from the world, before any tokens were
-        #                       extracted (reset to an empty string after this function is called)
-        #   $token          - An extracted token containing the single or double newline character
-        #
-        # Optional arguments
-        #   $noCloseFlag    - Flag set to TRUE when called by $self->processMxpSpacingTag, after
-        #                       processing an MXP line spacing tag like <BR>, in which case this
-        #                       function doesn't close all open MXP tags
-        #
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise, returns a list of Axmud colour/style tags generated by closing any open MXP
-        #       tags (may be an empty list)
-
-        my ($self, $origText, $token, $noCloseFlag, $check) = @_;
-
-        # Local variables
-        my (
-            $wholeText,
-            @emptyList, @emptyList2, @tagList,
-        );
-
-        # Check for improper arguments
-        if (! defined $origText || ! defined $token || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->processEndLine', @_);
-            return @emptyList;
-        }
-
-        # If any text on this line has already been displayed, it is stored in $self->recvUsedText.
-        #   If any tags have already been applied, they are stored in $self->recvUsedHash.
-        # Update IVs, so that ->recvUsedText/->recvUsedHash contains everything that has been
-        #   displayed added to anything we're about to display (in $self->recvLineText and
-        #   ->recvLineHash)
-        $self->combineLineHashes();
-
-        # If empty line suppression is turned on (and the character is marked as logged in, when
-        #   required), suppress empty lines, as necessary
-        $wholeText = $self->recvUsedText;
-        if (
-            ! (
-                $self->currentWorld->suppressEmptyLineCount
-                && ($self->currentWorld->suppressBeforeLoginFlag || $self->loginFlag)
-                && $wholeText =~ m/^\s*$/
-                && (
-                    # Suppress all empty lines
-                    $self->currentWorld->suppressEmptyLineCount == 1
-                    # Suppress consecutive empty lines
-                    || $self->checkSuppressLine()
-                )
-            )
-        ) {
-            # Prepare everything that needs to be displayed (after checking it for triggers, and so
-            #   on), and then display it. The TRUE means that the received line ends with a newline
-            #   character
-            $self->processLinePortion($origText, TRUE);
-        }
-
-        # Update IVs ready for the next line
-        $self->ivPoke('recvLineText', '');
-        $self->ivPoke('recvLineLength', 0);
-        $self->ivEmpty('recvLineHash');
-        $self->ivPoke('recvUsedText', '');
-        $self->ivPoke('recvUsedLength', 0);
-        $self->ivEmpty('recvUsedHash');
-        $self->ivPoke('recvWholeLineText', '');
-        $self->ivPoke('recvImgLineText', '');
-
-        # (Later code is simpler, if hashes of Axmud colour/style tags always have at least one
-        #   entry, representing an empty list at the beginning of the line)
-        $self->ivPoke('recvLineHash', 0, \@emptyList);
-        $self->ivPoke('recvUsedHash', 0, \@emptyList2);
-
-        if (defined $self->mxpLineMode) {
-
-            # If we're in the middle of a <V>...</V> construction, the construction is abnormally
-            #   terminated
-            if ($self->mxpCurrentVar) {
-
-                $self->mxpDebug(
-                    $token,
-                    'Variable abnormally terminated by newline character',
-                    1301,
-                );
-
-                $self->ivUndef('mxpCurrentVar');
-            }
-
-            # If we're in the middle of an <A>...</A> construction, the construction is abnormally
-            #   terminated
-            if ($self->mxpCurrentLink) {
-
-                $self->mxpDebug(
-                    $token,
-                    'Link abnormally terminated by newline character',
-                    1302,
-                );
-
-                $self->ivUndef('mxpCurrentLink');
-            }
-
-            # If we're in the middle of a <SEND>...</SEND> construction, the construction is
-            #   abnormally terminated
-            if ($self->mxpCurrentSend) {
-
-                $self->mxpDebug(
-                    $token,
-                    'Send abnormally terminated by newline character',
-                    1303,
-                );
-
-                $self->ivUndef('mxpCurrentSend');
-            }
-
-            # All outstanding tags are closed after a newline character (but not after a line
-            #   spacing tag like <BR>, any only in 'open line mode')
-            if (! $noCloseFlag && $self->mxpLineMode == 0) {
-
-                push (@tagList, $self->emptyMxpStack());
-            }
-
-            # Newline characters cause the MXP line mode to be reset to the default mode (but line
-            #   spacing tags like <BR> do not)
-            if (! $noCloseFlag) {
-
-                if (! $self->mxpDefaultMode) {
-
-                    # When ->mxpDefaultMode is 0, the default mode is 'open'
-                    push (@tagList, $self->setMxpLineMode(0));
-
-                } else {
-
-                    # ->mxpDefaultMode values of 5-7 correspond to ->mxpLineMode values of 0-2
-                    push (@tagList, $self->setMxpLineMode($self->mxpDefaultMode - 5));
-                }
-            }
-        }
-
-        # If we're in the middle of two matching custom tags which defined tag properties, e.g.
-        #   from the MXP spec, <RName>...</RName>, update the stored text
-        # Represent the newline character as a space, but only if the existing stored text ends with
-        #   a non-whitespace character (an acceptable compromise over textual purity)
-        foreach my $key ($self->ivKeys('mxpFlagTextHash')) {
-
-            my $text = $self->ivShow('mxpFlagTextHash', $key);
-
-            if ($text ne '' && $text =~ m/\S$/) {
-
-                $self->ivAdd('mxpFlagTextHash', $key, $text . ' ');
-            }
-        }
-
-        # If Pueblo is waiting for a new line to insert the Axmud style tag 'justify_default',
-        #   inform $self->processIncomingData that it's now safe to do so
-        if ($self->puebloJustifyMode eq 'wait_newline') {
-
-            $self->ivPoke('puebloJustifyMode', 'wait_loop');
-        }
-
-        return @tagList;
-    }
-
-    sub processLinePortion {
-
-        # Called by $self->processIncompleteLine or ->processEndLine to display a partial or
-        #   complete line of received text
-        # If it's a partial line and earlier portions of this line have already been displayed,
-        #   then $self->recvUsedText/->recvUsedHash, which contain the portion that's been
-        #   processed so far, won't be the same as $self->recvLineText / $self->recvLineHash,
-        #   which contain the portion that hasn't been displayed yet
-        #
-        # Expected arguments
-        #   $origText       - The original text received from the world, before any tokens were
-        #                       extracted (reset to an empty string each time $self->processEndLine
-        #                       is called)
-        #   $newLineFlag    - Flag set to TRUE if this line ends with a newline character; set to
-        #                       FALSE if it doesn't (because it's a prompt, or because the whole
-        #                       line hasn't been received yet)
-        #
-        # Return values
-        #   'undef' on improper arguments or if (in 'strict prompts mode') an unrecognised
-        #       prompt is found, which is assumed to be the first part of a complete line we haven't
-        #       received yet
-        #   1 otherwise
-
-        my ($self, $origText, $newLineFlag, $check) = @_;
-
-        # Local variables
-        my (
-            $stripText, $matchFlag, $previousOffset,
-            @offsetList,
-            %tagHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $newLineFlag || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayLine', @_);
-        }
-
-        # Import IVs (for convenience)
-
-        # $stripText is $origText, but stripped of everything except text tokens (so, stripped of
-        #   escape sequences, MXP elements/entities, newline/escape characters, etc etc)
-        $stripText = $self->recvLineText;
-        # Many of the stripped tokens have been converted to Axmud colour/style tags. A hash of the
-        #   tags, linked to their equivalent position (offset) in $stripText. Hash in the form
-        #   $tagHash{offset} = reference_to_list_of_Axmud_colour_and_style_tags
-        %tagHash = $self->recvLineHash;
-
-        # Check for strict prompts, if necessary
-        if (
-            ! $newLineFlag
-            && $self->currentWorld->strictPromptsMode
-            # If $self->processIncomingData found an incomplete escape sequence at the end of a
-            #   packet, it's been saved in $self->emergencyBuffer. In that case, there is no doubt
-            #   that $stripText is not a prompt, so we don't have to check strict prompts
-            && ! $self->emergencyBuffer
-        ) {
-            # GA::Profile::World->cmdPromptPatternList contains a list of patterns which are the
-            #   world's command prompts (prompts don't have a newline character after them, as most
-            #   other lines sent by the world do)
-            # Test the line for recognised command prompts. If none are found, divert this
-            #    text into the emergency buffer until some more text is received
-            INNER: foreach my $pattern ($self->currentWorld->cmdPromptPatternList) {
-
-                if ($stripText =~ m/$pattern/g) {
-
-                    $matchFlag = TRUE;
-                }
-            }
-
-            if (! $matchFlag) {
-
-                # This line and any remaining lines not yet processed by the calling function will
-                #   be copied into $self->emergencyBuffer
-                return undef;
-            }
-        }
-
-        # Because of the lack of a newline character in a command prompt, if the user types
-        #   'north;north;north', the command prompt and the following text appear on the same line
-        # Test $stripText against known command prompt patterns. If the line matches any of the
-        #   patterns, we have to split the line at that point (unless the matching text occurs at
-        #   the end of $stripText)
-        # @offsetList contains the offsets of the first character after any matching text
-        #
-        # At the same time we'll check splitter triggers. @offsetList contains the offset of the
-        #   first character after the point at which a line is split into two
-        @offsetList = $self->checkLineSplit($stripText, $newLineFlag);
-        if (! @offsetList) {
-
-            # There are no command prompts in the middle of $stripText, and no splitter trigger has
-            #   split the line into two or more portions, so process the whole line portion as a
-            #   single line segment
-            $self->processLineSegment(
-                $origText,
-                $stripText,
-                $newLineFlag,
-                FALSE,         # Let the function decide whether the segment is a prompt, or not
-                %tagHash,
-            );
-
-        } else {
-
-            # Split the line portion into separate line segments, as if we were inserting a newline
-            #   character at all the positions in @offsetList
-            # This job is complicated by the fact that we also have to divide %tagHash, adjusting
-            #   the position of each group of tags
-            $previousOffset = 0;        # Start at the beginning of $stripText
-            for (my $offsetCount = 0; $offsetCount <= scalar @offsetList; $offsetCount++) {
-
-                my (
-                    $offset, $segmentText, $thisNewLineFlag, $promptFlag,
-                    @emptyList,
-                    %thisTagHash,
-                );
-
-                # Get the segment of the line between the last offset used (or the beginning of the
-                #   line, if this is the first offset used) and the end of the matching text
-                if ($offsetCount < scalar @offsetList) {
-
-                    # Segment is not at the end of $stripText
-                    $offset = $offsetList[$offsetCount];
-                    $segmentText = substr(
-                        $stripText,
-                        $previousOffset,
-                        ($offset - $previousOffset),
-                    );
-
-                    # We treat the segment as if it ended with a newline character
-                    $thisNewLineFlag = TRUE;
-                    # The segment definitely ends prompt
-                    $promptFlag = TRUE;
-
-                } else {
-
-                    # Segment is at the end of $stripText
-                    $segmentText = substr($stripText, $previousOffset);
-                    # We treat the segment as ending with a newline character, or not, depending on
-                    #   whether $line ended with a newline character
-                    $thisNewLineFlag = $newLineFlag;
-                    # The segment doesn't with a prompt
-                    $promptFlag = FALSE;
-                }
-
-                # Create a new hash of Axmud colour/style tags that occur in the matched text,
-                #   adjusting their positions (offsets) accordingly
-                foreach my $posn (keys %tagHash) {
-
-                    my ($listRef, $newPosn);
-
-                    $listRef = $tagHash{$posn};
-                    $newPosn = $posn - $previousOffset;
-
-                    if (
-                        $posn >= $previousOffset
-                        && (! defined $offset || $posn < $offset)
-                    ) {
-                        $thisTagHash{$newPosn} = $listRef;
-                    }
-                }
-
-                # %tagHash (as well as %thisTagHash) always have a key-value pair at offset 0,
-                #   because it keeps the code simple
-                # If a line has been split into segments, only the first portion will now have a
-                #   tag hash with a key-value pair at offset 0. Add a new key-value pair at offset 0
-                #   for all segments which now lack it
-                if (! exists $thisTagHash{0}) {
-
-                    $thisTagHash{0} = \@emptyList;
-                }
-
-                # Process the line segment
-                $self->processLineSegment(
-                    $origText,
-                    $segmentText,           # Equivalent to part of $stripText
-                    $thisNewLineFlag,
-                    $promptFlag,
-                    %thisTagHash,
-                );
-
-                # The next line segment begins after this one
-                $previousOffset = $offset;
-            }
-        }
-
-        if (! $newLineFlag) {
-
-            # $stripText (the whole line, before it was divided into segments) ends with a prompt
-            #   (i.e., doesn't end with a newline character). If it's a recognised command prompt,
-            #   we have to set $self->cmdPromptFlag
-            OUTER: foreach my $pattern ($self->currentWorld->cmdPromptPatternList) {
-
-                if ($stripText =~ m/$pattern$/) {
-
-                    $self->ivPoke('cmdPromptFlag', TRUE);
-                    last OUTER;
-                }
-            }
-        }
-
-        # Write the 'receive' logfile (all other logfiles have already been written by the call to
-        #   $self->processLineSegment)
-        $self->writeReceiveDataLog($stripText, $self->recvImgLineText, $newLineFlag);
-
-        return 1;
-    }
-
-    sub processLineSegment {
-
-        # Called by $self->processLinePortion, which received a complete or partial line of
-        #   received text
-        # If that line portion matched recognised command prompts or matched splitter triggers, it
-        #   will have been split into two or more segments; this function is called for each segment
-        # Otherwise, this function is called for the whole line portion
-        #
-        # Expected arguments
-        #   $origText       - The original text received from the world, before any tokens were
-        #                       extracted (reset to an empty string each time $self->processEndLine
-        #                       is called)
-        #   $stripText      - A segment of the received text, comprising some or all of a line of
-        #                       text received from a world, which has now been stripped of non-text
-        #                       tokens like newline characters, escape sequences, etc
-        #   $newLineFlag    - Flag set to TRUE if this line segment is to be treated as if it ends
-        #                       with a newline character, FALSE if is to be treated as if it does
-        #                       not end with a newline character
-        #   $promptFlag     - Flag set to TRUE if this line segment definitely ends in a prompt; set
-        #                       to FALSE if this function should decide if it ends in a prompt, or
-        #                       not
-        #
-        # Optional arguments
-        #   %tagHash        - A hash of Axmud colour/style tags, in the form:
-        #                           $tagHash{offset} = reference_to_list_of_colour_and_style_tags
-        #                   - (Can be an empty hash)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the line is empty, and has been suppressed due to
-        #       line suppression IVs in the current world
-        #   1 otherwise
-
-        my ($self, $origText, $stripText, $newLineFlag, $promptFlag, %tagHash) = @_;
-
-        # Local variables
-        my (
-            $modText, $gagFlag, $gagLogFlag, $instructListRef, $dependentCallListRef, $modFlag,
-            $bufferObj, $testLine, $char, $modCmd, $bufferText, $addText, $informFlag,
-            @instructList, @dependentCallList, @offsetList, @initialTagList, @specialList,
-            %modTagHash, %mxpFlagTextHash,
-        );
-
-        # Check for improper arguments
-        if (
-            ! defined $origText || ! defined $stripText || ! defined $newLineFlag
-            || ! defined $promptFlag
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->processLineSegment', @_);
-        }
-
-        # Now check the stripped line for valid URLs and valid email addresses. If any are found,
-        #   modify %tagHash to include start start/stop positions of each link
-        $self->extractClickLinks($stripText, \%tagHash);
-
-        # Test the stripped line against triggers. If any of them fire, $self->checkTriggers will
-        #   return a modified version of $splitText and %tagHash
-        # (NB Splitter triggers have already been tested against this line)
-        ($modText, $gagFlag, $gagLogFlag, $instructListRef, $dependentCallListRef, %modTagHash)
-            = $self->checkTriggers($origText, $stripText, $newLineFlag, %tagHash);
-
-        if (defined $modText) {
-
-            # At least one trigger fired
-            $modFlag = TRUE;
-            @instructList = @$instructListRef;
-            @dependentCallList = @$dependentCallListRef;
-            %tagHash = %modTagHash;
-
-        } else {
-
-            # No triggers fired
-            $modText = $stripText;
-        }
-
-        # Get a sorted list of offsets at which Axmud colour/style tags occur. Even if %tagHash
-        #   contains no colour/style tags at all, there will still be an key-value pair
-        #   corresponding to position 0 (the beginning of this line segment) - where the key is 0
-        #   and the corresponding value is an empty list
-        @offsetList = sort {$a <=> $b} (keys %tagHash);
-
-        # Import the hash of stored text appearing between MXP custom elements, and reset the IV
-        #   ready for the next line
-        %mxpFlagTextHash = $self->mxpFlagTextStoreHash;
-        $self->ivEmpty('mxpFlagTextStoreHash');
-
-        # Process each piece of the line in turn
-        OUTER: for (my $offsetCount = 0; $offsetCount < scalar @offsetList; $offsetCount++) {
-
-            my (
-                $textViewObj, $offset, $tagListRef, $nextOffset, $piece, $afterFlag, $string,
-                $numString, $thisLine,
-                @pieceTagList,
-                %currentTagHash,
-            );
-
-            $textViewObj = $self->currentTabObj->textViewObj;
-
-            # $offset is the position in $line where one or more Axmud colour/style tags occur
-            $offset = $offsetList[$offsetCount];
-            $tagListRef = $tagHash{$offset};
-            # $nextOffset is the position in $line where the next set of Axmud colour/style tags
-            #   occur. If there are no more tags after those at position $offset, then we leave
-            #   $nextOffset set to 'undef'
-            if ($offsetCount < (scalar @offsetList - 1)) {
-
-                $nextOffset = $offsetList[$offsetCount + 1];
-            }
-
-            # Process the Axmud colour/style tags applying to this part of the line; the function
-            #   returns a list of tags which apply to this portion of the line
-            %currentTagHash = $textViewObj->colourStyleHash;
-            %currentTagHash = $self->applyColourStyleTags(\%currentTagHash, $tagListRef);
-            $textViewObj->set_colourStyleHash(%currentTagHash);
-            # Get a list of colour/style tags that actually apply now (because
-            #   GA::Obj::TextView->colourStyleHash also records those that don't)
-            @pieceTagList = $textViewObj->listColourStyleTags();
-
-            # Remember which tags applied at the beginning of this line segment, so we can pass it
-            #   to $self->updateDisplayBuffer
-            if ($offset == 0) {
-
-                @initialTagList = @pieceTagList;
-            }
-
-            # Prepare a piece of the line segment to display in the current textview
-            if (defined $nextOffset) {
-
-                $piece = substr($modText, $offset, ($nextOffset - $offset));
-
-            } else {
-
-                $piece = substr($modText, $offset);   # Rest of the $line
-
-                # If this segment is at the end of a received line of text which ended in a newline
-                #   character (which has already been stripped away), the call to the textview
-                #   object should instruct it add the newline character to this $piece
-                if ($newLineFlag) {
-
-                    $afterFlag = TRUE;
-                }
-            }
-
-            # Display the piece (if allowed)
-            if (
-                (
-                    $piece ne ''                # We have some text to display...
-                    || $afterFlag               # ...or, at least, a newline character
-                ) && (
-                    ($modFlag && ! $gagFlag)    # Trigger fired, but doesn't have 'gag' attribute
-                    || ! $modFlag               # No trigger fired
-                )
-            ) {
-                # If this function is inserting text into the session's default textview object,
-                #   then a GA::Buffer::Display is going to be created (or updated)
-                # This function should inform the textview object what the number of the
-                #   GA::Buffer::Display object will be, so the the textview object can compare it to
-                #   its internal buffer line number (and, from there, display appropriate tooltips)
-                if (! $informFlag && $self->currentTabObj eq $self->defaultTabObj) {
-
-                    # This only needs to happen once for every call of this function
-                    $informFlag = TRUE;
-                    # Inform the textview object
-                    $textViewObj->useDisplayBufferNum($self->displayBufferCount);
-                }
-
-                # The first time this function calls ->insertText (but not subsequent times), inform
-                #   the textview object that it's about to receive some text from the session
-
-                # When GA::Client->debugLineNumsFlag is set, show explicit display buffer line
-                #   numbers at the beginning of the line
-                if ($axmud::CLIENT->debugLineNumsFlag && $textViewObj->insertNewLineFlag) {
-
-                    # Display the line number (in contrasting colours)
-                    $numString = '<' . $self->displayBufferCount . '> ',
-                    $textViewObj->insertText($numString, 'RED', 'ul_white', 'echo');
-
-                    # If an incomplete link has been completed and added to $self->mxpTempLinkList,
-                    #   but has not yet been processed by GA::Obj::TextView->add_incompleteLink,
-                    #   any link object (GA::Obj::Link) which occurs after the explicit line number
-                    #   will have the wrong offset. Update it
-                    ($thisLine) = $textViewObj->getInsertPosn();
-                    foreach my $linkObj ($self->mxpTempLinkList) {
-
-                        if (
-                            $linkObj->lineNum == $thisLine
-                            && $linkObj->posn >= ($offset + $self->explicitTextLength)
-                        ) {
-                            $linkObj->updatePosn($numString);
-                        }
-                    }
-
-                    $self->ivPoke(
-                        'explicitTextLength',
-                        $self->explicitTextLength + length($numString),
-                    );
-                }
-
-                # When GA::Client->debugLineTagsFlag is set, show explicit colour/style tags
-                #   throughout the line
-                $string = '';
-                if ($axmud::CLIENT->debugLineTagsFlag) {
-
-                    foreach my $tag (@$tagListRef) {
-
-                        $string .= '[' . $tag . ']';
-                    }
-
-                    # Display the explicit colour/style tag (in contrasting colours)
-                    $textViewObj->insertText(
-                        $string,
-                        'white',
-                        'ul_blue',
-                        'echo',
-                    );
-
-                    # Update completed links, as described above
-                    ($thisLine) = $textViewObj->getInsertPosn();
-                    foreach my $linkObj ($self->mxpTempLinkList) {
-
-                        if (
-                            $linkObj->lineNum == $thisLine
-                            && $linkObj->posn >= ($offset + $self->explicitTextLength)
-                        ) {
-                            $linkObj->updatePosn($string);
-                        }
-                    }
-
-                    $self->ivPoke(
-                        'explicitTextLength',
-                        $self->explicitTextLength + length($string),
-                    );
-                }
-
-                if ($afterFlag) {
-
-                    # Display the line piece and add a newline character to the end of it
-                    $textViewObj->insertText(
-                        $piece,
-                        'after',
-                        @pieceTagList,
-                    );
-
-                } else {
-
-                    # Display the line piece without adding a newline character
-                    $textViewObj->insertText(
-                        $piece,
-                        'echo',
-                        @pieceTagList,
-                    );
-                }
-            }
-        }
-
-        if (
-            ($modFlag && ! $gagFlag)   # Trigger fired, but doesn't have 'gag' attribute
-            || ! $modFlag
-        ) {
-            # Write to logs, if allowed (even for an empty line)
-            # NB The 'receive' logfile is written by $self->writeReceiveDataLog, which is called by
-            #   $self->processLinePortion, not this function
-            $self->writeIncomingDataLogs($modText, $newLineFlag);
-        }
-
-        # Update the received display buffer
-        $self->updateDisplayBuffer(
-            $origText,
-            $stripText,
-            $modText,
-            $newLineFlag,
-            \@offsetList,
-            \%tagHash,
-            \@initialTagList,
-            \%mxpFlagTextHash,
-        );
-
-        # If a newline character has just been displayed, reset the IV showing how much explicit
-        #   text for explicit line numbers/tags is on the (new) line
-        if ($newLineFlag) {
-
-            $self->ivPoke('explicitTextLength', 0);
-        }
-
-        # If text-to-speech conversion is required, add the received text to the TTS buffer, which
-        #   will be read aloud when control passes back to $self->incomingDataLoop
-        if (
-            $axmud::CLIENT->systemAllowTTSFlag
-            && $axmud::CLIENT->ttsReceiveFlag
-            # (Don't bother add any line segments which contain no readable characters, since the
-            #   TTS can't read them and it may mess up the artificial full stop added below)
-            && $modText =~ m/\w/
-        ) {
-            $bufferText = $self->ttsBuffer;
-            $addText = $modText;
-
-            if ($axmud::CLIENT->ttsSmoothFlag) {
-
-                # To make the text sound more natural, when spoken by the TTS engine, if the
-                #   existing contents of the TTS buffer ends with a newline character which is not
-                #   preceded by a punctuation mark, and if the new text starts with a capital
-                #   letter, insert an artificial full stop
-                if (
-                    # The last line stored in ->ttsBuffer ended with a newline character
-                    $bufferText =~ m/\n$/
-                    # The most recent line contains alphanumeric characters but doesn't end with a
-                    #   punctuation mark, and is optionally followed by one or more empty lines
-#                    && ! ($bufferText =~ m/\w\s*[\.\,\:\;\!\?][\s*\n]+$/)
-                    && ! ($bufferText =~ m/[[:alnum:]]\s*[\.\,\:\;\!\?][\s*\n]+$/)
-                    # The new line starts with a capital letter
-#                    && $addText =~ m/^\s*[A-Z]/
-                    && $addText =~ m/^\s*[[:upper:]]/
-                ) {
-                    $bufferText =~ s/\n$/\.\n/;
-                }
-
-                # If the new segment contains larget gaps (specifically, three or more consecutive
-                #   whitespace characters), also insert an artificial full stop there
-                $addText =~ s/(\w)\s{3,}/$1\. /;
-            }
-
-            $bufferText .= $addText;
-            if ($newLineFlag) {
-
-                $bufferText .= "\n";
-            }
-
-            # Update the buffer (if allowed)
-            if (
-                # Automatic login already processed
-                $self->loginFlag
-                # We Don't have to wait for a login before converting text
-                || ! $axmud::CLIENT->ttsLoginFlag
-                # We do have to wait for a login before converting text, but this is a prompt, and
-                #   prompts are still converted before a login
-                || ! $newLineFlag
-            ) {
-                $self->ivPoke('ttsBuffer', $bufferText);
-            }
-        }
-
-        # Check for an MXP prompt notification
-        if ($self->ivExists('mxpFlagTextHash', 'Prompt')) {
-
-            $promptFlag = TRUE;
-        }
-
-        # Handle prompts generally
-        if ($promptFlag || (! $newLineFlag)) {
-
-            # Record details of the prompt, in case anything needs to react to it. If the last
-            #   batch of text received was also a prompt
-            $self->ivPoke('promptLine', $origText);
-            $self->ivPoke('promptStripLine', $origText);
-
-            if (! $promptFlag) {
-
-                # If $self->sessionTime reaches this time without any more text being received
-                #   from the world, treat it as a prompt
-                $self->ivPoke(
-                    'promptCheckTime',
-                    $self->sessionTime + $axmud::CLIENT->promptWaitTime,
-                );
-
-            } else {
-
-                # Process the prompt on the next spin of the maintain loop
-                $self->ivPoke('promptCheckTime', $self->sessionTime);
-            }
-        }
-
-        # Perform any instructions created by any triggers that fired, but don't allow Perl
-        #   commands (which should already have been evaluated)
-        foreach my $instruction (@instructList) {
-
-            $self->doInstruct($instruction, TRUE);
-        }
-
-        # For any dependent triggers that fired, call the class and method specified by the fired
-        #   trigger
-        if (@dependentCallList) {
-
-            do {
-
-                my ($listRef, $class, $method);
-
-                $listRef = shift @dependentCallList;
-
-                $class = shift @$listRef;
-                $method = shift @$listRef;
-
-                $class->$method(@$listRef);
-
-            } until ( ! @dependentCallList);
-        }
-
-        # Fire any hooks that are using the 'receive_text' hook event
-        $self->checkHooks('receive_text', $stripText);
-
-        # Deal with any login stuff
-        if ($self->displayBufferCount) {
-
-            $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
-            $testLine = $bufferObj->modLine;
-
-            if ($self->loginPromptsMode ne 'none') {
-
-                # Test login patterns against the whole of the most recently-received line (in case
-                #   the line matching a login pattern is split across packets)
-
-                # In login modes 'lp' and 'world_cmd', if we're looking out for login success
-                #   patterns, see if the line matches any of them
-                if ($self->loginSuccessPatternList) {
-
-                    INNER: foreach my $pattern ($self->loginSuccessPatternList) {
-
-                        if ($testLine =~ m/$pattern/) {
-
-                            # Success! Complete the login
-                            $self->doLogin();
-                            last INNER;
-                        }
-                    }
-
-                # In login mode 'tiny', if we're looking out for the text which signals that the
-                #   world is ready to receive the login, set the flag
-                # Likewise for login mode 'world_cmd', but only if ->loginConnectPatternList is set)
-                } elsif (
-                    $self->loginPromptsMode eq 'tiny'
-                    || ($self->loginPromptsMode eq 'world_cmd' && $self->loginConnectPatternList)
-                ) {
-                    INNER: foreach my $pattern ($self->loginConnectPatternList) {
-
-                        if ($testLine =~ m/$pattern/) {
-
-                            # Success! Set the flag that allows $self->spinMaintainLoop to call
-                            #   $self->processCmdLoginMode
-                            $self->ivPoke('loginConnectFoundFlag', TRUE);
-                            last INNER;
-                        }
-                    }
-
-                # In login mode 'mission', a login success pattern interrupts the mission
-                #   immediately
-                } elsif (
-                    $self->loginPromptsMode eq 'mission'
-                    && $self->currentWorld->loginSuccessPatternList
-                ) {
-                    INNER: foreach my $pattern ($self->currentWorld->loginSuccessPatternList) {
-
-                        if ($testLine =~ m/$pattern/) {
-
-                            # Success! Complete the login
-                            $self->doLogin();
-                            last INNER;
-                        }
-                    }
-                }
-
-            } elsif ($self->loginSpecialList && $self->initChar) {
-
-                # Test the patterns in ->loginPatternList against the whole of the most
-                #   recently-received line (in case the line matching a pattern is split across
-                #   packets), initially looking for a line which matches the character's name
-                #   (case-insensitively)
-                $char = $self->initChar;
-                if ($testLine =~ m/$char/i) {
-
-                    # Line matches the character's name. Now, does it match the requirements of
-                    #   ->loginPatternList? A list in groups of 3, in the form
-                    #       (pattern, character_backref, world_command)
-                    @specialList = $self->loginSpecialList;
-                    do {
-
-                        my (
-                            $pattern, $backRef, $worldCmd,
-                            @backRefList,
-                        );
-
-                        $pattern = shift @specialList;
-                        $backRef = shift @specialList;
-                        $worldCmd = shift @specialList;
-
-                        if (@backRefList = ($testLine =~ m/$pattern/i)) {
-
-                            # Line matches one of the specified patterns. Now check that the
-                            #   character name appears in the right place (if required)
-                            # NB In @backRefList, the first backreference is at index 0, so need to
-                            #   subtract one
-                            $backRef--;
-
-                            if (
-                                # Character names appear only once per line, so it doesn't matter
-                                #   where in the line it appears
-                                $backRef == -1
-                                # Character names appear multiple lines per line; the one we need to
-                                #   check is in backreference number $backRef
-                                || lc($backRefList[$backRef]) eq lc($char)
-                            ) {
-                                # Success! Now we can subtitute backreferences
-                                # If the corresponding world command, $worldCmd, is enclosed in
-                                #   double-quotes, it's safe to use the ee modifier which will
-                                #   convert $1, $2 etc into the contents of the matching
-                                #   backreferences (otherwise we could end up executing arbitrary
-                                #   Perl code)
-                                $modCmd = $testLine;
-
-                                if (
-                                    substr($worldCmd, 0, 1) eq '"'
-                                    && substr($worldCmd, -1) eq '"'
-                                ) {
-                                    $modCmd =~ s/$pattern/$worldCmd/iee;
-                                } else {
-                                    $modCmd =~ s/$pattern/$worldCmd/i
-                                }
-                            }
-                        }
-
-                    } until ($modCmd || ! @specialList);
-
-                    # Absolutely no reason why $worldCmd shouldn't be set now, but just to be
-                    #   safe...
-                    if ($modCmd) {
-
-                        # Send the world command, telling the world which character to login
-                        $self->writeText(
-                            'Automatic login: Logging in character \'' . $char . '\', sending world'
-                            . ' command \'' . $modCmd . '\'',
-                        );
-                        $self->worldCmd($modCmd);
-                    }
-
-                    # Stop checking received lines for these patterns
-                    $self->ivEmpty('loginSpecialList');
-                }
-            }
-        }
-
-        return 1;
-    }
-
-    sub processEscChar {
-
-        # Called by $self->processIncomingData when it encounters an "\e" escape character which
-        #   doesn't start a valid escape sequence
-        #
-        # Processes the escape token
-        #
-        # Expected arguments
-        #   $token      - An extracted token containing the escape character
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise, returns a list of Axmud colour/style tags generated by closing any open MXP
-        #       tags (may be an empty list)
-
-        my ($self, $token, $check) = @_;
-
-        # Local variables
-        my (@emptyList, @tagList);
-
-        # Check for improper arguments
-        if (! defined $token || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->processEscChar', @_);
-            return @emptyList;
-        }
-
-        # Update IVs as if this token were a text token (so, the escape character is in fact
-        #   displayed on a subsequent call to $self->processLinePortion)
-        # v1.0.421 - Commented out, because some worlds send lone escape characters randomly
-#        $self->ivPoke('recvLineText', $self->recvLineText . $token);
-#        $self->ivPoke('recvLineLength', $self->recvLineLength + length($token));
-
-        if (defined $self->mxpLineMode) {
-
-            # If we're in the middle of a <V>...</V> construction, the construction is abnormally
-            #   terminated
-            if ($self->mxpCurrentVar) {
-
-                $self->mxpDebug(
-                    $token,
-                    'Variable abnormally terminated by escape character',
-                    1401,
-                );
-
-                $self->ivUndef('mxpCurrentVar');
-            }
-
-            # If we're in the middle of an <A>...</A> construction, the construction is abnormally
-            #   terminated
-            if ($self->mxpCurrentLink) {
-
-                $self->mxpDebug(
-                    $token,
-                    'Link abnormally terminated by escape character',
-                    1402,
-                );
-
-                $self->ivUndef('mxpCurrentLink');
-            }
-
-            # If we're in the middle of a <SEND>...</SEND> construction, the construction is
-            #   abnormally terminated
-            if ($self->mxpCurrentSend) {
-
-                $self->mxpDebug(
-                    $token,
-                    'Send abnormally terminated by escape character',
-                    1403,
-                );
-
-                $self->ivUndef('mxpCurrentSend');
-            }
-
-            # All outstanding tags are closed after a newline character (but only in 'open line
-            #   mode')
-            if ($self->mxpLineMode == 0) {
-
-                @tagList = $self->emptyMxpStack();
-            }
-        }
-
-        return @tagList;
-    }
-
-    sub processEscSequence {
-
-        # Called by $self->processIncomingData when its call to $self->extractEscSequence
-        #   successfully extracts an escape sequence token
-        #
-        # For OSC colour palette sequences, stores the newly-defined colour in $self->oscColourHash
-        # For MXP escape sequences, updates IVs
-        # For ANSI escape sequences, converts the sequence into a list of Axmud colour/style tags
-        # For xterm titlebar escape sequences, updates IVs
-        #
-        # NB If we're in the middle of an MXP <V>...</V> construction, a valid escape sequence
-        #   doesn't abnormally terminate the construction (but an invalid escape sequence does,
-        #   handled by ->processEscChar, does)
-        #
-        # Expected arguments
-        #   $token  - An extracted token containing the escape sequence
-        #   $data   - The middle portion of the escape sequence (the x's in 'ESC[Pxxxxxxx' / the #
-        #               in 'ESC[#z' / everything after the '[' character in 'ESC[Value;...;Valuem' /
-        #               the x's in 'ESC]0;xxxBEL' )
-        #   $type   - The type of escape sequence: 'osc', 'mxp', 'ansi', 'xterm'
-        #
-        # Return values
-        #   An empty list on improper arguments or if the escape sequence is invalid
-        #   Otherwise, returns a list of equivalent Axmud colour/style tags, when required (may be
-        #       an empty list)
-
-        my ($self, $token, $data, $type, $check) = @_;
-
-        # Local variables
-        my (
-            $char, $colour, $tag,
-            @emptyList, @valueList, @tagList,
-            %colourHash, %styleHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $token || ! defined $data || ! defined $type || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->processEscSequence', @_);
-            return @emptyList;
-        }
-
-        # Import IVs (for quick lookup)
-        %colourHash = $axmud::CLIENT->constANSIColourHash;
-        %styleHash = $axmud::CLIENT->constANSIStyleHash;
-
-        # Process the escape sequence
-        if ($type eq 'osc') {
-
-            # OSC colour palette escape sequence in the form 'ESC[Pxxxxxxx'
-            # (The earlier call to $self->extractEscSequence checked that OSC colour paletters are
-            #   enabled, i.e. GA::Client->oscPaletteFlag is TRUE)
-
-            # Split the 'xxxxxxx' part into two components
-            $char = substr($data, 0, 1);    # Which basic ANSI colour to change, in the range 0-F
-            $colour = substr($data, 1);     # The RGB colour to use instead, e.g. FF0000
-
-            # Update $self->oscColourHash. If $char is invalid, however, ignore this escape
-            #   sequence
-            $tag = $axmud::CLIENT->ivShow('constOscPaletteHash', uc($char));
-            if (defined $tag) {
-
-                $self->ivAdd('oscColourHash', $tag, '#' . uc($colour));
-            }
-
-        } elsif ($type eq 'mxp') {
-
-            # MXP escape sequences in the form 'ESC[#z'
-            # (The earlier call to $self->extractEscSequence checked that MXP is allowed, i.e.
-            #   $self->mxpMode is 'client_agree')
-
-            # As soon as the first MXP escape sequence is received, the MXP mode IVs must be set to
-            #   their default values
-            if (! defined $self->mxpLineMode) {
-
-                $self->ivPoke('mxpLineMode', 0);
-                $self->ivPoke('mxpDefaultMode', 0);
-                $self->ivPoke('mxpTempMode', undef);
-            }
-
-            # Turn on the window blinker, and update IVs
-            $self->turnOnBlinker(1);
-
-            # $data contains an integer, the '#' in 'ESC[#\'
-            # $data should be a value in the range 0-7, 10-12, 19-99; but it's allowed for
-            #   these values to have leading zeros. Make sure any leading zeros are removed
-            $data += 0;
-            # Check that it's a valid line value
-            if (
-                ! (
-                    ($data >= 0 && $data <= 7)
-                    || ($data >= 10 && $data <= 12)
-                    || ($data >= 19 && $data <= 99)
-                )
-            ) {
-                # Invalid MXP escape sequence; ignore it
-                $self->mxpDebug(
-                    $token,
-                    'Invalid value \'' . $data . '\' in MXP escape sequence (expected 0-7,'
-                    . ' 10-12, 19, 20-99)',
-                    1501,
-                );
-
-                return @emptyList;
-            }
-
-            # Process the sequence (modes 0-7 are the most frequent)
-            if ($data <= 7) {
-
-                # 0-7: Line mode escape sequences
-                if ($data >= 0 && $data <= 2) {
-
-                    # 0 - Open line, 1 - Secure line, 2 - Locked line
-                    push (@tagList, $self->setMxpLineMode($data));
-                    $self->ivUndef('mxpTempMode');
-
-                } elsif ($data == 3) {
-
-                    # 3 - Reset
-                    # Close all open tags
-                    push (@tagList, $self->emptyMxpStack());
-
-                    # Update IVs
-                    push (@tagList, $self->setMxpLineMode(0));
-                    $self->ivPoke('mxpDefaultMode', 0);
-                    $self->ivUndef('mxpTempMode');
-
-                } elsif ($data == 4) {
-
-                    # 4 - Temp secure mode
-                    $self->ivPoke('mxpTempMode', $self->mxpLineMode);
-                    push (@tagList, $self->setMxpLineMode(1, TRUE));
-
-                } elsif ($data >= 5 && $data <= 7) {
-
-                    # 5 - Lock open mode, 6 - Lock secure mode, 7 - Lock locked mode
-                    $self->ivPoke('mxpDefaultMode', $data);
-                    $self->ivUndef('mxpTempMode');
-                    push (@tagList, $self->setMxpLineMode($data - 5));
-                }
-
-            } elsif ($data >=10 && $data <= 12) {
-
-                # Room modes
-                push (@tagList, 'mxpm_' . $data);       # e.g. 'mxpm_10'
-
-            } elsif ($data == 19) {
-
-                # Welcome text
-                push (@tagList, 'mxpm_19');
-                # ...which is not displayed during an MXP relocate operation
-                if ($self->mxpRelocateMode ne 'none') {
-
-                    $self->ivPoke('mxpRelocateQuietLineFlag', TRUE);
-                }
-
-            } elsif ($data >= 20 && $data <= 99) {
-
-                # User-defined modes
-                push (@tagList, 'mxpm_' . $data);       # e.g. 'mxpm_20'
-            }
-
-        } elsif ($type eq 'ansi') {
-
-            # ANSI escape sequences in the form ESC[Value;...;Valuem or ESC[c
-
-            # Split the part after the 'ESC[' into two components
-            # A single character in the range HfABCDsuJKmhIpc
-            $char = substr($data, -1, 1);
-            # A list of integers separated by ';' characters
-            $data = substr($data, 0, (length($data) - 1));
-
-            # $char is a character in the range HfABCDsuJKmhIpc, but Axmud currently ignores all
-            #   sequences that aren't 'Set Graphics Mode' escape sequences
-            if ($char eq 'm') {
-
-                # Some worlds (e.g. Viking MUD) use the escape sequence 'Esc[m' instead of 'Esc[0m'.
-                #   Convert the former to the latter, if found
-                if (! $data) {
-
-                    $data = '0';
-                }
-
-                # $data is in the form 'Value;...;Value'. where Value is in the range 0-1, 3-9,
-                #   22-25, 27-29, 30-39, 40-49
-                @valueList = split(/;/, $data);
-                # It's valid to use 'Value's with leading 0s. Remove the leading zeros
-                foreach my $value (@valueList) {
-
-                    if ($value =~ m/^\d+$/) {
-
-                        $value += 0;
-                    }
-                }
-
-                # NB We're using 'eq' rather than '==' to prevent a Perl error, if we analyse a
-                #   sequence containing 'ESC[1,31m' rather than the correct 'ESC[1;31m', or even if
-                #   the string contains invalid non-numerical characters
-                #
-                # Special case: xterm-256 colours will set @valueList to (38, 5, n) or (48, 5, n)
-                #   (corresponding to escape sequences 'Esc[38;5;nm' and 'Esc[48;5;nm'). In this
-                #   case, @valueList must contain exactly 3 values
-                if ($valueList[0] eq '38' || $valueList[0] eq '48') {
-
-                    # If it's not a valid sequence, ignore it
-                    if (
-                        scalar @valueList == 3
-                        && $valueList[1] eq '5'
-                        && $axmud::CLIENT->ivExists('xTermColourHash', 'x' . $valueList[2])
-                    ) {
-                        if ($valueList[0] eq '38') {
-                            push (@tagList, 'x' . $valueList[2]);       # e.g. 'x255'
-                        } else {
-                            push (@tagList, 'ux' . $valueList[2]);      # e.g. 'ux255'
-                        }
-                    }
-
-                # Otherwise, it's an ANSI escape sequence, which can contain an arbitary number of
-                #   values
-                } else {
-
-                    INNER: foreach my $value (@valueList) {
-
-                        # (Sequences listed roughly in order of popularity)
-
-                        # 0 - All attributes off
-                        if ($value eq '0') {
-
-                            # Use a dummy Axmud style tag
-                            push (@tagList, 'attribs_off');
-
-                        # 1 - Bold on
-                        } elsif ($value eq '1') {
-
-                            # Use a dummy Axmud style tag
-                            push (@tagList, 'bold');
-
-                        # 22 - Bold off
-                        } elsif ($value eq '22') {
-
-                            # Use a dummy Axmud style tag
-                            push (@tagList, 'bold_off');
-
-                        # 30-37 - Text colours
-                        # 40-47 - Underlay colours
-                        } elsif (exists $colourHash{$value}) {
-
-                            push (@tagList, $colourHash{$value});   # e.g. 'red', 'ul_red'
-
-                        # 3 - Italics
-                        # 4 - Underline on
-                        # 5 - Blink (slow) on
-                        # 6 - Blink (rapid) on
-                        } elsif (exists $styleHash{$value}) {
-
-                            push (@tagList, $styleHash{$value});
-
-                        # 7 - Reverse video on
-                        } elsif ($value eq '7') {
-
-                            # Use a dummy Axmud style tag
-                            push (@tagList, 'reverse');
-
-                        # 27 - Reverse video off
-                        } elsif ($value eq '27') {
-
-                            # Use a dummy Axmud style tag
-                            push (@tagList, 'reverse_off');
-
-                        # 8 - Conceal on
-                        } elsif ($value eq '8') {
-
-                            # Use a dummy Axmud style tag
-                            push (@tagList, 'conceal');
-
-                        # 28 - Conceal off
-                        } elsif ($value eq '28') {
-
-                            # Use a dummy Axmud style tag
-                            push (@tagList, 'conceal_off');
-
-                        # 39 - Default text colour
-                        } elsif ($value eq '39') {
-
-                            push (@tagList, $self->session->currentTabObj->textViewObj->textColour);
-
-                        # 49 - Default underlay colour
-                        } elsif ($value eq '49') {
-
-                            push (
-                                @tagList,
-                                $self->session->currentTabObj->textViewObj->underlayColour,
-                            );
-                        }
-                    }
-                }
-            }
-
-        } elsif ($type eq 'xterm') {
-
-            # xterm titlebar escape sequences in the form 'ESC]0;xxxBEL'
-
-            # Update IVs
-            $self->ivPoke('xTermTitleFlag', $data);
-
-            if ($axmud::CLIENT->xTermTitleFlag) {
-
-                # The tab title must be updated (the routine call to $self->checkTabLabels by
-                #   $self->spinMaintainLoop will handle it)
-                $self->ivPoke('showXTermTitleFlag', TRUE);
-            }
-        }
-
-        # Return any Axmud colour/style tags generated (may be an empty list)
-        return @tagList;
-    }
-
-    sub processTextToken {
-
-        # Called by $self->processIncomingData
-        # Also called by $self->processMxpSpacingTag when processing a <SBR> or <HR> tag
-        #
-        # Process a text token (a string which doesn't contain any of the none-text tokens
-        #   removed by the calling function, such as newline characters, escape sequences, etc)
-        #
-        # Expected arguments
-        #   $token      - The token containing the text
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $token, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $token || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->processTextToken', @_);
-        }
-
-        # Update IVs
-        $self->ivPoke('recvLineText', $self->recvLineText . $token);
-        $self->ivPoke('recvLineLength', $self->recvLineLength + length($token));
-        $self->ivPoke('recvWholeLineText', $self->recvWholeLineText . $token);
-        $self->ivPoke('recvImgLineText', $self->recvImgLineText . $token);
-
-        # If we're in the middle of a <V>...</V> construction, update the variable's value
-        if ($self->mxpCurrentVar) {
-
-            $self->mxpCurrentVar->ivPoke('value', $self->mxpCurrentVar->value . $token);
-        }
-
-        # If we're in the middle of an <A>...</A> construction, update the link's visible text
-        if ($self->mxpCurrentLink) {
-
-            $self->mxpCurrentLink->ivPoke('text', $self->mxpCurrentLink->text . $token);
-        }
-
-        # If we're in the middle of a <SEND>...</SEND> construction, update the link's visible text
-        if ($self->mxpCurrentSend) {
-
-            $self->mxpCurrentSend->ivPoke('text', $self->mxpCurrentSend->text . $token);
-        }
-
-        # If we're in the middle of two matching custom tags which defined tag properties, e.g.
-        #   from the MXP spec, <RName>...</RName>, update the stored text
-        foreach my $key ($self->ivKeys('mxpFlagTextHash')) {
-
-            $self->ivAdd('mxpFlagTextHash', $key, $self->ivShow('mxpFlagTextHash', $key) . $token);
-        }
-
-        return 1;
-    }
-
-    # Incoming data loop - process MXP/MSP/Pueblo tags
-
-    sub processMxpElement {
-
-        # Called by $self->processIncomingData when it encounters an MXP element (a tag like '<B>'),
-        #   or by $self->processMxpCustomElement recursively
-        #
-        # Processes the MXP element, updating IVs and returning a corresponding list of Axmud
-        #   colour/style tags, where necessary
-        #
-        # NB If we're in the middle of a <V>...</V> construction, an element that isn't either the
-        #   opening or closing tag doesn't abnormally terminate the construction
-        #
-        # Expected arguments
-        #   $token      - An extracted token containing the MXP element
-        #
-        # Optionl arguments
-        #   $origText   - Specified when called by $self->processIncomingData, representing the
-        #                   received line of text, up to (but not including) the MXP tag
-        #   $parseMode  - Sometimes specified when this function calls itself recursively
-        #               - Set to 'simple' when processing element definitions. Only simple atomic
-        #                   elements like <B> (so don't allow <!ELEMENT> for example), and don't
-        #                   allow closing elements like </B>
-        #               - When set to 'simple_close', the same limitations apply as when set to
-        #                   'simple'. In addition, the element itself isn't processed, instead the
-        #                   corresponding closing element is processed (i.e. if $token is <B>, we
-        #                   process </B>)
-        #   %attHash    - When called by $self->processMxpCustomElement, a hash that specifies any
-        #                   attribute values that apply to this tag
-        #               - For example, in the element '<COLOR &col;>', this function substitutes
-        #                   the '&col;' for the attribute value matching the attribute 'col', where
-        #                   'col' is a key in %attHash, and the attribute value is the key's
-        #                   matching value
-        #               - Both the argument name and value can be substituted; so <COLOR &col;> and
-        #                   <COLOR FORE=&col;> have an identical effect
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise returns a recognition flag (set to FALSE if the token is nothing to do with
-        #       MXP which should be processed as ordinary text; set to TRUE if it's an MXP tag, even
-        #       an invalid one) followed by an equivalent list of Axmud colour/style tags otherwise
-        #       (may be an empty list)
-
-        my ($self, $token, $origText, $parseMode, %attHash) = @_;
-
-        # Local variables
-        my (
-            $origToken, $firstChar, $tagMode, $keyword,
-            @emptyList, @argList,
-        );
-
-        # Check for improper arguments
-        if (! defined $token) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpElement', @_);
-            return @emptyList;
-        }
-
-        # ($token will be modified during this function, but some parts of the function require the
-        #   the original token text)
-        $origToken = $token;
-
-        # Ignore comments, in the form '<!-- this is a comment -->' ($self->extractMxpElement has
-        #   already checked that an element beginning with '<!--' ends with a '-->', so we only need
-        #   to check the first part of the string
-        if (substr($token, 0, 4) eq '<!--') {
-
-            # Recognition flag, followed by empty Axmud colour/style tag list
-            return TRUE;
-        }
-
-        # MXP elements are in the form:
-        #   <keyword [args]>            ($tagMode 'open')
-        #   </keyword>                  ($tagMode 'close')
-        #   <!keyword [args]>           ($tagMode 'defn')
-
-        # Remove the initial < followed by optional whitespace, and the final > preceded by optional
-        #   whitespace
-        $token =~ s/^\<\s*//;
-        $token =~ s/\s*\>$//;
-        # In case there's nothing left, don't bother looking for keywords or arguments...
-        if (! $token) {
-
-            $self->mxpDebug($origToken, 'Processed an empty element', 1601);
-
-            # Treat token as ordinary text
-            return @emptyList;
-        }
-
-        # Remove the initial / or !, if present
-        $firstChar = substr($token, 0, 1);
-        if ($firstChar eq '/') {
-
-            # </keyword>
-            $token = substr($token, 1);
-            $tagMode = 'close';
-
-        } elsif ($firstChar eq '!') {
-
-            # <!keyword [args]>
-            $token = substr($token, 1);
-            $tagMode = 'defn';
-
-        } else {
-
-            # <keyword [args]>
-            $tagMode = 'open';
-        }
-
-        # Remove the keyword, which 'must start with a letter (A-Z) and then consist of letters,
-        #   numbers or the underline character'
-        if ($token =~ m/^([A-Za-z][A-Za-z0-9_]*)/) {
-
-            # (Simplify things by converting all keywords to upper-case)
-            $keyword = uc($1);
-            $token = substr($token, length($keyword));
-
-        } else {
-
-            if ($token =~ m/^[\'\"].*[\'\"]$/) {
-
-                # Keyword not found
-                $self->mxpDebug($origToken, 'Element contains quoted keyword', 1611);
-
-                # Recognition flag, followed by empty Axmud colour/style tag list
-                return TRUE;
-
-            } else {
-
-                # Keyword not found
-                $self->mxpDebug($origToken, 'Element contains invalid keyword', 1612);
-
-                # Recognition flag, followed by empty Axmud colour/style tag list
-                return TRUE;
-            }
-        }
-
-        # Some keywords are synonyms of others, e.g. <B>, <BOLD> and <STRONG> are all equivalent
-        if ($axmud::CLIENT->ivExists('constMxpConvertHash', $keyword)) {
-
-            $keyword = $axmud::CLIENT->ivShow('constMxpConvertHash', $keyword);
-        }
-
-        # Check that the keyword is either an official MXP element (e.g. <B>) or a user-defined
-        #   element, stored as a key in $self->mxpElementHash
-        if (
-            # ($keyword is in upper case, but element names are stored in lower case)
-            ! $axmud::CLIENT->ivExists('constMxpOfficialHash', $keyword)
-            && ! $self->ivExists('mxpElementHash', lc($keyword))
-        ) {
-            # Ignore obsolete keywords
-            if ($keyword eq 'SCRIPT') {
-
-                # Recognition flag, followed by empty Axmud colour/style tag list
-                return TRUE;
-
-            } else {
-
-                # Treat token as ordinary text
-                return @emptyList;
-            }
-        }
-
-        # Handle $parseMode, if specified by the calling function
-        if (defined $parseMode) {
-
-            if ($tagMode eq 'close') {
-
-                $self->mxpDebug(
-                    $origToken,
-                    'Malformed element (closing tag not valid in element definitions)',
-                    1621,
-                );
-
-                # Recognition flag, followed by empty Axmud colour/style tag list
-                return TRUE;
-
-            } elsif ($tagMode eq 'defn') {
-
-                $self->mxpDebug(
-                    $origToken,
-                    'Malformed element (non-atomic tag not valid in element definitions)',
-                    1622,
-                );
-
-                # Recognition flag, followed by empty Axmud colour/style tag list
-                return TRUE;
-
-            } elsif ($parseMode eq 'simple_close') {
-
-                # Don't process $token, which is an opening element like <B>; instead process the
-                #   corresponding closing element, which is something like </B>
-                $tagMode = 'close';     # Converts <B> to </B>
-                $token = '';            # Converts <COLOR ...> to </COLOR>
-            }
-        }
-
-        # Most keywords are only allowed in secure line mode
-        if (
-            ! $axmud::CLIENT->ivExists('constMxpModalHash', $keyword)
-            && (! defined $self->mxpLineMode || $self->mxpLineMode != 1)
-        ) {
-            $self->mxpDebug($origToken, 'Secure element used in unsecure line', 1623);
-
-            # Recognition flag, followed by empty Axmud colour/style tag list
-           return TRUE;
-        }
-
-        # Get a list of arguments, separated by one or more whitespace characters
-        # (The whole argument can be single-quoted, or double-quoted, in which case it can contain
-        #   embedded whitespace or the '>' character)
-        if ($token) {
-
-            do {
-
-                my (
-                    $argName, $argValue, $key, $value,
-                    @backRefList,
-                );
-
-                ($token, $argName, $argValue) = $self->extractMxpArgument($token);
-                if (! defined $token) {
-
-                    # Improper arguments, or malformed argument
-                    $self->mxpDebug($origToken, 'Malformed element', 1631);
-
-                    # Recognition flag, followed by empty Axmud colour/style tag list
-                    return TRUE;
-
-                } else {
-
-                    # Substitute the argument name or value, if they match one or more of the
-                    #   attributes specified in %attHash
-                    # e.g. In <COLOR &col;> and <COLOR FORE=&col;>, if there's a key in %attHash
-                    #   called 'col', subsitute the &col% for the key's corresponding value
-                    if (! defined $argValue) {
-
-                        @backRefList = ($argName =~ m/\&(\w+)\;/);
-                        foreach my $backRef (@backRefList) {
-
-                            if (exists $attHash{$backRef}) {
-
-                                $value = $attHash{$backRef};
-                                $argName =~ s/\&\w+\;/$value/g;
-                            }
-                        }
-
-                    } elsif (defined $argValue) {
-
-                        @backRefList = ($argValue =~ m/\&(\w+)\;/);
-                        foreach my $backRef (@backRefList) {
-
-                            if (exists $attHash{$backRef}) {
-
-                                $value = $attHash{$backRef};
-                                $argValue =~ s/\&\w+\;/$value/g;
-                            }
-                        }
-                    }
-
-                    # If the argument is not in the form 'argument_name=argument_value', then
-                    #   $argValue is 'undef', and $argName contains the whole argument
-                    push (@argList, $argName, $argValue);
-
-                    # After removing the 'argument' or the 'argument_name=argument_value'
-                    #   construction, if there's anything left in $token, it must start with a
-                    #   whitespace character
-                    # This ensures that there are whitespace character(s) between each argument,
-                    #   and prevents constructions like: name='value'name='value'
-                    if ($token && $token =~ m/^\S/) {
-
-                        $self->mxpDebug($origToken, 'Malformed element', 1632);
-
-                        # Recognition flag, followed by empty Axmud colour/style tag list
-                        return TRUE;
-                    }
-                }
-
-            } until (! $token);
-        }
-
-        # Process each type of MXP element in its own function
-
-        # Process modal elements: <B> <I> <U> <S> <H> <COLOR> <FONT>
-        if ($axmud::CLIENT->ivExists('constMxpModalHash', $keyword)) {
-
-            return (TRUE, $self->processMxpModalElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process HTML elements: <SMALL> <TT>
-        } elsif ($keyword eq 'SMALL' || $keyword eq 'TT') {
-
-            return (TRUE, $self->processMxpHtmlElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process element definitions: <!ELEMENT>
-        } elsif ($keyword eq 'EL') {
-
-            return (TRUE, $self->processMxpElementDefn($origToken, $tagMode, $keyword, @argList));
-
-        # Process attribute lists for user-defined elements: <!ATTLIST>
-        } elsif ($keyword eq 'AT') {
-
-            return (TRUE, $self->processMxpAttElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process entity element: <!ENTITY>
-        } elsif ($keyword eq 'EN') {
-
-            return (TRUE, $self->processMxpEntElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process direct setting of variable (entity values): <V>...</V>
-        } elsif ($keyword eq 'V') {
-
-            return (TRUE, $self->processMxpVarElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process support requests: <SUPPORT>
-        } elsif ($keyword eq 'SUPPORT') {
-
-            return (
-                TRUE,
-                $self->processMxpSupportElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process frames: <FRAME>
-        } elsif ($keyword eq 'FRAME') {
-
-            return (TRUE, $self->processMxpFrameElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process cursor control: <DEST>...</DEST>
-        } elsif ($keyword eq 'DEST') {
-
-            return (TRUE, $self->processMxpDestElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process direct setting of clickable links: <A>...</A>
-        } elsif ($keyword eq 'A') {
-
-            return (
-                TRUE,
-                $self->processMxpLinkElement($origToken, $tagMode, $keyword, FALSE, @argList),
-            );
-
-        # Process direct setting of send links: <SEND>...</SEND>
-        } elsif ($keyword eq 'SEND') {
-
-            return (
-                TRUE,
-                $self->processMxpSendElement($origToken, $tagMode, $keyword, FALSE, @argList),
-            );
-
-        # Process sounds: <SOUND>, <MUSIC>
-        } elsif ($keyword eq 'SOUND' || $keyword eq 'MUSIC') {
-
-            return (TRUE, $self->processMxpSoundElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process images: <IMAGE>
-        } elsif ($keyword eq 'IMAGE') {
-
-            return (TRUE, $self->processMxpImageElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process sound/image filters: <FILTER>
-        } elsif ($keyword eq 'FILTER') {
-
-            return (TRUE, $self->processMxpFilterElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process gauges: <GAUGE>, <STAT>
-        } elsif ($keyword eq 'GAUGE' || $keyword eq 'STAT') {
-
-            return (TRUE, $self->processMxpGaugeElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process MXP crosslinking: <RELOCATE>
-        } elsif ($keyword eq 'RELOCATE') {
-
-            return (
-                TRUE,
-                $self->processMxpCrosslinkElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process MXP logins: <USER>, <PASSWORD>
-        } elsif ($keyword eq 'USER' || $keyword eq 'PASSWORD') {
-
-            return (TRUE, $self->processMxpLoginElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process other official MXP elements
-        } elsif ($axmud::CLIENT->ivExists('constMxpOfficialHash', $keyword)) {
-
-            return (
-                TRUE,
-                $self->processMxpOfficialElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process custom elements
-        } elsif ($self->ivExists('mxpElementHash', lc($keyword))) {
-
-            return (TRUE, $self->processMxpCustomElement($origToken, $tagMode, $keyword, @argList));
-
-        # (This should never be executed)
-        } else {
-
-            $self->mxpDebug($origToken, 'Internal error while processing element', 1641);
-
-            # Recognition flag, followed by empty Axmud colour/style tag list
-            return TRUE;
-        }
     }
 
     sub processMxpModalElement {
@@ -16749,10 +19692,14 @@
         #   which text received from the world is displayed. The calling function may have processed
         #   some text tokens which haven't been displayed yet; if so, display them now so that
         #   they're displayed in the right frame
-        if ($self->recvLineText) {
+        if ($self->processStripLine) {
 
-            $self->processIncompleteLine($self->mxpOrigText);
-            $self->ivUndef('mxpOrigText');
+            $self->respondIncomingData(
+                'part',
+                $self->processOrigLine,
+                $self->processStripLine,
+                $self->processTagHash,
+            );
         }
 
         # Apply any links created by MXP <A> and <SEND> tags to the current textview (if the current
@@ -17179,10 +20126,14 @@
         #   which text received from the world is displayed. The calling function may have processed
         #   some text tokens which haven't been displayed yet; if so, display them now so that
         #   they're displayed in the right frame
-        if ($self->recvLineText) {
+        if ($self->processStripLine) {
 
-            $self->processIncompleteLine($self->mxpOrigText);
-            $self->ivUndef('mxpOrigText');
+            $self->respondIncomingData(
+                'part',
+                $self->processOrigLine,
+                $self->processStripLine,
+                $self->processTagHash,
+            );
         }
 
         # Apply any links created by MXP <A> and <SEND> tags to the current textview (if the current
@@ -17573,12 +20524,12 @@
 
             # The position of the link will be the textview's current insert position, plus the
             #   length of any already-processed text, that hasn't been displayed in the textview
-            #   object yet, which has been stored for us in ->mxpOrigText
+            #   object yet, which has been stored for us in ->processStripLine
             # (The -1 argument means this is an incomplete link object, not yet applied to the
             #   current textview and not yet stored in the textview object's registries)
-            if (defined $self->mxpOrigText) {
+            if ($self->processOrigLine ne '') {
 
-                $offset += length($self->recvLineText);
+                $offset += length($self->processStripLine);
             }
 
             $linkObj = Games::Axmud::Obj::Link->new(
@@ -17809,12 +20760,12 @@
 
             # The position of the link will be the textview's current insert position, plus the
             #   length of any already-processed text, that hasn't been displayed in the textview
-            #   object yet, which has been stored for us in ->mxpOrigText
+            #   object yet, which has been stored for us in ->processStripLine
             # (The -1 argument means this is an incomplete link object, not yet applied to the
             #   current textview and not yet stored in the textview object's registries)
-            if (defined $self->mxpOrigText) {
+            if ($self->processOrigLine ne '') {
 
-                $offset += length($self->recvLineText);
+                $offset += length($self->processStripLine);
             }
 
             $linkObj = Games::Axmud::Obj::Link->new(
@@ -18430,8 +21381,8 @@
                 $textViewObj->showImage($pixbuf, undef, 'echo');
             }
 
-            # $self->recvImgLineText must be updated for all processed images
-            $self->ivPoke('recvImgLineText', $self->recvImgLineText . '[' . $file . ']');
+            # $self->processImageLine must be updated for all processed images
+            $self->ivPoke('processImageLine', $self->processImageLine . '[' . $file . ']');
         }
 
         # Delete any converted file (leaving the original in place)
@@ -19380,7 +22331,7 @@
             # If the custom element defines any tag properties, start storing text between the
             #   opening tag we're processing now, and the matching closing tag we haven't processed
             #   yet
-            # (The hash is updated with every call to $self->processTextToken)
+            # (The hash is updated with every call to $self->updateTextToken)
             if (
                 $elementObj->flagArg
                 && ! $self->ivExists('mxpFlagTextHash', $elementObj->flagArg)
@@ -19469,1088 +22420,7 @@
         return @tagList;
     }
 
-    sub processMxpEntity {
-
-        # Called by $self->processIncomingData
-        #
-        # Process an MXP entity in the form %...;, replacing it with the named entity's value
-        # For entities in the form '&#nnn;' replaces the nnn with the ASCII character of that value,
-        #   but only for value in the range 32-255
-        #
-        # NB If we're in the middle of a <V>...</V> construction, an entity in the form %...'
-        #   doesn't abnormally terminate the construction. Therefore the following construction is
-        #   valid:
-        #       <V>I have %number; gold coins</V>
-        # ...and results in the variable's ->value being set to something 'I have 100 gold coins'
-        #
-        # Expected arguments
-        #   $token      - The token containing the entity in the form &...;
-        #   $text       - The remaining portion of text, which begins with the entity $token
-        #
-        # Return values
-        #   'undef' on improper arguments or if the entity is unrecognised
-        #   Otherwise returns the entity's value
-
-        my ($self, $token, $text, $check) = @_;
-
-        # Local variables
-        my ($enNum, $enName, $entityObj);
-
-        # Check for improper arguments
-        if (! defined $token || ! defined $text || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpEntity', @_);
-        }
-
-        # Handle entities in the form '&#nnn;'
-        if ($token =~ m/\&\#([0-9]{1,3})\;/) {
-
-            $enNum = $1;
-            # We'll assume that 'nnn' can be '064' as well as '64'. Convert it to a numeric value
-            $enNum += 0;
-
-            # Ignore numbers not in the range 32-255
-            if ($enNum < 32 || $enNum > 255) {
-
-                return undef;
-
-            } else {
-
-                return chr($enNum);
-            }
-        }
-
-        # Otherwise, get the entity name (the token will have at least three characters, due to the
-        #   regex used in $self->extractMxpEntity, so there's no need to check for a minimum length)
-        $enName = substr($token, 1, (length($token) - 2));
-
-        # Does an entity called $enName exist?
-        if (! $self->ivExists('mxpEntityHash', $enName)) {
-
-            # Standard entity names don't have their own GA::Mxp::Entity object
-            if (! $axmud::CLIENT->ivExists('constMxpEntityHash', $enName)) {
-
-                $self->mxpDebug($token, 'Unrecognised entity \'' . $enName . '\'', 3901);
-
-                return undef;
-
-            } else {
-
-                # Use the standard entity's value (an ASCII character)
-                return $axmud::CLIENT->ivShow('constMxpEntityHash', $enName);
-            }
-
-        } else {
-
-            # Replace the named entity with its value
-            $entityObj = $self->ivShow('mxpEntityHash', $enName);
-            return $entityObj->value;
-        }
-    }
-
-    sub processMxpSpacingTag {
-
-        # Called by $self->processIncomingData
-        #
-        # Process an MXP line spacing token: <NOBR>, <P>, </P>, <BR>, <SBR>
-        # Also process one kind of MXP HTML element, <HR>
-        #
-        # Expected arguments
-        #   $origText   - The original text received from the world, before this token was
-        #                   extracted
-        #   $token      - An extracted token containing the MXP element
-        #
-        # Return values
-        #   'undef' on improper arguments or if an invalid closing tag like </BR> is used
-        #   Otherwise, returns a modified $origText. If the token was converted into a newline
-        #       character, $origText is set by this function to be an empty string (as happens after
-        #       ->processIncomingData calls ->processEndLine directly); otherwise $token is added
-        #       to the existing value of $origText
-
-        my ($self, $origText, $token, $check) = @_;
-
-        # Local variables
-        my ($origToken, $width, $height, $string, $fontSize);
-
-        # Check for improper arguments
-        if (! defined $token || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpSpacingTag', @_);
-        }
-
-        # Remove the < and > characters
-        $origToken = $token;
-        $token = uc($token);
-        $token =~ s/^\<//;
-        $token =~ s/\>$//;
-
-        # Only the </P> element can be used as a closing tag (e.g. </NOBR> is invalid)
-        if ($token ne '/P' && substr($token, 0, 1) eq '/') {
-
-            $self->mxpDebug($origToken, 'Invalid line spacing tag \'' . $origToken . '\'', 4001);
-        }
-
-        # Process the tag
-        if ($token eq 'BR') {
-
-            # Force a line break inside or outside a paragraph. The TRUE argument means 'don't close
-            #   open MXP tags, as we would for a true newline character'
-            $self->processEndLine($origText, $origToken, TRUE);
-            # (When ->processIncomingData calls ->processEndLine, it sets $origText to an empty
-            #   string, so this function does the same)
-            return '';
-
-        } elsif ($token eq 'NOBR') {
-
-            # Ignore the next newline character
-            $self->ivPoke('mxpIgnoreNewLineFlag', TRUE);
-
-        } elsif ($token eq 'P') {
-
-            if ($self->mxpParagraphFlag) {
-
-                # In successive <P>...<P> tags, the second <P> tag is treated as though it were
-                #   preceded by a closing </P> tag
-                # Force a line break. The TRUE argument means 'don't close open MXP tags, as we
-                #   would for a true newline character'
-                $self->processEndLine($origText, $origToken, TRUE);
-                # (When ->processIncomingData calls ->processEndLine, it sets $origText to an empty
-                #   string, so this function does the same)
-                return '';
-
-            } else {
-
-                # Ignore all newline characters until the closing </P> tag
-                $self->ivPoke('mxpParagraphFlag', TRUE);
-            }
-
-        } elsif ($token eq '/P') {
-
-            if (! $self->mxpParagraphFlag) {
-
-                # An invalid </P>...</P> construction
-                $self->mxpDebug($origToken, '</P> tag after earlier closing </P> tag', 4002);
-
-            } else {
-
-                # Stop ignoring newline characters
-                $self->ivPoke('mxpParagraphFlag', FALSE);
-
-                # Force a line break. The TRUE argument means 'don't close open MXP tags, as we
-                #   would for a true newline character'
-                $self->processEndLine($origText, $origToken, TRUE);
-                # (When ->processIncomingData calls ->processEndLine, it sets $origText to an empty
-                #   string, so this function does the same)
-                return '';
-            }
-
-        } elsif ($token eq 'SBR') {
-
-            # Axmud doesn't yet implement soft line breaks; treat it as an ordinary space character
-            $self->processTextToken(' ');
-
-        } elsif ($token eq 'HR') {
-
-            # An HTML element. Draw a poor man's 'horizontal rule' with simple ASCII characters
-
-            # Force a line break inside or outside a paragraph. The TRUE argument means 'don't close
-            #   open MXP tags, as we would for a true newline character'
-            $self->processEndLine($origText, $origToken, TRUE);
-
-            # Adjust the width to take account of different font sizes, especially inside headings
-            #   (<H1>...</H1>, etc)
-            ($width, $height) = $self->getTextViewSize();
-            $fontSize = $self->currentTabObj->textViewObj->ivShow('mxpModalStackHash', 'font_size');
-
-            if ($fontSize ne '' && $fontSize != $axmud::CLIENT->constFontSize) {
-
-                # (Subtracting 1 seems to produce the right answer more often, for unknown reasons)
-                $width = int($width / ($fontSize / $axmud::CLIENT->constFontSize)) - 1;
-            }
-
-            # Draw the horizontal rule
-            $self->processTextToken(chr(0x2501) x $width);
-            # ...which ends in another newline character
-            $self->processEndLine($origText, $origToken, TRUE);
-
-            # (When ->processIncomingData calls ->processEndLine, it sets $origText to an empty
-            #   string, so this function does the same)
-            return '';
-        }
-
-        return $origText . $origToken;
-    }
-
-    sub processMxpHeadingTag {
-
-        # Called by $self->processIncomingData
-        #
-        # Process an MXP heading token: <H1>...</H1> - <H6>...</H6>
-        #
-        # Expected arguments
-        #   $origText   - The original text received from the world, before this token was
-        #                   extracted
-        #   $token      - An extracted token containing the MXP element
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise returns an equivalent list of Axmud colour/style tags otherwise (may be an
-        #       empty list)
-
-        my ($self, $origText, $token, $check) = @_;
-
-        # Local variables
-        my (
-            $flag, $num,
-            @emptyList, @tagList,
-            %stackHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $token || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpHeadingTag', @_);
-            return @emptyList;
-        }
-
-        # In MXP, the format is
-        #   <H1>...</H1>, etc
-        # In Pueblo, the format is
-        #   <H1 align=xxx>...</H1>, etc
-
-        # Extract the forward slash (if present) and the number, removing the diamond brackets and
-        #   ignoring any attributes
-        if ($token =~ m/\<(\/?)H(\d)/) {
-
-            $flag = $1;
-            $num = $2;
-
-        } else {
-
-            # This shouldn't be possible, as the calling function already used a regex
-            return @emptyList;
-        }
-
-        # <H1>, etc
-        if (! $flag) {
-
-            if ($self->mxpHeadingFlag) {
-
-                # In successive <Hx>...<Hx> tags, the second <Hx> tag is treated as though it were
-                #   preceded by a closing </Hx> tag (regardless of whether the number x is the
-                #   same for both tags)
-                # Force a line break. The TRUE argument means 'don't close open MXP tags, as we
-                #   would for a true newline character'
-                $self->processEndLine($origText, $token, TRUE);
-
-            } else {
-
-                # Ignore all newline characters until the closing </Hx> tag
-                $self->ivPoke('mxpHeadingFlag', TRUE);
-            }
-
-            # If the client flag is set, the font isn't changed (but the line breaks are used as
-            #   normal)
-            if ($axmud::CLIENT->allowMxpFontFlag) {
-
-                $stackHash{'font_size'} = $axmud::CLIENT->ivShow('constHeadingSizeHash', $num)
-                                            * $axmud::CLIENT->constFontSize;
-                $stackHash{'spacing'} = $axmud::CLIENT->ivShow('constHeadingSpacingHash', $num)
-                                            * $axmud::CLIENT->constFontSize;
-                $stackHash{'font_name'} = $axmud::CLIENT->constFont;
-                $stackHash{'bold_flag'} = TRUE;
-
-                # Create a dummy style tag that $self->applyColourStyleTags can interpret
-                #   e.g. 'mxpf_monospace_bold_12'
-                push (@tagList, $self->createMxpFontTag(%stackHash));
-
-                # Create a new MXP stack object and store it in the current textview object,
-                #   updating the latter's IVs
-                if (
-                    ! $self->currentTabObj->textViewObj->createMxpStackObj(
-                        $self,
-                        'H' . $num,
-                        %stackHash,
-                    )
-                ) {
-                    $self->mxpDebug($token, 'Internal error while processing element', 4101);
-
-                    return @emptyList;
-                }
-            }
-
-            # Operation complete
-            return @tagList;
-
-        # </H1>, etc
-        } else {
-
-            if (! $self->mxpHeadingFlag) {
-
-                # An invalid </Hx>...</Hx> construction
-                $self->mxpDebug($token, '</Hx> tag after earlier closing </Hx> tag', 4102);
-
-                return @emptyList;
-            }
-
-            # Stop ignoring newline characters
-            $self->ivPoke('mxpHeadingFlag', FALSE);
-
-            # Force a line break. The TRUE argument means 'don't close open MXP tags, as we
-            #   would for a true newline character'
-            $self->processEndLine($origText, $token, TRUE);
-
-            # If the client flag is set, restore the previous font
-            if ($axmud::CLIENT->allowMxpFontFlag) {
-
-                return $self->popMxpStack('H' . $num);
-
-            } else {
-
-                return @emptyList;
-            }
-        }
-    }
-
-    sub processMspSoundTrigger {
-
-        # Called by $self->processIncomingData when it encounters an MSP sound trigger, in the form
-        #   "!!SOUND(...)" or "!!MUSIC(...)"
-        # (Also called by $self->processMxpSoundElement when processing MXP sounds)
-        #
-        # Processes the MSP sound trigger, producing a list of parameters which are passed to
-        #   GA::Client->playSoundFile for playing
-        #
-        # Expected arguments
-        #   $token      - An extracted token containing the MSP sound trigger
-        #
-        # Optional arguments
-        #   $mxpFlag    - Set to TRUE for MXP <SOUND> and <MUSIC> tags, to which MXP file filters
-        #                   can be applied; set to FALSE (or 'undef') for MSP sound triggers
-        #
-        # Return values
-        #   'undef' on improper arguments or if the token is invalid, and should be displayed as
-        #       normal text
-        #   1 otherwise
-
-        my ($self, $token, $mxpFlag, $check) = @_;
-
-        # Local variables
-        my (
-            $paramString, $type, $fName, $v, $l, $p, $c, $t, $u, $path, $file, $dir, $ext,
-            $fetchObj, $string, $urlRegex, $convertFlag,
-            @list, @objList,@fileList,
-        );
-
-        # Check for improper arguments
-        if (! defined $token || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->processMspSoundTrigger', @_);
-        }
-
-        # Extract the parameter string (everything between the opening and closing brackets)
-        if ($token =~ m/\!\!SOUND\((.*)\)/) {
-
-            $paramString = $1;
-            $type = 'sound';
-
-        } elsif ($token =~ m/\!\!MUSIC\((.*)\)/) {
-
-            $paramString = $1;
-            $type = 'music';
-
-        } else {
-
-            # Invalid MSP sound token
-            return undef;
-        }
-
-        if (! $paramString) {
-
-            # Invalid MSP sound token (empty parameter string is not allowed - first parameter is
-            #   compulsory)
-            return undef;
-        }
-
-        # Extract the individual parameters (which are separated by one or more spaces, but do not
-        #   contain spaces)
-        @list = split(/\s+/, $paramString);
-
-        # The first parameter (file name) is compulsory
-        $fName = shift(@list);
-
-        # FName=OFF is a special case
-        if ($fName eq 'Off') {
-
-            # The file name 'Off' is reserved; must playing sound or music triggers, if no other
-            #   parameters are received
-            if (! @list) {
-
-                @objList = $self->ivValues('soundHarnessHash');
-                foreach my $soundObj (@objList) {
-
-                    if ($type eq $soundObj->type) {
-
-                        # Stop this sound
-                        $soundObj->stop();
-                        # ...and update the registry
-                        $self->ivDelete('soundHarnessHash', $soundObj->number);
-                    }
-                }
-
-                return 1;
-
-            # Otherwise, we expect @list to be in the form (U=some_url) which sets a default
-            #   download URL
-            } else {
-
-                $u = shift @list;
-
-                if (substr($u, 0, 2) ne 'U=') {
-
-                    # Invalid parameter list - play nothing
-                    return 1;
-                }
-
-                $u = substr($u, 2);
-
-                $urlRegex = $axmud::CLIENT->constUrlRegex;
-                if (! ($u =~ m/$urlRegex/)) {
-
-                    # Invalid URL - play nothing
-                    return 1;
-
-                } else {
-
-                    # The code below is a little simpler, if the partial URL ends with a slash
-                    if (substr($u, -1, 1) ne '/') {
-
-                        $u .= '/';
-                    }
-
-                    # Set the default MSP download URL, and play no sound
-                    $self->ivPoke('mspDefaultURL', $u);
-
-                    # Nothing to play, this time
-                    return 1;
-                }
-            }
-        }
-
-        # Remaining parameters are in the form <param-name>=<param-value>, where <param-name> is a
-        #   one-letter upper-case identifier (A-Z)
-        # If any parameters are not specified, use default values
-        $v = 100;
-        $l = 1;
-        $p = 50;
-        $c = 1;
-        $t = '';
-
-        if ($self->mspDefaultURL) {
-            $u = $self->mspDefaultURL;
-        } else {
-            $u = '';
-        }
-
-        # Extract parameter values, and check they're valid values
-        foreach my $item (@list) {
-
-            my ($name, $value);
-
-            if ($item =~ m/(.*)\=(.*)/) {
-
-                $name = $1;
-                $value = $2;
-
-                if ($name eq '' || $value eq '') {
-
-                    # Invalid parameter format - play nothing
-                    return 1;
-
-                } elsif ($type eq 'sound' && $name eq 'C') {
-
-                    # C parameters only used with !!MUSIC - play nothing
-                    return 1;
-
-                } elsif ($type eq 'music' && $name eq 'P') {
-
-                    # P parameters only used with !!SOUND - play nothing
-                    return 1;
-
-                } elsif ($name eq 'V') {
-
-                    # (If the value is invalid, $v remains set to its default value. This is also
-                    #   true for $l, $p and $c)
-                    if (! $axmud::CLIENT->floatCheck($value, 0, 100)) {
-
-                        $v = $value;
-                    }
-
-                } elsif ($name eq 'L') {
-
-                    if (! $axmud::CLIENT->intCheck($value, 1) && $value ne '-1') {
-
-                        $l = $value;
-                    }
-
-                } elsif ($name eq 'P') {
-
-                    if (! $axmud::CLIENT->floatCheck($value, 0, 100)) {
-
-                        $p = $value;
-                    }
-
-                } elsif ($name eq 'C') {
-
-                    if ($value eq '0' || $value eq '1') {
-
-                        $c = $value;
-                    }
-
-                } elsif ($name eq 'T') {
-
-                    $t = $value;
-
-                } elsif ($name eq 'U') {
-
-                    $u = $value;
-
-                } else {
-
-                    # Invalid parameter name - play nothing
-                    return 1;
-                }
-
-            } else {
-
-                # Invalid parameter - play nothing
-                return 1;
-            }
-        }
-
-        # If no file extension is specified, provide one
-        ($file, $dir, $ext) = File::Basename::fileparse($fName, qr/\.[^.]*/);
-        if (! $ext) {
-
-            if ($type eq 'sound') {
-                $fName .= '.wav';
-            } else {
-                $fName .= '.mid';
-            }
-        }
-
-        # Convert $fName into a full filepath ($fName must a relative filepath, pointing at a
-        #   directory used to store sounds for the current world)
-        if ($t) {
-
-            $path = $axmud::DATA_DIR . '/msp/' . $self->currentWorld->name
-                        . '/' . $t . '/' . $fName;
-
-        } else {
-
-            $path = $axmud::DATA_DIR . '/msp/' . $self->currentWorld->name . '/' . $fName;
-        }
-
-        # If this file actually exists, use it. Otherwise...
-        if (! -e $path) {
-
-            # If a partial URL was specified...
-            if ($u) {
-
-                # If we're not allowed to download, then there's nothing to play
-                if (
-                    (! $mxpFlag && ! $axmud::CLIENT->allowMspLoadSoundFlag)
-                    || ($mxpFlag && ! $axmud::CLIENT->allowMxpLoadSoundFlag)
-                ) {
-                    # Play nothing
-                    return 1;
-                }
-
-                # Compile the full URL from which to download
-                if (substr($u, -1, 1) ne '/') {
-
-                    $u .= '/';
-                }
-
-                $u .= $fName;
-
-                # Attempt to download the file
-                ($file, $dir) = File::Basename::fileparse($path);
-                $fetchObj = File::Fetch->new(uri => $u);
-                if (! $fetchObj->fetch(to => $dir)) {
-
-                    # Download error - play nothing
-                    return 1;
-                }
-
-            # Otherwise, if the file doesn't exist, $path may contain wildcards (the MSP spec
-            #   specifies * and ? specifically). Get a list of matching files, and choose a random
-            #   one
-            } else {
-
-                ($file, $dir) = File::Basename::fileparse($path);
-
-                # Convert MSP wildcards into regex equivalents (but only for the file itself, not
-                #   its containing directory)
-                # * must match the remainder of the file name
-                $file =~ s/\*.*/.*/;
-                # ? must match exactly one character
-                $file =~ s/\?/.?/;
-                $path = $dir . $file;
-
-                # Get a list of matching files
-                @fileList = grep {/$path/} glob "$dir*";
-                if (! @fileList) {
-
-                    # No matching file found. If the server specified a relative filepath (e.g.
-                    #   'zone231/room22.wav', and that file (the equivalent of
-                    #   /home/.../axmud-data/msp/world_name/zone231/room22.wav) doesn't exist, we
-                    #   can strip away the subdirectory and look in the main directory instead
-                    #   (i.e., in /home/.../axmud-data/msp/world_name/room22.wav)
-                    $path = $axmud::DATA_DIR . '/msp/' . $self->currentWorld->name . '/' . $file;
-                    $dir = $axmud::DATA_DIR . '/msp/' . $self->currentWorld->name . '/';
-                    @fileList = grep {/$path/} glob "$dir*";
-                }
-
-                if (@fileList == 1) {
-
-                    $path = $fileList[0];
-
-                } else {
-
-                    $path = $fileList[rand(scalar @fileList)];
-                }
-
-                if (! $path) {
-
-                    # No matching sound file - play nothing
-                    return 1;
-                }
-            }
-        }
-
-        # For sound files, Axmud only supports file extensions in GA::Client->constSoundFormatHash
-        ($file, $dir, $ext) = File::Basename::fileparse($path, qr/\.[^.]*/);
-        $ext =~ s/^\.//;
-        if (! $axmud::CLIENT->ivExists('constSoundFormatHash', $ext)) {
-
-            if (! $mxpFlag) {
-
-                # File format not supported
-                return 1;
-
-            } else {
-
-                # For any other file extension, apply the MXP filter (if the world has specified
-                #   one)
-                $path = $self->applyMxpFileFilter($path);
-                if (! $path) {
-
-                    # No MXP file filter supplied, or file conversion failed
-                    return 1;
-                }
-
-                # Check the file format of the converted file is supported
-                ($file, $dir, $ext) = File::Basename::fileparse($path, qr/\.[^.]*/);
-                $ext =~ s/^\.//;
-                if (! $axmud::CLIENT->ivExists('constSoundFormatHash', $ext)) {
-
-                    # File format not supported
-                    return 1;
-
-                } else {
-
-                    $convertFlag = TRUE;
-                }
-            }
-        }
-
-        # We can only play multiple sound triggers concurrently, if the flag is set
-        # We can never play more than one music trigger concurrently
-        @objList = $self->ivValues('soundHarnessHash');
-        foreach my $soundObj (@objList) {
-
-            if (
-                (
-                    # Concurrent sound triggers not allowed (at the moment)
-                    ! $axmud::CLIENT->allowMspMultipleFlag
-                    && $type eq 'sound'
-                    && $soundObj->type eq 'sound'
-                ) || (
-                    # Concurrent music triggers not allowed (ever)
-                    $type eq 'music'
-                    && $soundObj->type eq 'music'
-                )
-            ) {
-                # Stop this sound
-                $soundObj->stop();
-                # ...and update the registry
-                $self->ivDelete('soundHarnessHash', $soundObj->number);
-            }
-        }
-
-        # Apply the sound priority (but not for music triggers)
-        if ($type eq 'sound') {
-
-            @objList = $self->ivValues('soundHarnessHash');
-            foreach my $soundObj (@objList) {
-
-                if ($soundObj->type eq 'sound' && $soundObj->priority < $p) {
-
-                    # This sound has a lower priority, so stop it
-                    $soundObj->stop();
-                    # ...and update the registry
-                    $self->ivDelete('soundHarnessHash', $soundObj->number);
-                }
-            }
-        }
-
-        # Apply the continue flag
-        if ($type eq 'music') {
-
-            @objList = $self->ivValues('soundHarnessHash');
-            foreach my $soundObj (@objList) {
-
-                if ($soundObj->type eq 'music' && $soundObj->path eq $path) {
-
-                    # This music trigger is already playing
-
-                    # C=1
-                    if ($c) {
-
-                        # Allow the existing music trigger to continue playing, but modify its
-                        #   repeat count
-                        if ($soundObj->repeat != -1) {
-
-                            $soundObj->ivPoke('repeat', $soundObj->repeat + $l);
-                        }
-
-                        return 1;
-
-                    # C=0
-                    } else {
-
-                        # Restart the music trigger. In fact, stop the current music trigger, and
-                        #   let the new one start playing in a moment, using the same file.  (The
-                        #   TRUE argument means 'don't delete the sound file itself')
-                        $soundObj->stop(TRUE);
-                        # ...and update the registry
-                        $self->ivDelete('soundHarnessHash', $soundObj->number);
-
-                        # Combine the repeat count for the two duplicate sounds
-                        if ($soundObj->repeat == -1 || $l == -1) {
-
-                            $l = -1;
-
-                        } else {
-
-                            $l = $l + $soundObj->repeat;
-                        }
-                    }
-                }
-            }
-        }
-
-        # Play the sound file, passing any optional parameters
-        $axmud::CLIENT->playSoundFile(
-            $self,
-            $path,
-            $convertFlag,
-            $type,
-            $v,
-            $l,
-            $p,
-            $c,
-        );
-
-        return 1;
-    }
-
-    sub processPuebloElement {
-
-        # Called by $self->processIncomingData when it encounters a Pueblo element (e.g. '<B>')
-        #
-        # Processes the Pueblo element, updating IVs and returning a corresponding list of Axmud
-        #   colour/style tags, where necessary
-        #
-        # Expected arguments
-        #   $token      - An extracted token containing the Pueblo element
-        #   $origText   - Specified when called by $self->processIncomingData, representing the
-        #                   received line of text, up to (but not including) the Pueblo element
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise returns a recognition flag (set to FALSE if the token is nothing to do with
-        #       Pueblo which should be processed as ordinary text; set to TRUE if it's a Pueblo
-        #       element, even an invalid one) followed by an equivalent list of Axmud colour/style
-        #       tags otherwise (may be an empty list)
-
-        my ($self, $token, $origText, $check) = @_;
-
-        # Local variables
-        my (
-            $origToken, $firstChar, $tagMode, $keyword,
-            @emptyList, @argList,
-        );
-
-        # Check for improper arguments
-        if (! defined $token) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->processPuebloElement', @_);
-            return @emptyList;
-        }
-
-        # ($token will be modified during this function, but some parts of the function require the
-        #   the original token text)
-        $origToken = $token;
-
-        # Ignore comments, in the form '<!-- this is a comment -->' ($self->extractMxpElement has
-        #   already checked that an element beginning with '<!--' ends with a '-->', so we only need
-        #   to check the first part of the string
-        if (substr($token, 0, 4) eq '<!--') {
-
-            # Recognition flag, followed by empty Axmud colour/style tag list
-            return TRUE;
-        }
-
-        # Pueblo elements are in the form:
-        #   <keyword [args]>            ($tagMode 'open')
-        #   </keyword>                  ($tagMode 'close')
-
-        # Remove the initial < followed by optional whitespace, and the final > preceded by optional
-        #   whitespace
-        $token =~ s/^\<\s*//;
-        $token =~ s/\s*\>$//;
-        # In case there's nothing left, don't bother looking for keywords or arguments...
-        if (! $token) {
-
-            $self->puebloDebug($origToken, 'Processed an empty element', 6601);
-
-            # Treat token as ordinary text
-            return @emptyList;
-        }
-
-        # Remove the initial /, if present
-        $firstChar = substr($token, 0, 1);
-        if ($firstChar eq '/') {
-
-            # </keyword>
-            $token = substr($token, 1);
-            $tagMode = 'close';
-
-        } else {
-
-            # <keyword [args]>
-            $tagMode = 'open';
-        }
-
-        # Remove the keyword, assuming that the same rules apply that apply to MXP keyword ('must
-        #   start with a letter (A-Z) and then consist of letters, numbers or the underline
-        #   character'
-        if ($token =~ m/^([A-Za-z][A-Za-z0-9_]*)/) {
-
-            # (Simplify things by converting all keywords to upper-case)
-            $keyword = uc($1);
-            $token = substr($token, length($keyword));
-
-        } else {
-
-            if ($token =~ m/^[\'\"].*[\'\"]$/) {
-
-                # Keyword not found
-                $self->puebloDebug($origToken, 'Element contains quoted keyword', 6611);
-
-                # Recognition flag, followed by empty Axmud colour/style tag list
-                return TRUE;
-
-            } else {
-
-                # Keyword not found
-                $self->puebloDebug($origToken, 'Element contains invalid keyword', 6612);
-
-                # Recognition flag, followed by empty Axmud colour/style tag list
-                return TRUE;
-            }
-        }
-
-        # Some keywords are synonyms of others, e.g. <B>, <EM> and <STRONG> are all equivalent
-        if ($axmud::CLIENT->ivExists('constPuebloConvertHash', $keyword)) {
-
-            $keyword = $axmud::CLIENT->ivShow('constPuebloConvertHash', $keyword);
-        }
-
-        # Check that the keyword is an official Pueblo element, whether implemented or not
-        if (! $axmud::CLIENT->ivExists('constPuebloOfficialHash', $keyword)) {
-
-            # Treat token as ordinary text
-            return @emptyList;
-
-        # Ignore unimplemented keywords
-        } elsif (! $axmud::CLIENT->ivExists('constPuebloImplementHash', $keyword)) {
-
-            # Recognition flag, followed by empty Axmud colour/style tag list
-            return TRUE;
-        }
-
-        # Get a list of arguments, separated by one or more whitespace characters
-        # (The whole argument can be single-quoted, or double-quoted, in which case it can contain
-        #   embedded whitespace or the '>' character)
-        if ($token) {
-
-            do {
-
-                my ($argName, $argValue, $key, $value);
-
-                ($token, $argName, $argValue) = $self->extractMxpArgument($token);
-                if (! defined $token) {
-
-                    # Improper arguments, or malformed argument
-                    $self->puebloDebug($origToken, 'Malformed element', 6621);
-
-                    # Recognition flag, followed by empty Axmud colour/style tag list
-                    return TRUE;
-
-                } else {
-
-                    # If the argument is not in the form 'argument_name=argument_value', then
-                    #   $argValue is 'undef', and $argName contains the whole argument
-                    push (@argList, $argName, $argValue);
-
-                    # After removing the 'argument' or the 'argument_name=argument_value'
-                    #   construction, if there's anything left in $token, it must start with a
-                    #   whitespace character
-                    # This ensures that there are whitespace character(s) between each argument,
-                    #   and prevents constructions like: name='value'name='value'
-                    if ($token && $token =~ m/^\S/) {
-
-                        $self->puebloDebug($origToken, 'Malformed element', 6622);
-
-                        # Recognition flag, followed by empty Axmud colour/style tag list
-                        return TRUE;
-                    }
-                }
-
-            } until (! $token);
-        }
-
-        # Process each type of Pueblo element in its own function
-
-        # Process modal elements: <B> <I> <U> <STRIKE>
-        if ($axmud::CLIENT->ivExists('constPuebloModalHash', $keyword)) {
-
-            return (TRUE, $self->processMxpModalElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process HTML element: <TT>
-        } elsif ($keyword eq 'TT') {
-
-            return (TRUE, $self->processMxpHtmlElement($origToken, $tagMode, $keyword, @argList));
-
-        # Process colours: <COLOR>...</COLOR>
-        } elsif ($keyword eq 'COLOR') {
-
-            return (
-                TRUE,
-                $self->processPuebloColourElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process fonts: <FONT>...</FONT>
-        } elsif ($keyword eq 'FONT') {
-
-            return (
-                TRUE,
-                $self->processPuebloFontElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process base font: <BASEFONT>
-        } elsif ($keyword eq 'BASEFONT') {
-
-            return (
-                TRUE,
-                $self->processPuebloBaseFontElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process hyperlinks to send to MUD: <SEND>...</SEND>
-        } elsif ($keyword eq 'SEND') {
-
-            # Not in Pueblo 2.50 spec, so assume it's the same as the MXP tag
-            return (
-                TRUE,
-                $self->processMxpSendElement($origToken, $tagMode, $keyword, FALSE, @argList),
-            );
-
-        # Process direct setting of clickable links: <A>...</A>
-        } elsif ($keyword eq 'A') {
-
-            return (
-                TRUE,
-                $self->processPuebloLinkElement($origToken, $tagMode, $keyword, FALSE, @argList),
-            );
-
-        # Process list: <UL>...</UL>, <OL>...</OL>
-        } elsif ($keyword eq 'UL' || $keyword eq 'OL') {
-
-            return (
-                TRUE,
-                $self->processPuebloListElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process list items: <LI>
-        } elsif ($keyword eq 'LI') {
-
-            return (
-                TRUE,
-                $self->processPuebloListItemElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process text justification: <CENTER>
-        } elsif ($keyword eq 'CENTER') {
-
-            return (
-                TRUE,
-                $self->processPuebloJustifyElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process literal text: <CODE>...</CODE>, <PRE>...</PRE>, <SAMP>...</SAMP>
-        } elsif ($keyword eq 'CODE' || $keyword eq 'PRE' || $keyword eq 'SAMP') {
-
-            return (
-                TRUE,
-                $self->processPuebloLiteralElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process images: <IMG>
-        } elsif ($keyword eq 'IMG') {
-
-            return (
-                TRUE,
-                $self->processPuebloImageElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process panes: <XCH_PANE>
-        } elsif ($keyword eq 'XCH_PANE') {
-
-            return (
-                TRUE,
-                $self->processPuebloPaneElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # Process other implemented MXP elements
-        } elsif ($axmud::CLIENT->ivExists('constPuebloImplementHash', $keyword)) {
-
-            return (
-                TRUE,
-                $self->processPuebloImplementedElement($origToken, $tagMode, $keyword, @argList),
-            );
-
-        # (This should never be executed)
-        } else {
-
-            $self->puebloDebug($origToken, 'Internal error while processing element', 6631);
-
-            # Recognition flag, followed by empty Axmud colour/style tag list
-            return TRUE;
-        }
-    }
+    # (Process Pueblo tokens)
 
     sub processPuebloColourElement {
 
@@ -21132,12 +23002,12 @@
 
             # The position of the link will be the textview's current insert position, plus the
             #   length of any already-processed text, that hasn't been displayed in the textview
-            #   object yet, which has been stored for us in ->mxpOrigText
+            #   object yet, which has been stored for us in ->processStripLine
             # (The -1 argument means this is an incomplete link object, not yet applied to the
             #   current textview and not yet stored in the textview object's registries)
-            if (defined $self->mxpOrigText) {
+            if ($self->processOrigLine ne '') {
 
-                $offset += length($self->recvLineText);
+                $offset += length($self->processStripLine);
             }
 
             $linkObj = Games::Axmud::Obj::Link->new(
@@ -21399,12 +23269,8 @@
 
                 $self->ivShift('puebloStackList');
 
-                # Insert a newline character into the received text that's being processed by
-                #   $self->processIncomingData
-                $self->ivPoke(
-                    'puebloInsertString',
-                    $self->puebloInsertString . "\n",
-                );
+                # Force a line break by inserting an artificial newline token
+                $self->ivUnshift('currentTokenList', 'go', undef);
             }
 
             # Operation compelte
@@ -21592,11 +23458,14 @@
             }
         }
 
-        # Insert these characters into the received text that's being processed by
+        # Artificially insert some tokens into the list being processed by
         #   $self->processIncomingData
-        $self->ivPoke(
-            'puebloInsertString',
-            $self->puebloInsertString . "\n" . $string x scalar ($self->puebloStackList) . $bullet,
+        $self->ivUnshift(
+            'currentTokenList',
+                'go',
+                undef,
+                'text',
+                $string x scalar ($self->puebloStackList) . $bullet,
         );
 
         # Operation compelte
@@ -22125,10 +23994,14 @@
         #   text received from the world is displayed. The calling function may have processed some
         #   text tokens which haven't been displayed yet; if so, display them now so that they're
         #   displayed in the right frame
-        if ($self->recvLineText) {
+        if ($self->processStripLine) {
 
-            $self->processIncompleteLine($self->mxpOrigText);
-            $self->ivUndef('mxpOrigText');
+            $self->respondIncomingData(
+                'part',
+                $self->processOrigLine,
+                $self->processStripLine,
+                $self->processTagHash,
+            );
         }
 
         # Apply any links created by Pueblo <A> tags to the current textview (if the current
@@ -22504,1589 +24377,591 @@
         }
     }
 
-    sub processPuebloSpacingTag {
+    # (Process MCP messages)
+
+    sub processMcpMsg {
 
         # Called by $self->processIncomingData
+        # Also called by $self->spinMaintainLoop, if the time limit for waiting for an
+        #   'mcp-negotiate-end' message has expire, in which case the calling function calls this
+        #   function with an artificial MCP token
         #
-        # Process a Pueblo line spacing token: <BODY>, </BODY>, <P>, </P>, <BR>. <HR>
-        #
-        # Expected arguments
-        #   $origText   - The original text received from the world, before this token was
-        #                   extracted
-        #   $token      - An extracted token containing the Pueblo element
-        #
-        # Return values
-        #   'undef' on improper arguments or if an invalid closing tag like </BR> is used
-        #   Otherwise, returns a modified $origText. If the token was converted into a newline
-        #       character, $origText is set by this function to be an empty string (as happens after
-        #       ->processIncomingData calls ->processEndLine directly); otherwise $token is added
-        #       to the existing value of $origText
-
-        my ($self, $origText, $token, $check) = @_;
-
-        # Local variables
-        my ($origToken, $bufferObj, $width, $height, $fontSize);
-
-        # Check for improper arguments
-        if (! defined $token || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->processPuebloSpacingTag',
-                @_,
-            );
-        }
-
-        # Remove the < and > characters
-        $origToken = $token;
-        $token = uc($token);
-        $token =~ s/^\<//;
-        $token =~ s/\>$//;
-        # These Pueblo tags can have attributes, but Axmud ignores those attributes
-        $token =~ s/\s.*//;
-
-        # Only the </BODY> and </P> elements can be used as a closing tag (e.g. </BR> is invalid)
-        if ($token ne '/BODY' && $token ne '/P' && substr($token, 0, 1) eq '/') {
-
-            $self->puebloDebug($origToken, 'Invalid line spacing tag \'' . $origToken . '\'', 7801);
-        }
-
-        # Process the tag
-        if ($token eq 'BODY' || $token eq '/BODY') {
-
-            # The Pueblo spec states that <BODY>...</BODY> is not necessary for world output.
-            #   However, some worlds (e.g. Epoch) display some introductory text before the
-            #   <BODY>...</BODY> construction, so we'll replace both tags with empty lines
-
-            # If the current line contains any non-whitespace characters, we must insert a newline
-            #   character to terminate it
-            if ($origText =~ m/\S/) {
-
-                $self->processEndLine($origText, $origToken);
-                $origText = '';
-            }
-
-            # Insert a second newline character to put space between this paragraph, and anything
-            #   that follows it
-            $self->processEndLine('', $origToken);
-
-        } elsif ($token eq 'BR') {
-
-            # Force a line break inside or outside a paragraph
-            $self->processEndLine($origText, $origToken);
-            # (When ->processIncomingData calls ->processEndLine, it sets $origText to an empty
-            #   string, so this function does the same)
-            return '';
-
-        } elsif ($token eq 'P') {
-
-            # Special case: inside a <PRE>...</PRE> construction, <P> tags are implemented as a
-            #   simple newline
-            if ($self->puebloLiteralFlag) {
-
-                # Force a line break
-                $self->processEndLine($origText, $origToken);
-                # (When ->processIncomingData calls ->processEndLine, it sets $origText to an empty
-                #   string, so this function does the same)
-                return '';
-            }
-
-            $self->ivPoke('puebloParagraphFlag', TRUE);
-
-            # If the current line contains any non-whitespace characters, we must insert a newline
-            #   character to terminate it
-            if ($self->recvWholeLineText =~ m/\S/) {
-
-                $self->processEndLine($origText, $origToken);
-                $origText = '';
-            }
-
-            # If the line before that contained any newline characters, we must insert a newline
-            #   character to put an empty line between the that text, and the beginning of the
-            #   paragraph
-            if (defined $self->displayBufferLast) {
-
-                $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
-                if ($bufferObj->modLine =~ m/\S/) {
-
-                    $self->processEndLine($origText, $origToken);
-                    $origText = '';
-                }
-            }
-
-            return $origText;       # Will almost certainly be an empty string
-
-        } elsif ($token eq '/P') {
-
-            if (! $self->puebloParagraphFlag) {
-
-                # An invalid </P>...</P> construction
-                $self->puebloDebug($origToken, '</P> tag after earlier closing </P> tag', 7811);
-
-            } else {
-
-                $self->ivPoke('puebloParagraphFlag', FALSE);
-
-                # If the current line contains any non-whitespace characters, we must insert a
-                #   newline character to terminate it
-                if ($self->recvWholeLineText =~ m/\S/) {
-
-                    $self->processEndLine($origText, $origToken);
-                    $origText = '';
-                }
-
-                # Insert a second newline character to put space between this paragraph, and
-                #   anything that follows it
-                $self->processEndLine('', $origToken);
-
-                return '';
-            }
-
-        } elsif ($token eq 'HR') {
-
-            # An HTML element. Draw a poor man's 'horizontal rule' with simple ASCII characters
-
-            # Force a line break inside or outside a paragraph. The TRUE argument means 'don't close
-            #   open MXP tags, as we would for a true newline character'
-            $self->processEndLine($origText, $origToken, TRUE);
-
-            # Adjust the width to take account of different font sizes, especially inside headings
-            #   (<H1>...</H1>, etc)
-            ($width, $height) = $self->getTextViewSize();
-            $fontSize = $self->currentTabObj->textViewObj->ivShow('mxpModalStackHash', 'font_size');
-            if ($fontSize ne '' && $fontSize != $axmud::CLIENT->constFontSize) {
-
-                # (Subtracting 1 seems to produce the right answer more often, for unknown reasons)
-                $width = int($width / ($fontSize / $axmud::CLIENT->constFontSize)) - 1;
-            }
-
-            # Draw the horizontal rule
-            $self->processTextToken(chr(0x2501) x $width);
-            # ...which ends in another newline character
-            $self->processEndLine($origText, $origToken, TRUE);
-
-            # (When ->processIncomingData calls ->processEndLine, it sets $origText to an empty
-            #   string, so this function does the same)
-            return '';
-        }
-
-        return $origText . $origToken;
-    }
-
-    # Incoming data loop - misc incoming stuff
-
-    sub applyColourStyleTags {
-
-        # Called by $self->processLineSegment and ->applyTriggerStyle
-        #
-        # This function is two arguments
-        # The first argument is a reference to a hash of Axmud colour/style tags, based on
-        #   GA::Client->constColourStyleHash, representing the colours and styles that applied at
-        #   some specific offset on a specific line of text received from the world, before any
-        #   colour/style tags were applied
-        # The second argument is a reference to a list of Axmud colour/style tags representing the
-        #   colours and styles that were applied at that offset
-        #
-        # This function applies the list of tags to the hash, and returns the modified hash
-        #
-        # When called by $self->processLineSegment, the colour/style tags are those that apply
-        #   right now. When called by ->applyColourStyleTags, the colour/style tags are those that
-        #   applied at some point in the recent past, at the beginning or end of a line segment to
-        #   which trigger styles are being applied
+        # Process the MCP message
+        # The Axmud-supported packages 'mcp-negotiate' and 'mcp-cord' are handled entirely by this
+        #   function; for all other packages, a valid MCP message is redirected towards the MCP
+        #   package object (inheriting from Games::Axmud::Generic::Mcp)
         #
         # Expected arguments
-        #   $hashRef    - A reference to a hash of Axmud colour/style tags, based on
-        #                   GA::CLIENT->constColourStyleHash, in the form
-        #
-        #                   'text'       => 'undef' or an Axmud text colour tag, e.g. 'red' or
-        #                                       'x230'
-        #                   'underlay'   => 'undef' or an Axmud underlay colour tag, e.g. 'ul_white'
-        #                   'italics'    => TRUE or FALSE
-        #                   'underline'  => TRUE or FALSE
-        #                   'blink_slow' => TRUE or FALSE
-        #                   'blink_fast' => TRUE or FALSE
-        #                   'strike'     => TRUE or FALSE
-        #                   'link'       => TRUE or FALSE
-        #                   'mxp_font'   => TRUE or FALSE
-        #                   'justify'    => 'left', 'right', 'centre', or 'undef' to represent the
-        #                                       style tag 'justify_default'
-        #   $listRef    - A rerefence to a list of Axmud colour/style tags which are used to modify
-        #                   the hash (can be an empty list)
+        #   $origToken  - The original token text, containing the whole out-of-band line (MCP
+        #                   message), including any newline characters that follow it
         #
         # Return values
-        #   An empty list on improper arguments
-        #   Otherwise, returns the modified hash itself (not a reference to it)
+        #   'undef' on improper arguments, if the MCP message is invalid or if the MCP package
+        #       object rejects the message
+        #   1 if the MCP package object accepts a valid MCP message
 
-        my ($self, $hashRef, $listRef, $check) = @_;
+        my ($self, $origToken, $check) = @_;
 
         # Local variables
         my (
-            $textViewObj, $attribsOffFlag,
-            @tagList,
-            %hash, %styleHash, %justifyHash, %dummyHash,
+            $line, $firstChar, $dataTag, $multiObj, $msg, $packageName, $packageObj, $authKey,
+            $mode, $otherObj, $funcRef, $id, $cordMsg,
+            %checkHash, %argHash, %useHash, %newHash,
         );
 
         # Check for improper arguments
-        if (! defined $hashRef || ! defined $listRef || defined $check) {
+        if (! defined $origToken || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->applyColourStyleTags', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processMcpMsg', @_);
         }
 
-        # De-reference arguments
-        %hash = %$hashRef;
-        @tagList = @$listRef;
+        # MCP messages consist of three parts: the name of the message, the authentication key, and
+        #   a set of keyword-value pairs
 
-        # Import IVs (for quick lookup)
-        %styleHash = $axmud::CLIENT->constStyleTagHash;
-        %justifyHash = $axmud::CLIENT->constJustifyTagHash;
-        %dummyHash = $axmud::CLIENT->constDummyTagHash;
-        # Import the current textview object (for convenience)
-        $textViewObj = $self->currentTabObj->textViewObj;
+        # First remove the initial #$# and the final newline character(s)
+        # ($line should not begin with space characters, but we'll strip any we find)
+        $line = $origToken;
+        $line =~ s/^\#\$\#\s*//;
+        $line =~ s/[\n\r]*$//;
 
-        foreach my $tag (@tagList) {
+        $firstChar = substr($line, 0, 1);
+        if ($firstChar eq '*') {
 
-            my ($type, $underlayFlag, $boldishTag);
+            # If the remaining portion of $line begins with an asterisk, it's a multiline
+            #   continuation message
 
-            # When called by $self->applyTriggerStyle, @tagList can contain bold text colour tags
-            #   like 'BLUE'. When called by $self->processLineSegment, @tagList would instead
-            #   contain the pair 'bold', 'blue'
-            # @tagList might also contain bold underlay colours like 'UL_BLUE', but that doesn't
-            #   affect the setting of $hash{'bold'} (which only applies to text colours)
-            $type = $axmud::CLIENT->checkBoldTags($tag);
-            if ($type && $type eq 'text') {
+            # $line is now in the form '<space><data tag><space><key>:<space><value>'
+            return $self->processMcpContinuation($origToken, $line);
 
-                # $tag is a bold colour tag. Pretend that we processed a 'bold' dummy tag during
-                #   the last iteration of this loop
-                $hash{'bold'} = TRUE;
-                # Since we're about to change the text colour, we can rely on the following code to
-                #   take care of $hash{'text'}, $hash{'real_text'} and so on
-                $tag = lc($tag);
+        } elsif ($firstChar eq ':') {
+
+            # If the remaining portion of $line begins with a colon, it's a multiline termination
+            #   message
+
+            # $line is now in the form '<space><data tag><optional spaces>'
+            # Extract the data tag
+            if ($line =~ m/^\s*([A-Za-z][A-Za-z0-9\-]*)\s*$/) {
+
+                $dataTag = $1;
+
+            } else {
+
+                # Invalid termination message
+                $self->mcpDebug($origToken, 'Invalid multiline termination message', 8100);
+                return undef;
             }
 
-            # PART 1: 'Dummy' style tags
-            if (exists $dummyHash{$tag}) {
+            # Check that the data tag was specified by a previous MCP message with multiline values
+            $multiObj = $self->ivShow('mcpMultiObjHash', $dataTag);
+            if (! $multiObj) {
 
-                if ($tag eq 'attribs_off') {
+                $self->mcpDebug($origToken, 'Unrecognised multiline data tag', 8101);
+                return undef;
+            }
 
-                    # A dummy tag created by $self->processEscSequence, which corresponds to 'all
-                    #   attributes off'. We implement this by resetting %hash
-                    %hash = $axmud::CLIENT->constColourStyleHash;
-                    $attribsOffFlag = TRUE;
+            # Set up values for the rest of this function
 
-                } elsif ($tag eq 'bold') {
+            # MCP packages are generally in the form 'some-package-name', and MCP messages are
+            #   generally in the form 'some-package-name-message' (but a null message in the form
+            #   'some-package-name' is also allowed)
+            # From the list of MCP packages used by this session (in $self->mcpPackageHash), find
+            #   the longest name that matches the message, and use that MCP package object
+            foreach my $testName ($self->ivKeys('mcpPackageHash')) {
 
-                    # A 'dummy' style tag
-                    if (! $hash{'bold'}) {
-
-                        $hash{'bold'} = TRUE;
-
-                        if ($hash{'real_text'}) {
-
-                            $hash{'real_text'} = uc($hash{'real_text'});
-                        }
-
-                        # In conceal mode we don't make any changes to $hash{'text'} and
-                        #   $hash{'underlay'}
-                        if ($hash{'reverse'}) {
-                            $hash{'underlay'} = $axmud::CLIENT->swapColours($hash{'real_text'});
-                        } elsif (! $hash{'conceal'}) {
-                            $hash{'text'} = $hash{'real_text'};
-                        }
-
-                        # In conceal mode and reverse video mode, changing the underlay colour has
-                        #   no effect
-                        if (! $hash{'conceal'} && ! $hash{'reverse'}) {
-
-                            $hash{'underlay'} = $hash{'real_underlay'};
-                        }
-                    }
-
-                    # (A second 'bold' tag is ignored)
-
-                } elsif ($tag eq 'bold_off') {
-
-                    # A 'dummy' style tag
-                    if ($hash{'bold'}) {
-
-                        $hash{'bold'} = FALSE;
-
-                        if ($hash{'real_text'}) {
-
-                            $hash{'real_text'} = lc($hash{'real_text'});
-                        }
-
-                        if ($hash{'reverse'}) {
-                            $hash{'underlay'} = $axmud::CLIENT->swapColours($hash{'real_text'});
-                        } elsif (! $hash{'conceal'}) {
-                            $hash{'text'} = $hash{'real_text'};
-                        }
-
-                        # In conceal mode and reverse video mode, changing the underlay colour has
-                        #   no effect
-                        if (! $hash{'conceal'} && ! $hash{'reverse'}) {
-
-                            $hash{'underlay'} = $hash{'real_underlay'};
-                        }
-                    }
-
-                    # (A second consecutive 'bold_off' tag is ignored)
-
-                } elsif ($tag eq 'reverse') {
-
-                    # A 'dummy' style tag
-                    if (! $hash{'reverse'}) {
-
-                        $hash{'reverse'} = TRUE;
-
-                        # In reverse video mode, the existing text colour is used as the underlay
-                        #   colour. The existing underlay colour is ignored, if it is set, because
-                        #   reverse video was designed for monochrome monitors
-                        # In addition, the textview background colour is used as the new text colour
-
-                        # Conceal mode takes priority over reverse video mode, if that is already on
-                        if (! $hash{'conceal'}) {
-
-                            $hash{'text'} = $textViewObj->backgroundColour;
-                            if ($hash{'real_text'}) {
-
-                                $hash{'underlay'} = $axmud::CLIENT->swapColours($hash{'real_text'});
-
-                            } else {
-
-                                $hash{'underlay'}
-                                    = $axmud::CLIENT->swapColours($textViewObj->textColour);
-                            }
-                        }
-                    }
-
-                    # (A second 'reverse' tag is ignored)
-
-                } elsif ($tag eq 'reverse_off') {
-
-                    # A 'dummy' style tag
-                    if ($hash{'reverse'}) {
-
-                        $hash{'reverse'} = FALSE;
-                        if (! $hash{'conceal'}) {
-
-                            $hash{'text'} = $hash{'real_text'};
-                            $hash{'underlay'} = $hash{'real_underlay'};
-                        }
-                    }
-
-                    # (A second consecutive 'reverse_off' tag is ignored)
-
-                } elsif ($tag eq 'conceal') {
-
-                    # A 'dummy' style tag
-                    if (! $hash{'conceal'}) {
-
-                        $hash{'conceal'} = TRUE;
-
-                        # In conceal mode, both the text and underlay colours are set to the same as
-                        #   the textview background colour, so that the text is invisible unless the
-                        #   user selects it with the mouse
-                        # Conceal mode takes priority over reverse video mode, if that is already on
-                        $hash{'text'} = $textViewObj->backgroundColour;
-                        $hash{'underlay'}
-                            = $axmud::CLIENT->swapColours($textViewObj->backgroundColour);
-                    }
-
-                    # (A second 'conceal' tag is ignored)
-
-                } elsif ($tag eq 'conceal_off') {
-
-                    # A 'dummy' style tag
-                    if ($hash{'conceal'}) {
-
-                        $hash{'conceal'} = FALSE;
-                        if ($hash{'reverse'}) {
-
-                            $hash{'text'} = $textViewObj->backgroundColour;
-                            $hash{'underlay'} = $axmud::CLIENT->swapColours($hash{'real_text'});
-
-                        } else {
-
-                            $hash{'text'} = $hash{'real_text'};
-                            $hash{'underlay'} = $hash{'real_underlay'};
-                        }
-                    }
-
-                    # (A second consecutive 'conceal_off' tag is ignored)
-
-                } elsif ($tag eq 'mxpf_off') {
-
-                    # (Other 'mxpf_...' tags are handled below)
-                    $hash{'mxp_font'} = undef;
-                }
-
-            # PART 2: Justification style tags
-            } elsif (exists $justifyHash{$tag}) {
-
-                if ($tag eq 'justify_default') {
-                    $hash{'justify'} = undef;
-                } else {
-                    $hash{'justify'} = substr($tag, 8);
-                }
-
-            # PART 3: Style tags
-            } elsif (exists $styleHash{$tag}) {
-
-                # (Codes listed in rough order of popularity)
-                if ($tag eq 'link') {
-
-                    if ($hash{'link'}) {
-                        $hash{'link'} = FALSE;
-                    } else {
-                        $hash{'link'} = TRUE;
-                    }
-
-                } elsif ($tag eq 'link_off') {
-
-                    $hash{'link'} = FALSE;
-
-                } elsif (
-                    $tag eq 'italics'
-                    || $tag eq 'underline'
-                    || $tag eq 'blink_slow'
-                    || $tag eq 'blink_fast'
-                    || $tag eq 'strike'
+                if (
+                    ! defined $packageName
+                    || (
+                        index($multiObj->msg, $testName) == 0
+                        && length($testName) > length($packageName)
+                    )
                 ) {
-                    # (A second consecutive tag reinforces the previous one)
-                    $hash{$tag} = TRUE;
-
-                } elsif ($tag eq 'italics_off') {
-
-                    $hash{'italics'} = FALSE;
-
-                } elsif ($tag eq 'underline_off') {
-
-                    $hash{'underline'} = FALSE;
-
-                } elsif ($tag eq 'blink_off') {
-
-                    $hash{'blink_slow'} = FALSE;
-                    $hash{'blink_fast'} = FALSE;
-
-                } elsif ($tag eq 'strike_off') {
-
-                    $hash{'strike'} = FALSE;
+                    $packageName = $testName;
                 }
+            }
 
-            # PART 4: MXP style tags
-            } elsif (substr($tag, 0, 5) eq 'mxpf_') {
+            # If the message name refers to an MCP package not used by this session, ignore the
+            #   message name
+            if (! defined $packageName) {
 
-                # Dummy style tags used for MXP fonts
-                # Store the whole dummy tag, e.g. 'mxpf_monospace_bold_12' (NB 'mxpf_off' was
-                #   handled further above)
-                $hash{'mxp_font'} = $tag;
+                $self->mcpDebug($origToken, 'MCP package not in use by this session', 8102);
+                return undef;
 
-            } elsif (substr($tag, 0, 5) eq 'mxpm_') {
-
-                # Dummy style tag used for MXP modes in the range 10-12, 19, 20-99 (which don't
-                #   affect text attributes, so we don't add them to %hash)
-                # ...
-
-            # PART 5: Colour tags
             } else {
 
-                ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($tag);
-                if ($type) {
-
-                    if ($type eq 'standard') {
-
-                        # We're going to check $tag against the textview's object colour in a
-                        #   moment, which is stored as (for example) 'RED' if it's a bold colour. We
-                        #   need to compare it with 'RED', not 'red', if bold is on
-                        if ($hash{'bold'}) {
-                            $boldishTag = uc($tag);
-                        } else {
-                            $boldishTag = $tag;
-                        }
-
-                    } else {
-
-                        # xterm/RGB colour tags should be case insensitive
-                        $boldishTag = lc($tag);
-                    }
-                }
-
-                # PART 5a: Text colour tags
-                if ($type && ! $underlayFlag) {
-
-                    if (
-                        defined $hash{'real_text'}
-                        && $hash{'real_text'} eq $tag
-                    ) {
-                        # (The re-occuring tag is ignored)
-
-                    } elsif ($attribsOffFlag && $boldishTag eq $textViewObj->textColour) {
-
-                        # After an 'attribs off', if the tag matches the 'main' window's normal text
-                        #   colour, let that be the text colour
-                        # (This takes care of ANSI escape sequences like '^[0;37;40m', meaning
-                        #   'attribs off - white text - black underlay'. If we set $hash{'underlay'}
-                        #   to 'ul_black', the next 'bold' tag - which was intended to apply only to
-                        #   the text colour - will be applied to the underlay colour, too.)
-                        $hash{'real_text'} = undef;
-                        if ($hash{'reverse'}) {
-
-                            $hash{'text'} = $textViewObj->backgroundColour;
-                            $hash{'underlay'}
-                                = $axmud::CLIENT->swapColours($textViewObj->textColour);
-
-                        } else {
-
-                            $hash{'text'} = $hash{'real_text'};
-                        }
-
-                    } elsif ($hash{'bold'} && $type eq 'standard') {
-
-                        # Bold text colour
-                        $hash{'real_text'} = uc($tag);
-                        # If the world is using an OSC colour palette to modify this colour, use the
-                        #   modified form
-                        if ($self->ivExists('oscColourHash', $hash{'real_text'})) {
-
-                            $hash{'real_text'} = $self->ivShow('oscColourHash', $hash{'real_text'});
-                        }
-
-                        # In conceal mode we don't make any changes to $hash{'text'} and
-                        #   $hash{'underlay'}
-                        if ($hash{'reverse'}) {
-                            $hash{'underlay'} = $axmud::CLIENT->swapColours($hash{'real_text'});
-                        } elsif (! $hash{'conceal'}) {
-                            $hash{'text'} = $hash{'real_text'};
-                        }
-
-                    } else {
-
-                        # Normal colour, or a bold underlay colour like 'UL_BLUE', specified
-                        #   directly by a call from $self->applyTriggerStyle
-                        $hash{'real_text'} = $tag;
-                        # If the world is using an OSC colour palette to modify this colour, use the
-                        #   modified form
-                        if ($self->ivExists('oscColourHash', $hash{'real_text'})) {
-
-                            $hash{'real_text'} = $self->ivShow('oscColourHash', $hash{'real_text'});
-                        }
-
-                        if ($hash{'reverse'}) {
-                            $hash{'underlay'} = $axmud::CLIENT->swapColours($hash{'real_text'});
-                        } elsif (! $hash{'conceal'}) {
-                            $hash{'text'} = $hash{'real_text'};
-                        }
-                    }
-
-                # PART 5b: Underlay colour tags
-                } elsif ($type && $underlayFlag) {
-
-                    if (
-                        defined $hash{'real_underlay'}
-                        && $hash{'real_underlay'} eq $tag
-                    ) {
-                        # (The re-occuring tag is ignored)
-
-                    } elsif ($attribsOffFlag && $boldishTag eq $textViewObj->underlayColour) {
-
-                        # After an 'attribs off', if the tag matches the 'main' window's normal
-                        #   underlay colour, let that be the underlay colour
-                        $hash{'real_underlay'} = undef;
-
-                    } else {
-
-                        $hash{'real_underlay'} = $tag;
-
-                        # If the world is using an OSC colour palette to modify this colour, use the
-                        #   modified form
-                        if ($self->ivExists('oscColourHash', $hash{'real_underlay'})) {
-
-                            $hash{'real_underlay'}
-                                = $self->ivShow('oscColourHash', $hash{'real_underlay'});
-                        }
-                    }
-
-                    # In conceal mode and reverse video mode, changing the underlay colour has no
-                    #   effect
-                    if (! $hash{'conceal'} && ! $hash{'reverse'}) {
-
-                        $hash{'underlay'} = $hash{'real_underlay'};
-                    }
-                }
-            }
-        }
-
-        return %hash;
-    }
-
-    sub checkLineSplit {
-
-        # Called by $self->processLinePortion to work out if a received line of text should be
-        #   split into two or more pieces, because the lines matches one of the world profile's
-        #   command prompt patterns, or because it matches a splitter trigger
-        # (This only affects the way Axmud treats received text, after all non-text tokens have been
-        #   extracted by $self->processIncomingData; for example, it doesn't affect MXP at all)
-        #
-        # Returns a list of offsets of the first character after any split. However, it's not
-        #   possible to split the line at the beginning (or end), so the list of offsets never
-        #   contains 0 or n, where n = the length of the line. The list of offsets is in ascending
-        #   order, and there are no duplicate offsets (so if a command prompt and a splitter trigger
-        #   both split the line at the same place, only one offset is added to the list)
-        #
-        # Expected arguments
-        #   $stripText      - A portion of the received text, comprising a complete or partial line
-        #                       of text received from the world, which has now been stripped of non-
-        #                       text tokens like newline characters, escape sequences, etc
-        #   $newLineFlag    - Flag set to TRUE if this line ends in a newline character, or FALSE if
-        #                       it doesn't
-        #
-        # Return values
-        #   An empty list on improper arguments or if no command prompt patterns or splitter
-        #       triggers match the line
-        #   Otherwise, returns a list of offsets
-
-        my ($self, $stripText, $newLineFlag, $check) = @_;
-
-        # Local variables
-        my (
-            @emptyList, @offsetList, @deleteList, @sortedList,
-            %checkHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $stripText || ! defined $newLineFlag || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->checkLineSplit', @_);
-            return @emptyList;
-        }
-
-        # First split the line, according to the command prompt patterns specified by the current
-        #   world profile
-        foreach my $pattern ($self->currentWorld->cmdPromptPatternList) {
-
-            while ($stripText =~ m/($pattern).+/g) {
-
-                my $offset = $+[1];
-
-                if ($offset != 0 && $offset != length($stripText)) {
-
-                    push (@offsetList, $offset);
-                    # We'll use a hash to eliminate duplicates, once we start checking splitter
-                    #   triggers
-                    $checkHash{$offset} = undef;
-                }
-            }
-        }
-
-        # Check every active trigger interface, in the correct order, looking for splitter triggers
-        #   that match $stripText
-        OUTER: foreach my $number ($self->triggerOrderList) {
-
-            my ($obj, $stimulus, $response, $afterFlag, $ignoreFlag, $count, $copyLine);
-
-            $obj = $self->ivShow('interfaceNumHash', $number);
-
-            # If the trigger isn't a splitter trigger, ignore it
-            # If the trigger is a dependent trigger, don't fire it
-            # If the trigger is disabled, don't fire it
-            # If the trigger requires a line ending with a newline character and the line doesn't
-            #   end with one, don't fire it
-            # If the trigger requires a login and the character isn't logged in, don't fire it
-            if (
-                ! $obj->ivShow('attribHash', 'splitter')
-                || ! $obj->indepFlag
-                || ! $obj->enabledFlag
-                || ($obj->ivShow('attribHash', 'need_prompt') && $newLineFlag)
-                || ($obj->ivShow('attribHash', 'need_login') && ! $self->loginFlag)
-            ) {
-               next OUTER;
+                $packageObj = $self->ivShow('mcpPackageHash', $packageName);
             }
 
-            $stimulus = $obj->stimulus;
-            $response = $obj->response;
-            $afterFlag = $obj->ivShow('attribHash', 'split_after');
-            $ignoreFlag = $obj->ivShow('attribHash', 'ignore_case');
-            $count = 0;
-
-            # An independent splitter trigger.
-            # The trigger's 'stimulus' attribute must match $stripText for the trigger to fire
-            # (NB Using $stripText in the block breaks the algorithm. No idea why, but a workaround
-            #   is to perform the pattern match on another variable)
-            $copyLine = $stripText;
-            if (
-                (! $ignoreFlag && ($copyLine =~ m/$stimulus/g))
-                || ($ignoreFlag && ($copyLine =~ m/$stimulus/gi))
-            ) {
-                # Now we test the line against the trigger's 'response' attribute. We split the line
-                #   immediately before the matching portion of text or, if the trigger's
-                #   'keep_splitting' attribute is TRUE, immediately after it
-                if ($ignoreFlag) {
-
-                    while ($stripText =~ m/($response)/gi) {
-
-                        my $offset = $-[0];             # Split at beginning of matching portion
-
-                        if ($afterFlag) {
-
-                            $offset += length($1) ;     # Split at end of matching portion
-                        }
-
-                        if (
-                            $offset > 0
-                            && $offset < length($stripText)
-                            && ! exists $checkHash{$offset}
-                        ) {
-                            push (@offsetList, $offset);
-                            $checkHash{$offset} = undef;
-                            $count++;
-                        }
-                    }
-
-                } else {
-
-                    while ($stripText =~ m/($response)/g) {
-
-                        my $offset = $-[0];             # Split at beginning of matching portion
-
-                        if ($afterFlag) {
-
-                            $offset += length($1) ;     # Split at end of matching portion
-                        }
-
-                        if (
-                            $offset > 0
-                            && $offset < length($stripText)
-                            && ! exists $checkHash{$offset}
-                        ) {
-                            push (@offsetList, $offset);
-                            $checkHash{$offset} = undef;
-                            $count++;
-                        }
-                    }
-                }
-
-                # The trigger has fired only if both the stimulus and response match $stripText
-                if ($count) {
-
-                    # Temporary triggers should be marked for deletion, after firing for the first
-                    #   time
-                    if ($obj->ivShow('attribHash', 'temporary')) {
-
-                        push (@deleteList, $obj);
-                    }
-
-                    # Should we continue checking other triggers?
-                    if (! $obj->ivShow('attribHash', 'keep_checking')) {
-
-                        # Don't check any more triggers
-                        last OUTER;
-                    }
-                }
-            }
-        }
-
-        # Any temporary triggers which fired can now be deleted
-        foreach my $obj (@deleteList) {
-
-            $self->removeInterface($obj);
-        }
-
-        # Sort the list of offsets, before returning it
-        @sortedList = sort {$a <=> $b} (@offsetList);
-        return @sortedList;
-    }
-
-    sub combineLineHashes {
-
-        # Called by $self->processIncompleteLine and ->processEndLine, just before displayed
-        #   calling $self->displayLine to display some text from a received line
-        # If any text on this line has already been displayed, it is stored in $self->recvUsedText.
-        #   If any tags have already been applied, they are stored in $self->recvUsedHash.
-        # Update IVs, so that ->recvUsedText/->recvUsedHash contains everything that has been
-        #   displayed added to anything we're about to display (in $self->recvLineText and
-        #   ->recvLineHash)
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (%recvLineHash, %recvUsedHash);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->combineLineHashes', @_);
-        }
-
-        if (! $self->recvUsedText && ! $self->recvUsedHash) {
-
-            # Nothing from this line has been displayed yet
-            $self->ivPoke('recvUsedText', $self->recvLineText);
-            $self->ivPoke('recvUsedLength', $self->recvLineLength);
-            $self->ivPoke('recvUsedHash', $self->recvLineHash);
+            # Get the combined hash of key/value pairs
+            %argHash = ($multiObj->normalHash, $multiObj->multiHash);
 
         } else {
 
-            # Text and/or colour/style tags on this line have already been displayed, so we need to
-            #   merge IVs
-            # Import some IVs for quick lookup
-            %recvLineHash = $self->recvLineHash;
-            %recvUsedHash = $self->recvUsedHash;
+            # If the remaining portion of $line begins with (almost any) character besides an
+            #   asterisk or colon, it's a normal MCP message
 
-            foreach my $lineOffset (keys %recvLineHash) {
+            # Extract the message name, and remove any trailing spaces after it
+            if ($line =~ m/^(([^\s]+)\s*)/) {
 
-                my ($lineListRef, $usedListRef, $usedOffset);
+                $msg = $2;
+                $line = substr($line, length($1));
+            }
 
-                # Get the list of Axmud colour/style tags at this offset
-                $lineListRef = $self->ivShow('recvLineHash', $lineOffset);
-                # Find the offset, once the new text has been added to the old
-                $usedOffset = $lineOffset + $self->recvUsedLength;
+            # We can ignore the message name 'mpc', because $self->detectMcp already dealt with it
+            if ($msg eq 'mcp') {
 
-                if (exists $recvUsedHash{$usedOffset}) {
+                return 1;
+            }
 
-                    $usedListRef = $recvUsedHash{$usedOffset};
-                    push (@$usedListRef, @$lineListRef);
+            # MCP packages are generally in the form 'some-package-name', and MCP messages are
+            #   generally in the form 'some-package-name-message' (but a null message in the form
+            #   'some-package-name' is also allowed)
+            # From the list of MCP packages used by this session (in $self->mcpPackageHash), find
+            #   the longest name that matches the message, and use that MCP package object
+            foreach my $testName ($self->ivKeys('mcpPackageHash')) {
 
-                } else {
-
-                    $recvUsedHash{$usedOffset} = $lineListRef;
+                if (
+                    ! defined $packageName
+                    || (index($msg, $testName) == 0 && length($testName) > length($packageName))
+                ) {
+                    $packageName = $testName;
                 }
             }
 
-            $self->ivPoke('recvUsedText', $self->recvUsedText . $self->recvLineText);
-            $self->ivPoke('recvUsedLength', $self->recvUsedLength . $self->recvLineLength);
-            $self->ivPoke('recvUsedHash', %recvUsedHash);
-        }
+            # If the message name refers to an MCP package not used by this session, ignore the
+            #   message name
+            if (! defined $packageName) {
 
-        return 1;
-    }
+                # (Same error code as above)
+                $self->mcpDebug($origToken, 'MCP package not in use by this session', 8102);
 
-    sub updateEmergencyBuffer {
-
-        # Called by $self->processIncomingData (for an incomplete escape sequence or an incomplete
-        #   MXP tag) and by ->processIncompleteLine (for an unrecognised prompt in 'strict prompts'
-        #   mode)
-        # When the calling function tries to extract a token but fails because the token may be
-        #   incomplete, this function is called
-        # If the incomplete token is followed by a newline or escape character, we discard
-        #   everything up to (but not including) that newline/escape character
-        # Otherwise, we assume that the token has been split between two packets, only the first of
-        #   which has been received. The token text is stored in an emergency buffer, which is added
-        #   to the contents of the next packet received
-        #
-        # Expected arguments
-        #   $text       - The remaining portion of the received text, starting with an incomplete
-        #                   token
-        #   $mode       - Set to 'escape' for incomplete escape sequences, 'mxp' for incomplete MXP
-        #                   tags, 'prompt' for unrecognised prompts in 'strict prompts' mode
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   Otherwise, returns the modified $text. If there are no newline or escape characters,
-        #       $text is converted to an empty string; otherwise, $text is stripped of everything
-        #       before the first newline or escape character
-
-        my ($self, $text, $mode, $check) = @_;
-
-        # Local variables
-        my ($modText, $thisPosn, $nlPosn, $escPosn);
-
-        # Check for improper arguments
-        if (! defined $text || ! defined $mode || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateEmergencyBuffer', @_);
-        }
-
-        # We're not interested in newline/escape characters at the beginning of $text, so don't
-        #   test the first character
-        $modText = substr($text, 1);
-
-        # Now, look for the first newline/escape character in the rest of $text
-        $nlPosn = index($modText, "\n");
-        if ($nlPosn > -1) {
-
-            $thisPosn = $nlPosn;
-        }
-
-        $nlPosn = index($modText, "\r");
-        if ($nlPosn > -1 && (! defined $thisPosn || $nlPosn < $thisPosn)) {
-
-            $thisPosn = $nlPosn;
-        }
-
-        # (Unrecognised prompts are allowed to contain escape characters, so don't look for them
-        #   when $mode is 'prompt')
-        if ($mode ne 'prompt') {
-
-            $escPosn = index($modText, "\e");
-            if ($escPosn > -1 && (! defined $thisPosn || $escPosn < $thisPosn)) {
-
-                $thisPosn = $escPosn;
-            }
-        }
-
-        if (defined $thisPosn) {
-
-            # (Take account of the first character that was removed earlier)
-            $thisPosn++;
-
-            # Invalid, not incomplete, token. Discard everything up to the newline or escape
-            #   character
-            if ($mode eq 'mxp') {
-
-                $self->mxpDebug(
-                    '<',                            # Token unknown to this function
-                    'Invalid token discarded',
-                    5001,
-                );
-            }
-
-            return (substr($text, $thisPosn));
-
-        } else {
-
-            # Incomplete token. Store everything in the emergency buffer
-            if (defined $self->emergencyBuffer) {
-                $self->ivPoke('emergencyBuffer', $self->emergencyBuffer . $text);
             } else {
-                $self->ivPoke('emergencyBuffer', $text);
+
+                $packageObj = $self->ivShow('mcpPackageHash', $packageName);
             }
 
-            return '';
-        }
-    }
+            # Extract the authentification key, and compare it against the one that was created by
+            #   $self->generateMcpKey
+            if ($line =~ m/^(([^\s]+)\s*)/) {
 
-    sub writeIncomingDataLogs {
-
-        # Called by $self->processLineSegment to write logs after each line segment (usually
-        #   comprising a whole line) is received from the world, and after any matching triggers
-        #   have fired)
-        # NB $self->writeReceiveDataLog is used to write the 'receive' logfile; this function is
-        #   used to write all other logfiles
-        #
-        # Expected arguments
-        #   $modLine        - A segment of the received text, comprising some or all of a line of
-        #                       text received from a world, which has now been stripped of non-text
-        #                       tokens like newline characters, escape sequences, etc; and then
-        #                       possibly modified after all matching triggers have fired
-        #   $newLineFlag    - Flag set to TRUE if this line segment is to be treated as if it ends
-        #                       with a newline character, FALSE if is to be treated as if it does
-        #                       not end with a newline character
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $modLine, $newLineFlag, $check) = @_;
-
-        # Local variables
-        my @list;
-
-        # Check for improper arguments
-        if (! defined $modLine || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->writeIncomingDataLogs', @_);
-        }
-
-        # Write logs (if allowed)
-        $axmud::CLIENT->writeLog(
-            $self,
-            TRUE,                           # Not world-specific logs
-            $modLine,
-            FALSE,                          # Don't precede with a newline character
-            $newLineFlag,
-            'main',                         # Write to these files
-        );
-
-        $axmud::CLIENT->writeLog(
-            $self,
-            FALSE,                          # World-specific logs
-            $modLine,                       # After triggers fired
-            FALSE,                          # Don't precede with a newline character
-            $newLineFlag,
-            'display',                      # Write to these files
-        );
-
-        # If we're recording lines in a separate logfile because of a character falling asleep,
-        #   passing out or dying, do that now
-        if ($self->logAsleepUntilLine) {
-
-            @list = ($modLine);
-            if ($self->displayBufferLast >= $self->logAsleepUntilLine) {
-
-                $self->ivUndef('logAsleepUntilLine');
-                push (@list, '--- (End of sleep record) ---');
+                $authKey = $2;
+                $line = substr($line, length($1));
             }
 
-            foreach my $item (@list) {
+            # If the authentification key is wrong, ignore the message
+            if (! defined $authKey || $authKey ne $self->mcpAuthKey) {
 
-                $axmud::CLIENT->writeLog(
-                    $self,
-                    FALSE,                          # World-specific logs
-                    $item,
-                    FALSE,                          # Don't precede with a newline character
-                    $newLineFlag,
-                    'sleep' ,                       # Write to these files
+                $self->mcpDebug(
+                    $origToken,
+                    'Invalid authentification key (possible spoodfed message)',
+                    8110,
                 );
-            }
-        }
 
-        if ($self->logPassedOutUntilLine) {
-
-            @list = ($modLine);
-            if ($self->displayBufferLast >= $self->logPassedOutUntilLine) {
-
-                $self->ivUndef('logPassedOutUntilLine');
-                push (@list, '--- (End of passout record) ---');
+                return undef;
             }
 
-            foreach my $item (@list) {
+            # Extract key-value pairs (order is not important)
+            if ($line ne '') {
 
-                $axmud::CLIENT->writeLog(
-                    $self,
-                    FALSE,                          # World-specific logs
-                    $item,
-                    FALSE,                          # Don't precede with a newline character
-                    $newLineFlag,
-                    'passout',                      # Write to these files
-                );
-            }
-        }
+                ($mode, %argHash) = $self->extractMcpArgs($origToken, $msg, $line);
+                if (! defined $mode) {
 
-        if ($self->logDeadUntilLine) {
+                    # Error extracting the key-value pairs. A call to $self->mcpDebug has already
+                    #   been made
+                    return undef;
 
-            @list = ($modLine);
-            if ($self->displayBufferLast >= $self->logDeadUntilLine) {
+                } elsif ($mode eq 'multi') {
 
-                $self->ivUndef('logDeadUntilLine');
-                push (@list, '--- (End of dead record) ---');
-            }
-
-            foreach my $item (@list) {
-
-                $axmud::CLIENT->writeLog(
-                    $self,
-                    FALSE,                          # World-specific logs
-                    $item,
-                    FALSE,                          # Don't precede with a newline character
-                    $newLineFlag,
-                    'dead' ,                        # Write to these files
-                );
-            }
-        }
-
-        return 1;
-    }
-
-    sub writeReceiveDataLog {
-
-        # Called by $self->processLinePortion to write the 'receive' logfile
-        # Unlike other logfiles, lines written to 'receive' are not split into multiple lines by
-        #   splitter triggers or by recognised command prompts
-        #
-        # Expected arguments
-        #   $stripLine      - A segment of the received text, comprising some or all of a line of
-        #                       text received from a world, which has now been stripped of non-text
-        #                       tokens like newline characters, escape sequences, etc
-        #   $imgLine        - The same line but with extra text added for any processed images
-        #   $newLineFlag    - Flag set to TRUE if this line portion is to be treated as if it ends
-        #                       with a newline character, FALSE if is to be treated as if it does
-        #                       not end with a newline character
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $stripLine, $imgLine, $newLineFlag, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $stripLine || ! defined $imgLine || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->writeReceiveDataLog', @_);
-        }
-
-        # Write logs (if allowed)
-        if ($axmud::CLIENT->logImageFlag) {
-
-            $axmud::CLIENT->writeLog(
-                $self,
-                FALSE,                          # World-specific logs
-                $imgLine,                       # Additional text representing processed images
-                FALSE,                          # Don't precede with a newline character
-                $newLineFlag,
-                'receive',                      # Write to these files
-            );
-
-        } else {
-
-            $axmud::CLIENT->writeLog(
-                $self,
-                FALSE,                          # World-specific logs
-                $stripLine,                     # No text representing processed images
-                FALSE,                          # Don't precede with a newline character
-                $newLineFlag,
-                'receive',                      # Write to these files
-            );
-        }
-
-        return 1;
-    }
-
-    sub extractClickLinks {
-
-        # Called by $self->processLineSegment
-        # Before testing a received line against triggers, we need to see if there are any valid
-        #   web URLs/email addresses and, if so, note their positions (so they can be used when the
-        #   line is displayed in the current textview object)
-        #
-        # The calling function uses a hash of Axmud colour/style tags, in the form
-        #   $tagHash{position} = reference_to_a_list_of_Axmud_colour_and_style_tags
-        # ...where $position is the position in the line segment at which the colour/style tags
-        #   apply (the first character is position 0)
-        #
-        # For any URLs/email addresses found, adds 'link' and 'link_off' style tags to the hash
-        #
-        # Expected arguments
-        #   $stripText  - A segment of the received text, comprising some or all of a line of text
-        #                   received from a world, which has now been stripped of non-text tokens
-        #                   like newline characters, escape sequences, etc
-        #   $tagHashRef - Reference to the hash of Axmud colour/style tags described above (which
-        #                   this function may modify)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $stripText, $tagHashRef, $check) = @_;
-
-        # Local variables
-        my ($urlRegex, $emailRegex);
-
-        # Check for improper arguments
-        if (! defined $stripText || ! defined $tagHashRef || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->extractClickLinks', @_);
-        }
-
-        # (Don't bother checking for URLs, if there is no command set to open an external web
-        #   browser)
-        if ($axmud::CLIENT->browserCmd) {
-
-            # Import the regexes for recognising URLs
-            $urlRegex = $axmud::CLIENT->constUrlRegex;
-
-            while ($stripText =~ m/($urlRegex)/gi) {
-
-                my ($match, $start, $stop, $listRef);
-
-                $match = $1;
-                $start = length ($`);
-                $stop = $start + length($&);
-
-                # Ignore URLS which already occur between two 'link' tags
-                if ($self->checkLinkTags($tagHashRef, $start, $stop)) {
-
-                    if (exists $$tagHashRef{$start}) {
-
-                        $listRef = $$tagHashRef{$start};
-                        push (@$listRef, 'link');
-
-                    } else {
-
-                        $$tagHashRef{$start} = ['link'];
-                    }
-
-                    if (exists $$tagHashRef{$stop}) {
-
-                        $listRef = $$tagHashRef{$stop};
-                        push (@$listRef, 'link_off');
-
-                    } else {
-
-                        $$tagHashRef{$stop} = ['link_off'];
-                    }
+                    # Multiline values detected; wait until the rest of the multiline data has been
+                    #   received, before passing the message on to an MCP package
+                    return 1;
                 }
             }
         }
 
-        # (Don't bother checking for email addresses, if there is no command set to open an external
-        #   email application)
-        if ($axmud::CLIENT->emailCmd) {
+        # Now process the MCP message
 
-            # Import the regexes for recognising email addresses
-            $emailRegex = $axmud::CLIENT->constEmailRegex;
+        # Messages for the MCP package 'mcp-negotiate' and 'mcp-cord' are handled by this function,
+        #   and not by GA::Mcp::NegotiateCan itself
+        if ($packageName eq 'mcp-negotiate') {
 
-            while ($stripText =~ m/($emailRegex)/gi) {
+            # After a 'mcp-negotiate-end' message has been received, we don't accept any more
+            #   messages for the 'mcp-negotiate' package
+            if (defined $packageObj->get_scalar('endFlag')) {
 
-                my ($match, $start, $stop, $listRef);
+                $self->mcpDebug(
+                    $origToken,
+                    'Message for \'mcp-negotiate\' package ignored after earlier \'mcp-negotiate'
+                    . '-end\' message',
+                    8200,
+                );
 
-                $match = $1;
-                $start = length ($`);
-                $stop = $start + length($&);
-
-                # Ignore email addresses which already occurs between two 'link' tags
-                if ($self->checkLinkTags($tagHashRef, $start, $stop)) {
-
-                    if (exists $$tagHashRef{$start}) {
-
-                        $listRef = $$tagHashRef{$start};
-                        push (@$listRef, 'link');
-
-                    } else {
-
-                        $$tagHashRef{$start} = ['link'];
-                    }
-
-                    if (exists $$tagHashRef{$stop}) {
-
-                        $listRef = $$tagHashRef{$stop};
-                        push (@$listRef, 'link_off');
-
-                    } else {
-
-                        $$tagHashRef{$stop} = ['link_off'];
-                    }
-                }
-            }
-        }
-
-        return 1;
-    }
-
-    sub checkLinkTags {
-
-        # Called by $self->extractClickLinks when a URL or email address is found in some received
-        #   text
-        #
-        # The calling function was supplied with a hash of Axmud colour/style tags, in the form
-        #   $tagHash{position} = reference_to_a_list_of_Axmud_colour_and_style_tags
-        # ...where $position is the position in the line segment at which the colour/style tags
-        #   apply (the first character is position 0)
-        #
-        # This function checks the position of the URL/email address. If the whole URL/email address
-        #   occurs outside of two matching 'link' tags, then it's safe to add new 'link' tags
-        # e.g. ________EMAIL_______<link_tag>URL<link_off_tag>______    < We can add new tags
-        # e.g. ________<link_tag>...EMAIL...<link_off_tag>__________    < We can't add new tags
-        #
-        # Expected arguments
-        #   $tagHashRef     - Reference to the hash of Axmud colour/style tags described above
-        #   $start, $stop   - Offsets for the beginning/end of the newly-found URL or email address
-        #                       ($start is 0, if the URL/email address occurs at the start of the
-        #                       line)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the URL/email address occurs between two matching
-        #       'link' tags
-        #   1 if it's safe to create two new matching 'link' tags
-
-        my ($self, $tagHashRef, $start, $stop, $check) = @_;
-
-        # Local variables
-        my (
-            $prevFlag, $thisStart, $thisStop, $thisOffset,
-            @onOffsetList, @offOffsetList, @sortedList
-        );
-
-        # Check for improper arguments
-        if (! defined $tagHashRef || ! defined $start || ! defined $stop || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkLinkTags', @_);
-        }
-
-        # Get a list of offsets at which 'link' and 'link_off' tags occur
-        foreach my $offset (keys %$tagHashRef) {
-
-            my $listRef = $$tagHashRef{$offset};
-
-            if (grep m/link/, @$listRef) {
-
-                push (@onOffsetList, $offset);
+                return undef;
             }
 
-            if (grep m/link_off/, @$listRef) {
+            if ($msg eq 'mcp-negotiate-can') {
 
-                push (@offOffsetList, $offset);
-            }
-        }
+                # Check that the expected keys are present in %argHash (ignoring any unexpected
+                #   keys)
+                if (
+                    ! exists $argHash{'package'}
+                    || ! exists $argHash{'min-version'}
+                    || ! exists $argHash{'max-version'}
+                ) {
+                    $self->mcpDebug(
+                        $origToken,
+                        'Missing key-value pairs in \'mcp-negotiate-can\' message',
+                        8210,
+                    );
 
-        if (@onOffsetList || @offOffsetList) {
-
-            # Sort the lists
-            if (@onOffsetList) {
-
-                @onOffsetList = sort {$a <=> $b} (@onOffsetList);
-            }
-
-            if (@offOffsetList) {
-
-                @offOffsetList = sort {$a <=> $b} (@offOffsetList);
-            }
-
-            do {
-
-                my ($onOffset, $offOffset, $thisFlag);
-
-                $onOffset = $onOffsetList[0];
-                $offOffset = $offOffsetList[0];
-
-                # Remove 'link' and 'link_off' tags, one by one, in the order in which they occured
-                if (defined $onOffset && defined $offOffset && $offOffset < $onOffset) {
-
-                    $thisOffset = $offOffset;
-                    $thisFlag = FALSE;              # 'link_off'
-                    shift @offOffsetList;
-
-                } elsif (defined $onOffset) {
-
-                    $thisOffset = $onOffset;
-                    $thisFlag = TRUE;               # 'link'
-                    shift @onOffsetList;
-
-                } elsif (defined $offOffset) {
-
-                    $thisOffset = $offOffset;
-                    $thisFlag = FALSE;              # 'link_off'
-                    shift @offOffsetList;
+                    return undef;
                 }
 
-                # Special case: the first tag found should have been a 'link' tag, but if it was a
-                #   'link_off' tag, implying that a link has been spread over two lines, then the
-                #   URL/email address can't be found before it
-                if (! defined $prevFlag && ! $thisFlag) {
+                # Find the corresponding MCP package object, and set its ->useVersion IV
+                $otherObj = $self->ivShow('mcpPackageHash', $argHash{'package'});
+                if (! $otherObj) {
 
-                    if ($start <= $thisOffset) {
+                    $otherObj = $self->ivShow('mcpWaitHash', $argHash{'package'});
+                }
 
-                        return undef;
+                if (! $otherObj) {
+
+                    # MCP package object not supported by Axmud, or not defined by a plugin
+                    $self->mcpDebug(
+                        $origToken,
+                        'MCP Package not supported by ' . $axmud::SCRIPT,
+                        8211,
+                    );
+
+                    return undef;
+                }
+
+                # Use the highest package version supported by both the world and Axmud
+                if (
+                    $otherObj->maxVersion >= $argHash{'min-version'}
+                    && $argHash{'max-version'} >= $otherObj->minVersion
+                ) {
+                    if ($argHash{'max-version'} < $otherObj->maxVersion) {
+                        $otherObj->set_useVersion($argHash{'max-version'});
+                    } else {
+                        $otherObj->set_useVersion($otherObj->maxVersion);
                     }
 
                 } else {
 
-                    # 'link' tag found
-                    if ($thisFlag) {
+                    # The version numbers supported by the world and Axmud don't overlap, so we
+                    #   can't use this MCP package object
+                    $self->ivDelete('mcpPackageHash', $otherObj->name);
+                    $self->ivDelete('mcpWaitHash', $otherObj->name);
+                }
 
-                        # Wait for the corresponding 'link_off'. If the previously found tag was
-                        #   also 'link', ignore the new tag (two consecutive 'link' tags shouldn't
-                        #   happen, but just in case, that's what we'll do)
-                        if (! defined $prevFlag) {
+            } elsif ($msg eq 'mcp-negotiate-end') {
 
-                            $thisStart = $thisOffset;
-                            $thisStop = undef;
-                        }
+                # Don't accept any more messages to this MCP package
+                $packageObj->add_scalar('endFlag', TRUE);
+                # The time limit is no longer required
+                $self->ivUndef('mcpCheckTime');
 
-                    # 'link_off' flag found
-                    } else {
+                # Some MCP package objects specify a ->supplantList - a list of MCP packages which
+                #   should be supplanted in favour of that one
+                # All such MCP package objects, and any package objects that they supplant, are
+                #   currently stored in $self->mcpWaitHash
+                # Work out which of several alternative MCP packages should be used by this session.
+                #   Add those that should be used to $self->mcpPackageHash, and delete the rest
 
-                        $thisStop = $thisOffset;
-                        # Does any part of the URL/email address fall between the 'link' and
-                        #   'link_off' tags?
-                        if (
-                            ($start >= $thisStart && $start <= $thisStop)
-                            || ($stop >= $thisStart && $stop <= $thisStop)
-                        ) {
-                            # Either the beginning or the end of the URL/email address occurs
-                            #   between two matching 'link'/'link_off' tags
-                            return undef;
+                %useHash = $self->mcpWaitHash;
 
-                        } else {
+                # (A pair of packages could, in theory, specify that they supplant each other. To
+                #   get consistent results, in this situation the package with the longer name
+                #   supplants the package with the shorter name, so 'edit' is supplanted by
+                #   'special-edit')
+                foreach my $otherObj (sort {length($b) <=> length($a)} (values %useHash)) {
 
-                            # Move on to the next two matching 'link'/'link_off' tags
-                            $thisStart = undef;
-                            $thisStop = undef;
+                    foreach my $supplantName ($otherObj->supplantList) {
+
+                        # (A package doesn't supplant anything, if it's already been supplanted by
+                        #   some other package)
+                        if (exists $useHash{$otherObj->name} && exists $useHash{$supplantName}) {
+
+                            delete $useHash{$supplantName};
                         }
                     }
                 }
 
-                $prevFlag = $thisFlag;
+                # All surviving packages can be used by this session if the world supports them and
+                #   the server and client versions are compatible
+                foreach my $otherObj (sort {length($b) <=> length($a)} (values %useHash)) {
 
-            } until (! @onOffsetList && ! @offOffsetList);
+                    $self->ivAdd('mcpPackageHash', $otherObj->name, $otherObj);
 
-            # If the last tag found was a 'link' tag, then the URL/email address must not occur
-            #   after it
-            if (defined $thisStart && ! defined $thisStop && $start >= $thisOffset) {
+                    $self->mcpSendMsg(
+                        'mcp-negotiate-can',
+                            'package',
+                            $otherObj->name,
+                            'min-version',
+                            $otherObj->minVersion,
+                            'max-version',
+                            $otherObj->maxVersion,
+                    );
+                }
+
+                $self->ivEmpty('mcpWaitHash');
+
+                foreach my $otherObj ($self->ivValues('mcpPackageHash')) {
+
+                    if (! defined $otherObj->useVersion) {
+
+                        # Server doesn't support this package
+                        $self->ivDelete('mcpPackageHash', $otherObj->name);
+                    }
+                }
+
+                # We have also finished negotiating, now
+                $self->mcpSendMsg('mcp-negotiate-end');
+
+            } else {
+
+                # Unrecognised message for this packet
+                $self->mcpDebug($origToken, 'Unrecognised MCP message', 8220);
+
+                return undef;
+            }
+
+        } elsif ($packageName eq 'mcp-cord') {
+
+            # Strip the initial 'I' (or possibly an initial 'R') from the cord ID. If the ID doesn't
+            #   begin with one of those characters (or if no ID was specified), the message is
+            #   invalid
+            $id = $argHash{'_id'};
+            if (! defined $id || ! ($id =~ s/^[IR]//)) {
+
+                $self->mcpDebug($origToken, 'Invalid or missing MCP cord ID', 8250);
+                return undef;
+
+            } else {
+
+                delete $argHash{'_id'};
+            }
+
+            if ($msg eq 'mcp-cord-open') {
+
+                # Check that the expected key is present in %argHash (ignoring any unexpected keys)
+                if (! exists $argHash{'_type'}) {
+
+                    $self->mcpDebug(
+                        $origToken,
+                        'Missing key-value pairs in \'mcp-cord-open\' message',
+                        8260,
+                    );
+
+                    return undef;
+                }
+
+                # Check that some part of the code (probably in a plugin) understands the specified
+                #   _type
+                $funcRef = $self->ivShow('mcpCordOpenHash', $argHash{'_type'});
+                if (! defined $funcRef) {
+
+                    $self->mcpDebug($origToken, 'Unrecognised MCP cord type', 8261);
+                    return undef;
+                }
+
+                # Check that the unique ID hasn't already been used (IDs must be unique, so even if
+                #   a cord with the same ID has been closed, don't re-use it)
+                if ($self->ivExists('mcpCordIDHash', $id)) {
+
+                    # ID already in used
+                    $self->mcpDebug($origToken, 'MCP cord ID already in use', 8262);
+                    return undef;
+                }
+
+                # Call the corresponding function to notify some part of the code that a cord has
+                #   opened
+                # That code must call $self->accept_mcpCordID to add entries to $self->mcpCordIDHash
+                #   and $self->mcpCordCloseHash
+                # If the corresponding function doesn't want to use the cord, it must call
+                #   $self->refuse_mcpCordID to mark the cord as closed (so future messages are
+                #   ignored)
+                &$funcRef($self, $argHash{'_type'}, $id);
+
+            } elsif ($msg eq 'mcp-cord') {
+
+                # Check that the expected key is present in %argHash
+                if (! exists $argHash{'_message'}) {
+
+                    $self->mcpDebug(
+                        $origToken,
+                        'Missing key-value pairs in \'mcp-cord\' message',
+                        8270,
+                    );
+
+                    return undef;
+                }
+
+                # Extract those key-value pairs from the hash, leaving only the optional arguments
+                $cordMsg = $argHash{'_message'};
+                delete $argHash{'_message'};
+
+                # Check that the ID is recognised, and that the cord is still open (in both those
+                #   cases, $funcRef will be set to 'undef'
+                $funcRef = $self->ivShow('mcpCordIDHash', $id);
+                if (! $funcRef) {
+
+                    $self->mcpDebug(
+                        $origToken,
+                        'MCP cord not open (or has been closed)',
+                        8271,
+                    );
+
+                    return undef;
+                }
+
+                # Pass on the message and any optional arguments
+                &$funcRef($self, $id, $cordMsg, %argHash);
+
+            } elsif ($msg eq 'mcp-closed') {
+
+                # Check that the ID is recognised, and that the cord is still open
+                if (! $self->ivShow('mcpCordIDHash', $id)) {
+
+                    $self->mcpDebug(
+                        $origToken,
+                        'MCP cord not open (or has already been closed)',
+                        8280,
+                    );
+
+                    return undef;
+                }
+
+                # Call the corresponding function to notify some part of the code that the cord has
+                #   closed
+                # That code need not call any GA::Session function in response; this function will
+                #   do the tidying up
+                $funcRef = $self->ivShow('mcpCordCloseHash', $id);
+                if (! $funcRef) {
+
+                    $self->mcpDebug(
+                        $origToken,
+                        'Missing function reference in response to \'mcp-closed\' message',
+                        8281,
+                    );
+
+                    # (Not a fatal error, so don't return 'undef')
+                }
+
+                # Call the corresponding function to notify some part of the code that a cord has
+                #   closed
+                &$funcRef($self, $id);
+
+                # Update session IVs
+                $self->ivAdd('mcpCordIDHash', $id, undef);
+                $self->ivDelete('mcpCordCloseHash', $id);
+            }
+
+        } else {
+
+            # Don't respond to a package's messages until we're sure that both server and client
+            #   support the same version
+            if (! defined $packageObj->useVersion) {
+
+                $self->mcpDebug(
+                    $origToken,
+                    'Ignoring MCP message because server and client haven\'t negotiated the package'
+                    . ' version to use',
+                    8290,
+                );
+
+                return undef;
+
+            # Pass the message on to the MCP package object
+            } elsif (! $packageObj->msg($self, $msg, %argHash)) {
+
+                $self->mcpDebug(
+                    $origToken,
+                    'MCP message was not handled by its package',
+                    8291,
+                );
 
                 return undef;
             }
         }
 
-        # The URL/email address doesn't occur between two matching 'link' tags
+        # MCP message handled. Fire any hooks that are using the 'mcp' hook event
+        $self->checkHooks('mcp', $msg);
+
         return 1;
     }
 
-    sub checkSuppressLine {
+    # (Support functions for the MSP/MXP/Pueblo/MCP functions above)
 
-        # Called by $self->processEndLine when processing a newline character at the end of an
-        #   empty line (i.e. one which contains no text tokens, or only text tokens consisting of
-        #   whitespace)
-        # This function assumes that the current world's ->suppressEmptyLineCount is set to an
-        #   integer greater than 1 (other values are dealt with by the calling function)
-        # Any number of consecutive empty lines below this value are preserved, but any number of
-        #   consecutive empty lines at or above this value are suppresssed (ignored)
-        # e.g. Set to 3; the first two consecutive empty lines are preserved, but the 3rd, 4th and
-        #   5th are suppressed
+    sub setPseudoMSP {
+
+        # Called by GA::Cmd::MSP->do
+        # Some worlds are not able to negotiate telnet options to enable MSP, but nevertheless
+        #   are able to send MSP sound/music triggers to the client
+        # Therefore we need a setting of $self->mspMode which means something like 'the server did
+        #   not negotiate MSP, but Axmud is responding to MSP sound/music triggers'
+        # This function is called to turn on/off pseudo-MSP recognition. The server is informed
+        #   using IAC DONT MSP or IAC DO MSP, even if it doesn't seem to recognise those
+        #   telnet options
+        # NB Pseudo-MSP recognition can be turned on, even if the general setting
+        #   (GA::Client->useMspFlag) is FALSE
         #
         # Expected arguments
-        #   (none besides $self)
+        #   $flag   - Set to TRUE to turn on pseudo-MSP recognition, or FALSE to turn it off
         #
         # Return values
-        #   'undef' on improper arguments or if the line currently being processed by
-        #       ->processLineSegment shouldn't be suppressed
-        #   1 if the line should be suppressed
+        #   'undef' on improper arguments or if full MSP or pseudo-MSP recognition is already on/off
+        #   1 otherwise
 
-        my ($self, $check) = @_;
+        my ($self, $flag, $check) = @_;
 
         # Local variables
-        my ($line, $count, $target);
+        my %telConstHash;
 
         # Check for improper arguments
-        if (defined $check) {
+        if (! defined $flag || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkSuppressLine', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setPseudoMSP', @_);
         }
 
-        # If the display buffer is empty, there are no previous lines to check
-        if (! $self->displayBufferCount) {
+        # Import the hash of telnet constants (for convenience)
+        %telConstHash = $axmud::CLIENT->constTelnetHash;
 
-            return undef;
-        }
+        if ($flag) {
 
-        $line = $self->displayBufferLast;
-        $count = 1;     # The line being processed is itself empty
-        $target = $self->currentWorld->suppressEmptyLineCount;
+            if ($self->mspMode eq 'client_agree' || $self->mspMode eq 'client_simulate') {
 
-        do {
-
-            my $bufferObj;
-
-            $count++;
-
-            $bufferObj = $self->ivShow('displayBufferHash', $line);
-            if (! $bufferObj->emptyFlag) {
-
-                # Not enough consecutive empty lines; don't suppress the current empty line
-                return undef;
+                # Full MSP or pseudo-MSP recognition is already turned on
+                return 1;
 
             } else {
 
-                # On the next DO loop, check the previous line in the buffer
-                $line--;
+                # Turn on pseudo-MSP recognition
+                $self->optSendDo($telConstHash{'TELOPT_MSP'});
+                $self->ivPoke('mspMode', 'client_simulate');
             }
 
-        } until ($count >= $target || $line < $self->displayBufferFirst);
+        } else {
 
-        # There are enough consecutive empty lines; suppress the current empty line
-        return 1;
-    }
+            if ($self->mspMode eq 'no_invite' || $self->mspMode eq 'client_refuse') {
 
-    sub processPrompt {
+                # Full MSP or pseudo-MSP recognition is already turned off
+                return 1;
 
-        # Called by $self->spinMaintainLoop after receiving some text that looks like a prompt, and
-        #   after the waiting time has expired
-        # Also called by $self->optCallback after a TELOPT_EOR is received from the server
-        # Processes the next part of an automatic login, if necessary, and causes the 'prompt'
-        #   hook event
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
+            } else {
 
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $pattern, $initChar, $initAccount, $initPass,
-            @loginCmdList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->processPrompt', @_);
-        }
-
-        $self->ivIncrement('promptCount');
-
-        # In login mode 'lp', 'world_cmd' and 'telnet', we're waiting for prompts so that we can do
-        #   an automatic login
-        if ($self->loginPromptsMode ne 'none') {
-
-            # Mode 'lp' - LP/Diku/AberMUD login (consecutive prompts for character/password)
-            if ($self->loginPromptsMode eq 'lp') {
-
-                if ($self->promptCount == 1) {
-
-                    # Send the character name
-                    $self->worldCmd($self->initChar);
-
-                } elsif ($self->promptCount == 2) {
-
-                    # Send the password. The second argument is the substring in the first argument
-                    #   which should be obscured (the whole string, in this case)
-                    $self->worldCmd($self->initPass, $self->initPass);
-                    # Wait for login success patterns (if there are any), otherwise mark the
-                    #   character as logged in
-                    $self->setLoginPatterns();
-                }
-
-            # Mode 'world_cmd' - send a sequence of world commands at the first prompt
-            } elsif ($self->loginPromptsMode eq 'world_cmd' && $self->promptCount == 1) {
-
-                $self->processCmdLoginMode();
-
-            # Mode 'telnet' - basic telnet login (e.g. 'login:' 'password:')
-            } elsif ($self->loginPromptsMode eq 'telnet' && $self->loginPromptPatternList) {
-
-                $pattern = $self->ivShift('loginPromptPatternList');
-                if ($self->promptStripLine =~ m/$pattern/i) {
-
-                    if ($self->loginPromptPatternList) {
-
-                        # Send the character name
-                        $self->worldCmd($self->initChar);
-
-                    } else {
-
-                        # Send the password. The second argument is the substring in the first
-                        #   argument which should be obscured (the whole string, in this case)
-                        $self->worldCmd($self->initPass, $self->initPass);
-
-                        # Wait for login success patterns (if there are any), otherwise mark the
-                        #   character as logged in
-                        $self->setLoginPatterns();
-                    }
-
-                } else {
-
-                    # The pattern doesn't match this prompt. Re-insert it into the list, so that
-                    #   it can be tested against the next prompt
-                    $self->ivUnshift('loginPromptPatternList', $pattern);
-                }
+                # Turn off pseudo-MSP recognition
+                $self->optSendDont($telConstHash{'TELOPT_MSP'});
+                $self->ivPoke('mspMode', 'client_refuse');
             }
         }
 
-        # Fire any hooks that are using the 'login' hook event
-        $self->checkHooks('prompt', $self->promptStripLine);
-
-        # Cancel the prompt
-        $self->ivUndef('promptLine');
-        $self->ivUndef('promptStripLine');
-        $self->ivUndef('promptCheckTime');
-
         return 1;
     }
-
-    # Incoming data loop - misc MXP/Pueblo stuff
 
     sub setMxpLineMode {
 
-        # Called by $self->processEndLine, ->processEscSequence and ->checkMxpSecureMode
+        # Called by $self->updateEndLine, ->processEscSequence and ->checkMxpSecureMode
         # Sets a new value for $self->mxpLineMode
         # Also closes any open tags when open mode changes to secure mode (and vice versa)
         #
@@ -24499,7 +25374,8 @@
 
     sub emptyMxpStack {
 
-        # Called by $self->processEndLine, ->processEscChar, etc
+        # Called by $self->reactDisconnect, ->updateEndLine, ->processEscChar, ->processEscSequence
+        #   and ->setMxpLineMode
         # Empties the current textview's stack of GA::Mxp::StackObj objects by calling
         #   $self->popMxpStack for each one in turn
         # This has the effect of closing all open MXP tags
@@ -25489,6 +26365,921 @@
         }
     }
 
+    sub generateMcpKey {
+
+        # Called by $self->detectMCP (only) during the initial MCP negotiation
+        # Generates a random key for the server to use as an authentification key, every time it
+        #   sends us an MCP message
+        # Sends the key to the server
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($length, $string);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->generateMcpKey', @_);
+        }
+
+        # Length of string is 10-20 characters
+        $length = int(rand(11));
+        $length += 10;
+
+        $string = '';
+        for (my $count = 0; $count < $length; $count++) {
+
+            # ASCII 65-90 are the letters A-Z
+            my $num = int(rand(36));
+
+            if ($num < 10) {
+
+                # Add a numeral character
+                $string .= $num;
+
+            } else {
+
+                # Add a letter
+                $num += 55;
+                $string .= chr($num);
+            }
+        }
+
+        # Store the key
+        $self->ivPoke('mcpAuthKey', $string);
+
+        # Send the key to the server
+        $self->send(
+            '#$#mcp authentication-key: ' . $self->mcpAuthKey . ' version: 2.1 to: 2.1',
+        );
+
+        return 1;
+    }
+
+    sub extractMcpArgs {
+
+        # Called by $self->processMcpMsg
+        # Extracts an optional series of key-value pairs from a partial MCP out-of-bounds line
+        #   with everything except the key-value pairs already extracted), and returns them as a
+        #   list
+        #
+        # Expected arguments
+        #   $origToken  - The text of the token containg the MCP message
+        #   $msg        - The MCP message name, e.g. 'mcp-negotiate-can'
+        #   $string     - A string containing the key-value pairs in the usual MCP format, e.g.
+        #                   'package: edit min-version: 1.0 max-version: 1.0'. Might be an empty
+        #                   string (or a string containing only space characters), in which case an
+        #                   empty list is returned
+        #
+        # Return values
+        #   An empty list on improper arguments or if there's an error
+        #   Otherwise returns a list in the form (mode, key, value, key, value...), where 'mode'
+        #       is 'normal' if there are no multi-line values, and 'multi' if there is at least
+        #       one multi-line value
+
+        my ($self, $origToken, $msg, $string, $check) = @_;
+
+        # Local variables
+        my (
+            $multiObj,
+            @emptyList, @normalList, @multiList, @dataTagList,
+            %checkHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $origToken || ! defined $msg || ! defined $string || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->extractMcpArgs', @_);
+            return @emptyList;
+        }
+
+        do {
+
+            my ($key, $value, $portion, $multiFlag);
+
+            if ($string =~ m/^\s*$/) {
+
+                # All text extracted; exit the loop
+                $string = '';
+
+            } else {
+
+                # Extract a key, in the form 'key: ' or 'key*: '
+                if ($string =~ m/^(\s*([A-Za-z][A-Za-z0-9\-]*)\s*\:\s*)/) {
+
+                    $key = $2;
+                    $portion = $1;
+
+                } elsif ($string =~ m/^(\s*([A-Za-z][A-Za-z0-9\-]*)\s*\*\s*\:\s*)/) {
+
+                    $key = $2;
+                    $portion = $1;
+                    $multiFlag = TRUE;
+
+                } else {
+
+                    $self->mcpDebug($origToken, 'Invalid key in key-value pair list', 8300);
+                    return @emptyList
+                }
+
+                $string = substr($string, length($portion));
+
+                # Extract a simple value, as an unquoted or a quoted string
+                if (
+                    $string
+                    =~ m/^([\-\~\`\!\@\#\$\%\^\&\(\)\=\+\{\}\[\]\|\'\;\?\/\>\<\.\,A-Za-z0-9\_]+)/
+                ) {
+                    # Unquoted string
+                    $value = $1;
+                    $portion = $1;
+
+                } elsif (substr($string, 0, 2) eq '""') {
+
+                    # Empty quoted string
+                    $value = '';
+                    $portion = '';
+
+                } elsif ($string =~ m/^(\"(.*[^\\])\")/) {
+
+                    # Quoted string, in the form "...", with any escaped quotes, \", counting as a
+                    #   part of the string
+                    $value = $2;
+                    $portion = $1;
+
+                } else {
+
+                    $self->mcpDebug($origToken, 'Invalid value in key-value pair list', 8301);
+                    return @emptyList;
+                }
+
+                $string = substr($string, length($portion));
+
+                # Keys are case-insensitive. Convert them all to lower case
+                $key = lc($key);
+
+                # Keys must not be duplicated (and it's an error if they are)
+                if (exists $checkHash{$key}) {
+
+                    $self->mcpDebug($origToken, 'Duplicate key in key-value pair list', 8302);
+                    return @emptyList;
+
+                } else {
+
+                    $checkHash{$key} = undef;
+                }
+
+                # If the key was followed by an asterisk, this corresponding value is ignored; the
+                #   value is instead set over multiple MCP messages beginning #$#*
+                if ($key eq '_data-tag') {
+
+                    # For MCP messages with multiline values, the SPEC suggests the '_data-tag'
+                    #   key occurs last, but that's not defined
+                    # Put this key in its value in a separate list; if this MCP message doesn't use
+                    #   multiline values, then it's an ordinary key we can put back in @normalList
+                    #   at the end of this function
+                    push (@dataTagList, $key, $value);
+
+                } elsif (! $multiFlag) {
+
+                    # Ordinary key/value pair
+                    push (@normalList, $key, $value);
+
+                } else {
+
+                    # Key with multiline value. The value specified on the line is ignored (it's
+                    #   probably a literal "" anyway)
+                    push (@multiList, $key, '');
+                }
+            }
+
+        } until ($string eq '');
+
+        # Key/value pairs extracted
+        if (@multiList) {
+
+            # At least one multiline value was specified, so we need to wait for the remaining
+            #   MCP messages
+
+            # Check that @dataTagList contains exactly two items (the '_data-tag' key, and a valid
+            #   value)
+            if (! @dataTagList) {
+
+                $self->mcpDebug(
+                    $origToken,
+                    'Missing data tag in MCP message specifying multiline value(s)',
+                    8310,
+                );
+
+                return @emptyList;
+
+            } elsif ((scalar @dataTagList) > 2 ) {
+
+                $self->mcpDebug(
+                    $origToken,
+                    'Multiple data tags in MCP message specifying multiline value(s)',
+                    8311,
+                );
+
+                return @emptyList;
+
+            } else {
+
+                # Multiline data tags should be unique, at least until the server has finished
+                #   sending the multiline data
+                # Check that neither the server nor we are sending a different set of multiline data
+                #   using the same data tag
+                if ($self->ivExists('mcpMultiObjHash', $dataTagList[1])) {
+
+                    $self->mcpDebug(
+                        $origToken,
+                        'Data tag tag in MCP message specifying multiline value(s) is already in'
+                        . ' use',
+                        8312,
+                    );
+
+                    return @emptyList;
+                }
+
+                # Create a new MCP multiline object to store the multiline data until the server has
+                #   finished sending it
+                $multiObj = Games::Axmud::Mcp::Obj::MultiLine->new(
+                    $dataTagList[1],
+                    $msg,
+                    \@normalList,
+                    \@multiList,
+                );
+
+                if (! $multiObj) {
+
+                    $self->mcpDebug($origToken, 'Internal error processing multiline data', 8312);
+                    return @emptyList;
+
+                } else {
+
+                    $self->ivAdd('mcpMultiObjHash', $multiObj->name, $multiObj);
+
+                    # Wait until the rest of the multiline data arrives, before passing the MCP
+                    #   key/value pairs to a package
+                    return ('multi');
+                }
+            }
+
+        } else {
+
+            # Operation complete with no multiline values
+            return ('normal', @normalList, @dataTagList);
+        }
+    }
+
+    sub processMcpContinuation {
+
+        # Called by $self->processMcpMsg to process the main portion of an MSP multiline
+        #   continuation
+        #
+        # Expected arguments
+        #   $origToken  - The text of the token containg the MCP message
+        #   $string     - The line portion to process, in the form
+        #                   '<space><data tag><space><key>:<space><value>'
+        #
+        # Return values
+        #   'undef' on improper arguments or if the continuation line is invalid
+        #   1 otherwise
+
+        my ($self, $origToken, $string, $check) = @_;
+
+        # Local variables
+        my ($dataTag, $key, $value, $multiObj, $oldValue);
+
+        # Check for improper arguments
+        if (! defined $origToken || ! defined $string || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processMcpContinuation', @_);
+        }
+
+        # Extract the data tag
+        if ($string =~ m/^(\s*([A-Za-z][A-Za-z0-9\-]*)\s*)/) {
+
+            $dataTag = $2;
+            $string = substr($string, length($1));
+
+        } else {
+
+            $self->mcpDebug($origToken, 'Invalid data tag in multiline continuation', 8400);
+            return undef;
+        }
+
+        # Extract the key and value
+        if ($string =~ m/^(([A-Za-z][A-Za-z0-9\-]*)\s*\:\s)/) {
+
+            $key = $2;
+            $value = substr($string, length($1));
+
+        } else {
+
+            $self->mcpDebug($origToken, 'Invalid key and/or value in multiline continuation', 8401);
+            return undef;
+        }
+
+        # Check that the data tag was specified by a previous MCP message with multiline values
+        $multiObj = $self->ivShow('mcpMultiObjHash', $dataTag);
+        if (! $multiObj) {
+
+            $self->mcpDebug($origToken, 'Unrecognised data tag in multiline continuation', 8402);
+            return undef;
+        }
+
+        # Check that the key is one of those whose value can be updated
+        if ($multiObj->ivExists('normalHash', $key)) {
+
+            $self->mcpDebug(
+                $origToken,
+                'Multiline continuation tried to update a key whose value is not a mutliline value',
+                8403,
+            );
+
+            return undef;
+
+        } elsif (! $multiObj->ivExists('multiHash', $key)) {
+
+            $self->mcpDebug(
+                $origToken,
+                'Multiline continuation tried to update an undefined key',
+                8404,
+            );
+
+            return undef;
+        }
+
+        # Update the existing value, separating each line with a newline character
+        $oldValue = $multiObj->ivShow('multiHash', $key);
+        if ($oldValue eq '') {
+            $multiObj->ivPoke('multiHash', $key, $value);
+        } else {
+            $multiObj->ivPoke('multiHash', $key, "$oldValue\n$value");
+        }
+
+        return 1;
+    }
+
+    sub mcpSendMsg {
+
+        # Can be called by anything (usually by code in an MCP package object)
+        # Sends an MCP message to the server. Adds the initial '#$#', adds the authentification key
+        #   for this session, lays out key/value pairs in the correct format, and strips the message
+        #   of any non-7-bit ASCII characters
+        # NB All MCP messages to the server should be sent using this function, except for
+        #   the first one, which is sent by $self->generateMcpKey()
+        # NB MCP messages with multiline values can be sent manually by calling this function
+        #   several times, or by calling $self->mcpSendMultiLine once
+        #
+        # Expected arguments
+        #   $name   - The message name, e.g. 'mcp-negotiate-can'
+        #
+        # Optional arguments
+        #   @list   - An optional list of arguments, in the form (key, value, key, value...). If
+        #               specified, must contain an even number of items (i.e. the value must not be
+        #               'undef', but it could be an empty string). Duplicates keys are ignored.
+        #               Keys are case insensitive, and are converted to lower case before being sent
+        #
+        # Return values
+        #   'undef' on improper arguments, if MCP isn't enabled in this session, if the
+        #       authentification key hasn't been set, if @list contains an odd number of items or if
+        #       sending the message fails
+        #   1 otherwise
+
+        my ($self, $name, @list) = @_;
+
+        # Local variables
+        my (
+            $text, $modText,
+            %checkHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $name) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcpSendMsg', @_);
+        }
+
+        # Check MCP is enabled
+        if (! $self->mcpMode eq 'client_agree' || ! defined $self->mcpAuthKey) {
+
+            $self->mcpDebug(
+                '<outgoing MCP message>',
+                'MCP message not sent - MCP not enabled in this session',
+                8500,
+            );
+
+            return undef;
+        }
+
+        # Compose the message
+        $text = '#$#' . $name . ' ' . $self->mcpAuthKey;
+
+        if (@list) {
+
+            do {
+
+                my ($key, $value);
+
+                $key = lc(shift @list);
+                $value = shift @list;
+
+                if (! defined $key || ! defined $value) {
+
+                    $self->mcpDebug(
+                        '<outgoing MCP message>',
+                        'MCP message not sent - undefined key and/or value',
+                        8501,
+                    );
+
+                    return undef;
+
+                } elsif (exists $checkHash{$key}) {
+
+                   $self->mcpDebug(
+                        '<outgoing MCP message>',
+                        'Duplicate key ignored in MCP message to be sent',
+                        8502,
+                    );
+
+                } elsif (
+                    $value
+                    =~ m/^[\-\~\`\!\@\#\$\%\^\&\(\)\=\+\{\}\[\]\|\'\;\?\/\>\<\.\,A-Za-z0-9\_]+$/
+                ) {
+                    # Value is an unquoted string
+                    $text .= ' ' . $key . ': ' . $value;
+                    # Guard against duplicate keys
+                    $checkHash{$key} = undef;
+
+                } else {
+
+                    # Value is a quoted string. Replace any " with \"
+                    $value =~ s/\"/\\\"/;
+                    $text .= ' ' . $key . ': "' . $value . '"';
+                }
+
+            } until (! @list);
+        }
+
+        # Strip non-7-bit ASCII characters
+        $modText = '';
+        foreach my $char (split (//, $text)) {
+
+            if (ord($char) < 127) {
+
+                $modText .= $char;
+            }
+        }
+
+        # Send the message to the world
+        return $self->send($modText);
+    }
+
+    sub mcpSendMultiLine {
+
+        # Can be called by anything (usually by code in an MCP package object)
+        # An alternative to $self->mcpSendMsg, when we want to send MCP messages with multiline
+        #   values to the server
+        #
+        # Expected arguments
+        #   $name   - The message name, e.g. 'mcp-negotiate-can'
+        #
+        # Optional arguments
+        #   @list   - An optional list of arguments, in the form (key, value, key, value...). If
+        #               specified, must contain an even number of items (i.e. the value must not be
+        #               'undef', but it could be an empty string). Duplicates keys are ignored.
+        #               Keys are case insensitive, and are converted to lower case before being sent
+        #           - In the list, values can be either scalars or list references. If a scalar,
+        #               it's a normal value. If a list reference, it's a multiline value; each item
+        #               in the list is sent on a separate MCP out-of-bounds line
+        #
+        # Return values
+        #   'undef' on improper arguments, if MCP isn't enabled in this session, if the
+        #       authentification key hasn't been set, if @list contains an odd number of items or if
+        #       sending the messages fails
+        #   1 otherwise
+
+        my ($self, $name, @list) = @_;
+
+        # Local variables
+        my (
+            $dataTag, $text,
+            @multiList,
+            %checkHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $name) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcpSendMultiLine', @_);
+        }
+
+        # Check MCP is enabled
+        if (! $self->mcpMode eq 'client_agree' || ! defined $self->mcpAuthKey) {
+
+            $self->mcpDebug(
+                '<outgoing MCP message>',
+                'MCP multiline message not sent - MCP not enabled in this session',
+                8510,
+            );
+
+            return undef;
+        }
+
+        # Generate a data tag that's not already in use. Use an 8-character tag
+        do {
+
+            $dataTag = '';
+            for (my $count = 0; $count < 8; $count++) {
+
+                # ASCII 65-90 are the letters A-Z
+                my $num = int(rand(36));
+
+                if ($num < 10) {
+
+                    # Add a numeral character
+                    $dataTag .= $num;
+
+                } else {
+
+                    # Add a letter
+                    $num += 55;
+                    $dataTag .= chr($num);
+                }
+            }
+
+        } until (! $self->ivExists('mcpMultiObjHash', $dataTag));
+
+        # Compose the (first) MCP message
+        $text = '#$#' . $name . ' ' . $self->mcpAuthKey;
+
+        if (@list) {
+
+            do {
+
+                my ($key, $value);
+
+                $key = lc(shift @list);
+                $value = shift @list;
+
+                if (! defined $key || ! defined $value) {
+
+                    $self->mcpDebug(
+                        '<outgoing MCP message>',
+                        'MCP multiline message not sent - undefined key and/or value',
+                        8511,
+                    );
+
+                    return undef;
+
+                } elsif (exists $checkHash{$key}) {
+
+                    $self->mcpDebug(
+                        '<outgoing MCP message>',
+                        'Duplicate key ignored in MCP multiline message to be sent',
+                        8512,
+                    );
+
+                } elsif (ref($value) eq 'HASH') {
+
+                    # Multiline value. The value specified on this line is ignored by the server
+                    $text .= ' ' . $key . ': ""';
+
+                    push (@multiList,
+                        '#$#* ' . $dataTag . ' ' . $key . ': ' . $value,
+                    );
+
+                } elsif (
+                    $value
+                    =~ m/^[\-\~\`\!\@\#\$\%\^\&\(\)\=\+\{\}\[\]\|\'\;\?\/\>\<\.\,A-Za-z0-9\_]+$/
+                ) {
+                    # Simple value is an unquoted string
+                    $text .= ' ' . $key . ': ' . $value;
+                    # Guard against duplicate keys
+                    $checkHash{$key} = undef;
+
+                } else {
+
+                    # Simple value is a quoted string. Replace any " with \"
+                    $value =~ s/\"/\\\"/;
+                    $text .= ' ' . $key . ': "' . $value . '"';
+                }
+
+            } until (! @list);
+        }
+
+        # At least one multiline value
+        foreach my $item ($text, @multiList) {
+
+            # Strip non-7-bit ASCII characters
+            my $modItem = '';
+
+            foreach my $char (split (//, $item)) {
+
+                if (ord($char) < 127) {
+
+                    $modItem .= $char;
+                }
+            }
+
+            # Send the message to the world
+            $self->send($modItem);
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub mcpCordOpen {
+
+        # Can be called by anything
+        # Opens an MCP cord. Generates unique ID and sends it to the server, then updates IVs
+        #
+        # MCP cords can be opened by the server (the world) or by the client (Axmud)
+        #
+        # Any part of the Axmud code (including plugins) can open an MCP cord
+        #   - Call $self->add_mcpCordType to register the cord type, in case the server wants to
+        #       open a cord using the same type
+        #       - You must provide a function that's called when the server opens a cord of that
+        #           type
+        #       - That function must (at a minimum) call $self->accept_mcpCordID or
+        #           $self->refuse_mcpCordID
+        #   - Call $self->mcpCordOpen (this function!) to open the cord
+        #   - Call $self->mcpCordMsg to send a message along the cord
+        #   - Call $self->mcpCordClose to close the cord
+        #       - Once a cord has been closed, it can't be re-opened (but you can open a new cord
+        #           using the same type)
+        #
+        # Any part of the Axmud code (including plugins) can accept cords open by the server
+        #   - Call $self->add_mcpCordType to register the cord type, in case the server wants to
+        #       open a cord using the same type
+        #       - You must provide a function that's called when the server opens a cord of that
+        #           type
+        #       - That function must (at a minimum) call $self->accept_mcpCordID or
+        #           $self->refuse_mcpCordID
+        #
+        #   Example calls:
+        #       $session->add_mcpCordType(
+        #           'whiteboard',               # Cord type
+        #           \&respond_to_cord_open,
+        #       );
+        #
+        #       $session->accept_mcpCordID(
+        #           12345678,                   # Cord ID. Initial I/R will be removed if you use it
+        #           \&respond_to_cord_message,
+        #           \&respond_to_cord_close,
+        #       );
+        #
+        #       $session->refuse_mcpCordID(
+        #           12345678,                   # Cord ID. Initial I/R will be removed if you use it
+        #       );
+        #
+        #       $session->mcpCordOpen(
+        #           'whiteboard',               # Cord type
+        #           \&respond_to_cord_message,
+        #           \&respond_to_cord_close,
+        #       );
+        #
+        #       $session->mcpCordMsg(
+        #           12345678,                   # Cord ID. Initial I/R will be removed if you use it
+        #           'delete-stroke',            # Cord message (i.e. value of the '_message' key
+        #           $key,                       # Optional key-value pairs as arguments
+        #           $value,
+        #           $key,
+        #           $value,
+        #       );
+        #
+        #       $session->mcpCordClose(
+        #           12345678,                   # Cord ID. Initial I/R will be removed if you use it
+        #       );
+        #
+        # Expected arguments
+        #   $type       - The MCP cord type. Should already exist as a key in
+        #                   $self->mcpCordOpenHash, in case the server initiates a cord of that
+        #                   type. Call $self->add_mcpCordType to add an entry to that IV before
+        #                   calling this function, if no entry already exists
+        #   $msgFuncRef
+        #               - Reference to a function which should be called every time the server sends
+        #                   us an MCP message on this cord
+        #   $closeFuncRef
+        #               - Reference to a function which should be called when the server closes the
+        #                   cord
+        #
+        # Return values
+        #   'undef' on improper arguments, if MCP isn't enabled in this session or if the MCP cord
+        #       type doesn't exist in $self->mcpCordOpenHash
+        #   Otherwise returns the unique ID for this cord with the initial I/R character removed,
+        #       e.g. '12345678' (matching the form of keysin $self->mcpCordIDHash and
+        #       $self->mcpCordCloseHash)
+
+        my ($self, $type, $msgFuncRef, $closeFuncRef, $check) = @_;
+
+        # Local variables
+        my $id;
+
+        # Check for improper arguments
+        if (
+            ! defined $type || ! defined $msgFuncRef || ! defined $closeFuncRef
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcpCordOpen', @_);
+        }
+
+        # Check MCP is enabled, and that the specified $type has been defined
+        if (! $self->mcpMode eq 'client_agree' || ! defined $self->mcpAuthKey) {
+
+            $self->mcpDebug(
+                '<outgoing MCP message>',
+                'MCP cord not opened - MCP not enabled in this session', 8600,
+            );
+
+            return undef;
+
+        } elsif (! $self->ivExists('mcpCordOpenHash', $type)) {
+
+            $self->mcpDebug(
+                '<outgoing MCP message>',
+                'MCP cord not opened - unrecognised cord type', 8601,
+            );
+
+            return undef;
+        }
+
+        # Generate a unique ID
+        do {
+
+            my $length;
+
+            # The full ID is the letter 'I' (for 'initiator') or 'R' (for 'recipient'), followed by
+            #   8-16 random integers
+            $length = int(rand(9));
+            $length += 8;
+
+            $id = int(rand($length + 1));
+
+        } until (! $self->ivExists('mcpCordIDHash', $id));
+
+        # Send the ID to the server, which opens the cord
+        $self->mcpSendMsg(
+            'mcp-cord-open',
+                '_id',
+                # Axmud is always the 'recipient' of MCP negotiations, never the 'initiator'
+                'R' . $id,
+                '_type',
+                $type,
+        );
+
+        # Update IVs
+        $self->ivAdd('mcpCordIDHash', $id, $msgFuncRef);
+        $self->ivAdd('mcpCordCloseHash', $id, $closeFuncRef);
+
+        return $id;
+    }
+
+    sub mcpCordMsg {
+
+        # Can be called by anything
+        # Sends a message to the server along an MCP cord
+        # See comments in $self->mcpCordOpen for details of how to use the MCP cord functions
+        #
+        # Expected arguments
+        #   $id         - The MCP cord ID, one of the keys in $self->mcpCordIDHash. It doesn't need
+        #                   to begin with an initial 'I' or 'R' character, because this function
+        #                   will add an initial 'R'
+        #   $cordMsg    - The cord message
+        #
+        # Optional arguments
+        #   @list       - An optional list of arguments, in the form (key, value, key, value...). If
+        #                   specified, must contain an even number of items (i.e. the value must not
+        #                   be 'undef', but it could be an empty string)
+        #
+        # Return values
+        #   'undef' on improper arguments, if MCP isn't enabled in this session, if the MCP cord ID
+        #       doesn't exist in $self->mcpCordIDHash, if the cord has been closed or if the MCP
+        #       message can't be sent to the world
+        #   1 otherwise
+
+        my ($self, $id, $cordMsg, @list) = @_;
+
+        # Check for improper arguments
+        if (! defined $id || ! defined $cordMsg) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcpCordMsg', @_);
+        }
+
+        # Axmud stores MCP cord IDs with the initial I/R character removed. If the calling function
+        #   has specified one of those characters, remove it
+        $id =~ s/^[IR]//;
+
+        # Check MCP is enabled, and that the specified cord has been opened and not yet closed
+        if (! $self->mcpMode eq 'client_agree' || ! defined $self->mcpAuthKey) {
+
+            $self->mcpDebug(
+                '<outgoing MCP message>',
+                'MCP cord message not sent - MCP not enabled in this session',
+                8610,
+            );
+
+            return undef;
+
+        } elsif (! $self->ivShow('mcpCordIDHash', $id)) {
+
+            $self->mcpDebug(
+                '<outgoing MCP message>',
+                'MCP cord message not sent - unrecognised or closed cord',
+                8611,
+            );
+
+            return undef;
+        }
+
+        # Send the cord message
+        return $self->mcpSendMsg(
+            'mcp-cord',
+                '_id',
+                # Axmud is always the 'recipient' of MCP negotiations, never the 'initiator'
+                'R' . $id,
+                '_message',
+                $cordMsg,
+                @list,
+        );
+    }
+
+    sub mcpCordClose {
+
+        # Can be called by anything
+        # Closes an open MCP cord
+        # See comments in $self->mcpCordOpen for details of how to use the MCP cord functions
+        #
+        # Expected arguments
+        #   $id         - The MCP cord ID, one of the keys in $self->mcpCordIDHash. It doesn't need
+        #                   to begin with an initial 'I' or 'R' character, because this function
+        #                   will add an initial 'R'
+        #
+        # Return values
+        #   'undef' on improper arguments, if MCP isn't enabled in this session, if the MCP cord ID
+        #       doesn't exist in $self->mcpCordIDHash, if the cord has already been closed or if the
+        #       'mcp-cord-close' message can't be sent to the world
+        #   1 otherwise
+
+        my ($self, $id, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $id || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcpCordClose', @_);
+        }
+
+        # Axmud stores MCP cord IDs with the initial I/R character removed. If the calling function
+        #   has specified one of those characters, remove it
+        $id =~ s/^[IR]//;
+
+        # Check MCP is enabled, and that the specified cord has been opened and not yet closed
+        if (! $self->mcpMode eq 'client_agree' || ! defined $self->mcpAuthKey) {
+
+            $self->mcpDebug(
+                '<outgoing MCP message>',
+                'MCP cord message not sent - MCP not enabled in this session',
+                8620,
+            );
+
+            return undef;
+
+        } elsif (! $self->ivShow('mcpCordIDHash', $id)) {
+
+            $self->mcpDebug(
+                '<outgoing MCP message>',
+                'MCP cord message not sent - unrecognised or closed cord',
+                8611,
+            );
+
+            return undef;
+        }
+
+        # Update IVs
+        $self->ivAdd('mcpCordIDHash', $id, undef);
+        $self->ivDelete('mcpCordCloseHash', $id);
+
+        # Send the cord message
+        return $self->mcpSendMsg(
+            'mcp-cord-close',
+                '_id',
+                # Axmud is always the 'recipient' of MCP negotiations, never the 'initiator'
+                'R' . $id,
+        );
+    }
+
+    # (Debug message handling for MXP/Pueblo/MCP)
+
     sub mxpDebug {
 
         # Called by various functions
@@ -25525,7 +27316,7 @@
                 $num = 9998;
             }
 
-            $self->ivPush('mxpPuebloDebugList', 'mxp', $token, $num, $msg);
+            $self->ivPush('protocolDebugList', 'mxp', $token, $num, $msg);
         }
 
         return 1;
@@ -25534,7 +27325,7 @@
     sub puebloDebug {
 
         # Called by various functions
-        # Stores an Pueblo debug message until $self->processIncomingData is ready to display it (by
+        # Stores a Pueblo debug message until $self->processIncomingData is ready to display it (by
         #   not displaying it immediately, we can avoid some very ugly Gtk2 errors)
         #
         # Expected arguments
@@ -25567,75 +27358,108 @@
                 $num = 9999;
             }
 
-            $self->ivPush('mxpPuebloDebugList', 'pueblo', $token, $num, $msg);
+            $self->ivPush('protocolDebugList', 'pueblo', $token, $num, $msg);
         }
 
         return 1;
     }
 
-    # Incoming data loop - misc MSP stuff
+    sub mcpDebug {
 
-    sub setPseudoMSP {
-
-        # Called by GA::Cmd::MSP->do
-        # Some worlds are not able to negotiate telnet options to enable MSP, but nevertheless
-        #   are able to send MSP sound/music triggers to the client
-        # Therefore we need a setting of $self->mspMode which means something like 'the server did
-        #   not negotiate MSP, but Axmud is responding to MSP sound/music triggers'
-        # This function is called to turn on/off pseudo-MSP recognition. The server is informed
-        #   using IAC DONT MSP or IAC DO MSP, even if it doesn't seem to recognise those
-        #   telnet options
-        # NB Pseudo-MSP recognition can be turned on, even if the general setting
-        #   (GA::Client->useMspFlag) is FALSE
+        # Called by various functions
+        # Stores an MCP debug message until $self->processIncomingData is ready to display it (by
+        #   not displaying it immediately, we can avoid some very ugly Gtk2 errors)
         #
         # Expected arguments
-        #   $flag   - Set to TRUE to turn on pseudo-MSP recognition, or FALSE to turn it off
+        #   $token      - The MCP token that caused the error
+        #   $msg        - The debug message
+        #
+        # Optional arguments
+        #   $num       - An optional 4-digit error number, specified literally in the Axmud code
+        #                   (could be set to 'undef' if we just need a quick, temporary message).
+        #                   Currently, Pueblo errors use the range 6000-8999 and mixed MXP/Pueblo
+        #                   errors use the range 5000-5999
         #
         # Return values
-        #   'undef' on improper arguments or if full MSP or pseudo-MSP recognition is already on/off
+        #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $flag, $check) = @_;
-
-        # Local variables
-        my %telConstHash;
+        my ($self, $token, $msg, $num, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $flag || defined $check) {
+        if (! defined $token || ! defined $msg || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setPseudoMSP', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcpDebug', @_);
         }
 
-        # Import the hash of telnet constants (for convenience)
-        %telConstHash = $axmud::CLIENT->constTelnetHash;
+        # (Do nothing if the client flag is not set)
+        if ($axmud::CLIENT->debugMcpFlag) {
 
-        if ($flag) {
+            if (! defined $num) {
 
-            if ($self->mspMode eq 'client_agree' || $self->mspMode eq 'client_simulate') {
-
-                # Full MSP or pseudo-MSP recognition is already turned on
-                return 1;
-
-            } else {
-
-                # Turn on pseudo-MSP recognition
-                $self->optSendDo($telConstHash{'TELOPT_MSP'});
-                $self->ivPoke('mspMode', 'client_simulate');
+                $num = 9999;
             }
 
-        } else {
+            $self->ivPush('protocolDebugList', 'mcp', $token, $num, $msg);
+        }
 
-            if ($self->mspMode eq 'no_invite' || $self->mspMode eq 'client_refuse') {
+        return 1;
+    }
 
-                # Full MSP or pseudo-MSP recognition is already turned off
-                return 1;
+    sub displayProtocolDebug {
 
-            } else {
+        # Called by $self->processIncomingData
+        # If any MXP/Pueblo/MCP debug messages have been generated, display them, then display a
+        #   summary of the token that caused the problem
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
 
-                # Turn off pseudo-MSP recognition
-                $self->optSendDont($telConstHash{'TELOPT_MSP'});
-                $self->ivPoke('mspMode', 'client_refuse');
-            }
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayProtocolDebug', @_);
+        }
+
+        if ($self->protocolDebugList) {
+
+            do {
+
+                my ($protocol, $token, $num, $msg, $showText);
+
+                $protocol = $self->ivShift('protocolDebugList');
+                $token = $self->ivShift('protocolDebugList');
+                $num = $self->ivShift('protocolDebugList');
+                $msg = $self->ivShift('protocolDebugList');
+
+                $self->writeDebug(uc($protocol) . ': ' . $msg . ' (#' . $num . ')');
+                $self->writeDebug('   Token: ' . $token);
+
+                # (In this debug message, replace newline characters with visible '\n' and '\r'
+                #   strings, so that the user can see the first line, plus any newline character
+                #   which terminates it)
+                if ($self->processOrigLine =~ m/(.*[\n\r])/) {
+                    $showText = $1;
+                } else {
+                    $showText = $self->processOrigLine;
+                }
+
+                $showText =~ s/[\n]/\\n/;
+                $showText =~ s/[\r]/\\r/;
+
+                if ($showText) {
+                    $self->writeDebug('   Line : ' . $showText);
+                } else {
+                    $self->writeDebug('   Line : (empty line)');
+                }
+
+            } until (! $self->protocolDebugList);
         }
 
         return 1;
@@ -26512,7 +28336,8 @@
 
         # Local variables
         my (
-            $msdpFlag, $msspFlag, $mccpFlag, $mspFlag, $mxpFlag, $atcpFlag, $gmcpFlag,
+            $msdpFlag, $msspFlag, $mccpFlag, $mspFlag, $mxpFlag, $zmpFlag, $aard102Flag, $atcpFlag,
+            $gmcpFlag,
             %telConstHash,
         );
 
@@ -26690,12 +28515,75 @@
         # Implemented, but not handled out-of-bounds
 
         # ZMP (Zenith Mud Protocol - http://discworld.starturtle.net/external/protocols/zmp.html)
-        # NOT IMPLEMENTED
+        #
+        #   Server: IAC WILL TELOPT_ZMP
+        #   Client: IAC DO TELOPT_ZMP
+        #
+        #   Server: IAC WILL TELOPT_ZMP
+        #   Client: IAC DONT TELOPT_ZMP
+        if ($self->currentWorld->ivExists('telnetOverrideHash', 'zmp')) {
+            $zmpFlag = FALSE;
+        } else {
+            $zmpFlag = $axmud::CLIENT->useZmpFlag;
+        }
 
-        # AARDWOLF-102 (Aardwolf 102 channel
+        if (! $zmpFlag) {
+
+            # GA::Net::Telnet option log
+            #   RCVD WILL ZMP
+            #   SENT DONT ZMP
+            $self->ivPoke('atcpMode', 'client_refuse');
+
+        } else {
+
+            # GA::Net::Telnet option log
+            #   RCVD WILL ZMP
+            #   SENT DO ZMP
+            $connectObj->option_accept(Will => $telConstHash{'TELOPT_ZMP'});
+        }
+
+        # AARD102 (Aardwolf 102 channel
         #   - http://www.aardwolf.com/blog/2008/07/10/
         #       telnet-negotiation-control-mud-client-interaction/
-        # NOT IMPLEMENTED
+        #
+        #   Server: IAC DO TELOPT_AARD102
+        #   Client: IAC WILL TELOPT_AARD102
+        #
+        #   Server: IAC DO TELOPT_AARD102
+        #   Client: IAC WONT TELOPT_AARD102
+        #
+        #   Server: IAC WILL TELOPT_AARD102
+        #   Client: IAC DO TELOPT_AARD102
+        #
+        #   Server: IAC WILL TELOPT_AARD102
+        #   Client: IAC DONT TELOPT_AARD102
+        if ($self->currentWorld->ivExists('telnetOverrideHash', 'aard192')) {
+            $aard102Flag = FALSE;
+        } else {
+            $aard102Flag = $axmud::CLIENT->useAard102Flag;
+        }
+
+        if (! $aard102Flag) {
+
+            # GA::Net::Telnet option log
+            #   RCVD DO AARD102
+            #   SENT wONT AARD102
+            #
+            #   RCVD WILL AARD102
+            #   SENT DONT AARD102
+            $self->ivPoke('aard102Mode', 'client_refuse');
+
+        } else {
+
+            # GA::Net::Telnet option log
+            #   RCVD DO AARD102
+            #   SENT WILL AARD102
+            #
+            #   RCVD WILL AARD102
+            #   SENT DO AARD102
+            $connectObj->option_accept(Will => $telConstHash{'TELOPT_AARD102'});
+            $connectObj->option_accept(Do => $telConstHash{'TELOPT_AARD102'});
+        }
 
         # ATCP (Achaea Telnet Client Protocol)
         #   - https://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html
@@ -26762,7 +28650,7 @@
         # Strictly speaking a standard, not a protocol; Axmud implements it alongside TTYPE
         #   negotiatons
 
-        # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/mcp2.html#startup)
+        # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/)
         # NOT IMPLEMENTED
 
         return 1;
@@ -26776,9 +28664,9 @@
         #
         # Expected arguments
         #   $protocol   - The protocol to disable; one of 'msdp', 'mssp', 'mccp', 'msp', 'mxp',
-        #                   'pueblo', 'zmp', 'aard_102', 'atcp', 'gmcp', 'mtts', 'mcp'.
+        #                   'pueblo', 'zmp', 'aard102', 'atcp', 'gmcp', 'mtts', 'mcp'.
         #               - Other values are ignored, since the calling function should have checked
-        #                   $protocol already. 'zmp', 'aard_102' and 'mcp' have not been
+        #                   $protocol already. 'mcp' haS not been
         #                   implemented, and are also ignored. MTTS is handled alongside TTYPE
         #                   negotiations, so cannot be turned off mid-session; 'mtts' is also
         #                   ignored by this function. Pueblo negotiations are not handled
@@ -26846,12 +28734,16 @@
         # (negotiations not handled out-of-bounds)
 
         # ZMP (Zenith Mud Protocol - http://discworld.starturtle.net/external/protocols/zmp.html)
-        # NOT IMPLEMENTED
+        # "Once enabled, ZMP may not be disabled."
 
-        # AARDWOLF-102 (Aardwolf 102 channel
+        # AARD102 (Aardwolf 102 channel
         #   - http://www.aardwolf.com/blog/2008/07/10/
         #       telnet-negotiation-control-mud-client-interaction/
-        # NOT IMPLEMENTED
+        } elsif ($protocol eq 'aard102') {
+
+            $self->optSendDont($telConstHash{'TELOPT_AARD102'});
+            $self->optSendWont($telConstHash{'TELOPT_AARD102'});
+            $self->ivPoke('aard102Mode', 'client_refuse');
 
         # ATCP (Achaea Telnet Client Protocol)
         #   - https://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html
@@ -26872,7 +28764,7 @@
             # (Nothing to do - $self->prepareTTypeData checks GA::Client->useMttsFlag)
         }
 
-        # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/mcp2.html#startup)
+        # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/)
         # NOT IMPLEMENTED
 
         return 1;
@@ -27142,12 +29034,41 @@
         # Implemented, but not handled out-of-bounds
 
         # ZMP (Zenith Mud Protocol - http://discworld.starturtle.net/external/protocols/zmp.html)
-        # NOT IMPLEMENTED
+        } elsif ($option == $telConstHash{'TELOPT_ZMP'}) {
 
-        # AARDWOLF-102 (Aardwolf 102 channel
+            #   Server: IAC WILL TELOPT_ZMP
+            #   Client: IAC DO TELOPT_ZMP
+            #
+            #   Server: IAC WILL TELOPT_ZMP
+            #   Client: IAC DONT TELOPT_ZMP
+            if ($enabledFlag) {
+
+                $self->ivPoke('zmpMode', 'client_agree');
+
+                # Sending 'zmp.ident' is optional, but Axmud always does it
+                $self->zmpSendIdent();
+            }
+
+        # AARD102 (Aardwolf 102 channel
         #   - http://www.aardwolf.com/blog/2008/07/10/
         #       telnet-negotiation-control-mud-client-interaction/
-        # NOT IMPLEMENTED
+        } elsif ($option == $telConstHash{'TELOPT_AARD102'}) {
+
+            #   Server: IAC DO TELOPT_AARD102
+            #   Client: IAC WILL TELOPT_AARD102
+            #
+            #   Server: IAC DO TELOPT_AARD102
+            #   Client: IAC WONT TELOPT_AARD102
+            #
+            #   Server: IAC WILL TELOPT_AARD102
+            #   Client: IAC DO TELOPT_AARD102
+            #
+            #   Server: IAC WILL TELOPT_AARD102
+            #   Client: IAC DONT TELOPT_AARD102
+            if ($enabledFlag) {
+
+                $self->ivPoke('aard102Mode', 'client_agree');
+            }
 
         # ATCP (Achaea Telnet Client Protocol)
         #   - https://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html
@@ -27182,7 +29103,7 @@
         # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.net/mtts/)
         # Handled above alongside TTYPE
 
-        # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/mcp2.html#startup)
+        # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/)
         # NOT IMPLEMENTED
 
         # Record the time at which the last out-of-bounds communication was received
@@ -27212,8 +29133,8 @@
 
         # Local variables
         my (
-            $descrip, $name, $data,
-            @tokenList, @packageList,
+            $descrip, $name, $data, $byte, $byte2,
+            @tokenList, @packageList, @dataList,
             %telConstHash, %tokenHash, %msdpHash, %msspHash,
         );
 
@@ -27312,6 +29233,51 @@
             #   it and, in any case, we've already set $self->mxpMode to 'client_agree')
 
             # ... (do nothing)
+
+        # ZMP (Zenith Mud Protocol - http://discworld.starturtle.net/external/protocols/zmp.html)
+        } elsif ($option == $telConstHash{'TELOPT_ZMP'}) {
+
+            # Server: IAC SB TELOPT_ATCP Package[.SubPackages][.Command] NUL <parameters> IAC SE
+
+            # Separate the command and its optional parameters
+            if ($parameters =~ m/^([\w\-][\w\-\.]*)(\x00.*)?/) {
+
+                $name = lc($1);
+                $data = $2;
+
+                if (defined $data) {
+
+                    # Remove the initial nul byte
+                    $data = substr($data, 1);
+                    # And split into a list of data parameters
+                    @dataList = split(/x00/, $data);
+                }
+
+                # Process the command
+                $self->processZmpData($name, @dataList);
+            }
+
+        # AARD102 (Aardwolf 102 channel
+        #   - http://www.aardwolf.com/blog/2008/07/10/
+        #       telnet-negotiation-control-mud-client-interaction/
+        } elsif ($option == $telConstHash{'TELOPT_AARD102'}) {
+
+            # Server: IAC SB TELOPT_AARD102 byte byte IAC SE
+
+            # Separate out the two bytes, and pass them (as numbers) for processing
+            $byte = substr($parameters, 0, 1);
+            if (defined $byte) {
+
+                $byte = ord($byte);
+            }
+
+            $byte2 = substr($parameters, 1, 1);
+            if (defined $byte2) {
+
+                $byte2 = ord($byte2);
+            }
+
+            $self->processAard102Data($byte, $byte2);
 
         # ATCP (Achaea Telnet Client Protocol)
         #   - https://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html
@@ -28364,6 +30330,198 @@
         if (
             ! $self->connectObj->put(
                 String => $string,
+                Telnetmode => 0,
+            )
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub optSendZmp {
+
+        # Can be called by anything
+        # Sends a ZMP command to the world (in the same format as commands sent from the world to
+        #   the client)
+        #
+        # Expected arguments
+        #   $cmd        - The ZMP command to send, usually a string in the form
+        #                   'Package[.SubPackages][.Command]'. Only ZMP-compliant command names are
+        #                   sent (the command must contain only ASCII alph-numeric characters, dots
+        #                   and dashes; must not begin or end with a dot)
+        #
+        # Optional arguments
+        #   @paramList  - An optional list of parameters. Must not contain NUL bytes; any IAC bytes
+        #                   are escaped by this function
+        #
+        # Return values
+        #   'undef' on improper arguments, if the session is in 'offline' mode or if $cmd is
+        #       invalid/forbidden
+        #   1 otherwise
+
+        my ($self, $cmd, @paramList) = @_;
+
+        # Local variables
+        my (
+            $escape, $payload, $telCmd,
+            %telConstHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $cmd) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->optSendZmp', @_);
+        }
+
+        # Import the hash of telnet constants (for convenience)
+        %telConstHash = $axmud::CLIENT->constTelnetHash;
+
+        # Do nothing in offline mode
+        if (! $self->connectObj) {
+
+            return undef;
+        }
+
+        # Check that a $cmd was specified
+        if ($cmd eq '') {
+
+            return $self->writeWarning(
+                'Invalid empty ZMP command name',
+                $self->_objClass . '->optSendZmp',
+            );
+
+        # Check that $cmd is in the correct format. If not, we don't the command
+        } elsif (! ($cmd =~ m/^[\w\-]([\w\-\.]*[\w\-])?$/)) {
+
+            return $self->writeWarning(
+                'Invalid ZMP command name',
+                $self->_objClass . '->optSendZmp',
+            );
+        }
+
+        # Check that the parameters, if specified, don't contain a NUL byte
+        foreach my $param (@paramList) {
+
+            if ($param =~ m/x00/) {
+
+                return $self->writeWarning(
+                    'Invalid ZMP parameter',
+                    $self->_objClass . '->optSendZmp',
+                );
+            }
+        }
+
+        # Check that the parameters, if specified, don't contain any un-escaped IAC bytes. If so,
+        #   replaced them with an IAC escape sequence
+        $escape = chr(255) . chr(255);
+        foreach my $param (@paramList) {
+
+            $param =~ s/([^x255])x255([^x255])/$1$escape$2/g;
+            $param =~ s/^x255([^x255])/$escape$1/;
+            $param =~ s/([^x255])x255$/$1$escape/;
+        }
+
+        # If the command is 'zmp.ident', check that this command hasn't been sent before
+        if (lc($cmd) eq 'zmp.ident') {
+
+            if ($self->zmpSendIdentFlag) {
+
+                # ZMP spec says we're not allowed to send it twice
+                return undef;
+
+            } else {
+
+                $self->ivPoke('zmpSendIdentFlag', TRUE);
+            }
+        }
+
+        # Set the payload
+        unshift(@paramList, $cmd);
+        $payload = join(chr(0), @paramList);
+
+        $telCmd = pack(
+            "C3 A* C2",
+            $telConstHash{'TELNET_IAC'},
+            $telConstHash{'TELNET_SB'},
+            $telConstHash{'TELOPT_ZMP'},
+            $payload,
+            $telConstHash{'TELNET_IAC'},
+            $telConstHash{'TELNET_SE'},
+        );
+
+        if (
+            ! $self->connectObj->put(
+                String => $telCmd,
+                Telnetmode => 0,
+            )
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub optSendAard102 {
+
+        # Can be called by anything
+        # Sends an AARD102 sequence to the world
+        #
+        # Expected arguments
+        #   $option     - The option to send; should be a number in the range 1-9, 11-12, 14-17,
+        #                   50-53. This function will send any number in the range 1-254
+        #   $flag       - TRUE to turn the option on (e.g. option 9 to turn on say tags), FALSE to
+        #                   turn it off (e.g. option 17 to turn off inventory tags)
+        #
+        # Return values
+        #   'undef' on improper arguments, if the session is in 'offline' mode or if $option is not
+        #       in the range 1-254
+        #   1 otherwise
+
+        my ($self, $option, $flag, $check) = @_;
+
+        # Local variables
+        my (
+            $payload, $telCmd,
+            %telConstHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $option || ! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->optSendAard102', @_);
+        }
+
+        # Import the hash of telnet constants (for convenience)
+        %telConstHash = $axmud::CLIENT->constTelnetHash;
+
+        # Do nothing in offline mode, or if $option is an invalid value
+        if (! $self->connectObj || ! $axmud::CLIENT->intCheck($option, 1, 254))  {
+
+            return undef;
+        }
+
+        # Set the payload
+        $payload = chr($option);
+        if (! $flag) {
+            $payload .= chr(2);     # Off
+        } else {
+            $payload .= chr(1);     # On
+        }
+
+        $telCmd = pack(
+            "C3 A* C2",
+            $telConstHash{'TELNET_IAC'},
+            $telConstHash{'TELNET_SB'},
+            $telConstHash{'TELOPT_AARD102'},
+            $payload,
+            $telConstHash{'TELNET_IAC'},
+            $telConstHash{'TELNET_SE'},
+        );
+
+        if (
+            ! $self->connectObj->put(
+                String => $telCmd,
                 Telnetmode => 0,
             )
         ) {
@@ -30229,6 +32387,441 @@
         return 1;
     }
 
+    sub processZmpData {
+
+        # Called by $self->subOptCallback
+        # Processes the ZMP package
+        #
+        # Expected arguments
+        #   $string     - The package/command name, in the form 'Package[.SubPackages][.Command]',
+        #                   already converted to lower-case
+        #
+        # Optional arguments
+        #   @paramList  - An optional list of data parameters. Each parameter is usually an ASCII or
+        #                   UTF-8 string
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $string, @paramList) = @_;
+
+        # Local variables
+        my (
+            $packageName, $packageCmd, $packageObj, $funcRef,
+            @list,
+        );
+
+        # Check for improper arguments
+        if (! defined $string) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processZmpData', @_);
+        }
+
+        if ($axmud::CLIENT->debugZmpFlag) {
+
+            $self->writeDebug('ZMP: ' . $string);
+            if (! @paramList) {
+
+                $self->writeDebug('   <no data>');
+
+            } else {
+
+                foreach my $param (@paramList) {
+
+                    $self->writeDebug('   ' . $param);
+                }
+            }
+        }
+
+        # Respond to core commands
+        if ($string eq 'zmp.ping') {
+
+            # Should have no parameters, but if any parameters were specified, just ignore them
+            # Send the core command 'zmp.time' in response
+            $self->zmpSendTime();
+
+        } elsif ($string eq 'zmp.time') {
+
+            # Store the time received (no response required). If the parameter list is empty, keep
+            #   the current value
+            if (defined $paramList[0]) {
+
+                $self->ivPoke('zmpTimeStamp', $paramList[0]);
+            }
+
+        } elsif ($string eq 'zmp.ident') {
+
+            # Store the server's name, version and software (no response required). If the parameter
+            #   list is incomplete (or empty), only store the values received, replacing any other
+            #   values (because 'zmp.ident' is only supposed to be sent once)
+            $self->ivPoke('zmpServerName', $paramList[0]);
+            $self->ivPoke('zmpServerVersion', $paramList[1]);
+            $self->ivPoke('zmpServerDescrip', $paramList[2]);
+
+        } elsif ($string eq 'zmp.check') {
+
+            # $paramList[0] is the package name/package command that Axmud either supports, or not
+
+            # Check whether the package or command is supported, i.e. whether a package object
+            #   (GA::Obj::Zmp) exists for it. If the parameter is missing, do nothing
+            if (defined $paramList[0]) {
+
+                if ($paramList[0] =~ m/\.$/) {
+
+                    # Check whether a package is available
+                    # $paramList[0] is in the form Package[.SubPackages].
+                    # Remove the final dot
+                    $packageName = lc(substr($paramList[0], 0, -1));
+
+                } else {
+
+                    # Check whether a package containing the specified command is available
+                    # $paramList[0] is in the form Package[.SubPackages].Command
+                    # Separate the package name and the command
+                    if ($paramList[0] =~ m/^(.*)\.[^\.]+$/) {
+
+                        $packageName = $1;
+                        $packageCmd = $2;
+                    }
+                }
+
+                # Find the matching package object
+                if (
+                    $axmud::CLIENT->ivExists(
+                        'zmpPackageHash',
+                        $packageName . '@' . $self->currentWorld->name,
+                    )
+                ) {
+                    # Package available only when connected to this world
+                    # Package name in the form 'PackageName@WorldName'
+                    $packageObj = $axmud::CLIENT->ivShow(
+                        'zmpPackageHash',
+                        $packageName . '@' . $self->currentWorld->name,
+                    );
+
+                } else {
+
+                    # Package available when connected to any world
+                    # Package name in the form 'PackageName@'
+                    $packageObj = $axmud::CLIENT->ivShow(
+                        'zmpPackageHash',
+                        $packageName . '@',
+                    );
+                }
+
+                if ($packageObj) {
+
+                    if (defined $packageCmd) {
+
+                        if ($packageObj->ivExists('cmdHash', lc($packageCmd))) {
+                            $self->optSendZmp('zmp.support', $paramList[0]);
+                        } else {
+                            $self->optSendZmp('zmp.no-support', $paramList[0]);
+                        }
+
+                    } else {
+
+                        # If no commands are specified, Axmud regards the package as unsupported
+                        if ($packageObj->cmdHash) {
+                            $self->optSendZmp('zmp.support', $paramList[0]);
+                        } else {
+                            $self->optSendZmp('zmp.no-support', $paramList[0]);
+                        }
+                    }
+
+                } else {
+
+                    # No matching package object found
+                    $self->optSendZmp('zmp.no-support', $paramList[0]);
+                }
+
+            } else {
+
+                # ZMP spec says we must send something back, so do that even though the server's
+                #   ZMP command is invalid
+                $self->optSendZmp('zmp.no-support');
+            }
+
+        } else {
+
+            # Not a ZMP core command
+
+            # $string is in the form 'Package[.SubPackages].Command'
+            # Extract the package name 'Package[.SubPackages]', the package command 'Command', and
+            #   the matching package object (GA::Obj::Zmp)
+            if ($string =~ m/^(.*)\.(.*?)$/) {
+
+                $packageName = $1;
+                $packageCmd = $2;
+
+                # Find the matching package object
+                if (
+                    $axmud::CLIENT->ivExists(
+                        'zmpPackageHash',
+                        $packageName . '@' . $self->currentWorld->name,
+                    )
+                ) {
+                    # Package available only when connected to this world
+                    # Package name in the form 'PackageName@WorldName'
+                    $packageObj = $axmud::CLIENT->ivShow(
+                        'zmpPackageHash',
+                        $packageName . '@' . $self->currentWorld->name,
+                    );
+
+                } else {
+
+                    # Package available when connected to any world
+                    # Package name in the form 'PackageName@'
+                    $packageObj = $axmud::CLIENT->ivShow(
+                        'zmpPackageHash',
+                        $packageName . '@',
+                    );
+                }
+
+                if (
+                    $packageObj
+                    && $packageObj->ivExists('cmdHash', $packageCmd)
+                ) {
+                    $funcRef = $packageObj->ivShow('cmdHash', $packageCmd);
+                }
+            }
+        }
+
+        if (defined $funcRef) {
+
+            # Call the plugin's function, so it can respond to the package command
+            &$funcRef($self, $packageCmd, @paramList);
+        }
+
+        # Fire any hooks that are using the 'zmp' hook event
+        $self->checkHooks('zmp', $string);
+
+        return 1;
+    }
+
+    sub zmpSendTime {
+
+        # Called by $self->processZmpData or any other function
+        # Sends the ZMP core command 'zmp.time'
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if ZMP isn't enabled in this session or if sending the
+        #       command fails
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $second, $minute, $hour, $dayOfMonth, $month, $yearOffset, $dayOfWeek, $dayOfYear,
+            $daylightSavings, $year, $string,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->zmpSendTime', @_);
+        }
+
+        if ($self->zmpMode ne 'client_agree') {
+
+            return undef;
+        }
+
+        # Prepare a UTC timestamp in the format YYYY-MM-SS HH:MM:SS
+        ($second, $minute, $hour, $dayOfMonth, $month, $yearOffset) = gmtime();
+
+        $year = 1900 + $yearOffset;
+        $string = sprintf(
+            '%04d-%02d-%02d %02d:%02d:%02d',
+            $year, $month, $dayOfMonth, $hour, $minute, $second,
+        );
+
+        # Send zmp.time to the server
+        return $self->optSendZmp(
+            'zmp.time',
+            $string,
+        );
+    }
+
+    sub zmpSendIdent {
+
+        # Called by $self->optCallback (only; the command should not be sent a second time)
+        # Sends the ZMP core command 'zmp.ident'
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if ZMP isn't enabled in this session or if sending the
+        #       command fails
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($termTypeMode, $customClientName, $customClientVersion);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->zmpSendIdent', @_);
+        }
+
+        if ($self->zmpMode ne 'client_agree') {
+
+            return undef;
+        }
+
+        # (Use the same rules about disclosing this client's identity, as are used in TTYPE
+        #   negotiations)
+        if ($self->currentWorld->ivExists('termOverrideHash', 'termTypeMode')) {
+            $termTypeMode = $self->currentWorld->ivShow('termOverrideHash', 'termTypeMode');
+        } else {
+            $termTypeMode = $axmud::CLIENT->termTypeMode;
+        }
+
+        if ($self->currentWorld->ivExists('termOverrideHash', 'customClientName')) {
+
+            $customClientName
+                = $self->currentWorld->ivShow('termOverrideHash', 'customClientName');
+
+        } else {
+
+            $customClientName = $axmud::CLIENT->customClientName;
+        }
+
+        if ($self->currentWorld->ivExists('termOverrideHash', 'customClientVersion')) {
+
+            $customClientVersion
+                = $self->currentWorld->ivShow('termOverrideHash', 'customClientVersion');
+
+        } else {
+
+            $customClientVersion = $axmud::CLIENT->customClientVersion;
+        }
+
+        if ($termTypeMode eq 'send_client') {
+
+            # Send zmp.ident to the server. If it's already been sent during this session,
+            #   ->optSendZmp sends nothing and returns 'undef'
+            return $self->optSendZmp(
+                'zmp.ident',
+                $axmud::SCRIPT,
+            );
+
+        } elsif ($termTypeMode eq 'send_client_version') {
+
+            return $self->optSendZmp(
+                'zmp.ident',
+                $axmud::SCRIPT,
+                $axmud::VERSION,
+                $axmud::DESCRIP,
+            );
+
+        } elsif ($termTypeMode eq 'send_custom_client') {
+
+            if ($customClientName) {
+
+                if (! $customClientVersion) {
+
+                    return $self->optSendZmp(
+                        'zmp.ident',
+                        $customClientName,
+                    );
+
+                } else {
+
+                    return $self->optSendZmp(
+                        'zmp.ident',
+                        $customClientName,
+                        $customClientVersion,
+                        $customClientName,
+                    );
+                }
+            }
+        }
+    }
+
+    sub processAard102Data {
+
+        # Called by $self->subOptCallback
+        # Processes data from AARD102 telnet sequences
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $byte, $byte2   - Two bytes, already converted to numbers (e.g. 101, 1). If (for some
+        #                       reason) either or both are 'undef', this function does nothing
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $byte, $byte2, $check) = @_;
+
+        # Local variables
+        my $status;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processAard102Data', @_);
+        }
+
+        # ($byte, $byte2) should be in the range (100, 1) to (100, 8)
+        # Aardwolf also sends (100, 9), but I'm not sure what it signifies
+        # ($byte, $byte2) can also be (101, 1), meaning 'the MUD has just ticked'
+
+        # Set Session IVs accordingly
+        if (defined $byte && defined $byte2) {
+
+            if ($byte == 100) {
+
+                if ($byte2 == 1) {
+                    $status = 'at_login_screen';
+                } elsif ($byte2 == 2) {
+                    $status = 'at_motd';
+                } elsif ($byte2 == 3) {
+                    $status = 'player_active';
+                } elsif ($byte2 == 4) {
+                    $status = 'player_afk';
+                } elsif ($byte2 == 5) {
+                    $status = 'note_mode';
+                } elsif ($byte2 == 6) {
+                    $status = 'edit_mode';
+                } elsif ($byte2 == 7) {
+                    $status = 'page_prompt';
+                } elsif ($byte2 == 8) {
+                    $status = 'player_rest';
+                } elsif ($byte2 == 9) {
+                    $status = 'code_nine';
+                } else {
+                    $status = 'unknown_' . $byte2;     # e.g. 'unknown 9'
+                }
+
+                $self->ivPoke('aard102Status', $status);
+
+                # Fire any hooks that are using the 'aard102' hook event
+                $self->checkHooks('aard102', $status);
+
+            } elsif ($byte == 101 && $byte2 == 1) {
+
+                $self->ivPoke('aard102TickTime', $self->sessionTime);
+
+                # Fire any hooks that are using the 'aard102' hook event
+                $self->checkHooks('aard102', 'tick');
+            }
+        }
+
+        return 1;
+    }
+
     sub processAtcpData {
 
         # Called by $self->subOptCallback
@@ -30236,7 +32829,7 @@
         #
         # Expected arguments
         #   $name       - The package name, in the form Package[.SubPackages][.Message], already
-        #                   converte to lower-case
+        #                   converted to lower-case
         #   $data       - A scalar of undecoded JSON data, e.g. 'comm.repop { "zone": "town" }'
         #
         # Return values
@@ -30296,7 +32889,7 @@
         #
         # Expected arguments
         #   $name       - The package name, in the form Package[.SubPackages][.Message], already
-        #                   converte to lower-case
+        #                   converted to lower-case
         #   $data       - A scalar of undecoded JSON data, e.g. 'comm.repop { "zone": "town" }'
         #
         # Return values
@@ -32103,9 +34696,9 @@
         #   ->dispatchCmd carries out a few jobs, such as updating the world command buffer. In a
         #   few rare cases it is better to call this function instead, which simply sends the world
         #   command (and nothing else)
-        # An example of this is $self->worldCmd, which calls this function when it wants to send a
-        #   password; obviously, we don't want to display the unobscured password in the current
-        #   textview, nor do we want to save it to the world command buffer
+        # An example of this is $self->dispatchPassword, which calls this function when it wants to
+        #   send a password; obviously, we don't want to display the unobscured password in the
+        #   current textview, nor do we want to save it to the world command buffer
         #
         # Sends a string to the world. Unlike $self->put, a newline character is added
         #
@@ -32509,11 +35102,11 @@
 
                     $self->currentTabObj->textViewObj->insertCmd($decodeCmd);
 
-                } elsif ($self->promptLine) {
+                } else {
 
-                    # Send a newline character to cancel a prompt, so that the next line of text
-                    #   received isn't displayed on the same line
-                    $self->currentTabObj->textViewObj->insertCmd($decodeCmd);
+                    # Sending a newline character cancel any prompt; even if the world command isn't
+                    #   explicitly echoed in the textview, the newline must be
+                    $self->currentTabObj->textViewObj->insertText('', 'after');
                 }
             }
 
@@ -32578,6 +35171,14 @@
                             $stripCmd .= $char;
                         }
                     }
+                }
+
+                # If MCP is enabled, in-band lines starting either '#$#' or '#$"' must be quoted,
+                #   before being sent to the world
+                if (substr($stripCmd, 0, 3) eq '#$#' || substr($stripCmd, 0, 3) eq '#$"') {
+
+                    # Quote the in-band line by preceding it with '#$"'
+                    $stripCmd = '#$"' . $stripCmd;
                 }
 
                 # Send the command to the world
@@ -32670,7 +35271,17 @@
         # If the connection is open, send the command to the world
         if ($self->status eq 'connecting' || $self->status eq 'connected') {
 
-            $self->send($inputString);
+            # If MCP is enabled, in-band lines starting either '#$#' or '#$"' must be quoted,
+            #   before being sent to the world
+            if (substr($inputString, 0, 3) eq '#$#' || substr($inputString, 0, 3) eq '#$"') {
+
+                # Quote the in-band line by preceding it with '#$"'
+                $self->send('#$"' . $inputString);
+
+            } else {
+
+                $self->send($inputString);
+            }
         }
 
         # Obscure the command in the current textview (but if the server has suggested that the
@@ -32693,11 +35304,11 @@
                 $self->ivPoke('nlEchoFlag', TRUE);
             }
 
-        } elsif ($self->promptLine) {
+        } else {
 
-            # Send a newline character to cancel a prompt, so that the next line of text
-            #   received isn't displayed on the same line
-            $self->currentTabObj->textViewObj->insertCmd('');
+            # Sending a newline character cancel any prompt; even if the world command isn't
+            #   explicitly echoed in the textview, the newline must be
+            $self->currentTabObj->textViewObj->insertText('', 'after');
         }
 
         # If the most recently-received text from the world looked like a prompt,
@@ -33589,8 +36200,35 @@
         $objFlag = FALSE;
 
         # Match a string to a Perl object, and return the two- or six-element array described above
+        if ($first eq 'aard102') {
 
-        if ($first eq 'atcp') {
+            # S aard102.status
+            # S aard102.tick
+            if ($size != 2) {
+
+                $error = $genError;
+
+            } else {
+
+                $blessed = $self;
+                if ($last eq 'status') {
+                    $ivName = 'aard102Status';
+                } elsif ($last eq 'tick') {
+                    $ivName = 'aard102TickTime';
+                }
+
+                if ($ivName) {
+
+                    $var = $blessed->{$ivName};
+                    $privFlag = TRUE;
+
+                } else {
+
+                    $error = $genError;
+                }
+            }
+
+        } elsif ($first eq 'atcp') {
 
             if ($second eq 'list') {
 
@@ -34605,10 +37243,12 @@
                 'debug.protocol.mxp.comment'
                                         => 'debugMxpCommentFlag',
                 'debug.protocol.pueblo' => 'debugPuebloFlag',
-                'debug.protocol.peublo.comment'
+                'debug.protocol.pueblo.comment'
                                         => 'debugPuebloCommentFlag',
+                'debug.protocol.zmp'    => 'debugZmpFlag',
                 'debug.protocol.atcp'   => 'debugAtcpFlag',
                 'debug.protocol.gmcp'   => 'debugGmcpFlag',
+                'debug.protocol.mcp'    => 'debugMcpFlag',
                 'debug.line.numbers'    => 'debugLineNumsFlag',
                 'debug.line.tags'       => 'debugLineTagsFlag',
                 'debug.locator.some'    => 'debugLocatorFlag',
@@ -36661,8 +39301,11 @@
             # S protocol.mode.msp
             # S protocol.mode.mxp
             # S protocol.mode.pueblo
+            # S protocol.mode.zmp
+            # S protocol.mode.aard102
             # S protocol.mode.atcp
             # S protocol.mode.gmcp
+            # S protocol.mode.mcp
             %sessionHash = (
                 'protocol.ttype.sent'   => 'specifiedTType',
 
@@ -36677,8 +39320,11 @@
                 'protocol.mode.mxp'     => 'mxpMode',
                 'protocol.mode.pueblo'
                                         => 'puebloMode',
+                'protocol.mode.zmp'     => 'zmpMode',
+                'protocol.mode.aard102' => 'aard102Mode',
                 'protocol.mode.atcp'    => 'atcpMode',
                 'protocol.mode.gmcp'    => 'gmcpMode',
+                'protocol.mode.mcp'     => 'mcpMode',
             );
 
             if (exists $clientHash{$string}) {
@@ -37310,7 +39956,6 @@
             # O task.current.chat
             # O task.current.compass
             # O task.current.condition
-            # O task.current.debugger
             # O task.current.divert
             # O task.current.inventory
             # O task.current.launch
@@ -37319,6 +39964,7 @@
             # O task.current.rawtext
             # O task.current.rawtoken
             # O task.current.status
+            # O task.current.system
             # O task.current.tasklist
             # O task.current.watch
             } elsif ($second eq 'current') {
@@ -37334,9 +39980,9 @@
                     if (
                         $third eq 'advance' || $third eq 'attack' || $third eq 'channels'
                         || $third eq 'chat' || $third eq 'compass' || $third eq 'condition'
-                        || $third eq 'debugger' || $third eq 'divert' || $third eq 'inventory'
-                        || $third eq 'launch' || $third eq 'locator' || $third eq 'notepad'
-                        || $third eq 'rawtext' || $third eq 'rawtoken' || $third eq 'status'
+                        || $third eq 'divert' || $third eq 'inventory' || $third eq 'launch'
+                        || $third eq 'locator' || $third eq 'notepad' || $third eq 'rawtext'
+                        || $third eq 'rawtoken' || $third eq 'status' || $third eq 'system'
                         || $third eq 'tasklist' || $third eq 'watch'
                     ) {
                         if ($third eq 'rawtext') {
@@ -37971,6 +40617,65 @@
                         $objFlag = TRUE;
                     }
                 }
+            }
+
+        } elsif ($first eq 'zmp') {
+
+            if ($second eq 'list') {
+
+                my @list;
+
+                # L zmp.list
+                # L zmp.list.PACKAGE
+                # L zmp.list.PACKAGE.SUBPACKAGE
+                if ($size < 2) {
+
+                    $error = $genError;
+
+                } elsif ($size == 3) {
+
+                    @list = sort {lc($a->name) cmp lc($b->name)}
+                                ($axmud::CLIENT->ivValues('zmpPackageHash'));
+
+                    $blessed = undef;
+                    $var = \@list;
+                    $ivName = 'zmpPackageHash';
+                    $privFlag = TRUE;
+
+                } else {
+
+                    @list = @compList;
+                    shift @list;
+                    shift @list;
+
+                    $blessed = $axmud::CLIENT->ivShow(
+                        'zmpPackageHash',
+                        join('.', @list) . '@' . $self->currentWorld->name,
+                    );
+
+                    if (! $blessed) {
+
+                        $blessed = $axmud::CLIENT->ivShow(
+                            'zmpPackageHash',
+                            join('.', @list) . '@',
+                        );
+                    }
+
+                    if (! $blessed) {
+
+                        $error = 'ZMP package \'' . $string . '\' doesn\'t exist';
+
+                    } else {
+
+                        $var = $blessed->{cmdHash};
+                        $ivName = 'cmdHash';
+                        $privFlag = TRUE;
+                    }
+                }
+
+            } else {
+
+                $error = $genError;
             }
 
         } elsif ($first eq 'zonemap') {
@@ -38728,6 +41433,88 @@
 
         # Update IVs
         $self->ivPoke('mccpMode', $mode);
+
+        return 1;
+    }
+
+    sub add_mcpCordType {
+
+        # See comments in $self->mcpCordOpen for details of how to use the MCP cord functions
+        # If the MCP cord type is already recognised by some other part of the code, calling this
+        #   function will replace the old entry with a new one
+
+        my ($self, $type, $funcRef, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $type || ! defined $funcRef || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_mcpCordType', @_);
+        }
+
+        $self->ivAdd('mcpCordOpenHash', $type, $funcRef);
+
+        return 1;
+    }
+
+    sub del_mcpCordType {
+
+        # See comments in $self->mcpCordOpen for details of how to use the MCP cord functions
+        # Calling this function stops Axmud from opening MCP cords of the specified type; it doesn't
+        #   close any existing cords of that type
+
+        my ($self, $type, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $type || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->del_mcpCordType', @_);
+        }
+
+        $self->ivDelete('mcpCordOpenHash', $type);
+
+        return 1;
+    }
+
+    sub accept_mcpCordID {
+
+        # See comments in $self->mcpCordOpen for details of how to use the MCP cord functions
+
+        my ($self, $id, $msgFuncRef, $closeFuncRef, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $id || ! defined $msgFuncRef || ! defined $closeFuncRef || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->accept_mcpCordID', @_);
+        }
+
+        # Axmud stores MCP cord IDs with the initial I/R character removed. If the calling function
+        #   has specified one of those characters, remove it
+        $id =~ s/^[IR]//;
+
+        $self->ivAdd('mcpCordIDHash', $id, $msgFuncRef);
+        $self->ivAdd('mcpCordCloseHash', $id, $closeFuncRef);
+
+        return 1;
+    }
+
+    sub refuse_mcpCordID {
+
+        # See comments in $self->mcpCordOpen for details of how to use the MCP cord functions
+
+        my ($self, $id, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $id || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->refuse_mcpCordID', @_);
+        }
+
+        # Axmud stores MCP cord IDs with the initial I/R character removed. If the calling function
+        #   has specified one of those characters, remove it
+        $id =~ s/^[IR]//;
+
+        $self->ivAdd('mcpCordIDHash', $id, undef);
+        $self->ivDelete('mcpCordCloseHash', $id);
 
         return 1;
     }
@@ -39620,12 +42407,16 @@
     sub cmdPromptFlag
         { $_[0]->{cmdPromptFlag} }
 
-    sub nlTokenFlag
-        { $_[0]->{nlTokenFlag} }
+    sub lastTokenType
+        { $_[0]->{lastTokenType} }
     sub nlEchoFlag
         { $_[0]->{nlEchoFlag} }
     sub crlfMode
         { $_[0]->{crlfMode} }
+    sub constRawHash
+        { my $self = shift; return %{$self->{constRawHash}}; }
+    sub currentTokenList
+        { my $self = shift; return @{$self->{currentTokenList}}; }
 
     sub sessionFileObjHash
         { my $self = shift; return %{$self->{sessionFileObjHash}}; }
@@ -39744,8 +42535,6 @@
         { $_[0]->{compassTask} }
     sub conditionTask
         { $_[0]->{conditionTask} }
-    sub debuggerTask
-        { $_[0]->{debuggerTask} }
     sub divertTask
         { $_[0]->{divertTask} }
     sub inventoryTask
@@ -39762,6 +42551,8 @@
         { $_[0]->{rawTokenTask} }
     sub statusTask
         { $_[0]->{statusTask} }
+    sub systemTask
+        { $_[0]->{systemTask} }
     sub taskListTask
         { $_[0]->{taskListTask} }
     sub watchTask
@@ -39874,22 +42665,17 @@
     sub reactDisconnectFlag
         { $_[0]->{reactDisconnectFlag} }
 
-    sub recvLineText
-        { $_[0]->{recvLineText} }
-    sub recvLineLength
-        { $_[0]->{recvLineLength} }
-    sub recvLineHash
-        { my $self = shift; return %{$self->{recvLineHash}}; }
-    sub recvUsedText
-        { $_[0]->{recvUsedText} }
-    sub recvUsedLength
-        { $_[0]->{recvUsedLength} }
-    sub recvUsedHash
-        { my $self = shift; return %{$self->{recvUsedHash}}; }
-    sub recvWholeLineText
-        { $_[0]->{recvWholeLineText} }
-    sub recvImgLineText
-        { $_[0]->{recvImgLineText} }
+    sub processOrigLine
+        { $_[0]->{processOrigLine} }
+    sub processStripLine
+        { $_[0]->{processStripLine} }
+    sub processTagHash
+        { my $self = shift; return %{$self->{processTagHash}}; }
+    sub processRetainFlag
+        { $_[0]->{processRetainFlag} }
+
+    sub processImageLine
+        { $_[0]->{processImageLine} }
 
     sub explicitTextLength
         { $_[0]->{explicitTextLength} }
@@ -40100,8 +42886,6 @@
         { $_[0]->{mxpDefaultMode} }
     sub mxpTempMode
         { $_[0]->{mxpTempMode} }
-    sub mxpOrigText
-        { $_[0]->{mxpOrigText} }
     sub mxpTempLinkList
         { my $self = shift; return @{$self->{mxpTempLinkList}}; }
     sub mxpElementHash
@@ -40166,8 +42950,6 @@
         { $_[0]->{mxpDisableFrameFlag} }
     sub mxpLoginMode
         { $_[0]->{mxpLoginMode} }
-    sub mxpPuebloDebugList
-        { my $self = shift; return @{$self->{mxpPuebloDebugList}}; }
 
     sub puebloMode
         { $_[0]->{puebloMode} }
@@ -40181,8 +42963,6 @@
         { my $self = shift; return @{$self->{puebloStackList}}; }
     sub puebloColumnSize
         { $_[0]->{puebloColumnSize} }
-    sub puebloInsertString
-        { $_[0]->{puebloInsertString} }
     sub puebloParagraphFlag
         { $_[0]->{puebloParagraphFlag} }
     sub puebloLiteralFlag
@@ -40191,6 +42971,26 @@
         { $_[0]->{puebloLiteralSampFlag} }
     sub puebloJustifyMode
         { $_[0]->{puebloJustifyMode} }
+
+    sub zmpMode
+        { $_[0]->{zmpMode} }
+    sub zmpTimeStamp
+        { $_[0]->{zmpTimeStamp} }
+    sub zmpSendIdentFlag
+        { $_[0]->{zmpSendIdentFlag} }
+    sub zmpServerName
+        { $_[0]->{zmpServerName} }
+    sub zmpServerVersion
+        { $_[0]->{zmpServerVersion} }
+    sub zmpServerDescrip
+        { $_[0]->{zmpServerDescrip} }
+
+    sub aard102Mode
+        { $_[0]->{aard102Mode} }
+    sub aard102Status
+        { $_[0]->{aard102Status} }
+    sub aard102TickTime
+        { $_[0]->{aard102TickTime} }
 
     sub atcpMode
         { $_[0]->{atcpMode} }
@@ -40201,6 +43001,32 @@
         { $_[0]->{gmcpMode} }
     sub gmcpDataHash
         { my $self = shift; return %{$self->{gmcpDataHash}}; }
+
+    sub mcpMode
+        { $_[0]->{mcpMode} }
+    sub constMcpVersion
+        { $_[0]->{constMcpVersion} }
+    sub mcpAuthKey
+        { $_[0]->{mcpAuthKey} }
+    sub mcpWaitTime
+        { $_[0]->{mcpWaitTime} }
+    sub mcpCheckTime
+        { $_[0]->{mcpCheckTime} }
+    sub mcpMultiObjHash
+        { my $self = shift; return %{$self->{mcpMultiObjHash}}; }
+    sub mcpPackageHash
+        { my $self = shift; return %{$self->{mcpPackageHash}}; }
+    sub mcpWaitHash
+        { my $self = shift; return %{$self->{mcpWaitHash}}; }
+    sub mcpCordOpenHash
+        { my $self = shift; return %{$self->{mcpCordOpenHash}}; }
+    sub mcpCordIDHash
+        { my $self = shift; return %{$self->{mcpCordIDHash}}; }
+    sub mcpCordCloseHash
+        { my $self = shift; return %{$self->{mcpCordCloseHash}}; }
+
+    sub protocolDebugList
+        { my $self = shift; return @{$self->{protocolDebugList}}; }
 
     sub disableWorldCmdFlag
         { $_[0]->{disableWorldCmdFlag} }
@@ -40230,5 +43056,5 @@
         { $_[0]->{constRewriteMax} }
 }
 
-# Package must return true
+# Package must return a true value
 1

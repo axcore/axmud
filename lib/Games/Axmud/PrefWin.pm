@@ -236,31 +236,57 @@
 
         $self->addLabel($table, 'Script version',
             1, 3, 2, 3);
-        my $entry6 = $self->addEntry($table, undef, FALSE,
+        my $entry2 = $self->addEntry($table, undef, FALSE,
             3, 6, 2, 3);
-        $entry6->set_text($axmud::VERSION);
+        $entry2->set_text($axmud::VERSION);
 
         $self->addLabel($table, 'Script date',
             1, 3, 3, 4);
-        my $entry7 = $self->addEntry($table, undef, FALSE,
+        my $entry3 = $self->addEntry($table, undef, FALSE,
             3, 6, 3, 4);
-        $entry7->set_text($axmud::DATE);
+        $entry3->set_text($axmud::DATE);
 
         $self->addLabel($table, 'Authors',
             1, 3, 4, 5);
-        my $entry3 = $self->addEntry($table, undef, FALSE,
+        my $entry4 = $self->addEntry($table, undef, FALSE,
             3, 12, 4, 5);
-        $entry3->set_text($axmud::AUTHORS);
+        $entry4->set_text($axmud::AUTHORS);
 
         $self->addLabel($table, 'Copyright',
             1, 3, 5, 6);
-        my $entry4 = $self->addEntry($table, undef, FALSE,
+        my $entry5 = $self->addEntry($table, undef, FALSE,
             3, 12, 5, 6);
-        $entry4->set_text($axmud::COPYRIGHT);
+        $entry5->set_text($axmud::COPYRIGHT);
 
-        my $button = $self->addButton($table, 'About...', 'About ' . $axmud::SCRIPT, undef,
-            1, 4, 6, 7);
+        $self->addLabel($table, 'Website',
+            1, 3, 6, 7);
+        my $entry6 = $self->addEntry($table, undef, FALSE,
+            3, 10, 6, 7);
+        $entry6->set_text($axmud::URL);
+
+        my $button = $self->addButton($table, 'Open', 'Open this website in a web browser', undef,
+            10, 12, 6, 7);
+        if (! $axmud::URL) {
+
+            $button->set_sensitive(FALSE);
+        }
         $button->signal_connect('clicked' => sub {
+
+            if ($axmud::URL) {
+
+                $axmud::CLIENT->openURL($axmud::URL);
+            }
+        });
+
+        $self->addLabel($table, 'Description',
+            1, 3, 7, 8);
+        my $entry7 = $self->addEntry($table, undef, FALSE,
+            3, 12, 7, 8);
+        $entry7->set_text($axmud::DESCRIP);
+
+        my $button2 = $self->addButton($table, 'About...', 'About ' . $axmud::SCRIPT, undef,
+            1, 4, 8, 9);
+        $button2->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
             if (! $axmud::CLIENT->aboutWin) {
@@ -281,10 +307,10 @@
             }
         });
 
-        my $button2 = $self->addButton(
+        my $button3 = $self->addButton(
             $table, 'Credits...', 'Show information about credits', undef,
-            4, 6, 6, 7);
-        $button2->signal_connect('clicked' => sub {
+            4, 6, 8, 9);
+        $button3->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
             if (! $axmud::CLIENT->aboutWin) {
@@ -305,9 +331,9 @@
             }
         });
 
-        my $button3 = $self->addButton($table, 'Quick help...', 'Show quick help', undef,
-            6, 9, 6, 7);
-        $button3->signal_connect('clicked' => sub {
+        my $button4 = $self->addButton($table, 'Quick help...', 'Show quick help', undef,
+            6, 9, 8, 9);
+        $button4->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
             if (! $axmud::CLIENT->aboutWin) {
@@ -328,9 +354,81 @@
             }
         });
 
-        my $button4 = $self->addButton($table, 'Licenses...', 'Show license information', undef,
-            9, 12, 6, 7);
-        $button4->signal_connect('clicked' => sub {
+        my $button5 = $self->addButton($table,
+            'Peek/Poke list...',
+            'Show strings for Peek/Poke operations',
+            undef,
+            9, 12, 8, 9);
+        $button5->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'peek',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
+        my $button6 = $self->addButton($table, 'Changes...', 'Show list of changes', undef,
+            1, 4, 9, 10);
+        $button6->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'changes',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
+        my $button7 = $self->addButton($table, 'Installation...', 'Show installation guide', undef,
+            4, 6, 9, 10);
+        $button7->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'install',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
+        my $button8 = $self->addButton($table, 'GPL License...', 'Show text of GPL License', undef,
+            6, 9, 9, 10);
+        $button8->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
             if (! $axmud::CLIENT->aboutWin) {
@@ -351,12 +449,38 @@
             }
         });
 
+        my $button9 = $self->addButton($table,
+            'LGPL License...',
+            'Show text of LGPL License',
+            undef,
+            9, 12, 9, 10);
+        $button9->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'license_2',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
         # Right column
         $self->addLabel($table, 'Name in data files',
             7, 9, 1, 2);
-        my $entry2 = $self->addEntry($table, undef, FALSE,
+        my $entry8 = $self->addEntry($table, undef, FALSE,
             9, 12, 1, 2);
-        $entry2->set_text($axmud::NAME_FILE);
+        $entry8->set_text($axmud::NAME_FILE);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -1528,8 +1652,8 @@
             'Adult', 'bool',
             'Short', 'text',
             'Long', 'text',
-            'Host', 'text',
-            'Port', 'text',
+            'Host/Port', 'text',
+            'Language', 'text',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -1579,8 +1703,8 @@
                 $obj->adultFlag,
                 $obj->name,
                 $obj->longName,
-                $obj->host,
-                $obj->port,
+                $obj->host . ' ' . $obj->port,
+                $obj->language,
             );
         }
 
@@ -2210,7 +2334,7 @@
         });
 
         # TTYPE (not MTTS) negotiations
-        $self->addLabel($table, '<i>TTYPE (not MTTS) negotiations (*also used by MXP)</i>',
+        $self->addLabel($table, '<i>TTYPE (not MTTS) negotiations (*also used by MXP/ZMP)</i>',
             8, 13, 5, 6);
 
         my ($group, $radioButton) = $self->addRadioButton(
@@ -2378,15 +2502,23 @@
         my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 4, 5);
         $checkButton4->set_active($axmud::CLIENT->useZmpFlag);
-        $checkButton4->set_sensitive(FALSE);
-        $self->addLabel($table, '<i>Allow ZMP (Zenith Mud Protocol)</i>',
+        $checkButton4->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->toggle_mudProtocol('zmp', $checkButton4->get_active());
+        });
+
+        $self->addLabel($table, 'Allow ZMP (Zenith Mud Protocol)',
             2, 6, 4, 5);
 
         my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 5, 6);
         $checkButton5->set_active($axmud::CLIENT->useAard102Flag);
-        $checkButton5->set_sensitive(FALSE);
-        $self->addLabel($table, '<i>Allow AARDWOLF-102 (Aardwolf 102 channel)</i>',
+        $checkButton5->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->toggle_mudProtocol('aard102', $checkButton5->get_active());
+        });
+
+        $self->addLabel($table, 'Allow AARD102 (Aardwolf 102 channel)',
             2, 6, 5, 6);
 
         my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
@@ -2425,8 +2557,12 @@
         my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 9, 10);
         $checkButton9->set_active($axmud::CLIENT->useMcpFlag);
-        $checkButton9->set_sensitive(FALSE);
-        $self->addLabel($table, '<i>Allow MCP (Mud Client Protocol)</i>',
+        $checkButton9->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->toggle_mudProtocol('mcp', $checkButton9->get_active());
+        });
+
+        $self->addLabel($table, 'Allow MCP (Mud Client Protocol)',
             2, 6, 9, 10);
 
         my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
@@ -2920,29 +3056,55 @@
 
         my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 9, 10);
-        $checkButton9->set_active($axmud::CLIENT->debugAtcpFlag);
+        $checkButton9->set_active($axmud::CLIENT->debugZmpFlag);
         $checkButton9->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugAtcpFlag', $checkButton9->get_active());
+            $axmud::CLIENT->set_debugFlag('debugZmpFlag', $checkButton9->get_active());
+        });
+
+        $self->addLabel(
+            $table,
+            'Show debug messages for incoming ZMP data',
+            2, 12, 9, 10);
+
+        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 10, 11);
+        $checkButton10->set_active($axmud::CLIENT->debugAtcpFlag);
+        $checkButton10->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->set_debugFlag('debugAtcpFlag', $checkButton10->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages for incoming ATCP data',
-            2, 12, 9, 10);
+            2, 12, 10, 11);
 
-        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 10, 11);
-        $checkButton10->set_active($axmud::CLIENT->debugGmcpFlag);
-        $checkButton10->signal_connect('toggled' => sub {
+        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 11, 12);
+        $checkButton11->set_active($axmud::CLIENT->debugGmcpFlag);
+        $checkButton11->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugGmcpFlag', $checkButton10->get_active());
+            $axmud::CLIENT->set_debugFlag('debugGmcpFlag', $checkButton11->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages for incoming GMCP data',
-            2, 12, 10, 11);
+            2, 12, 11, 12);
+
+        my $checkButton12 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 12, 13);
+        $checkButton12->set_active($axmud::CLIENT->debugMcpFlag);
+        $checkButton12->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->set_debugFlag('debugMcpFlag', $checkButton12->get_active());
+        });
+
+        $self->addLabel(
+            $table,
+            'Show debug messages when invalid MCP messages are received/sent',
+            2, 12, 12, 13);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -7269,6 +7431,7 @@
         $self->workspaces5Tab($innerNotebook);
         $self->workspaces6Tab($innerNotebook);
         $self->workspaces7Tab($innerNotebook);
+        $self->workspaces8Tab($innerNotebook);
 
         return 1;
     }
@@ -7288,7 +7451,7 @@
 
         # Local variables
         my (
-            $width, $height,
+            $maxWidth, $maxHeight,
             @list, @comboList,
             %comboHash,
         );
@@ -7375,18 +7538,20 @@
         $self->addLabel($table, '<b>Window size settings</b>',
             0, 12, 4, 5);
 
-        $width = $axmud::CLIENT->constWorkspaceMaxWidth;
-        $height = $axmud::CLIENT->constWorkspaceMaxHeight;
+        $maxWidth = $axmud::CLIENT->constWorkspaceMaxWidth;
+        $maxHeight = $axmud::CLIENT->constWorkspaceMaxHeight;
 
-        $self->addLabel($table, 'Default width for \'main\' windows (range 100-' . $width . ')',
+        $self->addLabel($table, 'Default width for \'main\' windows (range 100-' . $maxWidth . ')',
             1, 6, 5, 6);
-        my $entry5 = $self->addEntryWithIcon($table, undef, 'int', 100, $width,
+        my $entry5 = $self->addEntryWithIcon($table, undef, 'int', 100, $maxWidth,
             6, 8, 5, 6, 8, 8);
         $entry5->set_text($axmud::CLIENT->customMainWinWidth);
 
-        $self->addLabel($table, 'Default height for \'main\' windows (range 100-' . $height . ')',
+        $self->addLabel(
+            $table,
+            'Default height for \'main\' windows (range 100-' . $maxHeight . ')',
             1, 6, 6, 7);
-        my $entry6 = $self->addEntryWithIcon($table, undef, 'int', 100, $height,
+        my $entry6 = $self->addEntryWithIcon($table, undef, 'int', 100, $maxHeight,
             6, 8, 6, 7, 8, 8);
         $entry6->set_text($axmud::CLIENT->customMainWinHeight);
 
@@ -7408,7 +7573,7 @@
         });
 
         my $button3 = $self->addButton($table,
-            'Reset', 'Reset the default width/height ', undef,
+            'Reset', 'Reset the default width/height', undef,
             10, 12, 6, 7);
         $button3->signal_connect('clicked' => sub {
 
@@ -7423,17 +7588,17 @@
 
         $self->addLabel(
             $table,
-            'Default width for other \'grid\' windows (range 100-' . $width . ')',
+            'Default width for other \'grid\' windows (range 100-' . $maxWidth . ')',
             1, 6, 7, 8);
-        my $entry7 = $self->addEntryWithIcon($table, undef, 'int', 100, $width,
+        my $entry7 = $self->addEntryWithIcon($table, undef, 'int', 100, $maxWidth,
             6, 8, 7, 8, 8, 8);
         $entry7->set_text($axmud::CLIENT->customGridWinWidth);
 
         $self->addLabel(
             $table,
-            'Default height for other \'grid\' windows (range 100-' . $height . ')',
+            'Default height for other \'grid\' windows (range 100-' . $maxHeight . ')',
             1, 6, 8, 9);
-        my $entry8 = $self->addEntryWithIcon($table, undef, 'int', 100, $height,
+        my $entry8 = $self->addEntryWithIcon($table, undef, 'int', 100, $maxHeight,
             6, 8, 8, 9, 8, 8);
         $entry8->set_text($axmud::CLIENT->customGridWinHeight);
 
@@ -7455,7 +7620,7 @@
         });
 
         my $button5 = $self->addButton($table,
-            'Reset', 'Reset the default width/height ', undef,
+            'Reset', 'Reset the default width/height', undef,
             10, 12, 8, 9);
         $button5->signal_connect('clicked' => sub {
 
@@ -7468,17 +7633,58 @@
             $entry8->set_text($axmud::CLIENT->customGridWinHeight);
         });
 
-        $self->addLabel($table, 'Default width for \'free\' windows',
-            1, 6, 9, 10);
-        my $entry9 = $self->addEntry($table, undef, FALSE,
-            6, 8, 9, 10, 8, 8);
-        $entry9->set_text($axmud::CLIENT->constFreeWinWidth);
+        $self->addLabel(
+            $table,
+            '<i>Tip: Only increase the \'free\' window size if <u>this</u> window is too small for'
+            . ' comfort</i>',
+            1, 12, 9, 10);
 
-        $self->addLabel($table, 'Default height for \'free\' windows',
+        $self->addLabel(
+            $table,
+            'Default width for \'free\' windows (range 100-' . $maxWidth . ')',
             1, 6, 10, 11);
-        my $entry10 = $self->addEntry($table, undef, FALSE,
+        my $entry9 = $self->addEntryWithIcon($table, undef, 'int', 100, $maxWidth,
             6, 8, 10, 11, 8, 8);
-        $entry10->set_text($axmud::CLIENT->constFreeWinHeight);
+        $entry9->set_text($axmud::CLIENT->customFreeWinWidth);
+
+        $self->addLabel(
+            $table,
+            'Default height for \'free\' windows (range 100-' . $maxHeight . ')',
+            1, 6, 11, 12);
+        my $entry10 = $self->addEntryWithIcon($table, undef, 'int', 100, $maxHeight,
+            6, 8, 11, 12, 8, 8);
+        $entry10->set_text($axmud::CLIENT->customFreeWinHeight);
+
+        my $button6 = $self->addButton($table,
+            'Set', 'Set the default width/height', undef,
+            8, 10, 11, 12);
+        $button6->signal_connect('clicked' => sub {
+
+            if ($self->checkEntryIcon($entry9, $entry10)) {
+
+                $self->session->pseudoCmd(
+                    'setwindowsize -f ' . $entry9->get_text() . ' ' . $entry10->get_text(),
+                    $self->pseudoCmdMode,
+                );
+
+                $entry9->set_text($axmud::CLIENT->customFreeWinWidth);
+                $entry10->set_text($axmud::CLIENT->customFreeWinHeight);
+            }
+        });
+
+        my $button7 = $self->addButton($table,
+            'Reset', 'Reset the default width/height', undef,
+            10, 12, 11, 12);
+        $button7->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd(
+                'setwindowsize -f',
+                $self->pseudoCmdMode,
+            );
+
+            $entry9->set_text($axmud::CLIENT->customFreeWinWidth);
+            $entry10->set_text($axmud::CLIENT->customFreeWinHeight);
+        });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -8221,12 +8427,6 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
-        # Local variables
-        my (
-            $allString, $defaultString,
-            @columnList, @emptyList,
-        );
-
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -8235,396 +8435,6 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
-
-        # Workspace grids
-        $self->addLabel($table, '<b>Workspace grids</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table,
-            '<i>List of workspace grids on which \'grid\' windows are arranged</i>',
-            1, 6, 1, 2);
-        my $checkButton = $self->addCheckButton($table, undef, FALSE,
-            8, 9, 1, 2);
-        $checkButton->set_active($axmud::CLIENT->activateGridFlag);
-        $self->addLabel($table, 'Grids are activated in general',
-            9, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Workspace', 'int',
-            'Grid num', 'int',
-            'Session', 'text',
-            'Zonemap', 'text',
-            'Layers', 'int',
-            'Max', 'int',
-            'No. zones', 'int',
-            'No. windows', 'int',
-        );
-
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 9,
-            -1, 200);           # Fixed height
-
-        # Initialise the list
-        $self->workspaces5Tab_refreshList($slWidget, scalar (@columnList / 2));
-
-        # Add editing widgets
-        $self->addLabel($table, 'Workspace:',
-            1, 3, 9, 10);
-        my $combo = $self->addComboBox($table, undef, \@emptyList, '',
-            TRUE,               # No 'undef' value used
-            3, 6, 9, 10);
-        $allString = '(all workspaces)';
-        $self->workspaces5Tab_resetCombo($combo, $allString);
-
-        $self->addLabel($table, 'Default zonemap:',
-            6, 9, 9, 10);
-        my $combo2 = $self->addComboBox($table, undef, \@emptyList, '',
-            TRUE,               # No 'undef' value used
-            9, 12, 9, 10);
-        $defaultString = '(' . $axmud::SCRIPT . ' chooses a zonemap)';
-        $self->workspaces5Tab_resetCombo2($combo2, $defaultString);
-
-        my $button = $self->addButton(
-            $table,
-            'Activate grids',
-            'Activate workspace grid(s) on the specified workspace using the specified default'
-            . ' zonemap',
-            undef,
-            1, 3, 10, 11);
-        $button->signal_connect('clicked' => sub {
-
-            my ($cmd, $number, $zonemap);
-
-            $cmd = 'activategrid';
-
-            $number = $combo->get_active_text();
-            if ($number ne $allString) {
-
-                $cmd .= ' ' . $number;
-            }
-
-            $zonemap = $combo2->get_active_text();
-            if ($zonemap ne $defaultString) {
-
-                $cmd .= ' -z ' . $zonemap;
-            }
-
-            $self->session->pseudoCmd($cmd, $self->pseudoCmdMode);
-
-            # Refresh the list
-            $self->workspaces5Tab_refreshList($slWidget, scalar (@columnList / 2));
-            # Update widgets
-            $self->workspaces5Tab_resetCombo($combo, $allString);
-            $self->workspaces5Tab_resetCombo2($combo2, $defaultString);
-            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
-        });
-
-        my $button2 = $self->addButton(
-            $table,
-            'Disactivate grids',
-            'Disactivate workspace grid(s) on the specified workspace',
-            undef,
-            3, 6, 10, 11);
-        $button2->signal_connect('clicked' => sub {
-
-            my ($cmd, $number);
-
-            $cmd = 'disactivategrid';
-
-            $number = $combo->get_active_text();
-            if ($number ne $allString) {
-
-                $cmd .= ' ' . $number;
-            }
-
-            $self->session->pseudoCmd($cmd, $self->pseudoCmdMode);
-
-            # Refresh the list
-            $self->workspaces5Tab_refreshList($slWidget, scalar (@columnList / 2));
-            # Update widgets
-            $self->workspaces5Tab_resetCombo($combo, $allString);
-            $self->workspaces5Tab_resetCombo2($combo2, $defaultString);
-            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
-        });
-
-        my $button3 = $self->addButton(
-            $table,
-            'Reset selected grids',
-            'Reset selected workspace grid using the specified default zonemap',
-            undef,
-            6, 9, 10, 11);
-        $button3->signal_connect('clicked' => sub {
-
-            my ($number, $cmd, $zonemap);
-
-            ($number) = $self->getSimpleListData($slWidget, 1);
-            if (defined $number) {
-
-                $cmd = 'resetgrid ' . $number;
-
-                $zonemap = $combo2->get_active_text();
-                if ($zonemap ne $defaultString) {
-
-                    $cmd .= ' ' . $zonemap;
-                }
-
-                $self->session->pseudoCmd($cmd, $self->pseudoCmdMode);
-            }
-
-            # Refresh the list
-            $self->workspaces5Tab_refreshList($slWidget, scalar (@columnList / 2));
-            # Update widgets
-            $self->workspaces5Tab_resetCombo($combo, $allString);
-            $self->workspaces5Tab_resetCombo2($combo2, $defaultString);
-            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
-        });
-
-        my $button4 = $self->addButton(
-            $table,
-            'Reset grids',
-            'Reset workspace grid(s) on the specified workspace using the specified default'
-            . ' zonemap',
-            undef,
-            9, 12, 10, 11);
-        $button4->signal_connect('clicked' => sub {
-
-            my ($cmd, $number, $zonemap);
-
-            $cmd = 'resetgrid';
-
-            $number = $combo->get_active_text();
-            if (defined $number) {
-
-                if ($number eq $allString) {
-                    $cmd .= ' -s';
-                } else {
-                    $cmd .= ' -w ' . $number;
-                }
-
-                $zonemap = $combo2->get_active_text();
-                if ($zonemap ne $defaultString) {
-
-                    $cmd .= ' ' . $zonemap;
-                }
-
-                $self->session->pseudoCmd($cmd, $self->pseudoCmdMode);
-            }
-
-            # Refresh the list
-            $self->workspaces5Tab_refreshList($slWidget, scalar (@columnList / 2));
-            # Update widgets
-            $self->workspaces5Tab_resetCombo($combo, $allString);
-            $self->workspaces5Tab_resetCombo2($combo2, $defaultString);
-            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
-        });
-
-        my $button5 = $self->addButton(
-            $table,
-            'View selected grid',
-            'View settings for the selected workspace grid',
-            undef,
-            6, 9, 11, 12);
-        $button5->signal_connect('clicked' => sub {
-
-            my ($number, $obj);
-
-            ($number) = $self->getSimpleListData($slWidget, 1);
-            if (defined $number) {
-
-                $obj = $axmud::CLIENT->desktopObj->ivShow('gridHash', $number);
-                if ($obj) {
-
-                    # Open an 'edit' window to edit the workspace grid
-                    $self->createFreeWin(
-                        'Games::Axmud::EditWin::WorkspaceGrid',
-                        $self,
-                        $self->session,
-                        'Edit workspace grid #' . $number,
-                        $obj,
-                        FALSE,                          # Not temporary
-                    );
-                }
-            }
-        });
-
-        my $button6 = $self->addButton(
-            $table,
-            'Refresh list',
-            'Refresh the list of workspace grids',
-            undef,
-            9, 12, 11, 12);
-        $button6->signal_connect('clicked' => sub {
-
-            # Refresh the list
-            $self->workspaces5Tab_refreshList($slWidget, scalar (@columnList / 2));
-            # Update widgets
-            $self->workspaces5Tab_resetCombo($combo, $allString);
-            $self->workspaces5Tab_resetCombo2($combo2, $defaultString);
-            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
-        });
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub workspaces5Tab_refreshList {
-
-        # Called by $self->workspaces5Tab to refresh the first GA::Gtk::Simple::List
-        #
-        # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
-        #   $columns    - The number of columns in the list
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $slWidget, $columns, $check) = @_;
-
-        # Local variables
-        my @dataList;
-
-        # Check for improper arguments
-        if (! defined $slWidget || ! defined $columns || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->workspaces5Tab_refreshList',
-                @_,
-            );
-        }
-
-        # Compile the simple list data
-        foreach my $obj (
-            sort {
-                if ($a->workspaceObj->number != $b->workspaceObj->number) {
-                    return $a->workspaceObj->number <=> $b->workspaceObj->number;
-                } else {
-                    return $a->number <=> $b->number;
-                }
-            }
-            ($axmud::CLIENT->desktopObj->ivValues('gridHash'))
-        ) {
-            my $string;
-
-            if ($obj->owner) {
-                $string = $obj->owner->number;
-            } else {
-                $string = '(shared)';
-            }
-
-            push (@dataList,
-                $obj->workspaceObj->number,
-                $obj->number,
-                $string,
-                $obj->zonemap,
-                $obj->currentLayer,
-                $obj->maxLayers,
-                $obj->ivPairs('zoneHash'),
-                $obj->ivPairs('gridWinHash'),
-            );
-        }
-
-        # Reset the simple list
-        $self->resetListData($slWidget, [@dataList], $columns);
-
-        return 1;
-    }
-
-    sub workspaces5Tab_resetCombo {
-
-        # Called by $self->workspaces5Tab to reset the contents of the first combobox
-        #
-        # Expected arguments
-        #   $combo      - The combobox whose contents should be reset
-        #   $title      - The title used in the combobox
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $combo, $title, $check) = @_;
-
-        # Local variables
-        my @comboList;
-
-        # Check for improper arguments
-        if (! defined $combo || ! defined $title || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->workspaces5Tab_resetCombo',
-                @_,
-            );
-        }
-
-        # Compile a list of combobox items
-        @comboList = sort {$a <=> $b} ($axmud::CLIENT->desktopObj->ivKeys('workspaceHash'));
-        unshift (@comboList, $title);
-
-        # Reset the combobox
-        $self->resetComboBox($combo, @comboList);
-
-        return 1;
-    }
-
-    sub workspaces5Tab_resetCombo2 {
-
-        # Called by $self->workspaces5Tab to reset the contents of the second combobox
-        #
-        # Expected arguments
-        #   $combo      - The combobox whose contents should be reset
-        #   $title      - The title used in the combobox
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $combo, $title, $check) = @_;
-
-        # Local variables
-        my @comboList;
-
-        # Check for improper arguments
-        if (! defined $combo || ! defined $title || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->workspaces5Tab_resetCombo2',
-                @_,
-            );
-        }
-
-        # Compile a list of combobox items
-        @comboList = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('zonemapHash'));
-        unshift (@comboList, $title);
-
-        # Reset the combobox
-        $self->resetComboBox($combo, @comboList);
-
-        return 1;
-    }
-
-    sub workspaces6Tab {
-
-        # Workspaces6 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->workspaces6Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
 
         # General workspace grid settings
         $self->addLabel($table, '<b>General workspace grid settings</b>',
@@ -8740,9 +8550,9 @@
         });
 
         $self->addLabel($table, 'Enable grid adjustment (fill small gaps)',
-            1, 11, 5, 6);
+            1, 5, 5, 6);
         my $checkButton2 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 5, 6);
+            5, 6, 5, 6);
         $checkButton2->set_active($axmud::CLIENT->gridAdjustmentFlag);
         $checkButton2->signal_connect('toggled' => sub {
 
@@ -8761,9 +8571,9 @@
         });
 
         $self->addLabel($table, 'Enable edge correction (edge of desktop)',
-            1, 11, 6, 7);
+            1, 5, 6, 7);
         my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 6, 7);
+            5, 6, 6, 7);
         $checkButton3->set_active($axmud::CLIENT->gridEdgeCorrectionFlag);
         $checkButton3->signal_connect('toggled' => sub {
 
@@ -8782,9 +8592,9 @@
         });
 
         $self->addLabel($table, 'Enable window reshuffling',
-            1, 11, 7, 8);
+            1, 5, 7, 8);
         my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 7, 8);
+            5, 6, 7, 8);
         $checkButton4->set_active($axmud::CLIENT->gridReshuffleFlag);
         $checkButton4->signal_connect('toggled' => sub {
 
@@ -8803,9 +8613,9 @@
         });
 
         $self->addLabel($table, 'Enable hiding of other session\'s windows',
-            1, 11, 8, 9);
+            1, 5, 8, 9);
         my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 8, 9);
+            5, 6, 8, 9);
         $checkButton5->set_active($axmud::CLIENT->gridInvisWinFlag);
         $checkButton5->signal_connect('toggled' => sub {
 
@@ -8825,6 +8635,402 @@
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub workspaces6Tab {
+
+        # workspaces6 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my (
+            $allString, $defaultString,
+            @columnList, @emptyList,
+        );
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->workspaces6Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
+
+        # Workspace grids
+        $self->addLabel($table, '<b>Workspace grids</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of workspace grids on which \'grid\' windows are arranged</i>',
+            1, 6, 1, 2);
+        my $checkButton = $self->addCheckButton($table, undef, FALSE,
+            8, 9, 1, 2);
+        $checkButton->set_active($axmud::CLIENT->activateGridFlag);
+        $self->addLabel($table, 'Grids are activated in general',
+            9, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Workspace', 'int',
+            'Grid num', 'int',
+            'Session', 'text',
+            'Zonemap', 'text',
+            'Layers', 'int',
+            'Max', 'int',
+            'No. zones', 'int',
+            'No. windows', 'int',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 9,
+            -1, 200);           # Fixed height
+
+        # Initialise the list
+        $self->workspaces6Tab_refreshList($slWidget, scalar (@columnList / 2));
+
+        # Add editing widgets
+        $self->addLabel($table, 'Workspace:',
+            1, 3, 9, 10);
+        my $combo = $self->addComboBox($table, undef, \@emptyList, '',
+            TRUE,               # No 'undef' value used
+            3, 6, 9, 10);
+        $allString = '(all workspaces)';
+        $self->workspaces6Tab_resetCombo($combo, $allString);
+
+        $self->addLabel($table, 'Default zonemap:',
+            6, 9, 9, 10);
+        my $combo2 = $self->addComboBox($table, undef, \@emptyList, '',
+            TRUE,               # No 'undef' value used
+            9, 12, 9, 10);
+        $defaultString = '(' . $axmud::SCRIPT . ' chooses a zonemap)';
+        $self->workspaces6Tab_resetCombo2($combo2, $defaultString);
+
+        my $button = $self->addButton(
+            $table,
+            'Activate grids',
+            'Activate workspace grid(s) on the specified workspace using the specified default'
+            . ' zonemap',
+            undef,
+            1, 3, 10, 11);
+        $button->signal_connect('clicked' => sub {
+
+            my ($cmd, $number, $zonemap);
+
+            $cmd = 'activategrid';
+
+            $number = $combo->get_active_text();
+            if ($number ne $allString) {
+
+                $cmd .= ' ' . $number;
+            }
+
+            $zonemap = $combo2->get_active_text();
+            if ($zonemap ne $defaultString) {
+
+                $cmd .= ' -z ' . $zonemap;
+            }
+
+            $self->session->pseudoCmd($cmd, $self->pseudoCmdMode);
+
+            # Refresh the list
+            $self->workspaces6Tab_refreshList($slWidget, scalar (@columnList / 2));
+            # Update widgets
+            $self->workspaces6Tab_resetCombo($combo, $allString);
+            $self->workspaces6Tab_resetCombo2($combo2, $defaultString);
+            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
+        });
+
+        my $button2 = $self->addButton(
+            $table,
+            'Disactivate grids',
+            'Disactivate workspace grid(s) on the specified workspace',
+            undef,
+            3, 6, 10, 11);
+        $button2->signal_connect('clicked' => sub {
+
+            my ($cmd, $number);
+
+            $cmd = 'disactivategrid';
+
+            $number = $combo->get_active_text();
+            if ($number ne $allString) {
+
+                $cmd .= ' ' . $number;
+            }
+
+            $self->session->pseudoCmd($cmd, $self->pseudoCmdMode);
+
+            # Refresh the list
+            $self->workspaces6Tab_refreshList($slWidget, scalar (@columnList / 2));
+            # Update widgets
+            $self->workspaces6Tab_resetCombo($combo, $allString);
+            $self->workspaces6Tab_resetCombo2($combo2, $defaultString);
+            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
+        });
+
+        my $button3 = $self->addButton(
+            $table,
+            'Reset selected grids',
+            'Reset selected workspace grid using the specified default zonemap',
+            undef,
+            6, 9, 10, 11);
+        $button3->signal_connect('clicked' => sub {
+
+            my ($number, $cmd, $zonemap);
+
+            ($number) = $self->getSimpleListData($slWidget, 1);
+            if (defined $number) {
+
+                $cmd = 'resetgrid ' . $number;
+
+                $zonemap = $combo2->get_active_text();
+                if ($zonemap ne $defaultString) {
+
+                    $cmd .= ' ' . $zonemap;
+                }
+
+                $self->session->pseudoCmd($cmd, $self->pseudoCmdMode);
+            }
+
+            # Refresh the list
+            $self->workspaces6Tab_refreshList($slWidget, scalar (@columnList / 2));
+            # Update widgets
+            $self->workspaces6Tab_resetCombo($combo, $allString);
+            $self->workspaces6Tab_resetCombo2($combo2, $defaultString);
+            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
+        });
+
+        my $button4 = $self->addButton(
+            $table,
+            'Reset grids',
+            'Reset workspace grid(s) on the specified workspace using the specified default'
+            . ' zonemap',
+            undef,
+            9, 12, 10, 11);
+        $button4->signal_connect('clicked' => sub {
+
+            my ($cmd, $number, $zonemap);
+
+            $cmd = 'resetgrid';
+
+            $number = $combo->get_active_text();
+            if (defined $number) {
+
+                if ($number eq $allString) {
+                    $cmd .= ' -s';
+                } else {
+                    $cmd .= ' -w ' . $number;
+                }
+
+                $zonemap = $combo2->get_active_text();
+                if ($zonemap ne $defaultString) {
+
+                    $cmd .= ' ' . $zonemap;
+                }
+
+                $self->session->pseudoCmd($cmd, $self->pseudoCmdMode);
+            }
+
+            # Refresh the list
+            $self->workspaces6Tab_refreshList($slWidget, scalar (@columnList / 2));
+            # Update widgets
+            $self->workspaces6Tab_resetCombo($combo, $allString);
+            $self->workspaces6Tab_resetCombo2($combo2, $defaultString);
+            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
+        });
+
+        my $button5 = $self->addButton(
+            $table,
+            'View selected grid',
+            'View settings for the selected workspace grid',
+            undef,
+            6, 9, 11, 12);
+        $button5->signal_connect('clicked' => sub {
+
+            my ($number, $obj);
+
+            ($number) = $self->getSimpleListData($slWidget, 1);
+            if (defined $number) {
+
+                $obj = $axmud::CLIENT->desktopObj->ivShow('gridHash', $number);
+                if ($obj) {
+
+                    # Open an 'edit' window to edit the workspace grid
+                    $self->createFreeWin(
+                        'Games::Axmud::EditWin::WorkspaceGrid',
+                        $self,
+                        $self->session,
+                        'Edit workspace grid #' . $number,
+                        $obj,
+                        FALSE,                          # Not temporary
+                    );
+                }
+            }
+        });
+
+        my $button6 = $self->addButton(
+            $table,
+            'Refresh list',
+            'Refresh the list of workspace grids',
+            undef,
+            9, 12, 11, 12);
+        $button6->signal_connect('clicked' => sub {
+
+            # Refresh the list
+            $self->workspaces6Tab_refreshList($slWidget, scalar (@columnList / 2));
+            # Update widgets
+            $self->workspaces6Tab_resetCombo($combo, $allString);
+            $self->workspaces6Tab_resetCombo2($combo2, $defaultString);
+            $checkButton->set_active($axmud::CLIENT->activateGridFlag);
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub workspaces6Tab_refreshList {
+
+        # Called by $self->workspaces6Tab to refresh the first GA::Gtk::Simple::List
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $columns    - The number of columns in the list
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my @dataList;
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->workspaces6Tab_refreshList',
+                @_,
+            );
+        }
+
+        # Compile the simple list data
+        foreach my $obj (
+            sort {
+                if ($a->workspaceObj->number != $b->workspaceObj->number) {
+                    return $a->workspaceObj->number <=> $b->workspaceObj->number;
+                } else {
+                    return $a->number <=> $b->number;
+                }
+            }
+            ($axmud::CLIENT->desktopObj->ivValues('gridHash'))
+        ) {
+            my $string;
+
+            if ($obj->owner) {
+                $string = $obj->owner->number;
+            } else {
+                $string = '(shared)';
+            }
+
+            push (@dataList,
+                $obj->workspaceObj->number,
+                $obj->number,
+                $string,
+                $obj->zonemap,
+                $obj->currentLayer,
+                $obj->maxLayers,
+                $obj->ivPairs('zoneHash'),
+                $obj->ivPairs('gridWinHash'),
+            );
+        }
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [@dataList], $columns);
+
+        return 1;
+    }
+
+    sub workspaces6Tab_resetCombo {
+
+        # Called by $self->workspaces6Tab to reset the contents of the first combobox
+        #
+        # Expected arguments
+        #   $combo      - The combobox whose contents should be reset
+        #   $title      - The title used in the combobox
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $combo, $title, $check) = @_;
+
+        # Local variables
+        my @comboList;
+
+        # Check for improper arguments
+        if (! defined $combo || ! defined $title || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->workspaces6Tab_resetCombo',
+                @_,
+            );
+        }
+
+        # Compile a list of combobox items
+        @comboList = sort {$a <=> $b} ($axmud::CLIENT->desktopObj->ivKeys('workspaceHash'));
+        unshift (@comboList, $title);
+
+        # Reset the combobox
+        $self->resetComboBox($combo, @comboList);
+
+        return 1;
+    }
+
+    sub workspaces6Tab_resetCombo2 {
+
+        # Called by $self->workspaces6Tab to reset the contents of the second combobox
+        #
+        # Expected arguments
+        #   $combo      - The combobox whose contents should be reset
+        #   $title      - The title used in the combobox
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $combo, $title, $check) = @_;
+
+        # Local variables
+        my @comboList;
+
+        # Check for improper arguments
+        if (! defined $combo || ! defined $title || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->workspaces6Tab_resetCombo2',
+                @_,
+            );
+        }
+
+        # Compile a list of combobox items
+        @comboList = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('zonemapHash'));
+        unshift (@comboList, $title);
+
+        # Reset the combobox
+        $self->resetComboBox($combo, @comboList);
 
         return 1;
     }
@@ -9056,6 +9262,180 @@
                 $zonemapObj->fullFlag,
                 $zonemapObj->tempFlag,
                 $zonemapObj->ivPairs('modelHash'),
+            );
+        }
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [@dataList], $columns);
+
+        return 1;
+    }
+
+    sub workspaces8Tab {
+
+        # Workspaces8 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->workspaces8Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _8', $innerNotebook);
+
+        # Window size/position storage
+        $self->addLabel($table, '<b>Window size/position storage</b>',
+            0, 6, 0, 1);
+
+        my $checkButton = $self->addCheckButton($table, undef, TRUE,
+            7, 12, 0, 1);
+        $checkButton->set_active($axmud::CLIENT->storeGridPosnFlag);
+        $checkButton->signal_connect('toggled' => sub {
+
+            if (
+                ($checkButton->get_active() && ! $axmud::CLIENT->storeGridPosnFlag)
+                || (! $checkButton->get_active() && $axmud::CLIENT->storeGridPosnFlag)
+            ) {
+                $self->session->pseudoCmd('togglewindowstorage', $self->pseudoCmdMode);
+            }
+        });
+        $checkButton->set_label('Automatically store size/position of all \'grid\' windows');
+
+        $self->addLabel($table,
+            '<i>List of stored \'grid\' window size/positions (used when workspace grids are'
+            . ' disactivated)</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Window name', 'text',
+            'X', 'int',
+            'Y', 'int',
+            'Width', 'int',
+            'Height', 'int',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 10,
+            -1, 270);       # Fixed height
+
+        # Initialise the list
+        $self->workspaces8Tab_refreshList($slWidget, scalar (@columnList / 2));
+
+        # Add editing widgets
+        my $button = $self->addButton($table,
+            'Store current sizes/positions',
+            'Store the sizes of this session\'s \'grid\' windows',
+            undef,
+            1, 4, 10, 11);
+        $button->signal_connect('clicked' => sub {
+
+            $axmud::CLIENT->desktopObj->storeGridWinPosn($self->session);
+
+            # Refresh the simple list
+            $self->workspaces8Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        my $button2 = $self->addButton($table,
+            'Clear selected', 'Clear the selected stored size/position', undef,
+            4, 6, 10, 11);
+        $button2->signal_connect('clicked' => sub {
+
+            my ($winName) = $self->getSimpleListData($slWidget, 0);
+            if (defined $winName) {
+
+                $self->session->pseudoCmd(
+                    'clearwindowstorage <' . $winName . '>',
+                    $self->pseudoCmdMode,
+                );
+
+                # Refresh the simple list
+                $self->workspaces8Tab_refreshList($slWidget, scalar (@columnList / 2));
+            }
+        });
+
+        my $button3 = $self->addButton($table,
+            'Clear all', 'Clear all stored sizes/positions', undef,
+            6, 8, 10, 11);
+        $button3->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd('clearwindowstorage', $self->pseudoCmdMode);
+
+            # Refresh the simple list
+            $self->workspaces8Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        my $button4 = $self->addButton($table,
+            'Refresh list', 'Refresh the list of stored sizes/positions', undef,
+            10, 12, 10, 11);
+        $button4->signal_connect('clicked' => sub {
+
+            # Refresh the simple list
+            $self->workspaces8Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub workspaces8Tab_refreshList {
+
+        # Called by $self->workspaces8Tab to refresh the GA::Gtk::Simple::List
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $columns    - The number of columns in the list
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my (
+            @dataList,
+            %ivHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->workspaces8Tab_refreshList',
+                @_,
+            );
+        }
+
+        # Import the hash of stored sizes/positions
+        %ivHash = $axmud::CLIENT->storeGridPosnHash;
+
+        # Compile the simple list data
+        foreach my $winName (sort {lc($a) cmp lc($b)} (keys %ivHash)) {
+
+            my $listRef = $ivHash{$winName};
+
+            push (@dataList,
+                $winName,
+                $$listRef[0],
+                $$listRef[1],
+                $$listRef[2],
+                $$listRef[3],
             );
         }
 
@@ -14502,8 +14882,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -16092,6 +16472,23 @@
             }
         });
 
+        $self->addLabel($table, '<b>World commands</b>',
+            0, 12, 7, 8);
+        $self->addLabel($table, 'World commands also shown in \'main\' window',
+            1, 6, 8, 9);
+        my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
+            6, 8, 8, 9);
+        $checkButton9->set_active($axmud::CLIENT->confirmWorldCmdFlag);
+        $checkButton9->signal_connect('toggled' => sub {
+
+            if (
+                ($checkButton9->get_active() && ! $axmud::CLIENT->confirmWorldCmdFlag)
+                || (! $checkButton9->get_active() && $axmud::CLIENT->confirmWorldCmdFlag)
+            ) {
+                $self->session->pseudoCmd('toggleinstruct -c', $self->pseudoCmdMode);
+            }
+        });
+
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
 
@@ -16414,6 +16811,30 @@
                 '<i>Sorry, window tiling hasn\'t been implemented on MS Windows yet</i>',
                 1, 12, 1, 2);
 
+            my $checkButton = $self->addCheckButton($table, undef, TRUE,
+                1, 12, 2, 3);
+            $checkButton->signal_connect('toggled' => sub {
+
+                if (
+                    ($checkButton->get_active() && ! $axmud::CLIENT->storeGridPosnFlag)
+                    || (! $checkButton->get_active() && $axmud::CLIENT->storeGridPosnFlag)
+                ) {
+                    $self->session->pseudoCmd('togglewindowstorage', $self->pseudoCmdMode);
+                }
+            });
+            $checkButton->set_label(
+                'Automatically store sizes/positions of all \'grid\' windows, and use them when'
+                . ' opening the same window again',
+            );
+
+            my $button = $self->addButton(
+                $table,
+                'Store current sizes/positions of all \'grid\' windows for this session',
+                'Store current sizes/positions of all \'grid\' windows for this session',
+                undef,
+                1, 12, 3, 4
+            );
+
         } else {
 
             $self->addLabel(
@@ -16638,8 +17059,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -19234,8 +19655,11 @@
         $self->msdpTab();
         $self->msspTab();
         $self->mxpTab();
+        $self->zmpTab();
+        $self->aard102Tab();
         $self->atcpTab();
         $self->gmcpTab();
+        $self->mcpTab();
 
         return 1;
     }
@@ -21653,7 +22077,7 @@
         my $entry7 = $self->addEntry($table, undef, FALSE,
             5, 12, 8, 9);
 
-        $self->addLabel($table, 'AARDWOLF-102',
+        $self->addLabel($table, 'AARD102 (Aardwolf 102 channel)',
             1, 4, 9, 10);
         my $checkButton8 = $self->addCheckButton($table, undef, FALSE,
             4, 5, 9, 10);
@@ -21778,9 +22202,21 @@
             $entry6->set_text('Server has suggested Pueblo and client has refused');
         }
 
-        $entry7->set_text('(not yet implemented)');
+        if ($self->session->zmpMode eq 'no_invite') {
+            $entry7->set_text('Server has not suggested ZMP yet');
+        } elsif ($self->session->zmpMode eq 'client_agree') {
+            $entry7->set_text('Server has suggested ZMP and client has agreed');
+        } elsif ($self->session->zmpMode eq 'client_refuse') {
+            $entry7->set_text('Server has suggested ZMP and client has refused');
+        }
 
-        $entry8->set_text('(not yet implemented)');
+        if ($self->session->aard102Mode eq 'no_invite') {
+            $entry8->set_text('Server has not suggested ZMP yet');
+        } elsif ($self->session->aard102Mode eq 'client_agree') {
+            $entry8->set_text('Server has suggested ZMP and client has agreed');
+        } elsif ($self->session->aard102Mode eq 'client_refuse') {
+            $entry8->set_text('Server has suggested ZMP and client has refused');
+        }
 
         $checkButton->set_active($axmud::CLIENT->useMsdpFlag);
         $checkButton2->set_active($axmud::CLIENT->useMsspFlag);
@@ -21924,7 +22360,13 @@
             $entry3->set_text('Preferred terminal: (not sent)');
         }
 
-        $entry4->set_text('(not yet implemented)');
+        if ($self->session->mcpMode eq 'no_invite') {
+            $entry4->set_text('Server has not suggested MCP yet');
+        } elsif ($self->session->mcpMode eq 'client_agree') {
+            $entry4->set_text('Server has suggested MCP and client has agreed');
+        } elsif ($self->session->mcpMode eq 'client_refuse') {
+            $entry4->set_text('Server has suggested MCP and client has refused');
+        }
 
         $checkButton->set_active($axmud::CLIENT->useAtcpFlag);
         $checkButton2->set_active($axmud::CLIENT->useGmcpFlag);
@@ -23161,6 +23603,212 @@
         return 1;
     }
 
+    sub zmpTab {
+
+        # Zmp tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->zmpTab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('_ZMP', $self->notebook);
+
+        # Supported ZMP packages
+        $self->addLabel($table, '<b>Supported ZMP pacakges</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of supported ZMP packages/commands (ZMP packages are created by plugins)</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Package', 'text',
+            'World', 'text',
+            'Commands', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 10,
+            -1, 300);      # Fixed height
+
+        # Initialise the list
+        $self->zmpTab_refreshList($slWidget, scalar (@columnList / 2));
+
+        # Add a button
+        my $button = $self->addButton($table,
+            'Refresh list', 'Refresh the list of GMCP data', undef,
+            9, 12, 10, 11);
+        $button->signal_connect('clicked' => sub {
+
+            $self->zmpTab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub zmpTab_refreshList {
+
+        # Resets the simple list displayed by $self->zmpTab
+        #
+        # Expected arguments
+        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $columns        - The number of columns
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my (
+            @dataList,
+            %hash,
+        );
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->zmpTab_refreshList', @_);
+        }
+
+        # Actually display ZMP packages for all sessions (they're stored in a GA::Client IV, but
+        #   this is the most logical place to display them)
+
+        # Import the IV
+        %hash = $axmud::CLIENT->zmpPackageHash;
+
+        # Compile the simple list data
+        foreach my $obj (sort {lc($a->packageName) cmp lc($b->packageName)} (values %hash)) {
+
+            my $world;
+
+            if (! $obj->world) {
+                $world = '<all worlds>';
+            } else {
+                $world = $world;
+            }
+
+            push (
+                @dataList,
+                $obj->packageName,
+                $world,
+                join(' / ', sort {lc($a) cmp lc($b)} ($obj->ivKeys('cmdHash'))),
+            );
+        }
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [@dataList], $columns);
+
+        return 1;
+    }
+
+    sub aard102Tab {
+
+        # Aard102 tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->aard102Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('AA_RD102', $self->notebook);
+
+        # AARD102 (Aardolf 102 channel)
+        $self->addLabel($table, '<b>AARD102 (Aardolf 102 channel)</b>',
+            0, 12, 0, 2);
+
+        $self->addLabel($table,
+            'AARD102 status, as reported by the world',
+            1, 6, 2, 4);
+        my $entry = $self->addEntry($table, undef, FALSE,
+            6, 12, 2, 4);
+        if (defined $self->session->aard102Status) {
+            $entry->set_text($self->session->aard102Status);
+        } else {
+            $entry->set_text('<not received>');
+        }
+
+        $self->addLabel($table,
+            'Tick time',
+            1, 6, 4, 6);
+        my $entry2 = $self->addEntry($table, undef, FALSE,
+            6, 12, 4, 6);
+        if (defined $self->session->aard102TickTime) {
+            $entry2->set_text($self->session->aard102TickTime);
+        } else {
+            $entry2->set_text('<not received>');
+        }
+
+        $self->addLabel($table,
+            '(Compare the session time)',
+            1, 6, 6, 8);
+        my $entry3 = $self->addEntry($table, undef, FALSE,
+            6, 12, 6, 8);
+        if (defined $self->session->sessionTime) {
+
+            $entry3->set_text($self->session->sessionTime);
+        }
+
+        my $button = $self->addButton($table,
+            'Refresh list', 'Refresh the data displayed', undef,
+            10, 12, 8, 10);
+        $button->signal_connect('clicked' => sub {
+
+            if (defined $self->session->aard102Status) {
+
+                $entry->set_text($self->session->aard102Status);
+            }
+
+            if (defined $self->session->aard102TickTime) {
+
+                $entry2->set_text($self->session->aard102TickTime);
+            }
+
+            if (defined $self->session->sessionTime) {
+
+                $entry3->set_text($self->session->sessionTime);
+            }
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
     sub atcpTab {
 
         # Atcp tab
@@ -23359,6 +24007,268 @@
             my $dataObj = $hash{$key};
 
             push (@dataList, $key, $axmud::CLIENT->encodeJson($dataObj->data));
+        }
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [@dataList], $columns);
+
+        return 1;
+    }
+
+    sub mcpTab {
+
+        # Mcp tab - called by $self->setupNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcpTab', @_);
+        }
+
+        # Tab setup
+        # Create a notebook within the main one, so that we have two rows of tabs
+        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('MCP', $self->notebook);
+
+        # Add tabs to the inner notebook
+        $self->mcp1Tab($innerNotebook);
+        $self->mcp2Tab($innerNotebook);
+
+        return 1;
+    }
+
+    sub mcp1Tab {
+
+        # Mcp1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcp1Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+
+        # MCP supported packages
+        $self->addLabel($table, '<b>MCP supported packages</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of MCP packages supported by ' . $axmud::SCRIPT
+            . ', or defined by a plugin</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Package', 'text',
+            'Plugin', 'text',
+            'Min version', 'text',
+            'Max version', 'text',
+            'Other packages supplanted', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 10, -1, 270);      # Fixed height
+
+        # Initialise the list
+        $self->mcp1Tab_refreshList($slWidget, scalar (@columnList / 2));
+
+        # Add a button
+        my $button = $self->addButton($table,
+            'Refresh list', 'Refresh the list of packages', undef,
+            9, 12, 10, 11);
+        $button->signal_connect('clicked' => sub {
+
+            $self->mcp1Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub mcp1Tab_refreshList {
+
+        # Resets the simple list displayed by $self->mcp1Tab
+        #
+        # Expected arguments
+        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $columns        - The number of columns
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my (
+            @dataList,
+            %hash,
+        );
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcp1Tab_refreshList', @_);
+        }
+
+        # Import the hash IV
+        %hash = $axmud::CLIENT->mcpPackageHash;
+
+        # Compile the simple list data
+        foreach my $obj (sort {lc($a->name) cmp lc($b->name)} (values %hash)) {
+
+            my $plugin;
+
+            if (defined $obj->plugin) {
+                $plugin = $obj->plugin;
+            } else {
+                $plugin = 'n/a';
+            }
+
+            push (@dataList,
+                $obj->name,
+                $plugin,
+                $obj->minVersion,
+                $obj->maxVersion,
+                join(' ', $obj->supplantList),
+            );
+        }
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [@dataList], $columns);
+
+        return 1;
+    }
+
+    sub mcp2Tab {
+
+        # Mcp2 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcp2Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
+
+        # MCP packages in use
+        $self->addLabel($table, '<b>MCP packages in use</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of MCP packages in use by this session (supported by both the world and '
+            . $axmud::SCRIPT . ')</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Package', 'text',
+            'Plugin', 'text',
+            'Used version', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 10, -1, 270);      # Fixed height
+
+        # Initialise the list
+        $self->mcp2Tab_refreshList($slWidget, scalar (@columnList / 2));
+
+        # Add a button
+        my $button = $self->addButton($table,
+            'Refresh list', 'Refresh the list of packages', undef,
+            9, 12, 10, 11);
+        $button->signal_connect('clicked' => sub {
+
+            $self->list($slWidget, scalar (@columnList / 2));
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub mcp2Tab_refreshList {
+
+        # Resets the simple list displayed by $self->mcp2Tab
+        #
+        # Expected arguments
+        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $columns        - The number of columns
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my (
+            @dataList,
+            %hash,
+        );
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mcp2Tab_refreshList', @_);
+        }
+
+        # Import the hash IV
+        %hash = $self->session->mcpPackageHash;
+
+        # Compile the simple list data
+        foreach my $obj (sort {lc($a->name) cmp lc($b->name)} (values %hash)) {
+
+            my $plugin;
+
+            if (defined $obj->plugin) {
+                $plugin = $obj->plugin;
+            } else {
+                $plugin = 'n/a';
+            }
+
+            push (@dataList,
+                $obj->name,
+                $plugin,
+                $obj->useVersion,
+            );
         }
 
         # Reset the simple list
@@ -23873,5 +24783,5 @@
     # Accessors - get
 }
 
-# Package must return true
+# Package must return a true value
 1

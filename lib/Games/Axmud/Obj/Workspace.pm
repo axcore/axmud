@@ -2118,6 +2118,16 @@
             # Unminimise it now
             $winObj->winWidget->deiconify();
 
+            # Update the GA::Client's hash of stored window positions (if required)
+            if ($winObj->winWidget) {
+
+                $axmud::CLIENT->add_storeGridPosn(
+                    $winObj,
+                    $winObj->winWidget->get_position(),
+                    $winObj->winWidget->get_size(),
+                );
+            }
+
         } else {
 
             # Update the 'external' window object's IVs
@@ -2318,7 +2328,7 @@
 
         # Local variables
         my (
-            $winmapObj, $winObj,
+            $listRef, $winmapObj, $winObj,
             @geometryList,
         );
 
@@ -2328,7 +2338,35 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->createSimpleGridWin', @_);
         }
 
-        # If no size was specified, use a default size
+        # If the GA::Client IV stores a position/size for a window with this $winName, we might be
+        #   able to use it (but never for 'external' windows)
+        $listRef = $axmud::CLIENT->ivShow('storeGridPosnHash', $winName);
+        if ($winType ne 'external' && defined $listRef) {
+
+            # $listRef is in the form (x y wid hei)
+            if (
+                ! defined $xPosPixels
+                && ! defined $yPosPixels
+                && defined $$listRef[0]
+                && defined $$listRef[1]
+            ) {
+                $xPosPixels = $$listRef[0];
+                $yPosPixels = $$listRef[1];
+            }
+
+            if (
+                ! defined $widthPixels
+                && ! defined $heightPixels
+                && defined $$listRef[2]
+                && defined $$listRef[3]
+            ) {
+                $widthPixels = $$listRef[2];
+                $heightPixels = $$listRef[3];
+            }
+        }
+
+        # If no size is still not specified, use a default size (and let the system's window manager
+        #   set its own position)
         if (! defined $widthPixels || ! defined $heightPixels) {
 
             if ($winType eq 'main') {
@@ -2458,6 +2496,16 @@
 
                     $winObj->set_wnckWin($wnckWin);
                 }
+            }
+
+            # Update the GA::Client's hash of stored window positions (if required)
+            if ($winObj->winWidget) {
+
+                $axmud::CLIENT->add_storeGridPosn(
+                    $winObj,
+                    $winObj->winWidget->get_position(),
+                    $winObj->winWidget->get_size(),
+                );
             }
 
         } else {
@@ -3183,5 +3231,5 @@
         { $_[0]->{defaultZonemap} }
 }
 
-# Package must return true
+# Package must return a true value
 1

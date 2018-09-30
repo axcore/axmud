@@ -152,5 +152,5 @@
         { $_[0]->{tabLabel} }
 }
 
-# Package must return true
+# Package must return a true value
 1

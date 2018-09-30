@@ -1859,11 +1859,16 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->updateRegionLevels', @_);
         }
 
-        foreach my $regionName ($self->ivKeys('checkLevelsHash')) {
+        OUTER: foreach my $regionName ($self->ivKeys('checkLevelsHash')) {
 
             my ($regionmapObj, $high, $low);
 
             $regionmapObj = $self->ivShow('regionmapHash', $regionName);
+            if (! $regionmapObj) {
+
+                # Region has just been deleted, so move on to the next one
+                next OUTER;
+            }
 
             # Check every room in the map, finding the highest and lowest occupied level
             foreach my $roomNum ($regionmapObj->ivValues('gridRoomHash')) {
@@ -2422,9 +2427,11 @@
         #   $updateFlag     - Flag set to TRUE if all Automapper windows using this world model
         #                       should be updated now, FALSE if not (in which case, they can be
         #                       updated later by the calling function, when it is ready)
-        #   $name           - A name for the new region (if more than 32 characters, it is
-        #                       shortened)
+        #
         # Optional arguments
+        #   $name           - A name for the new region. If more than 32 characters, it is
+        #                       shortened. If not specified, a name is generated for it (in the
+        #                       form 'unnamed_x' or 'temporary_x')
         #   $parentNum      - The model number of the parent region object ('undef' if no parent
         #                       region)
         #   $tempFlag       - If set to TRUE, the new region is a temporary region (that should be
@@ -2440,18 +2447,40 @@
         my ($self, $session, $updateFlag, $name, $parentNum, $tempFlag, $check) = @_;
 
         # Local variables
-        my ($regionObj, $regionmapObj);
+        my ($count, $partName, $regionObj, $regionmapObj);
 
         # Check for improper arguments
-        if (! defined $session || ! defined $updateFlag || ! defined $name || defined $check) {
+        if (! defined $session || ! defined $updateFlag || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addRegion', @_);
         }
 
-        # If $name is an empty string, we can't add it as a region
-        if (! $name) {
+        # If $name is not specified, generate a name
+        if (! defined $name || $name eq '') {
 
-            return undef;
+            # Geerate a name in the form 'unnamed_x', or 'temporary_x' for temporary regions
+            if ($tempFlag) {
+                $partName = 'temporary_';
+            } else {
+                $partName = 'unnamed_';
+            }
+
+            $count = 0;
+            do {
+
+                $count++;
+                $name = $partName . $count;
+
+            } until (
+                ! $self->ivExists('regionmapHash', $name)
+                || $count > 9999
+            );
+
+            if ($count > 9999) {
+
+                # To avoid infinite loops, give up at this point
+                return undef;
+            }
         }
 
         # Check the region doesn't already exist
@@ -4084,6 +4113,23 @@
                     $updateFlag,
                     $self->ivShow('exitModelHash', $exitNum),
                 );
+            }
+
+            # If the character previously moved through a 'temp_region' random exit into a temporary
+            #   region, and either the original or destination room is being deleted, we can simply
+            #   tell the automapper object to forget about returning to the original room
+            foreach my $thisSession ($axmud::CLIENT->ivValues('sessionHash')) {
+
+                if (
+                    $thisSession->worldModelObj eq $self
+                    && defined $thisSession->mapObj->tempRandomOriginRoom
+                    && (
+                        $thisSession->mapObj->tempRandomOriginRoom eq $obj
+                        || $thisSession->mapObj->tempRandomDestRoom eq $obj
+                    )
+                ) {
+                    $thisSession->mapObj->reset_tempRandom();
+                }
             }
 
         # Player character objects have additional IVs that must be updated
@@ -9801,8 +9847,9 @@
         #   $exitObj    - The GA::Obj::Exit to convert
         #   $exitType   - Set to 'same_region' if the exit leads to a random location in the current
         #                   region, 'any_region' if the exit leads to a random location in any
-        #                   region or 'room_list' if the exit leads to a random location in the
-        #                   exit's ->randomDestList
+        #                   region, 'temp_region' if a destination should be created in a new
+        #                   temporary region,  or 'room_list' if the exit leads to a random location
+        #                   in the exit's ->randomDestList
         #
         # Return values
         #   'undef' on improper arguments
@@ -9819,7 +9866,10 @@
         # Check for improper arguments
         if (
             ! defined $updateFlag || ! defined $exitObj || ! defined $exitType
-            || ($exitType ne 'same_region' && $exitType ne 'any_region' && $exitType ne 'room_list')
+            || (
+                $exitType ne 'same_region' && $exitType ne 'any_region'
+                && $exitType ne 'temp_region' && $exitType ne 'room_list'
+            )
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setRandomExit', @_);
@@ -13029,7 +13079,8 @@
         # Called by GA::Obj::Map->useExistingRoom to compare the current location according to
         #   the Locator task (GA::Task::Locator->roomObj, a non-model room object), with the current
         #   location according to the automapper (which is in the world model)
-        # Also called by GA::Obj::Map->autoCompareLocatorRoom and GA::Cmd::LocateRoom->do
+        # Also called by GA::Obj::Map->autoCompareLocatorRoom, ->checkTempRandomReturn and
+        #   GA::Cmd::LocateRoom->do
         # How the rooms are compared depends on the values of various flags
         #
         # Expected arguments
@@ -20274,5 +20325,5 @@
         { $_[0]->{roomTextRatio} }
 }
 
-# Package must return true
+# Package must return a true value
 1

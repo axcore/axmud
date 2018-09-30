@@ -58,6 +58,9 @@
 # Games::Axmud::Generic::MapWin
 # The generic 'map' window object, inherited by all 'map' windows
 #
+# Games::Axmud::Generic::Mcp
+# Generic MCP object, inherited by all MCP package objects
+#
 # Games::Axmud::Generic::ModelObj
 # The generic model object, inherited by all model objects
 #
@@ -97,7 +100,7 @@
 
     sub new {
 
-        # Called by GA::Session->->processAtcpData processGmcpData
+        # Called by GA::Session->processAtcpData or ->processGmcpData
         # Creates a new instance of the ATCP/GMCP object (which stores ATCP/GMCP data structures)
         #
         # Expected arguments
@@ -1629,10 +1632,28 @@
 
             # Display the error. (Deliberately don't add the name of this function as the second
             #   argument, to make the line less cluttered)
-            return $session->writeError(
-                'Bad or missing arguments in \';' . $inputString . '\' - try \';help '
-                . $standardCmd . '\'',
-            );
+            if (defined $standardCmd) {
+
+                return $session->writeError(
+                    'Bad or missing arguments in \';' . $inputString . '\' - try \';help '
+                    . $standardCmd . '\'',
+                );
+
+            } elsif (
+                $axmud::CLIENT->ivExists('constPrimaryDirList', $list[0])
+                || defined $session->currentDict->checkPrimaryDir($list[0])
+            ) {
+                return $session->writeError(
+                    'Bad or missing arguments in \';' . $inputString . '\' - try'
+                    . ' \';help allocateexit\'',
+                );
+
+            } else {
+
+                return $session->writeError(
+                    'Bad or missing arguments in \';' . $inputString . '\' - try \';help\'',
+                );
+            }
 
         } elsif ($session->cmdMode eq 'hide_system') {
 
@@ -1645,7 +1666,7 @@
             $session->mainWin->showMsgDialogue(
                 'Client command error',
                 'error',
-                "Improper or invalid arguments in the client command:\n$inputString",
+                "Bad or missing arguments in the client command:\n$inputString",
                 'ok',
             );
 
@@ -7077,8 +7098,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -15890,6 +15911,399 @@
     # Accessors - get
 }
 
+{ package Games::Axmud::Generic::Mcp;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Called by GA::Client->createSupportedMcpPackages and ->addPluginMcpPackages to create an
+        #   MCP package object, which handles one or more MCP messages
+        #
+        # Objects that inherit from this one should include at least their own ->msg function (but
+        #   should use the inherited version of all other functions in this generic object,
+        #   including ->new and ->clone)
+        #
+        # Expected arguments
+        #   $name           - The name of the GCP package, e.g. 'mcp-negotiate-can'. Must conform to
+        #                       MCP's package name rules (see the MCP spec for more information)
+        #
+        # Optional aguments
+        #   $minVersion     - The minimum package version supported (e.g. 1.0, 2.0 etc). If not
+        #                       specified or not a valid number (any decimal number greater than 0),
+        #                       1.0 is used
+        #   $maxVersion     - The maximum package version supported (e.g. 1.0, 2.0 etc). If not
+        #                       specified or not a valid number (any decimal number greater than 0),
+        #                       1.0 is used
+        #   $plugin         - For MCP packages defined by a plugin, the plugin's main package
+        #                       (declared in the file header). For Axmud-supported MCP packages,
+        #                       should be 'undef'
+        #   @supplantList   - An optional list of MCP package names for which Axmud should prefer to
+        #                       use this MCP package, if the world supports both. Standard MCP
+        #                       packages like 'mcp-negotiate' cannot be supplanted (specifically,
+        #                       any package whose name begins 'mcp-' cannot be supplanted; the name
+        #                       is ignored if present in this list)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my ($class, $name, $minVersion, $maxVersion, $plugin, @supplantList) = @_;
+
+        # Local variables
+        my (
+            @modList,
+            %checkHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $name) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        # Set the minimum/maximum versions, if not specified or if invalid values specified
+        if (
+            ! defined $minVersion
+            || $minVersion eq '0'
+            || ! $axmud::CLIENT->floatCheck($minVersion, 0)
+        ) {
+            $minVersion = '1.0';
+        }
+
+        if (
+            ! defined $maxVersion
+            || $maxVersion eq '0'
+            || ! $axmud::CLIENT->floatCheck($maxVersion, 0)
+        ) {
+            $maxVersion = '1.0';
+        }
+
+        # Remove any 'official' packages (and any duplicate package names)from @supplantList
+        foreach my $item (@supplantList) {
+
+            if (! exists $checkHash{$item} && substr($item, 0, 4) ne 'mcp-') {
+
+                push (@modList, $item);
+                $checkHash{$item} = undef;
+            }
+        }
+
+        # Setup
+        my $self = {
+            _objName                    => $name,
+            _objClass                   => $class,
+            _parentFile                 => undef,
+            _parentWorld                => undef,
+            _privFlag                   => TRUE,            # All IVs are private
+
+            # IVs
+            # ---
+
+            # The name of the GCP package, e.g. 'mcp-negotiate-can'. Must conform to MCP's package
+            #   name rules (see the MCP spec for more information)
+            name                        => $name,
+            # For MCP packages defined by a plugin, the plugin's main package (declared in the file
+            #   header). For Axmud-supported MCP packages, should be 'undef'
+            plugin                      => $plugin,
+            # An optional list of MCP package names for which Axmud should prefer to use this MCP
+            #   package, if the world supports both
+            supplantList                => [@modList],
+
+            # The minimum package version supported (e.g. 1.0, 2.0 etc)
+            minVersion                  => $minVersion,
+            # The maximum package version supported (e.g. 1.0, 2.0 etc)
+            maxVersion                  => $maxVersion,
+            # The highest version that's supported by both the server and client (set by
+            #   a call to $self->set_useVersion from GA::Session->detectMCP or
+            #   ->processMcpMsg)
+            useVersion                  => undef,
+
+            # Any values which particular kinds of MCP package need to store, can be stored in this
+            #   hash
+            dataHash                    => {},
+        };
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    sub clone {
+
+        # Called by GA::Session->detectMCP to clone an MCP package object stored in
+        #   GA::Client->mcpPackageHash (with default settings, and whose code is never executed)
+        #   into an MCP package object stored in GA::Session->mcpPackageHash (with custom settings,
+        #   and whose code can be executed when MCP messages are received)
+        #
+        # Expected arguments
+        #   $session    - The GA::Session which will store the cloned MCP package object
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $session, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # Setup
+        my $clone = {
+            _objName                    => $self->_objName,
+            _objClass                   => $self->_objClass,
+            _parentFile                 => undef,
+            _parentWorld                => $session->currentWorld->name,
+            _privFlag                   => TRUE,            # All IVs are private
+
+            name                        => $self->name,
+            plugin                      => $self->plugin,
+            supplantList                => [$self->supplantList],
+            minVersion                  => $self->minVersion,
+            maxVersion                  => $self->maxVersion,
+            useVersion                  => undef,
+
+            dataHash                    => {},
+        };
+
+        # Bless the cloned object into existence
+        bless $clone, $self->_objClass;
+        return $clone;
+    }
+
+    ##################
+    # Methods
+
+    sub msg {
+
+        # Called by GA::Session->processMcpMsg
+        # This generic function does nothing, except to check that the message belongs to this
+        #   package
+        #
+        # Expected arguments
+        #   $session    - The calling GA::Session
+        #   $msg        - The MCP message name, e.g. 'mcp-negotiate-can'
+        #
+        # Optional arguments
+        #   %hash       - A hash of key-value pairs which accompany the MCP message (may be an
+        #                   empty hash)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error processing the message
+        #   1 if the message is processed successfully
+
+        my ($self, $session, $msg, %hash) = @_;
+
+        # Local variables
+        my $name;
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $msg) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->msg', @_);
+        }
+
+        # Check that the MCP message actually belongs to this package
+        $name = $self->name;
+        if (! ($msg =~ m/^$name\-/)) {
+
+            return undef;
+        }
+
+        # (Add your own code here)
+
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    sub add_scalar {
+
+        # Can be called by anything to add a key-value pair to $self->dataHash, using a scalar value
+        #   (which can be 'undef')
+        # The scalar value is stored as a scalar value and can be retrieved with a call to
+        #   $self->get_scalar()
+
+        my ($self, $key, $scalar, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $key || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_scalar', @_);
+        }
+
+        $self->ivPoke('dataHash', $key, $scalar);
+
+        return 1;
+    }
+
+    sub get_scalar {
+
+        my ($self, $key, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $key || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->get_scalar', @_);
+        }
+
+        return $self->ivShow('dataHash', $key);
+    }
+
+    sub add_list {
+
+        # Can be called by anything to add a key-value pair to $self->dataHash, using a list value
+        #   (which can be an empty list)
+        # The list value is stored as a list reference and can be retrieved with a call to
+        #   $self->get_list()
+
+        my ($self, $key, @list) = @_;
+
+        # Check for improper arguments
+        if (! defined $key) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_list', @_);
+        }
+
+        $self->ivPoke('dataHash', $key, \@list);
+
+        return 1;
+    }
+
+    sub get_list {
+
+        my ($self, $key, $check) = @_;
+
+        # Local variables
+        my $listRef;
+
+        # Check for improper arguments
+        if (! defined $key || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->get_list', @_);
+        }
+
+        $listRef = $self->ivShow('dataHash', $key);
+        if (ref $listRef eq 'ARRAY') {
+
+            return @$listRef;
+
+        } else {
+
+            # Emergency failsafe - return the reference itself
+            return $listRef;
+        }
+    }
+
+    sub add_hash {
+
+        # Can be called by anything to add a key-value pair to $self->dataHash, using a hash value
+        #   (which can be empty hash)
+        # The hash value is stored as a hash reference (and can be retrieved with a call to
+        #   $self->get_hash()
+
+        my ($self, $key, %hash) = @_;
+
+        # Check for improper arguments
+        if (! defined $key) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_hash', @_);
+        }
+
+        $self->ivPoke('dataHash', $key, \%hash);
+
+        return 1;
+    }
+
+    sub get_hash {
+
+        my ($self, $key, $check) = @_;
+
+        # Local variables
+        my $hashRef;
+
+        # Check for improper arguments
+        if (! defined $key || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->get_hash', @_);
+        }
+
+        $hashRef = $self->ivShow('dataHash', $key);
+        if (ref $hashRef eq 'HASH') {
+
+            return %$hashRef;
+
+        } else {
+
+            # Emergency failsafe - return the reference itself
+            return $hashRef;
+        }
+    }
+
+    sub del_key {
+
+        my ($self, $key, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $key || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->del_key', @_);
+        }
+
+        $self->ivDelete('dataHash', $key);
+
+        return 1;
+    }
+
+    sub set_useVersion {
+
+        my ($self, $version, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $version || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_useVersion', @_);
+        }
+
+        $self->ivPoke('useVersion', $version);
+
+        return 1;
+    }
+
+    ##################
+    # Accessors - get
+
+    sub name
+        { $_[0]->{name} }
+    sub plugin
+        { $_[0]->{plugin} }
+    sub supplantList
+        { my $self = shift; return @{$self->{supplantList}}; }
+
+    sub minVersion
+        { $_[0]->{minVersion} }
+    sub maxVersion
+        { $_[0]->{maxVersion} }
+    sub useVersion
+        { $_[0]->{useVersion} }
+
+    sub dataHash
+        { my $self = shift; return %{$self->{dataHash}}; }
+}
+
 { package Games::Axmud::Generic::ModelObj;
 
     use strict;
@@ -16390,8 +16804,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -19548,7 +19962,7 @@
             $self->setTaskWinTitle();
 
             # In Axmud 'blind' mode, make sure the session's 'main' window is not obscured by the
-            #   newly-opend task window
+            #   newly-opened task window
             if ($axmud::BLIND_MODE_FLAG) {
 
                 $self->session->mainWin->restoreFocus();
@@ -26038,8 +26452,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -26240,7 +26654,7 @@
         # Add a table (inside a scrolled window) in the higher area
         my $scroller = Gtk2::ScrolledWindow->new(undef, undef);
         $packingBox->pack_start($scroller, TRUE, TRUE, 0);
-        $scroller->set_policy('never', 'automatic');
+        $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(5);
 
         my $table = Gtk2::Table->new($self->tableHeight, $self->tableWidth, FALSE);
@@ -26723,5 +27137,5 @@
         { my $self = shift; return %{$self->{specialPreviousButtonHash}}; }
 }
 
-# Package must return true
+# Package must return a true value
 1

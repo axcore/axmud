@@ -14117,478 +14117,6 @@
         { $_[0]->{nextObjTime} }
 }
 
-{ package Games::Axmud::Task::Debugger;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Task Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Creates a new instance of the Debugger task
-        #
-        # Expected arguments
-        #   $session    - The parent GA::Session (not stored as an IV)
-        #
-        # Optional arguments
-        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
-        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
-        #                   should be run when the user connects to the world), 'custom' (tasks with
-        #                   customised initial parameters, which are run when the user demands). If
-        #                   set to 'undef', this is a temporary task, created in order to access the
-        #                   default values stored in IVs, that will not be added to any tasklist
-        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
-        #                   profile from whose initial tasklist this task was created ('undef' if
-        #                   none)
-        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
-        #                   task will be. If 'undef', the global initial tasklist is used
-        #               - ($taskType = 'custom') 'undef'
-        #   $profCategory
-        #               - ($taskType = 'current', 'initial') which category the profile falls undef
-        #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
-        #               - ($taskType = 'custom') 'undef'
-        #   $customName
-        #               - ($taskType = 'current', 'initial') 'undef'
-        #               - ($taskType = 'custom') the custom task name, matching a key in
-        #                   GA::Session->customTaskHash
-        #
-        # Return values
-        #   'undef' on improper arguments or if the task can't be added to the specified tasklist
-        #   Blessed reference to the newly-created object on success
-
-        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $class || ! defined $session || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($class . '->new', @_);
-        }
-
-        if ($taskType) {
-
-            # For initial tasks, check that $profName exists
-            if (
-                $taskType eq 'initial'
-                && defined $profName
-                && ! $session->ivExists('profHash', $profName)
-            ) {
-                return $session->writeError(
-                    'Can\'t create new task because \'' . $profName . '\' profile doesn\'t exist',
-                    $class . '->new',
-                );
-
-            # For custom tasks, check that $customName doesn't already exist
-            } elsif (
-                $taskType eq 'custom'
-                && $axmud::CLIENT->ivExists('customTaskHash', $customName)
-            ) {
-                return $session->writeError(
-                    'Can\'t create new custom task because \'' . $customName . '\' is already being'
-                    . ' used',
-                    $class . '->new',
-                );
-
-            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
-
-                return $session->writeError(
-                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
-                    $class . '->new',
-                );
-            }
-        }
-
-        # Task settings
-        my $self = Games::Axmud::Generic::Task->new(
-            $session,
-            $taskType,
-            $profName,
-            $profCategory,
-            $customName,
-        );
-
-        $self->{_objName}               = 'debugger_task';
-        $self->{_objClass}              = $class;
-        $self->{_parentFile}            = undef;            # Set below
-        $self->{_parentWorld}           = undef;            # Set below
-        $self->{_privFlag}              = TRUE,             # All IVs are private
-
-        $self->{name}                   = 'debugger_task';
-        $self->{prettyName}             = 'Debugger';
-        $self->{shortName}              = 'Db';
-        $self->{shortCutIV}             = 'debuggerTask';   # Axmud built-in jealous task
-
-        $self->{category}               = 'activity';
-        $self->{descrip}                = 'Diverts error/warning/debug messages to a new window';
-        $self->{jealousyFlag}           = TRUE;
-        $self->{requireLocatorFlag}     = FALSE;
-        $self->{profSensitivityFlag}    = FALSE;
-        $self->{storableFlag}           = TRUE;
-        $self->{delayTime}              = 0;
-        $self->{allowWinFlag}           = TRUE;
-        $self->{requireWinFlag}         = TRUE;
-        $self->{startWithWinFlag}       = TRUE;
-        $self->{winPreferList}          = ['pane', 'grid'];
-        $self->{winmap}                 = 'basic_fill';
-        $self->{winUpdateFunc}          = undef;
-        $self->{tabMode}                = 'simple';
-        $self->{monochromeFlag}         = TRUE;
-        $self->{noScrollFlag}           = FALSE;
-        $self->{ttsFlag}                = FALSE;
-        $self->{ttsConfig}              = undef;
-        $self->{ttsAttribHash}          = {};
-        $self->{ttsFlagAttribHash}      = {};
-        $self->{ttsAlertAttribHash}     = {};
-        $self->{status}                 = 'wait_init';
-#       $self->{activeFlag}             = TRUE;             # Task can't be activated/disactivated
-
-        # Task parameters
-
-        # Error message mode: 'original' - error messages stay in the 'main' window, 'both' - error
-        #   messages shown in both the 'main' window and the task window, 'task' - error messages
-        #   shown only in the task window
-        $self->{errorMode}              = 'both';
-        # Warning message mode: 'original' - warning messages stay in the 'main' window, 'both' -
-        #   warning messages shown in both the 'main' window and the task window, 'task' - error
-        #   messages shown only in the task window
-        $self->{warningMode}            = 'both';
-        # Debug message mode: 'original' - debug messages stay in the 'main' window, 'both' - debug
-        #   messages shown in both the 'main' window and the task window, 'task' - debug messages
-        #   shown only in the task window
-        $self->{debugMode}              = 'both';
-        # Improper arguments mode: 'original' - improper arguments messages stay in the 'main'
-        #   window, 'both' - messages shown in both the 'main' window and the task window, 'task' -
-        #   messages shown only in the task window
-        $self->{improperMode}           = 'both';
-
-        # Bless task
-        bless $self, $class;
-
-        # For all tasks that aren't temporary...
-        if ($taskType) {
-
-            # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
-            #   added to any current, initial or custom tasklist)
-            if (! $self->checkPlugins()) {
-
-                return undef;
-            }
-
-            # Set the parent file object
-            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
-
-            # Create entries in tasklists, if possible
-            if (! $self->updateTaskLists($session)) {
-
-                return undef;
-            }
-        }
-
-        # Task creation complete
-        return $self;
-    }
-
-    sub clone {
-
-        # Create a clone of an existing task
-        # Usually used upon connection to a world, when every task in the initial tasklists must
-        #   be cloned into a new object, representing a task in the current tasklist
-        # (Also used when cloning a profile object, since all the tasks in its initial tasklist must
-        #   also be cloned)
-        #
-        # Expected arguments
-        #   $session    - The parent GA::Session (not stored as an IV)
-        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
-        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
-        #                   should be run when the user connects to the world). Custom tasks aren't
-        #                   cloned (at the moment)
-        #
-        # Optional arguments
-        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
-        #                   existing task is stored
-        #   $profCategory
-        #               - ($taskType = 'initial') which category the profile falls under (i.e.
-        #                   'world', 'race', 'char', etc)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the task can't be cloned
-        #   Blessed reference to the newly-created object on success
-
-        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
-
-        # Check for improper arguments
-        if (
-            ! defined $session || ! defined $taskType || defined $check
-            || ($taskType ne 'current' && $taskType ne 'initial')
-            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
-        }
-
-        # For initial tasks, check that $profName exists
-        if (
-            $taskType eq 'initial'
-            && defined $profName
-            && ! $session->ivExists('profHash', $profName)
-        ) {
-            return $axmud::CLIENT->writeError(
-                'Can\'t create cloned task because \'' . $profName . '\' profile doesn\'t exist',
-                $self->_objClass . '->clone',
-            );
-        }
-
-        # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
-        #   cloned)
-        if (! $self->checkPlugins()) {
-
-            return undef;
-        }
-
-        # Create the new task, using default settings and parameters
-        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
-
-        # Most of the cloned task's settings have default values, but a few are copied from the
-        #   original
-        $self->cloneTaskSettings($clone);
-
-        # Give the new (cloned) task the same initial parameters as the original one
-        $clone->{errorMode}             = $self->errorMode;
-        $clone->{warningMode}           = $self->warningMode;
-        $clone->{debugMode}             = $self->debugMode;
-        $clone->{improperMode}          = $self->improperMode;
-
-        # Cloning complete
-        return $clone;
-    }
-
-    sub preserve {
-
-        # Called by $self->main whenever this task is reset, in order to preserve some if its task
-        #   parameters (but not necessarily all of them)
-        #
-        # Expected arguments
-        #   $newTask    - The new task which has been created, to which some of this task's instance
-        #                   variables might have to be transferred
-        #
-        # Return values
-        #   'undef' on improper arguments, or if $newTask isn't in the GA::Session's current
-        #       tasklist
-        #   1 on success
-
-        my ($self, $newTask, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $newTask || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->preserve', @_);
-        }
-
-        # Check the task is in the current tasklist
-        if (! $self->session->ivExists('currentTaskHash', $newTask->uniqueName)) {
-
-            return $self->writeWarning(
-                '\'' . $self->uniqueName . '\' task missing from the current tasklist',
-                $self->_objClass . '->preserve',
-            );
-        }
-
-        # Preserve some task parameters (the others are left with their default settings, some of
-        #   which will be re-initialised in stage 2)
-
-        # Preserve display modes
-        $newTask->ivPoke('errorMode', $self->errorMode);
-        $newTask->ivPoke('warningMode', $self->warningMode);
-        $newTask->ivPoke('debugMode', $self->debugMode);
-        $newTask->ivPoke('improperMode', $self->improperMode);
-
-        return 1;
-    }
-
-#   sub setParentFileObj {}     # Inherited from generic task
-
-#   sub updateTaskLists {}      # Inherited from generic task
-
-#   sub ttsReadAttrib {}        # Inherited from generic task
-
-#   sub ttsSwitchFlagAttrib {}  # Inherited from generic task
-
-#   sub ttsSetAlertAttrib {}    # Inherited from generic task
-
-    ##################
-    # Task windows
-
-#   sub toggleWin {}            # Inherited from generic task
-
-#   sub openWin {}              # Inherited from generic task
-
-#   sub closeWin {}             # Inherited from generic task
-
-    ##################
-    # Methods
-
-#   sub init {}                 # Inherited from generic task
-
-#   sub doInit {}               # Inherited from generic task
-
-#   sub doShutdown {}           # Inherited from generic task
-
-#   sub doReset {}              # Inherited from generic task
-
-    ##################
-    # Response methods
-
-    sub showError {
-
-        # Called by GA::Obj::TextView->showError
-        # Displays an error message in the task window (in addition to, or instead of, displaying
-        #   it in the 'main' window)
-        #
-        # Expected arguments
-        #   $msg    - The error message to display
-        #
-        # Return values
-        #   'undef'
-
-        my ($self, $msg, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $msg || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->showError', @_);
-        }
-
-        # Show the error message
-        return $self->insertText($msg, $axmud::CLIENT->customShowErrorColour);
-    }
-
-    sub showWarning {
-
-        # Called by GA::Obj::TextView->showWarning
-        # Displays a warning message in the task window (in addition to, or instead of, displaying
-        #   it in the 'main' window)
-        #
-        # Expected arguments
-        #   $msg    - The warning message to display
-        #
-        # Return values
-        #   'undef'
-
-        my ($self, $msg, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $msg || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->showWarning', @_);
-        }
-
-        # Show the warning message
-        return $self->insertText($msg, $axmud::CLIENT->customShowWarningColour);
-    }
-
-    sub showDebug {
-
-        # Called by GA::Obj::TextView->showDebug
-        # Displays a debug message in the task window (in addition to, or instead of, displaying
-        #   it in the 'main' window)
-        #
-        # Expected arguments
-        #   $msg    - The debug message to display
-        #
-        # Return values
-        #   'undef'
-
-        my ($self, $msg, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $msg || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->showDebug', @_);
-        }
-
-        # Show the debug message
-        return $self->insertText($msg, $axmud::CLIENT->customShowDebugColour);
-    }
-
-    sub showImproper {
-
-        # Called by GA::Obj::TextView->showImproper
-        # Displays an improper arguments message in the task window (in addition to, or instead of,
-        #   it in the 'main' window)
-        #
-        # Expected arguments
-        #   $msg    - The message to display
-        #
-        # Return values
-        #   'undef'
-
-        my ($self, $msg, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $msg || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->showImproper', @_);
-        }
-
-        # Show the message
-        return $self->insertText($msg, $axmud::CLIENT->customShowImproperColour);
-    }
-
-    ##################
-    # Accessors - set
-
-    sub set_mode {
-
-        # Called by GA::Cmd::SetDebuggerMode->do
-
-        my ($self, $type, $mode, $check) = @_;
-
-        # Check for improper arguments
-        if (
-            ! defined $type
-            || ($type ne 'error' && $type ne 'warning' && $type ne 'debug' && $type ne 'improper')
-            || ! defined $mode
-            || ($mode ne 'original' && $mode ne 'both' && $mode ne 'task')
-            || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_mode', @_);
-        }
-
-        # Update IVs
-        if ($type eq 'error') {
-            $self->ivPoke('errorMode', $mode);
-        } elsif ($type eq 'warning') {
-            $self->ivPoke('warningMode', $mode);
-        } elsif ($type eq 'debug') {
-            $self->ivPoke('debugMode', $mode);
-        } elsif ($type eq 'improper') {
-            $self->ivPoke('improperMode', $mode);
-        }
-    }
-
-    ##################
-    # Accessors - task settings - get
-
-    # The accessors for task settings are inherited from the generic task
-
-    ##################
-    # Accessors - task parameters - get
-
-    sub errorMode
-        { $_[0]->{errorMode} }
-    sub warningMode
-        { $_[0]->{warningMode} }
-    sub debugMode
-        { $_[0]->{debugMode} }
-    sub improperMode
-        { $_[0]->{improperMode} }
-}
-
 { package Games::Axmud::Task::Divert;
 
     use strict;
@@ -16357,8 +15885,10 @@
         $self->ivPoke('taskWinFlag', TRUE);
         # Set its title (using the frame title, not the task name)
         $self->setTaskWinTitle($self->frameObj->name);
-        # Set a few (generic) IVs
-        $self->configureWin($winObj);
+
+        # Add a tab, if required. The TRUE argument indicates window setup
+        $self->addTab(undef, TRUE);
+        # (No entry box to setup)
 
         # Update the frame object's IVs
         $self->frameObj->ivPoke('tabObj', $self->defaultTabObj);
@@ -37022,6 +36552,576 @@
         { my $self = shift; return %{$self->{ttsPointsAlertTypeHash}}; }
 }
 
+{ package Games::Axmud::Task::System;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Task Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Creates a new instance of the System task
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #
+        # Optional arguments
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world), 'custom' (tasks with
+        #                   customised initial parameters, which are run when the user demands). If
+        #                   set to 'undef', this is a temporary task, created in order to access the
+        #                   default values stored in IVs, that will not be added to any tasklist
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
+        #                   profile from whose initial tasklist this task was created ('undef' if
+        #                   none)
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
+        #                   task will be. If 'undef', the global initial tasklist is used
+        #               - ($taskType = 'custom') 'undef'
+        #   $profCategory
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
+        #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
+        #               - ($taskType = 'custom') 'undef'
+        #   $customName
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
+        #                   GA::Session->customTaskHash
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be added to the specified tasklist
+        #   Blessed reference to the newly-created object on success
+
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        if ($taskType) {
+
+            # For initial tasks, check that $profName exists
+            if (
+                $taskType eq 'initial'
+                && defined $profName
+                && ! $session->ivExists('profHash', $profName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $profName . '\' profile doesn\'t exist',
+                    $class . '->new',
+                );
+
+            # For custom tasks, check that $customName doesn't already exist
+            } elsif (
+                $taskType eq 'custom'
+                && $axmud::CLIENT->ivExists('customTaskHash', $customName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new custom task because \'' . $customName . '\' is already being'
+                    . ' used',
+                    $class . '->new',
+                );
+
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
+
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
+                    $class . '->new',
+                );
+            }
+        }
+
+        # Task settings
+        my $self = Games::Axmud::Generic::Task->new(
+            $session,
+            $taskType,
+            $profName,
+            $profCategory,
+            $customName,
+        );
+
+        $self->{_objName}               = 'system_task';
+        $self->{_objClass}              = $class;
+        $self->{_parentFile}            = undef;            # Set below
+        $self->{_parentWorld}           = undef;            # Set below
+        $self->{_privFlag}              = TRUE,             # All IVs are private
+
+        $self->{name}                   = 'system_task';
+        $self->{prettyName}             = 'System';
+        $self->{shortName}              = 'Sy';
+        $self->{shortCutIV}             = 'systemTask';     # Axmud built-in jealous task
+
+        $self->{category}               = 'activity';
+        $self->{descrip}                = 'Diverts system messages into a new window';
+        $self->{jealousyFlag}           = TRUE;
+        $self->{requireLocatorFlag}     = FALSE;
+        $self->{profSensitivityFlag}    = FALSE;
+        $self->{storableFlag}           = TRUE;
+        $self->{delayTime}              = 0;
+        $self->{allowWinFlag}           = TRUE;
+        $self->{requireWinFlag}         = TRUE;
+        $self->{startWithWinFlag}       = TRUE;
+        $self->{winPreferList}          = ['pane', 'grid'];
+        $self->{winmap}                 = 'basic_fill';
+        $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
+        $self->{monochromeFlag}         = FALSE;
+        $self->{noScrollFlag}           = FALSE;
+        $self->{ttsFlag}                = FALSE;
+        $self->{ttsConfig}              = undef;
+        $self->{ttsAttribHash}          = {};
+        $self->{ttsFlagAttribHash}      = {};
+        $self->{ttsAlertAttribHash}     = {};
+        $self->{status}                 = 'wait_init';
+#       $self->{activeFlag}             = TRUE;             # Task can't be activated/disactivated
+
+        # Task parameters
+
+        # (Ordinary) system message mode: 'original' - ordinary system messages stay in the 'main'
+        #   window, 'both' - ordinary system messages shown in both the 'main' window and the task
+        #   window, 'task' - ordinary system messages shown only in the task window
+        $self->{systemMode}             = 'both';
+        # Error message mode: 'original' - error messages stay in the 'main' window, 'both' - error
+        #   messages shown in both the 'main' window and the task window, 'task' - error messages
+        #   shown only in the task window
+        $self->{errorMode}              = 'both';
+        # Warning message mode: 'original' - warning messages stay in the 'main' window, 'both' -
+        #   warning messages shown in both the 'main' window and the task window, 'task' - error
+        #   messages shown only in the task window
+        $self->{warningMode}            = 'both';
+        # Debug message mode: 'original' - debug messages stay in the 'main' window, 'both' - debug
+        #   messages shown in both the 'main' window and the task window, 'task' - debug messages
+        #   shown only in the task window
+        $self->{debugMode}              = 'both';
+        # Improper arguments mode: 'original' - improper arguments messages stay in the 'main'
+        #   window, 'both' - messages shown in both the 'main' window and the task window, 'task' -
+        #   messages shown only in the task window
+        $self->{improperMode}           = 'both';
+
+        # If set to TRUE, messages are shown in the same colour in both the 'main' and task window.
+        #   If FALSE, the task window uses default colours
+        $self->{colourFlag}             = TRUE;
+
+        # Bless task
+        bless $self, $class;
+
+        # For all tasks that aren't temporary...
+        if ($taskType) {
+
+            # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+            #   added to any current, initial or custom tasklist)
+            if (! $self->checkPlugins()) {
+
+                return undef;
+            }
+
+            # Set the parent file object
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
+
+            # Create entries in tasklists, if possible
+            if (! $self->updateTaskLists($session)) {
+
+                return undef;
+            }
+        }
+
+        # Task creation complete
+        return $self;
+    }
+
+    sub clone {
+
+        # Create a clone of an existing task
+        # Usually used upon connection to a world, when every task in the initial tasklists must
+        #   be cloned into a new object, representing a task in the current tasklist
+        # (Also used when cloning a profile object, since all the tasks in its initial tasklist must
+        #   also be cloned)
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world). Custom tasks aren't
+        #                   cloned (at the moment)
+        #
+        # Optional arguments
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
+        #                   existing task is stored
+        #   $profCategory
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
+        #                   'world', 'race', 'char', etc)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be cloned
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # For initial tasks, check that $profName exists
+        if (
+            $taskType eq 'initial'
+            && defined $profName
+            && ! $session->ivExists('profHash', $profName)
+        ) {
+            return $axmud::CLIENT->writeError(
+                'Can\'t create cloned task because \'' . $profName . '\' profile doesn\'t exist',
+                $self->_objClass . '->clone',
+            );
+        }
+
+        # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+        #   cloned)
+        if (! $self->checkPlugins()) {
+
+            return undef;
+        }
+
+        # Create the new task, using default settings and parameters
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
+
+        # Most of the cloned task's settings have default values, but a few are copied from the
+        #   original
+        $self->cloneTaskSettings($clone);
+
+        # Give the new (cloned) task the same initial parameters as the original one
+        $clone->{systemMode}            = $self->systemMode;
+        $clone->{errorMode}             = $self->errorMode;
+        $clone->{warningMode}           = $self->warningMode;
+        $clone->{debugMode}             = $self->debugMode;
+        $clone->{improperMode}          = $self->improperMode;
+
+        $clone->{colourFlag}            = $self->colourFlag;
+
+        # Cloning complete
+        return $clone;
+    }
+
+    sub preserve {
+
+        # Called by $self->main whenever this task is reset, in order to preserve some if its task
+        #   parameters (but not necessarily all of them)
+        #
+        # Expected arguments
+        #   $newTask    - The new task which has been created, to which some of this task's instance
+        #                   variables might have to be transferred
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $newTask isn't in the GA::Session's current
+        #       tasklist
+        #   1 on success
+
+        my ($self, $newTask, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $newTask || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->preserve', @_);
+        }
+
+        # Check the task is in the current tasklist
+        if (! $self->session->ivExists('currentTaskHash', $newTask->uniqueName)) {
+
+            return $self->writeWarning(
+                '\'' . $self->uniqueName . '\' task missing from the current tasklist',
+                $self->_objClass . '->preserve',
+            );
+        }
+
+        # Preserve some task parameters (the others are left with their default settings, some of
+        #   which will be re-initialised in stage 2)
+
+        # Preserve display modes
+        $newTask->ivPoke('systemMode', $self->systemMode);
+        $newTask->ivPoke('errorMode', $self->errorMode);
+        $newTask->ivPoke('warningMode', $self->warningMode);
+        $newTask->ivPoke('debugMode', $self->debugMode);
+        $newTask->ivPoke('improperMode', $self->improperMode);
+
+        $newTask->ivPoke('colourFlag', $self->colourFlag);
+
+        return 1;
+    }
+
+#   sub setParentFileObj {}     # Inherited from generic task
+
+#   sub updateTaskLists {}      # Inherited from generic task
+
+#   sub ttsReadAttrib {}        # Inherited from generic task
+
+#   sub ttsSwitchFlagAttrib {}  # Inherited from generic task
+
+#   sub ttsSetAlertAttrib {}    # Inherited from generic task
+
+    ##################
+    # Task windows
+
+#   sub toggleWin {}            # Inherited from generic task
+
+#   sub openWin {}              # Inherited from generic task
+
+#   sub closeWin {}             # Inherited from generic task
+
+    ##################
+    # Methods
+
+#   sub init {}                 # Inherited from generic task
+
+    sub doInit {
+
+        # Called by $self->init, just before the task completes its setup ($self->init)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doInit', @_);
+        }
+
+        # GA::Obj::TextView->showSystemText can be called several times to display parts of a
+        #   system message line; for example, to include a link in a part of it
+        # To make those calls the same in both the 'main' and task windows, we've got to use the
+        #   same setting of ->newLineDefault that 'main' windows use
+        $self->defaultTabObj->textViewObj->set_newLineDefault('after');
+
+        return 1;
+    }
+
+#   sub doShutdown {}           # Inherited from generic task
+
+#   sub doReset {}              # Inherited from generic task
+
+    ##################
+    # Response methods
+
+    sub showSystemText {
+
+        # Called by GA::Obj::TextView->showSystemText
+        # Displays an odrinary system message in the task window (in addition to, or instead of,
+        #   displaying it in the 'main' window)
+        #
+        # Expected arguments
+        #   $msg        - The system message to display
+        #
+        # Optional arguments
+        #   @args       - The optional list of arguments supplied to the original
+        #                   GA::Obj::TextView->showSystemText call, e.g. ('echo', 'blue')
+        #
+        # Return values
+        #   'undef'
+
+        my ($self, $msg, @args) = @_;
+
+        # Check for improper arguments
+        if (! defined $msg) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->showSystemText', @_);
+        }
+
+        # Show the error message
+        if (! $self->colourFlag) {
+            return $self->insertText($msg, @args);
+        } else {
+            return $self->insertText($msg, $axmud::CLIENT->customShowTextColour, @args);
+        }
+    }
+
+    sub showError {
+
+        # Called by GA::Obj::TextView->showError
+        # Displays an error message in the task window (in addition to, or instead of, displaying
+        #   it in the 'main' window)
+        #
+        # Expected arguments
+        #   $msg    - The error message to display
+        #
+        # Return values
+        #   'undef'
+
+        my ($self, $msg, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $msg || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->showError', @_);
+        }
+
+        # Show the error message
+        if (! $self->colourFlag) {
+            return $self->insertText($msg);
+        } else {
+            return $self->insertText($msg, $axmud::CLIENT->customShowErrorColour);
+        }
+    }
+
+    sub showWarning {
+
+        # Called by GA::Obj::TextView->showWarning
+        # Displays a warning message in the task window (in addition to, or instead of, displaying
+        #   it in the 'main' window)
+        #
+        # Expected arguments
+        #   $msg    - The warning message to display
+        #
+        # Return values
+        #   'undef'
+
+        my ($self, $msg, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $msg || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->showWarning', @_);
+        }
+
+        # Show the warning message
+        if (! $self->colourFlag) {
+            return $self->insertText($msg);
+        } else {
+            return $self->insertText($msg, $axmud::CLIENT->customShowWarningColour);
+        }
+    }
+
+    sub showDebug {
+
+        # Called by GA::Obj::TextView->showDebug
+        # Displays a debug message in the task window (in addition to, or instead of, displaying
+        #   it in the 'main' window)
+        #
+        # Expected arguments
+        #   $msg    - The debug message to display
+        #
+        # Return values
+        #   'undef'
+
+        my ($self, $msg, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $msg || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->showDebug', @_);
+        }
+
+        # Show the debug message
+        if (! $self->colourFlag) {
+            return $self->insertText($msg);
+        } else {
+            return $self->insertText($msg, $axmud::CLIENT->customShowDebugColour);
+        }
+    }
+
+    sub showImproper {
+
+        # Called by GA::Obj::TextView->showImproper
+        # Displays an improper arguments message in the task window (in addition to, or instead of,
+        #   it in the 'main' window)
+        #
+        # Expected arguments
+        #   $msg    - The message to display
+        #
+        # Return values
+        #   'undef'
+
+        my ($self, $msg, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $msg || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->showImproper', @_);
+        }
+
+        # Show the message
+        if (! $self->colourFlag) {
+            return $self->insertText($msg);
+        } else {
+            return $self->insertText($msg, $axmud::CLIENT->customShowImproperColour);
+        }
+    }
+
+    ##################
+    # Accessors - set
+
+    sub set_mode {
+
+        # Called by GA::Cmd::SetSystemMode->do
+
+        my ($self, $type, $mode, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $type
+            || (
+                $type ne 'system' && $type ne 'error' && $type ne 'warning' && $type ne 'debug'
+                && $type ne 'improper'
+            )
+            || ! defined $mode
+            || ($mode ne 'original' && $mode ne 'both' && $mode ne 'task')
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_mode', @_);
+        }
+
+        # Update IVs
+        if ($type eq 'system') {
+            $self->ivPoke('systemMode', $mode);
+        } elsif ($type eq 'error') {
+            $self->ivPoke('errorMode', $mode);
+        } elsif ($type eq 'warning') {
+            $self->ivPoke('warningMode', $mode);
+        } elsif ($type eq 'debug') {
+            $self->ivPoke('debugMode', $mode);
+        } elsif ($type eq 'improper') {
+            $self->ivPoke('improperMode', $mode);
+        }
+    }
+
+    ##################
+    # Accessors - task settings - get
+
+    # The accessors for task settings are inherited from the generic task
+
+    ##################
+    # Accessors - task parameters - get
+
+    sub systemMode
+        { $_[0]->{systemMode} }
+    sub errorMode
+        { $_[0]->{errorMode} }
+    sub warningMode
+        { $_[0]->{warningMode} }
+    sub debugMode
+        { $_[0]->{debugMode} }
+    sub improperMode
+        { $_[0]->{improperMode} }
+
+    sub colourFlag
+        { $_[0]->{colourFlag} }
+}
+
 { package Games::Axmud::Task::TaskList;
 
     use strict;
@@ -37946,5 +38046,5 @@
         { $_[0]->{firstTextFlag} }
 }
 
-# Package must return true
+# Package must return a true value
 1

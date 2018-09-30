@@ -24,9 +24,10 @@ dgr / disactivategrid         Disactivates (turns off) workspace grids
       Otherwise, workspace grids are turned off for all workspaces, and this 
          setting is also applied the next time Axmud starts.
 
-      In certain circumstances (such as when the desktop is too small), Axmud is
-         unable to create workspace grids at all, in which case this command 
-         can't be used.
+      In certain circumstances (such as when the desktop is too small, and also
+         on MS Windows), Axmud is unable to create workspace grids at all, in
+         which case this command can't be used.
+      In that situation, you should read the help for ';togglewindowstorage'.
  
    User commands:
       dgr / disactgrid / disactivategrid

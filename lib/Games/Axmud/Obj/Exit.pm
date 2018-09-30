@@ -207,6 +207,9 @@
             #   'none' - not a random exit
             #   'same_region' - a random exit leading somewhere in the same region
             #   'any_region' - a random exit leading anywhere
+            #   'temp_region' - a random exit leading to a temporary region, which should be created
+            #       when the character passes through the exit, and destroyed when the player
+            #       passes back through the exit to the original room
             #   'room_list' - a random exit leading to one of a defined list of rooms
             randomType                  => 'none',
             # For ->randomType 'room_list', a list of destination room numbers. Ignored when
@@ -581,5 +584,5 @@
         { my $self = shift; return %{$self->{doorHash}}; }
 }
 
-# Package must return true
+# Package must return a true value
 1

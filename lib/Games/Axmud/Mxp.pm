@@ -235,7 +235,7 @@
         $origDefnArg = $defnArg;
         do {
 
-            my ($posn, $length, $element);
+            my ($posn, $token, $element);
 
             $posn = index($defnArg, '<');
             if ($posn == -1) {
@@ -245,8 +245,8 @@
 
             } else {
 
-                $length = $session->extractMxpElement(substr($defnArg, $posn));
-                if (! $length) {
+                $token = $session->extractMxpPuebloElement(substr($defnArg, $posn));
+                if (! defined $token || $token eq '') {
 
                     # Invalid element
                     return undef;
@@ -254,10 +254,10 @@
                 } else {
 
                     # Remove the <...> tag from $defnArg
-                    $element = substr($defnArg, $posn, $length);
+                    $element = substr($defnArg, $posn, length($token));
                     push (@defnList, $element);
 
-                    substr($defnArg, $posn, $length, '');
+                    substr($defnArg, $posn, length($token), '');
                 }
             }
 
@@ -883,5 +883,5 @@
         { $_[0]->{removeFlag} }
 }
 
-# Package must return true
+# Package must return a true value
 1

@@ -1,5 +1,0 @@
-The Debugger task diverts (or copies) system messages (error, warning, debug
-   and improper arguments messages) into a separate task window. 
- 
-Client commands used with this task are:
-   ;setdebuggermode           Starts or configures the Debugger task

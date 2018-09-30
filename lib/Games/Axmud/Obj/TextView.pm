@@ -148,9 +148,9 @@
             #   background colour to a specified colour, and chooses suitable text/underlay colours
             #   (for example, specify 'blue' for white text on a blue background). The colours can
             #   be changed any time with further calls to ->setMonochromeMode
-            # When TRUE, calls to ->insertText and ->showText ignore any Axmud colour tags that are
-            #   specified (but not Axmud style tags, which are processed as usual). Calls to
-            #   ->insertCmd, ->showError, ->showWarning, ->showDebug, ->showImproper do not use
+            # When TRUE, calls to ->insertText and ->showSystemText ignore any Axmud colour tags
+            #   that are specified (but not Axmud style tags, which are processed as usual). Calls
+            #   to ->insertCmd, ->showError, ->showWarning, ->showDebug, ->showImproper do not use
             #   their normal text colours
             # When TRUE, the colour scheme only changes on calls to ->setMonochromeMode. It doesn't
             #   change when a new colour scheme is applied (via a call to $self->objUpdate, itself
@@ -200,7 +200,7 @@
             #   character (or if the buffer is empty), FALSE if the current insertion position is
             #   preceded by any other character
             insertNewLineFlag           => TRUE,
-            # The default behaviour for calls to $self->insertText (but not to ->showText)
+            # The default behaviour for calls to $self->insertText (but not to ->showSystemText)
             #   'before'    - prepends a newline character to the text
             #   'after'     - appends a newline character to the text
             #   'nl'        - same behaviour as 'after'
@@ -224,9 +224,9 @@
             #   value to 'undef'
             restoreInsertMark           => undef,
             # When $self->newLineFlag is FALSE (meaning the buffer doesn't end with a newline
-            #   character) and a system message needs to be shown (via a call to $self->showText,
-            #   ->showError, ->showWarning, ->showDebug or ->showImproper), the Gtk2::TextMark at
-            #   the end of the buffer is stored in this IV
+            #   character) and a system message needs to be shown (via a call to
+            #   $self->showSystemText, ->showError, ->showWarning, ->showDebug or ->showImproper),
+            #   the Gtk2::TextMark at the end of the buffer is stored in this IV
             # An artificial newline character is then added to the end of the buffer, and the
             #   system message is shown after that. The next call to $self->insertText or
             #   ->insertCmd when $self->insertMark is set to 'undef' (meaning, the usual insertion
@@ -237,16 +237,16 @@
             tempInsertMark              => undef,
             # $self->showError, ->showWarning, ->showDebug and ->showImproper always show text on
             #   separate lines and newline characters are automatically inserted after the system
-            #   message. However, calls to ->showText only insert a newline character by default;
-            #   code can call ->showText several times, to display a system message with different
-            #   tags (for example, to show a system message containing a link), in the expectation
-            #   that the final call will specify a newline character
-            # This IV is set by $self->showText (only) when a system message is displayed without
-            #   a newline character, storing the mark at the end of the system message, that being
-            #   the insertion point for the next call to $self->showText.
-            # It is reset when $self->showText displays a system message with a newline character,
-            #   or when $self->showError, ->showWarning, ->showDebug or ->showImproper show a
-            #   system message
+            #   message. However, calls to ->showSystemText only insert a newline character by
+            #   default; code can call ->showSystemText several times, to display a system message
+            #   with different tags (for example, to show a system message containing a link), in
+            #   the expectation that the final call will specify a newline character
+            # This IV is set by $self->showSystemText (only) when a system message is displayed
+            #   without a newline character, storing the mark at the end of the system message, that
+            #   being the insertion point for the next call to $self->showSystemText
+            # It is reset when $self->showSystemText displays a system message with a newline
+            #   character, or when $self->showError, ->showWarning, ->showDebug or ->showImproper
+            #   show a system message
             systemInsertMark            => undef,
             # When a system message without a newline character is displayed, it is also stored
             #   here, appended to any previous portions of the same line. When a system message with
@@ -347,7 +347,7 @@
             # Hash of graphics modes which applied at the end of the previous line, in the same
             #   form as $self->colourStyleHash
             # Set by $self->insertText after every newline character (and also by
-            #   $self->clearBuffer), but not by calls to ->showText, etc)
+            #   $self->clearBuffer), but not by calls to ->showSystemText, etc)
             prevColourStyleHash         => {%colourStyleHash},
 
             # List of MXP open modal tags forming a stack. When an opening tag like <FONT> is found,
@@ -1052,8 +1052,8 @@
 
     sub clearBuffer {
 
-        # Can be called by anything (also called by $self->insertText, ->insertQuick, ->showText
-        #   and ->showImage)
+        # Can be called by anything (also called by $self->insertText, ->insertQuick,
+        #   ->showSystemText and ->showImage)
         # Empties the Gtk2::TextBuffer of text
         #
         # Expected arguments
@@ -1652,7 +1652,7 @@
             $iter = $self->buffer->get_end_iter();
         } else {
 
-            # Incomplete system message after a call to $self->showText without a newline
+            # Incomplete system message after a call to $self->showSystemText without a newline
             #   character. Must insert an artificial newline character, and display $text after
             #   that
             $iter = $self->buffer->get_iter_at_mark($self->systemInsertMark);
@@ -1713,6 +1713,246 @@
         } elsif ($self->tempInsertMark) {
 
             if ($afterFlag) {
+
+                # Next call to $self->insertText, ->insertCmd etc uses the end of the buffer as its
+                #   insertion point
+                $self->ivUndef('tempInsertMark');
+
+            } else {
+
+                # Continue using this temporary insertion point, before a line with a system message
+                $mark = $self->buffer->create_mark($iter, $iter, TRUE);
+                $self->ivPoke('tempInsertMark', $mark);
+            }
+        }
+
+        if ($self->scrollLockFlag) {
+
+            if ($self->scrollLockType eq 'top') {
+                $self->scrollToTop();
+            } else {
+                $self->scrollToBottom();
+            }
+        }
+
+        return 1;
+    }
+
+    sub insertMultipleText {
+
+        # Can be called by anything (but mostly called by Session->displayLinePieces)
+        # Instead of calling $self->insertText multiple times, this function can be called a single
+        #   time for multiple pieces of text (which should save some processing time)
+        #
+        # Calls to $self->insertText use the default behaviour specified by $self->defaultNewLine,
+        #   if none of the arguments 'empty', 'before', 'after', 'nl' or 'echo' are specified
+        # However, this function ignores those arguments, except for 'before' for the first text
+        #   piece and 'after' for the last text piece (if specified); for every other text piece,
+        #   the default behaviour 'echo' is used
+        #
+        # Expected arguments
+        #   @displayList    - List in groups of 2, in the form
+        #                       (piece_of_text, reference_to_list_of_arguments)
+        #                     ...where each group of 2 is the same as the arguments used in a single
+        #                       call to $self->insertText
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, @displayList) = @_;
+
+        # Local variables
+        my ($firstFlag, $iter, $mark, $finalAfterFlag);
+
+        # Check for improper arguments
+        if (! @displayList) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->insertMultipleText', @_);
+        }
+
+        $firstFlag = TRUE;
+
+        # Process each text piece in turn
+        do {
+
+            my (
+                $text, $listRef, $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour,
+                $underlayColour, $monochromeFlag, $beep,
+                @styleTags,
+            );
+
+            $text = shift @displayList;
+            $listRef = shift @displayList;
+
+            # Interpret the list of @args
+            (
+                $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour,
+                @styleTags,
+            ) = $self->interpretTags($self->newLineDefault, @$listRef);
+            # Apply any colour overrides specified by the colour scheme or by this object's own
+            #   monochrome mode
+            ($monochromeFlag, $textColour, $underlayColour) = $self->modifyColourTags(
+                $textColour,
+                $underlayColour,
+            );
+
+            # Choose which colour tags to use (in monochrome mode, text/underlay colours are
+            #   ignored)
+            if (! $textColour) {
+
+                $textColour = $self->textColour;
+            }
+
+            if (! $underlayColour) {
+
+                $underlayColour = $self->underlayColour;
+            }
+
+            # If allowed, convert the colour of invisible text (e.g. black text with a black
+            #   underlay on a black background) to something visible
+            if (
+                $axmud::CLIENT->convertInvisibleFlag
+                && $textColour eq $self->backgroundColour
+                && (
+                    $underlayColour eq 'ul_' . $self->backgroundColour
+                    || $underlayColour eq 'UL_' . $self->backgroundColour
+                )
+            ) {
+                if ($axmud::CLIENT->ivExists('constPrettyTagHash', $textColour)) {
+                    $textColour = uc($textColour);
+                } else {
+                    $textColour = lc($textColour);
+                }
+            }
+
+            # Empty the buffer before writing text, if required
+            if ($emptyFlag) {
+
+                $self->clearBuffer();
+            }
+
+            # Prepare the message to send
+            if (! defined $text) {
+
+                # 'undef' is a valid value - represent it
+                $text = "<<undef>>";
+            }
+
+            # If $text contains any ASCII 7 characters (bells) and sound is on, play the 'bell'
+            #   sound. After that, even if sound is off, remove the ASCII 7 character from $text
+            $beep = chr(7);
+            if ($text =~ m/$beep/) {
+
+                # Don't display the ASCII 7 character
+                $text =~ s/$beep//g;
+
+                # Play the bell once, if allowed (even if the character appears multiple times in
+                #   $text; the call to ->playSound checks the status of GA::Client->allowSoundFlag)
+                if ($axmud::CLIENT->allowAsciiBellFlag) {
+
+                    $axmud::CLIENT->playSound('bell');
+                }
+            }
+
+            # For the first text piece, set the insertion point (all other pieces are inserted
+            #   directly after that)
+            if ($firstFlag) {
+
+                # Set the insertion point
+                if ($self->insertMark) {
+
+                    $mark = $self->insertMark;
+
+                } elsif ($self->tempInsertMark) {
+
+                    $mark = $self->tempInsertMark;
+                    if ($afterFlag) {
+
+                        # This code prevents a blank line being inserted between a world's prompt
+                        #   and the already-displayed Axmud system message
+                        $self->ivUndef('tempInsertMark');
+                        $afterFlag = FALSE;
+                    }
+                }
+
+                if ($mark) {
+                    $iter = $self->buffer->get_iter_at_mark($mark);
+                } elsif (! $self->systemInsertMark) {
+                    $iter = $self->buffer->get_end_iter();
+                } else {
+
+                    # Incomplete system message after a call to $self->showSystemText without a
+                    #   newline character. Must insert an artificial newline character, and display
+                    #   $text after that
+                    $iter = $self->buffer->get_iter_at_mark($self->systemInsertMark);
+                    $iter = $self->insertNewLine($iter);
+                    $self->ivPoke('prevColourStyleHash', $self->colourStyleHash);
+                }
+
+                # (Don't prepend a newline character if the buffer is empty, or for any text piece
+                #   besides the first one)
+                if ($beforeFlag && $self->bufferTextFlag) {
+
+                    # (Make sure the beginning of a link appears after the extra newline character,
+                    #   not before it)
+                    $iter = $self->insertNewLine($iter);
+                    $self->ivPoke('prevColourStyleHash', $self->colourStyleHash);
+                }
+
+                # (Don't execute this block more than once)
+                $firstFlag = FALSE;
+            }
+
+            # Create a link object, if required
+            if ($linkFlag && $text) {
+
+                $self->setupLink($iter, $text);
+            }
+
+            # Insert the text into the Gtk2::TextBuffer
+            if (! $monochromeFlag) {
+
+                $iter = $self->insertWithTags(
+                    $iter,
+                    $text,
+                    $textColour,
+                    $underlayColour,
+                    @styleTags,
+                );
+
+            } else {
+
+                $iter = $self->insertWithTags(
+                    $iter,
+                    $text,
+                    @styleTags,
+                );
+            }
+
+            # (Don't append a newline character for any text piece besides the last one)
+            if (! @displayList && $afterFlag) {
+
+                # (Make sure the end of a link appears before the extra newline character, not
+                #   after it)
+                $iter = $self->insertNewLine($iter);
+                $self->ivPoke('prevColourStyleHash', $self->colourStyleHash);
+
+                $finalAfterFlag = TRUE;
+            }
+
+        } until (! @displayList);
+
+        if ($self->insertMark) {
+
+            # The next call to $self->insertText, ->insertCmd etc uses the insertion point
+            #   immediately after $iter
+            $mark = $self->buffer->create_mark($iter, $iter, TRUE);
+            $self->ivPoke('insertMark', $mark);
+
+        } elsif ($self->tempInsertMark) {
+
+            if ($finalAfterFlag) {
 
                 # Next call to $self->insertText, ->insertCmd etc uses the end of the buffer as its
                 #   insertion point
@@ -2005,7 +2245,7 @@
             $iter = $self->buffer->get_end_iter();
         } else {
 
-            # Incomplete system message after a call to $self->showText without a newline
+            # Incomplete system message after a call to $self->showSystemText without a newline
             #   character. Must insert an artificial newline character, and display $text after
             #   that
             $iter = $self->buffer->get_iter_at_mark($self->systemInsertMark);
@@ -2050,11 +2290,12 @@
         return 1;
     }
 
-    sub showText {
+    sub showSystemText {
 
         # Called by Games::Axmud->writeText
         # Inserts system text into the Gtk2::TextBuffer, optionally applying Axmud colour/style tags
         #   and/or newline characters, and optionally emptying the buffer of text
+        # Optionally updates the System task's window
         #
         # Expected arguments
         #   (none besides $self)
@@ -2091,8 +2332,8 @@
         # Local variables
         my (
             $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour,
-            $colourSchemeObj, $monochromeFlag, $modText, $beep, $iter,
-            @styleTags
+            $colourSchemeObj, $monochromeFlag, $mode, $modText, $beep, $iter,
+            @styleTags, @modArgs,
         );
 
         # (No improper arguments to check)
@@ -2122,8 +2363,21 @@
             }
         }
 
-        # Empty the buffer before writing text, if required
-        if ($emptyFlag) {
+        # Whether the message is written only in this textview (mode 'original'), or in both this
+        #   textview and the System task's window ('both'), or in the System task's window only
+        #   (mode 'task'), depends on the System task's IVs (if the task is running)
+        if (! $self->session->systemTask) {
+
+            # Task not running
+            $mode = 'original';
+
+        } else {
+
+            $mode = $self->session->systemTask->errorMode;
+        }
+
+        # Empty the buffer before writing text, if required (but not in the System task window)
+        if ($emptyFlag && $mode ne 'task') {
 
             $self->clearBuffer();
         }
@@ -2144,86 +2398,105 @@
             $text =~ s/$beep//g;
         }
 
-        # If the last piece of text inserted at the Gtk2::TextBuffer via a call to
-        #   $self->insertText didn't end in a newline character, we need to insert an artifical new
-        #   line character so the system message appears on its own line, at the end of the buffer
-        if (
-            # Last character in the buffer isn't a newline character
-            ! $self->newLineFlag
-            # The insertion point for $self->insertText and ->insertCmd is the end of the buffer
-            && ! $self->insertMark
-            # The call to this function wasn't preceded by another call to this function which
-            #   didn't use a newline character
-            && ! $self->systemInsertMark
-        ) {
-            $iter = $self->buffer->get_end_iter();
-            $self->ivPoke('systemInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
-            $beforeFlag = TRUE;
-        }
+        if ($mode ne 'task') {
 
-        # Set the insertion point
-        if ($self->systemInsertMark) {
-            $iter = $self->buffer->get_iter_at_mark($self->systemInsertMark);
-        } else {
-            $iter = $self->buffer->get_end_iter();
-        }
+            # If the last piece of text inserted at the Gtk2::TextBuffer via a call to
+            #   $self->insertText didn't end in a newline character, we need to insert an artifical
+            #   new line character so the system message appears on its own line, at the end of the
+            #   buffer
+            if (
+                # Last character in the buffer isn't a newline character
+                ! $self->newLineFlag
+                # The insertion point for $self->insertText and ->insertCmd is the end of the buffer
+                && ! $self->insertMark
+                # The call to this function wasn't preceded by another call to this function which
+                #   didn't use a newline character
+                && ! $self->systemInsertMark
+            ) {
+                $iter = $self->buffer->get_end_iter();
+                $self->ivPoke('systemInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
+                $beforeFlag = TRUE;
+            }
 
-        # Insert the text into the Gtk2::TextBuffer
-        if ($beforeFlag) {
+            # Set the insertion point
+            if ($self->systemInsertMark) {
+                $iter = $self->buffer->get_iter_at_mark($self->systemInsertMark);
+            } else {
+                $iter = $self->buffer->get_end_iter();
+            }
 
-            # (Make sure the beginning of a link appears after the extra newline character, not
-            #   before it)
-           $iter = $self->insertNewLine($iter);
-        }
+            # Insert a newline character into the Gtk2::TextBuffer
+            if ($beforeFlag) {
 
-        # Create a link object, if required
-        if ($linkFlag && $modText) {
+                # (Make sure the beginning of a link appears after the extra newline character, not
+                #   before it)
+               $iter = $self->insertNewLine($iter);
+            }
 
             # Create a link object, if required
-            $self->setupLink($iter, $modText);
-        }
+            if ($linkFlag && $modText) {
 
-        # Insert the text into the Gtk2::TextBuffer
-        if ($monochromeFlag) {
-
-            $iter = $self->insertWithTags(
-                $iter,
-                $modText,
-                @styleTags,
-            );
-
-        } else {
-
-            $iter = $self->insertWithTags(
-                $iter,
-                $modText,
-                $textColour,
-                $underlayColour,
-                @styleTags,
-            );
-        }
-
-        if ($afterFlag) {
-
-            # (Make sure the end of a link appears before the extra newline character, not
-            #   after it)
-            $iter = $self->insertNewLine($iter);
-            $self->ivUndef('systemInsertMark');
-
-        } else {
-
-            # (System message in the next call to this function is appended to this system message,
-            #   which didn't end with a newline character)
-            $self->ivPoke('systemInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
-        }
-
-        if ($self->scrollLockFlag) {
-
-            if ($self->scrollLockType eq 'top') {
-                $self->scrollToTop();
-            } else {
-                $self->scrollToBottom();
+                # Create a link object, if required
+                $self->setupLink($iter, $modText);
             }
+
+            # Insert the text into the Gtk2::TextBuffer
+            if ($monochromeFlag) {
+
+                $iter = $self->insertWithTags(
+                    $iter,
+                    $modText,
+                    @styleTags,
+                );
+
+            } else {
+
+                $iter = $self->insertWithTags(
+                    $iter,
+                    $modText,
+                    $textColour,
+                    $underlayColour,
+                    @styleTags,
+                );
+            }
+
+            if ($afterFlag) {
+
+                # (Make sure the end of a link appears before the extra newline character, not
+                #   after it)
+                $iter = $self->insertNewLine($iter);
+                $self->ivUndef('systemInsertMark');
+
+            } else {
+
+                # (System message in the next call to this function is appended to this system
+                #   message, which didn't end with a newline character)
+                $self->ivPoke('systemInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
+            }
+
+            if ($self->scrollLockFlag) {
+
+                if ($self->scrollLockType eq 'top') {
+                    $self->scrollToTop();
+                } else {
+                    $self->scrollToBottom();
+                }
+            }
+        }
+
+        if ($mode ne 'original') {
+
+            # Write the message in the System task window, but remove an 'empty' argument if one
+            #   was specified for the 'main' window
+            foreach my $item (@args) {
+
+                if ($item ne 'empty') {
+
+                    push (@modArgs, $item);
+                }
+            }
+
+            $self->session->systemTask->showSystemText($text, @modArgs);
         }
 
         # Write to logs and convert text-to-speech, if required
@@ -2261,7 +2534,7 @@
                 && ! $self->session->ttsTempDisableFlag
             ) {
                 # Make sure the received text is visible in the textview(s)...
-                $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showText');
+                $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showSystemText');
 
                 # ...before converting text to speech
                 if (
@@ -2298,8 +2571,8 @@
     sub showError {
 
         # Called by Games::Axmud->writeError
-        # Inserts a system error message into the Gtk2::TextBuffer and/or updates the Debugger
-        #   task's window
+        # Inserts a system error message into the Gtk2::TextBuffer and/or updates the System task's
+        #   window
         #
         # Expected arguments
         #   (none besides $self)
@@ -2351,21 +2624,21 @@
         }
 
         # Whether the message is written only in this textview (mode 'original'), or in both this
-        #   textview and the Debugger task's window ('both'), or in the Debugger task's window only
-        #   (mode 'task'), depends on the Debugger task's IVs (if the task is running)
-        if (! $self->session->debuggerTask) {
+        #   textview and the System task's window ('both'), or in the System task's window only
+        #   (mode 'task'), depends on the System task's IVs (if the task is running)
+        if (! $self->session->systemTask) {
 
             # Task not running
             $mode = 'original';
 
         } else {
 
-            $mode = $self->session->debuggerTask->errorMode;
+            $mode = $self->session->systemTask->errorMode;
         }
 
         if ($mode ne 'task') {
 
-            # If the previous call to $self->showText displayed a message that didn't end in a
+            # If the previous call to $self->showSystemText displayed a message that didn't end in a
             #   newline character, $self->systemInsertMark is set
             # In that case, we must insert an artificial newline character, so this system message
             #   is displayed on its own line
@@ -2421,8 +2694,8 @@
 
         if ($mode ne 'original') {
 
-            # Write the message in the Debugger task window
-            $self->session->debuggerTask->showError($msg);
+            # Write the message in the System task window
+            $self->session->systemTask->showError($msg);
         }
 
         # Write to logs
@@ -2480,7 +2753,7 @@
     sub showWarning {
 
         # Called by Games::Axmud->writeWarning
-        # Inserts a system warning message into the Gtk2::TextBuffer and/or updates the Debugger
+        # Inserts a system warning message into the Gtk2::TextBuffer and/or updates the System
         #   task's window
         #
         # Expected arguments
@@ -2533,21 +2806,21 @@
         }
 
         # Whether the message is written only in this textview (mode 'original'), or in both this
-        #   textview and the Debugger task's window ('both'), or in the Debugger task's window only
-        #   (mode 'task'), depends on the Debugger task's IVs (if the task is running)
-        if (! $self->session->debuggerTask) {
+        #   textview and the System task's window ('both'), or in the System task's window only
+        #   (mode 'task'), depends on the System task's IVs (if the task is running)
+        if (! $self->session->systemTask) {
 
             # Task not running
             $mode = 'original';
 
         } else {
 
-            $mode = $self->session->debuggerTask->warningMode;
+            $mode = $self->session->systemTask->warningMode;
         }
 
         if ($mode ne 'task') {
 
-            # If the previous call to $self->showText displayed a message that didn't end in a
+            # If the previous call to $self->showSystemText displayed a message that didn't end in a
             #   newline character, $self->systemInsertMark is set
             # In that case, we must insert an artificial newline character, so this system message
             #   is displayed on its own line
@@ -2603,8 +2876,8 @@
 
         if ($mode ne 'original') {
 
-            # Write the message in the Debugger task window
-            $self->session->debuggerTask->showWarning($msg);
+            # Write the message in the System task window
+            $self->session->systemTask->showWarning($msg);
         }
 
         # Write to logs
@@ -2662,8 +2935,8 @@
     sub showDebug {
 
         # Called by Games::Axmud->writeDebug or ->wd
-        # Inserts a system debug message into the Gtk2::TextBuffer and/or updates the Debugger
-        #   task's window
+        # Inserts a system debug message into the Gtk2::TextBuffer and/or updates the System task's
+        #   window
         #
         # Expected arguments
         #   (none besides $self)
@@ -2715,21 +2988,21 @@
         }
 
         # Whether the message is written only in this textview (mode 'original'), or in both this
-        #   textview and the Debugger task's window ('both'), or in the Debugger task's window only
-        #   (mode 'task'), depends on the Debugger task's IVs (if the task is running)
-        if (! $self->session->debuggerTask) {
+        #   textview and the System task's window ('both'), or in the System task's window only
+        #   (mode 'task'), depends on the System task's IVs (if the task is running)
+        if (! $self->session->systemTask) {
 
             # Task not running
             $mode = 'original';
 
         } else {
 
-            $mode = $self->session->debuggerTask->debugMode;
+            $mode = $self->session->systemTask->debugMode;
         }
 
         if ($mode ne 'task') {
 
-            # If the previous call to $self->showText displayed a message that didn't end in a
+            # If the previous call to $self->showSystemText displayed a message that didn't end in a
             #   newline character, $self->systemInsertMark is set
             # In that case, we must insert an artificial newline character, so this system message
             #   is displayed on its own line
@@ -2785,8 +3058,8 @@
 
         if ($mode ne 'original') {
 
-            # Write the message in the Debugger task window
-            $self->session->debuggerTask->showDebug($msg);
+            # Write the message in the System task window
+            $self->session->systemTask->showDebug($msg);
         }
 
         # Write to logs
@@ -2845,7 +3118,7 @@
 
         # Called by Games::Axmud->writeImproper
         # Inserts a system 'improper arguments' message into the Gtk2::TextBuffer and/or updates the
-        #   Debugger task's window
+        #   System task's window
         #
         # Expected arguments
         #   $func       - The function that produced the message (e.g.
@@ -2897,21 +3170,21 @@
         $msg = "IMPROPER ARGS: $func() " . join (" ", @args);
 
         # Whether the message is written only in this textview (mode 'original'), or in both this
-        #   textview and the Debugger task's window ('both'), or in the Debugger task's window only
-        #   (mode 'task'), depends on the Debugger task's IVs (if the task is running)
-        if (! $self->session->debuggerTask) {
+        #   textview and the System task's window ('both'), or in the System task's window only
+        #   (mode 'task'), depends on the System task's IVs (if the task is running)
+        if (! $self->session->systemTask) {
 
             # Task not running
             $mode = 'original';
 
         } else {
 
-            $mode = $self->session->debuggerTask->improperMode;
+            $mode = $self->session->systemTask->improperMode;
         }
 
         if ($mode ne 'task') {
 
-            # If the previous call to $self->showText displayed a message that didn't end in a
+            # If the previous call to $self->showSystemText displayed a message that didn't end in a
             #   newline character, $self->systemInsertMark is set
             # In that case, we must insert an artificial newline character, so this system message
             #   is displayed on its own line
@@ -2967,8 +3240,8 @@
 
         if ($mode ne 'original') {
 
-            # Write the message in the Debugger task window
-            $self->session->debuggerTask->showImproper($msg);
+            # Write the message in the System task window
+            $self->session->systemTask->showImproper($msg);
         }
 
         # Write to logs
@@ -3085,7 +3358,7 @@
             $iter = $self->buffer->get_end_iter();
         } else {
 
-            # Incomplete system message after a call to $self->showText without a newline
+            # Incomplete system message after a call to $self->showSystemText without a newline
             #   character. Must insert an artificial newline character, and display $text after
             #   that
             $iter = $self->buffer->get_iter_at_mark($self->systemInsertMark);
@@ -3985,88 +4258,542 @@
         }
     }
 
+    sub applyColourStyleTags {
+
+        # Called by GA::Session->processLineSegment and ->applyTriggerStyle
+        # Also called by GA::Buffer::Display->copyLine
+        #
+        # GA::CLIENT->constColourStyleHash specifies a standard format for describing the Axmud
+        #   colour/style tags that apply at some offset in some text
+        # This function takes a hash in that format, describing the tags that apply to an
+        #   unspecified offset in this textview (which might have been displayed already, or not)
+        # The hash is then updated using a list of Axmud colour/style tags, so that hash describes
+        #   the tags that apply to a later offset in this textview (that hasn't been displayed yet)
+        #
+        # Expected arguments
+        #   $session    - The calling GA::Session
+        #   $listRef    - A reference to a list of Axmud colour/style tags which are used to modify
+        #                   the hash (can be an empty list)
+        #
+        # Optional arguments
+        #   %tagHash    - A hash in the format specified by GA::CLIENT->constColourStyleHash, i.e.
+        #
+        #                   'text'       => 'undef' or an Axmud text colour tag, e.g. 'red' or
+        #                                       'x230'
+        #                   'underlay'   => 'undef' or an Axmud underlay colour tag, e.g. 'ul_white'
+        #                   'italics'    => TRUE or FALSE
+        #                   'underline'  => TRUE or FALSE
+        #                   'blink_slow' => TRUE or FALSE
+        #                   'blink_fast' => TRUE or FALSE
+        #                   'strike'     => TRUE or FALSE
+        #                   'link'       => TRUE or FALSE
+        #                   'mxp_font'   => TRUE or FALSE
+        #                   'justify'    => 'left', 'right', 'centre', or 'undef' to represent the
+        #                                       style tag 'justify_default'
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise, returns the modified hash
+
+        my ($self, $session, $listRef, %tagHash) = @_;
+
+        # Local variables
+        my (
+            $attribsOffFlag,
+            %styleHash, %justifyHash, %dummyHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $listRef) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->applyColourStyleTags', @_);
+        }
+
+        # Import IVs (for quick lookup)
+        %styleHash = $axmud::CLIENT->constStyleTagHash;
+        %justifyHash = $axmud::CLIENT->constJustifyTagHash;
+        %dummyHash = $axmud::CLIENT->constDummyTagHash;
+
+        foreach my $tag (@$listRef) {
+
+            my ($type, $underlayFlag, $boldishTag);
+
+            # When called by GA::Session->applyTriggerStyle, @tagList can contain bold text colour
+            #   tags like 'BLUE'. When called by GA::Session->processLineSegment, @tagList would
+            #   instead contain the pair 'bold', 'blue'
+            # @tagList might also contain bold underlay colours like 'UL_BLUE', but that doesn't
+            #   affect the setting of $tagHash{'bold'} (which only applies to text colours)
+            $type = $axmud::CLIENT->checkBoldTags($tag);
+            if ($type && $type eq 'text') {
+
+                # $tag is a bold colour tag. Pretend that we processed a 'bold' dummy tag during
+                #   the last iteration of this loop
+                $tagHash{'bold'} = TRUE;
+                # Since we're about to change the text colour, we can rely on the following code to
+                #   take care of $tagHash{'text'}, $tagHash{'real_text'} and so on
+                $tag = lc($tag);
+            }
+
+            # PART 1: 'Dummy' style tags
+            if (exists $dummyHash{$tag}) {
+
+                if ($tag eq 'attribs_off') {
+
+                    # A dummy tag created by GA::Session->processEscSequence, which corresponds to
+                    #   'all attributes off'. We implement this by resetting %tagHash
+                    %tagHash = $axmud::CLIENT->constColourStyleHash;
+                    $attribsOffFlag = TRUE;
+
+                } elsif ($tag eq 'bold') {
+
+                    # A 'dummy' style tag
+                    if (! $tagHash{'bold'}) {
+
+                        $tagHash{'bold'} = TRUE;
+
+                        if ($tagHash{'real_text'}) {
+
+                            $tagHash{'real_text'} = uc($tagHash{'real_text'});
+                        }
+
+                        # In conceal mode we don't make any changes to $tagHash{'text'} and
+                        #   $tagHash{'underlay'}
+                        if ($tagHash{'reverse'}) {
+
+                            $tagHash{'underlay'}
+                                = $axmud::CLIENT->swapColours($tagHash{'real_text'});
+
+                        } elsif (! $tagHash{'conceal'}) {
+
+                            $tagHash{'text'} = $tagHash{'real_text'};
+                        }
+
+                        # In conceal mode and reverse video mode, changing the underlay colour has
+                        #   no effect
+                        if (! $tagHash{'conceal'} && ! $tagHash{'reverse'}) {
+
+                            $tagHash{'underlay'} = $tagHash{'real_underlay'};
+                        }
+                    }
+
+                    # (A second 'bold' tag is ignored)
+
+                } elsif ($tag eq 'bold_off') {
+
+                    # A 'dummy' style tag
+                    if ($tagHash{'bold'}) {
+
+                        $tagHash{'bold'} = FALSE;
+
+                        if ($tagHash{'real_text'}) {
+
+                            $tagHash{'real_text'} = lc($tagHash{'real_text'});
+                        }
+
+                        if ($tagHash{'reverse'}) {
+
+                            $tagHash{'underlay'}
+                                = $axmud::CLIENT->swapColours($tagHash{'real_text'});
+
+                        } elsif (! $tagHash{'conceal'}) {
+
+                            $tagHash{'text'} = $tagHash{'real_text'};
+                        }
+
+                        # In conceal mode and reverse video mode, changing the underlay colour has
+                        #   no effect
+                        if (! $tagHash{'conceal'} && ! $tagHash{'reverse'}) {
+
+                            $tagHash{'underlay'} = $tagHash{'real_underlay'};
+                        }
+                    }
+
+                    # (A second consecutive 'bold_off' tag is ignored)
+
+                } elsif ($tag eq 'reverse') {
+
+                    # A 'dummy' style tag
+                    if (! $tagHash{'reverse'}) {
+
+                        $tagHash{'reverse'} = TRUE;
+
+                        # In reverse video mode, the existing text colour is used as the underlay
+                        #   colour. The existing underlay colour is ignored, if it is set, because
+                        #   reverse video was designed for monochrome monitors
+                        # In addition, the textview background colour is used as the new text colour
+
+                        # Conceal mode takes priority over reverse video mode, if that is already on
+                        if (! $tagHash{'conceal'}) {
+
+                            $tagHash{'text'} = $self->backgroundColour;
+                            if ($tagHash{'real_text'}) {
+
+                                $tagHash{'underlay'}
+                                    = $axmud::CLIENT->swapColours($tagHash{'real_text'});
+
+                            } else {
+
+                                $tagHash{'underlay'}
+                                    = $axmud::CLIENT->swapColours($self->textColour);
+                            }
+                        }
+                    }
+
+                    # (A second 'reverse' tag is ignored)
+
+                } elsif ($tag eq 'reverse_off') {
+
+                    # A 'dummy' style tag
+                    if ($tagHash{'reverse'}) {
+
+                        $tagHash{'reverse'} = FALSE;
+                        if (! $tagHash{'conceal'}) {
+
+                            $tagHash{'text'} = $tagHash{'real_text'};
+                            $tagHash{'underlay'} = $tagHash{'real_underlay'};
+                        }
+                    }
+
+                    # (A second consecutive 'reverse_off' tag is ignored)
+
+                } elsif ($tag eq 'conceal') {
+
+                    # A 'dummy' style tag
+                    if (! $tagHash{'conceal'}) {
+
+                        $tagHash{'conceal'} = TRUE;
+
+                        # In conceal mode, both the text and underlay colours are set to the same as
+                        #   the textview background colour, so that the text is invisible unless the
+                        #   user selects it with the mouse
+                        # Conceal mode takes priority over reverse video mode, if that is already on
+                        $tagHash{'text'} = $self->backgroundColour;
+                        $tagHash{'underlay'}
+                            = $axmud::CLIENT->swapColours($self->backgroundColour);
+                    }
+
+                    # (A second 'conceal' tag is ignored)
+
+                } elsif ($tag eq 'conceal_off') {
+
+                    # A 'dummy' style tag
+                    if ($tagHash{'conceal'}) {
+
+                        $tagHash{'conceal'} = FALSE;
+                        if ($tagHash{'reverse'}) {
+
+                            $tagHash{'text'} = $self->backgroundColour;
+                            $tagHash{'underlay'}
+                                = $axmud::CLIENT->swapColours($tagHash{'real_text'});
+
+                        } else {
+
+                            $tagHash{'text'} = $tagHash{'real_text'};
+                            $tagHash{'underlay'} = $tagHash{'real_underlay'};
+                        }
+                    }
+
+                    # (A second consecutive 'conceal_off' tag is ignored)
+
+                } elsif ($tag eq 'mxpf_off') {
+
+                    # (Other 'mxpf_...' tags are handled below)
+                    $tagHash{'mxp_font'} = undef;
+                }
+
+            # PART 2: Justification style tags
+            } elsif (exists $justifyHash{$tag}) {
+
+                if ($tag eq 'justify_default') {
+                    $tagHash{'justify'} = undef;
+                } else {
+                    $tagHash{'justify'} = substr($tag, 8);
+                }
+
+            # PART 3: Style tags
+            } elsif (exists $styleHash{$tag}) {
+
+                # (Codes listed in rough order of popularity)
+                if ($tag eq 'link') {
+
+                    if ($tagHash{'link'}) {
+                        $tagHash{'link'} = FALSE;
+                    } else {
+                        $tagHash{'link'} = TRUE;
+                    }
+
+                } elsif ($tag eq 'link_off') {
+
+                    $tagHash{'link'} = FALSE;
+
+                } elsif (
+                    $tag eq 'italics'
+                    || $tag eq 'underline'
+                    || $tag eq 'blink_slow'
+                    || $tag eq 'blink_fast'
+                    || $tag eq 'strike'
+                ) {
+                    # (A second consecutive tag reinforces the previous one)
+                    $tagHash{$tag} = TRUE;
+
+                } elsif ($tag eq 'italics_off') {
+
+                    $tagHash{'italics'} = FALSE;
+
+                } elsif ($tag eq 'underline_off') {
+
+                    $tagHash{'underline'} = FALSE;
+
+                } elsif ($tag eq 'blink_off') {
+
+                    $tagHash{'blink_slow'} = FALSE;
+                    $tagHash{'blink_fast'} = FALSE;
+
+                } elsif ($tag eq 'strike_off') {
+
+                    $tagHash{'strike'} = FALSE;
+                }
+
+            # PART 4: MXP style tags
+            } elsif (substr($tag, 0, 5) eq 'mxpf_') {
+
+                # Dummy style tags used for MXP fonts
+                # Store the whole dummy tag, e.g. 'mxpf_monospace_bold_12' (NB 'mxpf_off' was
+                #   handled further above)
+                $tagHash{'mxp_font'} = $tag;
+
+            } elsif (substr($tag, 0, 5) eq 'mxpm_') {
+
+                # Dummy style tag used for MXP modes in the range 10-12, 19, 20-99 (which don't
+                #   affect text attributes, so we don't add them to %tagHash)
+                # ...
+
+            # PART 5: Colour tags
+            } else {
+
+                ($type, $underlayFlag) = $axmud::CLIENT->checkColourTags($tag);
+                if ($type) {
+
+                    if ($type eq 'standard') {
+
+                        # We're going to check $tag against the textview's object colour in a
+                        #   moment, which is stored as (for example) 'RED' if it's a bold colour. We
+                        #   need to compare it with 'RED', not 'red', if bold is on
+                        if ($tagHash{'bold'}) {
+                            $boldishTag = uc($tag);
+                        } else {
+                            $boldishTag = $tag;
+                        }
+
+                    } else {
+
+                        # xterm/RGB colour tags should be case insensitive
+                        $boldishTag = lc($tag);
+                    }
+                }
+
+                # PART 5a: Text colour tags
+                if ($type && ! $underlayFlag) {
+
+                    if (
+                        defined $tagHash{'real_text'}
+                        && $tagHash{'real_text'} eq $tag
+                    ) {
+                        # (The re-occuring tag is ignored)
+
+                    } elsif ($attribsOffFlag && $boldishTag eq $self->textColour) {
+
+                        # After an 'attribs off', if the tag matches the 'main' window's normal text
+                        #   colour, let that be the text colour
+                        # (This takes care of ANSI escape sequences like '^[0;37;40m', meaning
+                        #   'attribs off - white text - black underlay'. If we set
+                        #   $tagHash{'underlay'} to 'ul_black', the next 'bold' tag - which was
+                        #   intended to apply only to the text colour - will be applied to the
+                        #   underlay colour, too.)
+                        $tagHash{'real_text'} = undef;
+                        if ($tagHash{'reverse'}) {
+
+                            $tagHash{'text'} = $self->backgroundColour;
+                            $tagHash{'underlay'}
+                                = $axmud::CLIENT->swapColours($self->textColour);
+
+                        } else {
+
+                            $tagHash{'text'} = $tagHash{'real_text'};
+                        }
+
+                    } elsif ($tagHash{'bold'} && $type eq 'standard') {
+
+                        # Bold text colour
+                        $tagHash{'real_text'} = uc($tag);
+                        # If the world is using an OSC colour palette to modify this colour, use the
+                        #   modified form
+                        if ($session->ivExists('oscColourHash', $tagHash{'real_text'})) {
+
+                            $tagHash{'real_text'}
+                                = $session->ivShow('oscColourHash', $tagHash{'real_text'});
+                        }
+
+                        # In conceal mode we don't make any changes to $tagHash{'text'} and
+                        #   $tagHash{'underlay'}
+                        if ($tagHash{'reverse'}) {
+
+                            $tagHash{'underlay'}
+                                = $axmud::CLIENT->swapColours($tagHash{'real_text'});
+
+                        } elsif (! $tagHash{'conceal'}) {
+
+                            $tagHash{'text'} = $tagHash{'real_text'};
+                        }
+
+                    } else {
+
+                        # Normal colour, or a bold underlay colour like 'UL_BLUE', specified
+                        #   directly by a call from GA::Session->applyTriggerStyle
+                        $tagHash{'real_text'} = $tag;
+                        # If the world is using an OSC colour palette to modify this colour, use the
+                        #   modified form
+                        if ($session->ivExists('oscColourHash', $tagHash{'real_text'})) {
+
+                            $tagHash{'real_text'}
+                                = $session->ivShow('oscColourHash', $tagHash{'real_text'});
+                        }
+
+                        if ($tagHash{'reverse'}) {
+
+                            $tagHash{'underlay'}
+                                = $axmud::CLIENT->swapColours($tagHash{'real_text'});
+
+                        } elsif (! $tagHash{'conceal'}) {
+
+                            $tagHash{'text'} = $tagHash{'real_text'};
+                        }
+                    }
+
+                # PART 5b: Underlay colour tags
+                } elsif ($type && $underlayFlag) {
+
+                    if (
+                        defined $tagHash{'real_underlay'}
+                        && $tagHash{'real_underlay'} eq $tag
+                    ) {
+                        # (The re-occuring tag is ignored)
+
+                    } elsif ($attribsOffFlag && $boldishTag eq $self->underlayColour) {
+
+                        # After an 'attribs off', if the tag matches the 'main' window's normal
+                        #   underlay colour, let that be the underlay colour
+                        $tagHash{'real_underlay'} = undef;
+
+                    } else {
+
+                        $tagHash{'real_underlay'} = $tag;
+
+                        # If the world is using an OSC colour palette to modify this colour, use the
+                        #   modified form
+                        if ($session->ivExists('oscColourHash', $tagHash{'real_underlay'})) {
+
+                            $tagHash{'real_underlay'}
+                                = $session->ivShow('oscColourHash', $tagHash{'real_underlay'});
+                        }
+                    }
+
+                    # In conceal mode and reverse video mode, changing the underlay colour has no
+                    #   effect
+                    if (! $tagHash{'conceal'} && ! $tagHash{'reverse'}) {
+
+                        $tagHash{'underlay'} = $tagHash{'real_underlay'};
+                    }
+                }
+            }
+        }
+
+        return %tagHash;
+    }
+
     sub listColourStyleTags {
 
         # Called by GA::Session->processLineSegment and GA::Buffer::Display->new, ->update
-        # Returns a list of Axmud colour/style tags that apply in this textview at the current
-        #   insertion point
+        # The argument is a hash, in the form specified by GA::CLIENT->constColourStyleHash, of
+        #   Axmud colour/style tags that apply at some offset in the textview. This function
+        #   converts the hash to a simple list
         #
         # Expected arguments
         #   (none besides $self)
         #
+        # Optional arguments
+        #   %tagHash    - A hash of Axmud colour/style tags in the form specified by
+        #                   GA::CLIENT->constColourStyleHash. If an empty hash,
+        #                   $self->colourStyleHash is used instead
+        #
         # Return values
         #   An empty list on improper arguments
-        #   Otherwise, returns a list of Axmud colour/style tags which apply at the current
-        #       insertion point (may be an empty list)
+        #   Otherwise, returns the converted list of Axmud colour/style tags (may be an empty list)
 
-        my ($self, $check) = @_;
+        my ($self, %tagHash) = @_;
 
         # Local variables
-        my (
-            %hash,
-            @returnList,
-        );
+        my @returnList;
 
-        # Check for improper arguments
-        if (defined $check) {
+        # (No improper arguments to check)
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->listColourStyleTags', @_);
+        # Import this textview's current hash of colour/style tags, if no hash was specified
+        if (! %tagHash) {
+
+            %tagHash = $self->colourStyleHash;
         }
-
-        # Import the hash of colour/style tags (for convenience)
-        %hash = $self->colourStyleHash;
 
         # Compile a list of colour/style tags which now apply (tags listed in rough order of
         #   popularity)
-        if (defined $hash{'text'}) {
+        if (defined $tagHash{'text'}) {
 
-            push (@returnList, $hash{'text'});
+            push (@returnList, $tagHash{'text'});
         }
 
-        if (defined $hash{'underlay'}) {
+        if (defined $tagHash{'underlay'}) {
 
-            push (@returnList, $hash{'underlay'});
+            push (@returnList, $tagHash{'underlay'});
         }
 
-        if ($hash{'link'}) {
+        if ($tagHash{'link'}) {
 
             push (@returnList, 'link');
         }
 
-        if ($hash{'italics'}) {
+        if ($tagHash{'italics'}) {
 
             push (@returnList, 'italics');
         }
 
-        if ($hash{'underline'}) {
+        if ($tagHash{'underline'}) {
 
             push (@returnList, 'underline');
         }
 
-        if ($hash{'blink_slow'}) {
+        if ($tagHash{'blink_slow'}) {
 
             push (@returnList, 'blink_slow');
         }
 
-        if ($hash{'blink_fast'}) {
+        if ($tagHash{'blink_fast'}) {
 
             push (@returnList, 'blink_fast');
         }
 
-        if ($hash{'strike'}) {
+        if ($tagHash{'strike'}) {
 
             push (@returnList, 'strike');
         }
 
-        if (defined $hash{'mxp_font'}) {
+        if (defined $tagHash{'mxp_font'}) {
 
-            push (@returnList, $hash{'mxp_font'});
+            push (@returnList, $tagHash{'mxp_font'});
         }
 
-        if (defined $hash{'justify'}) {
+        if (defined $tagHash{'justify'}) {
 
             # e.g. 'justify_left'
-            push (@returnList, 'justify_' . $hash{'justify'});
+            push (@returnList, 'justify_' . $tagHash{'justify'});
         }
 
         return @returnList;
@@ -4901,7 +5628,7 @@
 
     sub interpretTags {
 
-        # Called by $self->insertText and ->showText
+        # Called by $self->insertText and ->showSystemText
         # Interprets a list of arguments passed to those functions, including Axmud colour and style
         #   tags and some additional strings for implementing newline characters and clearing the
         #   buffer
@@ -5252,7 +5979,7 @@
 
     sub insertWithTags {
 
-        # Called by $self->insertText, ->insertCmd, ->showText, ->showError, ->showWarning,
+        # Called by $self->insertText, ->insertCmd, ->showSystemText, ->showError, ->showWarning,
         #   ->showDebug, ->showImproper and ->showImage
         # Inserts some text and (optionally) colour and style tags into the Gtk2::TextBuffer
         #
@@ -5377,7 +6104,7 @@
 
     sub insertNewLine {
 
-        # Called by $self->insertText, ->insertCmd, ->showText, ->showError, ->showWarning,
+        # Called by $self->insertText, ->insertCmd, ->showSystemText, ->showError, ->showWarning,
         #   ->showDebug, ->showImproper and ->showImage
         # Inserts a newline character into the Gtk2::TextBuffer and updates IVs
         #
@@ -5552,7 +6279,7 @@
 
     sub setupLink {
 
-        # Called by $self->insertText and ->showText
+        # Called by $self->insertText and ->showSystemText
         # Just before a clickable link is displayed in the textview, creates a GA::Obj::Link (or
         #   amends an existing one) to store data until the user clicks on the link
         #
@@ -6174,5 +6901,5 @@
         { my $self = shift; return %{$self->{mxpModalStackHash}}; }
 }
 
-# Package must return true
+# Package must return a true value
 1

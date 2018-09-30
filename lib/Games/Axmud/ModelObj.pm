@@ -2486,5 +2486,5 @@
     # Group 5 IVs (none for this object)
 }
 
-# Package must return true
+# Package must return a true value
 1

@@ -16,6 +16,10 @@
 
 { package Games::Axmud::Widget::TextView::Gtk2;
 
+    use strict;
+    use diagnostics;
+    use warnings;
+
     # Use this sub-class, rather than Gtk2::TextView, to create a textview with the system's
     #   preferred colours and fonts
     # (In an ideal world, we'd call it GA::Gtk2::TextView, but GA::Obj::Desktop->setTextViewStyle
@@ -23,5 +27,5 @@
     use Glib::Object::Subclass 'Gtk2::TextView';
 }
 
-# Package must return true
+# Package must return a true value
 1

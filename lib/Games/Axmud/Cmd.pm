@@ -2153,7 +2153,7 @@
 
                 $session->writeText(
                     '   Random exit #' . $exitObj->number . ' has a list of destination rooms,'
-                    . ' but its ->randomType is not set to 3 (not auto-fixable)',
+                    . ' but its ->randomType is not set to \'room_list\' (not auto-fixable)',
                 );
 
                 $errorCount++;
@@ -3243,6 +3243,26 @@
         } elsif ($switch eq 'world_idle' || $switch eq '-w') {
 
             $event = 'world_idle';
+
+        } elsif ($switch eq 'aard102' || $switch eq '-q') {
+
+            $event = 'aard102';
+
+        } elsif ($switch eq 'zmp' || $switch eq '-z') {
+
+            $event = 'zmp';
+
+        } elsif ($switch eq 'atcp' || $switch eq '-a') {
+
+            $event = 'atcp';
+
+        } elsif ($switch eq 'gmcp' || $switch eq '-y') {
+
+            $event = 'gmcp';
+
+        } elsif ($switch eq 'mcp' || $switch eq '-b') {
+
+            $event = 'mcp';
         }
 
         if ($event) {
@@ -3257,37 +3277,6 @@
             } else {
 
                 $session->checkHooks($event, $hookVar);
-
-                return $self->complete(
-                    $session, $standardCmd,
-                    'Simulated the \'' . $event . '\' hook event',
-                );
-            }
-        }
-
-        # Now do hook events that use $hookVar, and optionally $hookVal too
-        if ($switch eq 'atcp' || $switch eq '-a') {
-
-            $event = 'atcp';
-
-        } elsif ($switch eq 'gmcp' || $switch eq '-y') {
-
-            $event = 'gmcp';
-        }
-
-        if ($event) {
-
-            if (! $hookVar) {
-
-                return $self->error(
-                    $session, $inputString,
-                    'At least one item of hook data must be used with the \'' . $event
-                    . '\' hook event',
-                );
-
-            } else {
-
-                $session->checkHooks($event, $hookVar, $hookVal);
 
                 return $self->complete(
                     $session, $standardCmd,
@@ -3577,8 +3566,10 @@
                 'debugPuebloFlag'       => 'Show messages for Pueblo errors                    ',
                 'debugPuebloCommentFlag'
                                         => 'Display Pueblo comments                            ',
+                'debugZmpFlag'          => 'Display incoming ZMP data                          ',
                 'debugAtcpFlag'         => 'Display incoming ATCP data                         ',
                 'debugGmcpFlag'         => 'Display incoming GMCP data                         ',
+                'debugMcpFlag'          => 'Show messages for MCP errors                       ',
             );
 
             do {
@@ -3607,11 +3598,11 @@
 
             if ($switch eq '-t') {
                 $iv = 'debugTelnetFlag';
-            } elsif ($switch eq '-m') {
+            } elsif ($switch eq '-s') {
                 $iv = 'debugTelnetMiniFlag';
             } elsif ($switch eq '-l') {
                 $iv = 'debugTelnetLogFlag';
-            } elsif ($switch eq '-s') {
+            } elsif ($switch eq '-d') {
                 $iv = 'debugMsdpFlag';
             } elsif ($switch eq '-x') {
                 $iv = 'debugMxpFlag';
@@ -3621,10 +3612,14 @@
                 $iv = 'debugPuebloFlag';
             } elsif ($switch eq '-u') {
                 $iv = 'debugPuebloCommentFlag';
+            } elsif ($switch eq '-z') {
+                $iv = 'debugZmpFlag';
             } elsif ($switch eq '-a') {
                 $iv = 'debugAtcpFlag';
             } elsif ($switch eq '-g') {
                 $iv = 'debugGmcpFlag';
+            } elsif ($switch eq '-m') {
+                $iv = 'debugMcpFlag';
             } else {
 
                 return $self->error(
@@ -9265,6 +9260,11 @@
 
             $string = 'MS Windows';
             @cmdList = $axmud::CLIENT->constMSWinCmdList;
+
+        } elsif ((! $switch && $^O =~ m/bsd/) || $switch eq '-b') {
+
+            $string = '*BSD';
+            @cmdList = $axmud::CLIENT->constBSDCmdList;
         }
 
         # Very unlikely error, but better to be safe than sorry...
@@ -16434,6 +16434,8 @@
     use diagnostics;
 
     use Glib qw(TRUE FALSE);
+    # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
+    use Archive::Tar;
 
     our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
 
@@ -17785,6 +17787,8 @@
     use diagnostics;
 
     use Glib qw(TRUE FALSE);
+    # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
+    use Archive::Tar;
 
     our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
 
@@ -19649,82 +19653,79 @@
         if (! defined $switch) {
 
             # Display header
-            $session->writeText(
-                'Global MUD protocol settings (* - not implemented in this version of '
-                . $axmud::SCRIPT . ')',
-            );
+            $session->writeText('Global MUD protocol settings');
 
             # Display list
             if ($axmud::CLIENT->useMsdpFlag) {
-                $session->writeText('   MSDP (Mud Server Data Protocol)           - on');
+                $session->writeText('   MSDP (Mud Server Data Protocol)           - ON');
             } else {
-                $session->writeText('   MSDP (Mud Server Data Protocol)           - off');
+                $session->writeText('   MSDP (Mud Server Data Protocol)           - OFF');
             }
 
             if ($axmud::CLIENT->useMsspFlag) {
-                $session->writeText('   MSSP (Mud Server Status Protocol)         - on');
+                $session->writeText('   MSSP (Mud Server Status Protocol)         - ON');
             } else {
-                $session->writeText('   MSSP (Mud Server Status Protocol)         - off');
+                $session->writeText('   MSSP (Mud Server Status Protocol)         - OFF');
             }
 
             if ($axmud::CLIENT->useMccpFlag) {
-                $session->writeText('   MCCP (Mud Client Compression Protocol)    - on');
+                $session->writeText('   MCCP (Mud Client Compression Protocol)    - ON');
             } else {
-                $session->writeText('   MCCP (Mud Client Compression Protocol)    - off');
+                $session->writeText('   MCCP (Mud Client Compression Protocol)    - OFF');
             }
 
             if ($axmud::CLIENT->useMspFlag) {
-                $session->writeText('   MSP (Mud Sound Protocol)                  - on');
+                $session->writeText('   MSP (Mud Sound Protocol)                  - ON');
             } else {
-                $session->writeText('   MSP (Mud Sound Protocol)                  - off');
+                $session->writeText('   MSP (Mud Sound Protocol)                  - OFF');
             }
 
             if ($axmud::CLIENT->useMxpFlag) {
-                $session->writeText('   MXP (Mud Extension Protocol)              - on');
+                $session->writeText('   MXP (Mud Extension Protocol)              - ON');
             } else {
-                $session->writeText('   MXP (Mud Extension Protocol)              - off');
+                $session->writeText('   MXP (Mud Extension Protocol)              - OFF');
             }
 
             if ($axmud::CLIENT->usePuebloFlag) {
-                $session->writeText('   Pueblo                                    - on');
+                $session->writeText('   Pueblo                                    - ON');
             } else {
-                $session->writeText('   Pueblo                                    - off');
+                $session->writeText('   Pueblo                                    - OFF');
             }
 
             if ($axmud::CLIENT->useZmpFlag) {
-                $session->writeText(' * ZMP (Zenith Mud Protocol)                 - on');
+                $session->writeText('   ZMP (Zenith Mud Protocol)                 - ON');
             } else {
-                $session->writeText(' * ZMP (Zenith Mud Protocol)                 - off');
+                $session->writeText('   ZMP (Zenith Mud Protocol)                 - OFF');
             }
 
             if ($axmud::CLIENT->useAard102Flag) {
-                $session->writeText(' * AARDWOLF-102 (Aardwolf 102 channel)       - on');
+                $session->writeText('   AARDW102 (Aardwolf 102 channel)           - ON');
             } else {
-                $session->writeText(' * AARDWOLF-102 (Aardwolf 102 channel)       - off');
+                $session->writeText('   AARD102 (Aardwolf 102 channel)            - OFF');
             }
 
             if ($axmud::CLIENT->useAtcpFlag) {
-                $session->writeText('   ATCP (Achaea Telnet Client Protocol)      - on');
+                $session->writeText('   ATCP (Achaea Telnet Client Protocol)      - ON');
             } else {
-                $session->writeText('   ATCP (Achaea Telnet Client Protocol)      - off');
+                $session->writeText('   ATCP (Achaea Telnet Client Protocol)      - OFF');
             }
 
             if ($axmud::CLIENT->useGmcpFlag) {
-                $session->writeText('   GMCP (Generic Mud Communication Protocol) - on');
+                $session->writeText('   GMCP (Generic Mud Communication Protocol) - ON');
             } else {
-                $session->writeText('   GMCP (Generic Mud Communication Protocol) - off');
+                $session->writeText('   GMCP (Generic Mud Communication Protocol) - OFF');
             }
 
             if ($axmud::CLIENT->useMttsFlag) {
-                $session->writeText('   MTTS (Mud Terminal Type Standard)         - on');
+                $session->writeText('   MTTS (Mud Terminal Type Standard)         - ON');
             } else {
-                $session->writeText('   MTTS (Mud Terminal Type Standard)         - off');
+                $session->writeText('   MTTS (Mud Terminal Type Standard)         - OFF');
             }
 
             if ($axmud::CLIENT->useMcpFlag) {
-                $session->writeText(' * MCP (Mud Client Protocol)                 - on');
+                $session->writeText('   MCP (Mud Client Protocol)                 - ON');
             } else {
-                $session->writeText(' * MCP (Mud Client Protocol)                 - off');
+                $session->writeText('   MCP (Mud Client Protocol)                 - OFF');
             }
 
             # Display footer. Use a message consistent with other client commands
@@ -19799,22 +19800,30 @@
 
             $session->writeText('   Pueblo');
             if ($session->puebloMode eq 'no_invite') {
-                $session->writeText('      0 - Server has not suggested Pueblo yet');
+                $session->writeText('      Server has not suggested Pueblo yet');
             } elsif ($session->puebloMode eq 'client_agree') {
-                $session->writeText('      1 - Server has suggested Pueblo and client has agreed');
+                $session->writeText('      Server has suggested Pueblo and client has agreed');
             } elsif ($session->puebloMode eq 'client_refuse') {
-                $session->writeText('      2 - Server has suggested Pueblo and client has refused');
+                $session->writeText('      Server has suggested Pueblo and client has refused');
             }
 
             $session->writeText('   ZMP (Zenith Mud Protocol)');
-            $session->writeText(
-                '      (not implemented in this version of ' . $axmud::SCRIPT . ')',
-            );
+            if ($session->zmpMode eq 'no_invite') {
+                $session->writeText('      Server has not suggested ZMP yet');
+            } elsif ($session->zmpMode eq 'client_agree') {
+                $session->writeText('      Server has suggested ZMP and client has agreed');
+            } elsif ($session->zmpMode eq 'client_refuse') {
+                $session->writeText('      Server has suggested ZMP and client has refused');
+            }
 
-            $session->writeText('   AARDWOLF-102 (Aardwolf 102 channel)');
-            $session->writeText(
-                '      (not implemented in this version of ' . $axmud::SCRIPT . ')',
-            );
+            $session->writeText('   AARD102 (Aardwolf 102 channel)');
+            if ($session->aard102Mode eq 'no_invite') {
+                $session->writeText('      Server has not suggested AARD102 yet');
+            } elsif ($session->aard102Mode eq 'client_agree') {
+                $session->writeText('      Server has suggested AARD102 and client has agreed');
+            } elsif ($session->aard102Mode eq 'client_refuse') {
+                $session->writeText('      Server has suggested AARD102 and client has refused');
+            }
 
             $session->writeText('   ATCP (Achaea Telnet Client Protocol)');
             if ($session->atcpMode eq 'no_invite') {
@@ -19842,9 +19851,13 @@
             }
 
             $session->writeText('   MCP (Mud Client Protocol)');
-            $session->writeText(
-                '      (not implemented in this version of ' . $axmud::SCRIPT . ')',
-            );
+            if ($session->mcpMode eq 'no_invite') {
+                $session->writeText('      Server has not suggested MCP yet');
+            } elsif ($session->mcpMode eq 'client_agree') {
+                $session->writeText('      Server has suggested MCP and client has agreed');
+            } elsif ($session->mcpMode eq 'client_refuse') {
+                $session->writeText('      Server has suggested MCP and client has refused');
+            }
 
             # Display footer. Use a message consistent with other client commands
             return $self->complete(
@@ -19972,6 +19985,46 @@
                 );
             }
 
+        # ;spt -z
+        } elsif ($switch eq '-z') {
+
+            $axmud::CLIENT->toggle_mudProtocol('zmp');
+
+            if ($axmud::CLIENT->useZmpFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The ZMP protocol has been enabled across all sessions',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The ZMP protocol has been disabled across all sessions',
+                );
+            }
+
+        # ;spt -r
+        } elsif ($switch eq '-r') {
+
+            $axmud::CLIENT->toggle_mudProtocol('aard102');
+
+            if ($axmud::CLIENT->useAard102Flag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The Aardwolf 102 channel has been enabled across all sessions',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The Aardwolf 102 channel has been disabled across all sessions',
+                );
+            }
+
         # ;spt -a
         } elsif ($switch eq '-a') {
 
@@ -20029,6 +20082,26 @@
                 return $self->complete(
                     $session, $standardCmd,
                     'The MTTS protocol has been disabled across all sessions',
+                );
+            }
+
+        # ;spt -m
+        } elsif ($switch eq '-m') {
+
+            $axmud::CLIENT->toggle_mudProtocol('mcp');
+
+            if ($axmud::CLIENT->useMcpFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The MCP protocol has been enabled across all sessions',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The MCP protocol has been disabled across all sessions',
                 );
             }
 
@@ -21650,6 +21723,483 @@
     }
 }
 
+{ package Games::Axmud::Cmd::ZMP;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('zmp', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['zmp'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Shows supported ZMP packages/commands';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $package,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            $dotPackage,
+            @list,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Compile an ordered list of matching ZMP packages
+        if (! $package) {
+
+            @list = sort {lc($a->packageName) cmp lc($b->packageName)}
+                ($axmud::CLIENT->ivValues('zmpPackageHash'));
+
+        } else {
+
+            foreach my $obj ($axmud::CLIENT->ivValues('zmpPackageHash')) {
+
+                if ($obj->packageName eq $package) {
+
+                    push (@list, $obj);
+                }
+            }
+
+            @list = sort {lc($a->packageName) cmp lc($b->packageName)} (@list);
+        }
+
+        if (! @list) {
+
+            return $self->error($session, $inputString, 'No matching ZMP packages found');
+        }
+
+        # Display header
+        $session->writeText('List of supported ZMP packages');
+
+        # Display list
+        foreach my $obj (@list) {
+
+            $session->writeText('   ' . $obj->packageName);
+
+            if ($obj->world) {
+                $session->writeText('      World    : ' . $obj->world);
+            } else {
+                $session->writeText('      World    : <supported in all worlds>');
+            }
+
+            if ($obj->cmdHash) {
+
+                $session->writeText(
+                    '      Commands : '
+                    . join(' / ', sort {lc($a) cmp lc($b)} ($obj->ivKeys('cmdHash'))),
+                );
+
+            } else {
+
+                $session->writeText(
+                    '      Commands : <none supported>',
+                );
+            }
+        }
+
+        # Display footer
+        if (@list == 1) {
+
+            return $self->complete($session, $standardCmd, 'End of list (1 package found)');
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'End of list (' . scalar @list . ' packages found)',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::SendZMP;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('sendzmp', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['szmp', 'sendzmp'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sends a ZMP command to the world';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $cmd,
+            @args,
+        ) = @_;
+
+        # Check for improper arguments
+        if (! defined $cmd) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check ZMP is enabled in the current session
+        if ($session->zmpMode ne 'client_agree') {
+
+            return $self->error(
+                $session, $inputString,
+                'ZMP is not enabled in the current session',
+            );
+        }
+
+        # Send the ZMP command and any specified parameters
+        if (! $session->optSendZmp($cmd, @args)) {
+
+            return $self->error(
+                $session, $inputString,
+                'Unabled to send ZMP command \'' . $cmd . '\'',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'ZMP command \'' . $cmd . '\' sent',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::InputZMP;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('inputzmp', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['izmp', 'inputzmp'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sends pre-formatted text via ZMP';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # Check for improper arguments
+        if (! @args) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check ZMP is enabled in the current session
+        if ($session->zmpMode ne 'client_agree') {
+
+            return $self->error(
+                $session, $inputString,
+                'ZMP is not enabled in the current session',
+            );
+        }
+
+        # Send the ZMP command and any specified parameters
+        if (! $session->optSendZmp('zmp.input', join("\n", @args))) {
+
+            return $self->error(
+                $session, $inputString,
+                'Unabled to send ZMP command \'zmp.input\'',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'ZMP input command sent',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::Aardwolf;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('aardwolf', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['aard', 'aard102', 'aardwolf'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Handles AARD102 (Aardwolf 102 channel) data';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $option,
+            $setting,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my ($diff, $flag);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # ;aard
+        if (! defined $option) {
+
+            # Display header
+            $session->writeText('Current AARD102 (Aardwolf 102 channel) status');
+
+            # Display list
+            if ($session->aard102Mode eq 'no_invite') {
+
+                $session->writeText('    AARD102 mode : Server has not suggested AARD102 yet');
+
+            } elsif ($session->aard102Mode eq 'client_agree') {
+
+                $session->writeText(
+                    '    AARD102 mode : Server has suggested AARD102 and client has agreed',
+                );
+
+            } elsif ($session->aard102Mode eq 'client_refuse') {
+
+                $session->writeText(
+                    '    AARD102 mode : Server has suggested AARD102 and client has refused',
+                );
+            }
+
+            if ($session->aard102Mode eq 'client_agree') {
+
+                if (! defined $session->aard102Status) {
+                    $session->writeText('    Status       : <not received>');
+                } else {
+                    $session->writeText('    Status       : ' . $session->aard102Status);
+                }
+
+                if (! defined $session->aard102TickTime) {
+
+                    $session->writeText('    Tick time    : <not received>');
+
+                } else {
+
+                    $diff = int($session->sessionTime - $session->aard102TickTime) + 1;
+
+                    if ($diff == 1) {
+                        $session->writeText('    Tick time    : 1 second ago');
+                    } else {
+                        $session->writeText('    Tick time    : ' . $diff . ' seconds ago');
+                    }
+                }
+            }
+
+            # Display footer
+            return $self->complete($session, $standardCmd, 'End of status list');
+
+        # ;aard <option>
+        # ;aard <option> <setting>
+        } else {
+
+            # Check AARD102 is enabled in the current session
+            if ($session->aard102Mode ne 'client_agree') {
+
+                return $self->error(
+                    $session, $inputString,
+                    'AARD102 is not enabled in the current session',
+                );
+
+            # <option> must be a value in the range 1-254
+            } elsif (! $axmud::CLIENT->intCheck($option, 1, 254)) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Invalid AARD102 option \'' . $option . '\' - must be a value in the range'
+                    . ' 1-254',
+                );
+            }
+
+            # If <setting> was specified, convert it to TRUE or FALSE
+            if (defined $setting) {
+
+                if (lc($setting) eq 'on') {
+                    $flag = TRUE;
+                } elsif (lc($setting) eq 'off') {
+                    $flag = FALSE;
+                } else {
+
+                    $flag = $self->convertTrueFalse($setting);
+                    if (! defined $flag) {
+
+                        # Emergency fallback to prevent yet more improper args messages
+                        $flag = FALSE;
+                    }
+                }
+
+            } else {
+
+                # Default is 'turn on'
+                $flag = TRUE;
+            }
+
+            # Apply the setting
+            if (! $session->optSendAard102($option, $flag)) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Could not apply the AARD102 setting \'' . $option . '\'',
+                );
+
+            } elsif (! $flag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'AARD102 option \'' . $option . '\' turned OFF',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'AARD102 option \'' . $option . '\' turned ON',
+                );
+            }
+        }
+    }
+}
+
 { package Games::Axmud::Cmd::ATCP;
 
     use strict;
@@ -21774,6 +22324,106 @@
             return $self->complete(
                 $session, $standardCmd,
                 'End of list (' . scalar @list . ' packages found)',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::SendATCP;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('sendatcp', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['satcp', 'sendatcp'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sends encoded JSON data to the world via ATCP';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # Local variables
+        my ($string, $name, $data);
+
+        # Check for improper arguments
+        if (! @args) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check ATCP is enabled in the current session
+        if ($session->atcpMode ne 'client_agree') {
+
+            return $self->error(
+                $session, $inputString,
+                'ATCP is not enabled in the current session',
+            );
+        }
+
+        # The ATCP packet expects a payload in the form 'Package[.SubPackages].Message <data>'
+        # Split @args into a name and data component, if possible; otherwise submit the whole
+        #   argument list as a single string
+        $string = join(' ', @args);
+#        if ($string =~ m/^([A-Za-z_][A-Za-z0-9_\-\.]*)\s(.*)/) {
+        if ($string =~ m/^([[:alpha:]\_][[:word:]\-\.]*)\s(.*)/) {
+
+            $name = lc($1);
+            $data = $2;
+
+        } else {
+
+            $name = $string;
+        }
+
+        # Send the ATCP packet
+        if (! $session->optSendAtcp($name, $data)) {
+
+            return $self->error(
+                $session, $inputString,
+                'Unabled to send ATCP package \'' . $name . '\'',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'ATCP package \'' . $name . '\' sent',
             );
         }
     }
@@ -21910,106 +22560,6 @@
     }
 }
 
-{ package Games::Axmud::Cmd::SendATCP;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('sendatcp', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['satcp', 'sendatcp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Sends encoded JSON data to the world via ATCP';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            @args,
-        ) = @_;
-
-        # Local variables
-        my ($string, $name, $data);
-
-        # Check for improper arguments
-        if (! @args) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Check ATCP is enabled in the current session
-        if ($session->atcpMode ne 'client_agree') {
-
-            return $self->error(
-                $session, $inputString,
-                'ATCP is not enabled in the current session',
-            );
-        }
-
-        # The ATCP packet expects a payload in the form 'Package[.SubPackages].Message <data>'
-        # Split @args into a name and data component, if possible; otherwise submit the whole
-        #   argument list as a single string
-        $string = join(' ', @args);
-#        if ($string =~ m/^([A-Za-z_][A-Za-z0-9_\-\.]*)\s(.*)/) {
-        if ($string =~ m/^([[:alpha:]\_][[:word:]\-\.]*)\s(.*)/) {
-
-            $name = lc($1);
-            $data = $2;
-
-        } else {
-
-            $name = $string;
-        }
-
-        # Send the ATCP packet
-        if (! $session->optSendAtcp($name, $data)) {
-
-            return $self->error(
-                $session, $inputString,
-                'Unabled to send ATCP package \'' . $name . '\'',
-            );
-
-        } else {
-
-            return $self->complete(
-                $session, $standardCmd,
-                'ATCP package \'' . $name . '\' sent',
-            );
-        }
-    }
-}
-
 { package Games::Axmud::Cmd::SendGMCP;
 
     use strict;
@@ -22107,6 +22657,115 @@
                 'GMCP package \'' . $name . '\' sent',
             );
         }
+    }
+}
+
+{ package Games::Axmud::Cmd::MCP;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('mcp', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['mcp'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Shows supported MCP packages';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Display header
+        $session->writeText('List of supported MCP packages');
+
+        # Display list
+        @list = sort {lc($a->name) cmp lc($b->name)} ($axmud::CLIENT->ivValues('mcpPackageHash'));
+        foreach my $obj (@list) {
+
+            $session->writeText(
+                '   ' . sprintf('%-64.64s', $obj->name) . ' v' . $obj->minVersion . ' - v'
+                . $obj->maxVersion,
+            );
+
+            if ($obj->supplantList) {
+
+                $session->writeText('      Supplants packages: ' . join(' ', $obj->supplantList));
+            }
+        }
+
+        # Display header
+        $session->writeText('List of MCP packages used in this session');
+
+        # Display list
+        if (! $session->mcpPackageHash) {
+
+            $session->writeText('   (No MCP packages are in use)');
+
+        } else {
+
+            foreach my $obj (
+                sort {lc($a->name) cmp lc($b->name)} ($session->ivValues('mcpPackageHash'))
+            ) {
+                my $version;
+
+                if (defined $obj->useVersion) {
+                    $version = 'v' . $obj->useVersion;
+                } else {
+                    $version = '<package disabled>';
+                }
+
+                $session->writeText('   ' . sprintf('%-64.64s', $obj->name) . ' ' . $version);
+            }
+        }
+
+        # Display footer
+        return $self->complete(
+            $session, $standardCmd,
+            'End of list (' . scalar @list . ' supported packages found)',
+        );
     }
 }
 
@@ -48068,6 +48727,16 @@
             );
         }
 
+        # LA::Script stores keywords/function names in lower case, but in most Axbasic scripts
+        #   they're typed in upper case (PRINT "Hello", etc)
+        # Reduce $topic to lower-case so that ';axbasichelp PRINT' and ';axbasichelp print' have the
+        #   same effect (but don't allow the user to type the switch -X, because that's not allowed
+        #   anywhere else)
+        if (defined $topic && lc($topic) ne '-x') {
+
+            $topic = lc($topic);
+        }
+
         # ;abh
         # ;abh -x
         if (! defined $topic || $topic eq '-x') {
@@ -49725,7 +50394,7 @@
 
         $self->{defaultUserCmdList} = ['swz', 'setwinsize', 'setwindowsize'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Sets the default size of \'grid\' windows';
+        $self->{descrip} = 'Sets the default size of windows';
 
         # Bless the object into existence
         bless $self, $class;
@@ -49748,7 +50417,7 @@
 
         # Check for improper arguments
         if (
-            (defined $switch && $switch ne '-m' && $switch ne '-g')
+            (defined $switch && $switch ne '-m' && $switch ne '-g' && $switch ne '-f')
             || (defined $width && ! defined $height)
             || defined $check
         ) {
@@ -49859,6 +50528,32 @@
                 'Default \'grid\' window size ' . $string . ' (width '
                 . $axmud::CLIENT->customGridWinWidth . ' height '
                 . $axmud::CLIENT->customGridWinHeight . ')',
+            );
+
+        # ;swz -f <width> <height>
+        # ;swz -f
+        } elsif ($switch eq '-f') {
+
+            if (! defined $width) {
+
+                $axmud::CLIENT->set_customFreeWinSize(
+                    $axmud::CLIENT->constFreeWinWidth,
+                    $axmud::CLIENT->constFreeWinHeight,
+                );
+
+                $string = 'reset';
+
+            } else {
+
+                $axmud::CLIENT->set_customFreeWinSize($width, $height);
+                $string = 'set';
+            }
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Default \'free\' window size ' . $string . ' (width '
+                . $axmud::CLIENT->customFreeWinWidth . ' height '
+                . $axmud::CLIENT->customFreeWinHeight . ')',
             );
         }
     }
@@ -54196,6 +54891,394 @@
         } else {
 
             return $self->complete($session, $standardCmd, 'Set window layer to ' . $mainLayer);
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::ToggleWindowStorage;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('togglewindowstorage', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['tws', 'togglewinstore', 'togglewindowstorage'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Toggles storage of \'grid\' window sizes/positions';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Toggle the flag
+        if (! $axmud::CLIENT->storeGridPosnFlag) {
+
+            $axmud::CLIENT->set_storeGridPosnFlag(TRUE);
+
+            # Store the size/position of all 'grid' windows for this session
+            $axmud::CLIENT->desktopObj->storeGridWinPosn($session);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Storage of \'grid\' window sizes/positions has been turned ON',
+            );
+
+        } else {
+
+            $axmud::CLIENT->set_storeGridPosnFlag(FALSE);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Storage of \'grid\' window sizes/positions has been turned OFF',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::ApplyWindowStorage;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('applywindowstorage', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['aws', 'applywinstore', 'applywindowstorage'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Stores size/position of all \'grid\' windows';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Store the size/position of all 'grid' windows for this session
+        $axmud::CLIENT->desktopObj->storeGridWinPosn($session);
+
+        return $self->complete(
+            $session, $standardCmd,
+            'Sizes/positions of this session\'s \'grid\' windows have been stored',
+        );
+    }
+}
+
+{ package Games::Axmud::Cmd::ClearWindowStorage;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('clearwindowstorage', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['cws', 'clearwinstore', 'clearwindowstorage'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Clears stored \'grid\' window sizes/positions';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $winName,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # ;cws
+        if (! defined $winName) {
+
+            if (! $axmud::CLIENT->storeGridPosnHash) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'There are no stored \'grid\' window sizes/positions',
+                );
+
+            } else {
+
+                $axmud::CLIENT->reset_storeGridPosn();
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'All stored \'grid\' window sizes/positions have been cleared',
+                );
+            }
+
+        # ;cw <name>
+        } else {
+
+            if (! $axmud::CLIENT->ivExists('storeGridPosnHash', $winName)) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'There is no stored size/position for the \'grid\' window \'' . $winName . '\'',
+                );
+
+            } else {
+
+                $axmud::CLIENT->del_storeGridPosn($winName);
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The stored size/position for the \'' . $winName . '\' window has been cleared',
+                );
+            }
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::DumpWindowStorage;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('dumpwindowstorage', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['dws', 'dumpwinstore', 'dumpwindowstorage'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Displays stored \'grid\' window sizes/positions';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my %hash;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        %hash = $axmud::CLIENT->storeGridPosnHash;
+        if (! %hash) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'There are no stored \'grid\' window sizes/positions',
+            );
+        }
+
+        # Display header
+        if ($axmud::CLIENT->storeGridPosnFlag) {
+
+            $session->writeText(
+                'List of stored \'grid\' window sizes/positions (storage turned ON)',
+            );
+
+        } else {
+
+            $session->writeText(
+                'List of stored \'grid\' window sizes/positions (storage turned OFF)',
+            );
+        }
+
+        $session->writeText('   Window name      X     Y     Width Height');
+
+        # Display list
+        foreach my $winName (sort {lc($a) cmp lc($b)} (keys %hash)) {
+
+            my ($listRef, $xPos, $yPos, $width, $height);
+
+            $listRef = $hash{$winName};
+
+            if (defined $$listRef[0]) {
+                $xPos = $$listRef[0];
+            } else {
+                $xPos = '-';
+            }
+
+            if (defined $$listRef[1]) {
+                $yPos = $$listRef[1];
+            } else {
+                $yPos = '-';
+            }
+
+            if (defined $$listRef[2]) {
+                $width = $$listRef[2];
+            } else {
+                $width = '-';
+            }
+
+            if (defined $$listRef[3]) {
+                $height = $$listRef[3];
+            } else {
+                $height = '-';
+            }
+
+            $session->writeText(
+                sprintf(
+                    '   %-16.16s %-5.5s %-5.5s %-5.5s %-5.5s',
+                    $winName,
+                    $xPos,
+                    $yPos,
+                    $width,
+                    $height,
+                ),
+            );
+        }
+
+        # Display footer
+        if (scalar (keys %hash) == 1) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'End of list (1 stored window found)',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'End of list (' . (scalar (keys %hash)) . ') stored windows found',
+            );
         }
     }
 }
@@ -75653,273 +76736,6 @@
     }
 }
 
-# Debugger task
-
-{ package Games::Axmud::Cmd::SetDebuggerMode;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('setdebuggermode', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['sdm', 'debugmode', 'setdebugmode', 'setdebuggermode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Starts or configures the Debugger task';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            @args,
-        ) = @_;
-
-        # Local variables
-        my (
-            $switch, $errorFlag, $warningFlag, $debugFlag, $improperFlag, $allFlag, $msgCount,
-            $winCount, $taskObj, $mode, $startFlag, $string, $string2,
-            @list,
-        );
-
-        # Extract switches
-        $msgCount = 0;
-
-        ($switch, @args) = $self->extract('-e', 0, @args);
-        if (defined $switch) {
-
-            $errorFlag = TRUE;
-            $msgCount++;
-        }
-
-        ($switch, @args) = $self->extract('-w', 0, @args);
-        if (defined $switch) {
-
-            $warningFlag = TRUE;
-            $msgCount++;
-        }
-
-        ($switch, @args) = $self->extract('-d', 0, @args);
-        if (defined $switch) {
-
-            $debugFlag = TRUE;
-            $msgCount++;
-        }
-
-        ($switch, @args) = $self->extract('-i', 0, @args);
-        if (defined $switch) {
-
-            $improperFlag = TRUE;
-            $msgCount++;
-        }
-
-        ($switch, @args) = $self->extract('-a', 0, @args);
-        if (defined $switch) {
-
-            $allFlag = TRUE;
-            $msgCount++;
-        }
-
-        $winCount = 0;
-
-        ($switch, @args) = $self->extract('-m', 0, @args);
-        if (defined $switch) {
-
-            $mode = 'original';
-            $winCount++;
-        }
-
-        ($switch, @args) = $self->extract('-b', 0, @args);
-        if (defined $switch) {
-
-            $mode = 'both';
-            $winCount++;
-        }
-
-        ($switch, @args) = $self->extract('-t', 0, @args);
-        if (defined $switch) {
-
-            $mode = 'task';
-            $winCount++;
-        }
-
-        # There should be nothing left in @args
-        if (@args) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Some switches can't be combined
-        if ($winCount > 1) {
-
-            return $self->error(
-                $session, $inputString,
-                'The switches -m, -t and -b can\'t be combined',
-            );
-        }
-
-        # If the user didn't specify the switches -e, -w, -d or -i, and if the task is already
-        #   running, then we display a list of the Debugger task's current settings
-        $taskObj = $session->debuggerTask;
-        if ($taskObj && ! $msgCount) {
-
-            # Display header
-            $session->writeText('Current debugger task modes');
-
-            # Display list
-            @list = ('error', 'warning', 'debug', 'improper');
-            foreach my $type (@list) {
-
-                my $iv = $type . 'Mode';        # e.g. ->errorMode
-
-                if ($taskObj->$iv == 1) {
-
-                    $session->writeText(
-                        sprintf('   %-8.8s', $type) . ' : displayed in \'main\'/task windows',
-                    );
-
-                } elsif ($taskObj->$iv == 2) {
-
-                    $session->writeText(
-                        sprintf('   %-8.8s', $type) . ' : displayed in task window only',
-                    );
-
-                } else {
-
-                    # Mode 0
-                    $session->writeText(
-                        sprintf('   %-8.8s', $type) . ' : displayed in \'main\' window only',
-                    );
-                }
-            }
-
-            # Display footer
-            return $self->complete(
-                $session, $standardCmd,
-                'Current debugger task modes displayed',
-            );
-        }
-
-        # Now we can check for missing switches
-        if (! $winCount) {
-
-            return $self->error(
-                $session, $inputString,
-                'You must specify one of the switches -m, -t and -b',
-            );
-        }
-
-        # If the Debugger task isn't already running, start it
-        if (! $taskObj) {
-
-            $taskObj = Games::Axmud::Task::Debugger->new($session, 'current');
-            if (! $taskObj) {
-
-                return $self->error(
-                    $session, $inputString,
-                    'General error creating a new Debugger task',
-                );
-
-            } else {
-
-                # Task started
-                $startFlag = TRUE;
-            }
-        }
-
-        # Update the task's IVs
-        if ($errorFlag || $allFlag) {
-
-            $taskObj->set_mode('error', $mode);
-            $string .= 'error',
-        }
-
-        if ($warningFlag || $allFlag) {
-
-            $taskObj->set_mode('warning', $mode);
-            if ($string) {
-                $string .= ' warning',
-            } else {
-                $string = 'warning',
-            }
-        }
-
-        if ($debugFlag || $allFlag) {
-
-            $taskObj->set_mode('debug', $mode);
-            if ($string) {
-                $string .= ' debug',
-            } else {
-                $string = 'debug',
-            }
-        }
-
-        if ($improperFlag || $allFlag) {
-
-            $taskObj->set_mode('improper', $mode);
-            if ($string) {
-                $string .= ' improper',
-            } else {
-                $string = 'improper',
-            }
-        }
-
-        if (! $msgCount) {
-
-            $string = '(none)';
-        }
-
-        if (defined $mode) {
-
-            $string .= ', mode set: ';
-
-            if ($mode eq 'both') {
-                $string = 'use \'main\' and task windows';
-            } elsif ($mode eq 'task') {
-                $string = 'use task window only';
-            } else {
-                $string = 'use \'main\' window only';       # Mode 'original'
-            }
-        }
-
-        $string .= ')';
-
-        return $self->complete(
-            $session, $standardCmd,
-            'Current debugger task updated (messages affected: ' . $string,
-        );
-    }
-}
-
 # Inventory / Condition tasks
 
 { package Games::Axmud::Cmd::ActivateInventory;
@@ -80888,6 +81704,290 @@
                 );
             }
         }
+    }
+}
+
+# System task
+
+{ package Games::Axmud::Cmd::SetSystemMode;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setsystemmode', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['ssm', 'systemmode', 'setsystemmode'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Starts or configures the System task';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # Local variables
+        my (
+            $switch, $textFlag, $errorFlag, $warningFlag, $debugFlag, $improperFlag, $allFlag,
+            $msgCount, $winCount, $taskObj, $mode, $startFlag, $string, $string2,
+            @list,
+        );
+
+        # Extract switches
+        $msgCount = 0;
+
+        ($switch, @args) = $self->extract('-s', 0, @args);
+        if (defined $switch) {
+
+            $textFlag = TRUE;
+            $msgCount++;
+        }
+
+        ($switch, @args) = $self->extract('-e', 0, @args);
+        if (defined $switch) {
+
+            $errorFlag = TRUE;
+            $msgCount++;
+        }
+
+        ($switch, @args) = $self->extract('-w', 0, @args);
+        if (defined $switch) {
+
+            $warningFlag = TRUE;
+            $msgCount++;
+        }
+
+        ($switch, @args) = $self->extract('-d', 0, @args);
+        if (defined $switch) {
+
+            $debugFlag = TRUE;
+            $msgCount++;
+        }
+
+        ($switch, @args) = $self->extract('-i', 0, @args);
+        if (defined $switch) {
+
+            $improperFlag = TRUE;
+            $msgCount++;
+        }
+
+        ($switch, @args) = $self->extract('-a', 0, @args);
+        if (defined $switch) {
+
+            $allFlag = TRUE;
+            $msgCount++;
+        }
+
+        $winCount = 0;
+
+        ($switch, @args) = $self->extract('-m', 0, @args);
+        if (defined $switch) {
+
+            $mode = 'original';
+            $winCount++;
+        }
+
+        ($switch, @args) = $self->extract('-b', 0, @args);
+        if (defined $switch) {
+
+            $mode = 'both';
+            $winCount++;
+        }
+
+        ($switch, @args) = $self->extract('-t', 0, @args);
+        if (defined $switch) {
+
+            $mode = 'task';
+            $winCount++;
+        }
+
+        # There should be nothing left in @args
+        if (@args) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Some switches can't be combined
+        if ($winCount > 1) {
+
+            return $self->error(
+                $session, $inputString,
+                'The switches -m, -t and -b can\'t be combined',
+            );
+        }
+
+        # If the user didn't specify the switches -s, -e, -w, -d or -i, and if the task is already
+        #   running, then we display a list of the System task's current settings
+        $taskObj = $session->systemTask;
+        if ($taskObj && ! $msgCount) {
+
+            # Display header
+            $session->writeText('Current System task modes');
+
+            # Display list
+            @list = ('system', 'error', 'warning', 'debug', 'improper');
+            foreach my $type (@list) {
+
+                my $iv = $type . 'Mode';        # e.g. ->errorMode
+
+                if ($taskObj->$iv == 1) {
+
+                    $session->writeText(
+                        sprintf('   %-8.8s', $type) . ' : displayed in \'main\'/task windows',
+                    );
+
+                } elsif ($taskObj->$iv == 2) {
+
+                    $session->writeText(
+                        sprintf('   %-8.8s', $type) . ' : displayed in task window only',
+                    );
+
+                } else {
+
+                    # Mode 0
+                    $session->writeText(
+                        sprintf('   %-8.8s', $type) . ' : displayed in \'main\' window only',
+                    );
+                }
+            }
+
+            # Display footer
+            return $self->complete(
+                $session, $standardCmd,
+                'Current System task modes displayed',
+            );
+        }
+
+        # Now we can check for missing switches
+        if (! $winCount) {
+
+            return $self->error(
+                $session, $inputString,
+                'You must specify one of the switches -m, -t and -b',
+            );
+        }
+
+        # If the System task isn't already running, start it
+        if (! $taskObj) {
+
+            $taskObj = Games::Axmud::Task::System->new($session, 'current');
+            if (! $taskObj) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'General error creating a new System task',
+                );
+
+            } else {
+
+                # Task started
+                $startFlag = TRUE;
+            }
+        }
+
+        # Update the task's IVs
+        if ($textFlag || $allFlag) {
+
+            $taskObj->set_mode('system', $mode);
+            $string .= 'system',
+        }
+
+        if ($errorFlag || $allFlag) {
+
+            $taskObj->set_mode('error', $mode);
+            if ($string) {
+                $string .= ' error',
+            } else {
+                $string = 'error',
+            }
+        }
+
+        if ($warningFlag || $allFlag) {
+
+            $taskObj->set_mode('warning', $mode);
+            if ($string) {
+                $string .= ' warning',
+            } else {
+                $string = 'warning',
+            }
+        }
+
+        if ($debugFlag || $allFlag) {
+
+            $taskObj->set_mode('debug', $mode);
+            if ($string) {
+                $string .= ' debug',
+            } else {
+                $string = 'debug',
+            }
+        }
+
+        if ($improperFlag || $allFlag) {
+
+            $taskObj->set_mode('improper', $mode);
+            if ($string) {
+                $string .= ' improper',
+            } else {
+                $string = 'improper',
+            }
+        }
+
+        if (! $msgCount) {
+
+            $string = '(none)';
+        }
+
+        if (defined $mode) {
+
+            $string .= ', mode set: ';
+
+            if ($mode eq 'both') {
+                $string = 'use \'main\' and task windows';
+            } elsif ($mode eq 'task') {
+                $string = 'use task window only';
+            } else {
+                $string = 'use \'main\' window only';       # Mode 'original'
+            }
+        }
+
+        $string .= ')';
+
+        return $self->complete(
+            $session, $standardCmd,
+            'Current System task updated (messages affected: ' . $string,
+        );
     }
 }
 
@@ -89433,5 +90533,5 @@
     }
 }
 
-# Package must return true
+# Package must return a true value
 1

@@ -12568,15 +12568,21 @@
             9, 12, 2, 3);
 
         ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'room_list\'', 'randomType', 'room_list', TRUE,
+            $table, $group, '\'temp_region\'', 'randomType', 'temp_region', TRUE,
             7, 9, 3, 4);
-        $self->addLabel($table, 'Leads to random room from this list:',
+        $self->addLabel($table, 'Creates new room in temporary region',
             9, 12, 3, 4);
 
+        ($group, $radioButton) = $self->addRadioButton(
+            $table, $group, '\'room_list\'', 'randomType', 'room_list', TRUE,
+            7, 9, 4, 5);
+        $self->addLabel($table, 'Leads to random room from this list:',
+            9, 12, 4, 5);
+
         $self->addTextView($table, 'randomDestList', TRUE,
-            9, 12, 4, 11,
+            9, 12, 5, 11,
             undef, undef, undef, undef,
-            -1, 250);               # Fixed width/height
+            -1, 220);               # Fixed width/height
 
         $self->addLabel($table, '<i>(Add a list of room numbers, one per line)</i>',
             9, 12, 11, 12);
@@ -26328,7 +26334,7 @@
 
         @comboList = qw(
             echo sga ttype eor naws new_environ charset
-            msdp mssp mccp msp mxp pueblo zmp aard_102 atcp gmcp mtts mcp
+            msdp mssp mccp msp mxp pueblo zmp aard102 atcp gmcp mtts mcp
         );
 
         my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
@@ -43791,10 +43797,6 @@
 
             $self->parametersCondition1Tab($innerNotebook);
 
-        } elsif ($self->editObj->name eq 'debugger_task') {
-
-            $self->parametersDebugger1Tab($innerNotebook);
-
         } elsif ($self->editObj->name eq 'divert_task') {
 
             $self->parametersDivert1Tab($innerNotebook);
@@ -43814,6 +43816,11 @@
             $self->parametersStatus1Tab($innerNotebook);
             $self->parametersStatus2Tab($innerNotebook);
             $self->parametersStatus3Tab($innerNotebook);
+
+        } elsif ($self->editObj->name eq 'system_task') {
+
+            $self->parametersSystem1Tab($innerNotebook);
+            $self->parametersSystem2Tab($innerNotebook);
 
         } elsif ($self->editObj->name eq 'watch_task') {
 
@@ -44487,9 +44494,9 @@
         return 1;
     }
 
-    sub parametersDebugger1Tab {
+    sub parametersSystem1Tab {
 
-        # Parameters Debugger1 tab
+        # Parameters System1 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -44503,22 +44510,24 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersDebugger1Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersSystem1Tab', @_);
         }
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
 
-        # Message display modes
-        $self->addLabel($table, '<b>Message display modes</b>',
+        # System message display modes
+        $self->addLabel($table, '<b>System message display modes</b>',
             0, 12, 0, 1);
-        $self->addLabel($table, '<i>Error messages</i>',
+
+        # Left column
+        $self->addLabel($table, '<i>Ordinary system messages</i>',
             1, 6, 1, 2);
 
-        my ($group, $group2, $group3, $group4, $radioButton);
+        my ($group, $group2, $group3, $group4, $group5, $radioButton);
 
         ($group, $radioButton) = $self->addRadioButton(
-            $table, undef, '\'main\'', 'errorMode',
+            $table, undef, '\'main\'', 'systemMode',
             'main',     # IV set to this value when toggled
             TRUE,       # Sensitive widget
             1, 3, 2, 3);
@@ -44526,22 +44535,22 @@
             3, 6, 2, 3);
 
         ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'both\'', 'errorMode', 'both', TRUE,
+            $table, $group, '\'both\'', 'systemMode', 'both', TRUE,
             1, 3, 3, 4);
         $self->addLabel($table, 'Displayed in \'main\' and task windows',
             3, 6, 3, 4);
 
         ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'task\'', 'errorMode', 'task', TRUE,
+            $table, $group, '\'task\'', 'systemMode', 'task', TRUE,
             1, 3, 4, 5);
         $self->addLabel($table, 'Displayed in the task window only',
             3, 6, 4, 5);
 
-        $self->addLabel($table, '<i>Warning messages</i>',
+        $self->addLabel($table, '<i>Error messages</i>',
             1, 6, 5, 6);
 
         ($group2, $radioButton) = $self->addRadioButton(
-            $table, undef, '\'main\'', 'warningMode',
+            $table, undef, '\'main\'', 'errorMode',
             'main',     # IV set to this value when toggled
             TRUE,       # Sensitive widget
             1, 3, 6, 7);
@@ -44549,45 +44558,46 @@
             3, 6, 6, 7);
 
         ($group2, $radioButton) = $self->addRadioButton(
-            $table, $group2, '\'both\'', 'warningMode', 'both', TRUE,
+            $table, $group2, '\'both\'', 'errorMode', 'both', TRUE,
             1, 3, 7, 8);
         $self->addLabel($table, 'Displayed in \'main\' and task windows',
             3, 6, 7, 8);
 
         ($group2, $radioButton) = $self->addRadioButton(
-            $table, $group2, '\'task\'', 'warningMode', 'task', TRUE,
+            $table, $group2, '\'task\'', 'errorMode', 'task', TRUE,
             1, 3, 8, 9);
         $self->addLabel($table, 'Displayed in the task window only',
             3, 6, 8, 9);
 
-        $self->addLabel($table, '<i>Debug messages</i>',
-            7, 12, 1, 2);
+        $self->addLabel($table, '<i>Warning messages</i>',
+            1, 6, 9, 10);
 
         ($group3, $radioButton) = $self->addRadioButton(
-            $table, undef, '\'main\'', 'debugMode',
+            $table, undef, '\'main\'', 'warningMode',
             'main',     # IV set to this value when toggled
             TRUE,       # Sensitive widget
-            7, 9, 2, 3);
+            1, 3, 10, 11);
         $self->addLabel($table, 'Displayed in the \'main\' window only',
-            9, 12, 2, 3);
+            3, 6, 10, 11);
 
         ($group3, $radioButton) = $self->addRadioButton(
-            $table, $group3, '\'both\'', 'debugMode', 'both', TRUE,
-            7, 9, 3, 4);
+            $table, $group3, '\'both\'', 'warningMode', 'both', TRUE,
+            1, 3, 11, 12);
         $self->addLabel($table, 'Displayed in \'main\' and task windows',
-            9, 12, 3, 4);
+            3, 6, 11, 12);
 
         ($group3, $radioButton) = $self->addRadioButton(
-            $table, $group3, '\'task\'', 'debugMode', 'task', TRUE,
-            7, 9, 4, 5);
+            $table, $group3, '\'task\'', 'warningMode', 'task', TRUE,
+            1, 3, 12, 13);
         $self->addLabel($table, 'Displayed in the task window only',
-            9, 12, 4, 5);
+            3, 6, 12, 13);
 
-        $self->addLabel($table, '<i>Improper arguments messages</i>',
+        # Right column
+        $self->addLabel($table, '<i>Debug messages</i>',
             7, 12, 5, 6);
 
         ($group4, $radioButton) = $self->addRadioButton(
-            $table, undef, '\'main\'', 'improperMode',
+            $table, undef, '\'main\'', 'debugMode',
             'main',     # IV set to this value when toggled
             TRUE,       # Sensitive widget
             7, 9, 6, 7);
@@ -44595,16 +44605,77 @@
             9, 12, 6, 7);
 
         ($group4, $radioButton) = $self->addRadioButton(
-            $table, $group4, '\'both\'', 'improperMode', 'both', TRUE,
+            $table, $group4, '\'both\'', 'debugMode', 'both', TRUE,
             7, 9, 7, 8);
         $self->addLabel($table, 'Displayed in \'main\' and task windows',
             9, 12, 7, 8);
 
         ($group4, $radioButton) = $self->addRadioButton(
-            $table, $group4, '\'task\'', 'improperMode', 'task', TRUE,
+            $table, $group4, '\'task\'', 'debugMode', 'task', TRUE,
             7, 9, 8, 9);
         $self->addLabel($table, 'Displayed in the task window only',
             9, 12, 8, 9);
+
+        $self->addLabel($table, '<i>Improper arguments messages</i>',
+            7, 12, 9, 10);
+
+        ($group5, $radioButton) = $self->addRadioButton(
+            $table, undef, '\'main\'', 'improperMode',
+            'main',     # IV set to this value when toggled
+            TRUE,       # Sensitive widget
+            7, 9, 10, 11);
+        $self->addLabel($table, 'Displayed in the \'main\' window only',
+            9, 12, 10, 11);
+
+        ($group5, $radioButton) = $self->addRadioButton(
+            $table, $group5, '\'both\'', 'improperMode', 'both', TRUE,
+            7, 9, 11, 12);
+        $self->addLabel($table, 'Displayed in \'main\' and task windows',
+            9, 12, 11, 12);
+
+        ($group5, $radioButton) = $self->addRadioButton(
+            $table, $group5, '\'task\'', 'improperMode', 'task', TRUE,
+            7, 9, 12, 13);
+        $self->addLabel($table, 'Displayed in the task window only',
+            9, 12, 12, 13);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub parametersSystem2Tab {
+
+        # Parameters System2 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersSystem2Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
+
+        # System message colours
+        $self->addLabel($table, '<b>System message colours</b>',
+            0, 12, 0, 1);
+
+        $self->addCheckButton($table, 'colourFlag', TRUE,
+            0, 1, 1, 2,
+            0, 0.5);
+        $self->addLabel($table, 'Preserve colour in task window',
+            1, 12, 1, 2);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -58621,5 +58692,5 @@
     # Accessors - get
 }
 
-# Package must return true
+# Package must return a true value
 1

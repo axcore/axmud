@@ -974,7 +974,7 @@
         }
 
         # Set up ->signal_connects that must not be set up until the window is visible
-        $self->setCheckResizeEvent();       # 'check-resize'
+        $self->setConfigureEvent();         # 'configure-event'
         $self->setWindowStateEvent();       # 'window-state-event'
         $self->setFocusInEvent();           # 'focus-in-event'
         $self->setFocusOutEvent();          # 'focus-out-event'
@@ -1990,10 +1990,10 @@
         return 1;
     }
 
-    sub setCheckResizeEvent {
+    sub setConfigureEvent {
 
         # Called by $self->winEnable
-        # Set up a ->signal_connect to watch out for changes in the window size
+        # Set up a ->signal_connect to watch out for changes in the window size and position
         #
         # Expected arguments
         #   (none besides $self)
@@ -2007,56 +2007,66 @@
         # Check for improper arguments
         if (defined $check) {
 
-             return $axmud::CLIENT->writeImproper($self->_objClass . '->setCheckResizeEvent', @_);
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setConfigureEvent', @_);
         }
 
-        $self->winBox->signal_connect('check-resize' => sub {
+        $self->winBox->signal_connect('configure-event' => sub {
 
             my ($widget, $event) = @_;
 
             # Local variables
-            my ($width, $height, $changeFlag, $stripObj);
+            my ($stripObj, $changeFlag);
 
-            # Has the window size actually changed? (This callback fires not only when the window
-            #   size changes, but when text is drawn in a Gtk2::TextView, and maybe for other things
-            #   too)
-            ($width, $height) = $self->winBox->get_size();
+            # Has the window size actually changed, or just its position?
             if (
                 ! defined $self->actualWinWidth            # Windows size checked for the first time
-                || $width != $self->actualWinWidth
-                || $height != $self->actualWinHeight
+                || $event->width != $self->actualWinWidth
+                || $event->height != $self->actualWinHeight
             ) {
-                $self->ivPoke('actualWinWidth', $width);
-                $self->ivPoke('actualWinHeight', $height);
+                $self->ivPoke('actualWinWidth', $event->width);
+                $self->ivPoke('actualWinHeight', $event->height);
                 $changeFlag = TRUE;
             }
 
             # For 'main' windows, ask every session using this window to check the size of its
             #   default textview object and, if it has changed, to inform the server (if NAWS is
             #   turned on)
-            # NB During a GA::Table::Pane operation to convert a simple tab into a normal tab,
-            #   this signal fires before the IVs have been set, so don't do anything
             if ($self->visibleSession) {
 
                 foreach my $session ($axmud::CLIENT->listSessions()) {
 
-                    if (
-                        $session->mainWin
-                        && $session->mainWin eq $self
-                        && ! $session->defaultTabObj->paneObj->tabConvertFlag
-                    ) {
+                    if ($session->mainWin && $session->mainWin eq $self) {
+
                         $session->checkTextViewSize();
                     }
                 }
             }
 
-            # If the 'main' window itself has changed size and the gauge box is visible, redraw
-            #   gauges
-            $stripObj = $self->ivShow('firstStripHash', 'Games::Axmud::Strip::GaugeBox');
-            if ($stripObj && $stripObj->canvas) {
+            if ($changeFlag) {
 
-                $self->updateGauges();
+                # If a gauge box is visible, redraw gauges and update the GA::Client's hash of
+                #   stored window positions (if required)
+                $stripObj = $self->ivShow('firstStripHash', 'Games::Axmud::Strip::GaugeBox');
+                if ($stripObj && $stripObj->canvas) {
+
+                    $self->updateGauges();
+                }
             }
+
+            # Let the GA::Client store the most recent size and position for a window of this
+            #   ->winName, if it needs to
+            if ($self->winWidget) {
+
+                $axmud::CLIENT->add_storeGridPosn(
+                    $self,
+                    $self->winWidget->get_position(),
+                    $self->winWidget->get_size(),
+                );
+            }
+
+            # Without returning 'undef', the window's strip/table objects aren't resized along with
+            #   the window
+            return undef;
         });
 
         return 1;
@@ -3075,7 +3085,7 @@
             # 'Display' column
             'open_automapper', 'open_object_viewer',
             'activate_grid', 'activate_grid_with', 'reset_grid', 'disactivate_grid',
-            'win_components', 'current_layer',
+            'win_components', 'current_layer', 'window_storage',
             'test_controls', 'test_panels',
             # 'Commands' column
             'repeat_cmd', 'repeat_second', 'repeat_interval',
@@ -3184,32 +3194,6 @@
         }
 
         # Menu bar items that require a 'main' window with a visible session whose status is
-        #   'connected' or 'offline' and a debugger task
-        @list = (
-            # 'Tasks' column
-            'edit_debugger_task',
-        );
-
-        if ($openFlag && $self->visibleSession->debuggerTask) {
-            push (@sensitiseList, @list);
-        } else {
-            push (@desensitiseList, @list);
-        }
-
-        # Menu bar items that require a 'main' window with a visible session whose status is
-        #   'connected' or 'offline' and a TaskList task
-        @list = (
-            # 'Tasks' column
-            'edit_task_list_task',
-        );
-
-        if ($openFlag && $self->visibleSession->taskListTask) {
-            push (@sensitiseList, @list);
-        } else {
-            push (@desensitiseList, @list);
-        }
-
-        # Menu bar items that require a 'main' window with a visible session whose status is
         #   'connected' or 'offline' and a Channels task
         @list = (
             # 'Tasks' column
@@ -3282,6 +3266,32 @@
         );
 
         if ($openFlag && $self->visibleSession->statusTask) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu bar items that require a 'main' window with a visible session whose status is
+        #   'connected' or 'offline' and a System task
+        @list = (
+            # 'Tasks' column
+            'edit_system_task',
+        );
+
+        if ($openFlag && $self->visibleSession->systemTask) {
+            push (@sensitiseList, @list);
+        } else {
+            push (@desensitiseList, @list);
+        }
+
+        # Menu bar items that require a 'main' window with a visible session whose status is
+        #   'connected' or 'offline' and a TaskList task
+        @list = (
+            # 'Tasks' column
+            'edit_task_list_task',
+        );
+
+        if ($openFlag && $self->visibleSession->taskListTask) {
             push (@sensitiseList, @list);
         } else {
             push (@desensitiseList, @list);
@@ -5476,6 +5486,8 @@
         #   session); inform the session it has opened
         $self->session->set_mapWin($self);
 
+        # Set up ->signal_connects that must not be set up until the window is visible
+        $self->setConfigureEvent();         # 'configure-event'
         # Set up ->signal_connects specified by the calling function, if any
         if ($listRef) {
 
@@ -6265,6 +6277,49 @@
             }
 
             # Return 'undef' to show that we haven't interfered with this keypress
+            return undef;
+        });
+
+        return 1;
+    }
+
+    sub setConfigureEvent {
+
+        # Called by $self->winEnable
+        # Set up a ->signal_connect to watch out for changes in the window size and position
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setConfigureEvent', @_);
+        }
+
+        $self->winBox->signal_connect('configure-event' => sub {
+
+            my ($widget, $event) = @_;
+
+            # Let the GA::Client store the most recent size and position for a window of this
+            #   ->winName, if it needs to
+            if ($self->winWidget) {
+
+                $axmud::CLIENT->add_storeGridPosn(
+                    $self,
+                    $self->winWidget->get_position(),
+                    $self->winWidget->get_size(),
+                );
+            }
+
+            # Without returning 'undef', the window's strip/table objects aren't resized along with
+            #   the window
             return undef;
         });
 
@@ -10703,6 +10758,14 @@
                 });
                 $subMenu_setRandomExit->append($item_markRandomAnywhere);
 
+                my $item_randomTempRegion
+                    = Gtk2::MenuItem->new('_Create destination in temporary region');
+                $item_randomTempRegion->signal_connect('activate' => sub {
+
+                    $self->markRandomExitCallback('temp_region');
+                });
+                $subMenu_setRandomExit->append($item_randomTempRegion);
+
                 my $item_markRandomList = Gtk2::MenuItem->new('Use list of random destinations');
                 $item_markRandomList->signal_connect('activate' => sub {
 
@@ -12478,6 +12541,15 @@
                 });
                 $subMenu_setRandomExit->append($item_markRandomAnywhere);
 
+                my $item_randomTempRegion = Gtk2::MenuItem->new(
+                    '_Create destination in temporary region',
+                );
+                $item_randomTempRegion->signal_connect('activate' => sub {
+
+                    $self->markRandomExitCallback('temp_region');
+                });
+                $subMenu_setRandomExit->append($item_randomTempRegion);
+
                 my $item_markRandomList = Gtk2::MenuItem->new('_Use list of random destinations');
                 $item_markRandomList->signal_connect('activate' => sub {
 
@@ -13114,6 +13186,9 @@
 
             $toolbar->insert($button, -1);
         }
+
+        # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+        $self->restrictWidgets();
 
         # Update IVs
         $self->ivAdd('buttonSetHash', $currentSet, FALSE);
@@ -15505,7 +15580,7 @@
             Gtk2::TreeViewColumn->new_with_attributes(
                 'Regions',
                 Gtk2::CellRendererText->new,
-                text => 0,
+                markup => 0,
             )
         );
 
@@ -15579,8 +15654,8 @@
         # Local variables
         my (
             $model, $count, $firstRegionObj,
-            @initList, @modList, @sortedList, @childList,
-            %pointerHash, %regionHash,
+            @initList, @otherList, @tempList, @combList, @childList,
+            %pointerHash, %regionHash, %markupHash,
         );
 
         # Check for improper arguments
@@ -15596,44 +15671,49 @@
         # Import the list of regions
         @initList = $self->worldModelObj->ivValues('regionModelHash');
 
-        # If one region is supposed to be at the top of the list, remove it from @initList
-        if ($self->worldModelObj->firstRegion) {
+        # Remove a region which is supposed to be at the top of the list, and any temporary regions
+        #   which should be at the bottom of it
+        foreach my $regionObj (@initList) {
 
-            foreach my $regionObj (@initList) {
+            if (
+                defined $self->worldModelObj->firstRegion
+                && $self->worldModelObj->firstRegion eq $regionObj->name
+            ) {
+                $firstRegionObj = $regionObj;
+                $markupHash{$regionObj} = $regionObj->name;
 
-                if ($regionObj->name ne $self->worldModelObj->firstRegion) {
+            } elsif ($regionObj->tempRegionFlag) {
 
-                    push (@modList, $regionObj);
+                push (@tempList, $regionObj);
+                $markupHash{$regionObj} = "<i>" . $regionObj->name . "</i>";
 
-                } else {
+            } else {
 
-                    $firstRegionObj = $regionObj;
-                }
+                push (@otherList, $regionObj);
+                $markupHash{$regionObj} = $regionObj->name;
             }
-
-        } else {
-
-            @modList = @initList;
         }
 
-        # Get a sorted list of regions (use the lc() function so that capitalised region names
-        #   don't appear first, followed by lower case region names)
+        # Sort the regions in their lists
         # NB If the flag is set to TRUE, the regions are shown in reverse alphabetical order
         if ($self->worldModelObj->reverseRegionListFlag) {
 
             # Reverse order
-            @sortedList = sort {lc($b->name) cmp lc($a->name)} (@modList);
+            @otherList = sort {lc($b->name) cmp lc($a->name)} (@otherList);
+            @tempList = sort {lc($b->name) cmp lc($a->name)} (@tempList);
 
         } else {
 
             # Normal order
-            @sortedList = sort {lc($a->name) cmp lc($b->name)} (@modList);
+            @otherList = sort {lc($a->name) cmp lc($b->name)} (@otherList);
+            @tempList = sort {lc($a->name) cmp lc($b->name)} (@tempList);
         }
 
-        # If there is supposed to be a specific region at the top of the list, move it there
+        # Restore the combined, ordered list
+        @combList = (@otherList, @tempList);
         if ($firstRegionObj) {
 
-            unshift (@sortedList, $firstRegionObj);
+            unshift (@combList, $firstRegionObj);
         }
 
         # Import the hash which records the rows that have been expanded (and not then collapsed),
@@ -15643,7 +15723,7 @@
 
         # We need to add parent regions to the treeview before we add any child regions. Go through
         #   the list, removing regions that have no parent, and adding them to the treeview
-        foreach my $regionObj (@sortedList) {
+        foreach my $regionObj (@combList) {
 
             my $pointer;
 
@@ -15659,7 +15739,7 @@
 
                 # Add this region to the treeview now
                 $pointer = $model->append(undef);
-                $model->set($pointer, 0 => $regionObj->name);
+                $model->set($pointer, 0 => $markupHash{$regionObj});
 
                 # Store $pointer in a hash, so that if this region has any child regions, they can
                 #   be added directly below in the treeview
@@ -15695,7 +15775,7 @@
                     # Add this region to the treeview, just below its parent
                     $pointer = $pointerHash{$parentObj->name};
                     $childPointer = $model->append($pointer);
-                    $model->set($childPointer, 0 => $regionObj->name);
+                    $model->set($childPointer, 0 => $markupHash{$regionObj});
 
                     # Store $childPointer in a hash, so that if this region has any child regions,
                     #   they can be added directly below in the treeview
@@ -15863,11 +15943,25 @@
             # Get the selected region
             $regionName = $self->treeViewSelectedLine;
 
-            # Find the regionmap matching the selected region
-            if ($regionName && $self->worldModelObj->ivExists('regionmapHash', $regionName)) {
+            if ($regionName) {
 
-                # Make it the selected region, and draw it on the map
-                $self->setCurrentRegion($regionName);
+                if ($self->worldModelObj->ivExists('regionmapHash', $regionName)) {
+
+                    # Make it the selected region, and draw it on the map
+                    $self->setCurrentRegion($regionName);
+
+                } else {
+
+                    # Remove any markup to get the actual region name
+                    $regionName =~ s/^\<i\>//;
+                    $regionName =~ s/\<\/i\>$//;
+
+                    if ($self->worldModelObj->ivExists('regionmapHash', $regionName)) {
+
+                        # Make it the selected region, and draw it on the map
+                        $self->setCurrentRegion($regionName);
+                    }
+                }
             }
         }
 
@@ -18001,7 +18095,7 @@
                 return 1;
             }
 
-        } elsif ($roomObj && $self->drawnExitHash) {
+        } elsif ($roomObj && $clickType eq 'single' && $self->drawnExitHash) {
 
             # Usually, when we click on the map on an empty pixel, all selected objects are
             #   unselected
@@ -18018,11 +18112,8 @@
             $exitObj = $self->findClickedExit($clickXPosPixels, $clickYPosPixels, $roomObj);
             if ($exitObj) {
 
-                if (
-                    $clickType eq 'single'
-                    && $button eq 'left'
-                    && $event->state =~ m/mod5-mask/
-                ) {
+                if ($button eq 'left' && $event->state =~ m/mod5-mask/) {
+
                     # This is a drag operation on the nearby exit
                     $listRef = $self->ivShow('drawnExitHash', $exitObj->number);
                     if (defined $listRef) {
@@ -18117,14 +18208,15 @@
             #   release the button instead, at that point we unselect all selected objects
             $self->startSelectBox($clickXPosPixels, $clickYPosPixels);
 
+        # If it's a mouse button release, handle the end of any selection box operation
         } elsif ($clickType eq 'release' && $button eq 'left' && $self->selectBoxFlag) {
 
-            # Handle the end of the selection box operation
             $self->stopSelectBox($event, $clickXPosPixels, $clickYPosPixels);
 
-        } else {
+        # Otherwise, if it's a button click (not a button release), just unselect all selected
+        #   objects
+        } elsif ($clickType ne 'release') {
 
-            # In all other situations, just unselect all selected objects
             $self->setSelectedObj();
         }
 
@@ -19853,7 +19945,7 @@
             $borderX1 = 0;
             $borderY1 = 0;
             $borderX2 = $self->currentRegionmap->blockWidthPixels - 1;
-            $borderY2 = $self->currentRegionmap->blockHeigthPixels - 1;
+            $borderY2 = $self->currentRegionmap->blockHeightPixels - 1;
 
         } else {
 
@@ -22858,16 +22950,19 @@
         # Prompt the user for a region name and, optionally, a parent region
         ($name, $parentName) = $self->showDoubleComboDialogue(
             $title,
-            'Enter a name for the new region (max 32 chars)',
+            "Enter a name for the new region (max 32 chars),\n"
+            . "or leave empty to generate a generic name",
             '(Optional) select the parent region',
             \@nameList,
             32,
         );
 
-        if ($name) {
+        # If the user clicked the 'Cancel' button, $name is 'undef' If they left the entry box
+        #   empty, it'll be an empty string
+        if (defined $name) {
 
             # Check the name is not already in use
-            if ($self->worldModelObj->ivExists('regionmapHash', $name)) {
+            if ($name ne '' && $self->worldModelObj->ivExists('regionmapHash', $name)) {
 
                 $self->showMsgDialogue(
                     $title,
@@ -22879,7 +22974,7 @@
                 return undef;
             }
 
-            # If parent was specified, find its world model number
+            # If a parent was specified, find its world model number
             if ($parentName) {
 
                 $parentNumber = $self->findRegion($parentName);
@@ -22889,8 +22984,8 @@
             if (
                 ! $self->worldModelObj->addRegion(
                     $self->session,
-                    TRUE,       # Update Automapper windows now
-                    $name,
+                    TRUE,               # Update Automapper windows now
+                    $name,              # May be an empty string
                     $parentNumber,
                     $tempFlag,
                 )
@@ -25083,7 +25178,7 @@
             $self->showMsgDialogue(
                 'Add first room',
                 'error',
-                'Can\'t add a room at the centre of the grid - the Locator task is not running',
+                'Can\'t add a room at the centre of the map - the Locator task is not running',
                 'ok',
             );
 
@@ -25094,7 +25189,7 @@
             $self->showMsgDialogue(
                 'Add first room',
                 'error',
-                'Can\'t add a room at the centre of the grid - the Locator task is not ready',
+                'Can\'t add a room at the centre of the map - the Locator task is not ready',
                 'ok',
             );
 
@@ -25102,7 +25197,7 @@
         }
 
         # Find the coordinates of the middle of the grid
-        ($xPosBlocks, $yPosBlocks, $zPosBlocks) = $self->findGridCentre();
+        ($xPosBlocks, $yPosBlocks, $zPosBlocks) = $self->currentRegionmap->getGridCentre();
 
         # Check the location to make sure there's not already a room there
         if ($self->currentRegionmap->fetchRoom($xPosBlocks, $yPosBlocks, $zPosBlocks)) {
@@ -25110,7 +25205,7 @@
             $self->showMsgDialogue(
                 'Add first room',
                 'error',
-                'Can\'t add a room at the centre of the grid - the position is already occupied',
+                'Can\'t add a room at the centre of the map - the position is already occupied',
                 'ok',
             );
 
@@ -29438,8 +29533,9 @@
         # Expected arguments
         #   $exitType   - Set to 'same_region' if the exit leads to a random location in the current
         #                   region, 'any_region' if the exit leads to a random location in any
-        #                   region or 'room_list' if the exit leads to a random location in its
-        #                   ->randomDestList
+        #                   region, 'temp_region' if a destination should be created in a new
+        #                   temporary region, or 'room_list' if the exit leads to a random location
+        #                   in its ->randomDestList
         #
         # Return values
         #   'undef' on improper arguments, if the standard callback check fails, if the user
@@ -29459,7 +29555,10 @@
         # Check for improper arguments
         if (
             ! defined $exitType
-            || ($exitType ne 'same_region' && $exitType ne 'any_region' && $exitType ne 'room_list')
+            || (
+                $exitType ne 'same_region' && $exitType ne 'any_region'
+                && $exitType ne 'temp_region' && $exitType ne 'room_list'
+            )
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->markRandomExitCallback', @_);
@@ -37005,7 +37104,7 @@
         my ($self, $roomObj, $exitObj, $check) = @_;
 
         # Local variables
-        my ($mapDir, $posnListRef, $colour, $xPos, $yPos, $newObj, $fillColour);
+        my ($mapDir, $posnListRef, $colour, $xPos, $yPos, $newObj, $outlineColour, $fillColour);
 
         # Check for improper arguments
         if (! defined $roomObj || ! defined $exitObj || defined $check) {
@@ -37039,40 +37138,42 @@
             # Set the exit colour
             $colour = $self->getExitColour($exitObj);
 
-            # Draw the canvas object
-            if ($exitObj->randomType eq 'any_region') {
+            # Other types of random exits are filled in
+            if ($exitObj->randomType eq 'same_region') {
 
-                # Random exits leading anywhere in the world aren't filled in
-                $newObj = Gnome2::Canvas::Item->new(
-                    $self->canvasRoot,
-                    'Gnome2::Canvas::Ellipse',
-                    x1 => $$posnListRef[0] + $xPos,
-                    y1 => $$posnListRef[1] + $yPos,
-                    x2 => $$posnListRef[2] + $xPos,
-                    y2 => $$posnListRef[3] + $yPos,
-                    outline_color => $colour,
-                );
+                # Default - black circle
+                $outlineColour = $colour;
+                $fillColour = $colour;
+
+            } elsif ($exitObj->randomType eq 'any_region') {
+
+                # Default - red circle
+                $outlineColour = $fillColour = $self->worldModelObj->randomExitColour;
+
+            } elsif ($exitObj->randomType eq 'temp_region') {
+
+                # Default - black circle with transparent centre
+                $outlineColour = $colour;
+                $fillColour = $self->worldModelObj->backgroundColour;
 
             } else {
 
-                # Other types of random exits are filled in
-                if ($exitObj->randomType eq 'same_region') {
-                    $fillColour = $colour;
-                } else {
-                    $fillColour = $self->worldModelObj->randomExitColour;
-                }
-
-                $newObj = Gnome2::Canvas::Item->new(
-                    $self->canvasRoot,
-                    'Gnome2::Canvas::Ellipse',
-                    x1 => $$posnListRef[0] + $xPos,
-                    y1 => $$posnListRef[1] + $yPos,
-                    x2 => $$posnListRef[2] + $xPos,
-                    y2 => $$posnListRef[3] + $yPos,
-                    outline_color => $colour,
-                    fill_color => $fillColour,
-                );
+                # Default for 'room_list' - red circle with transparent centre
+                $outlineColour = $self->worldModelObj->randomExitColour;
+                $fillColour = $self->worldModelObj->backgroundColour;
             }
+
+            # Draw the canvas object
+            $newObj = Gnome2::Canvas::Item->new(
+                $self->canvasRoot,
+                'Gnome2::Canvas::Ellipse',
+                x1 => $$posnListRef[0] + $xPos,
+                y1 => $$posnListRef[1] + $yPos,
+                x2 => $$posnListRef[2] + $xPos,
+                y2 => $$posnListRef[3] + $yPos,
+                outline_color => $outlineColour,
+                fill_color => $fillColour,
+            );
 
             # Set the object's position in the canvas drawing stack
             $self->setExitLevel($newObj);
@@ -39505,38 +39606,6 @@
         $yPosBlocks = int ($yPosPixels / $self->currentRegionmap->blockHeightPixels);
 
         return ($xPosBlocks, $yPosBlocks);
-    }
-
-    sub findGridCentre {
-
-        # Called by $self->addFirstRoom or any other function
-        # Finds the grid coordinates of the centre of the grid
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   The list (0, 0, 0) on improper arguments
-        #   Otherwise, returns a list containing the coordinates of the centre of the grid, in the
-        #       form (x, y, z)
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my ($xPosBlocks, $yPosBlocks, $zPosBlocks);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->findGridCentre', @_);
-            return (0, 0, 0);
-        }
-
-        $xPosBlocks = int (($self->currentRegionmap->gridWidthBlocks) / 2);
-        $yPosBlocks = int (($self->currentRegionmap->gridHeightBlocks) / 2);
-        $zPosBlocks = 0;    # 'Ground' level
-
-        return ($xPosBlocks, $yPosBlocks, $zPosBlocks);
     }
 
     sub findClickedExit {
@@ -46451,5 +46520,5 @@
         { $_[0]->{selectBoxCurrentYPos} }
 }
 
-# Package must return true
+# Package must return a true value
 1

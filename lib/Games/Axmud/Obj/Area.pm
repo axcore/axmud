@@ -197,5 +197,5 @@
         { $_[0]->{heightPixels} }
 }
 
-# Package must return true
+# Package must return a true value
 1

@@ -15,7 +15,11 @@
 # Games::Axmud::FixedWin::XXX
 # All 'fixed' window objects
 
+use strict;
+use diagnostics;
+use warnings;
+
 # (This file has been left blank deliberately)
 
-# Package must return true
+# Package must return a true value
 1

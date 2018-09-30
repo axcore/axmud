@@ -278,5 +278,5 @@
         { $_[0]->{height} }
 }
 
-# Package must return true
+# Package must return a true value
 1

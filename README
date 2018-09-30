@@ -1,6 +1,6 @@
-Axmud is known to work on MS Windows and Linux. It might be possible to install
-it on other systems, such as MacOS and *BSD, but the authors have not been able
-to confirm this yet.
+Axmud is known to work on MS Windows, Linux and *BSD. It might be possible to
+install it on other systems such as MacOS, but the authors have not been able to
+confirm this yet.
 
 After installation (see the INSTALL file), visually-impaired users can run this
 script
@@ -23,4 +23,5 @@ If a world profile already exists, you can specify its name instead
 
     axmud.pl cryosphere
 
-Note that certain features have not been implemented on MS Windows yet (namely window tiling and multiple desktop support)
+Note that window tiling and multiple desktop support has not been implemented on
+MS Windows yet.

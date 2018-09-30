@@ -204,8 +204,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -306,7 +306,80 @@
 
     # Standard window object functions
 
-#   sub winSetup {}         # Inherited from GA::Generic::FreeWin
+    sub winSetup {
+
+        # Called by GA::Generic::Win->createFreeWin, after the call to $self->new
+        # Creates the Gtk2::Window itself
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the window can't be opened
+        #   1 on success
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($hAdjust, $vAdjust, $ratioX, $ratioY, $newX, $newY);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->winSetup', @_);
+        }
+
+        # Most of the code is in the generic function
+        if (! $self->Games::Axmud::Generic::FreeWin::winSetup()) {
+
+            return undef;
+        }
+
+        # Some desktop managers use a bigger font than the author's desktop manager; as a result,
+        #   'free' windows like this one will be too small for comfort
+        # This window is (usually) only seen the first time Axmud is run. If the user's destkop
+        #   manager font is too big, this window's Gtk2::ScrolledWindow will contain scrollbars
+        # If the scrollbars are present, we can increase the size of default 'free' windows to
+        #   compensate, which removes the scrollbars in this window and (hopefully) most other
+        #   'free' windows, too
+        # Typically, this process makes the default 'free' window size slightly larger than it
+        #   strictly needs to be, but that's still better than a Connections window with none of
+        #   the 'Connect' buttons visible
+
+        # Drawing the window early makes the scrollbars testable (->winShowAll() is normally first
+        #   called by $self->winEnable)
+        $self->winShowAll($self->_objClass . '->winSetup');
+
+        # Detect the presence of any scrollbars and decide by which ratio the window's size should
+        #   be increased
+        $hAdjust = $self->scroller->get_hadjustment();
+        if ($hAdjust->upper != $hAdjust->page_size) {
+            $ratioX =  $hAdjust->upper / $hAdjust->page_size;
+        } else {
+            $ratioX = 1;
+        }
+
+        $vAdjust = $self->scroller->get_vadjustment();
+        if ($vAdjust->upper != $vAdjust->page_size) {
+            $ratioY =  $vAdjust->upper / $vAdjust->page_size;
+        } else {
+            $ratioY = 1;
+        }
+
+        if ($ratioX != 1 || $ratioY != 1) {
+
+            # One (or both) scrollbars detected
+            $newX = int($self->widthPixels * $ratioX);
+            $newY = int($self->heightPixels * $ratioY);
+
+            # Adjust the size of this window to compensate
+            $self->winWidget->resize($newX, $newY);
+            # Adjust the default size of future 'free' windows to compensate
+            $axmud::CLIENT->set_customFreeWinSize($newX, $newY);
+        }
+
+        return 1;
+    }
 
 #   sub winEnable {}        # Inherited from GA::Generic::WizWin
 
@@ -557,8 +630,8 @@
         $self->addLabel(
             $self->table,
             "<i>This is a good choice if you have a small monitor, or if you often connect\n"
-            . "to several worlds at a time. You can click the tabs at the top of each window\n"
-            . "to switch between connections.</i>",
+            . "to several worlds at a time. You can click the tabs at the top of each\n"
+            . "window to switch between connections.</i>",
             5, 12, 4, 5);
 
         $self->addSimpleImage(
@@ -583,8 +656,8 @@
 
          $self->addLabel(
             $self->table,
-            "<i>This is a good choice if you have a large monitor (or several monitors), or\n"
-            . "if you rarely connect to more than one world at a time.</i>",
+            "<i>This is a good choice if you have a large monitor (or several monitors),\n"
+            . "or if you rarely connect to more than one world at a time.</i>",
             5, 12, 7, 8);
 
         # (->signal_connects from above)
@@ -1682,8 +1755,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -6167,5 +6240,5 @@
         { my $self = shift; return %{$self->{indexConvertHash}}; }
 }
 
-# Package must return true
+# Package must return a true value
 1

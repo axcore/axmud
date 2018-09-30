@@ -2467,12 +2467,12 @@
         my ($self, $obj, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $$obj || defined $check) {
+        if (! defined $obj || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->pushSubStack', @_);
         }
 
-        $self->ivPush('subStackList', $$obj);
+        $self->ivPush('subStackList', $obj);
         $self->ivIncrement('subCount');
 
         return 1;
@@ -4582,5 +4582,5 @@
         { $_[0]->{accessType} }
 }
 
-# Package must return true
+# Package must return a true value
 1

@@ -25,6 +25,9 @@ my %prereqHash = (
     'File::ShareDir::Install'
                             => '0',
     'Glib'                  => '0',
+    'Glib::Object::Subclass'
+                            => '0',
+
     'Gnome2::Canvas'        => '0',
     'Gnome2::Wnck'          => '0',
     'Gtk2'                  => '0',
@@ -73,15 +76,18 @@ WriteMakefile(
     ],
     META_MERGE              => {
         'meta-spec'         => { version => 2 },
+		no_index            => {
+			directory 		=> [ 'share/plugins' ],
+		},
         resources           => {
-             repository     => {
-                 type       => 'git',
-                 url        => 'https://github.com/axcore/axmud.git',
-                 web        => 'https://github.com/axcore/axmud',
-             },
-             bugtracker     => {web => 'https://github.com/axcore/axmud/issues'},
-             homepage       => 'https://axmud.sourceforge.io/',
-         },
+            repository     	=> {
+				type       	=> 'git',
+                url        	=> 'https://github.com/axcore/axmud.git',
+                web        	=> 'https://github.com/axcore/axmud',
+            },
+            bugtracker     	=> {web => 'https://github.com/axcore/axmud/issues'},
+            homepage      	=> 'https://axmud.sourceforge.io/',
+        },
     },
 );
 

@@ -144,6 +144,7 @@
     use Games::Axmud::Gtk;
     use Games::Axmud::Interface;
     use Games::Axmud::InterfaceModel;
+    use Games::Axmud::Mcp;
     use Games::Axmud::ModelObj;
     use Games::Axmud::Mxp;
     use Games::Axmud::Net;
@@ -207,6 +208,7 @@
     use Games::Axmud::Obj::Workspace;
     use Games::Axmud::Obj::WorkspaceGrid;
     use Games::Axmud::Obj::WorldModel;
+    use Games::Axmud::Obj::Zmp;
     use Games::Axmud::Obj::Zone;
     use Games::Axmud::Obj::Zonemap;
     use Games::Axmud::Obj::ZoneModel;
@@ -1166,9 +1168,6 @@
             $self->doModify('ivPush');
 
             # Perform the push operation
-
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#           push ($self->{$iv}, @list);
             push( @{$self->{$iv}}, @list );
 
             return 1;
@@ -1232,9 +1231,6 @@
             $self->doModify('ivPop');
 
             # Perform the pop operation
-
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#           return (pop $self->{$iv});
             return ( pop @{$self->{$iv}} );
 
         } else {
@@ -1299,9 +1295,6 @@
             $self->doModify('ivUnshift');
 
             # Perform the unshift operation
-
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#            $num = unshift($self->{$iv}, @list);
             return ( unshift(@{$self->{$iv}}, @list) );
 
         } else {
@@ -1363,9 +1356,6 @@
             $self->doModify('ivShift');
 
             # Perform the shift operation
-
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#           return (shift $self->{$iv});
             return ( shift @{$self->{$iv}} );
 
         } else {
@@ -1487,14 +1477,6 @@
             # This is a list. Set the parent file object's 'data modified' flag
             $self->doModify('ivSplice');
 
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#           if (scalar @list) {
-#               @returnArray = splice ($self->{$iv}, $offset, $length, @list);
-#           } elsif (defined $length) {
-#               @returnArray = splice ($self->{$iv}, $offset, $length);
-#           } else {
-#               @returnArray = splice ($self->{$iv}, $offset);
-#           }
             if (scalar @list) {
                 @returnArray = splice ( @{$self->{$iv}}, $offset, $length, @list );
             } elsif (defined $length) {
@@ -2410,9 +2392,6 @@
         if ($refType eq 'HASH') {
 
             # This is a hash. Return a list of keys
-
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#            return (keys ($self->{$iv}));
             return (keys %{$self->{$iv}} );
 
         } else {
@@ -2467,9 +2446,6 @@
         if ($refType eq 'HASH') {
 
             # This is a hash. Return a list of values
-
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#           return (values ($self->{$iv}));
             return ( values %{$self->{$iv}} );
 
         } else {
@@ -2520,9 +2496,6 @@
         if ($refType eq 'HASH') {
 
             # This is a hash. Return the number of key-value pairs
-
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#            return scalar (keys ($self->{$iv}));
             return scalar (keys %{$self->{$iv}} );
 
         } else {
@@ -2990,7 +2963,7 @@
     sub writeText {
 
         # Can be called by anything
-        # Passes a set of arguments to GA::Obj::TextView->showText. If it's not possible to
+        # Passes a set of arguments to GA::Obj::TextView->showSystemText. If it's not possible to
         #   display a message in a 'main' window, writes to the terminal (and the Error Console
         #   window, the next time it's opened)
         #
@@ -3001,7 +2974,7 @@
         #   @args   - A list of arguments to pass on. The first one is the system message itself
         #
         # Return values
-        #   Returns the return value of the call to GA::Obj::TextView->showText, or 'undef' if
+        #   Returns the return value of the call to GA::Obj::TextView->showSystemText, or 'undef' if
         #       forced to write to the terminal
 
         my ($self, @args) = @_;
@@ -3014,13 +2987,14 @@
         # If this object has a ->session IV, then we can find its default tab
         if (exists $self->{'session'} && $self->session && $self->session->defaultTabObj) {
 
-            return $self->session->defaultTabObj->textViewObj->showText(@args);
+            return $self->session->defaultTabObj->textViewObj->showSystemText(@args);
 
         # Otherwise, try the GA::Client's current session (the visible session in the last 'main'
         #   window to receive focus)
         } elsif ($axmud::CLIENT->currentSession && $axmud::CLIENT->currentSession->defaultTabObj) {
 
-            return $axmud::CLIENT->currentSession->defaultTabObj->textViewObj->showText(@args);
+            return
+                $axmud::CLIENT->currentSession->defaultTabObj->textViewObj->showSystemText(@args);
 
         } else {
 
@@ -3635,5 +3609,5 @@
     # Accessors - set
 }
 
-# Package must return true
+# Package must return a true value
 1

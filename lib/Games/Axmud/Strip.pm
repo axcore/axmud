@@ -2899,12 +2899,12 @@
             #   Advance task)
             $self->ivAdd('menuItemHash', 'edit_advance_task', $menuItem_advanceTask_editTask);
 
-            my $menuItem_debuggerTask_editTask = Gtk2::ImageMenuItem->new(
-                'Edit current _Debugger task...',
+            my $menuItem_systemTask_editTask = Gtk2::ImageMenuItem->new(
+                'Edit current S_ystem task...',
             );
-            my $menuImg_debuggerTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
-            $menuItem_debuggerTask_editTask->set_image($menuImg_debuggerTask_editTask);
-            $menuItem_debuggerTask_editTask->signal_connect('activate' => sub {
+            my $menuImg_systemTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            $menuItem_systemTask_editTask->set_image($menuImg_systemTask_editTask);
+            $menuItem_systemTask_editTask->signal_connect('activate' => sub {
 
                 my $session = $self->winObj->visibleSession;
 
@@ -2914,17 +2914,17 @@
                     'Games::Axmud::EditWin::Task',
                     $self->winObj,
                     $session,
-                    'Edit ' . $session->debuggerTask->prettyName . ' task',
-                    $session->debuggerTask,
+                    'Edit ' . $session->systemTask->prettyName . ' task',
+                    $session->systemTask,
                     FALSE,                          # Not temporary
                     # Config
                     'edit_flag' => FALSE,           # Some IVs for current tasks not editable
                 );
             });
-            $subMenu_otherTask->append($menuItem_debuggerTask_editTask);
+            $subMenu_otherTask->append($menuItem_systemTask_editTask);
             # (Requires a visible session whose status is 'connected' or 'offline' and is running a
-            #   Debugger task)
-            $self->ivAdd('menuItemHash', 'edit_debugger_task', $menuItem_debuggerTask_editTask);
+            #   System task)
+            $self->ivAdd('menuItemHash', 'edit_system_task', $menuItem_systemTask_editTask);
 
             my $menuItem_taskListTask_editTask = Gtk2::ImageMenuItem->new(
                 'Edit current _TaskList task...',
@@ -3107,6 +3107,39 @@
         $menuColumn_display->append($menuItem_currentLayer);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'current_layer', $menuItem_currentLayer);
+
+            # 'Window storage' submenu
+            my $subMenu_windowStorage = Gtk2::Menu->new();
+
+            my $menuItem_autoStore
+                = Gtk2::CheckMenuItem->new('Automatically store sizes/positions');
+            $menuItem_autoStore->signal_connect('toggled' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd('togglewindowstorage', $mode);
+            });
+            $subMenu_windowStorage->append($menuItem_autoStore);
+
+            my $menuItem_storeCurrent = Gtk2::MenuItem->new('Store current sizes/positions');
+            $menuItem_storeCurrent->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd('applywindowstorage', $mode);
+            });
+            $subMenu_windowStorage->append($menuItem_storeCurrent);
+
+            $subMenu_windowStorage->append(Gtk2::SeparatorMenuItem->new());    # Separator
+
+            my $menuItem_resetStorage = Gtk2::MenuItem->new('_Clear stored sizes/positions');
+            $menuItem_resetStorage->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd('clearwindowstorage', $mode);
+            });
+            $subMenu_windowStorage->append($menuItem_resetStorage);
+
+        my $menuItem_windowStorage = Gtk2::MenuItem->new('\'Grid\' _window storage');
+        $menuItem_windowStorage->set_submenu($subMenu_windowStorage);
+        $menuColumn_display->append($menuItem_windowStorage);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'window_storage', $menuItem_windowStorage);
 
         $menuColumn_display->append(Gtk2::SeparatorMenuItem->new());    # Separator
 
@@ -9409,5 +9442,5 @@
     # Accessors - get
 }
 
-# Package must return true
+# Package must return a true value
 1

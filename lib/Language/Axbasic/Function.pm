@@ -2589,6 +2589,8 @@
     use diagnostics;
 
     use Glib qw(TRUE FALSE);
+    # Include module here, as well as in Axbasic.pm, so that .../t/00-compile.t won't fail
+    use Math::Trig;
 
     @Language::Axbasic::Function::Intrinsic::Numeric::sec::ISA = qw(
         Language::Axbasic::Function::Intrinsic::Numeric
@@ -7449,5 +7451,5 @@
     }
 }
 
-# Package must return true
+# Package must return a true value
 1

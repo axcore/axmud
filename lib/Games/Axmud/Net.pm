@@ -62,7 +62,7 @@
         TELOPT_EXOPL
 
         TELOPT_MSDP TELOPT_MSSP TELOPT_MCCP1 TELOPT_MCCP2 TELOPT_MSP
-        TELOPT_MXP TELOPT_ZMP TELOPT_AARDWOLF TELOPT_ATCP TELOPT_GMCP
+        TELOPT_MXP TELOPT_ZMP TELOPT_AARD102 TELOPT_ATCP TELOPT_GMCP
     );
 
     ## Module import.
@@ -105,7 +105,7 @@
         90  => 'MSP',
         91  => 'MXP',
         93  => 'ZMP',
-        102 => 'AARDWOLF',
+        102 => 'AARD192',
         200 => 'ATCP',
         201 => 'GMCP',
     );
@@ -4297,10 +4297,10 @@
     sub TELOPT_MSP ()               {90};   # Mud Sound Protocol
     sub TELOPT_MXP ()               {91};   # Mud Xtension Protocol
     sub TELOPT_ZMP ()               {93};   # Zenith Mud Protocol
-    sub TELOPT_AARDWOLF ()          {102};  # Aardwolf 102 channel
+    sub TELOPT_AARD102 ()           {102};  # Aardwolf 102 channel
     sub TELOPT_ATCP ()              {200};  # Achaea Telnet Client Protocol
     sub TELOPT_GMCP ()              {201};  # Generic MUD Communication Protocol
 }
 
-# Package must return true
+# Package must return a true value
 1

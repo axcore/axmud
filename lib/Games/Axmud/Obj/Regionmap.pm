@@ -1719,6 +1719,40 @@
         return $count;
     }
 
+    # Other functions
+
+    sub getGridCentre {
+
+        # Can be called by anything
+        # Finds the grid coordinates of the centre of the regionmap's grid
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   The list (0, 0, 0) on improper arguments
+        #   Otherwise, returns a list containing the coordinates of the centre of the grid, in the
+        #       form (x, y, z)
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($xPosBlocks, $yPosBlocks, $zPosBlocks);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->getGridCentre', @_);
+            return (0, 0, 0);
+        }
+
+        $xPosBlocks = int (($self->gridWidthBlocks) / 2);
+        $yPosBlocks = int (($self->gridHeightBlocks) / 2);
+        $zPosBlocks = 0;    # 'Ground' level
+
+        return ($xPosBlocks, $yPosBlocks, $zPosBlocks);
+    }
+
     ##################
     # Accessors - set
 
@@ -1804,5 +1838,5 @@
         { my $self = shift; return %{$self->{nonLivingCountHash}}; }
 }
 
-# Package must return true
+# Package must return a true value
 1

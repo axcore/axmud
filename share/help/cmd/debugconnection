@@ -7,15 +7,17 @@ dco / debugconnection         Toggles connection debugging flags
    Notes:
       <switch> can be any of the following:
          -t   Show telnet option negotiations messages
-         -m   Show short option negotiation messages
+         -s   Show short option negotiation messages
          -l   Telnet library writes its own logfile, telopt.log
-         -s   Show messages for MSDP data sent to Status/Locator
+         -d   Show messages for MSDP data sent to Status/Locator
          -x   Show messages for MXP errors
          -c   Display MXP comments
          -p   Show messages for Pueblo errors
          -u   Display Pueblo comments
+         -z   Display incoming ZMP data
          -a   Display incoming ATCP data
          -g   Display incoming GMCP data
+         -m   Show messages for MCP errors
 
       For debug messages relating to Axmud's internal processes and tasks, see 
          the ';debugtoggle' command.

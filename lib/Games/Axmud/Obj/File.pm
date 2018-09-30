@@ -22,6 +22,8 @@
     use diagnostics;
 
     use Glib qw(TRUE FALSE);
+    # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
+    use Fcntl qw(:flock);
 
     our @ISA = qw(Games::Axmud);
 
@@ -439,8 +441,8 @@
         my (
             $backupFile, $semaphoreFile, $semaphoreHandle, $saveDate, $saveTime, $fileHandle,
             $client, $result,
-            @list, @workspaceList, @itemList, @modList,
-            %workspaceHash, %itemHash, %worldHash,
+            @list, @workspaceList, @storeGridList, @itemList, @modList,
+            %workspaceHash, %storeGridHash, %itemHash, %worldHash,
         );
 
         # Check for improper arguments
@@ -753,6 +755,9 @@
             '# \'Grid\' window default size',
                 $client->customGridWinWidth,
                 $client->customGridWinHeight,
+            '# \'Free\' window default size',
+                $client->customFreeWinWidth,
+                $client->customFreeWinHeight,
             '# World command colour',
                 $client->customInsertCmdColour,
             '# System message colour',
@@ -791,6 +796,31 @@
                 $client->restartShareMainWinFlag,
             '# Workspace grids are activated',
                 $client->activateGridFlag,
+            '# Store \'grid\' window positions',
+                $client->storeGridPosnFlag,
+        );
+
+        %storeGridHash = $client->storeGridPosnHash;
+        @storeGridList = sort {lc($a) cmp lc($b)} (keys %storeGridHash);
+
+        push (@list,
+            '# Number of stored \'grid\' window positions',
+                scalar @storeGridList,
+            '# Stored \'grid\' window positions',
+        );
+
+        foreach my $winName (@storeGridList) {
+
+            my $listRef = $storeGridHash{$winName};
+
+            # To make the loading code simpler, store 4 values as a line, in the form 'x y wid hei'
+            push (@list,
+                $winName,
+                $$listRef[0] . ' ' . $$listRef[1] . ' ' . $$listRef[2] . ' ' . $$listRef[3] . ' ',
+            );
+        }
+
+        push (@list,
             '# Direction of workspace adding',
                 $client->initWorkspaceDir,
         );
@@ -1017,10 +1047,14 @@
                 $client->debugPuebloFlag,
             '# Show debug messages for Pueblo comments',
                 $client->debugPuebloCommentFlag,
+            '# Show debug messages for incoming ZMP data',
+                $client->debugZmpFlag,
             '# Show debug messages for incoming ATCP data',
                 $client->debugAtcpFlag,
             '# Show debug messages for incoming GMCP data',
                 $client->debugGmcpFlag,
+            '# Show debug messages for MCP problems',
+                $client->debugMcpFlag,
             '@@@ eos',
         );
 
@@ -1473,6 +1507,11 @@
 
             $failFlag = $self->readValue($failFlag, \%dataHash, 'discard_me');
         }
+        if ($self->scriptConvertVersion >= 1_001_162) {
+
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_free_win_width');
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_free_win_height');
+        }
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_insert_cmd_colour');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_text_colour');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_error_colour');
@@ -1509,6 +1548,13 @@
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'share_main_win_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'restart_share_main_win_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'activate_grid_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_001_164) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'store_grid_posn_flag');
+            $failFlag = $self->readHash($failFlag, \%dataHash, 'store_grid_posn_hash');
+        }
+        if ($self->scriptConvertVersion >= 1_000_800) {
             $failFlag = $self->readValue($failFlag, \%dataHash, 'init_workspace_dir');
             $failFlag = $self->readHash($failFlag, \%dataHash, 'init_workspace_hash');
         }
@@ -1644,7 +1690,7 @@
         if ($self->scriptConvertVersion >= 1_000_879) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_zmp_flag');
-            $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_aard_102_flag');
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_aard102_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_mcp_flag');
         }
         if ($self->scriptConvertVersion >= 1_000_832) {
@@ -1707,10 +1753,18 @@
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_pueblo_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_pueblo_comment_flag');
         }
+        if ($self->scriptConvertVersion >= 1_001_140) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_zmp_flag');
+        }
         if ($self->scriptConvertVersion >= 1_000_926) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_atcp_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_gmcp_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_001_158) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_mcp_flag');
         }
 
         $failFlag = $self->readEndOfSection($failFlag, $fileHandle);
@@ -2025,8 +2079,15 @@
         $client->ivPoke('boldColourTagHash', %{$dataHash{'bold_colour_tag_hash'}});
 
         # Read desktop and display settings
+        $client->ivPoke('customMainWinWidth', $dataHash{'custom_main_win_width'});
+        $client->ivPoke('customMainWinHeight', $dataHash{'custom_main_win_height'});
         $client->ivPoke('customGridWinWidth', $dataHash{'custom_grid_win_width'});
         $client->ivPoke('customGridWinHeight', $dataHash{'custom_grid_win_height'});
+        if ($self->scriptConvertVersion >= 1_001_162) {
+
+            $client->ivPoke('customFreeWinWidth', $dataHash{'custom_free_win_width'});
+            $client->ivPoke('customFreeWinHeight', $dataHash{'custom_free_win_height'});
+        }
 
         $client->ivPoke('customInsertCmdColour', $dataHash{'custom_insert_cmd_colour'});
         $client->ivPoke('customShowTextColour', $dataHash{'custom_show_text_colour'});
@@ -2055,6 +2116,28 @@
             $client->ivPoke('shareMainWinFlag', $dataHash{'share_main_win_flag'});
             $client->ivPoke('restartShareMainWinFlag', $dataHash{'restart_share_main_win_flag'});
             $client->ivPoke('activateGridFlag', $dataHash{'activate_grid_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_001_164) {
+
+            my (%thisHash, %newHash);
+
+            $client->ivPoke('storeGridPosnFlag', $dataHash{'store_grid_posn_flag'});
+
+            # To make the saving code simpler, 4 values were stored on a line, in the form
+            #   'x y wid hei'
+            %thisHash = %{$dataHash{'store_grid_posn_hash'}};
+
+            foreach my $key (keys %thisHash) {
+
+                my $listRef = [ split(/\s+/, $thisHash{$key}) ];
+
+                $newHash{$key} = $listRef;
+            }
+
+            $client->ivPoke('storeGridPosnHash', %newHash);
+        }
+        if ($self->scriptConvertVersion >= 1_000_800) {
+
             $client->ivPoke('initWorkspaceDir', $dataHash{'init_workspace_dir'});
             $client->ivPoke('initWorkspaceHash', %{$dataHash{'init_workspace_hash'}});
         }
@@ -2164,7 +2247,7 @@
         if ($self->scriptConvertVersion >= 1_000_879) {
 
             $client->ivPoke('useZmpFlag', $dataHash{'use_zmp_flag'});
-            $client->ivPoke('useAard102Flag', $dataHash{'use_aard_102_flag'});
+            $client->ivPoke('useAard102Flag', $dataHash{'use_aard102_flag'});
             $client->ivPoke('useMcpFlag', $dataHash{'use_mcp_flag'});
         }
         if ($self->scriptConvertVersion >= 1_000_832) {
@@ -2227,10 +2310,18 @@
             $client->ivPoke('debugPuebloFlag', $dataHash{'debug_pueblo_flag'});
             $client->ivPoke('debugPuebloCommentFlag', $dataHash{'debug_pueblo_comment_flag'});
         }
+        if ($self->scriptConvertVersion >= 1_001_140) {
+
+            $client->ivPoke('debugZmpFlag', $dataHash{'debug_zmp_flag'});
+        }
         if ($self->scriptConvertVersion >= 1_000_926) {
 
             $client->ivPoke('debugAtcpFlag', $dataHash{'debug_atcp_flag'});
             $client->ivPoke('debugGmcpFlag', $dataHash{'debug_gmcp_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_001_158) {
+
+            $client->ivPoke('debugMcpFlag', $dataHash{'debug_mcp_flag'});
         }
 
         # Set misc data
@@ -2935,7 +3026,8 @@
                 return undef;
             }
 
-            # Apply patches to any pre-configured world profiles with serious problems
+            # Apply patches to any pre-configured world profiles with serious problems, or whose
+            #   DNS/IP/port has changed
             if (
                 $fileType eq 'worldprof'
                 && $axmud::CLIENT->ivExists('constWorldPatchHash', $assocWorldProf)
@@ -7796,6 +7888,20 @@
                     $axmud::CLIENT->ivAdd('taskLabelHash', 'channels', 'channels_task');
                 }
             }
+
+            if ($version < 1_001_164) {
+
+                # This version renames the built-in Debugger task as the System task. Existing
+                #   Debugger tasks are updated below
+                if (! $axmud::CLIENT->ivExists('taskLabelHash', 'debugger')) {
+
+                    $axmud::CLIENT->ivDelete('taskLabelHash', 'debug');
+                    $axmud::CLIENT->ivDelete('taskLabelHash', 'debugger');
+
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'sys', 'system_task');
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'system', 'system_task');
+                }
+            }
         }
 
         ### worldprof / otherprof / tasks #########################################################
@@ -9059,6 +9165,37 @@
                     }
                 }
             }
+
+             if ($version < 1_001_164 && $self->session) {
+
+                my $class = 'Games::Axmud::Task::System';
+
+                # This version renames the built-in Debugger task as the System task
+                foreach my $taskObj ($self->compileTasks('debugger_task')) {
+
+                    # Rebless the task object into its new class
+                    bless $taskObj, $class;
+
+                    # Rename some existing IVs
+                    $taskObj->{_objName} = 'system_task';
+                    $taskObj->{_objClass} = $class;
+                    $taskObj->{name} = 'system_task';
+                    $taskObj->{prettyName} = 'System';
+                    $taskObj->{shortName} = 'Sy';
+                    $taskObj->{shortCutIV} = 'systemTask';
+                    $taskObj->{descrip} = 'Diverts system messages into a new window';
+
+                    # Change one task setting to fix an issue that prevented the window showing
+                    #   coloured text
+                    $taskObj->{monochromeFlag} = FALSE;
+
+                    # Add new IVs
+                    $taskObj->{systemMode} = undef;
+                    $taskObj->ivPoke('systemMode', 'both');
+                    $taskObj->{colourFlag} = undef;
+                    $taskObj->ivPoke('colourFlag', TRUE);
+                }
+            }
         }
 
         ### scripts ###############################################################################
@@ -9821,7 +9958,7 @@
     sub patchWorldProf {
 
         # Called by $self->loadDataFile for a world profile that must be patched due to serious
-        #   problems
+        #   problems, or whose DNS/IP/port has changed
         # Checks the version number of the loaded file against the version number specified by the
         #   GA::Client IV, and applies the patch, if required
         #
@@ -10127,6 +10264,13 @@
 
                 $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
             }
+        }
+
+        if ($world eq 'pict') {
+
+            # Change of DNS/IP address, replacing pict.genesismuds.com 4200
+            $worldObj->ivPoke('dns', undef);
+            $worldObj->ivPoke('ipv4', '136.62.89.155');
         }
 
         if ($world eq 'swmud' && $worldVersion <= 1_001_012) {
@@ -13199,5 +13343,5 @@
         { $_[0]->{modifyFlag} }
 }
 
-# Package must return true
+# Package must return a true value
 1

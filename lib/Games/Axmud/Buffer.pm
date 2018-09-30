@@ -461,7 +461,12 @@
         # The colour/style tags that applied at the beginning of the original line must be applied
         #   to that hash
         @previousTagList = $self->previousTagList;
-        %modHash = $self->session->applyColourStyleTags(\%modHash, \@previousTagList);
+        %modHash = $self->session->applyColourStyleTags(
+            $self->session,
+            \@previousTagList,
+            %modHash,
+        );
+
         $textViewObj->set_colourStyleHash(%modHash);
 
         # Split the original line into portions, and insert each portion (along with the colour/
@@ -499,7 +504,12 @@
                 $portion = substr($self->stripLine, $lastOffset, ($offset - $lastOffset));
 
                 %modHash = $textViewObj->colourStyleHash;
-                %modHash = $self->session->applyColourStyleTags(\%modHash, \@lastList);
+                %modHash = $self->session->applyColourStyleTags(
+                    $self->session,
+                    \@lastList,
+                    %modHash,
+                );
+
                 $textViewObj->set_colourStyleHash(%modHash);
 
                 $textViewObj->insertText(
@@ -520,7 +530,13 @@
         if (defined $lastOffset) {
 
             %modHash = $textViewObj->colourStyleHash;
-            %modHash = $self->session->applyColourStyleTags(\%modHash, \@lastList);
+
+            %modHash = $self->session->applyColourStyleTags(
+                $self->session,
+                \@lastList,
+                %modHash,
+            );
+
             $textViewObj->set_colourStyleHash(%modHash);
 
             $textViewObj->insertText(
@@ -1168,5 +1184,5 @@
         { $_[0]->{assistedExitObj} }
 }
 
-# Package must return true
+# Package must return a true value
 1

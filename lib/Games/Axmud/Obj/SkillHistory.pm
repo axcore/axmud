@@ -115,5 +115,5 @@
         { $_[0]->{skillNextCash} }
 }
 
-# Package must return true
+# Package must return a true value
 1

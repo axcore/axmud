@@ -1896,6 +1896,46 @@
         return 1;
     }
 
+    sub storeGridWinPosn {
+
+        # Called by GA::Cmd::ToggleWindowStorage->do and ApplyWindowStorage->do
+        # Gets the size and position of every 'grid' window for a specified GA::Session and calls
+        #   GA::Client->add_storeGridPosn to store them
+        # Works even when GA::Client->storeGridPosnFlag is FALSE, but otherwise ->add_storeGridPosn
+        #   itself decides whether each window's size and position should be stored
+        #
+        # Expected arguments
+        #   $session    - The GA::Session whose 'grid' windows should be stored
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $session, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->storeGridWinPosn', @_);
+        }
+
+        foreach my $winObj (sort {$a->number <=> $b->number} ($self->ivValues('gridWinHash'))) {
+
+            if ($winObj->session eq $session) {
+
+                # The TRUE flag means to ignore the setting of GA::Client->storeGridPosnFlag
+                $axmud::CLIENT->add_storeGridPosn(
+                    $winObj,
+                    $winObj->winWidget->get_position(),
+                    $winObj->winWidget->get_size(),
+                    TRUE,
+                );
+            }
+        }
+
+        return 1;
+    }
+
     # 'free' windows
 
     sub listFreeWins {
@@ -2448,5 +2488,5 @@
         { my $self = shift; return @{$self->{otherWinIconList}}; }
 }
 
-# Package must return true
+# Package must return a true value
 1

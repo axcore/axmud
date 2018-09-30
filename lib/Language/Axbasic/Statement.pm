@@ -5894,6 +5894,8 @@
     use diagnostics;
 
     use Glib qw(TRUE FALSE);
+    # Include module here, as well as in Axbasic.pm, so that .../t/00-compile.t won't fail
+    use Fcntl qw(SEEK_SET SEEK_END);
 
     @Language::Axbasic::Statement::erase::ISA = qw(
         Language::Axbasic
@@ -23196,5 +23198,5 @@
     }
 }
 
-# Package must return true
+# Package must return a true value
 1

@@ -34,15 +34,15 @@ require 5.008;
 # Set global variables
 use vars qw(
     $SCRIPT $VERSION $DATE $NAME_SHORT $NAME_ARTICLE $BASIC_NAME $BASIC_ARTICLE $BASIC_VERSION
-    $AUTHORS $COPYRIGHT $URL $NAME_FILE @COMPAT_FILE_LIST @COMPAT_DIR_LIST @COMPAT_EXT_LIST
+    $AUTHORS $COPYRIGHT $URL $DESCRIP $NAME_FILE @COMPAT_FILE_LIST @COMPAT_DIR_LIST @COMPAT_EXT_LIST
     $BLIND_MODE_FLAG $SAFE_MODE_FLAG $TEST_MODE_FLAG @TEST_MODE_LOGIN_LIST $TEST_MODE_CMD_FLAG
     $TEST_TERM_MODE_FLAG $TEST_GLOB_MODE_FLAG $TEST_PRE_CONFIG_FLAG @LICENSE_LIST @CREDIT_LIST
     $SHARE_DIR $DATA_DIR $CLIENT
 );
 
 $SCRIPT = 'Axmud';              # Name used in system messages
-$VERSION = '1.1.138';           # Version number for this client
-$DATE = '31 Aug 2018';
+$VERSION = '1.1.174';           # Version number for this client
+$DATE = '30 Sep 2018';
 $NAME_SHORT = 'axmud';          # Lower-case version of $SCRIPT; same as the package name above
 $NAME_ARTICLE = 'an Axmud';     # Name with an article
 $BASIC_NAME = 'Axbasic';        # Name of Axmud's built-in scripting library
@@ -51,6 +51,7 @@ $BASIC_VERSION = '1.000';       # Version number for the Axbasic library
 $AUTHORS = 'A S Lewis';
 $COPYRIGHT = 'Copyright 2011-2018 A S Lewis';
 $URL = 'http://axmud.sourceforge.net/';
+$DESCRIP = 'A modern MUD client for MS Windows/Linux';
 
 # Name used in headers of Axmud config/data files
 $NAME_FILE = 'axmud';
@@ -142,6 +143,7 @@ use File::Path qw(remove_tree);
 use File::ShareDir ':ALL';
 use File::ShareDir::Install;
 #use Glib qw(TRUE FALSE);
+use Glib::Object::Subclass;
 use Gnome2::Canvas;
 
 if ($^O ne 'MSWin32') {
@@ -226,8 +228,10 @@ $SIG{__DIE__} = sub {
 
 $SIG{__WARN__} = sub {
 
-    # v1.1.0 - filter out same warning messages caused by Gtk+ issues, that would otherwise spam the
-    #   Console window and/or terminal
+    # v1.1.159 - filter out same warning messages caused by Perl module/Gtk+ issues, that would
+    #   otherwise spam the Console window and/or terminal
+    # As of this version, the 'Failed to parse menu bar accelerator' warning is displayed in a *BSD
+    #   terminal before being captured by $SIG{__WARN__}, so little we can do about it
 
 #    if ($CLIENT && ! $SAFE_MODE_FLAG) {
 #        $CLIENT->writePerlWarning(@_);
@@ -238,6 +242,8 @@ $SIG{__WARN__} = sub {
     if (
         ! ($_[0] =~ m/gdk_pixbuf_from_pixdata\(\) called on/)
         && ! ($_[0] =~ m/GdkPixbuf-LOG \*\*\:/)
+        && ! ($_[0] =~ m/Failed to parse menu bar accelerator/)
+        && ! ($_[0] =~ m/Argument.*isn\'t numeric in numeric ge.*Archive\/Extract\.pm line/)
     ) {
         if ($CLIENT && ! $SAFE_MODE_FLAG) {
             $CLIENT->writePerlWarning(@_);
@@ -268,6 +274,8 @@ END {
     }
 }
 
+=pod
+
 =head1 NAME
 
 Games::Axmud - Axmud, a modern Multi-User Dungeon (MUD) client written in Perl5
@@ -275,9 +283,9 @@ Games::Axmud - Axmud, a modern Multi-User Dungeon (MUD) client written in Perl5
 
 =head1 SYNOPSIS
 
-Axmud is known to work on MS Windows and Linux. It might be possible to install
-it on other systems, such as MacOS and *BSD, but the authors have not been able
-to confirm this yet.
+Axmud is known to work on MS Windows, Linux and *BSD. It might be possible to
+install it on other systems such as MacOS, but the authors have not been able to
+confirm this yet.
 
 After installation (see the INSTALL file), visually-impaired users can run this
 script
@@ -300,8 +308,8 @@ If a world profile already exists, you can specify its name instead
 
     axmud.pl cryosphere
 
-Note that certain features have not been implemented on MS Windows yet (namely
-window tiling, multiple desktop support and text-to-speech)
+Note that window tiling and multiple desktop support has not been implemented on
+MS Windows yet.
 
 =head1 DESCRIPTION
 
@@ -311,7 +319,7 @@ Its features include:
 Telnet, SSH and SLL connections - ANSI/xterm/OSC/RGB colour - Full support for
 all major MUD protocols, including MXP and GMCP (with partial Pueblo support) -
 Class-based triggers, aliases, macros, timers and hooks - Graphical automapper
-- 70 pre-configured worlds - Multiple approaches to scripting - Fully
+- 90 pre-configured worlds - Multiple approaches to scripting - Fully
 customisable from top to bottom, using the command line or the extensive GUI
 interface - Native support for visually-impaired users
 
@@ -337,4 +345,5 @@ this program. If not, see <http://www.gnu.org/licenses/>.
 
 =cut
 
+# Package must return a true value
 1;

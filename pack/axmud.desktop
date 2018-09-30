@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Axmud (all users)
-Version=1.1.138
+Version=1.0
 Exec=axmud.pl
 Icon=axmud
 Type=Application

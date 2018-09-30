@@ -468,5 +468,5 @@
         { $_[0]->{defaultAreaHeight} }
 }
 
-# Package must return true
+# Package must return a true value
 1

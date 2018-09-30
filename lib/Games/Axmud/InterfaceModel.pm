@@ -626,6 +626,16 @@
                 #   fired once for each variable/value pair received)
                 # (Hook data: The variable/value pair received)
                 'mssp'                  => 2,
+                # Fired by GA::Session->processZmpData when ZMP data is received (the hook is fired
+                #   once for each ZMP packet received)
+                # (Hook data: The name of the ZMP package/command, as a string)
+                'zmp'                   => 1,
+                # Fired by GA::Session->processAard102Data when AARD102 status data is received (but
+                #   not when AARD102 tags are received; the hook is fired once for every AARD102
+                #   status notification)
+                # (Hook data: The AARD102 status, matching one of the possible values of
+                #   GA::Session->aard102Status, or the string 'tick')
+                'aard102'               => 1,
                 # Fired by GA::Session->processAtcpData when ATCP data is received (the hook is
                 #   fired once for each ATCP packet received)
                 # (Hook data: The name of the ATCP package received)
@@ -634,6 +644,11 @@
                 #   fired once for each GMCP packet received)
                 # (Hook data: The name of the GMCP package received)
                 'gmcp'                  => 1,
+                # Fired by GA::Session->processMcpMsg when an MCP message is received (the hook is
+                #   fired once for each MCP single-line message, and once for every group of
+                #   multiline messages)
+                # (Hook data: The name of the MCP message, as a string)
+                'mcp'                   => 1,
                 # Fired by GA::Client->setCurrentSession when the session becomes the one visible
                 #   in the 'main' window that has focus)
                 # (Hook data: none)
@@ -699,5 +714,5 @@
         { my $self = shift; return %{$self->{hookEventHash}}; }
 }
 
-# Package must return true
+# Package must return a true value
 1

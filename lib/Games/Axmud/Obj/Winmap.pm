@@ -883,5 +883,5 @@
         { $_[0]->{zoneHeight} }
 }
 
-# Package must return true
+# Package must return a true value
 1
