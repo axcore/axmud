@@ -41,7 +41,11 @@ ama / addmacro                Adds a macro
                           interface is destroyed after the macro fires for the
                           first time. When set to 0, the interface can fire
                           indefinitely
-                      
+         'cooldown'  - A number, in seconds; 0 (default) or above (can be
+                          fractional). If 0, no cooldown period applies after
+                          the macro fires. If above 0, the macro can't fire
+                          again until the cooldown period has expired
+                                                
       <switches> allows you to define which attributes the macro will have and
          with which profile it will be associated.
 
@@ -69,6 +73,8 @@ ama / addmacro                Adds a macro
                                    1)
          -t <boolean>         - Sets the 'temporary' attribute (1 or 0; default
                                    is 0)
+         -cd <number>         - Sets the 'cooldown' attribute (0 or above;
+                                   default is 0)
       Group 4 switch options: 0, 1 or more of the following options can be used:
          -b <name>            - This macro is checked before macros called
                                    <name> (when they both become active)

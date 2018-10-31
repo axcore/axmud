@@ -63,6 +63,7 @@ mtr / modifytrigger           Modifies a trigger
          -dp <boolean>        - Modifies the 'default_pane' attribute (1 or 0)
          -pn <string>         - Modifies the 'pane_name' attribute (a string)
          -t <boolean>         - Modifies the 'temporary' attribute (1 or 0)
+         -cd <number>         - Modifies the 'cooldown' attribute (0 or above)
          -m <mode>            - Modifies the 'style_mode' attribute (-2, -1, 0  
                                    or 1+)
          -h <colour>          - Modifies the 'style_text' attribute (0 or an  

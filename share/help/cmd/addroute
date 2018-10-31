@@ -12,18 +12,21 @@ art / addroute                Adds a new pre-defined route
                Saves the current recording as a circuit route from <start>
  
    Notes:
-      Axmud pre-defined routes are an easy way to move between rooms in the game
+      Axmud pre-defined routes are an easy way to move between rooms in the
          world. 
-      Each route consists of nothing more than a set of world commands; a simple 
-         route might be 'n;n;nw;n;n;e'.
+      Each route consists of nothing more than a chain of world commands, for
+         example 'n' or 'n;n;n;w;s;s'. The route can also be represented as a
+         speedwalk command like '.3nw2s' (even when speedwalk commands are
+         turned off generally; see the help for ';togglesigil').
       Pre-defined routes are independent of the world model; they work even if
          you have not drawn any maps, and they are not altered if you modify any
          of your maps.
 
       There are three types of pre-defined route. A 'road' route represents the
-         path between two rooms, using the game world's own roads and paths. A
-         'quick' route represents the shortest path between two rooms. Road and
-         quick routes connect two rooms called <start> and <stop>.
+         path between two rooms, using the world's own roads and paths (which
+         are presumably safer than taking the most direct route). A 'quick'
+         route represents the shortest path between two rooms.
+      Road and quick routes connect two rooms called <start> and <stop>.
       The third type of pre-defined route is a 'circuit' route, which starts and 
          stops in a room called <start>. A circuit route has a <name>, so that 
          you can create more than one circuit starting in a particular room.
@@ -68,9 +71,10 @@ art / addroute                Adds a new pre-defined route
          -h                   - Route not hoppable (can't be combined with other
                                    routes using the ';drive' command)
  
-     If you specify -a instead of <route>, a route will be created using the
-        current recording, but only using world commands in that recording. (See 
-        the help for ';record' for more information about recordings.)
+     If you specify the '-a' switch instead of <route>, a route will be created
+        using the current recording, but only using world commands in that
+        recording. (See the help for ';record' for more information about
+        recordings.)
      If <route> contains spaces, it should be enclosed in diamond brackets
         e.g. <n;nw;open door;n> 
      <switches> may be placed anywhere in the command, in any order, but the

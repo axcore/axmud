@@ -38,9 +38,15 @@
         #   $routeType  - 'road' (this route uses the world's roads and paths), 'quick' (this route
         #                   is the quickest path between two rooms), 'circuit' (this route starts
         #                   and stops in the same room)
-        #   $startRoom  - The tag of the start room (matches GA::ModelObj::Room->roomTag)
-        #   $otherRoom  - The tag of the stop room. For 'circuit' routes, the name of the circuit
-        #   $route      - The route itself (e.g. 'n;open door;n;nw')
+        #   $startRoom  - The tag of the start room (matches GA::ModelObj::Room->roomTag
+        #   $otherRoom  - For 'road' and 'quick' routes, the tag of the stop room. For 'circuit'
+        #                   routes, the name of the circuit
+        #   $route      - The route itself (a single world command, e.g. 'n', a chain of world
+        #                   commands, e.g. 'n;open door;n;nw', or a speedwalk command, e.g.
+        #                   '.3nw2s'). $route can be a speedwalk command even if the speedwalk sigil
+        #                   is turned off (GA::Client->speedSigilFlag is FALSE). If it's a speedwalk
+        #                   command, the calling function should have checked it's a valid speedwalk
+        #                   command
         #   $hopFlag    - Flag set to TRUE if this route is hoppable (can be combined with other
         #                   routes to make a longer route using the ';drive' etc commands), FALSE if
         #                   not
@@ -82,13 +88,18 @@
             #   route is the quickest path between two rooms), 'circuit' (this route starts and
             #   stops in the same room)
             routeType                   => $routeType,
-            # The tag of the start room (matches GA::ModelObj::Room->roomTag)
+            # The tag of the start room (matches GA::ModelObj::Room->roomTag
             startRoom                   => $startRoom,
-            # The tag of the stop room (for 'road', 'quick' routes) (set below)
+            # For 'road' and 'quick' routes, the tag of the stop room. For 'circuit' routes, the
+            #   name of the circuit
             stopRoom                    => undef,
             # The name of the circuit (for 'circuit' routes) (set below)
             circuitName                 => undef,
-            # The route itself (e.g. 'n;open door;n;nw')
+            # The route itself (a single world command, e.g. 'n', a chain of world commands, e.g.
+            #   'n;open door;n;nw', or a speedwalk command, e.g. '.3nw2s'). $route can be a
+            #   speedwalk command even if the speedwalk sigil is turned off
+            #   (GA::Client->speedSigilFlag is FALSE). If it's a speedwalk command, the calling
+            #   function should have checked it's a valid speedwalk command
             route                       => $route,
 
             # Flag set to TRUE if this route is hoppable (can be combined with other routes to make
@@ -111,7 +122,7 @@
         # Count the number of steps (distinct world commands) in $route
         if ($route) {
 
-            $self->resetStepCount();
+            $self->resetStepCount($session);
         }
 
         return $self;
@@ -171,13 +182,13 @@
         # Sets the ->stepCount IV
         #
         # Expected arguments
-        #   (none besides $self)
+        #   $session    - The calling function's GA::Session
         #
         # Return values
         #   'undef' on improper arguments
         #   Otherwise, returns the new value of ->stepCount (which may be 0)
 
-        my ($self, $check) = @_;
+        my ($self, $session, $check) = @_;
 
         # Local variables
         my (
@@ -186,13 +197,23 @@
         );
 
         # Check for improper arguments
-        if (defined $check) {
+        if (! defined $session || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->resetStepCount', @_);
         }
 
-        $cmdSep = $axmud::CLIENT->cmdSep;
-        @list = split(m/$cmdSep/, $self->route);
+        if (index($self->route, $axmud::CLIENT->constSpeedSigil) == 0) {
+
+            # $self->route is a speedwalk command. If it's an invalid speedwalk command, @list will
+            #   be empty
+            @list = $session->parseSpeedWalk($self->route);
+
+        } else {
+
+            # A single world command or a chain of world commands separated by commmand separators
+            $cmdSep = $axmud::CLIENT->cmdSep;
+            @list = split(m/$cmdSep/, $self->route);
+        }
 
         $self->ivPoke('stepCount', scalar @list);
 

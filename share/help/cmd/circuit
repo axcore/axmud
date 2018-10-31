@@ -5,7 +5,7 @@ cct / circuit                 Moves the character along a circuit route
       ;cct <name>             Moves from the current room along the route <name>
  
    Notes:
-      Axmud pre-defined routes are an easy way to move between rooms in the game
+      Axmud pre-defined routes are an easy way to move between rooms in the
          world (see the help for ';addroute' for information about routes).
       This command moves the character along a circuit route, which starts and
          stops at the room whose room tag is <start>. The circuit route itself

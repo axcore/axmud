@@ -4,7 +4,9 @@ msp / msp                     Manages the Mud Sound Protocol (MSP)
       ;msp                    Shows MSP status for this session
       ;msp on                 Turns on MSP for this session (only)
       ;msp off                Turns off MSP for this session (only)
-      ;msp -d                 Shows a list of downloaded MSP sound files
+      ;msp -l                 Shows a list of downloaded MSP sound files
+      ;msp -d                 Downloads an MSP soundpack
+      ;msp -d <link>          Downloads an MSP soundpack from <link>
       ;msp -t <file>          Tests the specified sound <file>
       ;msp -m                 Enable/disable playing multiple sounds together
       ;msp -a                 Enable/disable auto-downloading sound files
@@ -21,7 +23,15 @@ msp / msp                     Manages the Mud Sound Protocol (MSP)
  
             /home/yourname/axmud-data/msp/deathmud/
 
-      You can see exactly which directory/folder to use by typing ';msp'.
+      Some worlds offer a soundpack - a collection of sound files for use with
+         MSP-compatible clients. You can either download this soundpack
+         manually, extract each individual sound file and copy them all to the
+         directory above, or you can use the -d switch, in which case Amxud will
+         do everything for you.
+      <link> is the file link, e.g. 'http://deathmud.com/soundpack.zip'. If you
+         don't specify a link, Axmud will prompt you for it. Worlds that offer
+         soundpacks usually advertise them on their own websites, which is where
+         you can find the correct link.
 
       MSP sounds won't be played at all if sound has been turned off generally
          (use ';sound on' to turn it back on) or if MSP is turned off generally
@@ -39,7 +49,7 @@ msp / msp                     Manages the Mud Sound Protocol (MSP)
       ...you can turn on/off MSP for this session only by typing ';msp on' or
          ';msp off'. 
       
-      Use the -d switch to get a list of downloaded sounds for the current
+      Use the -l switch to get a list of downloaded sounds for the current
          world. Use the -t switch to play any of those sounds.
       
       MSP makes a distinction between 'sound' files (which respond to events in

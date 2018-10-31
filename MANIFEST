@@ -78,7 +78,9 @@ lib/Games/Axmud/Strip.pm
 lib/Games/Axmud/Table.pm
 lib/Games/Axmud/Task.pm
 lib/Games/Axmud/Widget.pm
-lib/Games/Axmud/Win.pm
+lib/Games/Axmud/Win/External.pm
+lib/Games/Axmud/Win/Internal.pm
+lib/Games/Axmud/Win/Map.pm
 lib/Games/Axmud/WizWin.pm
 lib/Language/Axbasic.pm
 lib/Language/Axbasic/Expression.pm
@@ -104,6 +106,7 @@ pack/README
 README
 scripts/axmud.pl
 scripts/baxmud.pl
+share/docs/COPYING
 share/docs/guide/ch01.html
 share/docs/guide/ch01.mkd
 share/docs/guide/ch02.html
@@ -153,7 +156,9 @@ share/docs/guide/img/ch04/dict_tab.png
 share/docs/guide/img/ch04/edit_win_buttons.png
 share/docs/guide/img/ch04/edit_win_tabs.png
 share/docs/guide/img/ch04/icon_application.png
+share/docs/guide/img/ch04/icon_broom.png
 share/docs/guide/img/ch04/icon_compass.png
+share/docs/guide/img/ch04/icon_console.png
 share/docs/guide/img/ch04/icon_help.png
 share/docs/guide/img/ch04/icon_lock.png
 share/docs/guide/img/ch04/icon_phone_vintage.png
@@ -205,8 +210,12 @@ share/docs/guide/img/ch15/icon_wizard.png
 share/docs/guide/img/ch15/impassable_ornament.png
 share/docs/guide/img/ch15/locked_ornament.png
 share/docs/guide/img/ch15/map_modes.png
+share/docs/guide/img/ch15/match_many_rooms.png
+share/docs/guide/img/ch15/match_one_room.png
 share/docs/guide/img/ch15/one_way_exit.png
 share/docs/guide/img/ch15/paint_toolbar.png
+share/docs/guide/img/ch15/path_problem1.png
+share/docs/guide/img/ch15/path_problem2.png
 share/docs/guide/img/ch15/pathfinding.png
 share/docs/guide/img/ch15/previous_room.png
 share/docs/guide/img/ch15/region_exit_1.png
@@ -225,6 +234,8 @@ share/docs/guide/img/ch15/selected_current_room.png
 share/docs/guide/img/ch15/selected_exit.png
 share/docs/guide/img/ch15/selected_room.png
 share/docs/guide/img/ch15/simple_label.png
+share/docs/guide/img/ch15/slide_mode_1.png
+share/docs/guide/img/ch15/slide_mode_2.png
 share/docs/guide/img/ch15/toolbar_1.png
 share/docs/guide/img/ch15/toolbar_2.png
 share/docs/guide/img/ch15/toolbar_3.png
@@ -312,6 +323,7 @@ share/help/axbasic/func/ifacetime
 share/help/axbasic/func/ifacetype_
 share/help/axbasic/func/int
 share/help/axbasic/func/ip
+share/help/axbasic/func/ip_
 share/help/axbasic/func/ismap
 share/help/axbasic/func/isscript
 share/help/axbasic/func/istask
@@ -357,6 +369,8 @@ share/help/axbasic/func/sqr
 share/help/axbasic/func/str_
 share/help/axbasic/func/tan
 share/help/axbasic/func/tanh
+share/help/axbasic/func/testpat
+share/help/axbasic/func/testpat_
 share/help/axbasic/func/time
 share/help/axbasic/func/time_
 share/help/axbasic/func/timestamp
@@ -645,6 +659,7 @@ share/help/cmd/commandbuffer
 share/help/cmd/commandseparator
 share/help/cmd/comment
 share/help/cmd/compass
+share/help/cmd/configureterminal
 share/help/cmd/connect
 share/help/cmd/converttext
 share/help/cmd/copyrecording
@@ -788,6 +803,7 @@ share/help/cmd/finishquest
 share/help/cmd/fixwindow
 share/help/cmd/flashwindow
 share/help/cmd/freezetask
+share/help/cmd/getip
 share/help/cmd/getkeycode
 share/help/cmd/gmcp
 share/help/cmd/go
@@ -1024,6 +1040,7 @@ share/help/cmd/setchar
 share/help/cmd/setcharset
 share/help/cmd/setcolour
 share/help/cmd/setcommandbuffer
+share/help/cmd/setcommifymode
 share/help/cmd/setcustomday
 share/help/cmd/setcustommonth
 share/help/cmd/setcustomprofile
@@ -1101,6 +1118,7 @@ share/help/cmd/testcolour
 share/help/cmd/testfile
 share/help/cmd/testmodel
 share/help/cmd/testpanel
+share/help/cmd/testpattern
 share/help/cmd/testplugin
 share/help/cmd/testwindowcontrols
 share/help/cmd/testxterm
@@ -1158,6 +1176,10 @@ share/help/task/watch
 share/icons/button/application.png
 share/icons/button/application_tile_vertical.png
 share/icons/button/broom.png
+share/icons/button/console.png
+share/icons/button/console_debug.png
+share/icons/button/console_error.png
+share/icons/button/console_system.png
 share/icons/button/lock.png
 share/icons/button/lock_open.png
 share/icons/button/prohibition_button.png
@@ -2362,6 +2384,8 @@ share/icons/map/icon_draw_checked.png
 share/icons/map/icon_draw_checked_large.png
 share/icons/map/icon_draw_code.png
 share/icons/map/icon_draw_code_large.png
+share/icons/map/icon_draw_compare.png
+share/icons/map/icon_draw_compare_large.png
 share/icons/map/icon_draw_complex.png
 share/icons/map/icon_draw_complex_large.png
 share/icons/map/icon_draw_contents.png
@@ -2635,6 +2659,7 @@ share/items/phrasebooks/portuguese.txt
 share/items/phrasebooks/russian.txt
 share/items/phrasebooks/spanish.txt
 share/items/phrasebooks/swedish.txt
+share/items/readme/README
 share/items/scripts/hello.bas
 share/items/scripts/test.bas
 share/items/scripts/wumpus.bas
@@ -2835,6 +2860,9 @@ share/items/worlds/dslocal/dslocal.tgz
 share/items/worlds/dsprime/dsprime.amx
 share/items/worlds/dsprime/dsprime.png
 share/items/worlds/dsprime/dsprime.tgz
+share/items/worlds/dswords/dswords.amx
+share/items/worlds/dswords/dswords.png
+share/items/worlds/dswords/dswords.tgz
 share/items/worlds/dunemud/dunemud.amx
 share/items/worlds/dunemud/dunemud.png
 share/items/worlds/dunemud/dunemud.tgz
@@ -2856,12 +2884,21 @@ share/items/worlds/empire/empire.tgz
 share/items/worlds/eotl/eotl.amx
 share/items/worlds/eotl/eotl.png
 share/items/worlds/eotl/eotl.tgz
+share/items/worlds/fkingdoms/fkingdoms.amx
+share/items/worlds/fkingdoms/fkingdoms.png
+share/items/worlds/fkingdoms/fkingdoms.tgz
+share/items/worlds/forestsedge/forestsedge.amx
+share/items/worlds/forestsedge/forestsedge.png
+share/items/worlds/forestsedge/forestsedge.tgz
 share/items/worlds/fourdims/fourdims.amx
 share/items/worlds/fourdims/fourdims.png
 share/items/worlds/fourdims/fourdims.tgz
 share/items/worlds/genesis/genesis.amx
 share/items/worlds/genesis/genesis.png
 share/items/worlds/genesis/genesis.tgz
+share/items/worlds/greatermud/greatermud.amx
+share/items/worlds/greatermud/greatermud.png
+share/items/worlds/greatermud/greatermud.tgz
 share/items/worlds/hellmoo/hellmoo.amx
 share/items/worlds/hellmoo/hellmoo.png
 share/items/worlds/hellmoo/hellmoo.tgz
@@ -2913,6 +2950,9 @@ share/items/worlds/medievia/medievia.tgz
 share/items/worlds/merentha/merentha.amx
 share/items/worlds/merentha/merentha.png
 share/items/worlds/merentha/merentha.tgz
+share/items/worlds/midnightsun/midnightsun.amx
+share/items/worlds/midnightsun/midnightsun.png
+share/items/worlds/midnightsun/midnightsun.tgz
 share/items/worlds/miriani/miriani.amx
 share/items/worlds/miriani/miriani.png
 share/items/worlds/miriani/miriani.tgz
@@ -2931,6 +2971,9 @@ share/items/worlds/mudii/mudii.tgz
 share/items/worlds/mume/mume.amx
 share/items/worlds/mume/mume.png
 share/items/worlds/mume/mume.tgz
+share/items/worlds/nannymud/nannymud.amx
+share/items/worlds/nannymud/nannymud.png
+share/items/worlds/nannymud/nannymud.tgz
 share/items/worlds/nanvaent/nanvaent.amx
 share/items/worlds/nanvaent/nanvaent.png
 share/items/worlds/nanvaent/nanvaent.tgz
@@ -2970,6 +3013,9 @@ share/items/worlds/rupert/rupert.tgz
 share/items/worlds/slothmud/slothmud.amx
 share/items/worlds/slothmud/slothmud.png
 share/items/worlds/slothmud/slothmud.tgz
+share/items/worlds/stickmud/stickmud.amx
+share/items/worlds/stickmud/stickmud.png
+share/items/worlds/stickmud/stickmud.tgz
 share/items/worlds/stonia/stonia.amx
 share/items/worlds/stonia/stonia.png
 share/items/worlds/stonia/stonia.tgz
@@ -2979,12 +3025,18 @@ share/items/worlds/swmud/swmud.tgz
 share/items/worlds/tempora/tempora.amx
 share/items/worlds/tempora/tempora.png
 share/items/worlds/tempora/tempora.tgz
+share/items/worlds/theland/theland.amx
+share/items/worlds/theland/theland.png
+share/items/worlds/theland/theland.tgz
 share/items/worlds/threekingdoms/threekingdoms.amx
 share/items/worlds/threekingdoms/threekingdoms.png
 share/items/worlds/threekingdoms/threekingdoms.tgz
 share/items/worlds/threescapes/threescapes.amx
 share/items/worlds/threescapes/threescapes.png
 share/items/worlds/threescapes/threescapes.tgz
+share/items/worlds/tilegacy/tilegacy.amx
+share/items/worlds/tilegacy/tilegacy.png
+share/items/worlds/tilegacy/tilegacy.tgz
 share/items/worlds/torilmud/torilmud.amx
 share/items/worlds/torilmud/torilmud.png
 share/items/worlds/torilmud/torilmud.tgz
@@ -2994,6 +3046,9 @@ share/items/worlds/tsunami/tsunami.tgz
 share/items/worlds/twotowers/twotowers.amx
 share/items/worlds/twotowers/twotowers.png
 share/items/worlds/twotowers/twotowers.tgz
+share/items/worlds/uossmud/uossmud.amx
+share/items/worlds/uossmud/uossmud.png
+share/items/worlds/uossmud/uossmud.tgz
 share/items/worlds/valhalla/valhalla.amx
 share/items/worlds/valhalla/valhalla.png
 share/items/worlds/valhalla/valhalla.tgz
@@ -3020,3 +3075,5 @@ share/plugins/mxpfilter.pm
 share/plugins/wilderness.pm
 share/plugins/zmptest.pm
 t/00-compile.t
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)

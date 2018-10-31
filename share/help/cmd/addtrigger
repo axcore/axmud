@@ -125,6 +125,10 @@ atr / addtrigger              Adds an independent trigger
                           interface is destroyed after the trigger fires for the
                           first time. When set to 0, the interface can fire
                           indefinitely
+         'cooldown'  - A number, in seconds; 0 (default) or above (can be
+                          fractional). If 0, no cooldown period applies after
+                          the trigger fires. If above 0, the trigger can't fire
+                          again until the cooldown period has expired
          'style_mode' 
                      - A style mode. Styles change the way the matching line is
                           displayed. If set to 0, styles are turned off. If set
@@ -214,6 +218,8 @@ atr / addtrigger              Adds an independent trigger
                                    specified, an empty string is used
          -t <boolean>         - Sets the 'temporary' attribute (1 or 0; default 
                                    is 0)
+         -cd <number>         - Sets the 'cooldown' attribute (0 or above;
+                                   default is 0)
          -m <mode>            - Sets the 'style_mode' attribute (-2, -1, 0 or 
                                    1+; default is 0)
          -h <colour>          - Sets the 'style_text' attribute (0 or an Axmud 

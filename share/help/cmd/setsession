@@ -1,7 +1,7 @@
-ss / setsession               Changes various session tab settings
+ss / setsession               Changes various session settings
  
    Format:
-      ;ss                     Shows current tab settings
+      ;ss                     Shows current settings
       
       ;ss -b                  Changes tab format to 'deathmud (Gandalf)
       ;ss -h                  Changes tab format to 'deathmud - Gandalf'
@@ -13,17 +13,26 @@ ss / setsession               Changes various session tab settings
       
       ;ss -m                  Opens prompt before click-closing 'main' window
       ;ss -t                  Opens prompt before click-closing tab
+
+      ;ss -o                  Toggles between modes after disconnection
  
    Notes:
       A session is a single connection to a world (even if it's in offline mode
          and after a disconnection.) Each session has its own tab in the main
          window.
-      This command customises the text displayed in the tab label.
+      This command can be used to customise the text displayed in the tab label.
       'xterm' titles are not used by most worlds, so turning them on may have no
          visible effect.
       Simple tabs are those shown without a label at all, when there's only one
          session open in a 'main' window. This is useful for conserving space on
          small monitors.
 
+      When a session is disconnect from a world, it normally switches into a
+         limited state in which some client commands are available, but most
+         aren't. In addition, any tasks and 'edit' windows close immediately.
+      If you use the '-o' switch, on disconnection the session will go into
+         'offline' mode instead (just as if you had opened the Connections
+         window and clicked the 'Connect offline' button).
+         
    User commands:
       ss / setsession

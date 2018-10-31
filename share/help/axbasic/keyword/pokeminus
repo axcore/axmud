@@ -7,9 +7,9 @@ POKEMINUS axmud-object-property, expression
       POKE gives Axbasic scripts access to some of Axmud's internal data (see 
          the help for the POKE statement for a full explanation). 
       POKEMINUS is similar to POKE, but it only sets the value of scalar 
-         properties such as "world.current.remoteWimpyMax". It cannot be used to 
-         set a list property such as "world.current.doorPatternList", a hash 
-         property such as "world.current.currencyHash" or a Perl object such as
+         properties such as "world.current.longName". It cannot be used to set a
+         list property such as "world.current.doorPatternList", a hash property
+         such as "world.current.currencyHash" or a Perl object such as
          "world.current".
       POKEMINUS modifies the value of the scalar property by subtracting the 
          value of the expression. Both values must be numeric.

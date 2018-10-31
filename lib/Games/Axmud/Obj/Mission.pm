@@ -1018,7 +1018,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -1031,7 +1032,7 @@
         #   Otherwise returns the result of the call to $self->continueMission ('undef', 1 or 2)
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -1041,7 +1042,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->triggerSeen', @_);

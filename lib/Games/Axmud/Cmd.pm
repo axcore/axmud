@@ -2730,6 +2730,71 @@
     }
 }
 
+{ package Games::Axmud::Cmd::TestPattern;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('testpattern', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['tpt', 'testregex', 'testpattern'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Opens the Pattern Test window';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Open an 'other' window
+        $session->mainWin->quickFreeWin('Games::Axmud::OtherWin::PatternTest', $session);
+
+        return $self->complete(
+            $session, $standardCmd,
+            'Opened Pattern Test window',
+        );
+    }
+}
+
 { package Games::Axmud::Cmd::QuickInput;
 
     use strict;
@@ -2762,7 +2827,7 @@
 
         $self->{defaultUserCmdList} = ['inp', 'qinput', 'quickinput'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Opens the quick input window';
+        $self->{descrip} = 'Opens the Quick Input window';
 
         # Bless the object into existence
         bless $self, $class;
@@ -2790,7 +2855,7 @@
 
         return $self->complete(
             $session, $standardCmd,
-            'Opened quick input window',
+            'Opened Quick Input window',
         );
     }
 }
@@ -3181,6 +3246,14 @@
         } elsif ($switch eq 'close_disconnect' || $switch eq '-x') {
 
             $event = 'close_disconnect';
+
+        } elsif ($switch eq 'map_rescue_merge' || $switch eq '-mm') {
+
+            $event = 'map_rescue_merge';
+
+        } elsif ($switch eq 'map_rescue_off' || $switch eq '-mf') {
+
+            $event = 'map_rescue_off';
         }
 
         if ($event) {
@@ -3220,6 +3293,34 @@
 
             $event = 'send_cmd';
 
+        } elsif ($switch eq 'system_text' || $switch eq '-st') {
+
+            $event = 'system_text';
+
+        } elsif ($switch eq 'system_error' || $switch eq '-se') {
+
+            $event = 'system_error';
+
+        } elsif ($switch eq 'system_warning' || $switch eq '-sw') {
+
+            $event = 'system_warning';
+
+        } elsif ($switch eq 'system_debug' || $switch eq '-sd') {
+
+            $event = 'system_debug';
+
+        } elsif ($switch eq 'system_improper' || $switch eq '-si') {
+
+            $event = 'system_improper';
+
+        } elsif ($switch eq 'system_all' || $switch eq '-sa') {
+
+            $event = 'system_all';
+
+        } elsif ($switch eq 'system_all_error' || $switch eq '-sl') {
+
+            $event = 'system_all_error';
+
         } elsif ($switch eq 'not_current' || $switch eq '-o') {
 
             $event = 'not_current';
@@ -3235,6 +3336,10 @@
         } elsif ($switch eq 'change_visible' || $switch eq '-k') {
 
             $event = 'change_visible';
+
+        } elsif ($switch eq 'textview_resize' || $switch eq '-tv') {
+
+            $event = 'textview_resize';
 
         } elsif ($switch eq 'user_idle' || $switch eq '-e') {
 
@@ -3263,6 +3368,18 @@
         } elsif ($switch eq 'mcp' || $switch eq '-b') {
 
             $event = 'mcp';
+
+        } elsif ($switch eq 'map_room' || $switch eq '-mr') {
+
+            $event = 'map_room';
+
+        } elsif ($switch eq 'map_no_room' || $switch eq '-mn') {
+
+            $event = 'map_no_room';
+
+        } elsif ($switch eq 'map_rescue_on' || $switch eq '-mo') {
+
+            $event = 'map_rescue_on';
         }
 
         if ($event) {
@@ -3557,6 +3674,7 @@
 
             # Display list
             @list = (
+                'debugEscSequenceFlag'  => 'Show invalid escape sequences                      ',
                 'debugTelnetFlag'       => 'Show telnet option negotiations messages           ',
                 'debugTelnetMiniFlag'   => 'Show short option negotiation messages             ',
                 'debugTelnetLogFlag'    => 'Telnet library writes its own logfile, telopt.log  ',
@@ -3596,7 +3714,9 @@
         # ;dco <switch>
         } else {
 
-            if ($switch eq '-t') {
+            if ($switch eq '-q') {
+                $iv = 'debugEscSequenceFlag';
+            } elsif ($switch eq '-t') {
                 $iv = 'debugTelnetFlag';
             } elsif ($switch eq '-s') {
                 $iv = 'debugTelnetMiniFlag';
@@ -6099,7 +6219,7 @@
 
         $self->{defaultUserCmdList} = ['ss', 'setsession'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Changes various session tab settings';
+        $self->{descrip} = 'Changes various session settings';
 
         # Bless the object into existence
         bless $self, $class;
@@ -6117,9 +6237,6 @@
             $check,
         ) = @_;
 
-        # Local variables
-        my $string;
-
         # Check for improper arguments
         if (defined $check) {
 
@@ -6130,20 +6247,19 @@
         if (! defined $switch) {
 
             # Display header
-            $session->writeText('Current session tab settings');
+            $session->writeText('List of session settings');
 
             # Display list
+            $session->writeText('   Tab label format: ');
             if ($axmud::CLIENT->sessionTabMode eq 'bracket') {
-                $string = '\'bracket\' - displayed as \'deathmud (Gandalf)\'';
+                $session->writeText('      \'bracket\' - displayed as \'deathmud (Gandalf)\'');
             } elsif ($axmud::CLIENT->sessionTabMode eq 'hyphen') {
-                $string = '\'hyphen\' - displayed as \'deathmud - Gandalf\'';
+                $session->writeText('      \'hyphen\' - displayed as \'deathmud - Gandalf\'');
             } elsif ($axmud::CLIENT->sessionTabMode eq 'world') {
-                $string = '\'world\' - displayed as \'deathmud\'';
+                $session->writeText('      \'world\' - displayed as \'deathmud\'');
             } elsif ($axmud::CLIENT->sessionTabMode eq 'char') {
-                $string = '\'char\' - displayed as \'Gandalf\'';
+                $session->writeText('      \'char\' - displayed as \'Gandalf\'');
             }
-
-            $session->writeText('   Tab label format: ' . $string);
 
             if (! $axmud::CLIENT->xTermTitleFlag) {
                 $session->writeText('   Display xterm titles                           - OFF');
@@ -6164,15 +6280,21 @@
             }
 
             if (! $axmud::CLIENT->confirmCloseMainWinFlag) {
-                $session->writeText('   Confirm before click-closing \'main\' window   - OFF');
+                $session->writeText('   Confirm before click-closing \'main\' window     - OFF');
             } else {
-                $session->writeText('   Confirm before click-closing \'main\' window   - ON');
+                $session->writeText('   Confirm before click-closing \'main\' window     - ON');
             }
 
             if (! $axmud::CLIENT->confirmCloseTabFlag) {
                 $session->writeText('   Confirm before click-closing tabs              - OFF');
             } else {
                 $session->writeText('   Confirm before click-closing tabs              - ON');
+            }
+
+            if (! $axmud::CLIENT->offlineOnDisconnectFlag) {
+                $session->writeText('   Switch to \'offline\' mode on disconnection      - OFF');
+            } else {
+                $session->writeText('   Switch to \'offline\' mode on disconnection      - ON');
             }
 
             # Display footer
@@ -6216,7 +6338,7 @@
 
         } elsif ($switch eq '-x') {
 
-            $axmud::CLIENT->toggle_sessionTabFlag('xterm');
+            $axmud::CLIENT->toggle_sessionFlag('xterm');
             if (! $axmud::CLIENT->xTermTitleFlag) {
 
                 return $self->complete(
@@ -6234,7 +6356,7 @@
 
         } elsif ($switch eq '-l') {
 
-            $axmud::CLIENT->toggle_sessionTabFlag('long');
+            $axmud::CLIENT->toggle_sessionFlag('long');
             if (! $axmud::CLIENT->longTabLabelFlag) {
 
                 return $self->complete(
@@ -6252,7 +6374,7 @@
 
         } elsif ($switch eq '-s') {
 
-            $axmud::CLIENT->toggle_sessionTabFlag('simple');
+            $axmud::CLIENT->toggle_sessionFlag('simple');
             if (! $axmud::CLIENT->simpleTabFlag) {
 
                 return $self->complete(
@@ -6270,7 +6392,7 @@
 
         } elsif ($switch eq '-m') {
 
-            $axmud::CLIENT->toggle_sessionTabFlag('close_main');
+            $axmud::CLIENT->toggle_sessionFlag('close_main');
             if (! $axmud::CLIENT->confirmCloseMainWinFlag) {
 
                 return $self->complete(
@@ -6288,7 +6410,7 @@
 
         } elsif ($switch eq '-t') {
 
-            $axmud::CLIENT->toggle_sessionTabFlag('close_tab');
+            $axmud::CLIENT->toggle_sessionFlag('close_tab');
             if (! $axmud::CLIENT->confirmCloseTabFlag) {
 
                 return $self->complete(
@@ -6301,6 +6423,24 @@
                 return $self->complete(
                     $session, $standardCmd,
                     'Confirm before click-closing tabs turned ON',
+                );
+            }
+
+        } elsif ($switch eq '-o') {
+
+            $axmud::CLIENT->toggle_sessionFlag('switch_offline');
+            if (! $axmud::CLIENT->offlineOnDisconnectFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Switch to \'offline\' mode on disconnection turned OFF',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Switch to \'offline\' mode on disconnection turned ON',
                 );
             }
 
@@ -8518,7 +8658,7 @@
 
         } else {
 
-            return $self->complete($session, $standardCmd,
+            return $self->complete(
                 $session, $standardCmd,
                 'Reminder alert set for ' . $minutes . ' minutes from now',
             );
@@ -8994,6 +9134,144 @@
                 $session, $standardCmd,
                 $axmud::SCRIPT . '\' custom list of days set to: '
                 . join(' ', @dayList),
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::SetCommifyMode;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setcommifymode', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['scf', 'commify', 'setcommifymode'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Customises conversion of long numbers';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $switch,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $msg;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # ;scf
+        if (! $switch) {
+
+            $msg = 'Current commification mode: \'';
+
+            if ($axmud::CLIENT->commifyMode eq 'comma') {
+                $msg .= 'comma\' - add commas, e.g. 1,000,000';
+            } elsif ($axmud::CLIENT->commifyMode eq 'europe') {
+                $msg .= 'europe\' - add full stops/periods, e.g. 1.000.000';
+            } elsif ($axmud::CLIENT->commifyMode eq 'europe') {
+                $msg .= 'brit\' - add spaces, e.g. 1 000 000';
+            } elsif ($axmud::CLIENT->commifyMode eq 'europe') {
+                $msg .= 'underline\' - add underlines/undescores, e.g. 1_000_000';
+            } else {
+                $msg .= 'none\' - don\'t commify large numbers';
+            }
+
+            return $self->complete($session, $standardCmd, $msg);
+
+        # ;scf -c
+        } elsif ($switch eq '-c') {
+
+            $axmud::CLIENT->set_commifyMode('comma');
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Commification mode set to \'comma\' - add commas, e.g. 1,000,000',
+            );
+
+        # ;scf -e
+        } elsif ($switch eq '-e') {
+
+            $axmud::CLIENT->set_commifyMode('europe');
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Commification mode set to \'comma\' -  add full stops/periods, e.g. 1.000.000',
+            );
+
+        # ;scf -b
+        } elsif ($switch eq '-b') {
+
+            $axmud::CLIENT->set_commifyMode('brit');
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Commification mode set to \'comma\' - add spaces, e.g. 1 000 000',
+            );
+
+        # ;scf -u
+        } elsif ($switch eq '-u') {
+
+            $axmud::CLIENT->set_commifyMode('underline');
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Commification mode set to \'comma\' - add commas, e.g. 1,000,000',
+            );
+
+        # ;scf -n
+        } elsif ($switch eq '-n') {
+
+            $axmud::CLIENT->set_commifyMode('none');
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Commification mode set to \'comma\' - add underlines/undescores, e.g. 1_000_000',
+            );
+
+        } else {
+
+            return $self->error(
+                $session, $inputString,
+                'Invalid switch (try c, -e, -b, -u or -n)',
             );
         }
     }
@@ -14425,6 +14703,16 @@
             );
 
             # Display list
+            if (! $axmud::CLIENT->mainWinSystemMsgFlag) {
+                $string = 'OFF';
+            } else {
+                $string = 'ON';
+            }
+
+            $session->writeText(
+                '   Allow system messages to be displayed in the \'main\' window - ' . $string,
+            );
+
             if (! $axmud::CLIENT->mainWinUrgencyFlag) {
                 $string = 'OFF';
             } else {
@@ -14449,6 +14737,25 @@
             return $self->complete(
                 $session, $standardCmd,
                 'End of list (2 features found)',
+            );
+
+        # ;tmw -s
+        } elsif ($switch eq '-s') {
+
+            if (! $axmud::CLIENT->mainWinSystemMsgFlag) {
+
+                $axmud::CLIENT->set_mainWinSystemMsgFlag(TRUE);
+                $string = 'ON';
+
+            } else {
+
+                $axmud::CLIENT->set_mainWinSystemMsgFlag(FALSE);
+                $string = 'OFF';
+            }
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Allow system messages to be displayed in the \'main\' window turned ' . $string,
             );
 
         # ;tmw -u
@@ -16134,7 +16441,14 @@
 
             # Load the file, replacing data stored in memory
             if (! $fileObj->loadDataFile()) {
-                $errorCount++;
+
+                # Try loading the automatic backup, i.e. 'tasks.axm.bu'
+                if (! $fileObj->loadDataFile(undef, undef, undef, TRUE)) {
+                    $errorCount++;
+                } else {
+                    $count++;
+                }
+
             } else {
                 $count++;
             }
@@ -18559,12 +18873,15 @@
 
         my (
             $self, $session, $inputString, $userCmd, $standardCmd,
-            $pluginPath,
+            $arg,
             $check,
         ) = @_;
 
         # Local variables
-        my $pluginName;
+        my (
+            $dirHandle, $count, $errorCount, $name,
+            @fileList, @modList,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -18574,45 +18891,98 @@
 
         # If a file path was not specified, open a file chooser dialogue to decide which plugin file
         #   to load
-        if (! $pluginPath) {
 
-            $pluginPath = $session->mainWin->showFileChooser(
+        # ;lpl
+        if (! $arg) {
+
+            $arg = $session->mainWin->showFileChooser(
                 'Load plugin',
                 'open',
                 $axmud::DATA_DIR . '/plugins',
             );
 
-            if (! $pluginPath) {
+            if (! $arg) {
 
                 return $self->complete($session, $standardCmd, 'Plugin not loaded');
             }
 
-        } elsif ($pluginPath eq '-s') {
+        # ;lpl -s
+        } elsif ($arg eq '-s') {
 
-            $pluginPath = $session->mainWin->showFileChooser(
+            $arg = $session->mainWin->showFileChooser(
                 'Load plugin',
                 'open',
                 $axmud::SHARE_DIR . '/plugins',
             );
 
-            if (! $pluginPath) {
+            if (! $arg) {
 
                 return $self->complete($session, $standardCmd, 'Plugin not loaded');
             }
-        }
 
-        # Load the specified plugin
-        $pluginName = $axmud::CLIENT->loadPlugin($pluginPath);
-        if (! $pluginName) {
+        # ;lpl -a
+        } elsif ($arg eq '-a') {
 
-            return $self->error($session, $inputString, 'Plugin not loaded');
+            # Get a list of standard plugins
+            if (! opendir ($dirHandle, $axmud::SHARE_DIR . '/plugins')) {
 
-        } else {
+                return $self->error($session, $inputString, 'No standard plugins found');
+
+            } else {
+
+                @fileList = readdir ($dirHandle);
+                closedir $dirHandle;
+            }
+
+            # Eliminate non-plugin files (including those beginning with an underline, meaning
+            #   they're a support file for a main plugin that doesn't begin with an underline)
+            foreach my $file (@fileList) {
+
+                if ($file =~ m/^[[:alpha:]].*\.pm/) {
+
+                    push (@modList, $file);
+                }
+            }
+
+            if (! @modList) {
+
+                return $self->error($session, $inputString, 'No standard plugins found');
+            }
+
+            # Load each standard plugin in turn
+            $count = 0;
+            $errorCount = 0;
+
+            foreach my $file (@modList) {
+
+                if (! $axmud::CLIENT->loadPlugin($axmud::SHARE_DIR . '/plugins/' . $file)) {
+                    $errorCount++;
+                } else {
+                    $count++;
+                }
+            }
 
             return $self->complete(
                 $session, $standardCmd,
-                'Plugin \'' . $pluginName . '\' loaded',
+                'Standard plugins loaded: ' . $count . ', errors: ' . $errorCount,
             );
+
+        # ;lpl <path>
+        } else {
+
+            # Load the specified plugin
+            $name = $axmud::CLIENT->loadPlugin($arg);
+            if (! $name) {
+
+                return $self->error($session, $inputString, 'Plugin not loaded');
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Plugin \'' . $name . '\' loaded',
+                );
+            }
         }
     }
 }
@@ -20360,6 +20730,185 @@
     }
 }
 
+{ package Games::Axmud::Cmd::ConfigureTerminal;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('configureterminal', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['ctl', 'configterm', 'configureterminal'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Configures terminal settings';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $switch,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # ;ctl
+        if (! defined $switch) {
+
+            # Display header
+            $session->writeText('Global terminal settings');
+
+            # Display list
+            if ($axmud::CLIENT->useCtrlSeqFlag) {
+                $session->writeText('   Use VT100 control sequences             - ON');
+            } else {
+                $session->writeText('   Use VT100 control sequences             - OFF');
+            }
+
+            if ($axmud::CLIENT->useVisibleCursorFlag) {
+                $session->writeText('   Show visible cursor in default textview - ON');
+            } else {
+                $session->writeText('   Show visible cursor in default textview - OFF');
+            }
+
+            if ($axmud::CLIENT->useFastCursorFlag) {
+                $session->writeText('   Use a rapidly-blinking cursor           - ON');
+            } else {
+                $session->writeText('   Use a rapidly-blinking cursor           - OFF');
+            }
+
+            if ($axmud::CLIENT->useDirectKeysFlag) {
+                $session->writeText('   Use direct keyboard input in terminal   - ON');
+            } else {
+                $session->writeText('   Use direct keyboard input in terminal   - OFF');
+            }
+
+            # Display footer. Use a message consistent with other client commands
+            return $self->complete(
+                $session, $standardCmd,
+                'End of terminal settings list (3 settings found)',
+            );
+
+        # ;ctl -s
+        } elsif ($switch eq '-s') {
+
+            $axmud::CLIENT->toggle_termSetting('use_ctrl_seq');
+            if ($axmud::CLIENT->useCtrlSeqFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Use of VT100 control sequences has been enabled',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Use of VT100 control sequences has been disabled',
+                );
+            }
+
+        # ;ctl -c
+        } elsif ($switch eq '-c') {
+
+            $axmud::CLIENT->toggle_termSetting('show_cursor');
+            if ($axmud::CLIENT->useVisibleCursorFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Show visible cursor in default textview has been enabled',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Show visible cursor in default textview has been disabled',
+                );
+            }
+
+        # ;ctl -f
+        } elsif ($switch eq '-f') {
+
+            $axmud::CLIENT->toggle_termSetting('fast_cursor');
+            if ($axmud::CLIENT->useVisibleCursorFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Use of a rapidly-blinking cursor has been enabled',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Use of a rapidly-blinking cursor has been disabled',
+                );
+            }
+
+        # ;ctl -d
+        } elsif ($switch eq '-d') {
+
+            $axmud::CLIENT->toggle_termSetting('direct_keys');
+            if ($axmud::CLIENT->useDirectKeysFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Use direct keyboard input in terminal has been enabled',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Use direct keyboard input in terminal has been disabled',
+                );
+            }
+
+        } else {
+
+            return $self->error(
+                $session, $inputString,
+                'Unrecognised switch \'' . $switch . '\' - try -s, -c or -d',
+            );
+        }
+    }
+}
+
 { package Games::Axmud::Cmd::MSDP;
 
     use strict;
@@ -21354,9 +21903,11 @@
 
         # Local variables
         my (
-            $soundDir, $count, $switch, $testFlag, $fileFlag, $multFlag, $dlFlag, $flexFlag,
-            $string, $fileCount,
-            @list,
+            $soundDir, $count, $switch, $testFlag, $listFlag, $dlFlag, $multFlag, $autoFlag,
+            $flexFlag, $string, $path, $urlRegex, $tempDir, $targetDir, $errorCount, $fetchObj,
+            $dlPath, $extractObj,
+            @fileList,
+            %extHash,
         );
 
         # Several parts of this function need the directory in which MSP sounds are stored for the
@@ -21373,10 +21924,17 @@
             $count++;
         }
 
+        ($switch, @args) = $self->extract('-l', 0, @args);
+        if (defined $switch) {
+
+            $listFlag = TRUE;
+            $count++;
+        }
+
         ($switch, @args) = $self->extract('-d', 0, @args);
         if (defined $switch) {
 
-            $fileFlag = TRUE;
+            $dlFlag = TRUE;
             $count++;
         }
 
@@ -21390,7 +21948,7 @@
         ($switch, @args) = $self->extract('-a', 0, @args);
         if (defined $switch) {
 
-            $dlFlag = TRUE;
+            $autoFlag = TRUE;
             $count++;
         }
 
@@ -21412,7 +21970,7 @@
 
            return $self->error(
                 $session, $inputString,
-                'The switches -t, -d, -m, -a and -f can\'t be combined',
+                'The switches -t, -l, -d, -m, -a and -f can\'t be combined',
             );
         }
 
@@ -21465,7 +22023,7 @@
             }
 
             $session->writeText(
-                '   Allow ' . $amux::SCRIPT . ' to automatically download new sound files',
+                '   Allow ' . $axmud::SCRIPT . ' to automatically download new sound files',
             );
 
             if ($axmud::CLIENT->allowMspLoadSoundFlag) {
@@ -21494,9 +22052,9 @@
 
                 $session->writeText('      Number   Type  File path');
 
-                @list = sort {$a->number <=> $b->number} ($session->ivValues('soundHarnessHash'));
-                foreach my $soundObj (@list) {
-
+                foreach my $soundObj (
+                    sort {$a->number <=> $b->number} ($session->ivValues('soundHarnessHash'))
+                ) {
                     $session->writeText(
                         sprintf('      %-8.8s %-5.5s', $soundObj->number, $soundObj->type)
                         . ' ' . $soundObj->path,
@@ -21603,18 +22161,22 @@
                 );
             }
 
-        # ;msp -d
-        } elsif ($fileFlag) {
+        # ;msp -l
+        } elsif ($listFlag) {
 
             # (Don't bother checking whether $string was specified, or not - just ignore it)
+            if (! -e $soundDir) {
+
+                return $self->complete($session, $standardCmd, 'No files found in ' . $soundDir);
+            }
 
             # Get a list of files in the MSP directory for the current world, and its subdirectories
             File::Find::find(
-                sub { push (@list, $File::Find::name); },
+                sub { push (@fileList, $File::Find::name); },
                 $soundDir,
             );
 
-            if (! @list) {
+            if (! @fileList) {
 
                 return $self->complete($session, $standardCmd, 'No files found in ' . $soundDir);
 
@@ -21624,23 +22186,23 @@
                 $session->writeText('MSP sound files downloaded to ' . $soundDir);
 
                 # Display list
-                $fileCount = 0;
 
-                @list = sort {lc($a) cmp lc($b)} (@list);
+                @fileList = sort {lc($a) cmp lc($b)} (@fileList);
+                $count = 0;
 
-                foreach my $path (@list) {
+                foreach my $file (@fileList) {
 
                     # Ignore directories
-                    if (-f $path) {
+                    if (-f $file) {
 
-                        $fileCount++;
-                        $path =~ s/$soundDir//;
-                        $session->writeText('   ' . $path);
+                        $count++;
+                        $file =~ s/$soundDir//;
+                        $session->writeText('   ' . $file);
                     }
                 }
 
                 # Display footer
-                if ($fileCount == 1) {
+                if ($count == 1) {
 
                     return $self->complete($session, $standardCmd, 'End of list (1 file found)');
 
@@ -21648,9 +22210,166 @@
 
                     return $self->complete(
                         $session, $standardCmd,
-                        'End of list (' . $fileCount . ' files found)',
+                        'End of list (' . $count . ' files found)',
                     );
                 }
+            }
+
+        # ;msp -d
+        } elsif ($dlFlag) {
+
+            # Initialise some variables
+            $urlRegex = $axmud::CLIENT->constUrlRegex;
+            $tempDir = $axmud::DATA_DIR . '/data/temp/msp-extract';
+            $targetDir = $axmud::DATA_DIR . '/msp/' . $session->currentWorld->name . '/';
+            %extHash = $axmud::CLIENT->constSoundFormatHash;
+            $count = 0;
+            $errorCount = 0;
+
+            # If no URL was specified, prompt the user for one
+            if (! defined $string) {
+
+                $string = $session->mainWin->showEntryDialogue(
+                    'Download MSP sound pack',
+                    'Enter the link for the \'' . $session->currentWorld->longName
+                    . '\' sound pack',
+                );
+
+                if (! defined $string) {
+
+                    return $self->complete($session, $standardCmd, 'Download operation cancelled');
+                }
+            }
+
+            # Check the URL is valid
+            if (! ($string =~ m/$urlRegex/)) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Invalid download link \'' . $string . '\'',
+                );
+            }
+
+            # Attempt to download the file
+            $session->writeText('Downloading sound pack \'' . $string . '\'...');
+            # It might be a long wait, so make sure the message is visible right away
+            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
+
+            $fetchObj = File::Fetch->new(uri => $string);
+            $dlPath = $fetchObj->fetch(to => $axmud::DATA_DIR . '/data/temp');
+            if (! $dlPath) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Sound pack download failed; check the link and try again',
+                );
+            }
+
+            # If it's an archive file, extract it
+            if (
+                $dlPath =~ m/\.tar$/
+                || $dlPath =~ m/\.tgz$/
+                || $dlPath =~ m/\.gz$/
+                || $dlPath =~ m/\.zip$/
+                || $dlPath =~ m/\.bz2$/
+                || $dlPath =~ m/\.tbz$/
+                || $dlPath =~ m/\.lzma$/
+            ) {
+                # Attempt to download the file
+                $session->writeText('Sound pack downloaded, extracting...');
+                $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
+
+                # Build an Archive::Extract object
+                $extractObj = Archive::Extract->new(archive => $dlPath);
+                if (! $extractObj) {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'No files extracted (file decompression error)',
+                    );
+                }
+
+                # Extract the archive
+                if (! $extractObj->extract(to => $tempDir)) {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'No files extracted (file decompression error)',
+                    );
+                }
+
+                # Get a list of paths, relative to $tempDir, of all the extracted files
+                @fileList = @{$extractObj->files};  # e.g. export/tasks.axm
+                OUTER: foreach my $file (@fileList) {
+
+                    my $matchFlag;
+
+                    # Convert all the paths into absolute paths
+                    $file = $axmud::DATA_DIR . '/data/temp/msp-extract/' . $file;
+
+                    # Any file that ends in a valid sound file extension (one of those specified by
+                    #   GA::Client->constSoundFormatHash) should be copied into the current world's
+                    #   MSP directory
+                    INNER: foreach my $ext (keys %extHash) {
+
+                        if ($file =~ m/\.$ext$/) {
+
+                            $matchFlag = TRUE;
+                            last INNER;
+                        }
+                    }
+
+                    if ($matchFlag) {
+
+                        File::Copy::move($file, $targetDir);
+                        $count++;
+
+                    } else {
+
+                        # Invalid sound file
+                        unlink $file;
+                        $errorCount++;
+                    }
+                }
+
+                if (! $count) {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'Didn\'t extract any valid sound files (invalid files: ' . $errorCount
+                        . ')',
+                    );
+
+                } else {
+
+                    return $self->complete(
+                        $session, $standardCmd,
+                        'Extraction complete (valid sound files: ' . $count
+                        . ', invalid sound files: ' . $errorCount . ')',
+                    );
+                }
+
+            # If it's a (single) valid sound file, use it
+            } else {
+
+                foreach my $ext (keys %extHash) {
+
+                    if ($dlPath =~ m/\.$ext$/) {
+
+                        File::Copy::move($dlPath, $targetDir);
+
+                        return $self->complete(
+                            $session, $standardCmd,
+                            'Sound pack (consisting of one file) downloaded',
+                        );
+                    }
+                }
+
+                return $self->error(
+                    $session, $inputString,
+                    'The downloaded file isn\'t a valid archive (e.g. ending .zip) or a valid'
+                    . ' sound file (e.g. ending .wav)',
+                );
             }
 
         # ;msp -m
@@ -21674,7 +22393,7 @@
             }
 
         # ;msp -a
-        } elsif ($dlFlag) {
+        } elsif ($autoFlag) {
 
             $axmud::CLIENT->toggle_mspFlag('load');
 
@@ -22400,7 +23119,6 @@
         # Split @args into a name and data component, if possible; otherwise submit the whole
         #   argument list as a single string
         $string = join(' ', @args);
-#        if ($string =~ m/^([A-Za-z_][A-Za-z0-9_\-\.]*)\s(.*)/) {
         if ($string =~ m/^([[:alpha:]\_][[:word:]\-\.]*)\s(.*)/) {
 
             $name = lc($1);
@@ -22631,7 +23349,6 @@
         # Split @args into a name and data component, if possible; otherwise submit the whole
         #   argument list as a single string
         $string = join(' ', @args);
-#        if ($string =~ m/^([A-Za-z_][A-Za-z0-9_\-\.]*)\s(.*)/) {
         if ($string =~ m/^([[:alpha:]\_][[:word:]\-\.]*)\s(.*)/) {
 
             $name = lc($1);
@@ -25890,7 +26607,6 @@
 
         # Again for visually-impaired user benefit, check the name is valid (reserved names are
         #   allowed) before creating the new configuration object
-#        } elsif (! ($configuration =~ m/^[A-Za-z_]{1}[A-Za-z0-9_]{0,15}$/)) {
         } elsif (! ($configuration =~ m/^[[:alpha:]\_]{1}[[:word:]]{0,15}$/)) {
 
             return $self->error(
@@ -26653,6 +27369,14 @@
             # ;pro <config> -u <pattern>
             } elsif ($var eq 'use' || $var eq '-u') {
 
+                if ($axmud::CLIENT->regexCheck($args[1])) {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'The pattern you specified isn\'t a valid regular expression',
+                    );
+                }
+
                 $ttsObj->ivPush('exclusiveList', $args[1]);
 
                 return $self->complete(
@@ -26664,6 +27388,14 @@
             # ;pro <config> exclude <pattern>
             # ;pro <config> -x <pattern>
             } else {
+
+                if ($axmud::CLIENT->regexCheck($args[1])) {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'The pattern you specified isn\'t a valid regular expression',
+                    );
+                }
 
                 $ttsObj->ivPush('excludedList', $args[1]);
 
@@ -31733,7 +32465,6 @@
 
         # Check $char is valid (converting to lower case, if need be)
         $char = lc($char);
-#        if (! $char =~ m/^[a-z]$/) {
         if (! $char =~ m/^[[:lower:]]$/) {
 
             return $self->error(
@@ -32022,7 +32753,6 @@
 
         # Check $char is valid (converting to upper case, if need be)
         $char = uc($char);
-#        if (! $char =~ m/^[A-Z]$/) {
         if (! $char =~ m/^[[:upper:]]$/) {
 
             return $self->error(
@@ -39433,12 +40163,9 @@
 
         } else {
 
-            if (! $nameFlag) {
-
-                # When the user specifies a switch, open the cage at its second tab (so that the
-                #   triggers, aliases etc are visible immediately)
-                $winObj->notebook->set_current_page(1);
-            }
+            # Open the cage at its second tab (so that the triggers, aliases etc are visible
+            #   immediately)
+            $winObj->notebook->set_current_page(1);
 
             return $self->complete(
                 $session, $standardCmd,
@@ -41087,12 +41814,12 @@
 
         # Display header
         $session->writeText('Interface list (* = enabled, D = dependent, I = independent)');
-        $session->writeText('       # Order Interface name                   Category');
+        $session->writeText('       # Order Interface name                   Category Cooldown');
 
         # Display list
         foreach my $obj (@finalList) {
 
-            my ($string, $name);
+            my ($string, $name, $iv, $seconds, $format);
 
             if ($obj->enabledFlag) {
                 $string = '*';      # Enabled
@@ -41113,15 +41840,51 @@
                 $name = substr($name, 0, 45) . '...';
             }
 
-            $session->writeText(
-                $string . sprintf (
-                    '%5.5s %5.5s %-32.32s %-16.16s',
-                    $obj->number,
-                    $posnHash{$obj->number},
-                    $name,
-                    $obj->category,
-                ),
-            );
+            # Show cooldown expire time, if set (NB timers don't have cooldowns)
+            if ($obj->category ne 'timer') {
+
+                $iv = $obj->category . 'CooldownHash';
+                $seconds = $session->ivShow($iv, $obj->number);
+                if (defined $seconds) {
+
+                    $seconds = $seconds - $session->sessionTime;
+                    if ($seconds < 0) {
+
+                        # Already expired, but IV not updated yet
+                        $seconds = undef;
+
+                    } else {
+
+                        $seconds = sprintf("%.1f", $seconds);
+                    }
+                }
+            }
+
+            if (! defined $seconds) {
+
+                $session->writeText(
+                    $string . sprintf (
+                        '%5.5s %5.5s %-32.32s %-8.8s',
+                        $obj->number,
+                        $posnHash{$obj->number},
+                        $name,
+                        $obj->category,
+                    ),
+                );
+
+            } else {
+
+                $session->writeText(
+                    $string . sprintf (
+                        '%5.5s %5.5s %-32.32s %-8.8s %.1f',
+                        $obj->number,
+                        $posnHash{$obj->number},
+                        $name,
+                        $obj->category,
+                        $seconds,
+                    ),
+                );
+            }
 
             if ($verboseFlag) {
 
@@ -49197,7 +49960,12 @@
         }
 
         # Import the list of Axbasic directories, and insert '/data/scripts/' at the beginning of it
-        @list = ($axmud::DATA_DIR . '/data/scripts', $axmud::CLIENT->scriptDirList);
+        if ($^O eq 'MSWin32') {
+            @list = ($axmud::DATA_DIR . '\\data\\scripts', $axmud::CLIENT->scriptDirList);
+        } else {
+            @list = ($axmud::DATA_DIR . '/data/scripts', $axmud::CLIENT->scriptDirList);
+        }
+
         if (! @list) {
 
             return $self->complete($session, $standardCmd, 'The script directory list is empty');
@@ -53818,13 +54586,13 @@
 
                     return $self->complete(
                         $session, $standardCmd,
-                        'Workspace grid inivisible window flag was already set to \'' . $string
+                        'Workspace grid invisible window flag was already set to \'' . $string
                         . '\'',
                     );
                 } else {
 
                     $axmud::CLIENT->set_gridInvisWinFlag($testFlag);
-                    $resetMsg = 'Workspace grid inivisible window flag set to \'' . $string . '\'',
+                    $resetMsg = 'Workspace grid invisible window flag set to \'' . $string . '\'',
                 }
             }
         }
@@ -57463,6 +58231,15 @@
         if (! defined $pattern || ($workspaceFlag && ! defined $workspaceNum) || @args) {
 
             return $self->improper($session, $inputString);
+        }
+
+        # Check $pattern is valid
+        if ($axmud::CLIENT->regexCheck($pattern)) {
+
+            return $self->error(
+                $session, $inputString,
+                'The pattern \'' . $pattern . '\' isn\'t a valid regular expression',
+            );
         }
 
         # Set the workspace grid onto which the 'external' window should be grabbed
@@ -61129,14 +61906,19 @@
         } elsif ($switch eq '-m') {
 
             if ($colour) {
-                $axmud::CLIENT->set_customShowTextColour($colour);
+
+                $axmud::CLIENT->set_customShowSystemTextColour($colour);
+
             } else {
-                $axmud::CLIENT->set_customShowTextColour($axmud::CLIENT->constShowTextColour);
+
+                $axmud::CLIENT->set_customShowSystemTextColour(
+                    $axmud::CLIENT->constShowSystemTextColour,
+                );
             }
 
             return $self->complete(
                 $session, $standardCmd,
-                'System message colour set to \'' . $axmud::CLIENT->customShowTextColour
+                'System message colour set to \'' . $axmud::CLIENT->customShowSystemTextColour
                 . '\'',
             );
 
@@ -61290,8 +62072,8 @@
         $self->showLine(
             $textViewObj,
             'System messages',
-            $axmud::CLIENT->customShowTextColour,
-            $axmud::CLIENT->constShowTextColour,
+            $axmud::CLIENT->customShowSystemTextColour,
+            $axmud::CLIENT->constShowSystemTextColour,
         );
 
         $self->showLine(
@@ -63296,6 +64078,13 @@
                 return $self->error(
                     $session, $inputString,
                     'Add a trigger break using which pattern? (Try \';break -t <pattern>\')',
+                );
+
+            } elsif ($axmud::CLIENT->regexCheck($arg)) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'The pattern \'' . $arg . '\' isn\'t a valid regular expression',
                 );
 
             } else {
@@ -66893,7 +67682,7 @@
             );
         }
 
-        # If the switch -a was specified instead of <route>, we need to construct a route from the
+        # If the switch '-a' was specified instead of <route>, we need to construct a route from the
         #   contents of the current recording
         if ($useRecordingFlag) {
 
@@ -66922,6 +67711,16 @@
                 # Compile a string like 'n;w;nw;n;up;open door'
                 $route = join ($axmud::CLIENT->cmdSep, @cmdList);
             }
+
+        # If <route> is a speedwalk command, check it's a valid speedwalk command
+        } elsif (
+            index($route, $axmud::CLIENT->constSpeedSigil) == 0
+            && ! $session->parseSpeedWalk($route)
+        ) {
+            return $self->error(
+                $session, $inputString,
+                'Invalid speedwalk command \'' . $route . '\'',
+            );
         }
 
         # Find the right cage
@@ -67018,7 +67817,7 @@
             $routeObj->ivPoke('hopFlag', $hopFlag);
 
             # Set the number of steps (individual commands on the route)
-            $routeObj->resetStepCount();
+            $routeObj->resetStepCount($session);
         }
 
         if ($roadFlag) {
@@ -68327,30 +69126,16 @@
 
             # Otherwise, ask the world model directly to provide the route (code adapted from
             #   GA::Win::Map->processPathCallback)
-            if ($session->mapObj->currentRoom->parent eq $roomObj->parent) {
 
-                # The rooms are in the same region
-                # Use the A* algorithm to find the shortest path between the two rooms
-                # (It returns two list references, one containing the list of GA::ModelObj::Room
-                #   objects on the path, the other containing the list of GA::Obj::Exit objects to
-                #   move between them)
-                ($roomListRef, $exitListRef) = $session->worldModelObj->findPath(
-                    $session->mapObj->currentRoom,
-                    $roomObj,
-                    $session->worldModelObj->avoidHazardsFlag,
-                );
-
-            } else {
-
-                # The rooms are in different regions
-                # Use the universal version of the A* algorithm to find a path between the two rooms
-                ($roomListRef, $exitListRef) = $session->worldModelObj->findUniversalPath(
-                    $session,
-                    $session->mapObj->currentRoom,
-                    $roomObj,
-                    $session->worldModelObj->avoidHazardsFlag,
-                );
-            }
+            # Use the universal version of the A* algorithm to find a path between the current and
+            #   selected rooms (if they're in the same region, the call is automatically redirected
+            #   to ->findPath)
+            ($roomListRef, $exitListRef) = $self->worldModelObj->findUniversalPath(
+                $session,
+                $session->mapObj->currentRoom,
+                $roomObj,
+                $session->worldModelObj->avoidHazardsFlag,
+            );
 
             if (! defined $roomListRef || ! @$roomListRef) {
 
@@ -68866,7 +69651,11 @@
         }
 
         # Take the route
-        $session->worldCmd($routeObj->route);
+        if (index($routeObj->route, $axmud::CLIENT->constSpeedSigil) == 0) {
+            $session->speedWalkCmd($routeObj->route);
+        } else {
+            $session->worldCmd($routeObj->route);
+        }
 
         if ($routeObj->stepCount == 1) {
 
@@ -70455,6 +71244,21 @@
         # Import the current world profile
         $worldObj = $session->currentWorld;
 
+
+        # Check the specified pattern is valid
+        if ($exceptFlag) {
+
+            $pattern = $channel;
+        }
+
+        if ($axmud::CLIENT->regexCheck($pattern)) {
+
+            return $self->error(
+                $session, $inputString,
+                'The pattern \'' . $pattern . '\' isn\'t a valid regular expression',
+            );
+        }
+
         # Add the pattern to the profile
         if (! $flagCount || $gagFlag) {
 
@@ -70470,10 +71274,9 @@
 
         } else {
 
-            # In this case, $channel is actually the pattern
-            $worldObj->ivPush('noChannelList', $channel);
+            $worldObj->ivPush('noChannelList', $pattern);
 
-            $msg = 'Added channel exception pattern \'' . $channel . '\'';
+            $msg = 'Added channel exception pattern \'' . $pattern . '\'';
         }
 
         # If the Channels or Divert tasks are currently running, tell them to reset their triggers
@@ -71028,6 +71831,76 @@
 }
 
 # Chat task
+
+{ package Games::Axmud::Cmd::GetIP;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('getip', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['gip', 'getip'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Displays your IP address';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $ip;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        $ip = $axmud::CLIENT->ipv4Get();
+        if (! defined $ip) {
+
+            return $self->error($session, $inputString, 'Unable to determine your IP address');
+
+        } else {
+
+            return $self->complete($session, $standardCmd, 'Your IP address is: ' . $ip);
+        }
+    }
+}
 
 { package Games::Axmud::Cmd::ChatListen;
 
@@ -78832,7 +79705,7 @@
                 # No command cages available
                 return $self->error(
                     $session, $inputString,
-                    'Teleport failure: could not find correspoding world command',
+                    'Teleport failure: could not find corresponding world command',
                 );
             }
 
@@ -79447,6 +80320,7 @@
                 return $session->mapObj->setCurrentRoom(
                     undef,
                     $self->_objClass . '->do',    # Character now lost
+                    FALSE,                        # Don't use auto-rescue mode
                 );
             }
 
@@ -79509,6 +80383,15 @@
         if (! defined $switch || ! defined $pattern || defined $check) {
 
             return $self->improper($session, $inputString);
+        }
+
+        # Check $pattern is valid
+        if ($axmud::CLIENT->regexCheck($pattern)) {
+
+            return $self->error(
+                $session, $inputString,
+                'The pattern \'' . $pattern . '\' isn\'t a valid regular expression',
+            );
         }
 
         # ;aep -d <pattern>
@@ -81079,7 +81962,7 @@
             );
 
         # Check the command exists
-        } elsif (! $session->statusTask->ivExists('commandHash', $cmd)) {
+        } elsif (! $session->statusTask->ivExists('cmdHash', $cmd)) {
 
             return $self->error(
                 $session, $inputString,
@@ -81297,11 +82180,11 @@
         if (! defined $number) {
 
             $session->writeText(
-                'Local wimpy  : ' . $charObj->localWimpy . '/' . $worldObj->constLocalWimpyMax,
+                'Local wimpy  : ' . $charObj->localWimpy . '/' . $charObj->constLocalWimpyMax,
             );
 
             $session->writeText(
-                'Remote wimpy : ' . $charObj->remoteWimpy . '/' . $worldObj->remoteWimpyMax,
+                'Remote wimpy : ' . $charObj->remoteWimpy . '/' . $charObj->remoteWimpyMax,
             );
 
             return $self->complete($session, $standardCmd, 'Wimpy settings displayed');
@@ -81310,12 +82193,12 @@
         } elsif (! $switch) {
 
             # Check that <number> is valid
-            if ($number =~ /\D/ || $number < 0 || $number > $worldObj->constLocalWimpyMax) {
+            if ($number =~ /\D/ || $number < 0 || $number > $charObj->constLocalWimpyMax) {
 
                 return $self->error(
                     $session, $inputString,
                     'Invalid wimpy level \'' . $number . '\' - must be 0-'
-                    . $worldObj->constLocalWimpyMax,
+                    . $charObj->constLocalWimpyMax,
                 );
 
             } else {
@@ -81337,7 +82220,7 @@
                 return $self->error(
                     $session, $inputString,
                     'Invalid wimpy level \'' . $number . '\' - must be 0-'
-                    . $worldObj->remoteWimpyMax,
+                    . $charObj->remoteWimpyMax,
                 );
 
             } else {
@@ -81421,28 +82304,29 @@
             return $self->improper($session, $inputString);
         }
 
-        if (! $session->statusTask) {
+        if (! $session->statusTask || ! $session->currentChar) {
 
             return $self->error(
                 $session, $inputString,
-                'This command can only be used when the Status task is running',
+                'This command can only be used when the Status task is running and when there\'s'
+                . ' a current character profile',
             );
 
         } elsif ($status eq '-a' || $status eq 'alive') {
 
-            $result = $session->statusTask->set_lifeStatus('alive');
+            $result = $session->statusTask->setValue('life_status', 'alive');
 
         } elsif ($status eq '-s' || $status eq 'sleep') {
 
-            $result = $session->statusTask->set_lifeStatus('sleep');
+            $result = $session->statusTask->setValue('life_status', 'sleep');
 
         } elsif ($status eq '-p' || $status eq 'passout') {
 
-            $result = $session->statusTask->set_lifeStatus('passout');
+            $result = $session->statusTask->setValue('life_status', 'passout');
 
         } elsif ($status eq '-d' || $status eq 'dead') {
 
-            $result = $session->statusTask->set_lifeStatus('dead');
+            $result = $session->statusTask->setValue('life_status', 'dead');
 
         } else {
 
@@ -81463,7 +82347,7 @@
 
             return $self->complete(
                 $session, $standardCmd,
-                'Current character\'s life status set to \'' . $session->statusTask->lifeStatus
+                'Current character\'s life status set to \'' . $session->currentChar->lifeStatus
                 . '\'',
             );
         }
@@ -87125,6 +88009,15 @@
             return $self->improper($session, $inputString);
         }
 
+        # Check $pattern is valid
+        if ($axmud::CLIENT->regexCheck($pattern)) {
+
+            return $self->error(
+                $session, $inputString,
+                'The pattern \'' . $pattern . '\' isn\'t a valid regular expression',
+            );
+        }
+
         # Import the hash of minion strings
         %hash = $session->worldModelObj->minionStringHash;
         if (! %hash) {
@@ -88614,13 +89507,15 @@
             $session->writeText('   Ignore first n characters: ' . $obj->ignoreFirstChars);
             $session->writeText('   Use first n characters: ' . $obj->useFirstChars);
 
-            if (! defined $obj->usePatternBackRefs) {
+            if (! defined $obj->usePatternGroups) {
                 $string = '(not set)';
             } else {
-                $string = $obj->usePatternBackRefs;
+                $string = $obj->usePatternGroups;
             }
 
-            $session->writeText('   If pattern (regex) matches, use only backrefs: ' . $string);
+            $session->writeText(
+                '   If pattern (regex) matches, use only group substrings: ' . $string,
+            );
 
             if (! $obj->noExtractList) {
                 $string = '(not set)';

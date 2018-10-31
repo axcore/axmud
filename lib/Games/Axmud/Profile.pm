@@ -206,8 +206,9 @@
             mxpOverrideHash             => {
 #               'room'                  => TRUE,            # GA::Client->allowMxpRoomFlag
             },
-            # A hash which overrides the values of GA::Client->termTypeMode, ->customClientName and
-            #   ->customClientVersion
+            # A hash which overrides the values of GA::Client->termTypeMode, ->customClientName,
+            #   ->customClientVersion, ->useCtrlSeqFlag, ->useVisibleCursorFlag and
+            #   ->useDirectKeysFlag
             # The key has the same name as the GA::Client IV. If the key doesn't exist in the hash,
             #   the session uses the value of the GA::Client IV. If the key exists in the hash, the
             #   session uses the key's corresponding value instead. The corresponding value should
@@ -218,6 +219,9 @@
 #               'termTypeMode'          => 'send_client',   # GA::Client->termTypeMode
 #               'customClientName'      => '',              # GA::Client->customClientName
 #               'customClientVersion'   => '',              # GA::Client->customClientVersion
+#               'useCtrlSeqFlag'        => TRUE,            # GA::Client->useCtrlSeqFlag
+#               'useVisibleCursorFlag'  => FALSE,           # GA::Client->useVisibleCursorFlag
+#               'useDirectKeysFlag'     => FALSE,           # GA::Client->useDirectKeysFlag
             },
             # A hash which overrides the values of GA::Client->echoSigilFlag, ->perlSigilFlag,
             #   ->scriptSigilFlag and ->multiSigilFlag
@@ -312,25 +316,26 @@
             #   sets provided by Perl's Encode module (and stored in GA::Client->charSetList); if
             #   set to 'undef', GA::Client->charSet is used as the character set
             worldCharSet                => undef,
-            # MSSP data collected from this world (if any, containing only generic variables). Hash
-            #   in the form
-            #       $msspGenericValueHash{variable} = value
-            msspGenericValueHash        => {},
-            # MSSP data collected from this world (if any, containing only custom variables)
-            msspCustomValueHash         => {},
 
             # The terminal type to use for this world. If set, it is sent to the world when the
             #   server requests a terminal type. If an empty string (or 'undef'), Axmud decides
             #   which terminal type to send, based on the GA::Client->termTypeMode,
             #   ->customClientName and ->customClientVersion
             termType                    => undef,
-            # The console size to use for this world ('undef' if not set)
+            # The terminal size to use for this world ('undef' if not set)
             columns                     => 0,           # e.g. 100
             rows                        => 0,           # e.g. 50
             # If the flag is TRUE, ->termType, ->columns and ->rows are sent to the world manually
             #   (and NAWS is not used in this session) after logging in. If set to FALSE, they
             #   aren't sent, and NAWS can be used (if the GA::Client flag allows it)
             sendSizeInfoFlag            => FALSE,
+
+            # MSSP data collected from this world (if any, containing only generic variables). Hash
+            #   in the form
+            #       $msspGenericValueHash{variable} = value
+            msspGenericValueHash        => {},
+            # MSSP data collected from this world (if any, containing only custom variables)
+            msspCustomValueHash         => {},
 
             # Automatic login mode. Axmud needs to know when the character has logged in; the
             #   GA::Session->loginFlag is set to TRUE at this point
@@ -395,28 +400,27 @@
             #   1 for the first listed character, 2 for the second one, and so on
             # A collection of patterns to take care of this situation. A list in groups of three;
             #   the first item is a pattern which should match the line containing the character's
-            #   name and usually uses one or more backreferences. The second item is the number of
-            #   the backreference containing the character name (can be set if multiple character
+            #   name and usually uses one or more group substrings. The second item is the number of
+            #   the group substring containing the character name (can be set if multiple character
             #   names appear on the same line; set to 0 if only one character name appears per
             #   matching line). The third item is the command to send to the world, and should
-            #   usually contain a backreference like $1
+            #   usually contain a group substring variable like $1
             #
             #       e.g.     Choose a character
             #                1. Gandalf
             #                2. Bilbo
             #
             #       In this case, the pattern to use would be '(\d)\.\s(.*)'
-            #       Characters appear on their own line, so we can use the backreference number 0
-            #       The corresponding world command to use would be simply '"$1"' - above, the
-            #           number 1 or 2. If the command contains backreferences, it should be
-            #           enclosed by double-quotes (as with rewriter triggers) - '"$1"', not '$1'
+            #       Characters appear on their own line, so we can use the group substring number 0
+            #       The corresponding world command to use would be simply '$1' - above, the
+            #           number 1 or 2
             #
             #       e.g.    1. Gandalf 2. Bilbo
             #
             #       In this case, the pattern to use might be '(\d)\.\s(.*)\s(\d)\.\s(.*)',
-            #           the backreference number would be 1, and the world command would be '"$1"'
+            #           the group substring number would be 1, and the world command would be '$1'
             #       We'd then add a second identical pattern to the list, together with the
-            #           backreference number 2 and the world command '"$2"'
+            #           group substring number 2 and the world command '$2'
             #
             # If this list is empty, it is ignored. If $self->loginMode is not 'mission', it is
             #   ignored
@@ -440,9 +444,9 @@
             #   0 - the pattern matching a line containing the character's name (because a
             #           perl substitution will be performed, it must match the whole line - begin
             #           and/or end the pattern with '.*' if necessary
-            #   1-  the number of the backreference that contains the character's name; can be set
+            #   1-  the number of the group substring that contains the character's name; can be set
             #           to 0 if only one character name appears per line
-            #   2 - the world command to send, usually enclosed within double-quotes
+            #   2 - the world command to send, usually including a group substring variable, e.g. $1
             loginSpecialList            => [],
 
             # Automatic quit mode. Users can disconnect from many worlds by sending some kind of
@@ -516,6 +520,10 @@
             # When this flag is FALSE, a line that doesn't end in a with a newline character (or
             #   is terminated with EOR or IAC GA) is processed (and displayed) immediately; it can
             #   be marked as a prompt some fractions of a second later, if no text is received
+            # Strict prompts mode is not applied when $self->specialEchoMode is 'enabled' (because
+            #   if world commands are sent to the world, one character at a time, and then echoed
+            #   back to us, the patterns in $self->cmdPromptPatternList won't recognise them as
+            #   valid prompts)
             strictPromptsMode           => FALSE,
             # Empty line suppression. If set to 0, no empty lines are suppressed. If set to 1, all
             #   empty lines are suppressed. If set to n (where n > 1), all consecutive lines from
@@ -545,12 +553,12 @@
             # In worlds which specify multiples in contents lines like this:
             #   (2) A big axe
             # ...a pattern which matches the portion '(2)'
-            # If the pattern must contain a backreference. The first backreference is used as the
-            #   multiple (other backreferences are ignored). In the example above, we would use the
-            #   pattern '\((\d+)\)'.
+            # The pattern must contain a group substring. The first group substring is used as the
+            #   multiple (other group substrings are ignored). In the example above, we would use
+            #   the pattern '\((\d+)\)'
             # Ignored if set to 'undef' (or an empty string). A matching pattern is NOT used as the
-            #   multiple if the backreference does not contain a positive integer (1 is acceptable,
-            #   but 0 is not)
+            #   multiple if the group substring does not contain a positive integer (1 is
+            #   acceptable, but 0 is not)
             multiplePattern             => undef,
 
             # Logging preferences for this world. The default settings are stored in
@@ -574,49 +582,50 @@
             #   ->weightUnit (If ->weightUnit is 'undef', should be an empty list)
             weightUnitStringList        => [],
 
+            # Dark room pattern groups (take the place of a room statement) (groups of 1)
+            #   [0]     - the pattern to match
+            darkRoomPatternList         => [],
+            # Failed exit pattern groups (groups of 1)
+            #   [0]     - the pattern to match
+            failExitPatternList         => [],
             # Closed door pattern groups (groups of 1)
             #   [0]     - the pattern (regex) to match
             doorPatternList             => [],
             # Locked door pattern groups (groups of 1)
             #   [0]     - the pattern to match
             lockedPatternList           => [],
-            # Failed exit pattern groups (groups of 1)
+            # Involuntary exit patterns (groups of 1)
             #   [0]     - the pattern to match
-            failExitPatternList         => [],
-            # Transient exit pattern groups, matching any exits which are temporary and usually in
-            #   random locations (such as the entrance to a wagon, which is moving from room to
-            #   room) (groups of 1)
-            #   [0]     - the pattern to match
-            transientExitPatternList    => [],
-            # Dark room pattern groups (take the place of a room statement) (groups of 1)
-            #   [0]     - the pattern to match
-            darkRoomPatternList         => [],
+            involuntaryExitPatternList  => [],
             # Unspecified room pattern groups (tell us that the character has arrived in a new room,
             #   but the room statement won't be displayed) (groups of 1)
             #   [0]     - the pattern to match
             unspecifiedRoomPatternList  => [],
-            # Involuntary exit patterns (groups of 1)
-            #   [0]     - the pattern to match
-            involuntaryExitPatternList  => [],
             # Follow exit patterns, used when 'You follow Gandalf north' moves the character to a
             #   new room, and when the world sends a new room statement (groups of 2)
             #   [0]     - the pattern to match
-            #   [1]     - The backreference containing the direction
+            #   [1]     - the number of the group substring containing the direction
             followPatternList           => [],
             # Follow anchor patterns, used when 'You follow Gandalf north' moves the character to a
             #   new room, but when the world doesn't send a new room statement (so the line
             #   matching the pattern must act as an anchor line) (groups of 2)
             #   [0]     - the pattern to match
-            #   [1]     - The backreference containing the direction
+            #   [1]     - the number of the group substring containing the direction
             followAnchorPatternList     => [],
+            # Transient exit pattern groups, matching any exits which are temporary and usually in
+            #   random locations (such as the entrance to a wagon, which is moving from room to
+            #   room) (groups of 2)
+            #   [0]     - the pattern to match
+            #   [1]     - the number of the destination room, or 'undef'/an empty string/zero if no
+            #               destination room is set
+            transientExitPatternList    => [],
 
-            # Display format list - how the Status task data should be displayed in the task's
-            #   window (if it's open)
-            # If it's an empty list, the Status task will use a default display. See the comments in
-            #   the Status task for an explanation of the list
-            # Standard variables are in the form @name@; custom variables in the form #name#
-            # (See the comments in GA::Task::Status->new for a list of standard variables)
-            displayFormatList           => [
+            # Status task format list - how the Status task should display its variables in its
+            #   task window (if it's open)
+            # Status task variables are in the form @variable_name@; any items in the list matching
+            #   that format are substituted for a value provided by the Status task, every time its
+            #   task window is updated
+            statusFormatList            => [
                 # Not reasonable to expect the user to create this for themselves, so use a default
                 #   list
                 'HP: @health_points@ (@health_points_max@) MP: @magic_points@ (@magic_points_max@)'
@@ -626,26 +635,23 @@
                 'Bank: @bank_balance@ Purse: @purse_contents@',
                 'Local Wimpy: @local_wimpy@ (@local_wimpy_max@) Remote Wimpy: @remote_wimpy@'
                 . ' (@remote_wimpy_max@)',
-                '@fight_count@ @coward_count@',
-                '@interaction_count@',
+                '@fight_count@ @coward_string@',
+                '@interact_string@',
                 'Temp: XP: @temp_xp_count@ (Av: @temp_xp_average@) QP: @temp_quest_count@'
                 . ' Money: @temp_money_count@ Time: @temp_timer@',
                 ' @temp_fight_count@ @temp_coward_count@',
-                ' @temp_interaction_count@',
+                ' @temp_interact_count@',
                 'Tasks: @task@ @task_active@',
             ],
             # Gauge format list - how the Status task should display data in the 'main' window's
             #   gauge box (groups of 7)
-            #   [0] - the variable to display in the gauge; one of the keys in the Status task's
-            #           ->singleBackRefVarHash (e.g. 'health_points') or (if that key doesn't
-            #           exist), one of the keys in $self->customStatusVarHash
-            #   [1] - the variable to display in the gauge as the 'maximum'; also one of the keys in
-            #           the Status task's ->singleBackRefVarHash (e.g. 'health_points_max') or (if
-            #           that key doesn't exist), one of the keys in $self->customVarHash
+            #   [0] - the variable to display in the gauge; can be any of the Status task's
+            #           character, fixed or custom variables
+            #   [1] - the variable to display in the gauge as the 'maximum'; can be any of the
+            #           Status task's character, fixed or custom variables
             #       - NB It's possible to use the same scalar in [0] and [1], e.g. 'bank_balance',
-            #           in order to display a gauge that's always full (assuming that
-            #           the Status task's ->gaugeValueFlag is TRUE, so the numerical value is also
-            #           displayed)
+            #           in order to display a gauge that's always full (assuming that the Status
+            #           task's ->gaugeValueFlag is TRUE, so the numerical value is also displayed)
             #   [2] - if TRUE, the total size of the gauge is ($value + $maxValue). If FALSE (or
             #           'undef'), the total size is $maxValue
             #   [3] - the label to use, e.g. 'HP'
@@ -667,58 +673,53 @@
                 'social_points', 'social_points_max', FALSE, 'SP',
                     'MAGENTA', 'magenta', 'WHITE',
             ],
-            # Hash of custom Status task variables, whose values are set either by MSDP (if enabled)
-            #   or by pattern groups in $self->singleBackRefPatternList. Hash in the form
-            #       $customStatusVarHash{variable_name} = MSDP_VARIABLE   < use MSDP
-            #       $customStatusVarHash{variable_name} = undef           < singleBackRefPatternList
-            # NB If 'variable_name' already exists as a standard variable (e.g. 'health_points'),
-            #   it's treated as a custom variable
-            customStatusVarHash         => {},
+            # Hash of Status task variables, whose values can be set when MSDP variables are
+            #   received. Hash in the form
+            #       $msdpStatusVarHash{MSDP_VARIABLE} = status_task_variable
+            # Normally, the Status task only accepts a subset of MSDP variables for the categories
+            #   'Character', 'Combat' and 'World'. Adding key-value pairs to this hash allow the
+            #   Status task to accept other MSDP variables too
+            msdpStatusVarHash           => {},
             # Bar string pattern groups (groups of 6)
             #   [0] - the pattern to match
-            #   [1] - which backreference contains the data we need
-            #   [2] - 'health', 'magic', 'energy', 'guild', 'social', 'xp_current', 'xp_next_level'
-            #           (other Status task standard variables can't be used here)
+            #   [1] - the number of the group substring that contains the data we need
+            #   [2] - 'health', 'magic', 'energy', 'guild', 'social', 'xp_current', 'xp_next_level',
+            #           'qp_current', 'qp_next_level', 'op_current', 'op_next_level' (note that
+            #           other values, including all other Status task variables, are invalid here)
             #   [3] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let
             #           the Status task choose
             #   [4] - the string which represents 1 unit, e.g. '=' or '*'
             #   [5] - how many units equal the maximum
             barPatternList              => [],
-            # Single backref pattern groups (groups of 4)
+            # Pattern groups containing one or more group substrings, only one of which is used
+            #   (groups of 4)
             #   [0] - the pattern to match
-            #   [1] - which backreference contains the data we need
-            #   [2] - 'health_points', 'health_points_max', 'magic_points', 'magic_points_max',
-            #           'energy_points', 'energy_points_max', 'guild_points', 'guild_points_max',
-            #           'social_points', 'social_points_max', 'xp_current', 'xp_next_level',
-            #           'xp_total', 'level', 'alignment', 'life_count', 'death_count', 'life_max',
-            #           'local_wimpy', 'remote_wimpy', 'remote_wimpy_max', 'bank_balance',
-            #           'purse_contents', 'opp_name', 'opp_health', 'opp_health_max', 'opp_level',
-            #           'opp_strength' or a custom variable
-            #           (other Status task standard variables can't be used here)
+            #   [1] - the number of the group substring that contains the data we need
+            #   [2] - any Status task character, local or custom variable
             #   [3] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let
             #           the Status task choose
-            singleBackRefPatternList    => [],
+            groupPatternList            => [],
             # Affect string pattern groups (groups of 3)
             #   [0] - the pattern to match
-            #   [1] - which backreference contains the data we need (probably a string like
-            #           'Curse Invisibility', with each word corresponding to a key in
+            #   [1] - the number of the group substring that contains the data we need (probably a
+            #           string like 'Curse Invisibility', with each word corresponding to a key in
             #           the current character's ->affectHash. If the string means that the
-            #           character is not affected by any spells (etc), use the value 0
+            #           character is not affected by any spells (etc), use the number 0
             #   [2] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let
             #           the Status task choose
             affectPatternList           => [],
             # Stat string pattern groups (groups of 4)
             #   [0] - the pattern to match
-            #   [1] - which backreference contains the data we need
+            #   [1] - the number of the group substring that contains the data we need
             #   [2] - a key in the stat hash (e.g. 'int', 'con', 'dex')
             #   [3] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let
             #           the Status task choose
             statPatternList             => [],
             # Age string pattern groups (groups of 1)
-            #   [0] - the pattern to match (all backreferences are used)
+            #   [0] - the pattern to match (all group substrings are used)
             agePatternList              => [],
             # Time string pattern groups (groups of 1)
-            #   [0] - the pattern to match (only the first backreference is used)
+            #   [0] - the pattern to match (only the first group substring is used)
             timePatternList             => [],
             # Status ignore pattern groups (groups of 1)
             #   [0] - the pattern to match when strings should be ignored
@@ -736,8 +737,8 @@
 
             # Inventory string pattern groups (groups of 5)
             #   [0] - the pattern to match
-            #   [1] - which backref contains object(s) in the inventory (might be 0 if the line
-            #           doesn't contain any objects)
+            #   [1] - the number of the group substring that contains object(s) in the inventory
+            #           (might be 0 if the line doesn't contain any objects)
             #   [2] - what kind of possession this is. Standard strings are:
             #           'wield', 'hold', 'wear', 'carry' for objects;
             #           'sack' for anything being carried in something else (which usually doesn't
@@ -799,17 +800,17 @@
             #   which don't match one of the patterns in ->inventoryIgnorePatternList) are processed
             #   as soon as they are received; other lines between 'start' and the first empty line
             #   are processed when the Inventory task is next called (default: once a second)
-            # NB 'optional' patterns must contain backrefs; only the backrefs are processed as an
-            #   object. 'start' and 'stop' patterns can contain backrefs, or not; the backrefs are
-            #   processed as objects, if found
+            # NB 'optional' patterns must contain group substrings; only the group substrings are
+            #   processed as an object. 'start' and 'stop' patterns can contain group substrings, or
+            #   not; the group substrings are processed as objects, if found
             # NB In modes 'start_stop' and 'start_empty', lines which don't match an 'optional'
             #   pattern are processed whole
             inventoryMode               => 'match_all',
 
             # Object condition pattern groups (groups of 4)
             #   [0] - the pattern to match
-            #   [1] - which backref contains the object (set to 0 if no part of the string is
-            #           guaranteed to contain the object)
+            #   [1] - the number of the group substring that contains the object (set to 0 if no
+            #           part of the string is guaranteed to contain the object)
             #   [2] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger (all the
             #           triggers are disabled when the task is disactivated, so we don't need a
             #           'choose')
@@ -820,7 +821,8 @@
 
             # Fight pattern groups applying to all characters in the world (groups of 2)
             #   [0] - the pattern to match
-            #   [1] - which backref contains the target (if 0, string doesn't contain the target)
+            #   [1] - the number of the group substring that contains the target (if 0, string
+            #           doesn't contain the target)
             fightStartedPatternList     => [],
             cannotFindTargetPatternList => [],
             targetAlreadyDeadPatternList
@@ -841,7 +843,8 @@
 
             # Interaction pattern groups applying to all characters in the world (groups of 2)
             #   [0] - the pattern to match
-            #   [1] - which backref contains the target (if 0, string doesn't contain the target)
+            #   [1] - the number of the group substring that contains the target (if 0, string
+            #           doesn't contain the target)
             interactionStartedPatternList
                                         => [],
             cannotInteractPatternList
@@ -871,9 +874,9 @@
 
             # Fight/interaction pattern groups (groups of 3)
             #   [0] - the pattern to match
-            #   [1] - which backref contains the target
-            #   [2] - which backref contains the direction (0 if not supplied by the world, e.g.
-            #           'The orc runs away.')
+            #   [1] - the number of the group substring that contains the target
+            #   [2] - the number of the group substring that contains the direction (0 if not
+            #           supplied by the world, e.g. 'The orc runs away.')
             targetLeavesPatternList     => [],
             targetArrivesPatternList    => [],
             # Exceptions to these pattern groups (groups of 1)
@@ -996,11 +999,6 @@
             questPointCount             => 0,
             questXPCount                => 0,
             questCashCount              => 0,
-
-            # Maximum wimpy setting for Axmud (a constant value)
-            constLocalWimpyMax          => 100,
-            # Maximum wimpy setting on world (can be set to any value by the user)
-            remoteWimpyMax              => 100,
 
             # Hash of character stats
             #   $statHash{stat_name} = default_value
@@ -1246,7 +1244,7 @@
             #   hotel), etc. The portions in brackets are not required by the Locator, so we need
             #   to be able to extract them
             # An unlimited list of patterns; any matching portions of the exit are removed. In
-            #   addition, the first backreference (if any) is used to set GA::Obj::Exit->exitInfo
+            #   addition, the first group substring (if any) is used to set GA::Obj::Exit->exitInfo
             #   (otherwise, ->exitInfo remains set to 'undef')
             exitInfoPatternList         => [],
             # An unlimited list of patterns; any matching portions of the exit are removed (in a
@@ -1439,7 +1437,7 @@
             connectHistoryList          => [],
 
             telnetOverrideHash          => {},
-            mxpOverrideHash                 => {},
+            mxpOverrideHash             => {},
             termOverrideHash            => {},
             sigilOverrideHash           => {},
 
@@ -1471,13 +1469,14 @@
             worldDescrip                => $self->worldDescrip,
             worldHint                       => $self->worldHint,
             worldCharSet                => $self->worldCharSet,
-            msspGenericValueHash        => {},              # MSSP data not cloned
-            msspCustomValueHash         => {},              # MSSP data not cloned
 
             termType                    => $self->termType,
             columns                     => $self->columns,
             rows                        => $self->rows,
             sendSizeInfoFlag            => $self->sendSizeInfoFlag,
+
+            msspGenericValueHash        => {},              # MSSP data not cloned
+            msspCustomValueHash         => {},              # MSSP data not cloned
 
             loginMode                   => $self->loginMode,
             loginCmdList                => [$self->loginCmdList],
@@ -1513,21 +1512,21 @@
             weightUnit                  => $self->weightUnit,
             weightUnitStringList        => [$self->weightUnitStringList],
 
+            darkRoomPatternList         => [$self->darkRoomPatternList],
+            failExitPatternList         => [$self->failExitPatternList],
             doorPatternList             => [$self->doorPatternList],
             lockedPatternList           => [$self->lockedPatternList],
-            failExitPatternList         => [$self->failExitPatternList],
-            transientExitPatternList    => [$self->transientExitPatternList],
-            darkRoomPatternList         => [$self->darkRoomPatternList],
-            unspecifiedRoomPatternList  => [$self->unspecifiedRoomPatternList],
             involuntaryExitPatternList  => [$self->involuntaryExitPatternList],
+            unspecifiedRoomPatternList  => [$self->unspecifiedRoomPatternList],
             followPatternList           => [$self->followPatternList],
             followAnchorPatternList     => [$self->followAnchorPatternList],
+            transientExitPatternList    => [$self->transientExitPatternList],
 
-            displayFormatList           => [$self->displayFormatList],
+            statusFormatList            => [$self->statusFormatList],
             gaugeFormatList             => [$self->gaugeFormatList],
-            customStatusVarHash         => {$self->customStatusVarHash},
+            msdpStatusVarHash           => {$self->msdpStatusVarHash},
             barPatternList              => [$self->barPatternList],
-            singleBackRefPatternList    => [$self->singleBackRefPatternList],
+            groupPatternList            => [$self->groupPatternList],
             affectPatternList           => [$self->affectPatternList],
             statPatternList             => [$self->statPatternList],
             agePatternList              => [$self->agePatternList],
@@ -1628,9 +1627,6 @@
             questPointCount             => $self->questPointCount,
             questXPCount                => $self->questXPCount,
             questCashCount              => $self->questCashCount,
-
-            constLocalWimpyMax          => $self->constLocalWimpyMax,
-            remoteWimpyMax              => $self->remoteWimpyMax,
 
             statHash                    => {$self->statHash},
             statOrderList               => [$self->statOrderList],
@@ -1958,17 +1954,6 @@
         $self->ivPoke('questXPCount', $xpCount);
         $self->ivPoke('questCashCount', $cashCount);
 
-        # If the Status task is running, update its copy of the statistics
-        if ($session->statusTask) {
-
-            $session->statusTask->set_worldQuests(
-                $self->questCount,
-                $self->questPointCount,
-                $self->questXPCount,
-                $self->questCashCount,
-            );
-        }
-
         # Now go through each character profile, and update its quest stats, too
         foreach my $profObj ($session->ivValues('profHash')) {
 
@@ -2031,7 +2016,7 @@
         $self->mergeScalar('worldURL', $otherObj);
         $self->mergeScalar('referURL', $otherObj);
 
-        # (Don't merge termtype or console size)
+        # (Don't merge termtype or terminal size)
 
         # Don't merge login details, but do add any login success patterns
         $self->mergeList('loginConnectPatternList', $otherObj);
@@ -2062,22 +2047,22 @@
         $self->mergeList('weightUnitStringList', $otherObj);
 
         # Merge room patterns
+        $self->mergeList('darkRoomPatternList', $otherObj);
+        $self->mergeList('failExitPatternList', $otherObj);
         $self->mergeList('doorPatternList', $otherObj);
         $self->mergeList('lockedPatternList', $otherObj);
-        $self->mergeList('failExitPatternList', $otherObj);
-        $self->mergeList('transientExitPatternList', $otherObj);
-        $self->mergeList('darkRoomPatternList', $otherObj);
-        $self->mergeList('unspecifiedRoomPatternList', $otherObj);
         $self->mergeList('involuntaryExitPatternList', $otherObj);
+        $self->mergeList('unspecifiedRoomPatternList', $otherObj);
         $self->mergeList('followPatternList', $otherObj);
         $self->mergeList('followAnchorPatternList', $otherObj);
+        $self->mergeList('transientExitPatternList', $otherObj);
 
         # (Don't merge the Status task's display format list - let the user keep their changes)
 
         # Merge Status task patterns
-        $self->mergeHash('customStatusVarHash', $otherObj);
+        $self->mergeHash('msdpStatusVarHash', $otherObj);
         $self->mergeGroupList('barPatternList', $otherObj, 6);
-        $self->mergeGroupList('singleBackRefPatternList', $otherObj, 4);
+        $self->mergeGroupList('groupPatternList', $otherObj, 4);
         $self->mergeGroupList('affectPatternList', $otherObj, 3);
         $self->mergeGroupList('statPatternList', $otherObj, 4);
         $self->mergeList('agePatternList', $otherObj);
@@ -2171,9 +2156,6 @@
         $self->ivPoke('currencyRounding', $otherObj->currencyRounding);
 
         # (Don't merge missions or quests)
-
-        # Don't merge local wimpy max (a constant), but do merge remote wimpy max
-        $self->mergeScalar('remoteWimpyMax', $otherObj);
 
         # Merge stats
         if ($otherObj->statHash) {
@@ -2340,7 +2322,8 @@
 
         # Called by $self->mergeData during an ';updateworld' operation
         # Merges a single list IV whose items are in groups, e.g. $self->fightStartedPatternList
-        #   whose items are in groups of two, in the form (pattern, backref, pattern, backref...)
+        #   whose items are in groups of two, in the form
+        #       (pattern, group_substring_number, pattern, group_substring_number...)
         # Copies groups of values stored in the importable world profile's list into the current
         #   world profile's list, unless the FIRST value in the importable group already exists as a
         #   FIRST value in the current group. (Groups in the importable world profile's list with a
@@ -2529,10 +2512,6 @@
         { $_[0]->{worldHint} }
     sub worldCharSet
         { $_[0]->{worldCharSet} }
-    sub msspGenericValueHash
-        { my $self = shift; return %{$self->{msspGenericValueHash}}; }
-    sub msspCustomValueHash
-        { my $self = shift; return %{$self->{msspCustomValueHash}}; }
 
     sub termType
         { $_[0]->{termType} }
@@ -2542,6 +2521,11 @@
         { $_[0]->{rows} }
     sub sendSizeInfoFlag
         { $_[0]->{sendSizeInfoFlag} }
+
+    sub msspGenericValueHash
+        { my $self = shift; return %{$self->{msspGenericValueHash}}; }
+    sub msspCustomValueHash
+        { my $self = shift; return %{$self->{msspCustomValueHash}}; }
 
     sub loginMode
         { $_[0]->{loginMode} }
@@ -2604,35 +2588,35 @@
     sub weightUnitStringList
         { $_[0]->{weightUnitStringList} }
 
+    sub darkRoomPatternList
+        { my $self = shift; return @{$self->{darkRoomPatternList}}; }
+    sub failExitPatternList
+        { my $self = shift; return @{$self->{failExitPatternList}}; }
     sub doorPatternList
         { my $self = shift; return @{$self->{doorPatternList}}; }
     sub lockedPatternList
         { my $self = shift; return @{$self->{lockedPatternList}}; }
-    sub failExitPatternList
-        { my $self = shift; return @{$self->{failExitPatternList}}; }
-    sub transientExitPatternList
-        { my $self = shift; return @{$self->{transientExitPatternList}}; }
-    sub darkRoomPatternList
-        { my $self = shift; return @{$self->{darkRoomPatternList}}; }
-    sub unspecifiedRoomPatternList
-        { my $self = shift; return @{$self->{unspecifiedRoomPatternList}}; }
     sub involuntaryExitPatternList
         { my $self = shift; return @{$self->{involuntaryExitPatternList}}; }
+    sub unspecifiedRoomPatternList
+        { my $self = shift; return @{$self->{unspecifiedRoomPatternList}}; }
     sub followPatternList
         { my $self = shift; return @{$self->{followPatternList}}; }
     sub followAnchorPatternList
         { my $self = shift; return @{$self->{followAnchorPatternList}}; }
+    sub transientExitPatternList
+        { my $self = shift; return @{$self->{transientExitPatternList}}; }
 
-    sub displayFormatList
-        { my $self = shift; return @{$self->{displayFormatList}}; }
+    sub statusFormatList
+        { my $self = shift; return @{$self->{statusFormatList}}; }
     sub gaugeFormatList
         { my $self = shift; return @{$self->{gaugeFormatList}}; }
-    sub customStatusVarHash
-        { my $self = shift; return %{$self->{customStatusVarHash}}; }
+    sub msdpStatusVarHash
+        { my $self = shift; return %{$self->{msdpStatusVarHash}}; }
     sub barPatternList
         { my $self = shift; return @{$self->{barPatternList}}; }
-    sub singleBackRefPatternList
-        { my $self = shift; return @{$self->{singleBackRefPatternList}}; }
+    sub groupPatternList
+        { my $self = shift; return @{$self->{groupPatternList}}; }
     sub affectPatternList
         { my $self = shift; return @{$self->{affectPatternList}} }
     sub statPatternList
@@ -2795,11 +2779,6 @@
         { $_[0]->{questXPCount} }
     sub questCashCount
         { $_[0]->{questCashCount} }
-
-    sub constLocalWimpyMax
-        { $_[0]->{constLocalWimpyMax} }
-    sub remoteWimpyMax
-        { $_[0]->{remoteWimpyMax} }
 
     sub statHash
         { my $self = shift; return %{$self->{statHash}}; }
@@ -3043,12 +3022,14 @@
             # List of fight patterns (e.g. 'You hit (.*) with your spear') used with this guild
             #   (groups of 2)
             #   [0] - the pattern to match
-            #   [1] - which backref contains the assailant (set to 0 if it doesn't)
+            #   [1] - the number of the group substring that contains the assailant (set to 0 if it
+            #           doesn't)
             fightMsgList                => [],
             # List of interaction patterns (e.g. 'You curse (.*) with your magic wand') used with
             #   this guild (groups of 2)
             #   [0] - the pattern to match
-            #   [1] - which backref contains the victim (set to 0 if it doesn't)
+            #   [1] - the number of the group substring that contains the victim (set to 0 if it
+            #           doesn't)
             interactionMsgList          => [],
 
             # The progression of skills. These variables store the default progression for the
@@ -3332,12 +3313,14 @@
             # List of fight patterns (e.g. 'You hit (.*) with your spear') used with this race
             #   (groups of 2)
             #   [0] - the pattern to match
-            #   [1] - which backref contains the assailant (set to 0 if it doesn't)
+            #   [1] - the number of the group substring that contains the assailant (set to 0 if it
+            #           doesn't)
             fightMsgList                => [],
             # List of interaction patterns (e.g. 'You curse (.*) with your magic wand') used with
             #   this race (groups of 2)
             #   [0] - the pattern to match
-            #   [1] - which backref contains the victim (set to 0 if it doesn't)
+            #   [1] - the number of the group substring that contains the victim (set to 0 if it
+            #           doesn't)
             interactionMsgList          => [],
         };
 
@@ -3589,6 +3572,19 @@
             #   $customProfHash{profile_name} = profile_category
             customProfHash              => {},
 
+            # Health, magic, energy, guild and social points (corresponding to those collected by
+            #   the Status task)
+            healthPoints                => 0,
+            healthPointsMax             => 0,
+            magicPoints                 => 0,
+            magicPointsMax              => 0,
+            energyPoints                => 0,
+            energyPointsMax             => 0,
+            guildPoints                 => 0,
+            guildPointsMax              => 0,
+            socialPoints                => 0,
+            socialPointsMax             => 0,
+
             # Current XP, that hasn't already been used for advancing skills
             xpCurrent                   => 0,
             # XP to the next level
@@ -3596,7 +3592,24 @@
             # Total XP earned by character (if known)
             xpTotal                     => 0,
 
-            # Hash of quests which have been solved. Hash in the form
+            # Current QP (Quest Points)
+            qpCurrent                   => 0,
+            # QP required for the next level
+            qpNextLevel                 => 0,
+            # Total QP earned by character (if known)
+            qpTotal                     => 0,
+
+            # Spare set of IVs, used in parallel with XP and QP counts, in case the world
+            #   implements a similar system using a different measure. We'll call them OP (Other
+            #   Points)
+            opCurrent                   => 0,
+            opNextLevel                 => 0,
+            opTotal                     => 0,
+
+            # The QP values above are designed to be updated by the Status task. This set of IVs
+            #   exists in parallel with the IVs with the same names in the world profile, and are
+            #   designed to be updated manually by the user
+            # Hash of quests which have been solved by this character. Hash in the form
             #   $questHash{quest_name} = undef
             questHash                   => {},
             # How many quests solved by this character
@@ -3670,12 +3683,13 @@
             lifeStatus                  => 'alive',
 
             # Many worlds have a 'wimpy' setting, allowing the char to automatically run away before
-            #   death. Axmud's ->localWimpy fulfills the same function (range 0 to the value
-            #   specified in GA::Profile::World->constLocalWimpyMax, which should always be 100)
-            # The wimpy setting used by the world is ->remoteWimpy (range 0 to the value specified
-            #   in GA::Profile::World->remoteWimpyMax, which can be any value)
-            localWimpy                  => 0,
+            #   death
             remoteWimpy                 => 0,
+            remoteWimpyMax              => 100,
+            # Axmud's local wimpy fulfills the same purpose, however the maximum value is always
+            #   100
+            localWimpy                  => 0,
+            constLocalWimpyMax          => 100,
 
             # The character's age (in the world's standard age unit, defined by
             #   GA::Profile::World->charAgeUnit)
@@ -3849,9 +3863,28 @@
             race                        => $self->race,
             customProfHash              => {$self->customProfHash},
 
+            healthPoints                => $self->healthPoints,
+            healthPointsMax             => $self->healthPointsMax,
+            magicPoints                 => $self->magicPoints,
+            magicPointsMax              => $self->magicPointsMax,
+            energyPoints                => $self->energyPoints,
+            energyPointsMax             => $self->energyPointsMax,
+            guildPoints                 => $self->guildPoints,
+            guildPointsMax              => $self->guildPointsMax,
+            socialPoints                => $self->socialPoints,
+            socialPointsMax             => $self->socialPointsMax,
+
             xpCurrent                   => $self->xpCurrent,
             xpNextLevel                 => $self->xpNextLevel,
             xpTotal                     => $self->xpTotal,
+
+            qpCurrent                   => $self->qpCurrent,
+            qpNextLevel                 => $self->qpNextLevel,
+            qpTotal                     => $self->qpTotal,
+
+            opCurrent                   => $self->opCurrent,
+            opNextLevel                 => $self->opNextLevel,
+            opTotal                     => $self->opTotal,
 
             questHash                   => {$self->questHash},
             questCount                  => $self->questCount,
@@ -3885,8 +3918,10 @@
             lifeMax                     => $self->lifeMax,
             lifeStatus                  => $self->lifeStatus,
 
-            localWimpy                  => $self->localWimpy,
             remoteWimpy                 => $self->remoteWimpy,
+            remoteWimpyMax              => $self->remoteWimpyMax,
+            localWimpy                  => $self->localWimpy,
+            constLocalWimpyMax          => $self->constLocalWimpyMax,
 
             age                         => $self->age,
 
@@ -3994,17 +4029,6 @@
         $self->ivPoke('questXPCount', $xpCount);
         $self->ivPoke('questCashCount', $cashCount);
 
-        # If the Status task is running, update its copy of the statistics
-        if ($session->statusTask) {
-
-            $session->statusTask->set_charQuests(
-                $self->questCount,
-                $self->questPointCount,
-                $self->questXPCount,
-                $self->questCashCount,
-            );
-        }
-
         return 1;
     }
 
@@ -4100,12 +4124,47 @@
     sub customProfHash
         { my $self = shift; return %{$self->{customProfHash}}; }
 
+    sub healthPoints
+        { $_[0]->{healthPoints} }
+    sub healthPointsMax
+        { $_[0]->{healthPointsMax} }
+    sub magicPoints
+        { $_[0]->{magicPoints} }
+    sub magicPointsMax
+        { $_[0]->{magicPointsMax} }
+    sub energyPoints
+        { $_[0]->{energyPoints} }
+    sub energyPointsMax
+        { $_[0]->{energyPointsMax} }
+    sub guildPoints
+        { $_[0]->{guildPoints} }
+    sub guildPointsMax
+        { $_[0]->{guildPointsMax} }
+    sub socialPoints
+        { $_[0]->{socialPoints} }
+    sub socialPointsMax
+        { $_[0]->{socialPointsMax} }
+
     sub xpCurrent
         { $_[0]->{xpCurrent} }
     sub xpNextLevel
         { $_[0]->{xpNextLevel} }
     sub xpTotal
         { $_[0]->{xpTotal} }
+
+    sub qpCurrent
+        { $_[0]->{qpCurrent} }
+    sub qpNextLevel
+        { $_[0]->{qpNextLevel} }
+    sub qpTotal
+        { $_[0]->{qpTotal} }
+
+    sub opCurrent
+        { $_[0]->{opCurrent} }
+    sub opNextLevel
+        { $_[0]->{opNextLevel} }
+    sub opTotal
+        { $_[0]->{opTotal} }
 
     sub questHash
         { my $self = shift; return %{$self->{questHash}}; }
@@ -4165,10 +4224,14 @@
     sub lifeStatus
         { $_[0]->{lifeStatus} }
 
-    sub localWimpy
-        { $_[0]->{localWimpy} }
     sub remoteWimpy
         { $_[0]->{remoteWimpy} }
+    sub remoteWimpyMax
+        { $_[0]->{remoteWimpyMax} }
+    sub localWimpy
+        { $_[0]->{localWimpy} }
+    sub constLocalWimpyMax
+        { $_[0]->{constLocalWimpyMax} }
 
     sub age
         { $_[0]->{age} }

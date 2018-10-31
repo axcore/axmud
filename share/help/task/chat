@@ -16,6 +16,7 @@ The Chat task cannot be started with ';starttask' - instead, use one of the
    task can't be used as an initial or custom task.
  
 Client commands used with this task are:
+   ;getip                     Displays your IP address
    ;chatlisten                Listens out for incoming calls
    ;chatignore                Stops listening out for for incoming calls
    ;addcontact                Adds someone to your contacts list

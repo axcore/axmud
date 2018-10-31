@@ -269,7 +269,7 @@
             # Any information about the exit (usually a string describing the destination, or
             #   occasionally the destination type). Set only if one of the patterns in
             #   GA::Profile::World->exitInfoPatternList matches the exit, when it appears in a room
-            #   statement exit list; the first backreference (if any) is used to set this IV
+            #   statement exit list; the first group substring (if any) is used to set this IV
             exitInfo                    => undef,
 
             # Hash of commands used during assisted moves, in the form

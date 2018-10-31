@@ -5068,7 +5068,10 @@
         my ($self, $session, $inputString, $standardCmd, $start, $stop, $routeType, $check) = @_;
 
         # Local variables
-        my ($routeString, $routeObj, $cmdListRef, $cmdSequence, $cmdCount);
+        my (
+            $routeString, $routeObj, $cmdListRef, $cmdSequence, $cmdCount,
+            @list,
+        );
 
         # Check for improper arguments
         if (
@@ -5150,9 +5153,20 @@
 
         } else {
 
-            # Use the pre-defined route
-            $cmdSequence = $routeObj->route;
-            $cmdCount = $routeObj->stepCount;
+            # Use the pre-defined route. If $routeObj->route is a speedwalk command, convert it into
+            #   a chain of world commands
+            if (index($routeObj->route, $axmud::CLIENT->constSpeedSigil) == 0) {
+
+                @list = $session->parseSpeedWalk($routeObj->route);
+                $cmdSequence = join($axmud::CLIENT->cmdSep, @list);
+                $cmdCount = scalar @list;
+
+            } else {
+
+                # $routeObj->route is already a single world command or a chain of world commands
+                $cmdSequence = $routeObj->route;
+                $cmdCount = $routeObj->stepCount;
+            }
         }
 
         # Final check that we really have found a route
@@ -8382,6 +8396,8 @@
         #       0, 6, 0, 1);
         #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'string', 3, 16,
         #       0, 6, 0, 1);
+        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'regex', 1, undef,
+        #       0, 6, 0, 1);
         #   my $entry = $self->addEntryWithIcon($table, 'some_IV', \&checkFunction, undef, undef,
         #       0, 6, 0, 1);
         #
@@ -8405,6 +8421,7 @@
         #                   values
         #               - If 'string', a string is expected (which might be a number) with the
         #                   specified min/max length
+        #               - If 'regex', a valid regex is expected with the specified min/max length
         #               - If a function reference, a function is called which should return 'undef'
         #                   or 1, depending on the value of the entry; the icon is set accordingly
         #   $min, $max  - The values described above (ignored when $mode is a function reference).
@@ -8489,9 +8506,9 @@
         } else {
 
             # We still need to set the icon for an empty box
-            if ($mode eq 'string') {
+            if ($mode eq 'string' || $mode eq 'regex') {
 
-                # Empty strings might be acceptable
+                # Empty strings/regexes might be acceptable
                 if (! $self->checkEntry('', $mode, $min, $max)) {
                     $entry->set_icon_from_stock('secondary', 'gtk-no');
                 } else {
@@ -8574,6 +8591,7 @@
         #                   values
         #               - If 'string', a string is expected (which might be a number) with the
         #                   specified min/max length
+        #               - If 'regex', a valid regex is expected with the specified min/max length
         #               - If a function reference, a function is called which should return 'undef'
         #                   or 1, depending on the value of the entry; the icon is set accordingly
         #   $min, $max  - The values described above (ignored when $mode is a function reference).
@@ -9113,7 +9131,8 @@
         my $slWidget = Games::Axmud::Gtk::Simple::List->new(@columnList);
         $scroller->add($slWidget);
 
-        # Make the simple list scrollable
+        # No interactive searches required
+        $slWidget->set_enable_search(FALSE);
 
         # Fill the columns with data
         if ($iv) {
@@ -9154,6 +9173,220 @@
         $table->attach_defaults($frame, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
 
         return $slWidget;
+    }
+
+    sub addRegexButton {
+
+        # Adds a Gtk2::Button at the specified position in the tab's Gtk2::Table. The button, when
+        #   clicked, checks regexes in a list of IVs, and opens a dialogue window to display the
+        #   result
+        #
+        # Example calls:
+        #   my $button = $self->addRegexButton($table, $listRef,
+        #       0, 6, 0, 1);
+        #
+        # Expected arguments
+        #   $table      - The tab's Gtk2::Table object
+        #   $listRef    - Reference to a list in groups of 2, in the form (type, iv, type, iv...)
+        #                   where 'type' is 'scalar' to test a pattern stored in a scalar IV, 'list'
+        #                   to test the patterns stored in a list IV, 'keys' or 'values' to test
+        #                   the patterns stored as keys/values in a hash IV, or 'both' to test the
+        #                   patterns stored as keys and values in a hash IV. If the referenced list
+        #                   is empty, no patterns are tested (and the button is desensitised). If
+        #                   any 'type' is not recognised, patterns in the IV are not tested (but
+        #                   other IVs are still tested)
+        #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
+        #               - The position of the button in the table
+        #
+        # Return values
+        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
+        #   Otherwise the Gtk2::Button created
+
+        my (
+            $self, $table, $listRef, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $table || ! defined $listRef || ! defined $leftAttach
+            || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addRegexButton', @_);
+        }
+
+        # Check that the position in the table makes sense
+        if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
+
+            return undef;
+        }
+
+        # Create the button
+        my $button = Gtk2::Button->new('Check patterns');
+        $self->tooltips->set_tip(
+            $button,
+            'Check that the patterns on this page are valid regular expressions',
+        );
+
+        if (! @$listRef) {
+
+            # No IVs specified so no patterns to check
+            $button->set_sensitive(FALSE);
+
+        } else {
+
+            # Respond to a mouse click on the button
+            $button->signal_connect('clicked' => sub {
+
+                my (
+                    $msg, $count,
+                    @list, @patternList, @errorList,
+                );
+
+                @list = @$listRef;
+
+                do {
+
+                    my (
+                        $type, $iv, $value,
+                        @valueList,
+                        %valueHash,
+                    );
+
+                    $type = shift @list;
+                    $iv = shift @list;
+
+                    # Generate a list of patterns stored in the IV, but ignore any 'undef' values
+                    #   and ignore any unrecognised $types
+                    if ($type eq 'scalar') {
+
+                        $value = $self->getEditHash_scalarIV($iv);
+                        if (defined $value) {
+
+                            push (@patternList, $value);
+                        }
+
+                    } elsif ($type eq 'list') {
+
+                        @valueList = $self->getEditHash_listIV($iv);
+                        foreach my $item (@valueList) {
+
+                            if (defined $item) {
+
+                                push (@patternList, $item);
+                            }
+                        }
+
+                    } elsif ($type eq 'keys' || $type eq 'values' || $type eq 'both') {
+
+                        %valueHash = $self->getEditHash_hashIV($iv);
+
+                        if ($type eq 'keys') {
+
+                            push (@patternList, keys %valueHash);
+
+                        } elsif ($type eq 'values') {
+
+                            foreach my $item (values %valueHash) {
+
+                                if (defined $item) {
+
+                                    push (@patternList, $item);
+                                }
+                            }
+
+                        } else {
+
+                            foreach my $key (keys %valueHash) {
+
+                                my $item = $valueHash{$key};
+
+                                if (defined $item) {
+                                    push (@patternList, $key, $item);
+                                } else {
+                                    push (@patternList, $key);
+                                }
+                            }
+                        }
+                    }
+
+                } until (! @list);
+
+                if (! @patternList) {
+
+                    $self->showMsgDialogue(
+                        'Check patterns',
+                        'info',
+                        'There are no patterns on this page',
+                        'ok',
+                    );
+
+                } else {
+
+                    # Check every pattern in turn. GA::Client->regexCheck returns 'undef' if the
+                    #   regex is valid, or an error message if it's not valid
+                    foreach my $pattern (@patternList) {
+
+                        my $error = $axmud::CLIENT->regexCheck($pattern);
+                        if (defined $error) {
+
+                            push (@errorList, $pattern, $error);
+                        }
+                    }
+
+                    if (! @errorList) {
+
+                        $self->showMsgDialogue(
+                            'Check patterns',
+                            'info',
+                            'All patterns on this page are valid',
+                            'ok',
+                        );
+
+                    } else {
+
+                        $msg = 'Patterns checked: ' . (scalar @patternList) . ', errors: '
+                                . ((scalar @errorList) / 2);
+
+                        $count = 0;
+                        do {
+
+                            my ($pattern, $error);
+
+                            $pattern = shift @errorList;
+                            $error = shift @errorList;
+                            $count++;
+
+                            chomp $pattern;
+                            chomp $error;
+
+                            $msg .= "\n\n$pattern\n$error";
+
+                            # (Only show the first 2 errors - don't want a dialogue window as big as
+                            #   the desktop)
+                            if ($count >= 2 && @errorList) {
+
+                                $msg .= "\n\n...";
+                                @errorList = ();
+                            }
+
+                        } until (! @errorList);
+
+                        $self->showMsgDialogue(
+                            'Check patterns',
+                            'error',
+                            $msg,
+                            'ok',
+                        );
+                    }
+                }
+            });
+        }
+
+        # Add the button to the table
+        $table->attach_defaults($button, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+
+        return $button;
     }
 
     # Add widgets - special functions for GA::EditWin::Generic::Interface and
@@ -9383,6 +9616,8 @@
         #       0, 6, 0, 1);
         #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'string', 3, 16,
         #       0, 6, 0, 1);
+        #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'regex', 1, undef,
+        #       0, 6, 0, 1);
         #   my $entry = $self->useEntryWithIcon(
         #       $table, 'some_attribute', \&checkFunction, undef, undef,
         #       0, 6, 0, 1);
@@ -9405,6 +9640,7 @@
         #                   values
         #               - If 'string', a string is expected (which might be a number) with the
         #                   specified min/max length
+        #               - If 'regex', a valid regex is expected with the specified min/max length
         #               - If a function reference, a function is called which should return 'undef'
         #                   or 1, depending on the value of the entry; the icon is set accordingly
         #   $min, $max  - The values described above (ignored when $mode is a function reference).
@@ -9485,9 +9721,9 @@
         } else {
 
             # We still need to set the icon for an empty box
-            if ($mode eq 'string') {
+            if ($mode eq 'string' || $mode eq 'regex') {
 
-                # Empty strings might be acceptable
+                # Empty strings/regexes might be acceptable
                 if (! $self->checkEntry('', $mode, $min, $max)) {
                     $entry->set_icon_from_stock('secondary', 'gtk-no');
                 } else {
@@ -9667,6 +9903,7 @@
         #                   values
         #               - If 'string', a string is expected (which might be a number) with the
         #                   specified min/max length
+        #               - If 'regex', a valid regex is expected with the specified min/max length
         #               - If a function reference, a function is called which should return 'undef'
         #                   or 1, depending on the value of the entry; the icon is set accordingly
         #   $min, $max  - The values described above (ignored when $mode is a function reference).
@@ -9773,6 +10010,26 @@
                 ! defined $value
                 || (defined $min && length($value) < $min)
                 || (defined $max && length($value) > $max)
+            ) {
+                # Invalid value
+                return undef;
+
+            } else {
+
+                # Valid value
+                return 1;
+            }
+
+
+        # 'regex' mode
+        } elsif ($mode eq 'regex') {
+
+            if (
+                ! defined $value
+                || (defined $min && length($value) < $min)
+                || (defined $max && length($value) > $max)
+                # ->regexCheck returns 'undef' for a valid regex, a string for an invalid one
+                || $axmud::CLIENT->regexCheck($value)
             ) {
                 # Invalid value
                 return undef;
@@ -9963,17 +10220,17 @@
         #
         #   $button->signal_connect('clicked' => sub {
         #
-        #       my ($pattern, $backRef);
+        #       my ($pattern, $grpNum);
         #
         #       $pattern = $entry->get_text();
-        #       $backRef = $entry2->get_text();
+        #       $grpNum = $entry2->get_text();
         #
         #       if ($self->checkEntryIcon($entry, $entry2)) {
         #
         #           # Add new values to (the end of) the list IV
         #           $self->addEditHash_listIV('myListIV',
         #               undef, FALSE,
-        #               $pattern, $backRef,
+        #               $pattern, $grpNum,
         #           );
         #
         #           # Refresh the simple list and reset entry boxes
@@ -10546,7 +10803,7 @@
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise, returns a scalar value (may be 'undef'
+        #   Otherwise, returns a scalar value (may be 'undef')
 
         my ($self, $iv, $check) = @_;
 
@@ -11658,13 +11915,13 @@
         });
 
         my $button5 = $self->addButton($table,
-            'Protect objects matching:',
+            'Protect objects matching words:',
             'Protect objects matching this list of words',
             undef,
-            1, 4, 10, 11,
+            1, 5, 10, 11,
             TRUE);              # Irreversible
         my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-            4, 12, 10, 11);
+            5, 12, 10, 11);
         $button5->signal_connect('clicked' => sub {
 
             my $wordString = $entry->get_text();
@@ -11688,13 +11945,13 @@
         });
 
         my $button6 = $self->addButton($table,
-            'Monitor objects matching:',
+            'Monitor objects matching words:',
             'Monitor objects matching this list of words',
             undef,
-            1, 4, 11, 12,
+            1, 5, 11, 12,
             TRUE);              # Irreversible
         my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-            4, 12, 11, 12);
+            5, 12, 11, 12);
         $button6->signal_connect('clicked' => sub {
 
             my $wordString = $entry2->get_text();
@@ -11997,14 +12254,14 @@
         });
 
         my $button5 = $self->addButton($table,
-            'Protect objects matching:',
+            'Protect objects matching words:',
             'Protect objects matching this list of words',
             undef,
-            1, 4, 10, 11,
+            1, 5, 10, 11,
             TRUE);              # Irreversible
 
         my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-            4, 12, 10, 11);
+            5, 12, 10, 11);
 
         $button5->signal_connect('clicked' => sub {
 
@@ -12030,13 +12287,13 @@
         });
 
         my $button6 = $self->addButton($table,
-            'Monitor objects matching:',
+            'Monitor objects matching words:',
             'Monitor objects matching this list of words',
             undef,
-            1, 4, 11, 12,
+            1, 5, 11, 12,
             TRUE);              # Irreversible
         my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-            4, 12, 11, 12);
+            5, 12, 11, 12);
         $button6->signal_connect('clicked' => sub {
 
             my $wordString = $entry2->get_text();
@@ -12289,7 +12546,8 @@
         $self->addLabel($table, 'Fire in named pane',
             1, 3, 8, 9);
         my $entry = $self->addEntry($table, undef, TRUE,
-            3, 6, 8, 9);
+            3, 6, 8, 9,
+            8, 8);
         $entry->set_text($self->editObj->ivShow('attribHash', 'pane_name'));
         if ($entry->get_text()) {
 
@@ -12340,6 +12598,11 @@
             7, 11, 6, 7);
         $self->useCheckButton($table, 'temporary', TRUE,
             11, 12, 6, 7, 1, 0.5);
+        $self->addLabel($table, 'Cooldown (in seconds)',
+            7, 9, 7, 8);
+        $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
+            9, 12, 7, 8,
+            8, 8);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -12361,7 +12624,7 @@
         my ($self, $innerNotebook, $check) = @_;
 
         # Local variables
-        my (@backRefList, @comboList, @comboList2);
+        my (@grpNumList, @comboList, @comboList2);
 
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
@@ -12371,6 +12634,10 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
+
+        # (Need just a little extra space to make everything fit)
+        $table->set_col_spacings($self->spacingPixels - 1);
+        $table->set_row_spacings($self->spacingPixels - 1);
 
         # Trigger styles
         $self->addLabel($table, '<b>Trigger attributes (cont.)</b>',
@@ -12385,37 +12652,37 @@
             TRUE,                   # Sensitive widget
             1, 2, 1, 2);
         $self->addLabel($table, 'Don\'t apply styles',
-            2, 6, 1, 2);
+            2, 4, 1, 2);
 
         ($group, $radioButton) = $self->useRadioButton(
             $table, $group, 'Mode -1', 'style_mode', -1, TRUE,
             1, 2, 2, 3);
         $self->addLabel($table, 'Apply style to whole line',
-            2, 6, 2, 3);
-
-        ($group, $radioButton) = $self->useRadioButton(
-            $table, $group, 'Mode -2', 'style_mode', -2, TRUE,
-            1, 2, 3, 4);
-        $self->addLabel($table, 'Apply style to matched text',
-            2, 6, 3, 4);
+            2, 4, 2, 3);
 
         # Top right
+        ($group, $radioButton) = $self->useRadioButton(
+            $table, $group, 'Mode -2', 'style_mode', -2, TRUE,
+            4, 5, 1, 2);
+        $self->addLabel($table, 'Apply style to matched text',
+            5, 10, 1, 2);
+
         my ($group2, $radioButton2) = $self->useRadioButton(
             $table, $group,
             'Mode n',
             'style_mode',
             -3,                 # Non-standard value; set to correct value by $self->saveChanges
             TRUE,
-            7, 8, 1, 2);
-        $self->addLabel($table, 'Apply style to matched backref #:',
-            8, 12, 1, 2);
-        @backRefList = (1, 2, 3, 4, 5, 6, 7, 8, 9);
+            4, 5, 2, 3);
+        $self->addLabel($table, 'Apply style to matched substring #:',
+            5, 10, 2, 3);
+        @grpNumList = (1, 2, 3, 4, 5, 6, 7, 8, 9);
         my $combo = $self->useComboBox(
             $table,
             '_substr_num',
-            \@backRefList,
-            'Select backref:',
-            8, 10, 2, 3);
+            \@grpNumList,
+            'Select:',
+            10, 12, 2, 3);
 
         if (
             $self->editObj->ivShow('attribHash', 'style_mode')
@@ -12428,7 +12695,7 @@
 
         # Bottom left
         $self->addLabel($table, '<u>Trigger style to apply:</u>',
-            1, 12, 4, 5);
+            1, 12, 3, 4);
 
         push (@comboList, '');
         push (@comboList2, '');
@@ -12449,7 +12716,7 @@
             'Text colour',
             'style_text',
             \@comboList,
-            5,
+            4,
         );
 
         $self->triggerAttributesTab_setColours(
@@ -12457,16 +12724,16 @@
             'Underlay colour',
             'style_underlay',
             \@comboList2,
-            9,
+            8,
         );
 
         # Right column
-        $self->triggerAttributesTab_addRadioButtons($table, 'Italics', 'style_italics', 5);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Underline', 'style_underline', 6);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Slow blink', 'style_blink_slow', 7);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Fast blink', 'style_blink_fast', 8);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Strike-through', 'style_strike', 9);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Link', 'style_link', 10);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Italics', 'style_italics', 4);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Underline', 'style_underline', 5);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Slow blink', 'style_blink_slow', 6);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Fast blink', 'style_blink_fast', 7);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Strike-through', 'style_strike', 8);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Link', 'style_link', 9);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -12783,6 +13050,11 @@
             7, 11, 1, 2);
         $self->useCheckButton($table, 'temporary', TRUE,
             11, 12, 1, 2, 1, 0.5);
+        $self->addLabel($table, 'Cooldown (in seconds)',
+            7, 9, 2, 3);
+        $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
+            9, 12, 2, 3,
+            8, 8);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -12815,10 +13087,19 @@
         # Macro attributes
         $self->addLabel($table, '<b>Macro attributes</b>',
             0, 12, 0, 1);
+
+        # Left column
         $self->addLabel($table, 'Temporary macro',
-            1, 11, 1, 2);
+            1, 5, 1, 2);
         $self->useCheckButton($table, 'temporary', TRUE,
-            11, 12, 1, 2, 1, 0.5);
+            5, 6, 1, 2, 1, 0.5);
+
+        # Right column
+        $self->addLabel($table, 'Cooldown (in seconds)',
+            7, 9, 1, 2);
+        $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
+            9, 12, 1, 2,
+            8, 8);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -12911,10 +13192,19 @@
         # Hook attributes
         $self->addLabel($table, '<b>Hook attributes</b>',
             0, 12, 0, 1);
+
+        # Left column
         $self->addLabel($table, 'Temporary hook',
-            1, 11, 1, 2);
+            1, 5, 1, 2);
         $self->useCheckButton($table, 'temporary', TRUE,
-            11, 12, 1, 2, 1, 0.5);
+            5, 6, 1, 2, 1, 0.5);
+
+        # Right column
+        $self->addLabel($table, 'Cooldown (in seconds)',
+            7, 9, 1, 2);
+        $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
+            9, 12, 1, 2,
+            8, 8);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -14972,7 +15262,7 @@
         return 1;
     }
 
-    sub setCheckResizeEvent {
+    sub setConfigureEvent {
 
         # Called by $self->winEnable
         # This generic function doesn't actually create any ->signal_connects
@@ -14989,7 +15279,7 @@
         # Check for improper arguments
         if (defined $check) {
 
-             return $axmud::CLIENT->writeImproper($self->_objClass . '->setCheckResizeEvent', @_);
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setConfigureEvent', @_);
         }
 
         # (Do nothing)
@@ -15014,7 +15304,7 @@
         # Check for improper arguments
         if (defined $check) {
 
-             return $axmud::CLIENT->writeImproper($self->_objClass . '->setCheckResizeEvent', @_);
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setWindowStateEvent', @_);
         }
 
         # (Do nothing)
@@ -15432,10 +15722,25 @@
                 return $value;
             }
 
-        } elsif (
-            $type eq 'instruction' || $type eq 'pattern' || $type eq 'string'
-            || $type eq 'substitution'
-        ) {
+        } elsif ($type eq 'pattern') {
+
+            # Check it's a valid regex
+            if (defined $axmud::CLIENT->regexCheck($value)) {
+
+                return $session->writeWarning(
+                    'Invalid attribute value for \'' . $attrib . '\' (not a valid pattern/regular'
+                    . ' expression)',
+                    $self->_objClass . '->checkAttribValue',
+                );
+
+            } else {
+
+                # $value is valid
+                return $value;
+            }
+
+        } elsif ($type eq 'instruction' || $type eq 'string' || $type eq 'substitution') {
+
             # All values of $value are valid
             return $value;
 
@@ -20259,7 +20564,7 @@
             }
 
             $newTaskObj->setTaskWinTitle();
-            $newTaskObj->insertText('<task reset>', 'empty');
+            $newTaskObj->insertTextThenClear('<task reset>', 'empty');
             $newTaskObj->winObj->set_owner($newTaskObj);
 
         } elsif ($self->winObj) {
@@ -20274,7 +20579,7 @@
             }
 
             $newTaskObj->setTaskWinTitle();
-            $newTaskObj->insertText('<task reset>', 'empty');
+            $newTaskObj->insertTextThenClear('<task reset>', 'empty');
             $newTaskObj->winObj->set_owner($newTaskObj);
             $newTaskObj->winObj->resetUrgent(TRUE);
 
@@ -20290,7 +20595,7 @@
             }
 
             $newTaskObj->setTaskWinTitle();
-            $newTaskObj->insertText('<task reset>', 'empty');
+            $newTaskObj->insertTextThenClear('<task reset>', 'empty');
         }
 
         return 1;
@@ -20612,6 +20917,17 @@
         }
     }
 
+    sub insertMultipleText {
+
+        my ($self, @args) = @_;
+
+        if ($self->defaultTabObj) {
+            return $self->defaultTabObj->textViewObj->insertMultipleText(@args);
+        } else {
+            return undef;
+        }
+    }
+
     sub insertWithLinks {
 
         my ($self, @args) = @_;
@@ -20631,6 +20947,27 @@
             return $self->defaultTabObj->textViewObj->insertQuick(@args);
         } else {
             return undef;
+        }
+    }
+
+    sub insertTextThenClear {
+
+        my ($self, @args) = @_;
+
+        if (
+            ! $self->defaultTabObj
+            || ! $self->defaultTabObj->textViewObj->insertText(@args)
+        ) {
+            return undef;
+
+        } else {
+
+            # The next time text is inserted into the textview's buffer, the buffer is first cleared
+            #   (which removes the '<task reset>' message, if this function was called by
+            #   $slf->transferWin)
+            $self->defaultTabObj->textViewObj->set_clearAfterInsert();
+
+            return 1;
         }
     }
 
@@ -21684,6 +22021,16 @@
         if ($self->winWidget && $self->visibleFlag) {
 
             $self->winWidget->show_all();
+
+            # Any textview objects (GA::Obj::TextView) which are waiting to update their size IVs
+            #   can now do so
+            foreach my $textViewObj ($axmud::CLIENT->desktopObj->ivValues('textViewHash')) {
+
+                if ($textViewObj->sizeUpdateFlag && $textViewObj->winObj eq $self) {
+
+                    $textViewObj->updateVisibleSize();
+                }
+            }
 
             # Optionally, write information about the calling function to the terminal (for
             #   debugging)
@@ -23823,6 +24170,186 @@
     sub showDoubleComboDialogue {
 
         # Can be called by any function
+        # Similar to $self->showDoubleEntryDialogue, but contains two combo boxes; returns the
+        #   contents of both boxes
+        #
+        # Expected arguments
+        #   $title          - The title to display, e.g. 'File Save'
+        #
+        # Optional arguments
+        #   $labelText      - The label above the first combo box. Can be pango markup text, or just
+        #                       plain text. If 'undef', no first label is used (but the combo box is
+        #                       still used)
+        #   $labelText2     - The label above the second combo box. If 'undef', no second label is
+        #                       used (but the combo box is still used)
+        #   $listRef        - Reference to a list of scalars to be used in the first combo box. If
+        #                       'undef', the first combo box will be empty
+        #   $listRef2       - Reference to a list of scalars to be used in the second combo box. If
+        #                       'undef', the second combo box will be empty
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise a list of two elements, containing the contents of the two combo boxes
+
+        my ($self, $title, $labelText, $labelText2, $listRef, $listRef2, $check) = @_;
+
+        # Local variables
+        my (
+            $spacing, $response, $responseText, $responseText2,
+            @emptyList,
+        );
+
+        # Check for improper arguments
+        if (! defined $title || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->showDoubleComboDialogue', @_);
+            return @emptyList;
+        }
+
+        # If an earlier call to $self->showBusyWin created a popup window, close it (otherwise it'll
+        #   be visible above the new dialogue window)
+        if ($axmud::CLIENT->busyWin) {
+
+            $self->closeDialogueWin($axmud::CLIENT->busyWin);
+        }
+
+        # Set the correct spacing size for 'dialogue' windows
+        $spacing = $axmud::CLIENT->constFreeSpacingPixels;
+
+        # If $listRef/$listRef2 were not specified, use empty lists
+        if (! defined $listRef) {
+
+            @$listRef = ();
+        }
+
+        if (! defined $listRef2) {
+
+            @$listRef2 = ();
+        }
+
+        # Show the 'dialogue' window
+        my $dialogueWin = Gtk2::Dialog->new(
+            $title,
+            $self->winWidget,
+            [qw/modal destroy-with-parent/],
+            'gtk-cancel' => 'reject',
+            'gtk-ok'     => 'accept',
+        );
+
+        $dialogueWin->set_position('center-always');
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+
+        $dialogueWin->signal_connect('delete-event' => sub {
+
+            $dialogueWin->destroy();
+            $self->restoreFocus();
+
+            return @emptyList;
+        });
+
+        # For the benefit of Pango, replace any diamond bracket (< or >) characters with normal
+        #   brackets
+        if ($labelText) {
+
+            $labelText =~ s/\</(/g;
+            $labelText =~ s/\>/)/g;
+        }
+
+        if ($labelText2) {
+
+            $labelText =~ s/\</(/g;
+            $labelText =~ s/\>/)/g;
+        }
+
+        # Add widgets to the 'dialogue' window
+        my $vBox = $dialogueWin->vbox;
+        # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
+        #   Gtk2::VBox on the right, into which we put everything
+        my $vBox2 = $self->addDialogueIcon($vBox);
+
+        # First label (optional) and combo (not optional)
+        my $label;
+        if ($labelText) {
+
+            $label = Gtk2::Label->new();
+            $label->set_alignment(0, 0);
+            $label->set_markup($labelText);
+
+            $vBox2->pack_start($label, FALSE, FALSE, $spacing);
+        }
+
+        my $combo = Gtk2::ComboBox->new_text();
+        $vBox2->pack_start($combo, FALSE, FALSE, $spacing);
+
+        # Fill the combo box with the specified lines, and display the first line
+        if (@$listRef) {
+
+            foreach my $line (@$listRef) {
+
+                $combo->append_text($line);
+            }
+
+            $combo->set_active(FALSE);
+        }
+
+        # Second label (optional) and combo (not optional)
+        my $label2;
+        if ($labelText2) {
+
+            $label2 = Gtk2::Label->new();
+            $label2->set_alignment(0, 0);
+            $label2->set_markup($labelText2);
+
+            $vBox2->pack_start($label2, FALSE, FALSE, $spacing);
+        }
+
+        my $combo2 = Gtk2::ComboBox->new_text();
+        $vBox2->pack_start($combo2, FALSE, FALSE, $spacing);
+
+        # Fill the combo box with the specified lines, and display the first line
+        if (@$listRef2) {
+
+            foreach my $line (@$listRef2) {
+
+                $combo2->append_text($line);
+            }
+
+            $combo2->set_active(FALSE);
+        }
+
+        # Display the 'dialogue' window
+        $dialogueWin->show_all();
+        $dialogueWin->present();
+
+        # Get the response. If the user clicked 'cancel', $response will be 'reject'
+        # Otherwise, user clicked 'ok', and we need to get the contents of the two boxes
+        $response = $dialogueWin->run();
+        if ($response eq 'accept') {
+
+            $responseText = $combo->get_active_text();
+            $responseText2 = $combo2->get_active_text();
+
+            # Destroy the window
+            $dialogueWin->destroy();
+            $self->restoreFocus();
+
+            # Return the response
+            return ($responseText, $responseText2);
+
+        } else {
+
+            # Destroy the window
+            $dialogueWin->destroy();
+            $self->restoreFocus();
+
+            # Return the response
+            return @emptyList;
+        }
+    }
+
+    sub showEntryComboDialogue {
+
+        # Can be called by any function
         # Similar to $self->showDoubleEntryDialogue, but contains an entry box above a combo box;
         #   returns the contents of both boxes
         # Optionally displays a combo above an entry box, but note that the order of the arguments
@@ -23861,7 +24388,7 @@
         # Check for improper arguments
         if (! defined $title || defined $check) {
 
-            $axmud::CLIENT->writeImproper($self->_objClass . '->showDoubleComboDialogue', @_);
+            $axmud::CLIENT->writeImproper($self->_objClass . '->showEntryComboDialogue', @_);
             return @emptyList;
         }
 
@@ -23996,7 +24523,7 @@
         #   consistently active (don't know why this works; it just does)
         $dialogueWin->show_all();
         $dialogueWin->present();
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showDoubleComboDialogue');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showEntryComboDialogue');
 
         # Get the response. If the user clicked 'cancel', $response will be 'reject'
         # Otherwise, user clicked 'ok', and we need to get the contents of the two boxes
@@ -24453,7 +24980,7 @@
         # Set the file path and caption text, if not specified
         if (! defined $path || ! (-e $path)) {
 
-            $path = $axmud::CLIENT->getDialogueIcon(TRUE);
+            $path = $axmud::CLIENT->getDialogueIcon('medium');
         }
 
         if (! $caption) {

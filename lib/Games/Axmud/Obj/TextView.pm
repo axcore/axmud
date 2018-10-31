@@ -83,7 +83,6 @@
             # Unique number for this textview object across all sessions (matches
             #   GA::Obj::Desktop->textViewCount)
             number                      => $number,
-
             # The window object (inheriting from GA::Generic::Win) in which this object's
             #   textview(s) are displayed
             winObj                      => $winObj,
@@ -92,6 +91,19 @@
             #   GA::Strip::Table object. Set to 'undef' for a textview object created for any
             #   other reason
             paneObj                     => $paneObj,
+
+            # Widgets
+            textView                    => undef,           # Gtk2::TextView
+            textView2                   => undef,           # Gtk2::TextView
+            buffer                      => undef,           # Gtk2::TextBuffer
+            vPaned                      => undef,           # Gtk2::VPaned
+            scroll                      => undef,           # Gtk2::ScrolledWindow
+            scroll2                     => undef,           # Gtk2::ScrolledWindow
+            startMark                   => undef,           # Gtk2::TextMark
+            endMark                     => undef,           # Gtk2::TextMark
+            popupMenu                   => undef,           # Gtk2::Menu
+
+            # Other IVs
 
             # Flag set to TRUE when the scroll lock is enabled, FALSE when it is disabled (only
             #   applies to the original Gtk2::TextView)
@@ -115,19 +127,6 @@
             #                       to move it manually, and when they do so, the IV remains set to
             #                       'hidden')
             splitScreenMode             => 'single',
-
-            # Widgets
-            textView                    => undef,           # Gtk2::TextView
-            textView2                   => undef,           # Gtk2::TextView
-            buffer                      => undef,           # Gtk2::TextBuffer
-            vPaned                      => undef,           # Gtk2::VPaned
-            scroll                      => undef,           # Gtk2::ScrolledWindow
-            scroll2                     => undef,           # Gtk2::ScrolledWindow
-            startMark                   => undef,           # Gtk2::TextMark
-            endMark                     => undef,           # Gtk2::TextMark
-            popupMenu                   => undef,           # Gtk2::Menu
-
-            # Other IVs
 
             # The colour scheme applied to this textview object (matches a key in
             #   GA::Client->colourSchemeHash)
@@ -174,10 +173,22 @@
             #   same, this flag is set to FALSE
             # When ->resetMonochromeMode is called, this flag is set back to FALSE
             monochromeModFlag           => FALSE,
-            # Flag set to TRUE if existing text in the textview(s) should be overwritten by new
-            #   text, FALSE if new text should be inserted between existing text (only matters
-            #   when text is being inserted somewhere other than at the end of the buffer, and
-            #   doesn't apply to world commands or system messages)
+            # Ovewrite mode. The default value is FALSE, in which calls to $self->insertText (etc)
+            #   and ->insertCmd insert text at the end of the Gtk2::TextBuffer (or very near the
+            #   end, if system messages are visible on the final lines)
+            # Any code that uses cursor control to overwrite existing lines will call
+            #   $self->setInsertPosn, ->adjustInsertPosn, ->adjustInsertLine, ->adjustInsertOffset
+            #   or ->restoreInsertPosn
+            # Calls to any of these functions turn on ovewrite mode, which sets the flag to TRUE.
+            #   (Overwite mode can also be turned on via a call to $self->enableOverwrite(), or by
+            #   specifying an optional argument in calls to $self->clearBufferAfterPosn,
+            #   ->storeInsertPosn, etc
+            # Once turned on, overwrite mode should not be turned off unless a connection to a world
+            #   terminates (in which case, GA::Session->doDisconnect or ->reactDisconnect call
+            #   $self->disableOverwrite()
+            # When turned on, system messages are not displayed in the textview (and are instead
+            #   diverted to the Session Console window), and when the buffer's size exceeds the
+            #   maximum number of lines, the oldest line is not deleted
             overwriteFlag               => FALSE,
 
             # The maximum number of lines that the Gtk2::TextBuffer can contain. If 'undef' or 0,
@@ -187,18 +198,38 @@
             # The oldest remaining line to delete when the buffer is full
             nextDeleteLine              => 0,
 
+            # A scrolling region inside the buffer. If enabled, these two IVs are set to the line
+            #   numbers of the top and bottom line of the scrolling region. If disabled, these two
+            #   IVs are 'undef'
+            # If defined, ->scrlRegionTop must be at least one less than ->scrlRegionBottom.
+            #   ->scrlRegionTop must be 0 or above. If ->scrlRegionBottom is larger than the size
+            #   of the buffer, then the size of the buffer is used
+            scrlRegionTop               => undef,
+            scrlRegionBottom            => undef,
+
             # Flag set to TRUE when the buffer contains some text, and FALSE when it is empty (is
             #   TRUE if the buffer contains a single newline character; is FALSE if an empty buffer
             #   has an empty string 'inserted' into it along with one or more tags)
             bufferTextFlag              => FALSE,
+            # When the size of the visible textview needs to be updated, the new size can't be
+            #   worked out until the changes have been rendered (via calls to either
+            #   GA::Obj::Desktop->updateWidgets or GA::Generic::Win->winShowAll)
+            # If the size must be updated, any code can set this flag (by calling
+            #   $self->set_sizeUpdateFlag)
+            sizeUpdateFlag              => FALSE,
+            # GA::Obj::Desktop->updateWidgets and GA::Generic::Win->winShowAll, when called, check
+            #   the flag and call $self->updateVisibleSize() to set the following IVs
+            textWidthChars              => undef,
+            textHeightChars             => undef,
             # Flag set to TRUE when the last line of the buffer ends in a newline character; FALSE
             #   if it ends in any other character. Initially set to TRUE, since an empty buffer is
             #   treated as though a whole line, ending in a newline character, has been removed
             #   from the beginning of the buffer (whether or not it has)
             newLineFlag                 => TRUE,
             # Flag set to TRUE when the current insertion position is preceded by a newline
-            #   character (or if the buffer is empty), FALSE if the current insertion position is
-            #   preceded by any other character
+            #   character (or if the the insertion position is at the beginning of the buffer, or if
+            #   the buffer is empty), FALSE if the current insertion position is preceded by any
+            #   other character
             insertNewLineFlag           => TRUE,
             # The default behaviour for calls to $self->insertText (but not to ->showSystemText)
             #   'before'    - prepends a newline character to the text
@@ -206,6 +237,10 @@
             #   'nl'        - same behaviour as 'after'
             #   'echo'      - does not prepend/append a newline character by default
             newLineDefault              => 'after',
+            # Flag than can be set to TRUE by anything (via a call to $self->set_clearAfterInsert)
+            #   if the buffer should be emptied, the next time any non-system or system text is
+            #   inserted into it (the flag is automatically set back to FALSE after that operation)
+            clearAfterInsertFlag        => TRUE,
 
             # The Gtk2::TextMark which marks the point in the Gtk2::TextBuffer at which
             #   $self->insertText inserts text, and at which $self->insertCmd inserts world
@@ -217,7 +252,7 @@
             #   sets $self->insertMark
             # However, if some code (such as GA::Session->processMxpDestElement) needs to
             #   temporarily insert text at a particular location, we need to store the value of
-            #   $self->inserMark before the call to ->setInsertPosn, so it can be restored when the
+            #   $self->insertMark before the call to ->setInsertPosn, so it can be restored when the
             #   calling code is ready (via a call to $self->resetInsertPosn)
             # In most cases, $self->insertMark will have been 'undef' meaning that text is inserted
             #   at the end of the buffer, in which case $self->resetInsertPosn will restore its
@@ -226,7 +261,7 @@
             # When $self->newLineFlag is FALSE (meaning the buffer doesn't end with a newline
             #   character) and a system message needs to be shown (via a call to
             #   $self->showSystemText, ->showError, ->showWarning, ->showDebug or ->showImproper),
-            #   the Gtk2::TextMark at the end of the buffer is stored in this IV
+            #   the Gtk2::TextMark is created at the end of the buffer and stored in this IV
             # An artificial newline character is then added to the end of the buffer, and the
             #   system message is shown after that. The next call to $self->insertText or
             #   ->insertCmd when $self->insertMark is set to 'undef' (meaning, the usual insertion
@@ -253,6 +288,33 @@
             #   a newline character is displayed, it is appended to the contents of this IV (if
             #   any), the whole line is written to logs, and the IV is set back to 'undef'
             systemTextBuffer            => undef,
+
+            # If a visible cursor is used, we have to implement it ourselves (a Gtk cursor is only
+            #   visible when the textview has the focus, which is never)
+            # Flag set to TRUE if a visible cursor is enabled, FALSE if it's disabled
+            cursorEnableFlag            => FALSE,
+            # Flag set to TRUE if the visible cursor is enabled and 'on', and set to FALSE if the
+            #   visible cursor is either disabled or 'off'
+            cursorOnFlag                => FALSE,
+            # A visible cursor is implemented by creating a single Gtk2::TextTag and turning its
+            #   underline on/off (i.e. from ->spinClientLoop)
+            # Only one of these text tags exist; to move the visible cursor's position, we just
+            #   remove the old tag and insert a new one
+            # This Gtk2::TextMark stores the position at which the visible cursor has been placed
+            #   (i.e. the position at which the Gtk2::TextTag has been inserted)
+            cursorMark                  => undef,
+            # If the visible cursor is at the end of the buffer, we have to add an extra space
+            #   character, at that point, so the cursor is visible. The space character is
+            #   destroyed before any text is inserted, and a new space character inserted afterwards
+            # Flag set to TRUE if the visible cursor is at the end of the buffer, FALSE otherwise
+            cursorEndFlag               => FALSE,
+            # The ANSI control sequences 'Save Cursor Position' and 'Restore Cursor Position'
+            #   require us to store and later retrieve a cursor position. Store the position as
+            #   (y, x), rather than using a Gtk mark or iter
+            # In case anything calls $self->restoreInsertPosn before calling ->storeInsertPosn, use
+            #   a default position of the top-left corner
+            storePosnYPos               => 0,
+            storePosnXPos               => 0,
 
             # A hash of current GA::Obj::Link objects
             # Links objects can be added to the hash as soon as they are detected or (as is the case
@@ -357,7 +419,7 @@
             #   MXP colours or only ANSI escape sequence colours; not so well if it tries to
             #   combine them - because GA::Session->parseMxpElement is called to process the MXP
             #   tags, but it doesn't know the actual text attributes being used, because they're not
-            #   set until the later call to GA::Session->applyColourStyleTags
+            #   set until the later call to $self->applyColourStyleTags
             # Every item in the list is a GA::Mxp::StackObj object
             mxpModalStackList           => [],
             # Hash of current MXP text attributes, modified whenever a GA::Mxp::StackObj object is
@@ -526,11 +588,19 @@
         $self->ivPoke('vPaned', $vPaned);
         $self->ivPoke('scroll', $scroll);
         $self->ivPoke('scroll2', $scroll2);
+        $self->ivPoke('sizeUpdateFlag', TRUE);
 
         # Create a mark at the end of the buffer, with right gravity, so that whenever text is
         #   inserted, we can scroll to that mark (and the mark stays at the end)
-        my $startMark = $self->buffer->create_mark('start', $self->buffer->get_start_iter(), FALSE);
-        my $endMark = $self->buffer->create_mark('end', $self->buffer->get_end_iter(), FALSE);
+        # Also create a mark at the beginning of the buffer, with left gravity, for scrolling to the
+        #   top
+        my $startMark
+            = $self->buffer->create_mark('start_mark', $self->buffer->get_start_iter(), TRUE);
+        my $endMark
+            = $self->buffer->create_mark('end_mark', $self->buffer->get_end_iter(), FALSE);
+        # ($self->insertNewLine creates a 'line_N' mark after every newline character, but not at
+        #   the beginning of the Gtk2::TextBuffer)
+        $self->buffer->create_mark('line_0', $self->buffer->get_start_iter(), TRUE);
 
         # Update IVs again
         $self->ivPoke('startMark', $startMark);
@@ -1043,138 +1113,16 @@
 
             # (Any scrolling in the window hides tooltips)
             $self->hideTooltips();
+
+            # Without this line, changes to the visible textview size, caused by the addition/
+            #   removal of a scrollbar, are applied quickly enough
+            $self->ivPoke('sizeUpdateFlag', TRUE);
         });
 
         return 1;
     }
 
     # Other functions - called by anything
-
-    sub clearBuffer {
-
-        # Can be called by anything (also called by $self->insertText, ->insertQuick,
-        #   ->showSystemText and ->showImage)
-        # Empties the Gtk2::TextBuffer of text
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearBuffer', @_);
-        }
-
-        # Empty the buffer
-        $self->buffer->set_text('');
-        # Destroy any GA::Obj::Link objects whose links are no longer visible
-        $self->reset_link();
-        # Update IVs
-        $self->ivPoke('bufferTextFlag', FALSE);
-        $self->ivPoke('newLineFlag', TRUE);
-        $self->ivPoke('insertNewLineFlag', TRUE);
-        $self->ivUndef('insertMark');
-        $self->ivUndef('systemInsertMark');
-        $self->ivUndef('tempInsertMark');
-        # Reset colours/styles
-        $self->ivPoke('colourStyleHash', $axmud::CLIENT->constColourStyleHash);
-        $self->ivPoke('prevColourStyleHash', $axmud::CLIENT->constColourStyleHash);
-
-        return 1;
-    }
-
-    sub clearBufferAfterMark {
-
-        # Can be called by anything
-        # Empties the Gtk2::TextBuffer of text after a specified mark
-        #
-        # Expected arguments
-        #   $mark   - The Gtk2::TextMark after which the buffer should be cleared
-        #
-        # Return values
-        #   'undef' on improper arguments or if the text can't be emptied
-        #   1 otherwise
-
-        my ($self, $mark, $check) = @_;
-
-        # Local variables
-        my ($startIter, $stopIter);
-
-        # Check for improper arguments
-        if (! defined $mark || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearBufferAfterMark', @_);
-        }
-
-        $startIter = $self->buffer->get_iter_at_mark($mark);
-        $stopIter = $self->buffer->get_end_iter();
-        if ($startIter && $stopIter) {
-
-            $self->buffer->delete($startIter, $stopIter);
-            return 1;
-
-        } else {
-
-            return undef;
-        }
-    }
-
-    sub clearLineAfterMark {
-
-        # Can be called by anything
-        # Given a specified mark on a line in the Gtk2::TextBuffer, empties the rest of the line
-        #   (preserving the newline character, if present)
-        #
-        # Expected arguments
-        #   $mark   - The Gtk2::TextMark after which the line should be emptied
-        #
-        # Return values
-        #   'undef' on improper arguments or if the text can't be emptied
-        #   1 otherwise
-
-        my ($self, $mark, $check) = @_;
-
-        # Local variables
-        my ($startIter, $lineNum, $length, $endIter, $stopIter);
-
-        # Check for improper arguments
-        if (! defined $mark || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearLineAfterMark', @_);
-        }
-
-        $startIter = $self->buffer->get_iter_at_mark($mark);
-        $lineNum = $startIter->get_line();
-        $length = $startIter->get_chars_in_line();
-
-        $endIter = $self->buffer->get_end_iter();
-        if ($endIter->get_line() == $startIter->get_line()) {
-
-            # Clear text to the end of the buffer, as we're on the last line
-            $stopIter = $endIter;
-
-        } else {
-
-            # Preserve newline character at end of line
-            $stopIter = $self->buffer->get_iter_at_line_offset($lineNum, ($length - 1));
-        }
-
-        if ($startIter && $stopIter) {
-
-            $self->buffer->delete($startIter, $stopIter);
-            return 1;
-
-        } else {
-
-            return undef;
-        }
-    }
 
     sub scrollToTop {
 
@@ -1201,9 +1149,18 @@
         }
 
         if (! $flag && $self->textView) {
-            $self->textView->scroll_to_mark($self->buffer->get_mark('start'), 0.0, TRUE, 0, 0)
+
+            $self->textView->scroll_to_mark($self->buffer->get_mark('start_mark'), 0.0, TRUE, 0, 0)
+
         } elsif ($flag && $self->textView2) {
-            $self->textView2->scroll_to_mark($self->buffer->get_mark('start'), 0.0, TRUE, 0, 0);
+
+            $self->textView2->scroll_to_mark(
+                $self->buffer->get_mark('start_mark'),
+                0.0,
+                TRUE,
+                0,
+                0,
+            );
         }
 
         $self->winObj->winShowAll($self->_objClass . '->scrollToTop');
@@ -1236,9 +1193,9 @@
         }
 
         if (! $flag && $self->textView) {
-            $self->textView->scroll_to_mark($self->buffer->get_mark('end'), 0.0, TRUE, 0, 0);
+            $self->textView->scroll_to_mark($self->buffer->get_mark('end_mark'), 0.0, TRUE, 0, 0);
         } elsif ($flag && $self->textView2) {
-            $self->textView2->scroll_to_mark($self->buffer->get_mark('end'), 0.0, TRUE, 0, 0);
+            $self->textView2->scroll_to_mark($self->buffer->get_mark('end_mark'), 0.0, TRUE, 0, 0);
         }
 
         $self->winObj->winShowAll($self->_objClass . '->scrollToBottom');
@@ -1342,12 +1299,1029 @@
         return 1;
     }
 
+    sub clearBuffer {
+
+        # Can be called by anything (also called by $self->insertText, ->insertQuick,
+        #   ->showSystemText and ->showImage)
+        # Empties the Gtk2::TextBuffer of text
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #   $noCursorFlag   - If TRUE, don't call ->removeCursor or ->moveCursor, because the
+        #                       calling function wants to handle visible cursors. If FALSE or
+        #                       'undef', ->removeCursor and ->moveCursor are called as normal
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $overwriteFlag, $noCursorFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearBuffer', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        if (! $noCursorFlag) {
+
+            $self->removeCursor();
+        }
+
+        # Empty the buffer
+        $self->buffer->set_text('');
+        # Destroy any GA::Obj::Link objects whose links are no longer visible
+        $self->reset_link();
+
+        # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
+        #   Gtk2::TextTag)
+        if (! $noCursorFlag) {
+
+            $self->moveCursor();
+        }
+
+        # Update IVs
+        $self->ivPoke('nextDeleteLine', 0);
+        $self->ivPoke('bufferTextFlag', FALSE);
+        $self->ivPoke('bufferTextFlag', TRUE);
+        $self->ivPoke('newLineFlag', TRUE);
+        $self->ivPoke('insertNewLineFlag', TRUE);
+        $self->ivPoke('clearAfterInsertFlag', FALSE);
+        $self->ivUndef('insertMark');
+        $self->ivUndef('restoreInsertMark');
+        $self->ivUndef('tempInsertMark');
+        $self->ivUndef('systemInsertMark');
+        $self->ivPoke('storePosnYPos', 0);
+        $self->ivPoke('storePosnXPos', 0);
+        $self->ivEmpty('tooltipHash');
+        $self->ivPoke('lastTooltipLine', undef);
+        # Reset colours/styles
+        $self->ivPoke('colourStyleHash', $axmud::CLIENT->constColourStyleHash);
+        $self->ivPoke('prevColourStyleHash', $axmud::CLIENT->constColourStyleHash);
+
+        return 1;
+    }
+
+    sub clearBufferBeforeMark {
+
+        # Can be called by anything
+        # Empties the Gtk2::TextBuffer of text before a specified mark
+        #
+        # Expected arguments
+        #   $mark           - The Gtk2::TextMark before which the buffer should be cleared
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be emptied
+        #   1 otherwise
+
+        my ($self, $mark, $overwriteFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $stopIter, $lineNum, $posn, $startIter,
+            %tooltipHash, %newHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $mark || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearBufferBeforeMark', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        $stopIter = $self->buffer->get_iter_at_mark($mark);
+        $lineNum = $stopIter->get_line();
+        $posn = $stopIter->get_visible_line_offset();
+        $startIter = $self->buffer->get_start_iter();
+        if (! $startIter || ! $stopIter) {
+
+            return undef;
+        }
+
+        # Empty the buffer before the specified mark
+        $self->buffer->delete($startIter, $stopIter);
+
+        # Update IVs generally
+        $self->ivPoke('nextDeleteLine', 0);
+
+        if (! $self->buffer->get_char_count()) {
+
+            $self->ivPoke('bufferTextFlag', FALSE);
+            $self->ivPoke('newLineFlag', TRUE);
+
+        } else {
+
+            $self->ivPoke('bufferTextFlag', TRUE);
+            # (->newLineFlag retains its current value)
+        }
+
+        $self->ivPoke('sizeUpdateFlag', TRUE);
+        $self->ivPoke('insertNewLineFlag', TRUE);
+        $self->ivUndef('insertMark');
+        $self->ivUndef('restoreInsertMark');
+        $self->ivUndef('tempInsertMark');
+        $self->ivUndef('systemInsertMark');
+
+        if ($self->storePosnYPos < $lineNum) {
+
+            $self->ivPoke('storePosnYPos', 0);
+            $self->ivPoke('storePosnXPos', 0);
+
+        } elsif ($self->storePosnYPos == $lineNum) {
+
+            $self->ivPoke('storePosnYPos', 0);
+            $self->ivPoke('storePosnXPos', $self->storePosnXPos - $posn);
+
+        } else {
+
+            $self->ivPoke('storePosnYPos', $self->storePosnYPos - $lineNum);
+        }
+
+        %tooltipHash = $self->tooltipHash;
+        foreach my $key (keys %tooltipHash) {
+
+            my ($value, $modKey);
+
+            $value = $tooltipHash{$key};
+            $modKey = $key - $lineNum;
+
+            if ($modKey >= 0) {
+
+                $newHash{$modKey} = $value;
+            }
+        }
+
+        $self->ivPoke('tooltipHash', %newHash);
+        $self->ivUndef('lastTooltipLine');
+
+        # Destroy any GA::Obj::Link objects whose links are no longer visible
+        $self->reset_link();
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearBufferAfterMark {
+
+        # Can be called by anything
+        # Empties the Gtk2::TextBuffer of text after a specified mark
+        #
+        # Expected arguments
+        #   $mark           - The Gtk2::TextMark after which the buffer should be cleared
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be emptied
+        #   1 otherwise
+
+        my ($self, $mark, $overwriteFlag, $check) = @_;
+
+        # Local variables
+        my ($startIter, $lineNum, $posn, $stopIter, $oldBufferSize, $lastChar);
+
+        # Check for improper arguments
+        if (! defined $mark || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearBufferAfterMark', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        $startIter = $self->buffer->get_iter_at_mark($mark);
+        $lineNum = $startIter->get_line();
+        $posn = $startIter->get_visible_line_offset();
+        $stopIter = $self->buffer->get_end_iter();
+        $oldBufferSize = $stopIter->get_line();
+        if (! $startIter || ! $stopIter) {
+
+            return undef;
+        }
+
+        # Empty the buffer after the specified mark
+        $self->buffer->delete($startIter, $stopIter);
+
+        # Update IVs generally
+        if ($self->nextDeleteLine < $lineNum) {
+
+            $self->ivPoke('nextDeleteLine', $lineNum);
+        }
+
+        # Test the last character in the remaining buffer
+        $stopIter = $self->buffer->get_end_iter();
+        if (! $stopIter->backward_char()) {
+
+            $self->ivPoke('bufferTextFlag', FALSE);
+
+        } else {
+
+            $self->ivPoke('bufferTextFlag', TRUE);
+            $lastChar = $stopIter->get_text($self->buffer->get_end_iter());
+            if ($lastChar eq "\n") {
+                $self->ivPoke('newLineFlag', TRUE);
+            } else {
+                $self->ivPoke('newLineFlag', FALSE);
+            }
+        }
+
+        $self->ivPoke('sizeUpdateFlag', TRUE);
+
+        foreach my $iv (qw( insertMark restoreInsertMark systemInsertMark systemTextBuffer) ) {
+
+            if (defined $self->$iv && ! $self->buffer->get_iter_at_mark($self->$iv)) {
+
+                $self->ivUndef($iv);
+                if ($iv eq 'insertMark') {
+
+                    # If buffer is empty, this flag is TRUE
+                    if (! $self->buffer->get_char_count()) {
+                        $self->ivPoke('insertNewLineFlag', TRUE);
+                    } else {
+                        $self->ivPoke('insertNewLineFlag', FALSE);
+                    }
+                }
+            }
+        }
+
+        if (
+            $self->storePosnYPos > $lineNum
+            || ($self->storePosnYPos == $lineNum && $self->storePosnXPos > $posn)
+        ) {
+            # The stored cursor location is invalidated
+            $self->ivPoke('storePosnYPos', 0);
+            $self->ivPoke('storePosnXPos', 0);
+        }
+
+        if ($oldBufferSize > $lineNum) {
+
+            for (my $key = ($lineNum + 1); $key <= $oldBufferSize; $key++) {
+
+                # (For speed, don't use ->ivDelete)
+                delete $self->{tooltipHash}{$key};
+            }
+        }
+
+        $self->ivUndef('lastTooltipLine');
+
+        # Destroy any GA::Obj::Link objects whose links are no longer visible
+        $self->reset_link();
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearLineBeforeMark {
+
+        # Can be called by anything
+        # Given a specified mark on a line in the Gtk2::TextBuffer, empties everything on the line
+        #   up to that point
+        # (In other words, all characters before the mark are replaced by space characters)
+        #
+        # Expected arguments
+        #   $mark           - The Gtk2::TextMark before which the line should be emptied
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be cleared
+        #   1 otherwise
+
+        my ($self, $mark, $overwriteFlag, $check) = @_;
+
+        # Local variables
+        my ($stopIter, $lineNum, $posn, $startIter, $text);
+
+        # Check for improper arguments
+        if (! defined $mark || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearLineAfterMark', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        $stopIter = $self->buffer->get_iter_at_mark($mark);
+        $lineNum = $stopIter->get_line();
+        $posn = $stopIter->get_visible_line_offset();
+
+        if ($posn == 0) {
+
+            # Nothing to remove, as the insert position is at the beginning of the line
+            return 1;
+        }
+
+        $startIter = $self->buffer->get_iter_at_line_offset($lineNum, 0);
+        $text = ' ' x $posn;
+
+        $self->buffer->insert_with_tags_by_name($startIter, $text);
+
+        # (No IVs to update generally)
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearLineAroundMark {
+
+        # Can be called by anything
+        # Clears the line at the specified mark
+        # (In other words, all characters on the same line are replaced by space characters)
+        #
+        # Expected arguments
+        #   $mark           - The Gtk2::TextMark after which the line should be emptied
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be cleared
+        #   1 otherwise
+
+        my ($self, $mark, $overwriteFlag, $check) = @_;
+
+        # Local variables
+        my ($midIter, $lineNum, $posn, $startIter, $stopIter, $length, $text);
+
+        # Check for improper arguments
+        if (! defined $mark || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearLineAfterMark', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        $midIter = $self->buffer->get_iter_at_mark($mark);
+        $lineNum = $midIter->get_line();
+        $posn = $midIter->get_visible_line_offset();
+
+        $startIter = $self->buffer->get_iter_at_line_offset($lineNum, 0);
+        $stopIter = $self->buffer->get_iter_at_line_offset(($lineNum + 1), 0);
+        $stopIter->backward_char();
+        $length = $stopIter->get_visible_line_offset() - $startIter->get_visible_line_offset();
+        $text = ' ' x $length;
+        $self->buffer->insert_with_tags_by_name($startIter, $text);
+
+        # (No IVs to update generally)
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearLineAfterMark {
+
+        # Can be called by anything
+        # Given a specified mark on a line in the Gtk2::TextBuffer, empties the rest of the line
+        # (In other words, all characters after the mark are replaced by space characters, but the
+        #   newline character is preserved, if present)
+        #
+        # Expected arguments
+        #   $mark           - The Gtk2::TextMark after which the line should be emptied
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be cleared
+        #   1 otherwise
+
+        my ($self, $mark, $overwriteFlag, $check) = @_;
+
+        # Local variables
+        my ($startIter, $lineNum, $posn, $length, $endIter, $stopIter);
+
+        # Check for improper arguments
+        if (! defined $mark || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearLineAfterMark', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        $startIter = $self->buffer->get_iter_at_mark($mark);
+        $lineNum = $startIter->get_line();
+        $posn = $startIter->get_visible_line_offset();
+        $length = $self->getLineLength($startIter);
+
+        $endIter = $self->buffer->get_end_iter();
+        if ($endIter->get_line() == $startIter->get_line()) {
+
+            # Clear text to the end of the buffer, as we're on the last line
+            $stopIter = $endIter;
+
+        } else {
+
+            # Preserve newline character at end of line
+            $stopIter = $self->buffer->get_iter_at_line_offset($lineNum, ($length - 1));
+        }
+
+        if (! $startIter && ! $stopIter) {
+
+            return undef;
+        }
+
+        # Clear the line portion
+        $self->buffer->delete($startIter, $stopIter);
+
+        # Update IVs generally
+        foreach my $iv (qw( insertMark restoreInsertMark systemInsertMark systemTextBuffer) ) {
+
+            if (defined $self->$iv && ! $self->buffer->get_iter_at_mark($self->$iv)) {
+
+                $self->ivUndef($iv);
+                if ($iv eq 'insertMark') {
+
+                    # If buffer is empty, this flag is TRUE
+                    if (! $self->buffer->get_char_count()) {
+                        $self->ivPoke('insertNewLineFlag', TRUE);
+                    } else {
+                        $self->ivPoke('insertNewLineFlag', FALSE);
+                    }
+                }
+            }
+        }
+
+        if (
+            $self->storePosnYPos == $lineNum
+            && $self->storePosnXPos >= $posn
+            && $self->storePosnXPos <= $length
+        ) {
+            # The stored cursor location is invalidated
+            $self->ivPoke('storePosnYPos', 0);
+            $self->ivPoke('storePosnXPos', 0);
+        }
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearBufferBeforePosn {
+
+        # Can be called by anything
+        # Empties the Gtk2::TextBuffer of text before a specified position
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #   $currentYPos, $currentXPos
+        #                   - The position to use. If either are not defined, the current insertion
+        #                       position is used
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be emptied
+        #   1 otherwise
+
+        my ($self, $overwriteFlag, $currentYPos, $currentXPos, $check) = @_;
+
+        # Local variables
+        my (
+            $stopIter, $lineNum, $posn, $startIter,
+            %tooltipHash, %newHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearBufferBeforePosn', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        if (! defined $currentYPos || ! defined $currentXPos) {
+
+            # Get the current insertion position (or the end of the buffer, if no insertion position
+            #   is set)
+            ($currentYPos, $currentXPos) = $self->getInsertPosn();
+        }
+
+        $stopIter = $self->buffer->get_iter_at_line_offset($currentYPos, $currentXPos);
+        $lineNum = $stopIter->get_line();
+        $posn = $stopIter->get_visible_line_offset();
+        $startIter = $self->buffer->get_start_iter();
+        if (! $startIter || ! $stopIter) {
+
+            return undef;
+        }
+
+        # Empty the buffer up to the specified position
+        $self->buffer->delete($startIter, $stopIter);
+
+        # Update IVs generally
+        $self->ivPoke('nextDeleteLine', 0);
+
+        if (! $self->buffer->get_char_count()) {
+
+            $self->ivPoke('bufferTextFlag', FALSE);
+            $self->ivPoke('newLineFlag', TRUE);
+
+        } else {
+
+            $self->ivPoke('bufferTextFlag', TRUE);
+            # (->newLineFlag retains its current value)
+        }
+
+        $self->ivPoke('sizeUpdateFlag', TRUE);
+        $self->ivPoke('insertNewLineFlag', TRUE);
+        $self->ivUndef('insertMark');
+        $self->ivUndef('restoreInsertMark');
+        $self->ivUndef('tempInsertMark');
+        $self->ivUndef('systemInsertMark');
+
+        if ($self->storePosnYPos < $currentYPos) {
+
+            $self->ivPoke('storePosnYPos', 0);
+            $self->ivPoke('storePosnXPos', 0);
+
+        } elsif ($self->storePosnYPos == $currentYPos) {
+
+            $self->ivPoke('storePosnYPos', 0);
+            $self->ivPoke('storePosnXPos', $self->storePosnXPos - $posn);
+
+        } else {
+
+            $self->ivPoke('storePosnYPos', $self->storePosnYPos - $lineNum);
+        }
+
+        %tooltipHash = $self->tooltipHash;
+        foreach my $key (keys %tooltipHash) {
+
+            my ($value, $modKey);
+
+            $value = $tooltipHash{$key};
+            $modKey = $key - $currentYPos;
+
+            if ($modKey >= 0) {
+
+                $newHash{$modKey} = $value;
+            }
+        }
+
+        $self->ivPoke('tooltipHash', %newHash);
+        $self->ivUndef('lastTooltipLine');
+
+        # Destroy any GA::Obj::Link objects whose links are no longer visible
+        $self->reset_link();
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearBufferAfterPosn {
+
+        # Can be called by anything
+        # Empties the Gtk2::TextBuffer of text after a specified position
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #   $currentYPos, $currentXPos
+        #                   - The position to use. If either are not defined, the current insertion
+        #                       position is used
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be emptied
+        #   1 otherwise
+
+        my ($self, $overwriteFlag, $currentYPos, $currentXPos, $check) = @_;
+
+        # Local variables
+        my ($startIter, $lineNum, $posn, $stopIter, $lastChar, $oldBufferSize);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearBufferAfterPosn', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        if (! defined $currentYPos || ! defined $currentXPos) {
+
+            # Get the current insertion position (or the end of the buffer, if no insertion position
+            #   is set)
+            ($currentYPos, $currentXPos) = $self->getInsertPosn();
+        }
+
+        $startIter = $self->buffer->get_iter_at_line_offset($currentYPos, $currentXPos);
+        $lineNum = $startIter->get_line();
+        $posn = $startIter->get_visible_line_offset();
+        $stopIter = $self->buffer->get_end_iter();
+        if (! $startIter || ! $stopIter) {
+
+            return undef;
+        }
+
+        # Empty the buffer from the specified position
+        $self->buffer->delete($startIter, $stopIter);
+
+        # Update IVs generally
+        if ($self->nextDeleteLine < $lineNum) {
+
+            $self->ivPoke('nextDeleteLine', $lineNum);
+        }
+
+        # Test the last character in the remaining buffer
+        $stopIter = $self->buffer->get_end_iter();
+        if (! $stopIter->backward_char()) {
+
+            $self->ivPoke('bufferTextFlag', FALSE);
+
+        } else {
+
+            $self->ivPoke('bufferTextFlag', TRUE);
+            $lastChar = $stopIter->get_text($self->buffer->get_end_iter());
+            if ($lastChar eq "\n") {
+                $self->ivPoke('newLineFlag', TRUE);
+            } else {
+                $self->ivPoke('newLineFlag', FALSE);
+            }
+        }
+
+        $self->ivPoke('sizeUpdateFlag', TRUE);
+
+        foreach my $iv (qw( insertMark restoreInsertMark systemInsertMark systemTextBuffer) ) {
+
+            if (defined $self->$iv && ! $self->buffer->get_iter_at_mark($self->$iv)) {
+
+                $self->ivUndef($iv);
+                if ($iv eq 'insertMark') {
+
+                    # If buffer is empty, this flag is TRUE
+                    if (! $self->buffer->get_char_count()) {
+                        $self->ivPoke('insertNewLineFlag', TRUE);
+                    } else {
+                        $self->ivPoke('insertNewLineFlag', FALSE);
+                    }
+                }
+            }
+        }
+
+        if (
+            $self->storePosnYPos > $lineNum
+            || ($self->storePosnYPos == $lineNum && $self->storePosnXPos > $posn)
+        ) {
+            # The stored cursor location is invalidated
+            $self->ivPoke('storePosnYPos', 0);
+            $self->ivPoke('storePosnXPos', 0);
+        }
+
+        if ($oldBufferSize > $lineNum) {
+
+            for (my $key = ($lineNum + 1); $key <= $oldBufferSize; $key++) {
+
+                # (For speed, don't use ->ivDelete)
+                delete $self->{tooltipHash}{$key};
+            }
+        }
+
+        $self->ivUndef('lastTooltipLine');
+
+        # Destroy any GA::Obj::Link objects whose links are no longer visible
+        $self->reset_link();
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearLineBeforePosn {
+
+        # Called by GA::Session->processCtrlSequence (or by any other code)
+        # Given a specified position on a line in the Gtk2::TextBuffer, empties everything on the
+        #   line up to that point
+        # (In other words, all characters before the position are replaced by space characters)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #   $currentYPos, $currentXPos
+        #                   - The position to use. If either are not defined, the current insertion
+        #                       position is used
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be cleared
+        #   1 otherwise
+
+        my ($self, $overwriteFlag, $currentYPos, $currentXPos, $check) = @_;
+
+        # Local variables
+        my ($startIter, $text);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearLineBeforePosn', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        if (! defined $currentYPos || ! defined $currentXPos) {
+
+            # Get the current insertion position (or the end of the buffer, if no insertion position
+            #   is set)
+            ($currentYPos, $currentXPos) = $self->getInsertPosn();
+        }
+
+        if ($currentXPos == 0) {
+
+            # Nothing to remove, as the insert position is at the beginning of the line
+            return 1;
+        }
+
+        $startIter = $self->buffer->get_iter_at_line_offset($currentYPos, 0);
+        $text = ' ' x $currentXPos;
+
+        $self->buffer->insert_with_tags_by_name($startIter, $text);
+
+        # (No IVs to update generally)
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearLineAroundPosn {
+
+        # Called by GA::Session->processCtrlSequence (or by any other code)
+        # Clears the line at the specified position
+        # (In other words, all characters on the same line are replaced by space characters)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #   $currentYPos, $currentXPos
+        #                   - The position to use. If either are not defined, the current insertion
+        #                       position is used
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be cleared
+        #   1 otherwise
+
+        my ($self, $overwriteFlag, $currentYPos, $currentXPos, $check) = @_;
+
+        # Local variables
+        my ($startIter, $stopIter, $length, $text);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearLineAroundPosn', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        if (! defined $currentYPos || ! defined $currentXPos) {
+
+            # Get the current insertion position (or the end of the buffer, if no insertion position
+            #   is set)
+            ($currentYPos, $currentXPos) = $self->getInsertPosn();
+        }
+
+        $startIter = $self->buffer->get_iter_at_line_offset($currentYPos, 0);
+        $stopIter = $self->buffer->get_iter_at_line_offset(($currentYPos + 1), 0);
+        $stopIter->backward_char();
+        $length = $stopIter->get_visible_line_offset() - $startIter->get_visible_line_offset();
+        $text = ' ' x $length;
+        $self->buffer->insert_with_tags_by_name($startIter, $text);
+
+        # (No IVs to update generally)
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
+    sub clearLineAfterPosn {
+
+        # Called by GA::Session->processCtrlSequence (or by any other code)
+        # Given a specified position on a line in the Gtk2::TextBuffer, empties the rest of the line
+        # (In other words, all characters after the position are replaced by space characters, but
+        #   the newline character is preserved, if present)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #   $currentYPos, $currentXPos
+        #                   - The position to use. If either are not defined, the current insertion
+        #                       position is used
+        #
+        # Return values
+        #   'undef' on improper arguments or if the text can't be cleared
+        #   1 otherwise
+
+        my ($self, $overwriteFlag, $currentYPos, $currentXPos, $check) = @_;
+
+        # Local variables
+        my ($startIter, $lineNum, $length, $endIter, $stopIter);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clearLineAfterPosn', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        if (! defined $currentYPos || ! defined $currentXPos) {
+
+            # Get the current insertion position (or the end of the buffer, if no insertion position
+            #   is set)
+            ($currentYPos, $currentXPos) = $self->getInsertPosn();
+        }
+
+        $startIter = $self->buffer->get_iter_at_line_offset($currentYPos, $currentXPos);
+        $lineNum = $startIter->get_line();
+        $length = $self->getLineLength($startIter);
+
+        $endIter = $self->buffer->get_end_iter();
+        if ($endIter->get_line() == $startIter->get_line()) {
+
+            # Clear text to the end of the buffer, as we're on the last line
+            $stopIter = $endIter;
+
+        } else {
+
+            # Preserve newline character at end of line
+            $stopIter = $self->buffer->get_iter_at_line_offset($lineNum, ($length - 1));
+        }
+
+        # Clear the line portion
+        $self->buffer->delete($startIter, $stopIter);
+
+        # Update IVs generally
+        foreach my $iv (qw( insertMark restoreInsertMark systemInsertMark systemTextBuffer) ) {
+
+            if (defined $self->$iv && ! $self->buffer->get_iter_at_mark($self->$iv)) {
+
+                $self->ivUndef($iv);
+                if ($iv eq 'insertMark') {
+
+                    # If buffer is empty, this flag is TRUE
+                    if (! $self->buffer->get_char_count()) {
+                        $self->ivPoke('insertNewLineFlag', TRUE);
+                    } else {
+                        $self->ivPoke('insertNewLineFlag', FALSE);
+                    }
+                }
+            }
+        }
+
+        if (
+            $self->storePosnYPos == $lineNum
+            && $self->storePosnXPos >= $currentXPos
+            && $self->storePosnXPos <= $length
+        ) {
+            # The stored cursor location is invalidated
+            $self->ivPoke('storePosnYPos', 0);
+            $self->ivPoke('storePosnXPos', 0);
+        }
+
+        # In case the visible cursor is at a position that's now been overwritten, redraw it
+        $self->replaceCursor();
+
+        return 1;
+    }
+
     sub getInsertPosn {
 
-        # Called by GA::Session->processMxpLinkElement, ->processMxpSendElement,
+        # Called by several functions in this textview object
+        # Also alled by GA::Session->processMxpLinkElement, ->processMxpSendElement,
         #   GA::Session->processLineSegment or by any other code
         # Gets the position in the Gtk2::TextBuffer at which text is being inserted (via calls to
         #   $self->insertText), expressed in a line number and character offset
+        # If no insertion position is specified by $self->insertMark or ->tempInsertMark, returns
+        #   the position of the end of the buffer, as if the insertion position was set to that
         #
         # Expected arguments
         #   (none besides $self)
@@ -1376,6 +2350,8 @@
             $mark = $self->insertMark;
         } elsif ($self->tempInsertMark) {
             $mark = $self->tempInsertMark;
+        } elsif ($self->cursorMark) {
+            $mark = $self->cursorMark;
         }
 
         if ($mark) {
@@ -1389,9 +2365,11 @@
 
     sub setInsertPosn {
 
-        # Called by GA::Session->processMxpDestElement (or by any other code)
+        # Called by GA::Session->processMxpDestElement, GA::Session->processCtrlSequence (or by any
+        #   other code)
         # Sets the position in the Gtk2::TextBuffer at which text is being inserted (via calls to
-        #   $self->insertText), expressed in a line number and character offset
+        #   $self->insertText, ->insertMultipleText, ->insertWithLinks or ->insertCmd)
+        # The position is expressed as a line number and character offset
         # If the specified position doesn't exist, newline character and whitespace are added to
         #   the buffer so that text can be inserted there
         #
@@ -1399,8 +2377,8 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $yPos   - The line number. If 'undef', line 0 is used
-        #   $xPos   - The character offset. If 'undef', offset 0 is used
+        #   $yPos       - The line number. If 'undef', line 0 is used
+        #   $xPos       - The character offset. If 'undef', offset 0 is used
         #
         # Return values
         #   'undef' on improper arguments
@@ -1410,8 +2388,8 @@
 
         # Local variables
         my (
-            $endIter, $lineNum, $lineIter, $length, $posn, $beforeIter, $beforeString, $insertIter,
-            $insertMark,
+            $lineIter, $length, $endIter, $posn, $beforeIter, $beforeString, $insertIter,
+            $insertMark, $restoreMark,
         );
 
         # Check for improper arguments
@@ -1419,6 +2397,15 @@
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setInsertPosn', @_);
         }
+
+        # Turn on overwrite mode, if it's not already on
+        if (! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
 
         # Use default line number/character offset if they weren't specified
         if (! defined $yPos) {
@@ -1431,29 +2418,28 @@
             $xPos = 0;
         }
 
-        # Before v3.20, Gtk doesn't allow the use of an invalid position, so we must check first
+        # Before v3.20, Gtk doesn't allow the use of an invalid position, so we must check it's
+        #   valid before proceeding
 
         # Check the end of the buffer
-        $endIter = $self->buffer->get_end_iter();
-        $lineNum = $endIter->get_line();
-        if ($yPos > $lineNum) {
+        if ($yPos > ($self->buffer->get_line_count() - 1)) {
 
             # The specified line doesn't exist, so we need to add some new (empty) ones
             do {
 
-                $self->insertNewLine($endIter);
-                $lineNum++;
+                $self->buffer->insert($self->buffer->get_end_iter(), "\n");
 
-            } until ($yPos <= $lineNum);
+            } until ($yPos <= ($self->buffer->get_line_count() - 1));
         }
 
         # Check the size of the specified line
         $lineIter = $self->buffer->get_iter_at_line($yPos);
-        $length = $lineIter->get_chars_in_line();
+        $length = $self->getLineLength($lineIter);
         # Get the position of the iter just before the line's newline character, if any (there won't
-        #   be on if this line is at the end of the buffer)
+        #   be one if this line is at the end of the buffer)
         # (Don't need to check that $endIter->get_visible_line_offset() matches the same value in
         #   $lineIter, since we already know it's the last line)
+        $endIter = $self->buffer->get_end_iter();
         if ($endIter->get_line() == $lineIter->get_line()) {
             $posn = $length;
         } else {
@@ -1472,9 +2458,15 @@
         # Set the new insert position, storing the current position in case $self->resetInsertPosn
         #   is called
         $insertIter = $self->buffer->get_iter_at_line_offset($yPos, $xPos);
-        $insertMark = $self->buffer->create_mark($insertIter, $insertIter, TRUE);
-        $self->ivPoke('restoreInsertMark', $self->insertMark);
+        $insertMark = $self->buffer->create_mark('insert_mark', $insertIter, TRUE);
         $self->ivPoke('insertMark', $insertMark);
+
+        $insertIter = $self->buffer->get_iter_at_line_offset($yPos, $xPos);
+        $restoreMark = $self->buffer->create_mark('restore_insert_mark', $insertIter, TRUE);
+        $self->ivPoke('restoreInsertMark', $restoreMark);
+
+        # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+        $self->moveCursor($self->buffer->get_iter_at_mark($insertMark));
 
         return 1;
     }
@@ -1503,6 +2495,458 @@
         $self->ivPoke('insertMark', $self->restoreInsertMark);
         $self->ivUndef('restoreInsertMark');
 
+        return 1;
+    }
+
+    sub adjustInsertPosn {
+
+        # Called by GA::Session->processCtrlSequence (or by any other code)
+        # Adjusts the position of the current insertion position
+        #
+        # Expected arguments
+        #   $yAdjust    - The line number adjustment, e.g. -1 to move up a line, +2 to move down 2
+        #                   lines, 0 to stay on the same line
+        #   $xAdjust    - The character offset adjustment, e.g. -1 to move back one character, +2 to
+        #                   move forwards 2 characters, 0 to stay in the same column
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the result of the call to $self->setInsertPosn
+
+        my ($self, $yAdjust, $xAdjust, $check) = @_;
+
+        # Local variables
+        my ($yPos, $xPos, $iter);
+
+        # Check for improper arguments
+        if (! defined $yAdjust || ! defined $xAdjust || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->adjustInsertPosn', @_);
+        }
+
+        # Turn on overwrite mode, if it's not already on
+        if (! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # Get the current insertion position (or the end of the buffer, if no insertion position is
+        #   set)
+        ($yPos, $xPos) = $self->getInsertPosn();
+
+        # Make the adjustment
+        $yPos += $yAdjust;
+        $xPos += $xAdjust;
+
+        # Sanity checks. If $xPos is now greater than the length of the existing line,
+        #   $self->setInsertPosn will add extra spaces; otherwise, we have to adjust bad values
+        #   ourselves
+        if ($yPos < 0) {
+
+            $yPos = 0;
+        }
+
+        if ($xPos < 0) {
+
+            $xPos = 0;
+        }
+
+        $iter = $self->buffer->get_end_iter();
+        if ($yPos > $iter->get_line()) {
+
+            $yPos = $iter->get_line();
+        }
+
+        # Change the insertion position
+        return $self->setInsertPosn($yPos, $xPos);
+    }
+
+    sub adjustInsertLine {
+
+        # Called by GA::Session->processCtrlSequence (or by any other code)
+        # Adjusts the position of the current insertion position, moving it to the beginning of a
+        #   line
+        #
+        # Expected arguments
+        #   $yAdjust    - The line number adjustment, e.g. -1 to move up a line, +2 to move down 2
+        #                   lines, 0 to stay on the same line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the result of the call to $self->setInsertPosn
+
+        my ($self, $yAdjust, $check) = @_;
+
+        # Local variables
+        my ($yPos, $xPos, $iter);
+
+        # Check for improper arguments
+        if (! defined $yAdjust || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->adjustInsertLine', @_);
+        }
+
+        # Turn on overwrite mode, if it's not already on
+        if (! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # Get the current insertion position (or the end of the buffer, if no insertion position is
+        #   set)
+        ($yPos) = $self->getInsertPosn();
+
+        # Make the adjustment
+        $yPos += $yAdjust;
+        $xPos = 0;
+
+        # Sanity checks. If $xPos is now greater than the length of the existing line,
+        #   $self->setInsertPosn will add extra spaces; otherwise, we have to adjust bad values
+        #   ourselves
+        if ($yPos < 0) {
+
+            $yPos = 0;
+        }
+
+        $iter = $self->buffer->get_end_iter();
+        if ($yPos > $iter->get_line()) {
+
+            $yPos = $iter->get_line();
+        }
+
+        # Change the insertion position
+        return $self->setInsertPosn($yPos, $xPos);
+    }
+
+    sub adjustInsertOffset {
+
+        # Called by GA::Session->processCtrlSequence (or by any other code)
+        # Adjusts the position of the current insertion position
+        #
+        # Expected arguments
+        #   $xPos       - The character offset. If 'undef', offset 0 is used
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the result of the call to $self->setInsertPosn
+
+        my ($self, $xPos, $check) = @_;
+
+        # Local variables
+        my $yPos;
+
+        # Check for improper arguments
+        if (! defined $xPos || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->adjustInsertOffset', @_);
+        }
+
+        # Turn on overwrite mode, if it's not already on
+        if (! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # Get the current insertion position (or the end of the buffer, if no insertion position is
+        #   set)
+        ($yPos) = $self->getInsertPosn();
+
+        # Sanity checks. If $xPos is now greater than the length of the existing line,
+        #   $self->setInsertPosn will add extra spaces; otherwise, we have to adjust bad values
+        #   ourselves
+        if ($xPos < 0) {
+
+            $xPos = 0;
+        }
+
+        # Change the insertion position
+        return $self->setInsertPosn($yPos, $xPos);
+    }
+
+    sub storeInsertPosn {
+
+        # Called by GA::Session->processCtrlSequence (or by any other code)
+        # Stores the current insertion position, so it can be re-used as the new insertion position
+        #   at some point in the future
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
+        #                       'undef', no change to overwrite mode is made
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $overwriteFlag, $check) = @_;
+
+        # Local variables
+        my ($currentYPos, $currentXPos);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->storeInsertPosn', @_);
+        }
+
+        # Turn on overwrite mode, if required by the calling function (and if it's not already
+        #   turned on)
+        if ($overwriteFlag && ! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        # Get the current insertion position (or the end of the buffer, if no insertion position is
+        #   set)
+        ($currentYPos, $currentXPos) = $self->getInsertPosn();
+
+        $self->ivPoke('storePosnYPos', $currentYPos);
+        $self->ivPoke('storePosnXPos', $currentXPos);
+
+        return 1;
+    }
+
+    sub restoreInsertPosn {
+
+        # Called by GA::Session->processCtrlSequence (or by any other code)
+        # Restores the cursor position stored in an earlier call to $self->storeInsertPosn
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the result of the call to $self->setInsertPosn
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->restoreInsertPosn', @_);
+        }
+
+        # Turn on overwrite mode, if it's not already on
+        if (! $self->overwriteFlag) {
+
+            $self->enableOverwrite();
+        }
+
+        return $self->setInsertPosn($self->storePosnYPos, $self->storePosnXPos);
+    }
+
+    sub insertBackspace {
+
+        # Called mostly by GA::Session->processIncomingData
+        # Inserts a string probably containing one or more backspace characters
+        # If overwrite mode is one, processes the string as received. If overwrite mode is off,
+        #   replaces the backspace character with good ol' fashioned '^H', and displays it as a
+        #   normal string
+        #
+        # Expected arguments
+        #   $string - The string to insert. It's usually in the form "\b \b", or just "\b", but can
+        #               contain any combination of characters (including an empty string)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $string, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (! defined $string || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->insertBackspace', @_);
+        }
+
+        if ($string eq '') {
+
+            # Nothing to insert
+            return 1;
+
+        } elsif (! $self->overwriteFlag) {
+
+            # Replace the backspace characters with ^H, and display $string as an ordinary string
+            $string =~ s/\b/^H/g;
+            return $self->insertText($string, 'echo');
+        }
+
+        # Otherwise, split $string into segments, adjusting the insert position for each backspace
+        #   character it contains
+        do {
+
+            my ($index, $yPos, $xPos);
+
+            $index = index($string, "\b");
+            if ($index == 0) {
+
+                # Set the new insert position one character earlier in the line (but if already at
+                #   the beginning of a line, don't go any further backwards in the buffer)
+                ($yPos, $xPos) = $self->getInsertPosn();
+                if ($xPos > 0) {
+
+                    $self->setInsertPosn($yPos, ($xPos - 1));
+                }
+
+                $string = substr($string, 1);
+
+            } elsif ($index == -1 ) {
+
+                # The rest of $string contains no backspace characters
+                $self->insertText($string, 'echo');
+                $string = '';
+
+            } else {
+
+                # String starts with one or more non-backspace characters
+                $self->insertText(substr($string, 0, $index), 'echo');
+                $string = substr($string, $index);
+            }
+
+        } until ($string eq '');
+
+        return 1;
+    }
+
+    sub scrlRegionUp {
+
+        # Called by $self->insertNewLine and GA::Session->processCtrlSequence
+        # VT100 (and similar terminal standards) define an area of the textview, the scroll region,
+        #   which should 'scroll' independently of the rest of the textview
+        # Actually, when the region 'scrolls', we just delete the line at the top of the region,
+        #   and add a new line at the bottom of it
+        #
+        # Expected arguments
+        #   $num        - The number of lines to scroll (when called by $self->insertNewLine, set
+        #                   to 1)
+        #
+        # Optional arguments
+        #   $nlFlag     - Set to TRUE if the calling function hasn't inserted a newline character at
+        #                   the bottom of the region (in which case, this function needs to do it).
+        #                   Set to FALSE (or 'undef') if the newline character has already been
+        #                   inserted, in which case this function only needs to delete the line at
+        #                   the top of the region
+        #
+        # Return values
+        #   'undef' on improper arguments, if the scroll region doesn't exist, if $num is not a
+        #       positive integer or if the scroll region's IVs are set to invalid values
+        #   1 otherwise
+
+        my ($self, $num, $nlFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $num || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->scrlRegionUp', @_);
+        }
+
+        # Check a scrolling region is defined, that $num is a valid integer, and that the buffer
+        #   actually contains at least as many lines as specified by $self->scrlRegionBottom
+        if (
+            ! defined $self->scrlRegionTop
+            || ! $axmud::CLIENT->intCheck($num, 1)
+            || ($self->buffer->get_line_count() - 1) < ($self->scrlRegionBottom + 1)
+        ) {
+            return undef;
+        }
+
+        # Update the scrolling region $num times
+        for (my $count = 0; $count < $num; $count++) {
+
+            $self->buffer->delete(
+                $self->buffer->get_iter_at_line_offset($self->scrlRegionTop, 0),
+                $self->buffer->get_iter_at_line_offset(($self->scrlRegionTop + 1), 0),
+            );
+
+            if ($nlFlag) {
+
+                # Newline character(s) haven't been inserted into the buffer by the calling
+                #   function, so we need to insert them here
+                $self->buffer->insert(
+                    $self->buffer->get_iter_at_line_offset($self->scrlRegionBottom, 0),
+                    "\n",
+                );
+            }
+
+            # Update the tooltip IVs
+            for (my $line = ($self->scrlRegionTop + 1); $line <= $self->scrlRegionBottom; $line++) {
+
+                $self->ivAdd('tooltipHash', ($line - 1), $self->ivShow('tooltipHash', $line));
+            }
+
+            $self->ivAdd('tooltipHash', $self->scrlRegionBottom, '');
+            $self->ivPoke('lastTooltipLine', undef);
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub scrlRegionDown {
+
+        # Called by GA::Session->processCtrlSequence (only)
+        # VT100 (and similar terminal standards) define an area of the textview, the scroll region,
+        #   which should 'scroll' independently of the rest of the textview
+        # Actually, when the region 'scrolls', we just delete the line at the bottom of the region,
+        #   and add a new line at the top of it
+        #
+        # Expected arguments
+        #   $num        - The number of lines to scroll
+        #
+        # Return values
+        #   'undef' on improper arguments, if the scroll region doesn't exist, if $num is not a
+        #       positive integer or if the scroll region's IVs are set to invalid values
+        #   1 otherwise
+
+        my ($self, $num, $nlFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $num || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->scrlRegionDown', @_);
+        }
+
+        # Check a scrolling region is defined, that $num is a valid integer, and that the buffer
+        #   actually contains at least as many lines as specified by $self->scrlRegionTop
+        if (
+            ! defined $self->scrlRegionTop
+            || ! $axmud::CLIENT->intCheck($num, 1)
+            || ($self->buffer->get_line_count() - 1) < ($self->scrlRegionTop + 1)
+        ) {
+            return undef;
+        }
+
+        # Update the scrolling region $num times
+        for (my $count = 0; $count < $num; $count++) {
+
+            $self->buffer->delete(
+                $self->buffer->get_iter_at_line_offset($self->scrlRegionBottom, 0),
+                $self->buffer->get_iter_at_line_offset(($self->scrlRegionBottom + 1), 0),
+            );
+
+            # Newline character(s) haven't been inserted into the buffer by the calling
+            #   function, so we need to insert them here
+            $self->buffer->insert(
+                $self->buffer->get_iter_at_line_offset($self->scrlRegionTop, 0),
+                "\n",
+            );
+
+            # Update the tooltip IVs
+            for (my $line = ($self->scrlRegionBottom - 1); $line >= $self->scrlRegionTop; $line++) {
+
+                $self->ivAdd('tooltipHash', ($line + 1), $self->ivShow('tooltipHash', $line));
+            }
+
+            $self->ivAdd('tooltipHash', $self->scrlRegionTop, '');
+            $self->ivPoke('lastTooltipLine', undef);
+        }
+
+        # Operation complete
         return 1;
     }
 
@@ -1556,11 +3000,20 @@
         # Local variables
         my (
             $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour,
-            $monochromeFlag, $beep, $mark, $iter,
+            $monochromeFlag, $beep, $mark, $iter, $tempInsertFlag,
             @styleTags,
         );
 
         # (No improper arguments to check)
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+        # If the buffer is due to be cleared before inserting any text, then clear it
+        if ($self->clearAfterInsertFlag) {
+
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
+        }
 
         # Interpret the list of @args
         ($emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour, @styleTags)
@@ -1603,7 +3056,8 @@
         # Empty the buffer before writing text, if required
         if ($emptyFlag) {
 
-            $self->clearBuffer();
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
         }
 
         # Prepare the message to send
@@ -1643,6 +3097,7 @@
                 #   already-displayed Axmud system message
                 $self->ivUndef('tempInsertMark');
                 $afterFlag = FALSE;
+                $tempInsertFlag = TRUE;
             }
         }
 
@@ -1665,7 +3120,7 @@
 
             # (Make sure the beginning of a link appears after the extra newline character, not
             #   before it)
-           $iter = $self->insertNewLine($iter);
+            $iter = $self->insertNewLine($iter);
             $self->ivPoke('prevColourStyleHash', $self->colourStyleHash);
         }
 
@@ -1707,25 +3162,26 @@
 
             # The next call to $self->insertText, ->insertCmd etc uses the insertion point
             #   immediately after $iter
-            $mark = $self->buffer->create_mark($iter, $iter, TRUE);
+            $mark = $self->buffer->create_mark('insert_mark', $iter, TRUE);
             $self->ivPoke('insertMark', $mark);
+            # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+            $self->moveCursor($self->buffer->get_iter_at_mark($mark));
 
-        } elsif ($self->tempInsertMark) {
+        } elsif ($tempInsertFlag) {
 
-            if ($afterFlag) {
+            # Continue using this temporary insertion point, before a line with a system message
+            #   (and don't restore the cursor yet)
+            $mark = $self->buffer->create_mark('temp_insert_mark', $iter, TRUE);
+            $self->ivPoke('tempInsertMark', $mark);
 
-                # Next call to $self->insertText, ->insertCmd etc uses the end of the buffer as its
-                #   insertion point
-                $self->ivUndef('tempInsertMark');
+        } else {
 
-            } else {
-
-                # Continue using this temporary insertion point, before a line with a system message
-                $mark = $self->buffer->create_mark($iter, $iter, TRUE);
-                $self->ivPoke('tempInsertMark', $mark);
-            }
+            # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
+            #   Gtk2::TextTag)
+            $self->moveCursor();
         }
 
+        # Apply scroll lock, if required
         if ($self->scrollLockFlag) {
 
             if ($self->scrollLockType eq 'top') {
@@ -1763,7 +3219,7 @@
         my ($self, @displayList) = @_;
 
         # Local variables
-        my ($firstFlag, $iter, $mark, $finalAfterFlag);
+        my ($firstFlag, $iter, $mark, $finalAfterFlag, $tempInsertFlag);
 
         # Check for improper arguments
         if (! @displayList) {
@@ -1771,6 +3227,16 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->insertMultipleText', @_);
         }
 
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+        # If the buffer is due to be cleared before inserting any text, then clear it
+        if ($self->clearAfterInsertFlag) {
+
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
+        }
+
+        # Some operations are only executed for the first 'piece_of_text' in @displayList
         $firstFlag = TRUE;
 
         # Process each text piece in turn
@@ -1829,7 +3295,8 @@
             # Empty the buffer before writing text, if required
             if ($emptyFlag) {
 
-                $self->clearBuffer();
+                # The TRUE argument means 'don't remove/move the cursor'
+                $self->clearBuffer(undef, TRUE);
             }
 
             # Prepare the message to send
@@ -1873,6 +3340,8 @@
                         #   and the already-displayed Axmud system message
                         $self->ivUndef('tempInsertMark');
                         $afterFlag = FALSE;
+                        # Act on the temporary insertion point once we've finished this do... loop
+                        $tempInsertFlag = TRUE;
                     }
                 }
 
@@ -1899,9 +3368,6 @@
                     $iter = $self->insertNewLine($iter);
                     $self->ivPoke('prevColourStyleHash', $self->colourStyleHash);
                 }
-
-                # (Don't execute this block more than once)
-                $firstFlag = FALSE;
             }
 
             # Create a link object, if required
@@ -1931,15 +3397,25 @@
             }
 
             # (Don't append a newline character for any text piece besides the last one)
-            if (! @displayList && $afterFlag) {
+            if (! @displayList && ($afterFlag || $tempInsertFlag)) {
 
-                # (Make sure the end of a link appears before the extra newline character, not
-                #   after it)
-                $iter = $self->insertNewLine($iter);
-                $self->ivPoke('prevColourStyleHash', $self->colourStyleHash);
+                if (! $tempInsertFlag) {
+
+                    # (Make sure the end of a link appears before the extra newline character, not
+                    #   after it)
+                    $iter = $self->insertNewLine($iter);
+                    $self->ivPoke('prevColourStyleHash', $self->colourStyleHash);
+
+                } else {
+
+                    $iter = $self->buffer->get_end_iter();
+                }
 
                 $finalAfterFlag = TRUE;
             }
+
+            # (Don't execute this some code blocks more than once)
+            $firstFlag = FALSE;
 
         } until (! @displayList);
 
@@ -1947,25 +3423,26 @@
 
             # The next call to $self->insertText, ->insertCmd etc uses the insertion point
             #   immediately after $iter
-            $mark = $self->buffer->create_mark($iter, $iter, TRUE);
+            $mark = $self->buffer->create_mark('insert_mark', $iter, TRUE);
             $self->ivPoke('insertMark', $mark);
+            # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+            $self->moveCursor($self->buffer->get_iter_at_mark($mark));
 
-        } elsif ($self->tempInsertMark) {
+        } elsif ($tempInsertFlag && ! $finalAfterFlag) {
 
-            if ($finalAfterFlag) {
+            # Continue using this temporary insertion point, before a line with a system message
+            #   (and don't restore the cursor yet)
+            $mark = $self->buffer->create_mark('temp_insert_mark', $iter, TRUE);
+            $self->ivPoke('tempInsertMark', $mark);
 
-                # Next call to $self->insertText, ->insertCmd etc uses the end of the buffer as its
-                #   insertion point
-                $self->ivUndef('tempInsertMark');
+        } else {
 
-            } else {
-
-                # Continue using this temporary insertion point, before a line with a system message
-                $mark = $self->buffer->create_mark($iter, $iter, TRUE);
-                $self->ivPoke('tempInsertMark', $mark);
-            }
+            # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
+            #   Gtk2::TextTag)
+            $self->moveCursor();
         }
 
+        # Apply scroll lock, if required
         if ($self->scrollLockFlag) {
 
             if ($self->scrollLockType eq 'top') {
@@ -2152,18 +3629,26 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->insertQuick', @_);
         }
 
-        # Clear the buffer...
-        $self->clearBuffer();
-        # ...and refill it
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+
+        # Clear the buffer. The TRUE argument means 'don't remove/move the cursor'
+        $self->clearBuffer(undef, TRUE);
+        # Fill the empty buffer with text
         if ($string) {
 
             $self->buffer->set_text($string);
         }
 
+        # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
+        #   Gtk2::TextTag)
+        $self->moveCursor();
+
         # Update IVs
         if ($string) {
 
             $self->ivPoke('bufferTextFlag', TRUE);
+            $self->ivPoke('sizeUpdateFlag', TRUE);
 
             if ($string =~ m/\n$/) {
 
@@ -2179,6 +3664,7 @@
         } else {
 
             $self->ivPoke('bufferTextFlag', FALSE);
+            $self->ivPoke('sizeUpdateFlag', TRUE);
         }
 
         # Scroll the textview to the bottom
@@ -2198,7 +3684,7 @@
         # Expected arguments
         #   $cmd        - The command to show. When GA::Session->dispatchCmd/->dispatchPassword
         #                   need to cancel a prompt, an empty string. A newline character is
-        #                   automatically appended
+        #                   automatically appended in both cases
         #
         # Return values
         #   'undef' on improper arguments
@@ -2207,12 +3693,24 @@
         my ($self, $cmd, $check) = @_;
 
         # Local variables
-        my ($colourSchemeObj, $monochromeFlag, $textColour, $mark, $noNewLineFlag, $iter);
+        my (
+            $colourSchemeObj, $monochromeFlag, $textColour, $mark, $noNewLineFlag, $iter, $endIter,
+            $endLine,
+        );
 
         # Check for improper arguments
         if (! defined $cmd || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->insertCmd', @_);
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+        # If the buffer is due to be cleared before inserting any text, then clear it
+        if ($self->clearAfterInsertFlag) {
+
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
         }
 
         # Import the colour scheme in use
@@ -2253,10 +3751,37 @@
         }
 
         # Insert the text into the Gtk2::TextBuffer
-        if ($monochromeFlag) {
-            $iter = $self->insertWithTags($iter, $cmd);
-        } else {
-            $iter = $self->insertWithTags($iter, $cmd, $textColour);
+        if ($cmd ne '') {
+
+            if ($monochromeFlag) {
+                $iter = $self->insertWithTags($iter, $cmd);
+            } else {
+                $iter = $self->insertWithTags($iter, $cmd, $textColour);
+            }
+        }
+
+        # In overwrite mode, don't insert a newline character on the bottom line
+        if (! $noNewLineFlag && $self->overwriteFlag) {
+
+            $endIter = $self->buffer->get_end_iter();
+            $endLine = $endIter->get_line();
+
+            if ($endLine == $iter->get_line() && $endLine == ($self->textHeightChars - 1)) {
+
+                $noNewLineFlag = TRUE;
+
+                # Remove any text between the end of the world command, and the end of the buffer
+                #   (so that the previous world command, if longer than this one, is no longer
+                #   visible)
+                if ($endIter->get_visible_line_offset() > $iter->get_visible_line_offset()) {
+
+                    $self->buffer->delete($iter, $endIter);
+                }
+
+                # Move the insertion point back to the beginning of the line, so the next world
+                #   command overwrites this one
+                $iter = $self->buffer->get_iter_at_line_offset($endLine, 0);
+            }
         }
 
         if (! $noNewLineFlag) {
@@ -2268,14 +3793,16 @@
 
             # The next call to $self->insertText, ->insertCmd etc uses the insertion point
             #   immediately after $iter
-            $mark = $self->buffer->create_mark($iter, $iter, TRUE);
+            $mark = $self->buffer->create_mark('insert_mark', $iter, TRUE);
             $self->ivPoke('insertMark', $mark);
+            # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+            $self->moveCursor($self->buffer->get_iter_at_mark($mark));
 
-        } elsif ($self->tempInsertMark) {
+        } else {
 
-            # Next call to $self->insertText, ->insertCmd etc uses the end of the buffer as its
-            #   insertion point
-            $self->ivUndef('tempInsertMark');
+            # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
+            #   Gtk2::TextTag)
+            $self->moveCursor();
         }
 
         if ($self->scrollLockFlag) {
@@ -2332,7 +3859,8 @@
         # Local variables
         my (
             $emptyFlag, $beforeFlag, $afterFlag, $linkFlag, $textColour, $underlayColour,
-            $colourSchemeObj, $monochromeFlag, $mode, $modText, $beep, $iter,
+            $systemTask, $hereFlag, $taskFlag, $consoleFlag, $colourSchemeObj, $monochromeFlag,
+            $modText, $beep, $iter,
             @styleTags, @modArgs,
         );
 
@@ -2354,7 +3882,7 @@
 
             if (! $textColour) {
 
-                $textColour = $axmud::CLIENT->customShowTextColour;
+                $textColour = $axmud::CLIENT->customShowSystemTextColour;
             }
 
             if (! $underlayColour) {
@@ -2366,20 +3894,44 @@
         # Whether the message is written only in this textview (mode 'original'), or in both this
         #   textview and the System task's window ('both'), or in the System task's window only
         #   (mode 'task'), depends on the System task's IVs (if the task is running)
-        if (! $self->session->systemTask) {
+        $systemTask = $self->session->systemTask;
+        if (! $systemTask) {
 
-            # Task not running
-            $mode = 'original';
+            $hereFlag = TRUE;
 
         } else {
 
-            $mode = $self->session->systemTask->errorMode;
+            if ($systemTask->systemMode eq 'original') {
+
+                $hereFlag = TRUE;
+
+            } elsif ($systemTask->systemMode eq 'both') {
+
+                $hereFlag = TRUE;
+                $taskFlag = TRUE;
+
+            } else {
+
+                $taskFlag = TRUE;
+            }
         }
 
-        # Empty the buffer before writing text, if required (but not in the System task window)
-        if ($emptyFlag && $mode ne 'task') {
+        # If not allowed to write a system message in this textview, write to the Session Console
+        #   window instead
+        if (
+            $hereFlag
+            && (! $axmud::CLIENT->mainWinSystemMsgFlag || $self->overwriteFlag)
+        ) {
+            $hereFlag = FALSE;
+            $consoleFlag = TRUE;
+        }
 
-            $self->clearBuffer();
+        # Empty the buffer before writing text, if required (but not in the System task window or in
+        #   the Session console window)
+        if ($emptyFlag && $hereFlag) {
+
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
         }
 
         # Prepare the message to send
@@ -2398,11 +3950,11 @@
             $text =~ s/$beep//g;
         }
 
-        if ($mode ne 'task') {
+        if ($hereFlag) {
 
             # If the last piece of text inserted at the Gtk2::TextBuffer via a call to
             #   $self->insertText didn't end in a newline character, we need to insert an artifical
-            #   new line character so the system message appears on its own line, at the end of the
+            #   newline character so the system message appears on its own line, at the end of the
             #   buffer
             if (
                 # Last character in the buffer isn't a newline character
@@ -2414,8 +3966,22 @@
                 && ! $self->systemInsertMark
             ) {
                 $iter = $self->buffer->get_end_iter();
-                $self->ivPoke('systemInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
+                $self->ivPoke(
+                    'tempInsertMark',
+                    $self->buffer->create_mark('temp_insert_mark', $iter, TRUE),
+                );
+
                 $beforeFlag = TRUE;
+            }
+
+            # If the cursor is visible, remove it temporarily (i.e. remove the existing
+            #   Gtk2::TextTag)
+            $self->removeCursor();
+            # If the buffer is due to be cleared before inserting any text, then clear it
+            if ($self->clearAfterInsertFlag) {
+
+                # The TRUE argument means 'don't remove/move the cursor'
+                $self->clearBuffer(undef, TRUE);
             }
 
             # Set the insertion point
@@ -2430,7 +3996,7 @@
 
                 # (Make sure the beginning of a link appears after the extra newline character, not
                 #   before it)
-               $iter = $self->insertNewLine($iter);
+                $iter = $self->insertNewLine($iter);
             }
 
             # Create a link object, if required
@@ -2464,14 +4030,26 @@
 
                 # (Make sure the end of a link appears before the extra newline character, not
                 #   after it)
-                $iter = $self->insertNewLine($iter);
+                $self->insertNewLine($iter);
                 $self->ivUndef('systemInsertMark');
+
+                # Restore the cursor
+                if ($self->tempInsertMark) {
+                    $self->moveCursor($self->buffer->get_iter_at_mark($self->tempInsertMark));
+                } else {
+                    $self->replaceCursor();
+                }
 
             } else {
 
                 # (System message in the next call to this function is appended to this system
                 #   message, which didn't end with a newline character)
-                $self->ivPoke('systemInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
+                $self->ivPoke(
+                    'systemInsertMark',
+                    $self->buffer->create_mark('system_insert_mark', $iter, TRUE),
+                );
+
+                # (Don't restore the cursor until the complete line is displayed)
             }
 
             if ($self->scrollLockFlag) {
@@ -2484,26 +4062,34 @@
             }
         }
 
-        if ($mode ne 'original') {
+        if (defined $text && $text ne '') {
 
-            # Write the message in the System task window, but remove an 'empty' argument if one
-            #   was specified for the 'main' window
-            foreach my $item (@args) {
+            if ($taskFlag) {
 
-                if ($item ne 'empty') {
+                # Write the message in the System task window, but remove an 'empty' argument if one
+                #   was specified for the 'main' window
+                foreach my $item (@args) {
 
-                    push (@modArgs, $item);
+                    if ($item ne 'empty') {
+
+                        push (@modArgs, $item);
+                    }
                 }
+
+                $self->session->systemTask->showSystemText($text, @modArgs);
             }
 
-            $self->session->systemTask->showSystemText($text, @modArgs);
-        }
+            if ($consoleFlag) {
 
-        # Write to logs and convert text-to-speech, if required
-        # Only a complete line (ending in a newline character) is written to logs and/or converted
-        #   to text-to-speech; until then, a partial system message is stored in a buffer
-        if ($text) {
+                # Send the message to the GA::Session, for display (now or later) in the Session
+                #   Console window
+                $self->session->add_systemMsg('system', $text);
+            }
 
+            # Write to logs and convert text-to-speech, if required
+            # Only a complete line (ending in a newline character) is written to logs and/or
+            #   converted to text-to-speech; until then, a partial system message is stored in a
+            #   buffer
             if (! $self->systemTextBuffer) {
                 $self->ivPoke('systemTextBuffer', $text);
             } else {
@@ -2561,6 +4147,10 @@
                 }
             }
 
+            # Fire any hooks that are using the system hook events
+            $self->session->checkHooks('system_text', $self->systemTextBuffer);
+            $self->session->checkHooks('system_all', $self->systemTextBuffer);
+
             $self->ivUndef('systemTextBuffer');
         }
 
@@ -2589,12 +4179,24 @@
         my ($self, $text, $func, $check) = @_;
 
         # Local variables
-        my ($colourSchemeObj, $monochromeFlag, $textColour, $msg, $mode, $iter, $beforeFlag);
+        my (
+            $colourSchemeObj, $monochromeFlag, $textColour, $msg, $systemTask, $hereFlag, $taskFlag,
+            $consoleFlag, $iter, $beforeFlag,
+        );
 
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showError', @_);
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+        # If the buffer is due to be cleared before inserting any text, then clear it
+        if ($self->clearAfterInsertFlag) {
+
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
         }
 
         # Import the colour scheme in use
@@ -2626,17 +4228,39 @@
         # Whether the message is written only in this textview (mode 'original'), or in both this
         #   textview and the System task's window ('both'), or in the System task's window only
         #   (mode 'task'), depends on the System task's IVs (if the task is running)
-        if (! $self->session->systemTask) {
+        $systemTask = $self->session->systemTask;
+        if (! $systemTask) {
 
-            # Task not running
-            $mode = 'original';
+            $hereFlag = TRUE;
 
         } else {
 
-            $mode = $self->session->systemTask->errorMode;
+            if ($systemTask->errorMode eq 'original') {
+
+                $hereFlag = TRUE;
+
+            } elsif ($systemTask->errorMode eq 'both') {
+
+                $hereFlag = TRUE;
+                $taskFlag = TRUE;
+
+            } else {
+
+                $taskFlag = TRUE;
+            }
         }
 
-        if ($mode ne 'task') {
+        # If not allowed to write a system message in this textview, write to the Session Console
+        #   window instead
+        if (
+            $hereFlag
+            && (! $axmud::CLIENT->mainWinSystemMsgFlag || $self->overwriteFlag)
+        ) {
+            $hereFlag = FALSE;
+            $consoleFlag = TRUE;
+        }
+
+        if ($hereFlag) {
 
             # If the previous call to $self->showSystemText displayed a message that didn't end in a
             #   newline character, $self->systemInsertMark is set
@@ -2659,8 +4283,22 @@
                 && ! $self->insertMark
             ) {
                 $iter = $self->buffer->get_end_iter();
-                $self->ivPoke('tempInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
+                $self->ivPoke(
+                    'tempInsertMark',
+                    $self->buffer->create_mark('temp_insert_mark', $iter, TRUE),
+                );
+
                 $beforeFlag = TRUE;
+            }
+
+            # If the cursor is visible, remove it temporarily (i.e. remove the existing
+            #   Gtk2::TextTag)
+            $self->removeCursor();
+            # If the buffer is due to be cleared before inserting any text, then clear it
+            if ($self->clearAfterInsertFlag) {
+
+                # The TRUE argument means 'don't remove/move the cursor'
+                $self->clearBuffer(undef, TRUE);
             }
 
             # Set the insertion point
@@ -2680,7 +4318,14 @@
                 $iter = $self->insertWithTags($iter, $msg, $textColour);
             }
 
-           $iter = $self->insertNewLine($iter);
+            $self->insertNewLine($iter);
+
+            # Restore the cursor
+            if ($self->tempInsertMark) {
+                $self->moveCursor($self->buffer->get_iter_at_mark($self->tempInsertMark));
+            } else {
+                $self->replaceCursor();
+            }
 
             if ($self->scrollLockFlag) {
 
@@ -2692,15 +4337,22 @@
             }
         }
 
-        if ($mode ne 'original') {
+        if (defined $msg && $msg ne '') {
 
-            # Write the message in the System task window
-            $self->session->systemTask->showError($msg);
-        }
+            if ($taskFlag) {
 
-        # Write to logs
-        if ($msg) {
+                # Write the message in the System task window
+                $self->session->systemTask->showError($msg);
+            }
 
+            if ($consoleFlag) {
+
+                # Send the message to the GA::Session, for display (now or later) in the Session
+                #   Console window
+                $self->session->add_systemMsg('error', $msg);
+            }
+
+            # Write to logs
             $axmud::CLIENT->writeLog(
                 $self->session,
                 TRUE,                           # Not world-specific logs
@@ -2709,6 +4361,11 @@
                 TRUE,                           # Use final newline character
                 'main', 'errors', 'error',      # Write to these files
             );
+
+            # Fire any hooks that are using the system hook events
+            $self->session->checkHooks('system_error', $msg);
+            $self->session->checkHooks('system_all', $msg);
+            $self->session->checkHooks('system_all_error', $msg);
         }
 
         # Play a sound effect (if allowed, and if this textview object hasn't played the same
@@ -2771,12 +4428,24 @@
         my ($self, $text, $func, $check) = @_;
 
         # Local variables
-        my ($colourSchemeObj, $monochromeFlag, $textColour, $msg, $mode, $iter, $beforeFlag);
+        my (
+            $colourSchemeObj, $monochromeFlag, $textColour, $msg, $systemTask, $hereFlag, $taskFlag,
+            $consoleFlag, $iter, $beforeFlag,
+        );
 
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showWarning', @_);
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+        # If the buffer is due to be cleared before inserting any text, then clear it
+        if ($self->clearAfterInsertFlag) {
+
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
         }
 
         # Import the colour scheme in use
@@ -2808,17 +4477,39 @@
         # Whether the message is written only in this textview (mode 'original'), or in both this
         #   textview and the System task's window ('both'), or in the System task's window only
         #   (mode 'task'), depends on the System task's IVs (if the task is running)
-        if (! $self->session->systemTask) {
+        $systemTask = $self->session->systemTask;
+        if (! $systemTask) {
 
-            # Task not running
-            $mode = 'original';
+            $hereFlag = TRUE;
 
         } else {
 
-            $mode = $self->session->systemTask->warningMode;
+            if ($systemTask->warningMode eq 'original') {
+
+                $hereFlag = TRUE;
+
+            } elsif ($systemTask->warningMode eq 'both') {
+
+                $hereFlag = TRUE;
+                $taskFlag = TRUE;
+
+            } else {
+
+                $taskFlag = TRUE;
+            }
         }
 
-        if ($mode ne 'task') {
+        # If not allowed to write a system message in this textview, write to the Session Console
+        #   window instead
+        if (
+            $hereFlag
+            && (! $axmud::CLIENT->mainWinSystemMsgFlag || $self->overwriteFlag)
+        ) {
+            $hereFlag = FALSE;
+            $consoleFlag = TRUE;
+        }
+
+        if ($hereFlag) {
 
             # If the previous call to $self->showSystemText displayed a message that didn't end in a
             #   newline character, $self->systemInsertMark is set
@@ -2841,8 +4532,22 @@
                 && ! $self->insertMark
             ) {
                 $iter = $self->buffer->get_end_iter();
-                $self->ivPoke('tempInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
+                $self->ivPoke(
+                    'tempInsertMark',
+                    $self->buffer->create_mark('temp_insert_mark', $iter, TRUE),
+                );
+
                 $beforeFlag = TRUE;
+            }
+
+            # If the cursor is visible, remove it temporarily (i.e. remove the existing
+            #   Gtk2::TextTag)
+            $self->removeCursor();
+            # If the buffer is due to be cleared before inserting any text, then clear it
+            if ($self->clearAfterInsertFlag) {
+
+                # The TRUE argument means 'don't remove/move the cursor'
+                $self->clearBuffer(undef, TRUE);
             }
 
             # Set the insertion point
@@ -2862,7 +4567,14 @@
                 $iter = $self->insertWithTags($iter, $msg, $textColour);
             }
 
-            $iter = $self->insertNewLine($iter);
+            $self->insertNewLine($iter);
+
+            # Restore the cursor
+            if ($self->tempInsertMark) {
+                $self->moveCursor($self->buffer->get_iter_at_mark($self->tempInsertMark));
+            } else {
+                $self->replaceCursor();
+            }
 
             if ($self->scrollLockFlag) {
 
@@ -2874,15 +4586,22 @@
             }
         }
 
-        if ($mode ne 'original') {
+        if (defined $msg && $msg ne '') {
 
-            # Write the message in the System task window
-            $self->session->systemTask->showWarning($msg);
-        }
+            if ($taskFlag) {
 
-        # Write to logs
-        if ($msg) {
+                # Write the message in the System task window
+                $self->session->systemTask->showWarning($msg);
+            }
 
+            if ($consoleFlag) {
+
+                # Send the message to the GA::Session, for display (now or later) in the Session
+                #   Console window
+                $self->session->add_systemMsg('warning', $msg);
+            }
+
+            # Write to logs
             $axmud::CLIENT->writeLog(
                 $self->session,
                 TRUE,                           # Not world-specific logs
@@ -2891,6 +4610,11 @@
                 TRUE,                           # Use final newline character
                 'main', 'errors', 'warning',    # Write to these files
             );
+
+            # Fire any hooks that are using the system hook events
+            $self->session->checkHooks('system_warning', $msg);
+            $self->session->checkHooks('system_all', $msg);
+            $self->session->checkHooks('system_all_error', $msg);
         }
 
         # Play a sound effect (if allowed, and if this textview object hasn't played the same
@@ -2953,12 +4677,24 @@
         my ($self, $text, $func, $check) = @_;
 
         # Local variables
-        my ($colourSchemeObj, $monochromeFlag, $textColour, $msg, $mode, $iter, $beforeFlag);
+        my (
+            $colourSchemeObj, $monochromeFlag, $textColour, $msg, $systemTask, $hereFlag, $taskFlag,
+            $consoleFlag, $iter, $beforeFlag,
+        );
 
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showDebug', @_);
+        }
+
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+        # If the buffer is due to be cleared before inserting any text, then clear it
+        if ($self->clearAfterInsertFlag) {
+
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
         }
 
         # Import the colour scheme in use
@@ -2990,17 +4726,39 @@
         # Whether the message is written only in this textview (mode 'original'), or in both this
         #   textview and the System task's window ('both'), or in the System task's window only
         #   (mode 'task'), depends on the System task's IVs (if the task is running)
-        if (! $self->session->systemTask) {
+        $systemTask = $self->session->systemTask;
+        if (! $systemTask) {
 
-            # Task not running
-            $mode = 'original';
+            $hereFlag = TRUE;
 
         } else {
 
-            $mode = $self->session->systemTask->debugMode;
+            if ($systemTask->debugMode eq 'original') {
+
+                $hereFlag = TRUE;
+
+            } elsif ($systemTask->debugMode eq 'both') {
+
+                $hereFlag = TRUE;
+                $taskFlag = TRUE;
+
+            } else {
+
+                $taskFlag = TRUE;
+            }
         }
 
-        if ($mode ne 'task') {
+        # If not allowed to write a system message in this textview, write to the Session Console
+        #   window instead
+        if (
+            $hereFlag
+            && (! $axmud::CLIENT->mainWinSystemMsgFlag || $self->overwriteFlag)
+        ) {
+            $hereFlag = FALSE;
+            $consoleFlag = TRUE;
+        }
+
+        if ($hereFlag) {
 
             # If the previous call to $self->showSystemText displayed a message that didn't end in a
             #   newline character, $self->systemInsertMark is set
@@ -3023,8 +4781,21 @@
                 && ! $self->insertMark
             ) {
                 $iter = $self->buffer->get_end_iter();
-                $self->ivPoke('tempInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
+                $self->ivPoke(
+                    'tempInsertMark',
+                    $self->buffer->create_mark('temp_insert_mark', $iter, TRUE),
+                );
+
                 $beforeFlag = TRUE;
+            }
+            # If the cursor is visible, remove it temporarily (i.e. remove the existing
+            #   Gtk2::TextTag)
+            $self->removeCursor();
+            # If the buffer is due to be cleared before inserting any text, then clear it
+            if ($self->clearAfterInsertFlag) {
+
+                # The TRUE argument means 'don't remove/move the cursor'
+                $self->clearBuffer(undef, TRUE);
             }
 
             # Set the insertion point
@@ -3044,7 +4815,14 @@
                 $iter = $self->insertWithTags($iter, $msg, $textColour);
             }
 
-            $iter = $self->insertNewLine($iter);
+            $self->insertNewLine($iter);
+
+            # Restore the cursor
+            if ($self->tempInsertMark) {
+                $self->moveCursor($self->buffer->get_iter_at_mark($self->tempInsertMark));
+            } else {
+                $self->replaceCursor();
+            }
 
             if ($self->scrollLockFlag) {
 
@@ -3056,15 +4834,22 @@
             }
         }
 
-        if ($mode ne 'original') {
+        if (defined $msg && $msg ne '') {
 
-            # Write the message in the System task window
-            $self->session->systemTask->showDebug($msg);
-        }
+            if ($taskFlag) {
 
-        # Write to logs
-        if ($msg) {
+                # Write the message in the System task window
+                $self->session->systemTask->showDebug($msg);
+            }
 
+            if ($consoleFlag) {
+
+                # Send the message to the GA::Session, for display (now or later) in the Session
+                #   Console window
+                $self->session->add_systemMsg('debug', $msg);
+            }
+
+            # Write to logs
             $axmud::CLIENT->writeLog(
                 $self->session,
                 TRUE,                           # Not world-specific logs
@@ -3073,6 +4858,11 @@
                 TRUE,                           # Use final newline character
                 'main', 'errors', 'debug',      # Write to these files
             );
+
+            # Fire any hooks that are using the system hook events
+            $self->session->checkHooks('system_debug', $msg);
+            $self->session->checkHooks('system_all', $msg);
+            $self->session->checkHooks('system_all_error', $msg);
         }
 
         # Play a sound effect (if allowed, and if this textview object hasn't played the same
@@ -3134,7 +4924,10 @@
         my ($self, $func, @args) = @_;
 
         # Local variables
-        my ($colourSchemeObj, $monochromeFlag, $textColour, $msg, $mode, $iter, $beforeFlag);
+        my (
+            $colourSchemeObj, $monochromeFlag, $textColour, $msg, $systemTask, $hereFlag, $taskFlag,
+            $consoleFlag, $iter, $beforeFlag,
+        );
 
         # Check for improper arguments
         if (! defined $func) {
@@ -3172,17 +4965,39 @@
         # Whether the message is written only in this textview (mode 'original'), or in both this
         #   textview and the System task's window ('both'), or in the System task's window only
         #   (mode 'task'), depends on the System task's IVs (if the task is running)
-        if (! $self->session->systemTask) {
+        $systemTask = $self->session->systemTask;
+        if (! $systemTask) {
 
-            # Task not running
-            $mode = 'original';
+            $hereFlag = TRUE;
 
         } else {
 
-            $mode = $self->session->systemTask->improperMode;
+            if ($systemTask->improperMode eq 'original') {
+
+                $hereFlag = TRUE;
+
+            } elsif ($systemTask->improperMode eq 'both') {
+
+                $hereFlag = TRUE;
+                $taskFlag = TRUE;
+
+            } else {
+
+                $taskFlag = TRUE;
+            }
         }
 
-        if ($mode ne 'task') {
+        # If not allowed to write a system message in this textview, write to the Session Console
+        #   window instead
+        if (
+            $hereFlag
+            && (! $axmud::CLIENT->mainWinSystemMsgFlag || $self->overwriteFlag)
+        ) {
+            $hereFlag = FALSE;
+            $consoleFlag = TRUE;
+        }
+
+        if ($hereFlag) {
 
             # If the previous call to $self->showSystemText displayed a message that didn't end in a
             #   newline character, $self->systemInsertMark is set
@@ -3205,8 +5020,22 @@
                 && ! $self->insertMark
             ) {
                 $iter = $self->buffer->get_end_iter();
-                $self->ivPoke('tempInsertMark', $self->buffer->create_mark($iter, $iter, TRUE));
+                $self->ivPoke(
+                    'tempInsertMark',
+                    $self->buffer->create_mark('temp_insert_mark', $iter, TRUE),
+                );
+
                 $beforeFlag = TRUE;
+            }
+
+            # If the cursor is visible, remove it temporarily (i.e. remove the existing
+            #   Gtk2::TextTag)
+            $self->removeCursor();
+            # If the buffer is due to be cleared before inserting any text, then clear it
+            if ($self->clearAfterInsertFlag) {
+
+                # The TRUE argument means 'don't remove/move the cursor'
+                $self->clearBuffer(undef, TRUE);
             }
 
             # Set the insertion point
@@ -3226,7 +5055,14 @@
                 $iter = $self->insertWithTags($iter, $msg, $textColour);
             }
 
-            $iter = $self->insertNewLine($iter);
+            $self->insertNewLine($iter);
+
+            # Restore the cursor
+            if ($self->tempInsertMark) {
+                $self->moveCursor($self->buffer->get_iter_at_mark($self->tempInsertMark));
+            } else {
+                $self->replaceCursor();
+            }
 
             if ($self->scrollLockFlag) {
 
@@ -3238,15 +5074,22 @@
             }
         }
 
-        if ($mode ne 'original') {
+        if (defined $msg && $msg ne '') {
 
-            # Write the message in the System task window
-            $self->session->systemTask->showImproper($msg);
-        }
+            if ($taskFlag) {
 
-        # Write to logs
-        if ($msg) {
+                # Write the message in the System task window
+                $self->session->systemTask->showImproper($msg);
+            }
 
+            if ($consoleFlag) {
+
+                # Send the message to the GA::Session, for display (now or later) in the Session
+                #   Console window
+                $self->session->add_systemMsg('improper', $msg);
+            }
+
+            # Write to logs
             $axmud::CLIENT->writeLog(
                 $self->session,
                 TRUE,                           # Not world-specific logs
@@ -3255,6 +5098,11 @@
                 TRUE,                           # Use final newline character
                 'main', 'errors', 'improper',   # Write to these files
             );
+
+            # Fire any hooks that are using the system hook events
+            $self->session->checkHooks('system_improper', $msg);
+            $self->session->checkHooks('system_all', $msg);
+            $self->session->checkHooks('system_all_error', $msg);
         }
 
         # Play a sound effect (if allowed, and if this textview object hasn't played the same
@@ -3327,7 +5175,7 @@
         # Local variables
         my (
             $emptyFlag, $beforeFlag, $afterFlag, $mark, $iter, $image, $ebox, $anchor, $lineNum,
-            $posn, $newMark, $newIter,
+            $posn, $newMark, $newIter, $tempInsertFlag,
         );
 
         # Check for improper arguments
@@ -3336,20 +5184,34 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showImage', @_);
         }
 
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        $self->removeCursor();
+        # If the buffer is due to be cleared before inserting any text, then clear it
+        if ($self->clearAfterInsertFlag || $emptyFlag) {
+
+            # The TRUE argument means 'don't remove/move the cursor'
+            $self->clearBuffer(undef, TRUE);
+        }
+
         # Interpret the list of @args, ignoring most of the usual return values
         ($emptyFlag, $beforeFlag, $afterFlag) = $self->interpretTags($self->newLineDefault, @args);
 
-        # Empty the buffer before writing text, if required
-        if ($emptyFlag) {
-
-            $self->clearBuffer();
-        }
-
         # Set the insertion point
         if ($self->insertMark) {
+
             $mark = $self->insertMark;
+
         } elsif ($self->tempInsertMark) {
+
             $mark = $self->tempInsertMark;
+            if ($afterFlag) {
+
+                # This code prevents a blank line being inserted between a world's prompt and the
+                #   already-displayed Axmud system message
+                $self->ivUndef('tempInsertMark');
+                $afterFlag = FALSE;
+                $tempInsertFlag = TRUE;
+            }
         }
 
         if ($mark) {
@@ -3359,7 +5221,7 @@
         } else {
 
             # Incomplete system message after a call to $self->showSystemText without a newline
-            #   character. Must insert an artificial newline character, and display $text after
+            #   character. Must insert an artificial newline character, and display $pixbuf after
             #   that
             $iter = $self->buffer->get_iter_at_mark($self->systemInsertMark);
             $iter = $self->insertNewLine($iter);
@@ -3443,11 +5305,27 @@
             $newIter = $self->insertNewLine($newIter);
         }
 
-        $newMark = $self->buffer->create_mark($newIter, $newIter, TRUE);
         if ($self->insertMark) {
+
+            # The next call to $self->insertText, ->insertCmd etc uses the insertion point
+            #   immediately after $newIter
+            $newMark = $self->buffer->create_mark('insert_mark', $newIter, TRUE);
             $self->ivPoke('insertMark', $newMark);
-        } elsif ($self->tempInsertMark) {
+            # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+            $self->moveCursor($self->buffer->get_iter_at_mark($mark));
+
+        } elsif ($tempInsertFlag) {
+
+            # Continue using this temporary insertion point, before a line with a system message
+            #   (and don't restore the cursor yet)
+            $newMark = $self->buffer->create_mark('temp_insert_mark', $newIter, TRUE);
             $self->ivPoke('tempInsertMark', $newMark);
+
+        } else {
+
+            # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
+            #   Gtk2::TextTag)
+            $self->moveCursor();
         }
 
         if ($self->scrollLockFlag) {
@@ -3465,6 +5343,214 @@
         }
 
         return 1;
+    }
+
+    sub removeCursor {
+
+        # Called by $self->insertText, ->insertMultipleText, ->insertQuick and ->insertCmd
+        # 'Removes' the visible cursor, usually before a call to $self->moveCursor to move it
+        #   somewhere else
+        # Also removes the extract space character at the end of the buffer, if one was created by
+        #   $self->moveCursor
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if visible cursors are disabled in this textview or if no
+        #       visible cursor has been drawn yet
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($nextIter, $iter);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->removeCursor', @_);
+        }
+
+        # Do nothing if visible cursors are disabled in this textview, or if no cursor has been
+        #   drawn by an earlier call to $self->moveCursor
+        if (! $self->cursorEnableFlag || ! $self->cursorMark) {
+
+            return undef;
+        }
+
+        $nextIter = $self->buffer->get_iter_at_mark($self->cursorMark);
+        if (! $nextIter) {
+
+            return undef;
+
+        } else {
+
+            $nextIter->forward_char();
+            $iter = $self->buffer->get_iter_at_mark($self->cursorMark);
+        }
+
+        # Remove the Gtk2::TextTag
+        $self->buffer->remove_tag_by_name(
+            'cursor',
+            # Would like to remove the text tag just for the one space character, but it doesn't
+            #   work
+            $iter,
+            $self->buffer->get_end_iter(),
+        );
+
+        # Remove the extra space that was added, if the cursor was position at the end of the buffer
+        #   (if a system message has been displayed, it might not be the end of the buffer now)
+        if ($self->cursorEndFlag) {
+
+            $self->buffer->delete($iter, $nextIter);
+        }
+
+        # Remove the mark
+        $self->buffer->delete_mark($self->cursorMark);
+
+        # Update IVs
+        $self->ivUndef('cursorMark');
+        $self->ivPoke('cursorEndFlag', FALSE);
+
+        return 1;
+    }
+
+    sub moveCursor {
+
+        # Called by $self->insertText, ->insertMultipleText, ->insertQuick and ->insertCmd
+        # 'Moves' the visible cursor to a specified position, or to the end of the buffer
+        # If at the end of the buffer, or at the end of line, adds an extra space character so that
+        #   the cursor is actually visible
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $iter   - The Gtk2::TextIter at which to position the cursor. If 'undef', the cursor is
+        #               positioned at the end of the buffer
+        #
+        # Return values
+        #   'undef' on improper arguments or if visible cursors are disabled in this textview
+        #   1 otherwise
+
+        my ($self, $iter, $check) = @_;
+
+        # Local variables
+        my ($endIter, $lastFlag, $cursorMark, $nextIter, $length);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->moveCursor', @_);
+        }
+
+        # Do nothing if visible cursors are disabled in this textview
+        if (! $self->cursorEnableFlag) {
+
+            return undef;
+        }
+
+        $endIter = $self->buffer->get_end_iter();
+        if (! $iter || $endIter->get_line() == $iter->get_line()) {
+
+            # Insert position is on the buffer's last line
+            $lastFlag = TRUE;
+        }
+
+        if (
+            ! defined $iter
+            || (
+                $lastFlag
+                && $endIter->get_visible_line_offset() == $iter->get_visible_line_offset()
+            )
+        ) {
+            $cursorMark = $self->buffer->create_mark('cursor_mark', $endIter, TRUE);
+
+            # Insert a space character at the end of the buffer, so that the visible cursor is
+            #   actually visible
+            $self->buffer->insert_with_tags_by_name(
+                $self->buffer->get_end_iter(),
+                ' ',
+                'cursor',
+            );
+
+            # Update IVs
+            $self->ivPoke('cursorMark', $cursorMark);
+            $self->ivPoke('cursorEndFlag', TRUE);
+
+        } else {
+
+            $cursorMark = $self->buffer->create_mark('cursor_mark', $iter, TRUE);
+
+            $nextIter = $self->buffer->get_iter_at_mark($cursorMark);
+            if (! $nextIter) {
+
+                return undef;
+
+            } else {
+
+                $nextIter->forward_char();
+                $iter = $self->buffer->get_iter_at_mark($cursorMark);
+            }
+
+            # If the visible cursor is at the end of a line (i.e. just before a newline character),
+            #   insert a space character there so that the visible cursor is actually visible
+            $length = $self->getLineLength($iter);
+            if (
+                ($lastFlag && $iter->get_visible_line_offset() >= $length)
+                || (! $lastFlag && $iter->get_visible_line_offset() >= ($length - 1))
+            ) {
+                $self->buffer->insert_with_tags_by_name(
+                    $iter,
+                    ' ',
+                    'cursor',
+                );
+
+            } else {
+
+                # Just insert the Gtk2::TextTag for the cursor at this position
+                $self->buffer->apply_tag_by_name(
+                    'cursor',
+                    $iter,
+                    $nextIter,
+                );
+            }
+
+            # Update IVs
+            $self->ivPoke('cursorMark', $cursorMark);
+            $self->ivPoke('cursorEndFlag', FALSE);
+        }
+
+        return 1;
+    }
+
+    sub replaceCursor {
+
+        # Called by the clear buffer/clear line operations (e.g. $self->clearBufferAfterMark,
+        #   ->clearLineAroundPosn, etc)
+        # Calls $self->moveCursor with the correct arguments for the current situation
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the result of the call to $self->  moveCursor
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->replaceCursor', @_);
+        }
+
+        if ($self->insertMark) {
+            return $self->moveCursor($self->buffer->get_iter_at_mark($self->insertMark));
+        } else {
+            return $self->moveCursor($self->buffer->get_end_iter());
+        }
     }
 
     # Other functions - must be called by specific code
@@ -4049,9 +6135,6 @@
         #   blink by alternating the values between TRUE and FALSE.
         # NB Gtk2 doesn't understand Axmud colour tags like 'ul_green', so we must convert them to
         #   RGB
-        # NB v1.0.882 Because of some weird Gtk issue, colour tags created before these 'blink_slow'
-        #   and 'blink_fast' tags can be made to blink, but colour tags created afterwards will not
-        #   blink. A workaround is to to use both 'foreground-set'/'background-set' and 'invisible'
         $background = $axmud::CLIENT->returnRGBColour($self->backgroundColour);
 
         # Blink slow
@@ -4061,7 +6144,6 @@
             'foreground-set'    => TRUE,                        # Text initially invisible
             'background'        => $background,
             'background-set'    => TRUE,                        # Underlay initially invisible
-            'invisible'         => TRUE,
         );
 
         # Blink fast
@@ -4071,7 +6153,6 @@
             'foreground-set'    => TRUE,
             'background'        => $background,
             'background-set'    => TRUE,
-            'invisible'         => TRUE,
         );
 
         # Strikethrough
@@ -4105,6 +6186,15 @@
         $self->buffer->create_tag(
             'justify_default',
             'justification'     => 'left',
+        );
+
+        # A special tag, not related to any Axmud colour/style tag, which handles a visible cursor
+        #   in the textview. Only one position in $self->buffer (if any) uses this tag at a time
+        # It's added to the buffer after any text insertion operation, so it should overrule any
+        #   'underline' tag that already exists at that position
+        $self->buffer->create_tag(
+            'cursor',
+            'underline'         => 'single',
         );
 
         return 1;
@@ -5280,6 +7370,10 @@
             $self->ivPoke('scroll', $scroll);
             $self->ivUndef('scroll2');
 
+            # In case split screen mode has just been turned off, check that the textview's size
+            #   hasn't change (as soon as possible)
+            $self->ivPoke('sizeUpdateFlag', TRUE);
+
             # Operation complete
             return $scroll;
         }
@@ -5410,6 +7504,10 @@
                 );
 
                 $self->scrollToLock();
+
+                # In case split screen mode has just been turned off, check that the textview's size
+                #   hasn't change (as soon as possible)
+                $self->ivPoke('sizeUpdateFlag', TRUE);
 
                 # Nothing needs to be re-packed
                 return undef
@@ -5624,6 +7722,303 @@
         }
 
         return 1;
+    }
+
+    sub updateVisibleSize {
+
+        # Called by Games::Axmud::Obj::Desktop->updateWidgets (only) for any textview object whose
+        #   ->sizeUpdateFlag is set
+        # Updates IVs and informs the GA::Session
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($charWidth, $charHeight, $rectObj, $textViewWidth, $textViewHeight);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateVisibleSize', @_);
+        }
+
+        # Do nothing while split screen mode is on
+        if ($self->splitScreenMode ne 'split') {
+
+            # Get the width/height of a character in the Gtk2::TextView
+            ($charWidth, $charHeight) = $self->getCharSize();
+            # Get a Gtk2::Gdk::Rectangle
+            $rectObj = $self->textView->get_visible_rect();
+            # Get the size of the textview
+            $textViewWidth = int($rectObj->width / $charWidth);
+            $textViewHeight = int($rectObj->height / $charHeight);
+
+            if (
+                ! defined $self->textWidthChars
+                || $textViewWidth != $self->textWidthChars
+                || $textViewHeight != $self->textHeightChars
+            ) {
+                # The size has changed. Update IVs...
+                $self->ivPoke('textWidthChars', $textViewWidth);
+                $self->ivPoke('textHeightChars', $textViewHeight);
+                # ...and inform the parent GA::Session
+                $self->session->textViewSizeUpdate($self);
+            }
+        }
+
+        $self->ivPoke('sizeUpdateFlag', FALSE);
+
+        return 1;
+    }
+
+    sub getCharSize {
+
+        # Called by $self->updateVisibleSize
+        # Gets the size (in pixels) of a single character in the Gtk2::TextView
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $char       - The character whose size should be found. If 'undef', the character 'w'
+        #                   is tested
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns a list in the form (width_pixels, height_pixels)
+
+        my ($self, $char, $check) = @_;
+
+        # Local variables
+        my (
+            $layout, $inkRect, $logicalRect,
+            @emptyList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->getCharSize', @_);
+            return @emptyList;
+        }
+
+        if (! $char) {
+
+            $char = 'w';
+        }
+
+        # Get the Pango::Layout representing the character in this session's textview
+        $layout = $self->textView->create_pango_layout($char);
+
+        # Get the width/height of the character
+        ($inkRect, $logicalRect) = $layout->get_pixel_extents();
+
+        return ($$logicalRect{'width'}, $$logicalRect{'height'});
+    }
+
+    sub getLineLength {
+
+        # For reasons unknown, calls to Gtk2::TextIter->get_chars_in_line returns the actual number
+        #   of characters in a line, plus 10,000
+        # Return the number of characters in a line, subtracting 10,000 if necessary
+        #
+        # Expected arguments
+        #   $iter   - A Gtk2::TextIter anywhere on the line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the (real) number of characters on the line
+
+        my ($self, $iter, $check) = @_;
+
+        # Local variables
+        my $count;
+
+        # Check for improper arguments
+        if (! defined $iter || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->getLineLength', @_);
+        }
+
+        $count = $iter->get_chars_in_line();
+        if ($count >= 10000) {
+
+            $count -= 10000;
+        }
+
+        return $count;
+    }
+
+    sub setupLink {
+
+        # Called by $self->insertText and ->showSystemText
+        # Just before a clickable link is displayed in the textview, creates a GA::Obj::Link (or
+        #   amends an existing one) to store data until the user clicks on the link
+        #
+        # Expected arguments
+        #   $iter       - The Gtk2::TextIter marking the position in the Gtk2::TextBuffer
+        #                   (stored in $self->buffer) at which the link will be displayed
+        #   $text       - The text of the link itself
+        #
+        # Return values
+        #   'undef' on improper arguments or if the link can't be created/amended
+        #   1 otherwise
+
+        my ($self, $iter, $text, $check) = @_;
+
+        # Local variables
+        my ($lineNum, $posn, $email, $type, $listRef, $objNum, $linkObj);
+
+        # Check for improper arguments
+        if (! defined $iter || ! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupLink', @_);
+        }
+
+        # Get the position of the start of the link
+        $lineNum = $iter->get_line();
+        $posn = $iter->get_line_offset();
+
+        # Check $text to see if it matches the start of an acceptable link, in the form
+        #   http://deathmud.org         - a URL opened by GA::Client->browserCmd
+        #   mailto:god@deathmud.org     - an email sent by GA::Client->emailCmd
+        #   admin@deathmud.org          - an email sent by GA::Client->emailCmd
+        #   telnet://deathmud.org:6666  - a new connection to a world, using telnet
+        #   telnet://deathmud.org       - a new connection to a world, port 23
+        #   ssh://deathmud.org:6666     - a new connection to a world, using SSH
+        #   ssh://deathmud.org          - a new connection to a world, generic port
+        #   ssl://deathmud.org:6666     - a new connection to a world, using SSL
+        #   ssl://deathmud.org          - a new connection to a world, generic port
+        # NB We don't check against GA::Client->urlRegex, etc, because $text might not contain
+        #   the whole link, but we do check against an email link without the mailto: part, in the
+        #   expectation that it was probably displayed by a single call to $self->insertText, etc
+        # NB This function isn't used for MXP links, for which a GA::Obj::Link has already been
+        #   created
+        $email = '^' . $axmud::CLIENT->constEmailRegex;
+        if ($text =~ m/^http(s?)\:\/\//i) {
+
+            $type = 'www';
+
+        } elsif ($text =~ m/^mailto\:/i || $text =~ m/$email/i) {
+
+            $type = 'mail';
+
+        } elsif ($text =~ m/^telnet\:\/\//i) {
+
+            $type = 'telnet';
+
+        } elsif ($text =~ m/^ssh\:\/\//i) {
+
+            $type = 'ssh';
+
+        } elsif ($text =~ m/^ssl\:\/\//i) {
+
+            $type = 'ssl';
+        }
+
+        # A single link may be created by one or more successive calls to $self->insertText (etc).
+        #   If $text isn't the start of a link, we will be looking to add it to the end of an
+        #   existing link
+        # This textview object stores its own list of GA::Obj::Link objects which apply to the
+        #   current insertion point; a hash in the form
+        #       ->linkObjLineHash{line} = reference_to_list_of_GA::Obj::Link_objects
+        $listRef = $self->ivShow('linkObjLineHash', $lineNum);
+
+        if (! defined $listRef) {
+
+            # Set its IVs
+            if (! $type) {
+
+                # This shouldn't happen
+                $type = 'other';
+            }
+
+            # Create a new GA::Obj::Link object
+            $linkObj = $self->add_link($lineNum, $posn, $type);
+            if (! $linkObj) {
+
+                return undef;
+            }
+
+            # (For non-MXP links, ->href and ->text are the same)
+            $linkObj->ivPoke('href', $text);
+            $linkObj->ivPoke('text', $text);
+
+        } elsif (! $type) {
+
+            # Check each GA::Obj::Link object in turn. If there's one which ends at $posn, we'll
+            #   need to check if $text is part of the same link, or the start of a new link
+            # (Don't need to check MXP links, which are always created whole)
+            OUTER: foreach my $obj (@$listRef) {
+
+                my $endPosn = $obj->posn + length ($obj->text);
+                if (! $obj->mxpFlag && $endPosn == $posn) {
+
+                    # $text is almost certainly part of the previous link
+                    $linkObj = $obj;
+                    # (->href and ->text are the same for non-MXP links)
+                    $linkObj->ivPoke('href', $obj->href . $text);
+                    $linkObj->ivPoke('text', $obj->text . $text);
+                    last OUTER;
+                }
+            }
+
+            if (! $linkObj) {
+
+                # Could not add $text to the end of an existing link
+                return undef;
+            }
+        }
+
+        return 1;
+    }
+
+    sub createMxpStackObj {
+
+        # Called by GA::Session->processMxpModalElement
+        # Creates an mxp stack object (GA::Mxp::StackObj) and adds it to this textview's stack
+        #
+        # Expected arguments
+        #   $session        - The calling GA::Session
+        #   $keyword        - The MXP element keyword (already converted to upper case)
+        #
+        # Optional arguments
+        #   %stackHash      - A hash of key-value pairs which updates $self->mxpModalStackHash by
+        #                       replacing one or more of its key-value pairs (might be an empty
+        #                       hash)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the stack object can't be created
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $session, $keyword, %stackHash) = @_;
+
+        # Local variables
+        my $stackObj;
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $keyword) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->createMxpStackObj', @_);
+        }
+
+        # Create a new MXP stack object which preserves current MXP text attributes, just before we
+        #   update $self->mxpModalStackHash
+        $stackObj = Games::Axmud::Mxp::StackObj->new($session, $keyword, $self->mxpModalStackHash);
+        if (! $stackObj ) {
+
+            return undef;
+        }
+
+        # Update IVs
+        $self->ivPush('mxpModalStackList', $stackObj);
+
+        # Apply the new text attributes specified by %stackHash
+        foreach my $key (keys %stackHash) {
+
+            $self->ivAdd('mxpModalStackHash', $key, $stackHash{$key});
+        }
+
+        return $stackObj;
     }
 
     sub interpretTags {
@@ -6028,7 +8423,7 @@
 
             my ($length, $stopPosn, $stopIter);
 
-            $length = $iter->get_chars_in_line();
+            $length = $self->getLineLength($iter);
             $stopPosn = $posn + length($text);
             if ($endIter->get_line() == $iter->get_line()) {
 
@@ -6061,14 +8456,8 @@
         # Get the iter after immediately after the inserted text. Gtk, for some reason, crashes if
         #   we try to get an iter outside the buffer, and some worlds (e.g. Kallisti) can cause
         #   such a crash, so we have to do a sanity check
-        # v1.0.879 - for reasons unknown, most of them time ->get_chars_in_line returns the actual
-        #   number of characters, plus 10,000, so we need to subtract it
         $posn += length ($text);
-        $newLength = $iter->get_chars_in_line();
-        if ($newLength >= 10000) {
-
-            $newLength -= 10000;
-        }
+        $newLength = $self->getLineLength($iter);
 
         if ($posn > $newLength) {
 
@@ -6097,6 +8486,7 @@
         if ($text ne '') {
 
             $self->ivPoke('bufferTextFlag', TRUE);
+            $self->ivPoke('sizeUpdateFlag', TRUE);
         }
 
         return $newIter;
@@ -6104,13 +8494,14 @@
 
     sub insertNewLine {
 
-        # Called by $self->insertText, ->insertCmd, ->showSystemText, ->showError, ->showWarning,
-        #   ->showDebug, ->showImproper and ->showImage
+        # Called by $self->insertText, ->insertMultipleText, ->insertCmd, ->showSystemText,
+        #   ->showError, ->showWarning, ->showDebug, ->showImproper and ->showImage
+        # Also called by $self->setInsertPosn to add empty lines, if they don't already exist
         # Inserts a newline character into the Gtk2::TextBuffer and updates IVs
         #
         # Expected arguments
-        #   $iter       - The Gtk2::TextIter, representing the point in the buffer at which the text
-        #                   is inserted
+        #   $iter           - The Gtk2::TextIter, representing the point in the buffer at which the
+        #                       text is inserted
         #
         # Return values
         #   'undef' on improper arguments
@@ -6120,7 +8511,7 @@
         my ($self, $iter, $check) = @_;
 
         # Local variables
-        my ($lineNum, $origLineNum, $posn, $newIter, $endIter);
+        my ($lineNum, $posn, $endIter, $forceFlag);
 
         # Check for improper arguments
         if (! defined $iter || defined $check) {
@@ -6129,84 +8520,95 @@
         }
 
         # Get the iter's position in the textview buffer
-        $origLineNum = $lineNum = $iter->get_line();
+        $lineNum = $iter->get_line();
         $posn = $iter->get_visible_line_offset();
-
-#        # Insert the newline character into the Gtk2::TextBuffer
-#        $self->buffer->insert_with_tags_by_name($iter, "\n");
-        # Gtk overwrite mode doesn't work (for some reason), so we're forced to implement our own
-        #   overwrite mode by deleting existing text before inserting new text
         $endIter = $self->buffer->get_end_iter();
-        if ($self->overwriteFlag && $iter ne $endIter) {
 
-            if ($endIter->get_line() == $iter->get_line()) {
+        if ($endIter->get_line() == $lineNum) {
 
-                # We're on the last line, but not at the last character; can insert the newline
-                #   character at the end of the buffer
-                # (Otherwise we're not on the last line, so the current line already has a newline
-                #   character at the end. No need to insert a new one; just skip to the beginning of
-                #   the next line in the code below)
-                $iter = $endIter;
-                $self->buffer->insert_with_tags_by_name($iter, "\n");
+            # We're on the buffer's last line
+            if ($self->getLineLength($endIter) == $posn) {
+
+                # We're at the end of the buffer, so insert a newline character as normal
+                $self->buffer->insert($iter, "\n");
+                $self->ivPoke('newLineFlag', TRUE);
+
+                # Create a mark after this newline character, so the next line (which currently
+                #   contains no characters at all) can be deleted when the buffer exceeds its
+                #   maximum number of lines
+                # (Lines aren't deleted in overwrite mode, so don't bother creating the marks)
+                if (! $self->overwriteFlag) {
+
+                    $self->buffer->create_mark(
+                        'line_' . $lineNum,
+                        $self->buffer->get_end_iter(),
+                        TRUE,
+                    );
+
+                    # If the buffer has exceeded its maximum number of lines, delete the oldest
+                    #   remaining line
+                    if ($self->maxLines && ($lineNum - $self->maxLines) >= $self->nextDeleteLine) {
+
+                        $self->removeOldLine();
+                    }
+                }
+
+            } else {
+
+                # We're somewhere on the buffer's last line, but not at the end
+                # Add a newline character to the end of the buffer, then move the insertion position
+                #   to the beginning of the next line
+                $self->buffer->insert($endIter, "\n");
+                $self->setInsertPosn(($lineNum + 1), 0);
             }
 
         } else {
 
-            # We're at the end of the buffer; insert a newline character as normal
-            $self->buffer->insert_with_tags_by_name($iter, "\n");
+            # We're somewhere on a line, but not the buffer's last line
+            # This line already ends with a newline character, so just move the insertion position
+            #   to the beginning of the next line
+            $self->setInsertPosn(($lineNum + 1), 0);
+            # If a scrolling region scrolls, we're forced to add newline character(s) anyway
+            $forceFlag = TRUE;
         }
 
-        # Get the iter after immediately after the inserted newline character
-        $lineNum++;
-        $posn = 0;
-        $newIter = $self->buffer->get_iter_at_line_offset($lineNum, $posn);
+        # $self->insertNewLineFlag is set on every call to this function (unless
+        #   $self->tempInsertMark is set, in which case this newline follows a system message, and
+        #   the actual insertion point is on some earlier line, in which case, we retain the current
+        #   value of $self->insertNewLineFlag)
+        if (! $self->tempInsertMark) {
 
-        # $self->insertNewLineFlag is set on every call to this function
-        $self->ivPoke('insertNewLineFlag', TRUE);
-        # $self->newLineFlag must be set if the buffer ends with a newline character
-        $endIter = $self->buffer->get_end_iter();
-
-        # Confusingly, $newIter and $endIter are not the same, even if they both point at the same
-        #   position in the buffer
-        if (
-            $newIter->get_line() eq $endIter->get_line()
-            && $newIter->get_visible_line_offset eq $endIter->get_visible_line_offset()
-        ) {
-            $self->ivPoke('newLineFlag', TRUE);
-            # Let's return $endIter rather than $newIter...
-            $newIter = $endIter;
-
-            # Create a mark so the line terminated by this endline character can be removed when
-            #   the buffer is full
-            $self->buffer->create_mark(
-                'line_' . $origLineNum,
-                $endIter,
-                TRUE,
-            );
-
-            # If the buffer has exceeded its maximum number of lines, delete the oldest remaining
-            #   line
-            if ($self->maxLines && ($lineNum - $self->maxLines) >= $self->nextDeleteLine) {
-
-                $self->removeOldLine();
-            }
+            $self->ivPoke('insertNewLineFlag', TRUE);
         }
 
-        # Update IVs. Flag is TRUE even if the buffer contains only a newline character
+        # This flag is TRUE even if the buffer contains only a newline character
         $self->ivPoke('bufferTextFlag', TRUE);
+        $self->ivPoke('sizeUpdateFlag', TRUE);
 
-        # Removing line(s) from the top of the buffer seems to invalidate $newIter that we got
-        #   just above, causing Axmud to crash. Solution is to get yet another iter and return that,
-        #   rather than returning $newIter
-        return $self->buffer->get_iter_at_line_offset($lineNum, $posn);
+        if (defined $self->scrlRegionBottom && $self->scrlRegionBottom eq $lineNum) {
+
+            # If a scroll region is defined, and if this function was called when the insertion
+            #   position was on the line at the bottom of that region, then scroll all the lines in
+            #   the region up by one (by deleting the first line in the region)
+            $self->scrlRegionUp(1, $forceFlag);
+
+            return $self->buffer->get_iter_at_line_offset($lineNum, 0);
+
+        } else {
+
+            # Just return the Gtk2::TextIter at the new insertion position
+            return $self->buffer->get_iter_at_line_offset(($lineNum + 1), 0);
+        }
     }
 
     sub removeOldLine {
 
         # Called by $self->insertNewLine
-        # When the Gtk2::TextBuffer is full, remove the oldest line
+        # When the Gtk2::TextBuffer is full (i.e. the number of lines in the buffer exceeds the
+        #   maximum), remove the oldest line
         # Also check $self->insertMark, etc, just in case they no longer exist (and update them, if
         #   so)
+        # Never called in overwrite mode (i.e. when $self->overwriteFlag is TRUE)
         #
         # Expected arguments
         #   (none besides $self)
@@ -6218,7 +8620,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($mark, $listRef);
+        my ($mark, $listRef, $ordinaryLineNum);
 
         # Check for improper arguments
         if (defined $check) {
@@ -6254,6 +8656,7 @@
             if ($self->insertMark && ! $self->insertMark->get_buffer()) {
 
                 $self->ivPoke('insertMark', undef);
+                $self->ivPoke('insertNewLineFlag', FALSE);
             }
 
             if ($self->restoreInsertMark && ! $self->restoreInsertMark->get_buffer()) {
@@ -6277,177 +8680,77 @@
         return 1;
     }
 
-    sub setupLink {
+    sub enableOverwrite {
 
-        # Called by $self->insertText and ->showSystemText
-        # Just before a clickable link is displayed in the textview, creates a GA::Obj::Link (or
-        #   amends an existing one) to store data until the user clicks on the link
+        # Mostly called by functions in this textview object, but can (in theory) be called by
+        #   anything
+        # Enables overwrite mode
         #
         # Expected arguments
-        #   $iter       - The Gtk2::TextIter marking the position in the Gtk2::TextBuffer
-        #                   (stored in $self->buffer) at which the link will be displayed
-        #   $text       - The text of the link itself
+        #   (none besides $self)
         #
         # Return values
-        #   'undef' on improper arguments or if the link can't be created/amended
+        #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $iter, $text, $check) = @_;
-
-        # Local variables
-        my ($lineNum, $posn, $email, $type, $listRef, $objNum, $linkObj);
+        my ($self, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $iter || ! defined $text || defined $check) {
+        if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupLink', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->enableOverwrite', @_);
         }
 
-        # Get the position of the start of the link
-        $lineNum = $iter->get_line();
-        $posn = $iter->get_line_offset();
+        $self->ivPoke('overwriteFlag', TRUE);
 
-        # Check $text to see if it matches the start of an acceptable link, in the form
-        #   http://deathmud.org         - a URL opened by GA::Client->browserCmd
-        #   mailto:god@deathmud.org     - an email sent by GA::Client->emailCmd
-        #   admin@deathmud.org          - an email sent by GA::Client->emailCmd
-        #   telnet://deathmud.org:6666  - a new connection to a world, using telnet
-        #   telnet://deathmud.org       - a new connection to a world, port 23
-        #   ssh://deathmud.org:6666     - a new connection to a world, using SSH
-        #   ssh://deathmud.org          - a new connection to a world, generic port
-        #   ssl://deathmud.org:6666     - a new connection to a world, using SSL
-        #   ssl://deathmud.org          - a new connection to a world, generic port
-        # NB We don't check against GA::Client->urlRegex, etc, because $text might not contain
-        #   the whole link, but we do check against an email link without the mailto: part, in the
-        #   expectation that it was probably displayed by a single call to $self->insertText, etc
-        # NB This function isn't used for MXP links, for which a GA::Obj::Link has already been
-        #   created
-        $email = '^' . $axmud::CLIENT->constEmailRegex;
-        if ($text =~ m/^http(s?)\:\/\//i) {
+        $self->textView->set_overwrite(TRUE);
+        if ($self->textView2) {
 
-            $type = 'www';
-
-        } elsif ($text =~ m/^mailto\:/i || $text =~ m/$email/i) {
-
-            $type = 'mail';
-
-        } elsif ($text =~ m/^telnet\:\/\//i) {
-
-            $type = 'telnet';
-
-        } elsif ($text =~ m/^ssh\:\/\//i) {
-
-            $type = 'ssh';
-
-        } elsif ($text =~ m/^ssl\:\/\//i) {
-
-            $type = 'ssl';
-        }
-
-        # A single link may be created by one or more successive calls to $self->insertText (etc).
-        #   If $text isn't the start of a link, we will be looking to add it to the end of an
-        #   existing link
-        # This textview object stores its own list of GA::Obj::Link objects which apply to the
-        #   current insertion point; a hash in the form
-        #       ->linkObjLineHash{line} = reference_to_list_of_GA::Obj::Link_objects
-        $listRef = $self->ivShow('linkObjLineHash', $lineNum);
-
-        if (! defined $listRef) {
-
-            # Set its IVs
-            if (! $type) {
-
-                # This shouldn't happen
-                $type = 'other';
-            }
-
-            # Create a new GA::Obj::Link object
-            $linkObj = $self->add_link($lineNum, $posn, $type);
-            if (! $linkObj) {
-
-                return undef;
-            }
-
-            # (For non-MXP links, ->href and ->text are the same)
-            $linkObj->ivPoke('href', $text);
-            $linkObj->ivPoke('text', $text);
-
-        } elsif (! $type) {
-
-            # Check each GA::Obj::Link object in turn. If there's one which ends at $posn, we'll
-            #   need to check if $text is part of the same link, or the start of a new link
-            # (Don't need to check MXP links, which are always created whole)
-            OUTER: foreach my $obj (@$listRef) {
-
-                my $endPosn = $obj->posn + length ($obj->text);
-                if (! $obj->mxpFlag && $endPosn == $posn) {
-
-                    # $text is almost certainly part of the previous link
-                    $linkObj = $obj;
-                    # (->href and ->text are the same for non-MXP links)
-                    $linkObj->ivPoke('href', $obj->href . $text);
-                    $linkObj->ivPoke('text', $obj->text . $text);
-                    last OUTER;
-                }
-            }
-
-            if (! $linkObj) {
-
-                # Could not add $text to the end of an existing link
-                return undef;
-            }
+            $self->textView2->set_overwrite(TRUE);
         }
 
         return 1;
     }
 
-    sub createMxpStackObj {
+    sub disableOverwrite {
 
-        # Called by GA::Session->processMxpModalElement
-        # Creates an mxp stack object (GA::Mxp::StackObj) and adds it to this textview's stack
+        # Should only be called by GA::Session->doDisconnect or ->reactDisconnect when a (real)
+        #   connection terminates, and when this is the session's default textview
+        # Turns off overwrite mode (if on), and moves the insertion point to the end of
+        #   $self->buffer
         #
         # Expected arguments
-        #   $session        - The calling GA::Session
-        #   $keyword        - The MXP element keyword (already converted to upper case)
-        #
-        # Optional arguments
-        #   %stackHash      - A hash of key-value pairs which updates $self->mxpModalStackHash by
-        #                       replacing one or more of its key-value pairs (might be an empty
-        #                       hash)
+        #   (none besides $self)
         #
         # Return values
-        #   'undef' on improper arguments or if the stack object can't be created
-        #   Blessed reference to the newly-created object on success
+        #   'undef' on improper arguments
+        #   1 otherwise
 
-        my ($self, $session, $keyword, %stackHash) = @_;
-
-        # Local variables
-        my $stackObj;
+        my ($self, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $session || ! defined $keyword) {
+        if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->createMxpStackObj', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->disableOverwrite', @_);
         }
 
-        # Create a new MXP stack object which preserves current MXP text attributes, just before we
-        #   update $self->mxpModalStackHash
-        $stackObj = Games::Axmud::Mxp::StackObj->new($session, $keyword, $self->mxpModalStackHash);
-        if (! $stackObj ) {
+        if ($self->overwriteFlag) {
 
-            return undef;
+            $self->ivPoke('overwriteFlag', FALSE);
+            $self->ivUndef('insertMark');
+            $self->ivUndef('restoreInsertMark');
+            $self->ivUndef('tempInsertMark');
+            $self->ivUndef('systemInsertMark');
+            $self->ivUndef('scrlRegionTop');
+            $self->ivUndef('scrlRegionBottom');
+
+            if ($self->bufferTextFlag && ! $self->newLineFlag) {
+
+                $self->insertNewLine($self->buffer->get_end_iter());
+            }
         }
 
-        # Update IVs
-        $self->ivPush('mxpModalStackList', $stackObj);
-
-        # Apply the new text attributes specified by %stackHash
-        foreach my $key (keys %stackHash) {
-
-            $self->ivAdd('mxpModalStackHash', $key, $stackHash{$key});
-        }
-
-        return $stackObj;
+        return 1;
     }
 
     ##################
@@ -6472,6 +8775,21 @@
         return 1;
     }
 
+    sub set_clearAfterInsert {
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_clearAfterInsert', @_);
+        }
+
+        $self->ivPoke('clearAfterInsertFlag', TRUE);
+
+        return 1;
+    }
+
     sub set_colourStyleHash {
 
         # Called by GA::Session->processLineSegment
@@ -6481,6 +8799,35 @@
         # (No improper arguments to check)
 
         $self->ivPoke('colourStyleHash', %hash);
+
+        return 1;
+    }
+
+    sub set_cursorEnableFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_cursorEnableFlag', @_);
+        }
+
+        if ($flag) {
+
+            $self->ivPoke('cursorEnableFlag', TRUE);
+
+            $self->moveCursor();
+
+        } else {
+
+            if ($self->cursorEnableFlag) {
+
+                $self->removeCursor();
+            }
+
+            $self->ivPoke('cursorEnableFlag', FALSE);
+        }
 
         return 1;
     }
@@ -6502,68 +8849,54 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->add_incompleteLink', @_);
         }
 
-        # DEBUG
-        # Temporary fix for (rare) problem of links placed after a line has finished, which causes
-        #   Gtk2 to crash
-        my $checkIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, 0);
-        if ($checkIter->get_chars_in_line() <= $linkObj->posn) {
-
-            # Don't apply this link
-            return undef;
-        }
-        # DEBUG
-
         if ($linkObj->number != -1) {
 
             # Not an incomplete link object
             return undef;
-
-        } else {
-
-            $linkObj->ivPoke('number', $self->linkObjCount);
-
-            $self->ivAdd('linkObjHash', $linkObj->number, $linkObj);
-
-            if (! $self->ivExists('linkObjLineHash', $linkObj->lineNum)) {
-
-                $self->ivAdd('linkObjLineHash', $linkObj->lineNum, []);
-            }
-
-            $listRef = $self->ivShow('linkObjLineHash', $linkObj->lineNum);
-            push (@$listRef, $linkObj);
-            $self->ivAdd('linkObjLineHash', $linkObj->lineNum, $listRef);
-
-            $self->ivIncrement('linkObjCount');
-
-            # Add Axmud 'link' and 'link_off' tags at the appropriate places
-            $startIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, $linkObj->posn);
-
-            # Need to check that the 'link_off' is going at the right place; if the line is too
-            #   short, Axmud will crash
-            $length = $startIter->get_chars_in_line();
-            $stopPosn = $linkObj->posn + length ($linkObj->text);
-            if ($stopPosn > $length) {
-
-                $endIter = $self->buffer->get_end_iter();
-                if ($endIter->get_line() == $startIter->get_line()) {
-                    $stopPosn = $length;
-                } else {
-                    $stopPosn = $length - 1;
-                }
-            }
-
-            $stopIter = $self->buffer->get_iter_at_line_offset(
-                $linkObj->lineNum,
-                $stopPosn,
-            );
-
-            if ($startIter && $stopIter) {
-
-                $self->buffer->apply_tag_by_name('link', $startIter, $stopIter);
-            }
-
-            return 1;
         }
+
+        # Update IVs
+        $linkObj->ivPoke('number', $self->linkObjCount);
+
+        $self->ivAdd('linkObjHash', $linkObj->number, $linkObj);
+
+        if (! $self->ivExists('linkObjLineHash', $linkObj->lineNum)) {
+
+            $self->ivAdd('linkObjLineHash', $linkObj->lineNum, []);
+        }
+
+        $listRef = $self->ivShow('linkObjLineHash', $linkObj->lineNum);
+        push (@$listRef, $linkObj);
+        $self->ivAdd('linkObjLineHash', $linkObj->lineNum, $listRef);
+
+        $self->ivIncrement('linkObjCount');
+
+        # Add Axmud 'link' and 'link_off' tags at the appropriate places
+        $startIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, $linkObj->posn);
+        $endIter = $self->buffer->get_end_iter();
+
+        # Need to check that the 'link_off' is going to be inserted into the buffer at a position
+        #   that actually exists; if the line is too short, Axmud will crash
+        $length = $self->getLineLength($startIter);
+        $stopPosn = $linkObj->posn + length ($linkObj->text);
+
+        if ($endIter->get_line() == $startIter->get_line() && $stopPosn > $length) {
+            $stopPosn = $length;
+        } elsif ($endIter->get_line() != $startIter->get_line() && $stopPosn > ($length - 1)) {
+            $stopPosn = $length - 1;
+        }
+
+        $stopIter = $self->buffer->get_iter_at_line_offset(
+            $linkObj->lineNum,
+            $stopPosn,
+        );
+
+        if ($startIter && $stopIter) {
+
+            $self->buffer->apply_tag_by_name('link', $startIter, $stopIter);
+        }
+
+        return 1;
     }
 
     sub add_link {
@@ -6733,40 +9066,6 @@
         }
     }
 
-    sub set_overwrite {
-
-        my ($self, $flag, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_overwrite', @_);
-        }
-
-        if (! $flag) {
-
-            $self->ivPoke('overwriteFlag', FALSE);
-
-            $self->textView->set_overwrite(FALSE);
-            if ($self->textView2) {
-
-                $self->textView2->set_overwrite(FALSE);
-            }
-
-        } else {
-
-            $self->ivPoke('overwriteFlag', TRUE);
-
-            $self->textView->set_overwrite(TRUE);
-            if ($self->textView2) {
-
-                $self->textView2->set_overwrite(TRUE);
-            }
-        }
-
-        return 1;
-    }
-
     sub set_scrollLockType {
 
         my ($self, $type, $check) = @_;
@@ -6786,6 +9085,53 @@
         return 1;
     }
 
+    sub set_scrlRegion {
+
+        my ($self, $top, $bottom, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $top || ! defined $bottom || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_scrlRegion', @_);
+        }
+
+        $self->ivPoke('scrlRegionTop', $top);
+        $self->ivPoke('scrlRegionBottom', $bottom);
+
+        return 1;
+    }
+
+    sub reset_scrlRegion {
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->reset_scrlRegion', @_);
+        }
+
+        $self->ivUndef('scrlRegionTop');
+        $self->ivUndef('scrlRegionBottom');
+
+        return 1;
+    }
+
+    sub set_sizeUpdateFlag {
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_sizeUpdateFlag', @_);
+        }
+
+        $self->ivPoke('sizeUpdateFlag', TRUE);
+
+        return 1;
+    }
+
     ##################
     # Accessors - get
 
@@ -6793,18 +9139,10 @@
         { $_[0]->{session} }
     sub number
         { $_[0]->{number} }
-
     sub winObj
         { $_[0]->{winObj} }
     sub paneObj
         { $_[0]->{paneObj} }
-
-    sub scrollLockFlag
-        { $_[0]->{scrollLockFlag} }
-    sub scrollLockType
-        { $_[0]->{scrollLockType} }
-    sub splitScreenMode
-        { $_[0]->{splitScreenMode} }
 
     sub textView
         { $_[0]->{textView} }
@@ -6824,6 +9162,13 @@
         { $_[0]->{endMark} }
     sub popupMenu
         { $_[0]->{popupMenu} }
+
+    sub scrollLockFlag
+        { $_[0]->{scrollLockFlag} }
+    sub scrollLockType
+        { $_[0]->{scrollLockType} }
+    sub splitScreenMode
+        { $_[0]->{splitScreenMode} }
 
     sub colourScheme
         { $_[0]->{colourScheme} }
@@ -6849,14 +9194,27 @@
     sub nextDeleteLine
         { $_[0]->{nextDeleteLine} }
 
+    sub scrlRegionTop
+        { $_[0]->{scrlRegionTop} }
+    sub scrlRegionBottom
+        { $_[0]->{scrlRegionBottom} }
+
     sub bufferTextFlag
         { $_[0]->{bufferTextFlag} }
+    sub sizeUpdateFlag
+        { $_[0]->{sizeUpdateFlag} }
+    sub textWidthChars
+        { $_[0]->{textWidthChars} }
+    sub textHeightChars
+        { $_[0]->{textHeightChars} }
     sub newLineFlag
         { $_[0]->{newLineFlag} }
     sub insertNewLineFlag
         { $_[0]->{insertNewLineFlag} }
     sub newLineDefault
         { $_[0]->{newLineDefault} }
+    sub clearAfterInsertFlag
+        { $_[0]->{clearAfterInsertFlag} }
 
     sub insertMark
         { $_[0]->{insertMark} }
@@ -6868,6 +9226,19 @@
         { $_[0]->{systemInsertMark} }
     sub systemTextBuffer
         { $_[0]->{systemTextBuffer} }
+
+    sub cursorEnableFlag
+        { $_[0]->{cursorEnableFlag} }
+    sub cursorOnFlag
+        { $_[0]->{cursorOnFlag} }
+    sub cursorMark
+        { $_[0]->{cursorMark} }
+    sub cursorEndFlag
+        { $_[0]->{cursorEndFlag} }
+    sub storePosnYPos
+        { $_[0]->{storePosnYPos} }
+    sub storePosnXPos
+        { $_[0]->{storePosnXPos} }
 
     sub linkObjHash
         { my $self = shift; return %{$self->{linkObjHash}}; }

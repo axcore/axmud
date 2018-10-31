@@ -461,7 +461,7 @@
         # The colour/style tags that applied at the beginning of the original line must be applied
         #   to that hash
         @previousTagList = $self->previousTagList;
-        %modHash = $self->session->applyColourStyleTags(
+        %modHash = $textViewObj->applyColourStyleTags(
             $self->session,
             \@previousTagList,
             %modHash,
@@ -504,7 +504,7 @@
                 $portion = substr($self->stripLine, $lastOffset, ($offset - $lastOffset));
 
                 %modHash = $textViewObj->colourStyleHash;
-                %modHash = $self->session->applyColourStyleTags(
+                %modHash = $textViewObj->applyColourStyleTags(
                     $self->session,
                     \@lastList,
                     %modHash,
@@ -531,7 +531,7 @@
 
             %modHash = $textViewObj->colourStyleHash;
 
-            %modHash = $self->session->applyColourStyleTags(
+            %modHash = $textViewObj->applyColourStyleTags(
                 $self->session,
                 \@lastList,
                 %modHash,

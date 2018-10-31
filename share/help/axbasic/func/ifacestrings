@@ -1,11 +1,11 @@
 IFACESTRINGS ()
 
    Synopsis:
-      Returns the number of substrings stored in the current interface 
+      Returns the number of substrings stored in the current interface
          notification
 
    Notes:
       The interface notification list contains all the notifications received,
          and not yet processed, as the result of an earlier SETTRIG statement.
       If the list is empty, -1 is returned. If the trigger's pattern did not
-         contain substrings (backreferences), 0 is returned.
+         contain group substrings, 0 is returned.

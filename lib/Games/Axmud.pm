@@ -158,7 +158,6 @@
     use Games::Axmud::Table;
     use Games::Axmud::Task;
     use Games::Axmud::Widget;
-    use Games::Axmud::Win;
     use Games::Axmud::WizWin;
 
     use Games::Axmud::Obj::Area;
@@ -212,6 +211,10 @@
     use Games::Axmud::Obj::Zone;
     use Games::Axmud::Obj::Zonemap;
     use Games::Axmud::Obj::ZoneModel;
+
+    use Games::Axmud::Win::External;
+    use Games::Axmud::Win::Internal;
+    use Games::Axmud::Win::Map;
 
     ##################
     # Constructors
@@ -2964,7 +2967,7 @@
 
         # Can be called by anything
         # Passes a set of arguments to GA::Obj::TextView->showSystemText. If it's not possible to
-        #   display a message in a 'main' window, writes to the terminal (and the Error Console
+        #   display a message in a 'main' window, writes to the terminal (and the Client Console
         #   window, the next time it's opened)
         #
         # Expected arguments
@@ -2999,7 +3002,7 @@
         } else {
 
             # Otherwise, we're forced to write to the terminal. The message is also stored in
-            #   GA::Client->systemMsgList, so it can be viewed in the Error Console window, if and
+            #   GA::Client->systemMsgList, so it can be viewed in the Client Console window, if and
             #   when the user opens it
             $msg = $args[0];
             if (! defined $msg) {
@@ -3009,7 +3012,7 @@
 
             $msg = 'SYSTEM: ' . $msg;
 
-            $axmud::CLIENT->add_systemMsg($msg);
+            $axmud::CLIENT->add_systemMsg('system', $msg);
             print $msg . "\n";
 
             return undef;
@@ -3020,7 +3023,7 @@
 
         # Can be called by anything
         # Passes a set of arguments to GA::Obj::TextView->showError. If it's not possible to display
-        #   a message in a 'main' window, writes to the terminal (and the Error Console window, the
+        #   a message in a 'main' window, writes to the terminal (and the Client Console window, the
         #   next time it's opened)
         #
         # Expected arguments
@@ -3061,7 +3064,7 @@
 
         } else {
 
-            # Write to the terminal and the Error Console window, if possible
+            # Write to the terminal and the Client Console window, if possible
             if (! defined $text) {
 
                 $text = "<<undef>>\n";
@@ -3073,7 +3076,7 @@
                 $msg = "ERROR: $text";
             }
 
-            $axmud::CLIENT->add_systemMsg($msg);
+            $axmud::CLIENT->add_systemMsg('error', $msg);
             print $msg . "\n";
 
             return undef;
@@ -3084,7 +3087,7 @@
 
         # Can be called by anything
         # Passes a set of arguments to GA::Obj::TextView->showWarning. If it's not possible to
-        #   display a message in a 'main' window, writes to the terminal (and the Error Console
+        #   display a message in a 'main' window, writes to the terminal (and the Client Console
         #   window, the next time it's opened)
         #
         # Expected arguments
@@ -3125,7 +3128,7 @@
 
         } else {
 
-            # Write to the terminal and the Error Console window, if possible
+            # Write to the terminal and the Client Console window, if possible
             if (! defined $text) {
 
                 $text = "<<undef>>\n";
@@ -3137,7 +3140,7 @@
                 $msg = "WARNING: $text";
             }
 
-            $axmud::CLIENT->add_systemMsg($msg);
+            $axmud::CLIENT->add_systemMsg('warning', $msg);
             print $msg . "\n";
 
             return undef;
@@ -3148,7 +3151,7 @@
 
         # Can be called by anything
         # Passes a set of arguments to GA::Obj::TextView->showDebug. If it's not possible to
-        #   display a message in a 'main' window, writes to the terminal (and the Error Console
+        #   display a message in a 'main' window, writes to the terminal (and the Client Console
         #   window, the next time it's opened)
         #
         # Expected arguments
@@ -3189,7 +3192,7 @@
 
         } else {
 
-            # Write to the terminal and the Error Console window, if possible
+            # Write to the terminal and the Client Console window, if possible
             if (! defined $text) {
 
                 $text = "<<undef>>\n";
@@ -3201,7 +3204,7 @@
                 $msg = "DEBUG: $text";
             }
 
-            $axmud::CLIENT->add_systemMsg($msg);
+            $axmud::CLIENT->add_systemMsg('debug', $msg);
             print $msg . "\n";
 
             return undef;
@@ -3232,7 +3235,7 @@
 
         # Can be called by anything
         # Passes a set of arguments to GA::Obj::TextView->showImproper. If it's not possible to
-        #   display a message there, writes to the terminal (and the Error Console window, the next
+        #   display a message there, writes to the terminal (and the Client Console window, the next
         #   time it's opened)
         #
         # Expected arguments
@@ -3253,11 +3256,11 @@
         # Check for improper arguments
         if (! defined $func) {
 
-            # This function mustn't call itself, so write something to the terminal and the Error
+            # This function mustn't call itself, so write something to the terminal and the Client
             #   Console window, if possible
             $msg = "ERROR: Recursive improper arguments call from $func";
 
-            $axmud::CLIENT->add_systemMsg($msg);
+            $axmud::CLIENT->add_systemMsg('improper', $msg);
             print $msg . "\n";
 
             return undef;
@@ -3283,10 +3286,10 @@
                 }
             }
 
-            # Write to the terminal and the Error Console window, if possible
+            # Write to the terminal and the Client Console window, if possible
             $msg = "IMPROPER ARGUMENTS: $func() " . join (" ", @args);
 
-            $axmud::CLIENT->add_systemMsg($msg);
+            $axmud::CLIENT->add_systemMsg('improper', $msg);
             print $msg . "\n";
 
             return undef;
@@ -3353,7 +3356,7 @@
 
         # Called by code in axmud.pl
         # After trapping a Perl error, display the error in a 'main' window. If it's not possible to
-        #   display a message there, write to the terminal (and the Error Console window, the next
+        #   display a message there, write to the terminal (and the Client Console window, the next
         #   time it's opened)
         #
         # Expected arguments
@@ -3388,10 +3391,10 @@
 
         } else {
 
-            # Write to the terminal and the Error Console window, if possible
+            # Write to the terminal and the Client Console window, if possible
             $msg = "PERL ERROR: " . join("\n", @list);
 
-            $axmud::CLIENT->add_systemMsg($msg);
+            $axmud::CLIENT->add_systemMsg('error', $msg);
             print $msg . "\n";
 
             return undef;
@@ -3404,7 +3407,7 @@
 
         # Called by code in axmud.pl
         # After trapping a Perl warning, display the warning in a 'main' window. If it's not
-        #   possible to display a message there, write to the terminal (and the Error Console
+        #   possible to display a message there, write to the terminal (and the Client Console
         #   window, the next time it's opened)
         #
         # Expected arguments
@@ -3439,10 +3442,10 @@
 
         } else {
 
-            # Write to the terminal and the Error Console window, if possible
+            # Write to the terminal and the Client Console window, if possible
             $msg = "PERL WARNING: " . join("\n", @list);
 
-            $axmud::CLIENT->add_systemMsg($msg);
+            $axmud::CLIENT->add_systemMsg('warning', $msg);
             print $msg . "\n";
 
             return undef;

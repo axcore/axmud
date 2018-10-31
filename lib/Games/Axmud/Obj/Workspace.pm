@@ -1563,11 +1563,14 @@
             }
 
             # This line prevents the system's window manager from placing the 'main' window at the
-            #   wrong location, on smaller desktops
+            #   wrong location on smaller desktops
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->moveResizeWin');
 
             # Move the window, if that was specified
-            if (defined $xPosPixels) {
+            # v1.1.264 - for unknown reasons, $winObj->winWidget is occasionally set to 'undef'
+            #   just before this line. Temporary fix until we find the cause
+#            if (defined $xPosPixels) {
+            if ($winObj->winWidget && defined $xPosPixels) {
 
                 $winObj->winWidget->move($xPosPixels, $yPosPixels);
             }

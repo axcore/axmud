@@ -1,8 +1,8 @@
-# Axmud list of all worlds, created Sun Sep 30, 2018
+# Axmud list of all worlds, created Wed Oct 31, 2018
 
 Aabahran, The Forsaken Lands
 aabahran
-play.theforsakenlands.org
+play.theforsakenlands.com
 1848
 0
 English
@@ -1841,7 +1841,7 @@ dswonderland.com
 1
 English
 
-Dragon Swords MUD
+Dragon Swords
 dswords
 dragonswordsmud.com
 1234
@@ -2334,7 +2334,7 @@ English
 Forgotten Kingdoms
 fkingdoms
 forgottenkingdoms.org
-4000
+23
 0
 English
 
@@ -2401,10 +2401,10 @@ foomoo.org
 0
 English
 
-The Forests Edge
+Forest's Edge
 forestsedge
 theforestsedge.com
-4000
+23
 0
 English
 
@@ -5621,7 +5621,7 @@ unitopia.de
 0
 Deutsch
 
-The Unofficial Squaresoft MUD
+The Unofficial SquareSoft MUD
 uossmud
 uossmud.sandwich.net
 9000

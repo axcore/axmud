@@ -544,7 +544,7 @@
         }
 
         # The next token is either an expression representing an Axmud internal variable (a scalar,
-        #   e.g. "current.world.name"; an array, e.g. "current.world.displayFormatList"; or a hash,
+        #   e.g. "current.world.name"; an array, e.g. "current.world.statusFormatList"; or a hash,
         #   e.g. "current.world.currencyHash")
         $token = $self->tokenGroupObj->lookAhead();
         if (! defined $token) {
@@ -664,7 +664,7 @@
         }
 
         # The first token is either an expression representing an Axmud internal variable (a scalar,
-        #   e.g. "current.world.name"; an array, e.g. "current.world.displayFormatList"; or a hash,
+        #   e.g. "current.world.name"; an array, e.g. "current.world.statusFormatList"; or a hash,
         #   e.g. "current.world.currencyHash")
         $token = $self->tokenGroupObj->lookAhead();
         if (! defined $token) {
@@ -13183,7 +13183,7 @@
 
         # The first (compulsory) token is either an expression representing an Axmud internal
         #   variable (a scalar, e.g. "current.world.name"; an array,
-        #   e.g. "current.world.displayFormatList"; or a hash, e.g. "current.world.currencyHash")
+        #   e.g. "current.world.statusFormatList"; or a hash, e.g. "current.world.currencyHash")
         $token = $self->tokenGroupObj->lookAhead();
         if (! defined $token) {
 

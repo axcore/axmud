@@ -6,6 +6,7 @@ dco / debugconnection         Toggles connection debugging flags
  
    Notes:
       <switch> can be any of the following:
+         -q   Show invalid escape sequences messages
          -t   Show telnet option negotiations messages
          -s   Show short option negotiation messages
          -l   Telnet library writes its own logfile, telopt.log

@@ -5,7 +5,7 @@ road / road                   Moves the character using pre-defined road routes
       ;road <stop>            Moves from the current room to the room <stop>
  
    Notes:
-      Axmud pre-defined routes are an easy way to move between rooms in the game
+      Axmud pre-defined routes are an easy way to move between rooms in the
          world (see the help for ';addroute' for information about routes).
       This command moves the character between two rooms - whose room tags are
          <start> and <stop> - using only pre-defined 'road' routes. 

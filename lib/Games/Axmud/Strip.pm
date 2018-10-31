@@ -229,6 +229,12 @@
         $menuItem_edit->set_submenu($menuColumn_edit);
         $menuBar->append($menuItem_edit);
 
+        # 'Interfaces' column
+        my $menuColumn_interfaces = $self->drawInterfacesColumn();
+        my $menuItem_interfaces = Gtk2::MenuItem->new('_Interfaces');
+        $menuItem_interfaces->set_submenu($menuColumn_interfaces);
+        $menuBar->append($menuItem_interfaces);
+
         # 'Tasks' column
         my $menuColumn_tasks = $self->drawTasksColumn();
         my $menuItem_tasks = Gtk2::MenuItem->new('_Tasks');
@@ -1643,97 +1649,127 @@
             return undef;
         }
 
-        my $menuItem_editTriggers = Gtk2::MenuItem->new('World _triggers...');
-        $menuItem_editTriggers->signal_connect('activate' => sub {
+        my $menuItem_quickPrefs = Gtk2::ImageMenuItem->new(
+            '_Quick preferences...',
+        );
+        my $menuImg_quickPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
+        $menuItem_quickPrefs->set_image($menuImg_quickPrefs);
+        $menuItem_quickPrefs->signal_connect('activate' => sub {
 
-            # Open the cage window on the notebook's second page, so the user can see the list of
-            #   triggers immediately
-            $self->winObj->visibleSession->pseudoCmd('editcage -t', $mode);
+            $self->winObj->visibleSession->pseudoCmd('editquick', $mode);
         });
-        $menuColumn_edit->append($menuItem_editTriggers);
+        $menuColumn_edit->append($menuItem_quickPrefs);
         # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_triggers', $menuItem_editTriggers);
+        $self->ivAdd('menuItemHash', 'edit_quick_prefs', $menuItem_quickPrefs);
 
-        my $menuItem_editAliases = Gtk2::MenuItem->new('World _aliases...');
-        $menuItem_editAliases->signal_connect('activate' => sub {
+        my $menuItem_clientPrefs = Gtk2::ImageMenuItem->new(
+            $axmud::SCRIPT . ' pr_eferences...',
+        );
+        my $menuImg_clientPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
+        $menuItem_clientPrefs->set_image($menuImg_clientPrefs);
+        $menuItem_clientPrefs->signal_connect('activate' => sub {
 
-            # Open the cage window on the notebook's second page, so the user can see the list of
-            #   aliases immediately
-            $self->winObj->visibleSession->pseudoCmd('editcage -a', $mode);
+            $self->winObj->visibleSession->pseudoCmd('editclient', $mode);
         });
-        $menuColumn_edit->append($menuItem_editAliases);
+        $menuColumn_edit->append($menuItem_clientPrefs);
         # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_aliases', $menuItem_editAliases);
+        $self->ivAdd('menuItemHash', 'edit_client_prefs', $menuItem_clientPrefs);
 
-        my $menuItem_editMacros = Gtk2::MenuItem->new('World _macros...');
-        $menuItem_editMacros->signal_connect('activate' => sub {
+        my $menuItem_sessionPrefs = Gtk2::ImageMenuItem->new('_Session preferences...');
+        my $menuImg_sessionPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
+        $menuItem_sessionPrefs->set_image($menuImg_sessionPrefs);
+        $menuItem_sessionPrefs->signal_connect('activate' => sub {
 
-            # Open the cage window on the notebook's second page, so the user can see the list of
-            #   macros immediately
-            $self->winObj->visibleSession->pseudoCmd('editcage -m', $mode);
+            $self->winObj->visibleSession->pseudoCmd('editsession', $mode);
         });
-        $menuColumn_edit->append($menuItem_editMacros);
+        $menuColumn_edit->append($menuItem_sessionPrefs);
         # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_macros', $menuItem_editMacros);
-
-        my $menuItem_editTimers = Gtk2::MenuItem->new('World t_imers...');
-        $menuItem_editTimers->signal_connect('activate' => sub {
-
-            # Open the cage window on the notebook's second page, so the user can see the list of
-            #   timers immediately
-            $self->winObj->visibleSession->pseudoCmd('editcage -i', $mode);
-        });
-        $menuColumn_edit->append($menuItem_editTimers);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_timers', $menuItem_editTimers);
-
-        my $menuItem_editHooks = Gtk2::MenuItem->new('World _hooks...');
-        $menuItem_editHooks->signal_connect('activate' => sub {
-
-            # Open the cage window on the notebook's second page, so the user can see the list of
-            #   hooks immediately
-            $self->winObj->visibleSession->pseudoCmd('editcage -h', $mode);
-        });
-        $menuColumn_edit->append($menuItem_editHooks);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_hooks', $menuItem_editHooks);
+        $self->ivAdd('menuItemHash', 'edit_session_prefs', $menuItem_sessionPrefs);
 
         $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_activeInterfaces = Gtk2::MenuItem->new('Acti_ve interfaces...');
-        $menuItem_activeInterfaces->signal_connect('activate' => sub {
+        my $menuItem_editWorld = Gtk2::ImageMenuItem->new('Edit current _world...');
+        my $menuImg_editWorld = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        $menuItem_editWorld->set_image($menuImg_editWorld);
+        $menuItem_editWorld->signal_connect('activate' => sub {
 
-            # Open a session preference window on the notebook's second page, so the user can see
-            #   the list of active interfaces immediately
-            $self->winObj->visibleSession->pseudoCmd('editactiveinterface', $mode);
+            $self->winObj->visibleSession->pseudoCmd('editworld', $mode);
         });
-        $menuColumn_edit->append($menuItem_activeInterfaces);
+        $menuColumn_edit->append($menuItem_editWorld);
         # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'active_interfaces', $menuItem_activeInterfaces);
+        $self->ivAdd('menuItemHash', 'edit_current_world', $menuItem_editWorld);
+
+        my $menuItem_editGuild = Gtk2::ImageMenuItem->new('Edit current _guild...');
+        my $menuImg_editGuild = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        $menuItem_editGuild->set_image($menuImg_editGuild);
+        $menuItem_editGuild->signal_connect('activate' => sub {
+
+            $self->winObj->visibleSession->pseudoCmd('editguild', $mode);
+        });
+        $menuColumn_edit->append($menuItem_editGuild);
+        # Requires a current session whose status is 'connected' or 'offline' and whose
+        #   ->currentGuild is defined
+        $self->ivAdd('menuItemHash', 'edit_current_guild', $menuItem_editGuild);
+
+        my $menuItem_editRace = Gtk2::ImageMenuItem->new('Edit current _race...');
+        my $menuImg_editRace = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        $menuItem_editRace->set_image($menuImg_editRace);
+        $menuItem_editRace->signal_connect('activate' => sub {
+
+            $self->winObj->visibleSession->pseudoCmd('editrace', $mode);
+        });
+        $menuColumn_edit->append($menuItem_editRace);
+        # Requires a current session whose status is 'connected' or 'offline' and whose
+        #   ->currentRace is defined
+        $self->ivAdd('menuItemHash', 'edit_current_race', $menuItem_editRace);
+
+        my $menuItem_editChar = Gtk2::ImageMenuItem->new('Edit current _character...');
+        my $menuImg_editChar = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        $menuItem_editChar->set_image($menuImg_editChar);
+        $menuItem_editChar->signal_connect('activate' => sub {
+
+            $self->winObj->visibleSession->pseudoCmd('editchar', $mode);
+        });
+        $menuColumn_edit->append($menuItem_editChar);
+        # Requires a current session whose status is 'connected' or 'offline' and whose
+        #   ->currentChar is defined
+        $self->ivAdd('menuItemHash', 'edit_current_char', $menuItem_editChar);
 
         $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_editCmds = Gtk2::MenuItem->new('World _commands...');
-        $menuItem_editCmds->signal_connect('activate' => sub {
+        my $menuItem_locatorWiz = Gtk2::ImageMenuItem->new('Run Locator wi_zard...');
+        my $menuImg_locatorWiz = Gtk2::Image->new_from_stock('gtk-page-setup', 'menu');
+        $menuItem_locatorWiz->set_image($menuImg_locatorWiz);
+        $menuItem_locatorWiz->signal_connect('activate' => sub {
 
-            # Open the cage window on the notebook's second page, so the user can see the list of
-            #   commands immediately
-            $self->winObj->visibleSession->pseudoCmd('editcage -c', $mode);
+            $self->winObj->visibleSession->pseudoCmd('locatorwizard', $mode);
         });
-        $menuColumn_edit->append($menuItem_editCmds);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_cmds', $menuItem_editCmds);
+        $menuColumn_edit->append($menuItem_locatorWiz);
+        # (Requires a visible session whose status is 'connected' or 'offline'. A
+        #   corresponding menu item also appears in $self->drawTasksColumn)
+        $self->ivAdd('menuItemHash', 'run_locator_wiz', $menuItem_locatorWiz);
 
-        my $menuItem_editRoutes = Gtk2::MenuItem->new('World _routes...');
-        $menuItem_editRoutes->signal_connect('activate' => sub {
+        my $menuItem_editWorldModel = Gtk2::ImageMenuItem->new('Edit _world model...');
+        my $menuImg_editWorldModel = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        $menuItem_editWorldModel->set_image($menuImg_editWorldModel);
+        $menuItem_editWorldModel->signal_connect('activate' => sub {
 
-            # Open the cage window on the notebook's second page, so the user can see the list of
-            #   routes immediately
-            $self->winObj->visibleSession->pseudoCmd('editcage -r', $mode);
+            $self->winObj->visibleSession->pseudoCmd('editmodel', $mode);
         });
-        $menuColumn_edit->append($menuItem_editRoutes);
+        $menuColumn_edit->append($menuItem_editWorldModel);
         # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_routes', $menuItem_editRoutes);
+        $self->ivAdd('menuItemHash', 'edit_world_model', $menuItem_editWorldModel);
+
+        my $menuItem_editDict = Gtk2::ImageMenuItem->new('Edit _dictionary...');
+        my $menuImg_editDict = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        $menuItem_editDict->set_image($menuImg_editDict);
+        $menuItem_editDict->signal_connect('activate' => sub {
+
+            $self->winObj->visibleSession->pseudoCmd('editdictionary', $mode);
+        });
+        $menuColumn_edit->append($menuItem_editDict);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'edit_dictionary', $menuItem_editDict);
 
         $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
@@ -1860,118 +1896,466 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'simulate', $menuItem_simulate);
 
-        $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        my $menuItem_patternTest = Gtk2::MenuItem->new('Test _patterns...');
+        $menuItem_patternTest->signal_connect('activate' => sub {
 
-        my $menuItem_locatorWiz = Gtk2::ImageMenuItem->new('Run Locator wi_zard...');
-        my $menuImg_locatorWiz = Gtk2::Image->new_from_stock('gtk-page-setup', 'menu');
-        $menuItem_locatorWiz->set_image($menuImg_locatorWiz);
-        $menuItem_locatorWiz->signal_connect('activate' => sub {
-
-            $self->winObj->visibleSession->pseudoCmd('locatorwizard', $mode);
+            $self->winObj->visibleSession->pseudoCmd('testpattern', $mode);
         });
-        $menuColumn_edit->append($menuItem_locatorWiz);
-        # (Requires a visible session whose status is 'connected' or 'offline'. A
-        #   corresponding menu item also appears in $self->drawTasksColumn)
-        $self->ivAdd('menuItemHash', 'run_locator_wiz', $menuItem_locatorWiz);
-
-        my $menuItem_editWorldModel = Gtk2::ImageMenuItem->new('Edit _world model...');
-        my $menuImg_editWorldModel = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
-        $menuItem_editWorldModel->set_image($menuImg_editWorldModel);
-        $menuItem_editWorldModel->signal_connect('activate' => sub {
-
-            $self->winObj->visibleSession->pseudoCmd('editmodel', $mode);
-        });
-        $menuColumn_edit->append($menuItem_editWorldModel);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_world_model', $menuItem_editWorldModel);
-
-            # 'Edit current profile' submenu
-            my $subMenu_currentProf = Gtk2::Menu->new();
-
-            my $menuItem_editWorld = Gtk2::MenuItem->new('Edit current _world...');
-            $menuItem_editWorld->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('editworld', $mode);
-            });
-            $subMenu_currentProf->append($menuItem_editWorld);
-
-            my $menuItem_editGuild = Gtk2::MenuItem->new('Edit current _guild...');
-            $menuItem_editGuild->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('editguild', $mode);
-            });
-            $subMenu_currentProf->append($menuItem_editGuild);
-            # Requires a current session whose status is 'connected' or 'offline' and whose
-            #   ->currentGuild is defined
-            $self->ivAdd('menuItemHash', 'edit_current_guild', $menuItem_editGuild);
-
-            my $menuItem_editRace = Gtk2::MenuItem->new('Edit current _race...');
-            $menuItem_editRace->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('editrace', $mode);
-            });
-            $subMenu_currentProf->append($menuItem_editRace);
-            # Requires a current session whose status is 'connected' or 'offline' and whose
-            #   ->currentRace is defined
-            $self->ivAdd('menuItemHash', 'edit_current_race', $menuItem_editRace);
-
-            my $menuItem_editChar = Gtk2::MenuItem->new('Edit current _character...');
-            $menuItem_editChar->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('editchar', $mode);
-            });
-            $subMenu_currentProf->append($menuItem_editChar);
-            # Requires a current session whose status is 'connected' or 'offline' and whose
-            #   ->currentChar is defined
-            $self->ivAdd('menuItemHash', 'edit_current_char', $menuItem_editChar);
-
-        my $menuItem_currentProf = Gtk2::MenuItem->new('Edit current _profile');
-        $menuItem_currentProf->set_submenu($subMenu_currentProf);
-        $menuColumn_edit->append($menuItem_currentProf);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_current_prof', $menuItem_currentProf);
-
-        $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
-
-        my $menuItem_quickPrefs = Gtk2::ImageMenuItem->new(
-            '_Quick preferences...',
-        );
-        my $menuImg_quickPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
-        $menuItem_quickPrefs->set_image($menuImg_quickPrefs);
-        $menuItem_quickPrefs->signal_connect('activate' => sub {
-
-            $self->winObj->visibleSession->pseudoCmd('editquick', $mode);
-        });
-        $menuColumn_edit->append($menuItem_quickPrefs);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_quick_prefs', $menuItem_quickPrefs);
-
-        my $menuItem_clientPrefs = Gtk2::ImageMenuItem->new(
-            $axmud::SCRIPT . ' pr_eferences...',
-        );
-        my $menuImg_clientPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
-        $menuItem_clientPrefs->set_image($menuImg_clientPrefs);
-        $menuItem_clientPrefs->signal_connect('activate' => sub {
-
-            $self->winObj->visibleSession->pseudoCmd('editclient', $mode);
-        });
-        $menuColumn_edit->append($menuItem_clientPrefs);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_client_prefs', $menuItem_clientPrefs);
-
-        my $menuItem_sessionPrefs = Gtk2::ImageMenuItem->new('_Session preferences...');
-        my $menuImg_sessionPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
-        $menuItem_sessionPrefs->set_image($menuImg_sessionPrefs);
-        $menuItem_sessionPrefs->signal_connect('activate' => sub {
-
-            $self->winObj->visibleSession->pseudoCmd('editsession', $mode);
-        });
-        $menuColumn_edit->append($menuItem_sessionPrefs);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'edit_session_prefs', $menuItem_sessionPrefs);
+        $menuColumn_edit->append($menuItem_patternTest);
 
         # Setup complete
         return $menuColumn_edit;
+    }
+
+    sub drawInterfacesColumn {
+
+        # Called by $self->enableMenu
+        # Sets up the menu's 'Interfaces' column
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, or if the menu can't be created
+        #   Otherwise returns the Gtk2::Menu created
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $mode;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->drawInterfacesColumn', @_);
+        }
+
+        # Import IVs (for convenience)
+        $mode = $self->winObj->pseudoCmdMode;
+
+        # Set up column
+        my $menuColumn_interfaces = Gtk2::Menu->new();
+        if (! $menuColumn_interfaces) {
+
+            return undef;
+        }
+
+        my $menuItem_activeInterfaces = Gtk2::MenuItem->new('Acti_ve interfaces...');
+        $menuItem_activeInterfaces->signal_connect('activate' => sub {
+
+            # Open a session preference window on the notebook's second page, so the user can see
+            #   the list of active interfaces immediately
+            $self->winObj->visibleSession->pseudoCmd('editactiveinterface', $mode);
+        });
+        $menuColumn_interfaces->append($menuItem_activeInterfaces);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'active_interfaces', $menuItem_activeInterfaces);
+
+        $menuColumn_interfaces->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+            # 'Triggers' submenu
+            my $subMenu_showTriggers = Gtk2::Menu->new();
+
+            my $menuItem_worldTriggers = Gtk2::MenuItem->new('_World triggers...');
+            $menuItem_worldTriggers->signal_connect('activate' => sub {
+
+                # Open the cage window on the notebook's second page, so the user can see the list
+                #   of triggers immediately
+                $self->winObj->visibleSession->pseudoCmd('editcage -t', $mode);
+            });
+            $subMenu_showTriggers->append($menuItem_worldTriggers);
+
+            my $menuItem_guildTriggers = Gtk2::MenuItem->new('_Guild triggers...');
+            $menuItem_guildTriggers->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage trigger_guild_' . $self->winObj->visibleSession->currentGuild->name,
+                    $mode,
+                );
+            });
+            $subMenu_showTriggers->append($menuItem_guildTriggers);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   guild)
+            $self->ivAdd('menuItemHash', 'guild_triggers', $menuItem_guildTriggers);
+
+            my $menuItem_raceTriggers = Gtk2::MenuItem->new('_Race triggers...');
+            $menuItem_raceTriggers->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage trigger_race_' . $self->winObj->visibleSession->currentRace->name,
+                    $mode,
+                );
+            });
+            $subMenu_showTriggers->append($menuItem_raceTriggers);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   race)
+            $self->ivAdd('menuItemHash', 'race_triggers', $menuItem_raceTriggers);
+
+            my $menuItem_charTriggers = Gtk2::MenuItem->new('_Character triggers...');
+            $menuItem_charTriggers->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage trigger_char_' . $self->winObj->visibleSession->currentChar->name,
+                    $mode,
+                );
+            });
+            $subMenu_showTriggers->append($menuItem_charTriggers);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   character)
+            $self->ivAdd('menuItemHash', 'char_triggers', $menuItem_charTriggers);
+
+        my $menuItem_showTriggers = Gtk2::MenuItem->new('_Triggers');
+        $menuItem_showTriggers->set_submenu($subMenu_showTriggers);
+        $menuColumn_interfaces->append($menuItem_showTriggers);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'show_triggers', $menuItem_showTriggers);
+
+            # 'Aliases' submenu
+            my $subMenu_showAliases = Gtk2::Menu->new();
+
+            my $menuItem_worldAliases = Gtk2::MenuItem->new('World _aliases...');
+            $menuItem_worldAliases->signal_connect('activate' => sub {
+
+                # Open the cage window on the notebook's second page, so the user can see the list
+                #   of aliases immediately
+                $self->winObj->visibleSession->pseudoCmd('editcage -a', $mode);
+            });
+            $subMenu_showAliases->append($menuItem_worldAliases);
+
+            my $menuItem_guildAliases = Gtk2::MenuItem->new('_Guild aliases...');
+            $menuItem_guildAliases->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage alias_guild_' . $self->winObj->visibleSession->currentGuild->name,
+                    $mode,
+                );
+            });
+            $subMenu_showAliases->append($menuItem_guildAliases);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   guild)
+            $self->ivAdd('menuItemHash', 'guild_aliases', $menuItem_guildAliases);
+
+            my $menuItem_raceAliases = Gtk2::MenuItem->new('_Race aliases...');
+            $menuItem_raceAliases->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage alias_race_' . $self->winObj->visibleSession->currentRace->name,
+                    $mode,
+                );
+            });
+            $subMenu_showAliases->append($menuItem_raceAliases);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   race)
+            $self->ivAdd('menuItemHash', 'race_aliases', $menuItem_raceAliases);
+
+            my $menuItem_charAliases = Gtk2::MenuItem->new('_Character aliases...');
+            $menuItem_charAliases->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage alias_char_' . $self->winObj->visibleSession->currentChar->name,
+                    $mode,
+                );
+            });
+            $subMenu_showAliases->append($menuItem_charAliases);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   character)
+            $self->ivAdd('menuItemHash', 'char_aliases', $menuItem_charAliases);
+
+        my $menuItem_showAliases = Gtk2::MenuItem->new('_Aliases');
+        $menuItem_showAliases->set_submenu($subMenu_showAliases);
+        $menuColumn_interfaces->append($menuItem_showAliases);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'show_aliases', $menuItem_showAliases);
+
+            # 'Macros' submenu
+            my $subMenu_showMacros = Gtk2::Menu->new();
+
+            my $menuItem_worldMacros = Gtk2::MenuItem->new('World _macros...');
+            $menuItem_worldMacros->signal_connect('activate' => sub {
+
+                # Open the cage window on the notebook's second page, so the user can see the list
+                #   of macros immediately
+                $self->winObj->visibleSession->pseudoCmd('editcage -m', $mode);
+            });
+            $subMenu_showMacros->append($menuItem_worldMacros);
+
+            my $menuItem_guildMacros = Gtk2::MenuItem->new('_Guild macros...');
+            $menuItem_guildMacros->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage macro_guild_' . $self->winObj->visibleSession->currentGuild->name,
+                    $mode,
+                );
+            });
+            $subMenu_showMacros->append($menuItem_guildMacros);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   guild)
+            $self->ivAdd('menuItemHash', 'guild_macros', $menuItem_guildMacros);
+
+            my $menuItem_raceMacros = Gtk2::MenuItem->new('_Race macros...');
+            $menuItem_raceMacros->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage macro_race_' . $self->winObj->visibleSession->currentRace->name,
+                    $mode,
+                );
+            });
+            $subMenu_showMacros->append($menuItem_raceMacros);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   race)
+            $self->ivAdd('menuItemHash', 'race_macros', $menuItem_raceMacros);
+
+            my $menuItem_charMacros = Gtk2::MenuItem->new('_Character macros...');
+            $menuItem_charMacros->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage macro_char_' . $self->winObj->visibleSession->currentChar->name,
+                    $mode,
+                );
+            });
+            $subMenu_showMacros->append($menuItem_charMacros);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   character)
+            $self->ivAdd('menuItemHash', 'char_macros', $menuItem_charMacros);
+
+        my $menuItem_showMacros = Gtk2::MenuItem->new('_Macros');
+        $menuItem_showMacros->set_submenu($subMenu_showMacros);
+        $menuColumn_interfaces->append($menuItem_showMacros);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'show_macros', $menuItem_showMacros);
+
+            # 'Timers' submenu
+            my $subMenu_showTimers = Gtk2::Menu->new();
+
+            my $menuItem_worldTimers = Gtk2::MenuItem->new('World t_imers...');
+            $menuItem_worldTimers->signal_connect('activate' => sub {
+
+                # Open the cage window on the notebook's second page, so the user can see the list
+                #   of timers immediately
+                $self->winObj->visibleSession->pseudoCmd('editcage -i', $mode);
+            });
+            $subMenu_showTimers->append($menuItem_worldTimers);
+
+            my $menuItem_guildTimers = Gtk2::MenuItem->new('_Guild timers...');
+            $menuItem_guildTimers->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage timer_guild_' . $self->winObj->visibleSession->currentGuild->name,
+                    $mode,
+                );
+            });
+            $subMenu_showTimers->append($menuItem_guildTimers);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   guild)
+            $self->ivAdd('menuItemHash', 'guild_timers', $menuItem_guildTimers);
+
+            my $menuItem_raceTimers = Gtk2::MenuItem->new('_Race timers...');
+            $menuItem_raceTimers->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage timer_race_' . $self->winObj->visibleSession->currentRace->name,
+                    $mode,
+                );
+            });
+            $subMenu_showTimers->append($menuItem_raceTimers);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   race)
+            $self->ivAdd('menuItemHash', 'race_timers', $menuItem_raceTimers);
+
+            my $menuItem_charTimers = Gtk2::MenuItem->new('_Character timers...');
+            $menuItem_charTimers->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage timer_char_' . $self->winObj->visibleSession->currentChar->name,
+                    $mode,
+                );
+            });
+            $subMenu_showTimers->append($menuItem_charTimers);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   character)
+            $self->ivAdd('menuItemHash', 'char_timers', $menuItem_charTimers);
+
+        my $menuItem_showTimers = Gtk2::MenuItem->new('_Timers');
+        $menuItem_showTimers->set_submenu($subMenu_showTimers);
+        $menuColumn_interfaces->append($menuItem_showTimers);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'show_timers', $menuItem_showTimers);
+
+            # 'Hooks' submenu
+            my $subMenu_showHooks = Gtk2::Menu->new();
+
+            my $menuItem_worldHooks = Gtk2::MenuItem->new('World _hooks...');
+            $menuItem_worldHooks->signal_connect('activate' => sub {
+
+                # Open the cage window on the notebook's second page, so the user can see the list
+                #   of hooks immediately
+                $self->winObj->visibleSession->pseudoCmd('editcage -h', $mode);
+            });
+            $subMenu_showHooks->append($menuItem_worldHooks);
+
+            my $menuItem_guildHooks = Gtk2::MenuItem->new('_Guild hooks...');
+            $menuItem_guildHooks->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage hook_guild_' . $self->winObj->visibleSession->currentGuild->name,
+                    $mode,
+                );
+            });
+            $subMenu_showHooks->append($menuItem_guildHooks);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   guild)
+            $self->ivAdd('menuItemHash', 'guild_hooks', $menuItem_guildHooks);
+
+            my $menuItem_raceHooks = Gtk2::MenuItem->new('_Race hooks...');
+            $menuItem_raceHooks->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage hook_race_' . $self->winObj->visibleSession->currentRace->name,
+                    $mode,
+                );
+            });
+            $subMenu_showHooks->append($menuItem_raceHooks);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   race)
+            $self->ivAdd('menuItemHash', 'race_hooks', $menuItem_raceHooks);
+
+            my $menuItem_charHooks = Gtk2::MenuItem->new('_Character hooks...');
+            $menuItem_charHooks->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage hook_char_' . $self->winObj->visibleSession->currentChar->name,
+                    $mode,
+                );
+            });
+            $subMenu_showHooks->append($menuItem_charHooks);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   character)
+            $self->ivAdd('menuItemHash', 'char_hooks', $menuItem_charHooks);
+
+        my $menuItem_showHooks = Gtk2::MenuItem->new('_Hooks');
+        $menuItem_showHooks->set_submenu($subMenu_showHooks);
+        $menuColumn_interfaces->append($menuItem_showHooks);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'show_hooks', $menuItem_showHooks);
+
+        $menuColumn_interfaces->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+            # 'Commands' submenu
+            my $subMenu_showCmds = Gtk2::Menu->new();
+
+            my $menuItem_worldCmds = Gtk2::MenuItem->new('_World commands...');
+            $menuItem_worldCmds->signal_connect('activate' => sub {
+
+                # Open the cage window on the notebook's second page, so the user can see the list
+                #   OF commands immediately
+                $self->winObj->visibleSession->pseudoCmd('editcage -c', $mode);
+            });
+            $subMenu_showCmds->append($menuItem_worldCmds);
+
+            my $menuItem_guildCmds = Gtk2::MenuItem->new('_Guild commands...');
+            $menuItem_guildCmds->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage cmd_guild_' . $self->winObj->visibleSession->currentGuild->name,
+                    $mode,
+                );
+            });
+            $subMenu_showCmds->append($menuItem_guildCmds);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   guild)
+            $self->ivAdd('menuItemHash', 'guild_cmds', $menuItem_guildCmds);
+
+            my $menuItem_raceCmds = Gtk2::MenuItem->new('_Race commands...');
+            $menuItem_raceCmds->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage cmd_race_' . $self->winObj->visibleSession->currentRace->name,
+                    $mode,
+                );
+            });
+            $subMenu_showCmds->append($menuItem_raceCmds);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   race)
+            $self->ivAdd('menuItemHash', 'race_cmds', $menuItem_raceCmds);
+
+            my $menuItem_charCmds = Gtk2::MenuItem->new('_Character commands...');
+            $menuItem_charCmds->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage cmd_char_' . $self->winObj->visibleSession->currentChar->name,
+                    $mode,
+                );
+            });
+            $subMenu_showCmds->append($menuItem_charCmds);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   character)
+            $self->ivAdd('menuItemHash', 'char_cmds', $menuItem_charCmds);
+
+        my $menuItem_showCmds = Gtk2::MenuItem->new('_Commands');
+        $menuItem_showCmds->set_submenu($subMenu_showCmds);
+        $menuColumn_interfaces->append($menuItem_showCmds);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'show_cmds', $menuItem_showCmds);
+
+            # 'Routes' submenu
+            my $subMenu_showRoutes = Gtk2::Menu->new();
+
+            my $menuItem_worldRoutes = Gtk2::MenuItem->new('_World routes...');
+            $menuItem_worldRoutes->signal_connect('activate' => sub {
+
+                # Open the cage window on the notebook's second page, so the user can see the list
+                #   OF routes immediately
+                $self->winObj->visibleSession->pseudoCmd('editcage -r', $mode);
+            });
+            $subMenu_showRoutes->append($menuItem_worldRoutes);
+
+            my $menuItem_guildRoutes = Gtk2::MenuItem->new('_Guild routes...');
+            $menuItem_guildRoutes->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage route_guild_' . $self->winObj->visibleSession->currentGuild->name,
+                    $mode,
+                );
+            });
+            $subMenu_showRoutes->append($menuItem_guildRoutes);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   guild)
+            $self->ivAdd('menuItemHash', 'guild_routes', $menuItem_guildRoutes);
+
+            my $menuItem_raceRoutes = Gtk2::MenuItem->new('_Race routes...');
+            $menuItem_raceRoutes->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage route_race_' . $self->winObj->visibleSession->currentRace->name,
+                    $mode,
+                );
+            });
+            $subMenu_showRoutes->append($menuItem_raceRoutes);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   race)
+            $self->ivAdd('menuItemHash', 'race_routes', $menuItem_raceRoutes);
+
+            my $menuItem_charRoutes = Gtk2::MenuItem->new('_Character routes...');
+            $menuItem_charRoutes->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd(
+                    'editcage route_char_' . $self->winObj->visibleSession->currentChar->name,
+                    $mode,
+                );
+            });
+            $subMenu_showRoutes->append($menuItem_charRoutes);
+            # (Requires a visible session whose status is 'connected' or 'offline', and a current
+            #   character)
+            $self->ivAdd('menuItemHash', 'char_routes', $menuItem_charRoutes);
+
+        my $menuItem_showRoutes = Gtk2::MenuItem->new('_Routes');
+        $menuItem_showRoutes->set_submenu($subMenu_showRoutes);
+        $menuColumn_interfaces->append($menuItem_showRoutes);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'show_routes', $menuItem_showRoutes);
+
+        # Setup complete
+        return $menuColumn_interfaces;
     }
 
     sub drawTasksColumn {
@@ -2327,7 +2711,7 @@
                 );
 
                 # Prompt the user for a pattern
-                ($cmd, $keycode) = $self->winObj->showDoubleComboDialogue(
+                ($cmd, $keycode) = $self->winObj->showEntryComboDialogue(
                     'Customise keypad key',
                     '(Optional) world command',
                     'Keypad key',
@@ -2575,8 +2959,8 @@
             });
             $subMenu_locatorTask->append($menuItem_locatorTask_resetTask);
 
-            my $menuItem_statusTask_toggleLocWin = Gtk2::MenuItem->new('Toggle task _window');
-            $menuItem_statusTask_toggleLocWin->signal_connect('activate' => sub {
+            my $menuItem_locatorTask_toggleLocWin = Gtk2::MenuItem->new('Toggle task _window');
+            $menuItem_locatorTask_toggleLocWin->signal_connect('activate' => sub {
 
                 if ($self->winObj->visibleSession->locatorTask->winObj) {
 
@@ -2587,7 +2971,7 @@
                     $self->winObj->visibleSession->pseudoCmd('opentaskwindow locator', $mode);
                 }
             });
-            $subMenu_locatorTask->append($menuItem_statusTask_toggleLocWin);
+            $subMenu_locatorTask->append($menuItem_locatorTask_toggleLocWin);
 
             $subMenu_locatorTask->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
@@ -2721,53 +3105,6 @@
             $menuItem_gauges->set_submenu($subMenu_gauges);
             $subMenu_statusTask->append($menuItem_gauges);
 
-            # 'Wimpy' submenu
-            my $subMenu_wimpy = Gtk2::Menu->new();
-
-            my $menuItem_statusTask_localWimpy0 = Gtk2::MenuItem->new('_Local wimpy to 0');
-            $menuItem_statusTask_localWimpy0->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('setwimpy 0', $mode);
-            });
-            $subMenu_wimpy->append($menuItem_statusTask_localWimpy0);
-
-            my $menuItem_statusTask_localWimpyMax = Gtk2::MenuItem->new('L_ocal wimpy to max');
-            $menuItem_statusTask_localWimpyMax->signal_connect('activate' => sub {
-
-                my $number = $self->winObj->visibleSession->currentWorld->_localWimpyMax;
-
-                if (defined $number) {
-
-                    $self->winObj->visibleSession->pseudoCmd('setwimpy ' . $number, $mode);
-                }
-            });
-            $subMenu_wimpy->append($menuItem_statusTask_localWimpyMax);
-
-            $subMenu_wimpy->append(Gtk2::SeparatorMenuItem->new());    # Separator
-
-            my $menuItem_statusTask_remoteWimpy0 = Gtk2::MenuItem->new('_Remote wimpy to 0');
-            $menuItem_statusTask_remoteWimpy0->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('setwimpy -r 0', $mode);
-            });
-            $subMenu_wimpy->append($menuItem_statusTask_remoteWimpy0);
-
-            my $menuItem_statusTask_remoteWimpyMax = Gtk2::MenuItem->new('R_emote _wimpy to max');
-            $menuItem_statusTask_remoteWimpyMax->signal_connect('activate' => sub {
-
-                my $number = $self->winObj->visibleSession->currentWorld->remoteWimpyMax;
-
-                if (defined $number) {
-
-                    $self->winObj->visibleSession->pseudoCmd('setwimpy -r ' . $number, $mode);
-                }
-            });
-            $subMenu_wimpy->append($menuItem_statusTask_remoteWimpyMax);
-
-            my $menuItem_wimpy = Gtk2::MenuItem->new('_Wimpy');
-            $menuItem_wimpy->set_submenu($subMenu_wimpy);
-            $subMenu_statusTask->append($menuItem_wimpy);
-
             $subMenu_statusTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
 
             my $menuItem_statusTask_editTask = Gtk2::ImageMenuItem->new('_Edit current task...');
@@ -2898,6 +3235,33 @@
             # (Requires a visible session whose status is 'connected' or 'offline' and is running an
             #   Advance task)
             $self->ivAdd('menuItemHash', 'edit_advance_task', $menuItem_advanceTask_editTask);
+
+            my $menuItem_rawTokenTask_editTask = Gtk2::ImageMenuItem->new(
+                'Edit current Raw _Token task...',
+            );
+            my $menuImg_rawTokenTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            $menuItem_rawTokenTask_editTask->set_image($menuImg_rawTokenTask_editTask);
+            $menuItem_rawTokenTask_editTask->signal_connect('activate' => sub {
+
+                my $session = $self->winObj->visibleSession;
+
+                # Open up a task 'edit' window to edit the task, with the 'main' window as the
+                #   parent
+                $self->winObj->createFreeWin(
+                    'Games::Axmud::EditWin::Task',
+                    $self->winObj,
+                    $session,
+                    'Edit ' . $session->rawTokenTask->prettyName . ' task',
+                    $session->rawTokenTask,
+                    FALSE,                          # Not temporary
+                    # Config
+                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
+                );
+            });
+            $subMenu_otherTask->append($menuItem_rawTokenTask_editTask);
+            # (Requires a visible session whose status is 'connected' or 'offline' and is running a
+            #   RawToken task)
+            $self->ivAdd('menuItemHash', 'edit_raw_token_task', $menuItem_rawTokenTask_editTask);
 
             my $menuItem_systemTask_editTask = Gtk2::ImageMenuItem->new(
                 'Edit current S_ystem task...',
@@ -7643,6 +8007,8 @@
         #                       corresponding 'id' values
         #                   'wipe_flag' - TRUE if a 'wipe entry' button should be drawn to the left
         #                       of the entry box, FALSE if not (default is FALSE)
+        #                   'console_flag' - TRUE if a 'toggle console' button should be drawn to
+        #                       the right of the entry box, FALSE if not (default is FALSE)
         #                   'input_flag' - TRUE if a 'toggle expand' button (for opening the quick
         #                       input window) should be drawn to the right of the entry box, FALSE
         #                       if not (default is FALSE)
@@ -7676,6 +8042,7 @@
             'func'                      => undef,
             'id'                        => '',
             'wipe_flag'                 => FALSE,
+            'console_flag'              => FALSE,
             'input_flag'                => FALSE,
             'cancel_flag'               => FALSE,
             'switch_flag'               => FALSE,
@@ -7789,6 +8156,7 @@
             # Widgets
             entry                       => undef,       # Gtk2::Entry
             wipeButton                  => undef,       # Gtk2::ToolButton
+            consoleButton               => undef,       # Gtk2::ToolButton
             inputButton                 => undef,       # Gtk2::ToolButton
             cancelButton                => undef,       # Gtk2::ToolButton
             switchButton                => undef,       # Gtk2::ToolButton
@@ -7819,6 +8187,29 @@
             # Hash in the form
             #   $captureHash{session_number} = undef
             captureHash                 => {},
+            # The current state of the console button, set to 'empty', 'system', 'debug' or 'error'
+            #   (or 'undef' if the button isn't visible)
+            consoleIconType             => undef,
+            # When a system message is waiting to be displayed in a Session Console window, the
+            #   button may be made to flash by periodic calls to $self->set_consoleIconFlash. When
+            #   not flashing, this value is set to TRUE; when flashing, it is alternately set to
+            #   FALSE and TRUE
+            consoleIconFlashFlag        => TRUE,
+
+            # Special echo mode. This flag is set by a call to $self->set_specialEchoFlag
+            # When TRUE, characters are sent to the world, one at a time, as soon as they're typed
+            # When false, instructions aren't executed until the user presses their RETURN key
+            specialEchoFlag             => FALSE,
+            # When special echo mode is enabled and the entry box contains a non-world command (for
+            #   example, a client command), this is flag is set to TRUE (so that the escape, tab,
+            #   backspace and delete keys are applied to the contents of the entry, not sent to the
+            #   world directly)
+            specialPreserveFlag         => FALSE,
+            # When special echo mode is enabled and ->specialPreserveFlag is TRUE, meaning that a
+            #   world command is being typed in the entry box (one letter at a time), the world
+            #   command is stored here, so it can be passed to the GA::Session
+            # At all other times, this IV is set to an empty string
+            specialWorldCmd             => '',
         };
 
         # Bless the object into existence
@@ -7894,16 +8285,33 @@
             $entry->set_sensitive(FALSE);
         }
 
+        # Draw a 'toggle console' icon as a toolbutton (optional)
+        my $consoleButton;
+        if ($self->ivShow('initHash', 'console_flag') && ! $axmud::BLIND_MODE_FLAG) {
+
+            $consoleButton = Gtk2::ToolButton->new(
+                Gtk2::Image->new_from_file(
+                    $axmud::SHARE_DIR . $axmud::CLIENT->constEmptyIconPath,
+                ),
+                'Open Session Console window',
+            );
+            $hBox->pack_start($consoleButton, FALSE, FALSE, 0);
+            $consoleButton->set_tooltip_text('Open Session Console window');
+            $consoleButton->set_sensitive(FALSE);
+
+            $self->ivPoke('consoleIconType', 'empty');
+        }
+
         # Draw a 'toggle expand' icon as a toolbutton (optional)
         my $inputButton;
         if ($self->ivShow('initHash', 'input_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
             $inputButton = Gtk2::ToolButton->new(
                 Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constMultiIconPath),
-                'Open quick input window',
+                'Open Quick Input window',
             );
             $hBox->pack_start($inputButton, FALSE, FALSE, 0);
-            $inputButton->set_tooltip_text('Open quick input window');
+            $inputButton->set_tooltip_text('Open Quick Input window');
             $inputButton->set_sensitive(FALSE);
         }
 
@@ -7967,6 +8375,7 @@
         $self->ivPoke('packingBox', $hBox);
         $self->ivPoke('entry', $entry);
         $self->ivPoke('wipeButton', $wipeButton);
+        $self->ivPoke('consoleButton', $consoleButton);
         $self->ivPoke('inputButton', $inputButton);
         $self->ivPoke('cancelButton', $cancelButton);
         $self->ivPoke('switchButton', $switchButton);
@@ -7994,6 +8403,7 @@
         #   in the future too, so we'll wait until now to do ->signal_connects)
         $self->setEntrySignals();           # 'activate'
         $self->setWipeSignals();            # 'clicked'
+        $self->setConsoleSignals();         # 'clicked'
         $self->setInputSignals();           # 'clicked'
         $self->setCancelSignals();          # 'clicked'
         $self->setSwitchSignals();          # 'clicked'
@@ -8085,6 +8495,11 @@
             $self->inputButton->set_sensitive($flag);
         }
 
+        if ($self->consoleButton) {
+
+            $self->consoleButton->set_sensitive($flag);
+        }
+
         if ($self->cancelButton) {
 
             $self->cancelButton->set_sensitive($flag);
@@ -8134,7 +8549,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my $textViewObj;
+        my ($textViewObj, $iv);
 
         # Check for improper arguments
         if (defined $check) {
@@ -8152,6 +8567,19 @@
             if ($self->winObj->visibleSession->defaultTabObj) {
 
                 $textViewObj = $self->winObj->visibleSession->defaultTabObj->textViewObj;
+            }
+
+            if ($self->consoleButton) {
+
+                # e.g. constEmptyIconPath
+                $iv = 'const' . ucfirst($self->winObj->visibleSession->systemMsgMode) . 'IconPath';
+
+                $self->consoleButton->set_icon_widget(
+                    Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
+                );
+
+                $self->ivPoke('consoleIconType', $self->winObj->visibleSession->systemMsgMode);
+                $self->ivPoke('consoleIconFlashFlag', TRUE);
             }
 
             if ($self->scrollButton) {
@@ -8205,10 +8633,14 @@
             } else {
 
                 # If the current current session's server has suggested that the client stop
-                #   ECHOing, and the client has agreed, text in the entry box must be obscured. If
-                #   not, it must be un-obscured (in case it was obscured by the previous session)
+                #   ECHOing, and the client has agreed, text in the entry box must be obscured
+                # If not, or if special echo mode is on, it must be un-obscured (in case it was
+                #   obscured by the previous session)
                 # In either case, text in the entry box is removed when switching sessions
-                if ($self->winObj->visibleSession->echoMode eq 'client_agree') {
+                if (
+                    $self->winObj->visibleSession->echoMode eq 'client_agree'
+                    && ! $self->specialEchoFlag
+                ) {
                     $self->obscureEntry(TRUE);
                 } else {
                     $self->obscureEntry(FALSE);
@@ -8235,34 +8667,50 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my %shortHash;
+
         # Check for improper arguments
         if (defined $check) {
 
              return $axmud::CLIENT->writeImproper($self->_objClass . '->setEntrySignals', @_);
         }
 
-        # Deal with input
+        # Deal with user pressing their ENTER key
         $self->entry->signal_connect('activate' => sub {
 
-            my ($value, $thisFuncRef, $session, $successFlag, $type);
+            my ($instruct, $thisFuncRef, $successFlag, $type);
 
-            $value = $self->entry->get_text();
+            $instruct = $self->entry->get_text();
             $thisFuncRef = $self->funcRef;
 
             # The entry box's behaviour depends on whether the parent window is a 'main' window, or
             #   not
             if ($self->winObj->winType eq 'main') {
 
-                $session = $self->winObj->visibleSession;
+                if (
+                    $self->specialEchoFlag
+                    && ! $self->specialPreserveFlag
+                    && $self->specialWorldCmd
+                    && $self->winObj->visibleSession
+                ) {
+                    # Pass the stored world command to the visible session, calling ->dispatchCmd
+                    #   directly, since it already checks for special echo mode
+                    $self->winObj->visibleSession->dispatchCmd($self->specialWorldCmd);
+                    # Also update the instruction buffer, since we bypassed GA::Session->doInstruct
+                    $self->winObj->visibleSession->updateInstructBuffer(
+                        $self->specialWorldCmd,
+                        'world',
+                    );
 
-                if ($session) {
+                } elsif ($self->winObj->visibleSession) {
 
                     # Pass the typed instruction to the visible session
-                    ($successFlag, $type) = $session->doInstruct($value);
+                    ($successFlag, $type) = $self->winObj->visibleSession->doInstruct($instruct);
 
                     if (
                         defined $type
-                        && $session->echoMode ne 'client_agree'
+                        && $self->winObj->visibleSession->echoMode ne 'client_agree'
                         && (
                             (
                                 $axmud::CLIENT->preserveWorldCmdFlag
@@ -8288,21 +8736,138 @@
                         $self->entry->set_text('');
                     }
 
+                    # Reset the text stored for the benefit of GA::Session->autoCompleteBuffer
+                    $self->ivUndef('originalEntryText');
+
                 } else {
 
                     $self->entry->set_text('');
-                }
 
-                # Reset the text stored for the benefit of GA::Session->autoCompleteBuffer
-                $self->ivUndef('originalEntryText');
+                    # Reset the text stored for the benefit of GA::Session->autoCompleteBuffer
+                    $self->ivUndef('originalEntryText');
+                }
 
             # For other 'internal' windows, redirect the entry box's contents to the specified
             #   function (if any)
             } elsif ($thisFuncRef) {
 
-                &$thisFuncRef($self, $self->entry, $self->funcID, $value);
+                &$thisFuncRef($self, $self->entry, $self->funcID, $instruct);
 
                 $self->entry->set_text('');
+            }
+
+            # Update IVs
+            $self->entry->set_icon_from_stock('primary', undef);
+            $self->ivPoke('specialPreserveFlag', FALSE);
+            $self->ivPoke('specialWorldCmd', '');
+
+            return 1;
+        });
+
+        # Deal with user entering or removing any character(s) from the entry box, during special
+        #   echo mode
+        # In special echo mode, world commands are sent to the world immediately, one character at a
+        #   time; but non-world commands (such as client commands) behave as normal. Forced client
+        #   commands also behave as normal
+        # To implement this we need to work out when the user is typing an instruction that begins
+        #   with a recognised instruction sigil, and when they're not
+
+        # Most instruction sigils are one character long, but GA::Client->constForcedSigil is two.
+        #   In any case, some user might edit GA::Client->new to alter the literal values
+        # Save a bit of time by compiling a hash of strings that start a multi-character sigil
+        #   (for example, for the forced world command sigil ',,' add an entry for ',')
+        # We assume that the user has followed the instructions in GA::Client->new, and has made
+        #   sure each sigil starts with a different character
+        foreach my $type (qw(client forced echo perl script multi speed bypass)) {
+
+            my $iv = 'const' . ucfirst($type) . 'Sigil';        # e.g. 'constClientSigil'
+
+            if (length ($axmud::CLIENT->$iv) > 1) {
+
+                for (my $num = 1; $num <= length($axmud::CLIENT->$iv); $num++) {
+
+                    $shortHash{substr($axmud::CLIENT->$iv, 0, $num)} = undef;
+                }
+            }
+        }
+
+        $self->entry->signal_connect('changed' => sub {
+
+            my $instruct = $self->entry->get_text();
+
+            if (! $self->specialEchoFlag || $instruct eq '') {
+
+                # Special echo mode is off or the command entry box is empty, so do nothing with
+                #   ordinary keypresses
+                return undef;
+
+            } else {
+
+                # Special echo mode is on. Trim initial whitespace, so we can work out whether
+                #   $instruct starts with an instruction sigil, or not; but if $instruct actually
+                #   contains just space character(s), don't trim it
+                $instruct =~ s/^\s*(\S.*)/$1/;
+
+                # Is the whole of instruct a partial multi-character sigil (for example, a single
+                #   comma from the forced world command sigil ',,') ?
+                foreach my $short (keys %shortHash) {
+
+                    if ($instruct eq $short) {
+
+                        # Decide what to do once the the user has typed another character
+                        # Meanwhile, set the entry icon for non-world commands
+                        $self->entry->set_icon_from_stock('primary', 'gtk-disconnect');
+                        # Don't let GA::Win::Internal->setKeyPressEvent intercept the escape, tab,
+                        #   backspace and delete keys, which should instead apply to our entry box
+                        $self->ivPoke('specialPreserveFlag', TRUE);
+                        $self->ivPoke('specialWorldCmd', '');
+
+                        return undef;
+                    }
+                }
+
+                # Now check that $instruct begins with an instruction sigil that's currently
+                #   enabled
+                foreach my $type (qw(client forced echo perl script multi speed bypass)) {
+
+                    my ($constIV, $flagIV);
+
+                    $constIV = 'const' . ucfirst($type) . 'Sigil';      # e.g. 'constClientSigil'
+                    $flagIV = $type . 'SigilFlag';                      # e.g. 'echoSigilFlag'
+
+                    if (
+                        index($instruct, $axmud::CLIENT->$constIV) == 0
+                        && (
+                            # The IVs ->clientSigilFlag and ->forcedSigilFlag don't exist
+                            $type eq 'client'
+                            || $type eq 'forced'
+                            || $axmud::CLIENT->$flagIV
+                        )
+                    ) {
+                        # $instruct begins with an instruction sigil that's enabled. Set the entry
+                        #   icon for non-world commands
+                        $self->entry->set_icon_from_stock('primary', 'gtk-disconnect');
+                        # Don't let GA::Win::Internal->setKeyPressEvent intercept the escape, tab,
+                        #   backspace and delete keys, which should instead apply to our entry box
+                        $self->ivPoke('specialPreserveFlag', TRUE);
+                        $self->ivPoke('specialWorldCmd', '');
+
+                        return undef;
+                    }
+                }
+
+                # $instruct is part of a world command, so send it to the world immediately (the
+                #   TRUE argument means to encode $instruct using the session's current character
+                #   set)
+                $self->winObj->visibleSession->put($instruct, TRUE);
+                # Reset the entry box, and set the icon for world commands
+                $self->entry->set_text('');
+                $self->entry->set_icon_from_stock('primary', 'gtk-connect');
+                # Update IVs
+                $self->ivPoke('specialPreserveFlag', FALSE);
+                $self->ivPoke('specialWorldCmd', $self->specialWorldCmd . $instruct);
+
+                return undef;
             }
         });
 
@@ -8334,6 +8899,62 @@
             $self->wipeButton->signal_connect('clicked' => sub {
 
                 $self->entry->set_text('');
+
+                # Update IVs. Clicking the button means that the user wants to start typing a new
+                #   world command, without having pressed their RETURN key (for example, if they've
+                #   just been navigating menus)
+                $self->ivPoke('specialPreserveFlag', FALSE);
+                $self->ivPoke('specialWorldCmd', '');
+                # Remove the icon, too
+                $self->entry->set_icon_from_stock('primary', undef);
+            });
+        }
+
+        return 1;
+    }
+
+    sub setConsoleSignals {
+
+        # Called by $self->objEnable
+        # Set up a ->signal_connect to watch out for the button being clicked
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setInputSignals', @_);
+        }
+
+        if ($self->consoleButton) {
+
+            $self->consoleButton->signal_connect('clicked' => sub {
+
+                if ($self->winObj->visibleSession) {
+
+                    if (! $self->winObj->visibleSession->consoleWin) {
+
+                        # Open an Session Console window
+                        $self->winObj->createFreeWin(
+                            'Games::Axmud::OtherWin::SessionConsole',
+                            $self->winObj,
+                            $self->winObj->visibleSession,
+                            undef,                              # Let the window set its own title
+                        );
+
+                    } else {
+
+                        # Close the existing window
+                        $self->winObj->visibleSession->consoleWin->winDestroy();
+                    }
+                }
             });
         }
 
@@ -8658,6 +9279,42 @@
         }
     }
 
+    sub applyBackspace {
+
+        # Called by GA::Win::Internal->setKeyPressEvent when the user presses the backspace key in
+        #   special echo mode
+        # $self->specialWorldCmd stores a copy of the world command that's being sent to the world,
+        #   one character at a time; amend the copy by removing its final character
+        # (This doesn't guarantee that the world command stored in ->specialWorldCmd is exactly the
+        #   same as the command the world thinks it's receiving, but it should be close enough)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->applyBackspace', @_);
+        }
+
+        # The calling function has done most of the checking, so just update ->specialWorldCmd
+        if ($self->specialWorldCmd ne '') {
+
+            $self->ivPoke(
+                'specialWorldCmd',
+                substr($self->specialWorldCmd, 0, ((length ($self->specialWorldCmd)) - 1)),
+            );
+        }
+
+        return 1;
+    }
+
     sub updateScrollButton {
 
         # Called by GA::Table::Pane->toggleScrollLock and ->toggleSplitScreen, and by
@@ -8721,7 +9378,6 @@
                         $axmud::SHARE_DIR . $axmud::CLIENT->constScrollIconPath
                     ),
                 );
-
 
             } else {
 
@@ -8822,6 +9478,61 @@
         return 1;
     }
 
+    sub updateConsoleButton {
+
+        # Called by GA::Session->add_systemMsg and ->reset_systemMsg
+        # The argument corresponds to the icon to draw on the console button. However, don't redraw
+        #   the icon if the correct icon is already visible
+        #
+        # Expected arguments
+        #   $type   - 'empty', 'system', 'debug' or 'error', corresponding to one of the icons in
+        #               ../share/icons/button
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $type, $check) = @_;
+
+        # Local variables
+        my $iv;
+
+        # Check for improper arguments
+        if (
+            ! defined $type
+            || ($type ne 'empty' && $type ne 'system' && $type ne 'debug' && $type ne 'error')
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateConsoleButton', @_);
+        }
+
+        if (
+            $self->consoleButton
+            && (
+                # The 'empty' icon is visible
+                ! $self->consoleIconType
+                # A change of visible icon
+                || $self->consoleIconType ne $type
+                # The icon is in flashing mode, so any of two icons might be visible
+                || ! $self->consoleIconFlashFlag
+            )
+        ) {
+            # e.g. 'constEmptyIconPath'
+            $iv = 'const' . ucfirst($type) . 'IconPath';
+
+            $self->consoleButton->set_icon_widget(
+                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
+            );
+
+            $self->ivPoke('consoleIconType', $type);
+            $self->ivPoke('consoleIconFlashFlag', TRUE);
+
+            $self->winObj->winShowAll($self->_objClass . '->updateScrollButton');
+        }
+
+        return 1;
+    }
+
     ##################
     # Accessors - set
 
@@ -8843,6 +9554,83 @@
             # Add the pane object to the list of pane objects which can be made active with the
             #   switch button
             $self->ivPush('paneObjList', $tableObj);
+        }
+
+        return 1;
+    }
+
+    sub set_consoleIconFlash {
+
+        # Called by GA::Client->spinClientLoop to flash the console button
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $iv;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_consoleIconFlash', @_);
+        }
+
+        # (The calling function has already compared IVs against this window's visible session)
+
+        if ($self->consoleButton && $self->consoleIconType) {
+
+            if ($self->consoleIconFlashFlag) {
+
+                $self->consoleButton->set_icon_widget(
+                    Gtk2::Image->new_from_file(
+                        $axmud::SHARE_DIR . $axmud::CLIENT->constEmptyIconPath,
+                    ),
+                );
+
+                $self->ivPoke('consoleIconFlashFlag', FALSE);
+
+            } else {
+
+                $iv = 'const' . ucfirst($self->consoleIconType) . 'IconPath';
+
+                $self->consoleButton->set_icon_widget(
+                    Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
+                );
+
+                $self->ivPoke('consoleIconFlashFlag', TRUE);
+            }
+
+            $self->consoleButton->show_all();
+        }
+
+        return 1;
+    }
+
+    sub reset_consoleIconFlash {
+
+        # Called by GA::Session->spinMaintainLoop to stop the console button's flashing
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $iv;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->reset_consoleIconFlash', @_);
+        }
+
+        if ($self->consoleButton && $self->consoleIconType) {
+
+            $iv = 'const' . ucfirst($self->consoleIconType) . 'IconPath';
+
+            $self->consoleButton->set_icon_widget(
+                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
+            );
+
+            $self->consoleButton->show_all();
+
+            $self->ivPoke('consoleIconFlashFlag', TRUE);
         }
 
         return 1;
@@ -8896,6 +9684,38 @@
         return 1;
     }
 
+    sub set_specialEchoFlag {
+
+        # Called by GA::Session->updateSpecialEcho
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_specialEchoFlag', @_);
+        }
+
+        if (! $flag) {
+
+            $self->ivPoke('specialEchoFlag', FALSE);
+            $self->ivPoke('specialPreserveFlag', FALSE);
+            $self->ivPoke('specialWorldCmd', '');
+
+        } else {
+
+            $self->ivPoke('specialEchoFlag', TRUE);
+        }
+
+        if ($self->entry) {
+
+            $self->entry->set_text('');
+            $self->entry->set_icon_from_stock('primary', undef);
+        }
+
+        return 1;
+    }
+
     ##################
     # Accessors - get
 
@@ -8903,6 +9723,8 @@
         { $_[0]->{entry} }
     sub wipeButton
         { $_[0]->{wipeButton} }
+    sub consoleButton
+        { $_[0]->{consoleButton} }
     sub inputButton
         { $_[0]->{inputButton} }
     sub cancelButton
@@ -8921,6 +9743,17 @@
         { $_[0]->{originalEntryText} }
     sub captureHash
         { my $self = shift; return %{$self->{captureHash}}; }
+    sub consoleIconType
+        { $_[0]->{consoleIconType} }
+    sub consoleIconFlashFlag
+        { $_[0]->{consoleIconFlashFlag} }
+
+    sub specialEchoFlag
+        { $_[0]->{specialEchoFlag} }
+    sub specialPreserveFlag
+        { $_[0]->{specialPreserveFlag} }
+    sub specialWorldCmd
+        { $_[0]->{specialWorldCmd} }
 }
 
 { package Games::Axmud::Strip::ConnectInfo;

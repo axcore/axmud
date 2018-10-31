@@ -7,9 +7,9 @@ POKEINT axmud-object-property
       POKE gives Axbasic scripts access to some of Axmud's internal data (see 
          the help for the POKE statement for a full explanation). 
       POKEINT is similar to POKE, but it only sets the value of scalar 
-         properties such as "world.current.remoteWimpyMax". It cannot be used to 
-         set a list property such as "world.current.doorPatternList", a hash 
-         property such as "world.current.currencyHash" or a Perl object such as
+         properties such as "world.current.longName". It cannot be used to set a
+         list property such as "world.current.doorPatternList", a hash property
+         such as "world.current.currencyHash" or a Perl object such as
          "world.current".
       POKEINT modifies the value of the scalar property - a value which must be 
          numeric - by removing its fractional part, converting 3.1415 to 3 and 

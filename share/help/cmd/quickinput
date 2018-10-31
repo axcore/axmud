@@ -1,4 +1,4 @@
-inp / quickinput              Opens the quick input window
+inp / quickinput              Opens the Quick Input window
  
    Format:
       ;inp                    Opens the window

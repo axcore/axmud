@@ -102,6 +102,7 @@
 
             @pageList                   = (
                 'intro',    # Corresponds to function $self->introPage
+                'mainWin',
                 'task',
                 'sigil',
                 'last',
@@ -117,6 +118,7 @@
 
             @pageList                   = (
                 'intro',
+                'mainWin',
                 'zonemap',
                 'task',
                 'sigil',
@@ -598,12 +600,114 @@
         }
 
         # Intro
+        $self->addLabel($self->table, '<b>Setup wizard (' . $self->getPageString() . ')</b>',
+            0, 12, 0, 1);
+
+        $self->addSimpleImage(
+            $self->table,
+            $axmud::CLIENT->getDialogueIcon('large'),
+            undef,
+            1, 6, 1, 12);
+
+        # (Empty labels for spacing)
+        $self->addLabel($self->table, '',
+            7, 10, 1, 2);
+        $self->addLabel($self->table, '',
+            7, 10, 2, 3);
+        $self->addLabel($self->table, '',
+            7, 10, 3, 4);
+
+        $self->addLabel($self->table, '<b>Welcome to ' . $axmud::SCRIPT . '!</b>',
+            7, 10, 4, 5);
+        $self->addLabel(
+            $self->table,
+            '<i>Please take a few moments to set up your new MUD client</i>',
+            7, 10, 5, 6);
+
+        my $button = $self->addButton(
+            $self->table,
+            undef,
+            "Ok, let's get started!",
+            "Move on to the next page",
+            7, 10, 6, 7);
+        $button->signal_connect('clicked' => sub {
+
+            # (The same as clicking the 'Next' button at the bottom of the window)
+            $self->buttonNext();
+        });
+
+        my $button2 = $self->addButton(
+            $self->table,
+            undef,
+            "Use recommended settings for my system",
+            "Close this window and use recommended settings",
+            7, 10, 7, 8);
+        $button2->signal_connect('clicked' => sub {
+
+            # The only change that the widgets on the following pages make is to set the zonemap...
+            if (
+                defined $self->workspaceObj->currentWidth
+                && $self->workspaceObj->currentWidth >= 1800
+            ) {
+                $self->ivPoke('zonemap', 'widescreen');
+            }
+
+            # All other system-dependent changes are already specified by this object's IVs, so we
+            #   can call the function as if the user had clicked the 'Save' button at the bottom of
+            #   the window
+            $self->saveChanges();
+        });
+
+        my $button3 = $self->addButton(
+            $self->table,
+            undef,
+            "Just use default settings",
+            "Close this window and use default settings",
+            7, 10, 8, 9);
+        $button3->signal_connect('clicked' => sub {
+
+            # (The same as clicking the 'Cancel' button at the bottom of the window)
+            $self->buttonCancel();
+        });
+
+        $self->addLabel($self->table, '',
+            7, 10, 9, 10);
+        $self->addLabel($self->table, '',
+            7, 10, 10, 11);
+        $self->addLabel($self->table, '',
+            7, 10, 11, 12);
+
+        return 12;
+    }
+
+    sub mainWinPage {
+
+        # 'Main' window page - called by $self->setupTable or ->expandTable
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the number of table rows used
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @spacingList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mainWinPage', @_);
+        }
+
+        # 'Main' windows
         $self->addLabel($self->table, '<b>\'Main\' windows (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
             $self->table,
-            "<i>Please take a moment to customise " . $axmud::SCRIPT . ", or click the"
-            . " <b>Cancel</b> button to use default settings.</i>",
+            "<i>Choose how Axmud handles multiple simultaneous connections.</i>",
             1, 12, 1, 2);
 
         $self->addSimpleImage(
@@ -778,7 +882,7 @@
             # (->signal_connects from above)
 
             # As a convenience for users, auto-set the 'widescreen' zonemap (but only do this once,
-            #   otherwise widescreen will be re-selected if the 'Previous' button is clicked
+            #   otherwise widescreen will be re-selected if the 'Previous' button is clicked)
             # Use 1800, rather than 1920, as the test in case there are desktop panels on the
             #   left and/or right sides
 
@@ -3575,15 +3679,15 @@
 
             # Right column
             $self->addLabel($self->table, '<i>Exit list</i>',
-                7, 12, 3, 4);
+                6, 12, 3, 4);
             my $textView2 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                7, 12, 4, 7);
+                6, 12, 4, 7);
             $self->updateTextView($textView2, 'verb_exit');
 
             $self->addLabel($self->table, '<i>Individual exits</i>',
-                7, 12, 7, 8);
+                6, 12, 7, 8);
             my $textView3 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                7, 12, 8, 11);
+                6, 12, 8, 11);
             if ($self->analysisExitList) {
 
                 my $buffer3 = $textView3->get_buffer();
@@ -3735,9 +3839,9 @@
 
             # Middle right column
             $self->addLabel($self->table, '<i>Individual exits</i>',
-                7, 12, ($row + 3), ($row + 4));
+                6, 12, ($row + 3), ($row + 4));
             my $entry4 = $self->addEntry($self->table, undef, undef, TRUE,
-                7, 12, ($row + 4), ($row + 5));
+                6, 12, ($row + 4), ($row + 5));
             $entry4->set_editable(FALSE);
 
             # Bottom portion
@@ -3973,9 +4077,9 @@
 
         # Right column
         $self->addLabel($self->table, '<i>Marker patterns (e.g. \'is here.\')</i>',
-            7, 12, 7, 8);
+            6, 12, 7, 8);
         my $textView2 = $self->addTextView($self->table, undef, undef, undef, TRUE,
-            7, 12, 8, 9);
+            6, 12, 8, 9);
         my $buffer2 = $textView2->get_buffer();
         if ($self->markerList) {
 

@@ -2027,9 +2027,9 @@
         # Add a simple list
         @columnList = (
             ucfirst($self->singular) . ' name', 'text',
-            'enabled', 'bool',
-            'stimulus', 'text',
-            'response', 'text',
+            'Enabled', 'bool',
+            'Stimulus', 'text',
+            'Response', 'text',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -2260,22 +2260,32 @@
         # For hooks, use a combo; for everything else, use an entry. For aliases, leave room for an
         #   extra button beside the entry
         my ($entry, $combo);
-        if ($self->editObj->cageType eq 'hook') {
+        if ($self->editObj->cageType eq 'trigger') {
+
+            $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
+                3, 12, 8, 9);
+
+        } elsif ($self->editObj->cageType eq 'alias') {
+
+            $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
+                3, 10, 8, 9);
+
+        } elsif ($self->editObj->cageType eq 'macro') {
+
+            $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+                3, 12, 8, 9);
+
+        } elsif ($self->editObj->cageType eq 'timer') {
+
+            $entry = $self->addEntryWithIcon($table, undef, 'float', 0.01, undef,
+                3, 12, 8, 9);
+
+        } elsif ($self->editObj->cageType eq 'hook') {
 
             @comboList = sort {$a cmp $b} ($self->interfaceModelObj->ivKeys('hookEventHash'));
             $combo = $self->addComboBox($table, undef, \@comboList, '',
                 TRUE,               # No 'undef' value used
                 3, 6, 8, 9);
-
-        } elsif ($self->editObj->cageType eq 'alias') {
-
-            $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-                3, 10, 8, 9);
-
-        } else {
-
-            $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-                3, 12, 8, 9);
         }
 
         my $label = $self->addLabel(
@@ -5397,9 +5407,9 @@
             9, 13, 10, 11);
         $self->addLabel(
             $table,
-            'Locator uses only the contents of any backreference(s), if this pattern matches',
+            'Locator uses only the contents of any group substring(s), if this pattern matches',
             1, 9, 11, 12);
-        $self->addEntryWithIcon($table, 'usePatternBackRefs', 'string', 0, undef,
+        $self->addEntryWithIconButton($table, 'usePatternGroups', 'regex', 0, undef,
             1, 13, 12, 13);
 
         # Tab complete
@@ -5625,11 +5635,11 @@
         # First group of radio buttons (at top; ->signal_connects appear below)
         my ($group, $radioButton, $radioButton2);
         ($group, $radioButton) = $self->addRadioButton(
-            $table, undef, 'Line contains at least one', undef, undef, TRUE,
-            6, 10, 0, 1);
+            $table, undef, 'Line contains at least one pattern / tag', undef, undef, TRUE,
+            4, 9, 0, 1);
         ($group, $radioButton2) = $self->addRadioButton(
-            $table, $group, 'Line contains all', undef, undef, TRUE,
-            10, 12, 0, 1);
+            $table, $group, 'All patterns / tags', undef, undef, TRUE,
+            9, 12, 0, 1);
         if ($self->editObj->$flagIV) {
 
             $radioButton2->set_active(TRUE);
@@ -5666,16 +5676,27 @@
         my $label = $self->addLabel($table, '',
             1, 12, 1, 2);
         my $textView = $self->addTextView($table, $patternListIV, TRUE,
-            1, 12, 2, 6,
+            1, 10, 2, 6,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 110);                  # Fixed height
+            -1, 100);                  # Fixed height
+        $self->addRegexButton($table,
+            [
+                'list', $patternListIV,
+            ],
+            10, 12, 2, 3);
+        $self->addLabel($table, '',    # Empty labels for spacing
+            10, 12, 3, 4);
+        $self->addLabel($table, '',    # Empty labels for spacing
+            10, 12, 4, 5);
+        $self->addLabel($table, '',    # Empty labels for spacing
+            10, 12, 5, 6);
 
         # Second label and textview, e.g. 'Tags found at the start of the component'
         my $label2 = $self->addLabel($table, '',
             1, 4, 6, 7);
         my $textView2 = $self->addTextView($table, $tagListIV, TRUE,
             1, 4, 7, 12,
-            TRUE, TRUE, TRUE, FALSE);    # Treat as list, remove empty lines, do remove whitespace
+            TRUE, TRUE, TRUE, FALSE);  # Treat as list, remove empty lines, do remove whitespace
         my $buffer = $textView2->get_buffer();
 
         # (Set text for these two labels)
@@ -5779,7 +5800,8 @@
             \&patternsTags1Tab_checkEntry,
             undef,
             undef,
-            6, 10, 9, 10);
+            6, 10, 9, 10,
+            8, 8);
 
         # (Only one button of this type, for this tab, so it doesn't have its own function)
         my $button5 = $self->addButton(
@@ -5839,7 +5861,8 @@
             \&patternsTags1Tab_checkEntry2,
             undef,
             undef,
-            6, 10, 10, 11);
+            6, 10, 10, 11,
+            8, 8);
 
         # (Only one button of this type, for this tab, so it doesn't have its own function)
         my $button6 = $self->addButton(
@@ -5919,11 +5942,12 @@
                 $self->ivAdd('editHash', $modeIV, 'default');   # Any tags
 
                 $self->patternsTags1Tab_setSensitive(
-                    0,
+                    'default',
                     $textView2,
                     [$comboBox, $button, $button2],
                     [$comboBox2, $button3, $button4],
                     [$entry, $button5],
+                    [$entry2, $button6],
                     [$comboBox3, $button6],
                 );
             }
@@ -5937,11 +5961,12 @@
                 $self->ivAdd('editHash', $modeIV, 'no_colour');
 
                 $self->patternsTags1Tab_setSensitive(
-                    1,
+                    'no_colour',
                     $textView2,
                     [$comboBox, $button, $button2],
                     [$comboBox2, $button3, $button4],
                     [$entry, $button5],
+                    [$entry2, $button6],
                     [$comboBox3, $button6],
                 );
             }
@@ -5955,11 +5980,12 @@
                 $self->ivAdd('editHash', $modeIV, 'no_style');
 
                 $self->patternsTags1Tab_setSensitive(
-                    2,
+                    'no_style',
                     $textView2,
                     [$comboBox, $button, $button2],
                     [$comboBox2, $button3, $button4],
                     [$entry, $button5],
+                    [$entry2, $button6],
                     [$comboBox3, $button6],
                 );
             }
@@ -5973,11 +5999,12 @@
                 $self->ivAdd('editHash', $modeIV, 'no_colour_style');
 
                 $self->patternsTags1Tab_setSensitive(
-                    3,
+                    'no_colour_style',
                     $textView2,
                     [$comboBox, $button, $button2],
                     [$comboBox2, $button3, $button4],
                     [$entry, $button5],
+                    [$entry2, $button6],
                     [$comboBox3, $button6],
                 );
             }
@@ -7597,7 +7624,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 7, 8, 9);
 
         $self->addLabel($table, 'Value:',
@@ -7733,7 +7760,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 7, 8, 9);
 
         $self->addLabel($table, 'Value',
@@ -7868,7 +7895,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 7, 8, 9);
 
         $self->addLabel($table, 'Value',
@@ -8193,13 +8220,13 @@
 
         # Portable types
         $self->addLabel($table, '<b>Portable types</b>',
-            0, 12, 0, 1);
+            0, 10, 0, 1);
         $self->addLabel($table, '<i>Objects which can normally be picked up</i>',
-            1, 8, 1, 2);
+            1, 10, 1, 2);
         my $textView = $self->addTextView($table, 'portableTypeList', TRUE,
             1, 12, 2, 5,
             TRUE, TRUE, TRUE, FALSE,  # Treat as list, remove empty lines, do remove whitespace
-            -1, 110);
+            -1, 130);
         my $buffer = $textView->get_buffer();
 
         my $button = Gtk2::Button->new('Use default list');
@@ -8211,17 +8238,17 @@
             $buffer->set_text(join("\n", $self->editObj->ivPeek('constPortableTypeList')));
         });
         $self->tooltips->set_tip($button, 'Use the default list of Portable types');
-        $table->attach_defaults($button, 8, 12, 1, 2);
+        $table->attach_defaults($button, 10, 12, 0, 2);
 
         # Decoration types
         $self->addLabel($table, '<b>Decoration types</b>',
-            0, 12, 5, 6);
+            0, 10, 5, 6);
         $self->addLabel($table, '<i>Objects which can\'t normally be picked up</i>',
-            1, 8, 6, 7);
+            1, 10, 6, 7);
         my $textView2 = $self->addTextView($table, 'decorationTypeList', TRUE,
             1, 12, 7, 10,
             TRUE, TRUE, TRUE, FALSE,  # Treat as list, remove empty lines, do remove whitespace
-            -1, 110);
+            -1, 130);
         my $buffer2 = $textView2->get_buffer();
 
         my $button2 = Gtk2::Button->new('Use default list');
@@ -8233,7 +8260,7 @@
             $buffer2->set_text(join("\n", $self->editObj->ivPeek('constDecorationTypeList')));
         });
         $self->tooltips->set_tip($button2, 'Use the default list of Decoration types');
-        $table->attach_defaults($button2, 8, 12, 6, 7);
+        $table->attach_defaults($button2, 10, 12, 5, 7);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -8955,7 +8982,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Plural pattern',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 7, 8, 9);
 
         $self->addLabel($table, 'Singular ending',
@@ -9042,7 +9069,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Singular pattern',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 0, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 0, undef,
             4, 7, 8, 9);
 
         $self->addLabel($table, 'Plural ending',
@@ -9344,7 +9371,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Declined ending pattern',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 7, 8, 9);
 
         $self->addLabel($table, 'Undeclined ending',
@@ -9432,7 +9459,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Undeclined ending pattern',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 7, 8, 9);
 
         $self->addLabel($table, 'Declined ending',
@@ -9647,9 +9674,9 @@
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'pseudoNounHash');
 
         # Add entries/comboboxes for adding new patterns
-        $self->addLabel($table, 'Pseudo noun',
+        $self->addLabel($table, 'Pseudo noun (pattern)',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 12, 8, 9);
 
         $self->addLabel($table, 'Replacement noun',
@@ -9734,9 +9761,9 @@
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'pseudoObjHash');
 
         # Add entries/comboboxes for adding new patterns
-        $self->addLabel($table, 'Pseudo object',
+        $self->addLabel($table, 'Pseudo object (pattern)',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 12, 8, 9);
 
         $self->addLabel($table, 'Replacement object (if any)',
@@ -9821,9 +9848,9 @@
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'pseudoAdjHash');
 
         # Add entries/comboboxes for adding new patterns
-        $self->addLabel($table, 'Pseudo adjective',
+        $self->addLabel($table, 'Pseudo adjective (pattern)',
             1, 4, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             4, 12, 8, 9);
 
         $self->addLabel($table, 'Replacement adjective (if any)',
@@ -10311,7 +10338,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern',
             1, 3, 9, 10);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 12, 9, 10);
 
         $self->addLabel($table, 'Replacement',
@@ -11771,7 +11798,6 @@
             );
         }
 
-#        if ($text =~ m/^[A-Za-z]$/) {
         if ($text =~ m/^[[:alpha:]]$/) {
             return 1;
         } else {
@@ -13541,17 +13567,27 @@
         $self->addLabel($table, 'Stimulus <i>(' . $interfaceModelObj->stimulusName . ')</i>',
             1, 3, 5, 6);
         # For hooks, use a combo; for everything else, use an entry
-        if ($self->editObj->category eq 'hook') {
+        if ($self->editObj->category eq 'trigger' || $self->editObj->category eq 'alias') {
+
+            $self->addEntryWithIcon($table, 'stimulus', 'regex', 1, undef,
+                3, 12, 5, 6);
+
+        } elsif ($self->editObj->category eq 'macro') {
+
+            $self->addEntryWithIcon($table, 'stimulus', 'string', 1, undef,
+                3, 12, 5, 6);
+
+        } elsif ($self->editObj->category eq 'timer') {
+
+            $self->addEntryWithIcon($table, 'stimulus', 'float', 0.01, undef,
+                3, 12, 5, 6);
+
+        } elsif ($self->editObj->category eq 'hook') {
 
             @comboList = sort {$a cmp $b} ($interfaceModelObj->ivKeys('hookEventHash'));
             $self->addComboBox($table, 'stimulus', \@comboList, '',
                 TRUE,               # No 'undef' value used
                 3, 6, 5, 6);
-
-        } else {
-
-            $self->addEntryWithIcon($table, 'stimulus', 'string', 1, undef,
-                3, 12, 5, 6);
         }
 
         $self->addLabel($table, 'Response <i>(' . $interfaceModelObj->responseName . ')</i>',
@@ -18684,15 +18720,26 @@
         $self->addEntry($table, 'roomGuildYOffset', FALSE,
             5, 6, 4, 5, 6, 6);
 
-        # Axbasic list
-        $self->addLabel($table, '<b>' . $axmud::BASIC_NAME . ' list</b>',
-            0, 6, 5, 6);
-        $self->addLabel(
-            $table,
-            '<i>List of ' . $axmud::BASIC_NAME . ' scripts run when the room is entered</i>',
-            1, 6, 6, 7);
-        $self->addTextView($table, 'arriveScriptList', TRUE,
-            1, 6, 7, 12);
+        $self->addLabel($table, 'Unspecified room description',
+            1, 5, 5, 6);
+        $self->addCheckButton($table, 'unspecifiedFlag', FALSE,
+            5, 6, 5, 6, 1, 0.5);
+        $self->addLabel($table, 'Currently dark',
+            1, 5, 6, 7);
+        $self->addCheckButton($table, 'currentlyDarkFlag', FALSE,
+            5, 6, 6, 7, 1, 0.5);
+
+        $self->addLabel($table, '<b>Wilderness mode</b>',
+            0, 6, 7, 8);
+        my $entry = $self->addEntry($table, undef, FALSE,
+            1, 6, 8, 9);
+        if ($self->editObj->wildMode eq 'normal') {
+            $entry->set_text('\'normal\' - exits are required between rooms');
+        } elsif ($self->editObj->wildMode eq 'border') {
+            $entry->set_text('\'border\' - assume exits exist between adjacent wild rooms');
+        } elsif ($self->editObj->wildMode eq 'wild') {
+            $entry->set_text('\'wild\' - assume exits exist between all adjacent rooms');
+        }
 
         # Right column
         $self->addLabel($table, '<b>Regionmap grid position</b>',
@@ -18710,36 +18757,15 @@
         $self->addEntry($table, 'zPosBlocks', FALSE,
             11, 13, 3, 4, 4, 4);
 
-        $self->addLabel($table, 'Ever matched with Locator',
-            8, 12, 4, 5);
-        $self->addCheckButton($table, 'everMatchedFlag', FALSE,
-            12, 13, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Unspecified room description',
-            8, 12, 5, 6);
-        $self->addCheckButton($table, 'unspecifiedFlag', FALSE,
-            12, 13, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Currently dark',
-            8, 12, 6, 7);
-        $self->addCheckButton($table, 'currentlyDarkFlag', FALSE,
-            12, 13, 6, 7, 1, 0.5);
-
-        $self->addLabel($table, '<b>Wilderness mode</b>',
-            7, 13, 7, 8);
-        my $entry = $self->addEntry($table, undef, FALSE,
-            8, 13, 8, 9);
-        if ($self->editObj->wildMode eq 'normal') {
-            $entry->set_text('\'normal\' - exits are required between rooms');
-        } elsif ($self->editObj->wildMode eq 'border') {
-            $entry->set_text('\'border\' - assume exits exist between adjacent wild rooms');
-        } elsif ($self->editObj->wildMode eq 'wild') {
-            $entry->set_text('\'wild\' - assume exits exist between all adjacent rooms');
-        }
-
-        # Empty labels to make spacing right
-        $self->addLabel($table, '',
-            8, 13, 9, 10);
-        $self->addLabel($table, '',
-            8, 13, 10, 11);
+        # Axbasic list
+        $self->addLabel($table, '<b>' . $axmud::BASIC_NAME . ' list</b>',
+            7, 13, 4, 5);
+        $self->addLabel(
+            $table,
+            '<i>List of ' . $axmud::BASIC_NAME . ' scripts run when the room is entered</i>',
+            8, 13, 5, 6);
+        $self->addTextView($table, 'arriveScriptList', TRUE,
+            8, 13, 6, 12);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -19026,18 +19052,29 @@
 
         # Room titles
         $self->addLabel($table, '<b>Room titles</b>',
-            0, 12, 0, 2);
+            0, 6, 0, 2);
         $self->addLabel($table, '<i>List of room titles (brief descriptions) for this room</i>',
-            1, 12, 2, 4);
+            1, 6, 2, 4);
         $self->addTextView($table, 'titleList', TRUE,
-            1, 12, 4, 6);
+            1, 6, 4, 6);
 
         # Room commands
         $self->addLabel($table, '<b>Room commands</b>',
-            0, 12, 6, 8);
+            6, 12, 0, 2);
         $self->addLabel($table, '<i>List of commands available in this room</i>',
-            1, 12, 8, 10);
+            7, 12, 2, 4);
         $self->addTextView($table, 'roomCmdList', TRUE,
+            7, 12, 4, 6);
+
+        # Unspecified room patterns
+        $self->addLabel($table, '<b>Unspecified room patterns commands</b>',
+            0, 12, 6, 8);
+        $self->addLabel(
+            $table,
+            '<i>Patterns seen when the character moves to a room without a recognisable room'
+            . ' statement</i>',
+            1, 12, 8, 10);
+        $self->addTextView($table, 'unspecifiedPatternList', TRUE,
             1, 12, 10, 12);
 
         # Tab complete
@@ -19498,11 +19535,18 @@
 
         # Failed exit patterns
         $self->addLabel($table, '<b>Failed exit patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel(
             $table,
             '<i>Patterns which mean an exit in this room is (temporarily) unavailable</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'failExitPatternList',
+                'list', 'specialDepartPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'failExitPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
@@ -19550,12 +19594,19 @@
 
         # Failed exit patterns
         $self->addLabel($table, '<b>Repulse exit patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel(
             $table,
             '<i>Patterns which mean the character has left the room involuntarily after a failed'
             . ' move</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'repulseExitPatternList',
+                'list', 'involuntaryExitPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'repulseExitPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
@@ -20251,8 +20302,9 @@
 
         # Add a simple list
         @columnList = (
+            '#', 'text',
             'Object name', 'text',
-            'Object', 'text',
+            'Object category', 'text',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -20265,12 +20317,51 @@
         # Add editing buttons
         my $button = $self->addButton(
             $table,
+            'View',
+            'View the selected temporary object',
+            undef,
+            1, 3, 10, 11,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            my (
+                $num, $obj,
+                @objList,
+            );
+
+            ($num) = $self->getSimpleListData($slWidget, 0);
+            if (defined $num) {
+
+                @objList = $self->getEditHash_listIV('tempObjList');
+                $obj = $objList[$num - 1];
+                if (defined $obj) {
+
+                    # Open an 'edit' window for the exit object
+                    $self->createFreeWin(
+                        'Games::Axmud::EditWin::ModelObj::' . ucfirst($obj->category),
+                        $self,
+                        $self->session,
+                        'Edit temporary ' . $obj->category . ' object',
+                        $obj,
+                        # Not temporary (at least not in the sense that 'edit' windows understand
+                        #   an object to be temporary)
+                        FALSE,
+                    );
+                }
+            }
+
+            # Refresh the simple list
+            $self->contents1Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        my $button2 = $self->addButton(
+            $table,
             'Reset',
             'Reset the list of objects',
             undef,
             8, 10, 10, 11,
         );
-        $button->signal_connect('clicked' => sub {
+        $button2->signal_connect('clicked' => sub {
 
             # Remove the IV from $self->editHash, so that the IV in $self->editObj takes over
             $self->ivDelete('editHash', 'tempObjList');
@@ -20279,14 +20370,14 @@
             $self->contents1Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
-        my $button2 = $self->addButton(
+        my $button3 = $self->addButton(
             $table,
             'Clear',
             'Empty the list of objects',
             undef,
             10, 12, 10, 11,
         );
-        $button2->signal_connect('clicked' => sub {
+        $button3->signal_connect('clicked' => sub {
 
             # Empty the list
             $self->ivAdd('editHash', 'tempObjList', []);
@@ -20316,7 +20407,10 @@
         my ($self, $slWidget, $columns, $check) = @_;
 
         # Local variables
-        my (@objList, @dataList);
+        my (
+            $count,
+            @objList, @dataList,
+        );
 
         # Check for improper arguments
         if (! defined $slWidget || ! defined $columns || defined $check) {
@@ -20331,11 +20425,15 @@
         @objList = $self->getEditHash_listIV('tempObjList');
 
         # Compile the simple list data
+        $count = 0;
         foreach my $obj (@objList) {
 
+            $count++;
+
             push (@dataList,
+                $count,
                 $obj->name,
-                $obj,
+                $obj->category,
             );
         }
 
@@ -23018,7 +23116,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -23031,10 +23129,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -23050,15 +23148,15 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
                 # Add new values to (the end of) the list IV
-                $self->addEditHash_listIV('fightMsgList', undef, FALSE, $pattern, $backRef);
+                $self->addEditHash_listIV('fightMsgList', undef, FALSE, $pattern, $grpNum);
 
                 # Refresh the simple list and reset entry boxes
                 $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'fightMsgList');
@@ -23106,7 +23204,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -23119,10 +23217,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -23137,10 +23235,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -23150,7 +23248,7 @@
                     undef,
                     FALSE,
                     $pattern,
-                    $backRef,
+                    $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -24301,6 +24399,22 @@
                 }
             }
 
+            # If ->termOverrideHash has been updated, inform all sessions whose current world is
+            #   this one
+            if (
+                $self->editObj->category eq 'world'
+                && $self->ivExists('editHash', 'termOverrideHash')
+            ) {
+                foreach my $otherSession ($axmud::CLIENT->ivValues('sessionHash')) {
+
+                    if ($otherSession->currentWorld eq $self->editObj) {
+
+                        $self->session->textViewCursorUpdate();
+                        $self->session->textViewKeysUpdate();
+                    }
+                }
+            }
+
             # The changes can now be cleared
             $self->ivEmpty('editHash');
 
@@ -25066,7 +25180,14 @@
 
         # Automatic login mode (2)
         $self->addLabel($table, '<b>Automatic login mode (2)</b>',
-            0, 12, 0, 1);
+            0, 10, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'loginConnectPatternList',
+                'list', 'loginSuccessPatternList',
+            ],
+            10, 12, 0, 1);
+
         $self->addLabel(
             $table, '<i>(NB The \'Initial\' tab lists the tasks, scripts and missions that start'
             . ' when the login process is complete)</i>',
@@ -25082,14 +25203,14 @@
         $self->addTextView($table, 'loginConnectPatternList', TRUE,
             1, 8, 4, 6,
             undef, undef, undef, undef,
-            -1, 120);           # Fixed height
+            -1, 110);           # Fixed height
 
         $self->addLabel($table, 'Mode \'world_cmd\': List of world commands to send',
             8, 12, 3, 4);
         $self->addTextView($table, 'loginCmdList', TRUE,
             8, 12, 4, 6,
             undef, undef, undef, undef,
-            -1, 120);           # Fixed height
+            -1, 110);           # Fixed height
 
         $self->addLabel(
             $table,
@@ -25098,7 +25219,7 @@
         $self->addTextView($table, 'loginSuccessPatternList', TRUE,
             1, 8, 8, 12,
             TRUE, TRUE, FALSE, FALSE, # Treat as a list, remove empty lines, don't remove whitespace
-            -1, 120);           # Fixed height
+            -1, 110);           # Fixed height
 
         $self->addLabel($table, 'Task/script/mission modes: task/script/mission to start',
             8, 12, 7, 8);
@@ -25190,15 +25311,15 @@
             . ' world command substitutions',
             1, 12, 1, 2);
         $self->addLabel($table,
-            '    <i>(e.g. line  <b>1 Gandalf</b>  -  pattern'
-            . ' <b>^(\d+)\s(\w+)$</b>  -  character backref <b>2</b>  -  command <b> "$1"</b>'
-            . '  )</i>',
+            '    <i>e.g. line  <b>1 Gandalf</b>  -  pattern'
+            . '  <b>^(\d+)\s(\w+)$</b>  -  group substring number  <b>2</b>  -  command'
+            . '  <b>$1</b></i>',
             1, 12, 2, 3);
 
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref', 'int',
+            'Substring #', 'int',
             'Substitution', 'text',
         );
 
@@ -25212,10 +25333,10 @@
         # Add entries for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 3, 9, 10);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 12, 9, 10);
 
-        $self->addLabel($table, 'Backref:',
+        $self->addLabel($table, 'Substring #:',
             1, 3, 10, 11);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
             3, 6, 10, 11);
@@ -25235,10 +25356,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef, $cmd);
+            my ($pattern, $grpNum, $cmd);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
             $cmd = $entry3->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2, $entry3)) {
@@ -25247,7 +25368,7 @@
                 $self->addEditHash_listIV(
                     'loginSpecialList',
                     undef, FALSE,
-                    $pattern, $backRef, $cmd,
+                    $pattern, $grpNum, $cmd,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -25871,29 +25992,17 @@
             $self->settings10Tab_refreshCombo($combo);
         });
 
-        # Wimpy settings
-        $self->addLabel($table, '<b>Wimpy settings</b>',
-            0, 6, 4, 5);
-        $self->addLabel($table, 'World wimpy maximum',
-            1, 4, 5, 6);
-        $self->addEntryWithIcon($table, 'remoteWimpyMax', 'int', 0, undef,
-            4, 6, 5, 6, 8, 8);
-        $self->addLabel($table, $axmud::SCRIPT . ' wimpy maximum',
-            1, 4, 6, 7);
-        $self->addEntry($table, 'constLocalWimpyMax', FALSE,
-            4, 6, 6, 7, 8, 8);
-
         # Multiples
         $self->addLabel($table, '<b>Multiples</b>',
-            0, 12, 7, 8);
+            0, 12, 4, 5);
         $self->addLabel($table, 'Add numbers to similar objects',
-            1, 5, 8, 9);
+            1, 5, 5, 6);
         $self->addCheckButton($table, 'numberedObjFlag', TRUE,
-            5, 6, 8, 9);
+            5, 6, 5, 6);
         $self->addLabel($table, 'Multiple object pattern',
-            1, 4, 9, 10);
-        $self->addEntry($table, 'multiplePattern', TRUE,
-            4, 6, 9, 10);
+            1, 4, 6, 7);
+        $self->addEntryWithIconButton($table, 'multiplePattern', 'regex', undef, undef,
+            4, 6, 6, 7);
 
         # Consecutive empty line suppression
         $self->addLabel($table, '<b>Consecutive empty line suppression</b>',
@@ -25924,9 +26033,8 @@
             11, 13, 6, 7, 6, 4);
         $self->addLabel($table, '...in time period (min 0.1 secs)',
             8, 11, 7, 8);
-        $self->addEntryWithIcon($table, 'excessCmdDelay', 'int', 0.1, undef,
+        $self->addEntryWithIcon($table, 'excessCmdDelay', 'float', 0.1, undef,
             11, 13, 7, 8, 6, 4);
-
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -26021,7 +26129,13 @@
 
         # Units
         $self->addLabel($table, '<b>Units</b>',
-            0, 12, 0, 1);
+            0, 10, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'cmdPromptPatternList',
+            ],
+            10, 12, 0, 1);
+
         $self->addLabel($table, 'Character age units',
             1, 6, 1, 2);
         $self->addEntryWithButton($table, 'charAgeUnit', TRUE,
@@ -26047,7 +26161,7 @@
         $self->addTextView($table, 'cmdPromptPatternList', TRUE,
             1, 13, 7, 12,
             TRUE, TRUE, FALSE, FALSE, # Treat as a list, remove empty lines, don't remove whitespace
-            -1, 180);                 # Fixed height
+            -1, 160);                 # Fixed height
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -26701,8 +26815,8 @@
 
         # Local variables
         my (
-            @columnList, @initList, @comboList,
-            %comboHash,
+            @columnList, @initList, @comboList, @initList2, @comboList2, @comboList3,
+            %comboHash, %comboHash2,
         );
 
         # Check for improper arguments
@@ -26725,19 +26839,19 @@
         # Add a simple list
         @columnList = (
             'Setting', 'text',
-            'Value', 'text',
+            'Value (1 - enabled)', 'text',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 3, 8,
-            -1, 160);       # Fixed height
+            1, 12, 3, 7,
+            -1, 140);       # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'termOverrideHash');
 
         # Add editing widgets
         $self->addLabel($table, 'TTYPE negotiations',
-            1, 3, 8, 9);
+            1, 3, 7, 8);
 
         @initList = (
             'send_nothing'          => 'Send nothing',
@@ -26762,10 +26876,10 @@
 
         my $combo = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,                       # No 'undef' value used
-            3, 8, 8, 9);
+            3, 8, 7, 8);
 
         my $button = $self->addButton($table, 'Use', 'Use this setting in the session', undef,
-            8, 10, 8, 9);
+            8, 10, 7, 8);
         $button->signal_connect('clicked' => sub {
 
             my (
@@ -26789,7 +26903,7 @@
             'Don\'t use',
             'Don\'t use this setting in the session',
             undef,
-            10, 12, 8, 9);
+            10, 12, 7, 8);
         $button2->signal_connect('clicked' => sub {
 
             my %hash = $self->getEditHash_hashIV('termOverrideHash');
@@ -26803,12 +26917,12 @@
         });
 
         $self->addLabel($table, 'Custom client name',
-            1, 3, 9, 10);
+            1, 3, 8, 9);
         my $entry = $self->addEntry($table, undef, TRUE,
-            3, 8, 9, 10);
+            3, 8, 8, 9);
 
         my $button3 = $self->addButton($table, 'Use', 'Use this setting in the session', undef,
-            8, 10, 9, 10);
+            8, 10, 8, 9);
         $button3->signal_connect('clicked' => sub {
 
             my (
@@ -26837,7 +26951,7 @@
             'Don\'t use',
             'Don\'t use this setting in the session',
             undef,
-            10, 12, 9, 10);
+            10, 12, 8, 9);
         $button4->signal_connect('clicked' => sub {
 
             my %hash = $self->getEditHash_hashIV('termOverrideHash');
@@ -26851,12 +26965,12 @@
         });
 
         $self->addLabel($table, 'Custom client version',
-            1, 3, 10, 11);
+            1, 3, 9, 10);
         my $entry2 = $self->addEntry($table, undef, TRUE,
-            3, 8, 10, 11);
+            3, 8, 9, 10);
 
         my $button5 = $self->addButton($table, 'Use', 'Use this setting in the session', undef,
-            8, 10, 10, 11);
+            8, 10, 9, 10);
         $button5->signal_connect('clicked' => sub {
 
             my (
@@ -26885,7 +26999,7 @@
             'Don\'t use',
             'Don\'t use this setting in the session',
             undef,
-            10, 12, 10, 11);
+            10, 12, 9, 10);
         $button6->signal_connect('clicked' => sub {
 
             my %hash = $self->getEditHash_hashIV('termOverrideHash');
@@ -26898,13 +27012,96 @@
             $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'termOverrideHash');
         });
 
-        my $button7 = $self->addButton(
+        @initList2 = (
+            'useCtrlSeqFlag'          => 'Use VT100 control sequences',
+            'useVisibleCursorFlag'    => 'Show visible cursor in default textview',
+            'useDirectKeysFlag'       => 'Use direct keyboard input in terminal',
+        );
+
+        do {
+
+            my ($iv, $descrip);
+
+            $iv = shift @initList2;
+            $descrip = shift @initList2;
+
+            push (@comboList2, $descrip);
+            $comboHash2{$descrip} = $iv;
+
+        } until (! @initList2);
+
+        $self->addLabel($table, 'Terminal emulation',
+            1, 3, 10, 11);
+        my $combo2 = $self->addComboBox($table, undef, \@comboList2, '',
+            TRUE,                       # No 'undef' value used
+            3, 6, 10, 11);
+
+        @comboList3 = ('Enabled', 'Disabled');
+        my $combo3 = $self->addComboBox($table, undef, \@comboList3, '',
+            TRUE,                       # No 'undef' value used
+            6, 8, 10, 11);
+
+        my $button7 = $self->addButton($table, 'Use', 'Use this setting in the session', undef,
+            8, 10, 10, 11);
+        $button7->signal_connect('clicked' => sub {
+
+            my (
+                $iv, $mode, $flag,
+                %hash,
+            );
+
+            $iv = $comboHash2{$combo2->get_active_text()};
+            $mode = $combo3->get_active_text();
+            if ($mode eq 'Enabled') {
+                $flag = TRUE;
+            } else {
+                $flag = FALSE;
+            }
+
+            %hash = $self->getEditHash_hashIV('termOverrideHash');
+            $hash{$iv} = $flag;
+            $self->ivAdd('editHash', 'termOverrideHash', \%hash);
+
+            # Reset the comboboxes
+            $combo2->set_active(0);
+            $combo3->set_active(0);
+            # Refresh the simple list
+            $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'termOverrideHash');
+        });
+
+        my $button8 = $self->addButton(
+            $table,
+            'Don\'t use',
+            'Don\'t use this setting in the session',
+            undef,
+            10, 12, 10, 11);
+        $button8->signal_connect('clicked' => sub {
+
+            my (
+                $iv,
+                %hash,
+            );
+
+            $iv = $comboHash2{$combo2->get_active_text()};
+
+            %hash = $self->getEditHash_hashIV('termOverrideHash');
+            delete $hash{$iv};
+            $self->ivAdd('editHash', 'termOverrideHash', \%hash);
+
+            # Reset the comboboxes
+            $combo2->set_active(0);
+            $combo3->set_active(0);
+            # Refresh the simple list
+            $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'termOverrideHash');
+        });
+
+        my $button9 = $self->addButton(
             $table,
             'Reset',
             'Reset the list of override settings',
             undef,
             8, 10, 11, 12);
-        $button7->signal_connect('clicked' => sub {
+        $button9->signal_connect('clicked' => sub {
 
             # Remove this IV from $self->editHash, so that the IV in $self->editObj takes over
             $self->ivDelete('editHash', 'termOverrideHash');
@@ -26913,17 +27110,19 @@
             $combo->set_active(0);
             $entry->set_text('');
             $entry2->set_text('');
+            $combo2->set_active(0);
+            $combo3->set_active(0);
             # Refresh the simple list
             $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'termOverrideHash');
         });
 
-        my $button8 = $self->addButton(
+        my $button10 = $self->addButton(
             $table,
             'Clear',
             'Clear the list of override settings',
             undef,
             10, 12, 11, 12);
-        $button8->signal_connect('clicked' => sub {
+        $button10->signal_connect('clicked' => sub {
 
             # Add an empty hash to $self->editHash
             $self->ivAdd('editHash', 'termOverrideHash', {});
@@ -26932,10 +27131,11 @@
             $combo->set_active(0);
             $entry->set_text('');
             $entry2->set_text('');
+            $combo2->set_active(0);
+            $combo3->set_active(0);
             # Refresh the simple list
             $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'termOverrideHash');
         });
-
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -28076,10 +28276,10 @@
 
             # Verbose components
             $self->addLabel($table, '<b>Verbose anchor patterns</b>',
-                0, 12, 0, 1);
+                0, 10, 0, 1);
             $self->addLabel($table,
                 '<i>List of patterns which mark a line as a verbose anchor line</i>',
-                1, 12, 1, 2);
+                1, 10, 1, 2);
 
         } elsif ($listIV eq 'shortAnchorPatternList') {
 
@@ -28087,10 +28287,10 @@
 
             # Short verbose components
             $self->addLabel($table, '<b>Short verbose anchor patterns</b>',
-                0, 12, 0, 1);
+                0, 10, 0, 1);
             $self->addLabel($table,
                 '<i>List of patterns which mark a line as a short verbose anchor line</i>',
-                1, 12, 1, 2);
+                1, 10, 1, 2);
 
         } elsif ($listIV eq 'briefAnchorPatternList') {
 
@@ -28098,11 +28298,17 @@
 
             # Short verbose components
             $self->addLabel($table, '<b>Brief anchor patterns</b>',
-                0, 12, 0, 1);
+                0, 10, 0, 1);
             $self->addLabel($table,
                 '<i>List of patterns which mark a line as a brief anchor line</i>',
-                1, 12, 1, 2);
+                1, 10, 1, 2);
         }
+
+        $self->addRegexButton($table,
+            [
+                'list', $listIV,
+            ],
+            10, 12, 0, 2);
 
         $self->addTextView($table, $listIV, TRUE,
             1, 12, 2, 6,
@@ -28220,7 +28426,7 @@
             3, 6, 10, 11);
         $self->addLabel($table, 'Pattern:',
             7, 9, 10, 11);
-        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             9, 12, 10, 11);
 
         # Add standard editing buttons to the simple list
@@ -28279,7 +28485,15 @@
 
         # Other room statement markers
         $self->addLabel($table, '<b>Other room statement markers</b>',
-            0, 12, 0, 1);
+            0, 10, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'notAnchorPatternList',
+                'scalar', 'verboseFinalPattern',
+                'scalar', 'shortFinalPattern',
+                'scalar', 'briefFinalPattern',
+            ],
+            10, 12, 0, 1);
 
         my ($group, $radioButton) = $self->addRadioButton(
             $table, undef, 'OFF', 'basicMappingFlag',
@@ -28357,25 +28571,28 @@
 
         # Verbose exit delimiter/marker strings
         $self->addLabel($table,
-            '<b>Verbose exit delimiter/marker strings</b>',
-            0, 12, 0, 1);
+            '<b>Verbose exit delimiter strings/marker patterns</b>',
+            0, 10, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'verboseExitLeftMarkerList',
+                'list', 'verboseExitRightMarkerList',
+            ],
+            10, 12, 0, 1);
 
-        $self->addCheckButton($table, 'verboseExitSplitCharFlag', TRUE,
-            6, 7, 0, 1);
-        $self->addLabel(
-            $table,
-            'Split exits into single characters',
-            7, 12, 0, 1);
+        my $checkButton = $self->addCheckButton($table, 'verboseExitSplitCharFlag', TRUE,
+            1, 12, 1, 2);
+        $checkButton->set_label('Split exits into single characters, e.g. for NSEW');
 
-        $self->addLabel($table, '<i>Delimiters (<b>not</b> regular expressions)</i>',
-            1, 6, 1, 2);
+        $self->addLabel($table, '<i>Delimiters (<b>not</b> patterns/regular expressions)</i>',
+            1, 6, 2, 3);
         $self->addTextView($table, 'verboseExitDelimiterList', TRUE,
-            1, 6, 2, 6,
+            1, 6, 3, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
-        $self->addLabel($table, '<i>Non-delimiters (<b>not</b> regular expressions)</i>',
-            7, 12, 1, 2);
+        $self->addLabel($table, '<i>Non-delimiters (<b>not</b> patterns/regular expressions)</i>',
+            7, 12, 2, 3);
         $self->addTextView($table, 'verboseExitNonDelimiterList', TRUE,
-            7, 12, 2, 6,
+            7, 12, 3, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
 
         $self->addLabel($table, '<i>Left-side marker patterns</i>',
@@ -28419,25 +28636,28 @@
 
         # Brief exit delimiter/marker strings
         $self->addLabel($table,
-            '<b>Brief exit delimiter/marker strings</b>',
+            '<b>Brief exit delimiter strings/marker patterns</b>',
             0, 12, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'briefExitLeftMarkerList',
+                'list', 'briefExitRightMarkerList',
+            ],
+            10, 12, 0, 1);
 
-        $self->addCheckButton($table, 'briefExitSplitCharFlag', TRUE,
-            6, 7, 0, 1);
-        $self->addLabel(
-            $table,
-            'Split exits into single characters',
-            7, 12, 0, 1);
+        my $checkButton = $self->addCheckButton($table, 'briefExitSplitCharFlag', TRUE,
+            1, 12, 1, 2);
+        $checkButton->set_label('Split exits into single characters, e.g. for NSEW');
 
-        $self->addLabel($table, '<i>Delimiters (<b>not</b> regular expressions)</i>',
-            1, 6, 1, 2);
+        $self->addLabel($table, '<i>Delimiters (<b>not</b> patterns/regular expressions)</i>',
+            1, 6, 2, 3);
         $self->addTextView($table, 'briefExitDelimiterList', TRUE,
-            1, 6, 2, 6,
+            1, 6, 3, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
-        $self->addLabel($table, '<i>Non-delimiters (<b>not</b> regular expressions)</i>',
-            7, 12, 1, 2);
+        $self->addLabel($table, '<i>Non-delimiters (<b>not</b> patterns/regular expressions)</i>',
+            7, 12, 2, 3);
         $self->addTextView($table, 'briefExitNonDelimiterList', TRUE,
-            7, 12, 2, 6,
+            7, 12, 3, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
 
         $self->addLabel($table, '<i>Left-side marker patterns</i>',
@@ -28487,8 +28707,8 @@
             0, 12, 0, 1);
         $self->addLabel(
             $table,
-            '<i>Strings (<b>not</b> regular expressions) which give more information about exits'
-            . ' in an exit list</i>',
+            '<i>Strings (<b>not</b> patterns/regular expressions) which give more information about'
+            . ' exits in an exit list</i>',
             1, 12, 1, 2);
 
         # Add a simple list
@@ -28684,14 +28904,21 @@
 
         # Exit remove/info patterns
         $self->addLabel($table, '<b>Exit state/remove/info patterns</b>',
-            0, 12, 0, 1);
+            0, 10, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'exitStatePatternList',
+                'list', 'exitRemovePatternList',
+                'list', 'exitInfoPatternList',
+            ],
+            10, 12, 0, 1);
 
         $self->addLabel(
             $table,
             '<i>If exit delimiters interfere with state strings, matching parts of the exit area'
             . ' removed before delimiters are applied</i>',
             1, 12, 1, 2);
-        $self->addTextView($table, 'exitStateStringList', TRUE,
+        $self->addTextView($table, 'exitStatePatternList', TRUE,
             1, 12, 2, 5,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
             -1, 80);                   # Fixed height
@@ -28709,7 +28936,7 @@
         $self->addLabel(
             $table,
             '<i>Parts of the exit which match these patterns are removed (but the first'
-            . ' backreference is stored)</i>',
+            . ' group substring is stored)</i>',
             1, 12, 9, 10);
         $self->addTextView($table, 'exitInfoPatternList', TRUE,
             1, 12, 10, 13,
@@ -28774,7 +29001,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Exit alias',
             1, 3, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 6, 8, 9);
 
         $self->addLabel($table, 'Replacement string',
@@ -28838,10 +29065,16 @@
 
         # Contents list patterns
         $self->addLabel($table, '<b>Contents list patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel(
             $table, '<i>List of patterns seen in contents lists (which are not parsed)</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'contentPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'contentPatternList', TRUE,
             1, 12, 4, 12,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
@@ -28901,7 +29134,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 6, 8, 9);
 
         $self->addLabel($table, 'Replacement',
@@ -28970,20 +29203,26 @@
 
         # Room command delimiter/marker strings
         $self->addLabel($table,
-            '<b>Room command delimiter/marker strings</b>',
+            '<b>Room command delimiter strings/marker patterns</b>',
             0, 12, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'roomCmdLeftMarkerList',
+                'list', 'roomCmdRightMarkerList',
+            ],
+            10, 12, 0, 1);
 
-        $self->addLabel($table, '<i>Delimiters (<b>not</b> regular expressions)</i>',
+        $self->addLabel($table, '<i>Delimiters (<b>not</b> patterns)</i>',
             1, 4, 1, 2);
         $self->addTextView($table, 'roomCmdDelimiterList', TRUE,
             1, 4, 2, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
-        $self->addLabel($table, '<i>Non-delimiters (<b>not</b> regular expressions)</i>',
+        $self->addLabel($table, '<i>Non-delimiters (<b>not</b> patterns)</i>',
             4, 8, 1, 2);
         $self->addTextView($table, 'roomCmdNonDelimiterList', TRUE,
             4, 8, 2, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
-        $self->addLabel($table, '<i>Ignorable room commands</i>',
+        $self->addLabel($table, '<i>Ignorable commands (<b>not</b> patterns)</i>',
             8, 12, 1, 2);
         $self->addTextView($table, 'roomCmdIgnoreList', TRUE,
             8, 12, 2, 11,
@@ -29002,11 +29241,7 @@
 
         my $checkButton = $self->addCheckButton($table, 'roomCmdSplitCharFlag', TRUE,
             1, 12, 11, 12);
-        $checkButton->set_label('Split room commands into single characters');
-#        $self->addLabel(
-#            $table,
-#            'Split room commands into single characters',
-#            2, 12, 11, 12);
+        $checkButton->set_label('Split room commands into singl-character commands');
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -29072,9 +29307,16 @@
 
         # Failed exit patterns
         $self->addLabel($table, '<b>Failed exit patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns seen when the character fails to move</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'failExitPatternList',
+                'list', 'darkRoomPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'failExitPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -29119,9 +29361,15 @@
 
         # Door patterns
         $self->addLabel($table, '<b>Door patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns seen when the character bumps into a door</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'doorPatternList',
+                'list', 'lockedPatternList',
+            ],
+            10, 12, 0, 4);
         $self->addTextView($table, 'doorPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -29165,9 +29413,15 @@
 
         # Involuntary exit patterns
         $self->addLabel($table, '<b>Involuntary exit patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns seen when the character is moved involuntarily</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'involuntaryExitPatternList',
+                'list', 'unspecifiedRoomPatternList',
+            ],
+            10, 12, 0, 4);
         $self->addTextView($table, 'involuntaryExitPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -29176,7 +29430,8 @@
         $self->addLabel($table, '<b>Unspecified room patterns</b>',
             0, 12, 6, 8);
         $self->addLabel($table,
-            '<i>Patterns seen when the character moves to a room with no description</i>',
+            '<i>Patterns seen when the character moves to a room without a recognisable room'
+            . ' statement</i>',
             1, 12, 8, 10);
         $self->addTextView($table, 'unspecifiedRoomPatternList', TRUE,
             1, 12, 10, 12,
@@ -29201,6 +29456,9 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Local variables
+        my @columnList;
+
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -29212,15 +29470,74 @@
 
         # Transient exit patterns
         $self->addLabel($table, '<b>Transient exit patterns</b>',
-            0, 12, 0, 2);
+            0, 12, 0, 1);
         $self->addLabel(
             $table,
             '<i>Patterns matching exits which appear unpredictably (e.g. the entrance to a moving'
-            . ' wagon)</i>',
-            1, 12, 2, 4);
-        $self->addTextView($table, 'transientExitPatternList', TRUE,
-            1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            . ' vehicle)</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Transient exit pattern', 'text',
+            'Destination room #', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 10,
+            -1, 230);      # Fixed height
+
+        # Initialise the list
+        $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'transientExitPatternList');
+
+        # Add entries/comboboxes for adding new patterns
+        $self->addLabel($table, 'Transient exit pattern',
+            1, 3, 10, 11);
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
+            3, 6, 10, 11);
+
+        $self->addLabel($table, '(Optional) desination room #',
+            6, 9, 10, 11);
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 0, undef,
+            9, 12, 10, 11);
+
+        # Add standard editing buttons to the simple list
+        my $button = $self->addSimpleListButtons_listIV(
+            $table,
+            $slWidget,
+            'transientExitPatternList',
+            11, 2,
+            $entry, $entry2,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            my ($pattern, $destRoom);
+
+            $pattern = $entry->get_text();
+            $destRoom = $entry2->get_text();
+            if ($destRoom eq '' || $destRoom eq '0') {
+
+                $destRoom = undef;
+            }
+
+            if ($self->checkEntryIcon($entry, $entry2)) {
+
+                # Add new values to (the end of) the list IV
+                $self->addEditHash_listIV('transientExitPatternList',
+                    undef, FALSE,
+                    $pattern, $destRoom,
+                );
+
+                # Refresh the simple list and reset entry boxes
+                $self->refreshList_listIV(
+                    $slWidget,
+                    scalar (@columnList / 2),
+                    'transientExitPatternList',
+                );
+
+                $self->resetEntryBoxes($entry, $entry2);
+            }
+        });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -29265,7 +29582,7 @@
         # Add a simple list
         @columnList = (
             'Follow pattern', 'text',
-            'Direction backref', 'int',
+            'Direction substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -29278,10 +29595,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Follow pattern',
             1, 3, 10, 11);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 6, 10, 11);
 
-        $self->addLabel($table, 'Backreference for direction',
+        $self->addLabel($table, 'Substring # for direction',
             6, 9, 10, 11);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
             9, 12, 10, 11);
@@ -29296,17 +29613,17 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
                 # Add new values to (the end of) the list IV
                 $self->addEditHash_listIV('followPatternList',
                     undef, FALSE,
-                    $pattern, $backRef,
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -29363,7 +29680,7 @@
         # Add a simple list
         @columnList = (
             'Follow anchor pattern', 'text',
-            'Direction backref', 'int',
+            'Direction substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -29376,10 +29693,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Follow anchor pattern',
             1, 3, 10, 11);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 6, 10, 11);
 
-        $self->addLabel($table, 'Backreference for direction',
+        $self->addLabel($table, 'Substring # for direction',
             6, 9, 10, 11);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
             9, 12, 10, 11);
@@ -29394,17 +29711,17 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
                 # Add new values to (the end of) the list IV
                 $self->addEditHash_listIV('followAnchorPatternList',
                     undef, FALSE,
-                    $pattern, $backRef,
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -29578,6 +29895,9 @@
 
         my ($self, $innerNotebook, $taskObj, $check) = @_;
 
+        # Local variables
+        my @comboList;
+
         # Check for improper arguments
         if (! defined $innerNotebook || ! defined $taskObj || defined $check) {
 
@@ -29588,22 +29908,31 @@
         my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
 
         # Status task - display
-        $self->addLabel($table, '<b>Status task - display</b>',
+        $self->addLabel($table, '<b>Status task window format</b>',
             0, 6, 0, 1);
         $self->addLabel(
             $table,
-            '<i>How the Status task displays data for this world (format: @standard@,'
-            . ' #custom# )</i>',
+            '<i>How the Status task displays data in its task window (format: </i>ordinary text'
+            . ' @variable_name@...<i> )</i>',
             1, 11, 1, 2);
-        my $textView = $self->addTextView($table, 'displayFormatList', TRUE,
+        my $textView = $self->addTextView($table, 'statusFormatList', TRUE,
             1, 11, 2, 11,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
             -1, 270);                  # Fixed height
 
         # Add a combo box displaying the list of Status task display variables
-        my $comboBox = $self->addComboBox($table, undef, [$taskObj->displayVarList], '',
+        @comboList = sort {lc($a) cmp lc($b)} (
+            $taskObj->ivKeys('constCharVarHash'),
+            $taskObj->ivKeys('constFixedVarHash'),
+            $taskObj->ivKeys('constPseudoVarHash'),
+            $taskObj->ivKeys('constLocalVarHash'),
+            $taskObj->ivKeys('constCounterVarHash'),
+        );
+        $self->addLabel($table, 'Variable:',
+            1, 2, 11, 12);
+        my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,           # No 'undef' value used
-            1, 3, 11, 12);
+            2, 3, 11, 12);
 
         # Create some customised buttons for this tab
         # Add a button to insert the currently selected display variable into the textview, wherever
@@ -29625,7 +29954,7 @@
         $button2->signal_connect('clicked' => sub {
 
             my $buffer = $textView->get_buffer();
-            $buffer->set_text(join("\n", $self->editObj->displayFormatList));
+            $buffer->set_text(join("\n", $self->editObj->statusFormatList));
         });
         $self->tooltips->set_tip($button2, 'Reset the Status task display');
         $table->attach_defaults($button2, 5, 7, 11, 12);
@@ -29671,7 +30000,7 @@
         my ($self, $innerNotebook, $taskObj, $check) = @_;
 
         # Local variables
-        my (@columnList, @colourList);
+        my (@columnList, @comboList, @colourList);
 
         # Check for improper arguments
         if (! defined $innerNotebook || ! defined $taskObj || defined $check) {
@@ -29713,7 +30042,12 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Variable:',
             1, 3, 6, 7);
-        my $comboBox = $self->addComboBox($table, undef, [$taskObj->singleBackRefVarList], '',
+
+        @comboList = sort {lc($a) cmp lc($b)} (
+            $taskObj->ivKeys('constCharVarHash'),
+            $taskObj->ivKeys('constFixedVarHash'),
+        );
+        my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,               # No 'undef' value used
             3, 5, 6, 7);
         $self->addLabel($table, 'or custom:',
@@ -29723,7 +30057,7 @@
 
         $self->addLabel($table, 'Maximum var:',
             1, 3, 7, 8);
-        my $comboBox2 = $self->addComboBox($table, undef, [$taskObj->singleBackRefVarList], '',
+        my $comboBox2 = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,               # No 'undef' value used
             3, 5, 7, 8);
         $self->addLabel($table, 'or custom:',
@@ -29769,7 +30103,8 @@
         $self->addLabel($table, 'Label text <i>(optional)</i>:',
             9, 12, 9, 10);
         my $entry6 = $self->addEntry($table, undef, TRUE,
-            9, 12, 10, 11);
+            9, 12, 10, 11,
+            16, 16);
 
         # Add standard editing buttons to the simple list
         my $button = $self->addSimpleListButtons_listIV(
@@ -29916,17 +30251,16 @@
         my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
 
         # Status task custom variables
-        $self->addLabel($table, '<b>Status task custom variables</b>',
+        $self->addLabel($table, '<b>Status task MSDP variables</b>',
             0, 12, 0, 1);
         $self->addLabel($table,
-            '<i>Custom variables that can be collected and displayed in the task window (use'
-            . ' the #variable# format)</i>',
+            '<i>MSDP variables that should be converted directly into Status task variables</i>',
             1, 12, 1, 2);
 
         # Add a simple list
         @columnList = (
-            'Custom variable', 'text',
-            'Corresponding MSDP variable (if any)', 'text',
+            'MSDP variable', 'text',
+            'Status task variable', 'text',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -29934,49 +30268,44 @@
             -1, 240);      # Fixed height
 
         # Initialise the list
-        $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'customStatusVarHash');
+        $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'msdpStatusVarHash');
 
         # Add entries/comboboxes for adding new variables
-        $self->addLabel($table, 'Custom variable',
+        $self->addLabel($table, 'MSDP variable',
             1, 3, 8, 9);
         my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
             3, 6, 8, 9);
 
-        $self->addLabel($table, 'Equivalent MSDP variable (if any)',
+        $self->addLabel($table, 'Status task variable',
             6, 9, 8, 9);
-        my $entry2 = $self->addEntry($table, undef, TRUE,
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
             9, 12, 8, 9);
 
         # Add standard editing buttons to the simple list
         my $button = $self->addSimpleListButtons_hashIV(
             $table,
             $slWidget,
-            'customStatusVarHash',
+            'msdpStatusVarHash',
             9,
             $entry, $entry2,
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($var, $msdpVar);
+            my ($msdpVar, $var);
 
-            $var = $entry->get_text();
-            $msdpVar = $entry2->get_text();
-            if (! $msdpVar) {
+            $msdpVar = $entry->get_text();
+            $var = $entry2->get_text();
 
-                # Use 'undef' rather than an empty string
-                $msdpVar = undef;
-            }
-
-            if ($self->checkEntryIcon($entry)) {
+            if ($self->checkEntryIcon($entry, $entry2)) {
 
                 # Add a new key-value pair
-                $self->modifyEditHash_hashIV('customStatusVarHash', $var, $msdpVar);
+                $self->modifyEditHash_hashIV('msdpStatusVarHash', $msdpVar, $var);
 
                 # Refresh the simple list and reset entry boxes
                 $self->refreshList_hashIV(
                     $slWidget,
                     scalar (@columnList / 2),
-                    'customStatusVarHash',
+                    'msdpStatusVarHash',
                 );
 
                 $self->resetEntryBoxes($entry, $entry2);
@@ -30021,13 +30350,16 @@
         # Status task - general patterns
         $self->addLabel($table, '<b>Status task - general patterns</b>',
             0, 12, 0, 1);
-        $self->addLabel($table, '<i>Patterns containing a single piece of data we need</i>',
+        $self->addLabel(
+            $table,
+            '<i>Patterns with group substrings, e.g. </i><b>(.*)</b> <i>and</i> <b>(\d+)</b><i>,'
+            . ' one of which matches the data we need</i>',
             1, 12, 1, 2);
 
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
             'Variable', 'text',
             'Mode', 'text',
         );
@@ -30040,16 +30372,16 @@
         $self->refreshList_listIV(
             $slWidget,
             scalar (@columnList / 2),
-            'singleBackRefPatternList',
+            'groupPatternList',
         );
 
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 3, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 12, 8, 9);
 
-        $self->addLabel($table, 'Backref #:',
+        $self->addLabel($table, 'Substring #:',
             1, 3, 9, 10);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
             3, 6, 9, 10, 4, 4);
@@ -30060,14 +30392,19 @@
             TRUE,               # No 'undef' value used
             10, 12, 9, 10);
 
-        $self->addLabel($table, 'Standard or custom variable:',
+        $self->addLabel($table, 'Status task variable:',
             1, 6, 10, 11);
 
         $customString = 'Use a custom variable:';
-        push (@comboList,
-            $customString,
-            $taskObj->singleBackRefVarList,
+
+        @comboList = sort {lc($a) cmp lc($b)} (
+            $taskObj->ivKeys('constCharVarHash'),
+            $taskObj->ivKeys('constFixedVarHash'),
+            $taskObj->ivKeys('constPseudoVarHash'),
+            $taskObj->ivKeys('constLocalVarHash'),
+            $taskObj->ivKeys('constCounterVarHash'),
         );
+        unshift (@comboList, $customString);
         my $comboBox2 = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,               # No 'undef' value used
             6, 9, 10, 11);
@@ -30090,16 +30427,16 @@
         my $button = $self->addSimpleListButtons_listIV(
             $table,
             $slWidget,
-            'singleBackRefPatternList',
+            'groupPatternList',
             11, 4,
             $entry, $entry2, $entry3,
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef, $var, $mode);
+            my ($pattern, $grpNum, $var, $mode);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
             $mode = $comboBox->get_active_text();
             $var = $comboBox2->get_active_text();
             if ($var eq $customString) {
@@ -30110,16 +30447,16 @@
             if ($self->checkEntryIcon($entry, $entry2)) {
 
                 # Add new values to (the end of) the list IV
-                $self->addEditHash_listIV('singleBackRefPatternList',
+                $self->addEditHash_listIV('groupPatternList',
                     undef, FALSE,
-                    $pattern, $backRef, $var, $mode
+                    $pattern, $grpNum, $var, $mode
                 );
 
                 # Refresh the simple list and reset entry boxes
                 $self->refreshList_listIV(
                     $slWidget,
                     scalar (@columnList / 2),
-                    'singleBackRefPatternList',
+                    'groupPatternList',
                 );
                 $self->resetEntryBoxes($entry, $entry2);
             }
@@ -30145,7 +30482,7 @@
         my ($self, $innerNotebook, $check) = @_;
 
         # Local variables
-        my @columnList;
+        my (@columnList, @comboList);
 
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
@@ -30165,7 +30502,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
             'Variable', 'text',
             'Mode', 'text',
             'Unit', 'text',
@@ -30182,7 +30519,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 6, 8, 9);
 
         $self->addLabel($table, 'Unit:',
@@ -30195,18 +30532,20 @@
         my $entry3 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
             10, 12, 8, 9, 4, 4);
 
-        $self->addLabel($table, 'Backref #:',
+        $self->addLabel($table, 'Substring #:',
             1, 2, 9, 10);
         my $entry4 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
             2, 4, 9, 10, 4, 4);
 
-        $self->addLabel($table, 'Variable:',
+        $self->addLabel($table, 'Data type:',
             4, 6, 9, 10);
-        my $comboBox = $self->addComboBox(
-            $table,
-            undef,
-            ['health', 'magic', 'energy', 'guild', 'social', 'xp_current', 'xp_next_level'],
-            '',
+
+        @comboList = (
+            'health', 'magic', 'energy', 'guild', 'social', 'xp_current', 'xp_next_level',
+            'qp_current', 'qp_next_level', 'op_current', 'op_next_level',
+        );
+
+        my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,               # No 'undef' value used
             6, 8, 9, 10);
 
@@ -30226,10 +30565,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef, $var, $mode, $unit, $maxUnits);
+            my ($pattern, $grpNum, $var, $mode, $unit, $maxUnits);
 
             $pattern = $entry->get_text();
-            $backRef = $entry4->get_text();
+            $grpNum = $entry4->get_text();
             $var = $comboBox->get_active_text();
             $mode = $comboBox2->get_active_text();
             $unit = $entry2->get_text();
@@ -30241,7 +30580,7 @@
                 $self->addEditHash_listIV(
                     'barPatternList',
                     undef, FALSE,
-                    $pattern, $backRef, $var, $mode, $unit, $maxUnits,
+                    $pattern, $grpNum, $var, $mode, $unit, $maxUnits,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -30292,7 +30631,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
             'Display', 'text',
         );
 
@@ -30306,10 +30645,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 12, 8, 9);
 
-        $self->addLabel($table, 'Backref #:',
+        $self->addLabel($table, 'Substring #:',
             1, 2, 9, 10);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
             2, 6, 9, 10, 4, 4);
@@ -30330,10 +30669,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef, $mode);
+            my ($pattern, $grpNum, $mode);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
             $mode = $comboBox2->get_active_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
@@ -30342,7 +30681,7 @@
                 $self->addEditHash_listIV(
                     'affectPatternList',
                     undef, FALSE,
-                    $pattern, $backRef, $mode,
+                    $pattern, $grpNum, $mode,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -30395,7 +30734,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
             'Stat', 'text',
             'Display', 'text',
         );
@@ -30410,10 +30749,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 12, 8, 9);
 
-        $self->addLabel($table, 'Backref #:',
+        $self->addLabel($table, 'Substring #:',
             1, 2, 9, 10);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
             2, 6, 9, 10, 4, 4);
@@ -30441,10 +30780,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef, $stat, $mode);
+            my ($pattern, $grpNum, $stat, $mode);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
             $stat = $comboBox->get_active_text();
             $mode = $comboBox2->get_active_text();
 
@@ -30464,7 +30803,7 @@
                 $self->addEditHash_listIV(
                     'statPatternList',
                     undef, FALSE,
-                    $pattern, $backRef, $stat, $mode,
+                    $pattern, $grpNum, $stat, $mode,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -30503,9 +30842,16 @@
 
         # Status task ignore patterns
         $self->addLabel($table, '<b>Status task ignore patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns which should be ignored by the Status task</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'statusIgnorePatternList',
+                'list', 'questCompletePatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'statusIgnorePatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -30549,9 +30895,16 @@
 
         # Status task age patterns
         $self->addLabel($table, '<b>Status task age patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns containing the character\'s age</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'agePatternList',
+                'list', 'timePatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'agePatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -30595,9 +30948,16 @@
 
         # Life patterns
         $self->addLabel($table, '<b>Life patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns seen when the character dies</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'deathPatternList',
+                'list', 'resurrectPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'deathPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -30638,9 +30998,16 @@
 
         # Passing out patterns
         $self->addLabel($table, '<b>Passing out patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns seen when the character passes out</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'passedOutPatternList',
+                'list', 'comeAroundPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'passedOutPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -30681,9 +31048,16 @@
 
         # Sleep patterns
         $self->addLabel($table, '<b>Sleep patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns seen when the character falls asleep</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'fallAsleepPatternList',
+                'list', 'wakeUpPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'fallAsleepPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -30842,7 +31216,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
             'Type', 'text',
             'Mode', 'text',
             'Position', 'text',
@@ -30858,7 +31232,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
         $self->addLabel($table, 'Type:',
@@ -30876,7 +31250,7 @@
             TRUE,               # No 'undef' value used
             9, 12, 8, 9);
 
-        $self->addLabel($table, 'Backref #:',
+        $self->addLabel($table, 'Substring #:',
             1, 2, 9, 10);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             2, 6, 9, 10, 4, 4);
@@ -30903,10 +31277,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef, $type, $mode, $posn);
+            my ($pattern, $grpNum, $type, $mode, $posn);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
             $type = $comboBox->get_active_text();
             $mode = $comboBox2->get_active_text();
             $posn = $comboBox3->get_active_text();
@@ -30917,7 +31291,7 @@
                 $self->addEditHash_listIV(
                     'inventoryPatternList',
                     undef, FALSE,
-                    $pattern, $backRef, $type, $mode, $posn
+                    $pattern, $grpNum, $type, $mode, $posn,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -30988,7 +31362,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 10, 11);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 10, 11);
 
         $self->addLabel($table, 'Mode:',
@@ -31065,10 +31439,16 @@
 
         # Inventory discard patterns
         $self->addLabel($table, '<b>Inventory discard patterns</b>',
-            0, 12, 0, 1);
+            0, 10, 0, 1);
         $self->addLabel($table,
             '<i>Patterns matching portions of an inventory line that should be discarded</i>',
-            1, 12, 1, 2);
+            1, 10, 1, 2);
+        $self->addRegexButton($table,
+            [
+                'list', 'inventoryDiscardPatternList',
+                'list', 'inventorySplitPatternList',
+            ],
+            10, 12, 0, 2);
 
         $self->addTextView($table, 'inventoryDiscardPatternList', TRUE,
             1, 12, 2, 6,
@@ -31128,7 +31508,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
             'Mode', 'text',
             'Condition', 'text',
         );
@@ -31143,10 +31523,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 12, 8, 9);
 
-        $self->addLabel($table, 'Backref #:',
+        $self->addLabel($table, 'Substring #:',
             1, 3, 9, 10);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             3, 5, 9, 10, 4, 4);
@@ -31172,10 +31552,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef, $mode, $condition);
+            my ($pattern, $grpNum, $mode, $condition);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
             $mode = $comboBox->get_active_text();
             $condition = $entry3->get_text();
 
@@ -31185,7 +31565,7 @@
                 $self->addEditHash_listIV(
                     'conditionPatternList',
                     undef, FALSE,
-                    $pattern, $backRef, $mode, $condition
+                    $pattern, $grpNum, $mode, $condition,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -31229,9 +31609,15 @@
 
         # Condition task ignore patterns
         $self->addLabel($table, '<b>Condition task ignore patterns</b>',
-            0, 12, 0, 1);
+            0, 10, 0, 1);
         $self->addLabel($table, '<i>Patterns which should be ignored by the Condition task</i>',
-            1, 12, 1, 2);
+            1, 10, 1, 2);
+        $self->addRegexButton($table,
+            [
+                'list', 'conditionIgnorePatternList',
+            ],
+            10, 12, 0, 2);
+
         $self->addTextView($table, 'conditionIgnorePatternList', TRUE,
             1, 12, 2, 12,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
@@ -31415,7 +31801,7 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 9, 10);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 12, 9, 10);
 
         $self->addLabel($table, 'Channel name (1-16 chars):',
@@ -31489,7 +31875,7 @@
 
             # Prompt the user for a new channel and/or flag setting
             @comboList = ('Gag text in \'main\' window', 'Display text in \'main\' window');
-            ($choice, $choice2) = $self->showDoubleComboDialogue(
+            ($choice, $choice2) = $self->showEntryComboDialogue(
                 'Modify pattern attributes',
                 'Enter a channel (1-16 chars)',
                 undef,                              # No label above combo
@@ -31552,11 +31938,17 @@
 
         # Channel ignore patterns
         $self->addLabel($table, '<b>Channel ignore patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which match text that should not be diverted to the Channels or Divert'
             . ' tasks</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noChannelList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noChannelList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
@@ -31647,18 +32039,18 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 3, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 12, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
-            1, 4, 9, 10);
+        $self->addLabel($table, 'Target substring #:',
+            1, 3, 9, 10);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
-            4, 6, 9, 10, 4, 4);
+            3, 6, 9, 10, 4, 4);
 
-        $self->addLabel($table, 'Direction backref # (0 if unspecified):',
-            7, 10, 9, 10);
+        $self->addLabel($table, 'Direction substring # (0 if unspecified):',
+            7, 9, 9, 10);
         my $entry3 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
-            10, 12, 9, 10, 4, 4);
+            9, 12, 9, 10, 4, 4);
 
         # Add buttons at various positions
         my $button = $self->addSimpleListButtons_listIV(
@@ -31670,11 +32062,11 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $targetBackRef, $dirBackRef);
+            my ($pattern, $grpNum, $grpNum2);
 
             $pattern = $entry->get_text();
-            $targetBackRef = $entry2->get_text();
-            $dirBackRef = $entry3->get_text();
+            $grpNum = $entry2->get_text();
+            $grpNum2 = $entry3->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -31682,7 +32074,7 @@
                 $self->addEditHash_listIV(
                     'targetLeavesPatternList',
                     undef, FALSE,
-                    $pattern, $targetBackRef, $dirBackRef
+                    $pattern, $grpNum, $grpNum2,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -31754,18 +32146,18 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 3, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 12, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
-            1, 4, 9, 10);
+        $self->addLabel($table, 'Target substring #:',
+            1, 3, 9, 10);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
-            4, 6, 9, 10, 4, 4);
+            3, 6, 9, 10, 4, 4);
 
-        $self->addLabel($table, 'Direction backref # (0 if unspecified):',
-            6, 10, 9, 10);
+        $self->addLabel($table, 'Direction substring # (0 if unspecified):',
+            7, 9, 9, 10);
         my $entry3 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
-            10, 12, 9, 10, 4, 4);
+            9, 12, 9, 10, 4, 4);
 
         # Add buttons at various positions
         my $button = $self->addSimpleListButtons_listIV(
@@ -31777,11 +32169,11 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $targetBackRef, $dirBackRef);
+            my ($pattern, $grpNum, $grpNum2);
 
             $pattern = $entry->get_text();
-            $targetBackRef = $entry2->get_text();
-            $dirBackRef = $entry3->get_text();
+            $grpNum = $entry2->get_text();
+            $grpNum2 = $entry3->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2, $entry3)) {
 
@@ -31789,7 +32181,7 @@
                 $self->addEditHash_listIV(
                     'targetArrivesPatternList',
                     undef, FALSE,
-                    $pattern, $targetBackRef, $dirBackRef
+                    $pattern, $grpNum, $grpNum2,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -31835,7 +32227,14 @@
             0, 12, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which mean a target (or potential target) didn\'t just leave</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noTargetLeavesPatternList',
+                'list', 'noTargetArrivesPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noTargetLeavesPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -31880,11 +32279,18 @@
 
         # No fights room patterns
         $self->addLabel($table, '<b>No fights room patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns seen when the character initiates a fight in a room which forbids'
             . ' them</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noFightsRoomPatternList',
+                'list', 'noInteractionsRoomPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noFightsRoomPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -31977,7 +32383,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -31990,10 +32396,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -32008,10 +32414,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -32019,7 +32425,7 @@
                 $self->addEditHash_listIV(
                     'fightStartedPatternList',
                     undef, FALSE,
-                    $pattern, $backRef,
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -32073,7 +32479,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -32090,10 +32496,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -32108,10 +32514,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -32119,7 +32525,7 @@
                 $self->addEditHash_listIV(
                     'cannotFindTargetPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -32163,9 +32569,16 @@
 
         # Fight started ignore patterns
         $self->addLabel($table, '<b>Fight started ignore patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns which mean the character didn\'t initiate a fight</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noFightStartedPatternList',
+                'list', 'noCannotFindTargetPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noFightStartedPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -32221,7 +32634,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -32238,10 +32651,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -32256,10 +32669,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -32267,7 +32680,7 @@
                 $self->addEditHash_listIV(
                     'targetAlreadyDeadPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -32321,7 +32734,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -32334,10 +32747,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -32352,10 +32765,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -32363,7 +32776,7 @@
                 $self->addEditHash_listIV(
                     'targetKilledPatternList',
                     undef, FALSE,
-                    $pattern, $backRef,
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -32407,9 +32820,16 @@
 
         # Target already dead ignore patterns
         $self->addLabel($table, '<b>Target already dead ignore patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns which mean the character didn\'t fight a corpse</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noTargetAlreadyDeadPatternList',
+                'list', 'noTargetKilledPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noTargetAlreadyDeadPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -32465,7 +32885,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -32482,10 +32902,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -32500,10 +32920,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -32511,7 +32931,7 @@
                 $self->addEditHash_listIV(
                     'fightDefeatPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -32567,7 +32987,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -32580,10 +33000,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -32598,10 +33018,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -32609,7 +33029,7 @@
                 $self->addEditHash_listIV(
                     'wimpyEngagedPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -32653,9 +33073,16 @@
 
         # Target defeat ignore patterns
         $self->addLabel($table, '<b>Target defeat ignore patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns which mean the character didn\'t lose a fight</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noFightDefeatPatternList',
+                'list', 'noWimpyEngagedPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noFightDefeatPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -32746,7 +33173,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -32763,10 +33190,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -32781,10 +33208,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -32792,7 +33219,7 @@
                 $self->addEditHash_listIV(
                     'interactionStartedPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -32846,7 +33273,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -32863,10 +33290,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -32881,10 +33308,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -32892,7 +33319,7 @@
                 $self->addEditHash_listIV(
                     'cannotInteractPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -32936,10 +33363,17 @@
 
         # Interaction started ignore patterns
         $self->addLabel($table, '<b>Interaction started ignore patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which mean the character didn\'t initiate an interaction</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noInteractionStartedPatternList',
+                'list', 'noCannotInteractPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noInteractionStartedPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -32994,7 +33428,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -33011,10 +33445,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -33029,10 +33463,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -33040,7 +33474,7 @@
                 $self->addEditHash_listIV(
                     'interactionSuccessPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -33094,7 +33528,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -33111,10 +33545,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -33129,10 +33563,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -33140,7 +33574,7 @@
                 $self->addEditHash_listIV(
                     'interactionFailPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -33183,10 +33617,17 @@
 
         # Interaction success ignore patterns
         $self->addLabel($table, '<b>Interaction success ignore patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns seen when the character didn\'t just win an interaction</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noInteractionSuccessPatternList',
+                'list', 'noInteractionFailPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noInteractionSuccessPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33241,7 +33682,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -33258,10 +33699,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -33276,10 +33717,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -33287,7 +33728,7 @@
                 $self->addEditHash_listIV(
                     'interactionFightPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -33342,7 +33783,7 @@
         # Add a simple list
         @columnList = (
             'Pattern', 'text',
-            'Backref #', 'int',
+            'Substring #', 'int',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -33359,10 +33800,10 @@
         # Add entries/comboboxes for adding new patterns
         $self->addLabel($table, 'Pattern:',
             1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             2, 8, 8, 9);
 
-        $self->addLabel($table, 'Target backref #:',
+        $self->addLabel($table, 'Target substring #:',
             8, 9, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
             9, 12, 8, 9, 4, 4);
@@ -33377,10 +33818,10 @@
         );
         $button->signal_connect('clicked' => sub {
 
-            my ($pattern, $backRef);
+            my ($pattern, $grpNum);
 
             $pattern = $entry->get_text();
-            $backRef = $entry2->get_text();
+            $grpNum = $entry2->get_text();
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -33388,7 +33829,7 @@
                 $self->addEditHash_listIV(
                     'interactionDisasterPatternList',
                     undef, FALSE,
-                    $pattern, $backRef
+                    $pattern, $grpNum,
                 );
 
                 # Refresh the simple list and reset entry boxes
@@ -33432,10 +33873,17 @@
 
         # Interaction conversion ignore patterns
         $self->addLabel($table, '<b>Interaction conversion ignore patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns seen when an interaction didn\'t just turn into a fight</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'noInteractionFightPatternList',
+                'list', 'noInteractionDisasterPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'noInteractionFightPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33514,10 +33962,17 @@
 
         # Get success patterns
         $self->addLabel($table, '<b>Get success patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which mean a command like \'get axe\' was successful</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'getSuccessPatternList',
+                'list', 'getHeavyPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'getSuccessPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33563,11 +34018,18 @@
 
         # Get fail patterns
         $self->addLabel($table, '<b>Get fail patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which mean a command like \'get axe\' failed because there is such object'
             . ' to get</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'getFailPatternList',
+                'list', 'dropSuccessPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'getFailPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33612,11 +34074,18 @@
 
         # Drop forbid patterns
         $self->addLabel($table, '<b>Drop forbid patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which mean a command like \'drop axe\' failed because the world forbids'
             . ' it</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'dropForbidPatternList',
+                'list', 'dropFailPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'dropForbidPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33662,10 +34131,17 @@
 
         # Buy success patterns
         $self->addLabel($table, '<b>Buy success patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which mean a command like \'buy axe\' was successful</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'buySuccessPatternList',
+                'list', 'buyPartialPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'buySuccessPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33711,11 +34187,18 @@
 
         # Buy fail patterns
         $self->addLabel($table, '<b>Buy fail patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which mean a command like \'buy axe\' failed because there is no such'
             . ' object to buy</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'buyFailPatternList',
+                'list', 'sellSuccessPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'buyFailPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33760,11 +34243,18 @@
 
         # Sell partial success patterns
         $self->addLabel($table, '<b>Sell partial success patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table,
             '<i>Patterns which mean a command like \'sell ten axes\' partially succeeded (e.g.'
             . ' sold five)</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'sellPartialPatternList',
+                'list', 'sellFailPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'sellPartialPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33810,9 +34300,16 @@
 
         # Advance success patterns
         $self->addLabel($table, '<b>Advance success patterns</b>',
-            0, 12, 0, 2);
+            0, 10, 0, 2);
         $self->addLabel($table, '<i>Patterns seen when the character advances their skills</i>',
-            1, 12, 2, 4);
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'advanceSuccessPatternList',
+                'list', 'advanceFailPatternList',
+            ],
+            10, 12, 0, 4);
+
         $self->addTextView($table, 'advanceSuccessPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
@@ -33978,8 +34475,10 @@
         $self->missionsTab_refreshList($slWidget, (scalar @columnList / 2));
 
         # Add some buttons and a single entry box
+        $self->addLabel($table, 'Name',
+            1, 2, 9, 10);
         my $entry = $self->addEntryWithIcon($table, undef, 'string', 3, 16,
-            1, 4, 9, 10);
+            2, 4, 9, 10);
         my $button = $self->addButton($table,
             'Add...', 'Add a new mission using the contents of the current recording', undef,
             4, 6, 9, 10,
@@ -34271,8 +34770,10 @@
         $self->questsTab_refreshList($slWidget, (scalar @columnList / 2));
 
         # Add some buttons and a single entry box
+        $self->addLabel($table, 'Name',
+            1, 2, 10, 11);
         my $entry5 = $self->addEntryWithIcon($table, undef, 'string', 3, 16,
-            1, 4, 10, 11);
+            2, 4, 10, 11);
         my $button = $self->addButton($table, 'Add...', 'Add a new quest', undef,
             4, 6, 10, 11,
             TRUE,           # Irreversible
@@ -35576,6 +36077,8 @@
         $self->settings1Tab($innerNotebook);
         $self->settings2Tab($innerNotebook);
         $self->settings3Tab($innerNotebook);
+        $self->settings4Tab($innerNotebook);
+        $self->settings5Tab($innerNotebook);
 
         return 1;
     }
@@ -35628,58 +36131,46 @@
         $self->addComboBox($table, 'race', \@raceList, '',
             FALSE,              # 'undef' value allowed
             3, 6, 2, 3);
-        $self->addLabel($table, 'Current XP',
-            1, 3, 3, 4);
-        $self->addEntryWithIcon($table, 'xpCurrent', 'int', 0, undef,
-            3, 6, 3, 4);
-        $self->addLabel($table, 'XP to next level',
-            1, 3, 4, 5);
-        $self->addEntryWithIcon($table, 'xpNextLevel', 'int', 0, undef,
-            3, 6, 4, 5);
-        $self->addLabel($table, 'Total XP',
-            1, 3, 5, 6);
-        $self->addEntryWithIcon($table, 'xpTotal', 'int', 0, undef,
-            3, 6, 5, 6);
         $self->addLabel($table, 'Age',
-            1, 3, 6, 7);
+            1, 3, 3, 4);
         $self->addEntryWithIcon($table, 'age', 'int', 0, undef,
-            3, 6, 6, 7);
+            3, 6, 3, 4);
         $self->addLabel($table, 'Level',
-            1, 3, 7, 8);
+            1, 3, 4, 5);
         $self->addEntryWithIcon($table, 'level', 'int', 0, undef,
-            3, 6, 7, 8);
+            3, 6, 4, 5);
+        $self->addLabel($table, 'Bank balance',
+            1, 3, 5, 6);
+        $self->addEntryWithIcon($table, 'bankBalance', 'int', 0, undef,
+            3, 6, 5, 6);
+        $self->addLabel($table, 'Purse contents',
+            1, 3, 6, 7);
+        $self->addEntryWithIcon($table, 'purseContents', 'int', 0, undef,
+            3, 6, 6, 7);
 
         # Right column
-        $self->addLabel($table, 'Bank balance',
-            7, 9, 1, 2);
-        $self->addEntryWithIcon($table, 'bankBalance', 'int', 0, undef,
-            9, 12, 1, 2);
-        $self->addLabel($table, 'Purse contents',
-            7, 9, 2, 3);
-        $self->addEntryWithIcon($table, 'purseContents', 'int', 0, undef,
-            9, 12, 2, 3);
         $self->addLabel($table, 'Lives left',
-            7, 9, 3, 4);
+            7, 9, 1, 2);
         $self->addEntryWithIcon($table, 'lifeCount', 'int', 0, undef,
-            9, 12, 3, 4);
+            9, 12, 1, 2);
         $self->addLabel($table, 'Times killed',
-            7, 9, 4, 5);
+            7, 9, 2, 3);
         $self->addEntryWithIcon($table, 'deathCount', 'int', 0, undef,
-            9, 12, 4, 5);
+            9, 12, 2, 3);
         $self->addLabel($table, 'Max lives',
-            7, 9, 5, 6);
+            7, 9, 3, 4);
         $self->addEntryWithIcon($table, 'lifeMax', 'int', 0, undef,
-            9, 12, 5, 6);
+            9, 12, 3, 4);
         $self->addLabel($table, 'Life status',
-            7, 9, 6, 7);
+            7, 9, 4, 5);
         @comboList = ('alive', 'sleep', 'passout', 'dead');
         $self->addComboBox($table, 'lifeStatus', \@comboList, '',
             TRUE,               # No 'undef' value used
-            9, 12, 6, 7);
+            9, 12, 4, 5);
         $self->addLabel($table, 'Alignment',
-            7, 9, 7, 8);
+            7, 9, 5, 6);
         $self->addEntryWithButton($table, 'alignment', TRUE,
-            9, 12, 7, 8);
+            9, 12, 5, 6);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -35700,9 +36191,6 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
-        # Local variables
-        my $worldObj;
-
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -35712,32 +36200,55 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
 
-        # Import the current world
-        $worldObj = $self->session->currentWorld;
-
-        # Wimpy settings
-        $self->addLabel($table, '<b>Wimpy settings</b>',
+        # Points
+        $self->addLabel(
+            $table,
+            '<b>Points - health, magic, energy, guild and social points</b>',
             0, 12, 0, 1);
 
-        $self->addLabel($table, 'Current world wimpy',
+        # Left column
+        $self->addLabel($table, 'Health points',
             1, 3, 1, 2);
-        $self->addEntryWithIcon($table, 'remoteWimpy', 'int', 0, $worldObj->remoteWimpyMax,
+        $self->addEntryWithIcon($table, 'healthPoints', 'int', 0, undef,
             3, 6, 1, 2);
-        $self->addLabel($table, 'Maximum world wimpy',
-            7, 9, 1, 2);
-        my $entry = $self->addEntry($table, undef, FALSE,
-            9, 12, 1, 2);
-        $entry->set_text($worldObj->remoteWimpyMax);
-
-        $self->addLabel($table, 'Current ' . $axmud::SCRIPT . ' wimpy',
+        $self->addLabel($table, 'Maximum health points',
             1, 3, 2, 3);
-        $self->addEntryWithIcon($table, 'localWimpy', 'int', 0, $worldObj->constLocalWimpyMax,
+        $self->addEntryWithIcon($table, 'healthPointsMax', 'int', 0, undef,
             3, 6, 2, 3);
-        $self->addLabel($table, 'Maximum ' . $axmud::SCRIPT . ' wimpy',
+        $self->addLabel($table, 'Magic points',
+            1, 3, 3, 4);
+        $self->addEntryWithIcon($table, 'magicPoints', 'int', 0, undef,
+            3, 6, 3, 4);
+        $self->addLabel($table, 'Maximum magic points',
+            1, 3, 4, 5);
+        $self->addEntryWithIcon($table, 'magicPointsMax', 'int', 0, undef,
+            3, 6, 4, 5);
+        $self->addLabel($table, 'Energy points',
+            1, 3, 5, 6);
+        $self->addEntryWithIcon($table, 'energyPoints', 'int', 0, undef,
+            3, 6, 5, 6);
+        $self->addLabel($table, 'Maximum energy points',
+            1, 3, 6, 7);
+        $self->addEntryWithIcon($table, 'energyPointsMax', 'int', 0, undef,
+            3, 6, 6, 7);
+
+        # Right column
+        $self->addLabel($table, 'Guild points',
+            7, 9, 1, 2);
+        $self->addEntryWithIcon($table, 'guildPoints', 'int', 0, undef,
+            9, 12, 1, 2);
+        $self->addLabel($table, 'Maximum guild points',
             7, 9, 2, 3);
-        my $entry2 = $self->addEntry($table, undef, FALSE,
+        $self->addEntryWithIcon($table, 'guildPointsMax', 'int', 0, undef,
             9, 12, 2, 3);
-        $entry2->set_text($worldObj->constLocalWimpyMax);
+        $self->addLabel($table, 'Social points',
+            7, 9, 3, 4);
+        $self->addEntryWithIcon($table, 'socialPoints', 'int', 0, undef,
+            9, 12, 3, 4);
+        $self->addLabel($table, 'Maximum social points',
+            7, 9, 4, 5);
+        $self->addEntryWithIcon($table, 'socialPointsMax', 'int', 0, undef,
+            9, 12, 4, 5);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -35758,9 +36269,6 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
-        # Local variables
-        my (@columnList, @categoryList, @profList);
-
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -35769,6 +36277,143 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
+
+        # Points
+        $self->addLabel(
+            $table,
+            '<b>Points - eXperience Points, Quest Points and Other Points</b>',
+            0, 12, 0, 1);
+
+        # Left column
+        $self->addLabel($table, 'Current XP',
+            1, 3, 1, 2);
+        $self->addEntryWithIcon($table, 'xpCurrent', 'int', 0, undef,
+            3, 6, 1, 2);
+        $self->addLabel($table, 'XP to next level',
+            1, 3, 2, 3);
+        $self->addEntryWithIcon($table, 'xpNextLevel', 'int', 0, undef,
+            3, 6, 2, 3);
+        $self->addLabel($table, 'Total XP',
+            1, 3, 3, 4);
+        $self->addEntryWithIcon($table, 'xpTotal', 'int', 0, undef,
+            3, 6, 3, 4);
+
+        # Right column
+        $self->addLabel($table, 'Current QP',
+            7, 9, 1, 2);
+        $self->addEntryWithIcon($table, 'qpCurrent', 'int', 0, undef,
+            9, 12, 1, 2);
+        $self->addLabel($table, 'QP to next level',
+            7, 9, 2, 3);
+        $self->addEntryWithIcon($table, 'qpNextLevel', 'int', 0, undef,
+            9, 12, 2, 3);
+        $self->addLabel($table, 'Total QP',
+            7, 9, 3, 4);
+        $self->addEntryWithIcon($table, 'qpTotal', 'int', 0, undef,
+            9, 12, 3, 4);
+
+        $self->addLabel($table, 'Current OP',
+            7, 9, 4, 5);
+        $self->addEntryWithIcon($table, 'opCurrent', 'int', 0, undef,
+            9, 12, 4, 5);
+        $self->addLabel($table, 'OP to next level',
+            7, 9, 5, 6);
+        $self->addEntryWithIcon($table, 'opNextLevel', 'int', 0, undef,
+            9, 12, 5, 6);
+        $self->addLabel($table, 'Total OP',
+            7, 9, 6, 7);
+        $self->addEntryWithIcon($table, 'opTotal', 'int', 0, undef,
+            9, 12, 6, 7);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub settings4Tab {
+
+        # Settings4 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my $worldObj;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings4Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+
+        # Import the current world
+        $worldObj = $self->session->currentWorld;
+
+        # Wimpy settings
+        $self->addLabel($table, '<b>Wimpy settings</b>',
+            0, 12, 0, 1);
+
+        $self->addLabel($table, 'Current world wimpy',
+            1, 3, 1, 2);
+        $self->addEntryWithIcon($table, 'remoteWimpy', 'int', 0, undef,
+            3, 6, 1, 2);
+        $self->addLabel($table, 'Current ' . $axmud::SCRIPT . ' wimpy',
+            1, 3, 2, 3);
+        $self->addEntryWithIcon($table, 'localWimpy', 'int', 0, undef,
+            3, 6, 2, 3);
+
+
+        $self->addLabel($table, 'Maximum world wimpy',
+            7, 9, 1, 2);
+        $self->addEntryWithIcon($table, 'remoteWimpyMax', 'int', 0, undef,
+            9, 12, 1, 2);
+
+
+        $self->addLabel($table, 'Maximum ' . $axmud::SCRIPT . ' wimpy',
+            7, 9, 2, 3);
+        $self->addEntry($table, 'constLocalWimpyMax', FALSE,
+            9, 12, 2, 3);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub settings5Tab {
+
+        # Settings5 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my (@columnList, @categoryList, @profList);
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings5Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
 
         # Custom profile hash
         $self->addLabel($table, '<b>Custom profile hash</b>',
@@ -35788,7 +36433,7 @@
             -1, 270);     # Fixed height
 
         # Initialise the list
-        $self->settings3Tab_refreshList($slWidget, scalar (@columnList / 2));
+        $self->settings5Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add editing buttons
         my $button = $self->addButton(
@@ -35801,7 +36446,7 @@
         $button->signal_connect('clicked' => sub {
 
             # Refresh the simple list
-            $self->settings3Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->settings5Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         # Tab complete
@@ -35810,9 +36455,9 @@
         return 1;
     }
 
-    sub settings3Tab_refreshList {
+    sub settings5Tab_refreshList {
 
-        # Resets the simple list displayed by $self->settings3Tab
+        # Resets the simple list displayed by $self->settings5Tab
         #
         # Expected arguments
         #   $slWidget   - The GA::Gtk::Simple::List
@@ -35831,7 +36476,7 @@
         if (! defined $slWidget || ! defined $columns || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->settings3Tab_refreshList',
+                $self->_objClass . '->settings5Tab_refreshList',
                 @_,
             );
         }
@@ -41957,6 +42602,9 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my $route;
+
         # Check for improper arguments
         if (defined $check) {
 
@@ -41998,6 +42646,33 @@
         my $entry2 = $self->addEntry($table, 'stepCount', FALSE,
             3, 6, 7, 8);
 
+        my $button = $self->addButton(
+            $table,
+            'Convert speedwalk command',
+            'Convert the speedwalk command to ordinary world commands',
+            undef,
+            7, 12, 7, 8);
+        $button->signal_connect('clicked' => sub {
+
+            my (
+                $text,
+                @list,
+            );
+
+            $text = $entry->get_text();
+            @list = $self->session->parseSpeedWalk($text);
+            if (@list) {
+
+                $entry->set_text(join($axmud::CLIENT->cmdSep, @list));
+            }
+        });
+
+        $route = $self->getEditHash_scalarIV('route');
+        if (! defined $route || ! $self->session->parseSpeedWalk($route)) {
+
+            $button->set_sensitive(FALSE);
+        }
+
         # Right column
         $self->addLabel($table, 'Hoppable',
             7, 11, 1, 2);
@@ -42010,11 +42685,34 @@
 
             if ($self->checkEntryIcon($entry)) {
 
-                # Set the IV directly, rather than using ->editHash
-                $self->editObj->ivPoke('route', $text);
-                # ...so that ->stepCount can also be updated
-                $self->editObj->resetStepCount();
-                $entry2->set_text($self->editObj->stepCount);
+                if (index($text, $axmud::CLIENT->constSpeedSigil) == 0) {
+
+                    if (! $self->session->parseSpeedWalk($text)) {
+
+                        $button->set_sensitive(FALSE);
+                        $entry->set_icon_from_stock('secondary', 'gtk-no');
+
+                    } else {
+
+                        $button->set_sensitive(TRUE);
+
+                        # Set the IV directly, rather than using ->editHash
+                        $self->editObj->ivPoke('route', $text);
+                        # ...so that ->stepCount can also be updated
+                        $self->editObj->resetStepCount($self->session);
+                        $entry2->set_text($self->editObj->stepCount);
+                    }
+
+                } else {
+
+                    $button->set_sensitive(FALSE);
+
+                    # Set the IV directly, rather than using ->editHash
+                    $self->editObj->ivPoke('route', $text);
+                    # ...so that ->stepCount can also be updated
+                    $self->editObj->resetStepCount($self->session);
+                    $entry2->set_text($self->editObj->stepCount);
+                }
             }
         });
 
@@ -43810,12 +44508,14 @@
 
             $self->parametersLocator1Tab($innerNotebook);
 
+        } elsif ($self->editObj->name eq 'raw_token_task') {
+
+            $self->parametersRawToken1Tab($innerNotebook);
 
         } elsif ($self->editObj->name eq 'status_task') {
 
             $self->parametersStatus1Tab($innerNotebook);
             $self->parametersStatus2Tab($innerNotebook);
-            $self->parametersStatus3Tab($innerNotebook);
 
         } elsif ($self->editObj->name eq 'system_task') {
 
@@ -45066,6 +45766,57 @@
         return 1;
     }
 
+    sub parametersRawToken1Tab {
+
+        # Parameters RawToken1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersRawToken1Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+
+        # Task window
+        $self->addLabel($table, '<b>Task window</b>',
+            0, 12, 0, 1);
+
+        # Left column
+        $self->addLabel(
+            $table, 'Split lines, with one line per token',
+            1, 5, 1, 2);
+        $self->addCheckButton($table, 'splitLineFlag', TRUE,
+            5, 6, 1, 2);
+        $self->addLabel(
+            $table, 'Show token types',
+            1, 5, 2, 3);
+        $self->addCheckButton($table, 'showTypeFlag', TRUE,
+            5, 6, 2, 3);
+
+        # Right column
+        $self->addLabel(
+            $table, 'Show packet numbers',
+            6, 11, 1, 2);
+        $self->addCheckButton($table, 'countPacketFlag', TRUE,
+            11, 12, 1, 2);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
     sub parametersStatus1Tab {
 
         # Parameters Status1 tab
@@ -45148,7 +45899,7 @@
         $self->addCheckButton($table, 'gaugeFlag', TRUE,
             5, 6, 7, 8);
         $self->addLabel($table, 'Also show explicit gauge labels',
-            2, 5, 8, 9);
+            1, 5, 8, 9);
         $self->addCheckButton($table, 'gaugeValueFlag', TRUE,
             5, 6, 8, 9);
 
@@ -45172,7 +45923,7 @@
         my ($self, $innerNotebook, $check) = @_;
 
         # Local variables
-        my @comboList;
+        my @columnList;
 
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
@@ -45182,73 +45933,6 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
-
-        # Status task commands
-        $self->addLabel($table, '<b>Commify numbers</b>',
-            0, 12, 0, 1);
-
-        my ($group, $radioButton) = $self->addRadioButton(
-            $table, undef, '\'none\'', 'commifyMode',
-            'none',     # IV set to this value when toggled
-            TRUE,       # Sensitive widget
-            1, 3, 1, 2);
-        $self->addLabel($table, 'Don\'t add commas to numbers (1000000)',
-            3, 12, 1, 2);
-
-        ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'use_comma\'', 'commifyMode', 'use_comma', TRUE,
-            1, 3, 2, 3);
-        $self->addLabel($table, 'Add commas to numbers (1,000,000)',
-            3, 12, 2, 3);
-
-        ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'use_europe\'', 'commifyMode', 'use_europe', TRUE,
-            1, 3, 3, 4);
-        $self->addLabel($table, 'Add European-style full stops to numbers (1.000.000)',
-            3, 12, 3, 4);
-
-        ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'use_brit\'', 'commifyMode', 'use_brit', TRUE,
-            1, 3, 4, 5);
-        $self->addLabel($table, 'Add British-style spaces to numbers (1 000 000)',
-            3, 12, 4, 5);
-
-        ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'use_underline\'', 'commifyMode', 'use_underline', TRUE,
-            1, 3, 5, 6);
-        $self->addLabel($table, 'Add underlines to numbers (1_000_000)',
-            3, 12, 5, 6);
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub parametersStatus3Tab {
-
-        # Parameters Status3 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersStatus3Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
 
         # Status task commands
         $self->addLabel($table, '<b>Status task commands</b>',
@@ -46534,46 +47218,49 @@
         $self->addLabel($table, '<i>Local/remote wimpy level</i>',
             1, 12, 7, 8);
 
-        my $entry = $self->addEntryWithIcon(
-            $table, undef, 'int', 0, $self->session->currentWorld->constLocalWimpyMax,
-            2, 4, 8, 9);
-        my $button5 = $self->addButton($table, 'Set', '', undef,
-            4, 5, 8, 9,
-            TRUE,           # Irreversible
-        );
-        $button5->signal_connect('clicked' => sub {
+        if ($self->session->currentChar) {
 
-            my $number;
+            my $entry = $self->addEntryWithIcon(
+                $table, undef, 'int', 0, $self->session->currentChar->constLocalWimpyMax,
+                2, 4, 8, 9);
+            my $button5 = $self->addButton($table, 'Set', '', undef,
+                4, 5, 8, 9,
+                TRUE,           # Irreversible
+            );
+            $button5->signal_connect('clicked' => sub {
 
-            if ($self->checkEntryIcon($entry)) {
+                my $number;
 
-                $number = $entry->get_text();
+                if ($self->checkEntryIcon($entry)) {
 
-                $self->session->pseudoCmd('setwimpy ' . $number, $self->pseudoCmdMode);
-            }
-        });
-        $self->addLabel($table, 'Set local wimpy level (0..100)',
-            6, 12, 8, 9);
+                    $number = $entry->get_text();
 
-        my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
-            2, 4, 9, 10);
-        my $button6 = $self->addButton($table, 'Set', '', undef,
-            4, 5, 9, 10,
-            TRUE,           # Irreversible
-        );
-        $button6->signal_connect('clicked' => sub {
+                    $self->session->pseudoCmd('setwimpy ' . $number, $self->pseudoCmdMode);
+                }
+            });
+            $self->addLabel($table, 'Set local wimpy level (0..100)',
+                6, 12, 8, 9);
 
-            my $number;
+            my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
+                2, 4, 9, 10);
+            my $button6 = $self->addButton($table, 'Set', '', undef,
+                4, 5, 9, 10,
+                TRUE,           # Irreversible
+            );
+            $button6->signal_connect('clicked' => sub {
 
-            if ($self->checkEntryIcon($entry2)) {
+                my $number;
 
-                $number = $entry2->get_text();
+                if ($self->checkEntryIcon($entry2)) {
 
-                $self->session->pseudoCmd('setwimpy -r ' . $number, $self->pseudoCmdMode);
-            }
-        });
-        $self->addLabel($table, 'Set remote wimpy level (0..max)',
-            6, 12, 9, 10);
+                    $number = $entry2->get_text();
+
+                    $self->session->pseudoCmd('setwimpy -r ' . $number, $self->pseudoCmdMode);
+                }
+            });
+            $self->addLabel($table, 'Set remote wimpy level (0..max)',
+                6, 12, 9, 10);
+        }
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -47449,7 +48136,13 @@
 
         # Text-to-speech (TTS) (cont.)
         $self->addLabel($table, '<b>Text-to-speech (TTS) (cont.)</b>',
-            0, 12, 0, 1);
+            0, 10, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'exclusiveList',
+                'list', 'excludedList',
+            ],
+            10, 12, 0, 1);
 
         # If this configuration isn't modifiable, then neither the combo nor the entries should be
         #   sensitive
@@ -47467,7 +48160,7 @@
         $self->addTextView($table, 'exclusiveList', $flag,
             1, 12, 2, 6,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 160);                  # Fixed height
+            -1, 150);                  # Fixed height
 
         $self->addLabel(
             $table,
@@ -47477,7 +48170,7 @@
         $self->addTextView($table, 'excludedList', $flag,
             1, 12, 7, 12,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 160);                  # Fixed height
+            -1, 150);                  # Fixed height
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -52724,11 +53417,19 @@
                 'updateRoomCmdFlag', 'update_room_cmd', undef,
                 'updateOrnamentFlag', 'update_ornament', undef,
                  # ->settings3Tab
+#               'autoCompareAllFlag', 'auto_compare_region', undef,         # Set below
+                'autoRescueFlag', 'auto_rescue', undef,
+                'autoRescueFirstFlag', 'auto_rescue_first', undef,
+                'autoRescuePromptFlag', 'auto_rescue_prompt', undef,
+                'autoRescueNoMoveFlag', 'auto_rescue_no_move', undef,
+                'autoRescueVisitsFlag', 'auto_rescue_visits', undef,
+                'autoRescueForceFlag', 'auto_rescue_foce', undef,
+                 # ->settings4Tab
                 'allowModelScriptFlag', 'allow_model_scripts', undef,
                 'allowRoomScriptFlag', 'allow_room_scripts', undef,
-                 # ->settings4Tab
+                 # ->settings5Tab
                 # (none)
-                # ->settings5Tab
+                # ->settings6Tab
                 'assistedMovesFlag', 'allow_assisted_moves', undef,
                 'assistedBreakFlag', 'break_before_move', undef,
                 'assistedPickFlag', 'pick_before_move', undef,
@@ -52745,13 +53446,12 @@
                 'autocompleteExitsFlag', 'autocomplete_uncertain', undef,
                 'collectCheckedDirsFlag', 'collect_checked_dirs', undef,
                 'drawCheckedDirsFlag', 'draw_checked_dirs', undef,
-                # ->settings6Tab
+                # ->settings7Tab
                 'autoOpenWinFlag', 'auto_open_win', undef,
                 'pseudoWinFlag', 'pseudo_win', undef,
                 'allowTrackAloneFlag', 'keep_following', undef,
                 'setTwinOrnamentFlag', 'also_set_twin_exits', undef,
                 'intelligentExitsFlag', 'intelligent_uncertain', undef,
-                'autoCompareFlag', 'auto_compare_rooms', undef,
                 'followAnchorFlag', 'follow_anchor', undef,
                 'showAllPrimaryFlag', 'show_all_primary', undef,
                 'capitalisedRoomTagFlag', 'room_tags_capitalised', undef,
@@ -52823,6 +53523,33 @@
                 );
 
                 $self->ivDelete('editHash', 'showTooltipsFlag');
+            }
+
+            if ($self->ivExists('editHash', 'autoCompareMode')) {
+
+                $self->editObj->setAutoCompareMode(
+                    $self->ivShow('editHash', 'autoCompareMode'),
+                );
+
+                $self->ivDelete('editHash', 'autoCompareMode');
+            }
+
+            if ($self->ivExists('editHash', 'autoCompareAllFlag')) {
+
+                $self->editObj->toggleAutoCompareAllFlag(
+                    $self->ivShow('editHash', 'autoCompareAllFlag'),
+                );
+
+                $self->ivDelete('editHash', 'autoCompareAllFlag');
+            }
+
+            if ($self->ivExists('editHash', 'autoSlideMode')) {
+
+                $self->editObj->setAutoSlideMode(
+                    $self->ivShow('editHash', 'autoSlideMode'),
+                );
+
+                $self->ivDelete('editHash', 'autoSlideMode');
             }
 
             if ($self->ivExists('editHash', 'disableUpdateModeFlag')) {
@@ -54128,6 +54855,7 @@
         $self->settings4Tab($innerNotebook);
         $self->settings5Tab($innerNotebook);
         $self->settings6Tab($innerNotebook);
+        $self->settings7Tab($innerNotebook);
 
         return 1;
     }
@@ -54181,6 +54909,7 @@
             'word_count'    => '\'word_count\' - Recognised words',
             'room_flag'     => '\'room_flag\' - Room flag text',
             'visit_count'   => '\'visit_count\' - Character visits',
+            'compare_count' => '\'compare_count\' - Matching rooms',
             'profile_count' => '\'profile_count\' - Exclusive profiles',
             'title_descrip' => '\'title_descrip\' - Room descriptions',
             'exit_pattern'  => '\'exit_pattern\' - Assist move/exit patterns',
@@ -54294,6 +55023,10 @@
             7, 11, 10, 11);
         $self->addCheckButton($table, 'mapLabelAlignYFlag', FALSE,
             11, 12, 10, 11, 1, 0.5);
+        $self->addLabel($table, 'Label configuration window uses multi-line input',
+            7, 11, 11, 12);
+        $self->addCheckButton($table, 'mapLabelTextViewFlag', FALSE,
+            11, 12, 11, 12, 1, 0.5);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -54419,6 +55152,161 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
 
+        # (Need just a little extra space to make everything fit)
+        $table->set_col_spacings($self->spacingPixels - 1);
+        $table->set_row_spacings($self->spacingPixels - 1);
+
+        # Settings (cont.)
+        $self->addLabel($table, '<b>Settings (cont.)</b>',
+            0, 12, 0, 1);
+
+        # Auto-compare mode
+        $self->addLabel($table, '<u>Auto-compare mode</u>',
+            1, 6, 1, 2);
+
+        my ($radioGroup, $radioButton, $radioButton2, $radioButton3);
+        ($radioGroup, $radioButton) = $self->addRadioButton($table,
+            undef, 'Don\'t auto-compare the current room', 'autoCompareMode', 'default', TRUE,
+            1, 6, 2, 3);
+        ($radioGroup, $radioButton2) = $self->addRadioButton($table,
+            $radioGroup, 'Auto-compare new rooms', 'autoCompareMode', 'new', TRUE,
+            1, 6, 3, 4);
+        ($radioGroup, $radioButton3) = $self->addRadioButton($table,
+            $radioGroup, 'Auto-compare the current room', 'autoCompareMode', 'current', TRUE,
+            1, 6, 4, 5);
+
+        $self->addLabel($table, '<i>Which rooms to compare</i>',
+            1, 6, 5, 6);
+
+        my ($radioGroup2, $radioButton11, $radioButton12);
+        ($radioGroup2, $radioButton11) = $self->addRadioButton($table,
+            undef, 'Compare with rooms in the same region', undef, undef, TRUE,
+            1, 6, 6, 7);
+        ($radioGroup2, $radioButton12) = $self->addRadioButton($table,
+            $radioGroup2, 'Compare with rooms in the whole world', undef, undef, TRUE,
+            1, 6, 7, 8);
+        if ($self->getEditHash_scalarIV('autoCompareAllFlag')) {
+
+            $radioButton12->set_active(TRUE);
+        }
+
+        # (->autoCompareAllFlag is a flag, but it's easier for the user if it's presented using
+        #   radio buttons)
+        $radioButton11->signal_connect('toggled' => sub {
+
+            if ($radioButton11->get_active()) {
+
+                $self->ivAdd('editHash', 'autoCompareAllFlag', FALSE);
+            }
+        });
+
+        $radioButton12->signal_connect('toggled' => sub {
+
+            if ($radioButton12->get_active()) {
+
+                $self->ivAdd('editHash', 'autoCompareAllFlag', TRUE);
+            }
+        });
+
+        $self->addLabel($table, '<i>Max comparisons (0 - no limit)</i>',
+            1, 4, 8, 9);
+        $self->addEntryWithIcon($table, 'autoCompareMax', 'int', 0, undef,
+            4, 6, 8, 9, 8, 8);
+
+        # Auto-rescue mode
+        $self->addLabel($table, '<u>Auto-rescue mode</u>',
+            1, 6, 10, 11);
+
+        $self->addCheckButton($table, 'autoRescueFlag', TRUE,
+            1, 2, 11, 12, 0, 0.5);
+        $self->addLabel($table, 'Enable auto-rescue mode when lost',
+            2, 6, 11, 12);
+        $self->addCheckButton($table, 'autoRescueFirstFlag', TRUE,
+            1, 2, 12, 13, 0, 0.5);
+        $self->addLabel($table, 'Auto-merge rooms at first matching room',
+            2, 6, 12, 13);
+        $self->addCheckButton($table, 'autoRescuePromptFlag', TRUE,
+            1, 2, 13, 14, 0, 0.5);
+        $self->addLabel($table, 'Prompt user before auto-merge rooms',
+            2, 6, 13, 14);
+
+        # Auto-slide mode
+        $self->addLabel($table, '<u>Auto-slide mode</u>',
+            7, 12, 1, 2);
+
+        my (
+            $radioGroup3, $radioButton21, $radioButton22, $radioButton23, $radioButton24,
+            $radioButton25, $radioButton26, $radioButton27,
+        );
+
+        ($radioGroup3, $radioButton21) = $self->addRadioButton($table,
+            undef, 'Don\'t auto-slide new rooms', 'autoSlideMode', 'default', TRUE,
+            7, 12, 2, 3);
+        ($radioGroup3, $radioButton22) = $self->addRadioButton($table,
+            $radioGroup3, 'Slide original room backwards', 'autoSlideMode', 'orig_pull', TRUE,
+            7, 12, 3, 4);
+        ($radioGroup3, $radioButton23) = $self->addRadioButton($table,
+            $radioGroup3, 'Slide original room forwards', 'autoSlideMode', 'orig_push', TRUE,
+            7, 12, 4, 5);
+        ($radioGroup3, $radioButton24) = $self->addRadioButton($table,
+            $radioGroup3, 'Slide blocking room backwards', 'autoSlideMode', 'other_pull', TRUE,
+            7, 12, 5, 6);
+        ($radioGroup3, $radioButton25) = $self->addRadioButton($table,
+            $radioGroup3, 'Slide blocking room forwards', 'autoSlideMode', 'other_push', TRUE,
+            7, 12, 6, 7);
+        ($radioGroup3, $radioButton26) = $self->addRadioButton($table,
+            $radioGroup3, 'Slide new room backwards', 'autoSlideMode', 'dest_pull', TRUE,
+            7, 12, 7, 8);
+        ($radioGroup3, $radioButton27) = $self->addRadioButton($table,
+            $radioGroup3, 'Slide new room forwards', 'autoSlideMode', 'dest_push', TRUE,
+            7, 12, 8, 9);
+        $self->addLabel($table, '<i>Max slide distance (1 or above)</i>',
+            7, 10, 9, 10);
+        $self->addEntryWithIcon($table, 'autoSlideMax', 'int', 1, undef,
+            10, 12, 9, 10, 8, 8);
+
+        # (Auto-rescue mode continued, right column)
+        $self->addCheckButton($table, 'autoRescueNoMoveFlag', TRUE,
+            7, 8, 11, 12, 0, 0.5);
+        $self->addLabel($table, 'Don\'t move non-matching rooms',
+            8, 12, 11, 12);
+        $self->addCheckButton($table, 'autoRescueVisitsFlag', TRUE,
+            7, 8, 12, 13, 0, 0.5);
+        $self->addLabel($table, 'Only update visits in merged rooms',
+            8, 12, 12, 13);
+        $self->addCheckButton($table, 'autoRescueForceFlag', TRUE,
+            7, 8, 13, 14, 0, 0.5);
+        $self->addLabel($table, 'Temporarily switch to \'update\' mode',
+            8, 12, 13, 14);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub settings4Tab {
+
+        # Settings4 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings4Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
             0, 12, 0, 1);
@@ -54462,9 +55350,9 @@
         return 1;
     }
 
-    sub settings4Tab {
+    sub settings5Tab {
 
-        # Settings4 tab
+        # Settings5 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -54478,11 +55366,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings4Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings5Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
@@ -54560,9 +55448,9 @@
         return 1;
     }
 
-    sub settings5Tab {
+    sub settings6Tab {
 
-        # Settings5 tab
+        # Settings6 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -54583,11 +55471,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings5Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings6Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
@@ -54765,9 +55653,9 @@
         return 1;
     }
 
-    sub settings6Tab {
+    sub settings7Tab {
 
-        # Settings6 tab
+        # Settings7 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -54781,11 +55669,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings6Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings7Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _7', $innerNotebook);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
@@ -54818,22 +55706,18 @@
             1, 5, 7, 8);
         $self->addCheckButton($table, 'intelligentExitsFlag', TRUE,
             5, 6, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Auto-compare new rooms',
-            1, 5, 8, 9);
-        $self->addCheckButton($table, 'autoCompareFlag', TRUE,
-            5, 6, 8, 9, 1, 0.5);
         $self->addLabel($table, 'Draw new exits for follow anchors',
-            1, 5, 9, 10);
+            1, 5, 8, 9);
         $self->addCheckButton($table, 'followAnchorFlag', TRUE,
-            5, 6, 9, 10, 1, 0.5);
+            5, 6, 8, 9, 1, 0.5);
         $self->addLabel($table, 'Auto-set tags for region exits',
-            1, 5, 10, 11);
+            1, 5, 9, 10);
         $self->addCheckButton($table, 'updateExitTagFlag', TRUE,
-            5, 6, 10, 11, 1, 0.5);
+            5, 6, 9, 10, 1, 0.5);
         $self->addLabel($table, 'Show all 18 primary directions in dialogues',
-            1, 5, 11, 12);
+            1, 5, 10, 11);
         $self->addCheckButton($table, 'showAllPrimaryFlag', TRUE,
-            5, 6, 11, 12, 1, 0.5);
+            5, 6, 10, 11, 1, 0.5);
 
         # Right column
         $self->addLabel($table, 'Capitalise room tags',
@@ -56149,7 +57033,7 @@
 
                 } else {
 
-                    my $result = $self->session->worldModelObj->addRoomFlag(
+                    my $result = $self->editObj->addRoomFlag(
                         $self->session,
                         $name,
                         $short,
@@ -56587,7 +57471,7 @@
         # Add editing widgets
         $self->addLabel($table, 'Pattern',
             1, 3, 9, 10);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 12, 9, 10);
 
         $self->addLabel($table, 'Room flag category (filter)',

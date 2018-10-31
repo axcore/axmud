@@ -1,3 +1,235 @@
+v1.1.270 (31 Oct 2018)
+--------------------------------------------------------------------------------
+
+Pre-configured worlds
+- Ten new pre-configured worlds: Dragon Swords, Forgotten Kingdoms, Forest's
+    Edge, GreaterMUD, Midnight Sun, NannyMUD, StickMUD, The Land, The
+    Inquisition: Legacy and The Unofficial SquareSoft MUD
+- Minor improvements and fixes for the existing pre-configured worlds:
+    3Kingdoms, 3Scapes, Alter Aeon, Dead Souls (Local/Prime/Dev), Luminari,
+    MUD1, MUD2 (British and Canadian servers), and Two Towers
+
+Automapper new features
+- When moving from room to room, the automapper checks that each room matches
+    the one it was expecting. If the rooms don't match, the character is marked
+    as 'lost'. Some users didn't like this arrangement, so this version of Axmud
+    introduces several new features which allow the automapper to continue
+    drawing new rooms, if that's what you would prefer. These features are fully
+    explained in the Axmud Guide
+- From the automapper menu, 'Mode > Auto-compare > Auto-compare new rooms' turns
+    on auto-compare mode, which checks every new room against existing rooms in
+    the region. Any matching rooms are selected (drawn blue). In addition, a
+    rectangle is drawn inside the new room - a black rectangle if there is one
+    matching room, a red rectangle if there are multiple matching rooms. The way
+    this works can be tailored from the same sub-menu
+- Any room can be compared against other rooms in the region by right-clicking
+    it and selecting 'Move rooms/labels > Compare room > ...with rooms in
+    region'
+- From the automapper menu, 'Mode > Auto-rescue mode > Enable auto-rescue mode'
+    turns on auto-rescue mode. Instead of marking your character as lost, Axmud
+    creates a temporary region, and starts drawing rooms there. It compares
+    those rooms against rooms in the previous region. When you find a single
+    matching room, you can double-click on it; everything in the temporary
+    region is merged back into the previous region
+- Rooms from one area of a map can be merged into another area of the map at
+    any time (as long as the automapper window is in 'update' mode). There are
+    several ways to do this, including drag-and-drop
+- From the automapper menu, 'Mode > Auto-slide mode > Slide new room forwards'
+    turns on auto-slide mode. If a new room can't be drawn because there's a
+    different room in the way, the new room slides into the first available
+    space. The departure or blocking rooms can be moved instead, if you prefer.
+    (This is an alternative to auto-rescue mode; you can use whichever is most
+    convenient)
+- The automapper now remembers which regions you've viewed recently. When you
+    draw a map of a town, in a region called 'Town', you might find there isn't
+    enough space on the map to draw all of the rooms in some buildings. If so,
+    you can create another region called 'Town buildings'. Then, you can
+    transfer a room to that region by right-clicking the room and by selecting
+    'Move rooms/labels > Transfer to region > Town buildings'. Transferring a
+    room moves it to exactly the same grid position in another region
+- For individual rooms that the Locator task can't recognise - for rooms that
+    don't have an exit list, for example - you can now specify a pattern that
+    matches any line in that room; the Locator task and the automapper will then
+    be able to treat it like any other room. Right-click the map and select
+    'Add room here', then right-click the room and select 'Add pattern >
+    Add unspecified room pattern...'
+- Data stored in one or more rooms - such as titles and room descriptions - can
+    now be reset, quick and easily. First select the rooms, then from the
+    automapper menu select 'Rooms > Other room features > Reset room data...'
+- Transient exits (those which move from room to room, often because they're
+    attached to a vehicle) now have an optional destination room
+- The edit window showing the Locator task's current room now allows you to open
+    edit windows to view the room's temporary contents
+- Improved handling of edits to automapper window labels and label styles. When
+    creating new labels (or editing existing ones), you can now switch between
+    dialogue windows that offer single-line or multiple-line input (from the
+    automapper menu, select 'Labels > Use multiline labels'. Other minor chnages
+    should make labels less frustrating to work with
+- The world model search window (from the automapper menu, select 'Edit >
+    Search > Search world model...) now has a more sensible tab arrangement, so
+    it's no longer necessary to scroll through tabs to see the results of your
+    search. The search was also broken, and has been fixed
+- The automapper will now prompt you before deleting multiple rooms and/or
+    labels
+   
+Automapper fixes
+- Pathfinding routines were unable to find a path between two rooms in the same
+    region, going via another region. This problem has been fixed
+- Don't forget that if several region exits exist between regions A and B, the
+    pathfinding routines will only use one of them. If all the region exits in
+    region B lead to region A, you should probably convert them all into
+    super-region exits (which the pathfinding routines can use). From the
+    automapper window menu, you can now select 'Regions > Current region >
+    Convert all region exits'
+- When in 'update' mode, the automapper window no longer overwrites exit
+    ornaments (such as a line representing a closed door)
+- Fixed numerous problems with the room comparison/room matching code
+- Fixed room tags/room guilds being drawn in different positions, depending on
+    whether complex or simple exits were visible
+- Fixed occasional 'use of initialised value' errors caused by certain types of
+    exit at certain worlds
+- New custom room flags weren't visible in the automapper window's menu. Fixed
+
+Major new features
+- Axmud can now emulate VT100 terminals (connect to GreaterMUD or Forgotten
+    Kingdoms to see the new code in action). VT100 mode is turned on
+    automatically as required, so there's no need to enable anything
+- Most worlds send text to be displayed at the bottom of the main window, but a
+    few (especially those using VT100/MXP) expect text to be inserted anywhere
+    in the window. When this happens, Axmud will stop displaying its system
+    messages in the main window. Instead, the new '!' button will start
+    flashing yellow for system messages or red for error messages. You can view
+    the messages by clicking the button. (The System task, introduced in the
+    previous release, is unaffected by this change)
+- If you prefer all system messages to be directed into this console window, use
+    the ';togglemainwindow -s' command
+- The new ';configureterminal' command enables you to disable VT100 altogether,
+    to display a visible cursor in the main window, and to enable direct
+    keyboard input (very useful for worlds that expect you to navigate menus
+    with your cursor keys, and so on)
+- After a disconnection, the session goes into a limited state in which tasks
+    halt, edit windows close and many client commands are no longer available.
+    On disconnection, Axmud can now switch to 'offline' mode instead, exactly
+    as if you had clicked the 'Connect offline' button in the Connections
+    window. To turn this on, use ';setsession -o'
+- Greatly improved detection of invalid patterns (regular expressions/regexes),
+    which tend to cause a crash if anything tries to use them. You'll now find
+    it impossible to enter an invalid pattern in client commands. Edit and
+    preference windows will either refuse an invalid pattern, or provide a
+    button to test all the patterns in each tab
+- Added a new Pattern Tester window, which you can use to test patterns and
+    substitutions against any line of incoming text. Use the ';testpattern'
+    command to open it, or from the 'main' window menu select:
+    'Edit > Test patterns...'. You can also use the new Axbasic functions,
+    TESTPAT() and TESTPAT$()
+- All interfaces (triggers, aliases, macros, timers and hooks) now have an
+    optional cooldown attribute. If set, the interface won't fire again until
+    the cooldown period has expired 
+- For rewriter triggers and aliases that use group substrings, it's no longer
+    necessary to enclose the substitution in double quotes "..." (existing
+    triggers and aliases will continue to work as before, so there's no need to
+    prune them all)
+- Ordinary (non-rewriter) triggers can now use group substrings, e.g. for the
+    pattern 'An (orc) has arrived', the trigger's response can now be something
+    like 'kill $1', which is sent to the world as 'kill orc'
+- If one or more of Axmud's data files had been corrupted, it was necessary to
+    navigate through Axmud's data folder, find an earlier copy of the file and
+    to restore it manually. Axmud now loads the earlier copy of the file
+    automatically, if the most recent copy appears to be corrupt
+- For worlds that offer an MSP sound pack for download (e.g. Kallisti, Materia
+    Magica, CoffeeMUD), you can now use the ';msp -d' to automatically download
+    the sound pack and install it on your system (which should be quicker than
+    navigating through Axmud's data folders yourself)
+- Major internal redesign of the Status task. You probably won't notice many
+    changes, although some values that were not captured correctly (most notably
+    quest points) will now work. A nice bonus is that coloured gauges are
+    visible as soon as the session starts
+- In the Status task, the distinction between standard and custom values has 
+    been removed; if you capture a number and call it something like
+    'cats_total', that number is automatically available for display in the
+    task window or the main window's gauges
+- Many values that were previously stored in the Status task (and which were
+    lost, at the end of the session) are now stored in the character profile and
+    are thus preserved from session to session (your character's health points
+    is one example)
+- A new client command, ';setcommifymode', controls how the Status task adds
+    commas to very long numbers (converting 1000000 to 1,000,000, for example)
+
+Major fixes
+- Fixed problems with blinking text. Text using RGB colours still does not
+    blink, but text using standard and xterm colour tags now blinks correctly
+- Fixed mutliple ECHO issues at worlds where echoing of keyboard input is
+    permanently turned off (e.g. at MUD1)
+- Fixed several problems with basic mapping mode at worlds like MUD1/MUD2
+- Temporary directories in Axmud's data folder were not emptied when Axmud
+    starts, as they should have been. Fixed, which in many cases reduces the
+    size of the data folder by 33%
+- Fixed problems with clickable links that caused a crash when they appeared at
+    the end of line (in certain situations)
+- Fixed automapper error that used the wrong destination room, after a departure
+    room was moved in a fixed direction (or transferred to a new region)
+- Macros created by the Compass task were not destroyed when the task was halted
+    or reset. Fixed
+    
+Minor new features
+- Routes (see the help for ';addroute') can now use speedwalk commands like
+    '.3nw2s', as well as the more conventional 'n;n;n;w;s;s' and
+    'north;north;north;west;south;south'
+- The setup wizard window (visible when you first run Axmud) now offers to use
+    recommended options for your system, rather than forcing you to click
+    through several pages of options
+- Use ';debugconnection -q' if you want to see a debug message when invalid (or
+    unrecognised) VT100 escape sequences are received
+- Added ways to show your IP address. New client command, ';getip'. New Axbasic
+    function IP$(). The chat task command ';info' has been updated to show your
+    IP address clearly.
+- Several minor improvements and fixes for the Chat task
+- The layout of the menus in the 'main' and automapper windows have been
+    improved
+- The RawText and RawToken tasks can't start until the character is marked as
+    logged in. Axmud now stores text received from the beginning of the session,
+    so it can be displayed in the task windows as soon as they open
+- The RawToken task now displays tokens on a single line by default, rather than
+    one token per line, as before. Packet numbers and token types can also be
+    turned on and off now; use the task's edit window. Packet numbers, when
+    visible, are in a different colour to make them stand out better
+- Console windows now display system messages in their original colours
+- Axmud's data directory now contains a README file, explaining the purpose of
+    each of the sub-directories. A few new sub-directories have been added there
+- You can use ';loadplugin -s' to load all of Axmud's standard plugins at the
+    same time (but this is only useful for developers)
+    
+Minor fixes
+- New hook events, 'map_room', 'map_no_room', 'map_rescue_on',
+    'map_rescue_merge', 'map_rescue_off', 'textview_resize', 'system_text',
+    'system_error', 'system_warning', 'system_debug', 'system_improper',
+    'system_all', 'system_all_error'
+- Fixed output of ';listdirectory' command on MS Windows systems
+- Tabs in the edit window for triggers now fit comfortably inside the window
+    without the need for scrollbars (on most systems)
+- Gtk2 simple lists will no longer accept input (so you'll no longer see an
+    empty entry box appearing out of nowhere in random situations)
+- Fixed failure to write a parial line, containing only a 0 character, to
+    logfiles
+- Fixed failure to inform the world of a change in the main window size when
+    scrollbars are added/removed
+- Fixed problems with ';setreminder' command
+- For tasks that display a <task reset> message, that message is now removed
+    before new text is displayed (this problem did not affect all tasks)
+- Axmud no longer offers MCCP1 during telnet negotiations, if it has already
+    accepted MCCP2
+- Fixed frequent 'There was 1 un-closed 'grid' window when the parent workspace
+    grid closed' messages in the terminal window
+- Fixed multiple issues with the ';msp' command. In addition, the switches used
+    with this command have changed; see the help for ';msp' for more details
+- Modified the object parsing routines, so that both 'five big trolls' and
+    'five big trees' are visible in the Locator task's window in their
+    singular (not plural) forms. Debug messages generated by the same routines
+    have been improved a little for clarity
+- Fixed an occasional error produced by received lines of text stored in one of
+    Axmud's buffers
+- Several other minor fixes
+
 v1.1.174 (30 Sep 2018)
 --------------------------------------------------------------------------------
 

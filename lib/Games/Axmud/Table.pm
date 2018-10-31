@@ -8596,7 +8596,7 @@
 
             # Code to replace the pseudo-window object's ->winEnable
             $winObj->set_enabledFlag(TRUE);
-            $winObj->setCheckResizeEvent();     # 'check-resize'
+            $winObj->setConfigureEvent();       # 'check-resize'
             $winObj->setFocusInEvent();         # 'focus-in-event'
             $winObj->setFocusOutEvent();        # 'focus-out-event'
 

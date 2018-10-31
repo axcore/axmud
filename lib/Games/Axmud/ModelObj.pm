@@ -911,15 +911,6 @@
         $self->{roomGuildXOffset}       = 0;
         $self->{roomGuildYOffset}       = 0;
 
-        # When the user creates a model room on the map (e.g. with 'Add room at click'), that room
-        #   has no properties except the default ones
-        # In this situation, when the automapper calls ->compareRooms to work out whether this room
-        #   matches the Locator's current room, the answer must always be 'yes'
-        # This flag starts set to FALSE. After being matched with the Locator's room the first time,
-        #   the flag is set to TRUE - from that point, the answer is only 'yes' when their rooms
-        #   really do match
-        $self->{everMatchedFlag}        = FALSE;
-
         # When we move north from room A to a new room B, and when room B has an exit in the
         #   opposite direction, room A's departure exit is drawn as an 'uncertain' exit - we can
         #   definitely move north from A to B, and probably move south from B to A
@@ -985,6 +976,22 @@
         # When this object is created, ->descripHash contains a single key-value pair - the current
         #   light status and description. More pairs can be added later
         $self->{descripHash}            = {};
+        # GA::Profile::World->unspecifiedRoomPatternList provides a list of patterns that match
+        #   a line in 'unspecified' rooms (those that don't use a recognisable room statement;
+        #   typically a room whose exit list is completely obscured)
+        # If this room is an unspecified room, a list of patterns that match a line telling us that
+        #   the character has arrived in the room. The world profile's unspecified patterns are
+        #   checked after these ones; patterns in this list should match lines that are only used
+        #   with this room
+        $self->{unspecifiedPatternList} = [];
+        # For non-model room objects, flag set to TRUE if the room has an unspecified room statement
+        #   (e.g. 'You emerge from the bushes covered in thorns' - the character is in a new room,
+        #   but we don't know which one, or anything about its description, contents and exits)
+        $self->{unspecifiedFlag}        = FALSE;
+        # For non-model room objects, set to TRUE if the room is dark (right now), so that we don't
+        #   know its description, contents or exits; set to FALSE otherwise
+        $self->{currentlyDarkFlag}      = FALSE;
+
         # List of named exits, listed in the same order that standard exits use
         #   e.g. ('north', 'northeast', 'east'...)
         # For non-model rooms, it won't include hidden exits
@@ -1047,16 +1054,8 @@
         #   drawing cycle). Set to 'undef' if none of them are set
         $self->{lastRoomFlag}           = undef;
 
-        # For non-model room objects, flag set to TRUE if the room has an unspecified room statement
-        #   (e.g. 'You emerge from the bushes covered in thorns' - the character is in a new room,
-        #   but we don't know which one, or anything about its description, contents and exits)
-        $self->{unspecifiedFlag}        = FALSE;
-        # For non-model room objects, set to TRUE if the room is dark (right now), so that we don't
-        #   know its description, contents or exits; set to FALSE otherwise
-        $self->{currentlyDarkFlag}      = FALSE;
-
         # GA::Generic::ModelObj defines ->sourceCodePath, the path to the object's source code on
-        #   the world (if known).
+        #   the world (if known)
         # If the room is in a virtual area, this should be set to something like
         #   '/filepath/forest/24,3' - the 'path' that the world gives for this individual room. The
         #   following IV should be set to the file path for the virtual area itself, e.g.
@@ -1146,9 +1145,6 @@
     sub roomGuildYOffset
         { $_[0]->{roomGuildYOffset} }
 
-    sub everMatchedFlag
-        { $_[0]->{everMatchedFlag} }
-
     sub uncertainExitHash
         { my $self = shift; return %{$self->{uncertainExitHash}}; }
     sub oneWayExitHash
@@ -1164,6 +1160,13 @@
         { my $self = shift; return @{$self->{titleList}}; }
     sub descripHash
         { my $self = shift; return %{$self->{descripHash}}; }
+    sub unspecifiedPatternList
+        { my $self = shift; return @{$self->{unspecifiedPatternList}}; }
+    sub unspecifiedFlag
+        { $_[0]->{unspecifiedFlag} }
+    sub currentlyDarkFlag
+        { $_[0]->{currentlyDarkFlag} }
+
     sub sortedExitList
         { my $self = shift; return @{$self->{sortedExitList}}; }
     sub exitNumHash
@@ -1193,11 +1196,6 @@
         { my $self = shift; return %{$self->{roomFlagHash}}; }
     sub lastRoomFlag
         { $_[0]->{lastRoomFlag} }
-
-    sub unspecifiedFlag
-        { $_[0]->{unspecifiedFlag} }
-    sub currentlyDarkFlag
-        { $_[0]->{currentlyDarkFlag} }
 
     sub virtualAreaPath
         { $_[0]->{virtualAreaPath} }

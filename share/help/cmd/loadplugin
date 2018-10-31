@@ -4,6 +4,7 @@ lpl / loadplugin              Loads an Axmud plugin
       ;lpl <path>             Loads a plugin from the file <path>
       ;lpl                    Loads a plugin stored in Axmud's data directory
       ;lpl -s                 Loads a standard plugin
+      ;lpl -a                 Loads all standard plugins
  
    Notes:
       Axmud plugins are Perl modules which allow you to extend Axmud's core 
@@ -19,6 +20,8 @@ lpl / loadplugin              Loads an Axmud plugin
          switch you'll see the directory (folder) where standard plugins are
          stored. Otherwise you'll see the directory where plugins you write
          youself can be stored.
+      (The '-a' switch, which loads all standard plugins, is a debugging command
+         which you will probably never need to use.) 
 
       Axmud plugins must be .pm files which start with a header in a certain 
          format. If the header is not in this format, the plugin is not loaded:

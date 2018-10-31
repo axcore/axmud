@@ -34,6 +34,7 @@
 #   - Modified ->localfamily, ->_parse_family and ->_parse_localfamily to cope with the error seen
 #       on Debian/Ubuntu:
 #           'WARNING: Argument "2.020_03" isn't numeric in numeric ge (>=)'
+#   - Commented out $VERSION as it was causing Kwalitee errors
 
 { package Games::Axmud::Net::Telnet;
 
@@ -84,8 +85,9 @@
     my $EINTR = &_import_eintr();
 
     ## Global variables.
-    use vars qw($VERSION @Telopts %Axmud_Telopts);
-    $VERSION = "3.04";
+#    use vars qw($VERSION @Telopts %Axmud_Telopts);
+#    $VERSION = "3.04";
+    use vars qw(@Telopts %Axmud_Telopts);
     @Telopts = ("BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAMS", "STATUS",
             "TIMING MARK", "RCTE", "NAOL", "NAOP", "NAOCRD", "NAOHTS",
             "NAOHTD", "NAOFFD", "NAOVTS", "NAOVTD", "NAOLFD", "EXTEND ASCII",

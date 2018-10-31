@@ -8,6 +8,13 @@ shk / simulatehook            Simulates an Axmud hook event
       ;shk -r <text>          Simulates the 'receive_text' hook event
       ;shk -i <cmd>           Simulates the 'sending_cmd' hook event
       ;shk -s <cmd>           Simulates the 'send_cmd' hook event
+      ;shk -st <msg>          Simulates the 'system_text' hook event
+      ;shk -se <msg>          Simulates the 'system_error' hook event
+      ;shk -sw <msg>          Simulates the 'system_warning' hook event
+      ;shk -sd <msg>          Simulates the 'system_debug' hook event
+      ;shk -si <msg>          Simulates the 'system_improper' hook event
+      ;shk -sa <msg>          Simulates the 'system_all' hook event
+      ;shk -sl <msg>          Simulates the 'system_all_error' hook event
       ;shk -m <var> <val>     Simulates the 'msdp' hook event
       ;shk -n <var> <val>     Simulates the 'mssp' hook event
       ;shk -z <pack>          Simulates the 'zmp' hook event
@@ -21,11 +28,17 @@ shk / simulatehook            Simulates an Axmud hook event
       ;shk -v                 Simulates the 'visible_session' hook event
       ;shk -j <num>           Simulates the 'not_visible' hook event
       ;shk -k <num>           Simulates the 'change_visible' hook event
+      ;shk -tv <num>          Simulates the 'textview_resize' hook event
       ;shk -e <time>          Simulates the 'user_idle' hook event
       ;shk -w <time>          Simulates the 'world_idle' hook event
-      ;shk -g                 Simualtes the 'get_focus' hook event
+      ;shk -g                 Simulates the 'get_focus' hook event
       ;shk -f                 Simulates the 'lose_focus' hook event
       ;shk -x                 Simulates the 'close_disconnect' hook event
+      ;shk -mr                Simulates the 'map_room' hook event
+      ;shk -mn                Simulates the 'map_no_room' hook event
+      ;shk -mo                Simulates the 'map_rescue_on' hook event
+      ;shk -mm                Simulates the 'map_rescue_merge' hook event
+      ;shk -mf                Simulates the 'map_rescue_off' hook event
 
       ;shk <event> <var>      Simulates the specified hook <event>
       ;shk <event> <var> <val>
@@ -38,45 +51,62 @@ shk / simulatehook            Simulates an Axmud hook event
          interrupting the world itself.
 
       The 'connect' and 'disconnect' events fire whenever you connect to a
-         world, or disconnect from it. The 'close_disconnect' event fires just
+         world, or disconnect from it. The 'close_disconnect' event occurs just
          before the Axmud client shuts down.
-      The 'login' event fires when an automatic login is completed, or when you
+      The 'login' event occurs when an automatic login is completed, or when you
          use the ';login' command successfully.
-      The 'prompt' event fires whenever the world sends a prompt, and the
-         'receive_text' event fires whenever the world sends a normal packet of
+      The 'prompt' event occurs whenever the world sends a prompt, and the
+         'receive_text' event occurs whenever the world sends a normal packet of
          text (consisting of one or more lines, the last one ending with a
          newline character). <prompt> and <text> specifies the simulated text
          that would have been received.
-      The 'sending_cmd' event fires whenever Axmud wants to send a world 
-         command, but before any aliases are tested. The 'send_cmd' event fires 
+      The 'sending_cmd' event occurs whenever Axmud wants to send a world 
+         command, but before any aliases are tested. The 'send_cmd' event occurs 
          when the world command is about to be sent, after aliases have been 
          tested. <cmd> specifies the command that would have been sent.
+      The 'system_text', 'system_error', 'system_warning', 'system_debug',
+         'system_improper', 'system_all' and 'system_all_error'  events occur
+         when a system message is due to be displayed.
       The 'msdp', 'mssp' events fire when the world sends MSDP or MSSP data.
          <var> and <val> specify the variable/value pair that would have been
          received.
-      The 'zmp' event fires when the world sends a ZMP command. <pack> is a
+      The 'zmp' event occurs when the world sends a ZMP command. <pack> is a
          string in the form PACKAGE[.SUBPACKAGE].COMMAND.
-      The 'aard102' event fires when the world sends an AARD102 status update.
+      The 'aard102' event occurs when the world sends an AARD102 status update.
          <status> is the string 'tick' or one of Axmud's AARD102 status values,
          e.g. 'player_active'.
       The 'atcp' and 'gmcp' events fire when the world sends ATCP or GMCP data.
          <pack> is the package name, in the form PACKAGE[.SUBPACKAGE][.MESSAGE].
-      The 'mcp' event fires when the world sends an MCP message. <msg> is the
+      The 'mcp' event occurs when the world sends an MCP message. <msg> is the
          message name, e.g. 'mcp-negotiate-can'.
-      The 'current_session' event fires when this session becomes the current 
-         session. 'not_current' fires when this session is replaced as the 
+      The 'current_session' event occurs when this session becomes the current 
+         session. 'not_current' occurs when this session is replaced as the 
          current session; the new current session's number is <num>. 
-         'change_session' fires in every session when the current session 
+         'change_session' occurs in every session when the current session 
          changes, the new current session's number is <num>.
-      The 'user_idle' event fires when the user has been idle for a certain 
-         period of time. The 'world_idle' event fires when no text has been
+      The 'textview_resize' event occurs when a textview object is resized.
+         Textview objects handle the areas inside 'grid' windows that display
+         text; for example, the area inside the 'main' window that shows
+         text received from the world, and the whole of the Status task window.
+         Each textview object has a unique number, which is <num>
+      The 'user_idle' event occurs when the user has been idle for a certain 
+         period of time. The 'world_idle' event occurs when no text has been
          received from the world for a certain period of time. Currently, both
          events fire after 60 seconds. <time> is the system time at which the
          user last sent a world command, or text was last received from the 
          world.  
-      The 'get_focus' event fires when this session becomes the current session
-         and the 'lose_focus' event fires when another session becomes the 
+      The 'get_focus' event occurs when this session becomes the current session
+         and the 'lose_focus' event occurs when another session becomes the 
          current session.
+      The 'map_room' event occurs when the automapper's current room is set and
+         the 'map_no_room' event occurs when it is reset (for example, when the
+         automapper gets lost).
+      Three hook events occur during auto-rescue mode (when the automapper
+         window switches to a temporary region, rather than marking the
+         character as lost). 'map_rescue_on' occurs when auto-rescue mode
+         activates, 'map_rescue_merge' occurs when rooms in the temporary region
+         or merged back into the previous one, and 'map_rescue_off' occurs when
+         auto-rescue mode disactivates (with or without a merge operation).
 
       Instead of specifying a switch, you can specify the hook event itself. The
          following commands are interchangeable:

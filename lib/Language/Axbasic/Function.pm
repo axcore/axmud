@@ -2943,6 +2943,50 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::testpat;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::testpat::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # TESTPAT (regex)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument lisT
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my $value;
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+
+        if ($arg eq '' || $axmud::CLIENT->regexCheck($arg)) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::time;
 
     use strict;
@@ -3219,6 +3263,51 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::String::ip;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::ip::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # IP$ ()
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form '')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+
+        # Get the user's IP
+        my $ip = $axmud::CLIENT->ipv4Get();
+        if (! defined $ip) {
+
+            # Failsafe value
+            $ip = '127.0.0.1';
+        }
+
+        return $ip;
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::String::lcase;
 
     use strict;
@@ -3467,6 +3556,52 @@
 
         # Evaluate the function and return the value
         return $arg . '';
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::String::testpat;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::testpat::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # TESTPAT$ (regex)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my $result;
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+
+        $result = $axmud::CLIENT->regexCheck($arg);
+
+        if ($arg eq '' || ! defined $result) {
+            return '';
+        } else {
+            return $result;
+        }
     }
 }
 
@@ -5029,8 +5164,8 @@
                 $self->scriptObj->currentNotification,
             );
 
-            # Return the number of backreferences stored in it
-            return $obj->ivNumber('backRefList');
+            # Return the number of group substrings stored in it
+            return $obj->ivNumber('grpStringList');
         }
     }
 }
@@ -7118,15 +7253,15 @@
                 $self->scriptObj->currentNotification,
             );
 
-            if (! $obj->backRefList) {
+            if (! $obj->grpStringList) {
 
-                # No more backrefs to return
+                # No more group substrings to return
                 return '';
 
             } else {
 
-                # Return the last backreference, removing it from its list
-                return $obj->ivPop('backRefList');
+                # Return the last group substring, removing it from its list
+                return $obj->ivPop('grpStringList');
             }
         }
     }
@@ -7180,15 +7315,15 @@
                 $self->scriptObj->currentNotification,
             );
 
-            if (! $obj->backRefList) {
+            if (! $obj->grpStringList) {
 
-                # No more backrefs to return
+                # No more group substrings to return
                 return '';
 
             } else {
 
-                # Return the first backreference, removing it from its list
-                return $obj->ivShift('backRefList');
+                # Return the first group substring, removing it from its list
+                return $obj->ivShift('grpStringList');
             }
         }
     }

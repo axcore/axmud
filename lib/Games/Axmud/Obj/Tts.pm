@@ -76,7 +76,6 @@
         }
 
         # Check that $name is valid and not already in use by another TTS object
-#        if (! ($name =~ m/^[A-Za-z_]{1}[A-Za-z0-9_]{0,15}$/)) {
         if (! ($name =~ m/^[[:alpha:]\_]{1}[[:word:]]{0,15}$/)) {
 
             return $axmud::CLIENT->writeError(

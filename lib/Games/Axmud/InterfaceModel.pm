@@ -124,6 +124,7 @@
                 'default_pane'          => 'boolean',
                 'pane_name'             => 'string',
                 'temporary'             => 'boolean',
+                'cooldown'              => 'number',
                 'style_mode'            => 'mode',
                 'style_text'            => 'colour',
                 'style_underlay'        => 'underlay',
@@ -158,6 +159,7 @@
                 'default_pane'          => 'dp',
                 'pane_name'             => 'pn',
                 'temporary'             => 't',
+                'cooldown'              => 'cd',
                 'style_mode'            => 'm',
                 'style_text'            => 'h',
                 'style_underlay'        => 'j',
@@ -258,6 +260,7 @@
                 'ignore_case'           => 'boolean',
                 'keep_checking'         => 'boolean',
                 'temporary'             => 'boolean',
+                'cooldown'              => 'number',
             },
 
             # Switches used in client commands
@@ -272,6 +275,7 @@
                 'ignore_case'           => 'o',
                 'keep_checking'         => 'k',
                 'temporary'             => 't',
+                'cooldown'              => 'cd',
             },
         };
 
@@ -359,6 +363,7 @@
                 'enabled'               => 'boolean',
                 # Macro
                 'temporary'             => 'boolean',
+                'cooldown'              => 'number',
             },
 
             # Switches used in client commands
@@ -371,6 +376,7 @@
                 'name'                  => 'n',
                 'enabled'               => 'e',
                 'temporary'             => 't',
+                'cooldown'              => 'cd',
             },
         };
 
@@ -572,6 +578,7 @@
                 'enabled'               => 'boolean',
                 # Hook
                 'temporary'             => 'boolean',
+                'cooldown'              => 'number',
             },
 
             # Switches used in client commands
@@ -584,6 +591,7 @@
                 'name'                  => 'n',
                 'enabled'               => 'e',
                 'temporary'             => 't',
+                'cooldown'              => 'cd',
             },
 
             # Available hook events. The key is the hook event name, the corresponding value is the
@@ -618,6 +626,34 @@
                 #   world, AFTER any aliases (etc) have acted on it
                 # (Hook data: the command to be sent)
                 'send_cmd'              => 1,
+                # Fired by GA::Obj::Textview->showSystemText when a (normal) system message is due
+                #   to be displayed
+                # (Hook data: the system message)
+                'system_text'           => 1,
+                # Fired by GA::Obj::Textview->showError when a system error message is due to be
+                #   displayed
+                # (Hook data: the system message)
+                'system_error'          => 1,
+                # Fired by GA::Obj::Textview->showWarning when a system warning message is due to be
+                #   displayed
+                # (Hook data: the system message)
+                'system_warning'        => 1,
+                # Fired by GA::Obj::Textview->showDebug when a system debug message is due to be
+                #   displayed
+                # (Hook data: the system message)
+                'system_debug'          => 1,
+                # Fired by GA::Obj::Textview->showImproper when a system improper arguments
+                #   (internal error) message is due to be displayed
+                # (Hook data: the system message)
+                'system_improper'       => 1,
+                # Fired by several functions in GA::Obj::Textview when a system message is due to be
+                #   displayed
+                # (Hook data: the system message)
+                'system_all'            => 1,
+                # Fired by several functions in GA::Obj::Textview when a system error, warning,
+                #   debug or improper arguments message is due to be displayed
+                # (Hook data: the system message)
+                'system_all_error'      => 1,
                 # Fired by GA::Session->processMsdpData when MSDP data is received (the hook is
                 #   fired once for each variable/value pair received)
                 # (Hook data: The variable/value pair received)
@@ -673,6 +709,10 @@
                 #   window's visible session changes
                 # (Hook data: the new current session's ->number)
                 'change_vivible'        => 1,
+                # Fired by GA::Session->textViewSizeUpdate when a textview object is resized
+                #   (including when its scrollbars are made visible or invisible)
+                # (Hook data: the textview object's number, GA::Obj::TextView->number)
+                'textview_resize'       => 1,
                 # Fired by GA::Session->spinTimerLoop when the user has been idle for 60 seconds
                 #   (and no world commands have been sent)
                 # (Hook data: GA::Session->lastCmdTime, the time at which the last command was sent)
@@ -693,6 +733,23 @@
                 # Fired by GA::Client->stop when the client stops executing
                 # (Hook data: none)
                 'close_disconnect'      => 0,
+                # Fired by GA::Obj::Map->setCurrentRoom when the automapper's current room is set
+                # (Hook data: the current room's number)
+                'map_room'              => 1,
+                # Fired by GA::Obj::Map->setCurrentRoom when the automapper's current room is reset
+                # (Hook data: the previous current room's number, or 0 if not known)
+                'map_no_room'           => 1,
+                # Fired by GA::Obj::Map->setCurrentRoom when auto-rescue mode is activated
+                # (Hook data: the name of the temporary region created)
+                'map_rescue_on'         => 1,
+                # Fired by GA::Obj::Map->reset_rescueCheckFlag during auto-rescue mode when a merge
+                #   operation takes place (i.e. the rescue was successful)
+                # (Hook data: none)
+                'map_rescue_merge'      => 0,
+                # Fired by GA::Obj::Map->reset_rescueRegion when auto-rescue mode is disactivated
+                #   (regardless of whether the rescue was successful or not)
+                # (Hook data: none)
+                'map_rescue_off'        => 0,
             },
         };
 

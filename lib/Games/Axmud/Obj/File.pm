@@ -254,6 +254,13 @@
             # This flag should be set to TRUE (by the accessor functions inherited from the generic
             #   object Games::Axmud) whenever some of the data it contains is modified
             modifyFlag                  => FALSE,
+            # This flag can be set to TRUE when a backup file (e.g. 'tasks.axm.bu') rather than the
+            #   normal file (e.g. 'tasks.axm') is loaded
+            # When TRUE, the next time this file is saved, the existing backup file is not replaced,
+            #   and the flag is then set back to FALSE
+            # In this way, if a file can't be loaded and the backup file is loaded instead, the
+            #   faulty file is discarded (never becomes a backup file)
+            preserveBackupFlag          => FALSE,
         };
 
         # Bless the object into existence
@@ -491,20 +498,29 @@
         # Precautions taken when an emergency save is NOT in progress...
         if (! $emergFlag) {
 
-            # If the config file already exists, make a backup copy in the /temp directory (it's not
-            #   really necessary for the config file, which is so small, but for larger data files
-            #   which take a long time to save, it's necessary to have a backup before overwriting
-            #   an existing file)
-            if (-e $path) {
+            if ($self->preserveBackupFlag) {
 
+                # The file itself was missing/corrupted, so data was loaded from the backup file
+                # Don't replace the (good) backup file; just replace the (faulty) file itself
+                # NB For the config file, nothing in the Axmud code sets this flag to TRUE. Still,
+                #   the code exists, for any future version that needs it
+                $self->ivPoke('preserveBackupFlag', FALSE);
+
+            } elsif (-e $path) {
+
+                # If the config file already exists, make a backup copy (it's not really necessary
+                #   for the config file, which is so small, but for larger data files which take a
+                #   long time to save, it's necessary to have a backup before overwriting an
+                #   existing file)
                 if ($axmud::CLIENT->autoRetainFileFlag) {
 
-                    # Retain this 'temporary' file where the user can easily find it
+                    # Retain this backup file where the user can easily find it
                     $backupFile = $path . '.bu';
 
                 } else {
 
-                    # This really is a temporary file, so store it in the temporary files directory
+                    # This is a temporary backup file, so store it in the temporary files directory
+                    #   directory
                     $backupFile = $axmud::DATA_DIR . '/data/temp/config.bu';
                 }
 
@@ -761,7 +777,7 @@
             '# World command colour',
                 $client->customInsertCmdColour,
             '# System message colour',
-                $client->customShowTextColour,
+                $client->customShowSystemTextColour,
             '# System error message colour',
                 $client->customShowErrorColour,
             '# System warning message colour',
@@ -1030,7 +1046,17 @@
                 $client->customClientName,
             '# Customised client version',
                 $client->customClientVersion,
+            '# Use VT100 control sequences',
+                $client->useCtrlSeqFlag,
+            '# Use visible cursor in default textview',
+                $client->useVisibleCursorFlag,
+            '# Cursor blinks quickly, when visible',
+                $client->useFastCursorFlag,
+            '# Use direct keyboard input in default textview',
+                $client->useDirectKeysFlag,
             '# TELNET OPTION DEBUG FLAGS',
+            '# Show invalid escape sequence debug messages',
+                $client->debugEscSequenceFlag,
             '# Show option negotiation debug messages',
                 $client->debugTelnetFlag,
             '# Show option negotiation short debug messages',
@@ -1067,6 +1093,8 @@
             '# Day list',
                 7,                      # ...or the number of days in a week
                 $client->customDayList,
+            '# Number commification mode',
+                $client->commifyMode,
             '# Prompt wait time (seconds)',
                 $client->promptWaitTime,
             '# Login warning time (seconds)',
@@ -1099,6 +1127,8 @@
                 $self->convert($client->irreversibleIconFlag),
             '# Allow popup windows showing the ' . $axmud::SCRIPT . ' logo',
                 $self->convert($client->allowBusyWinFlag),
+            '# Allow system messages to be displayed in the \'main\' window',
+                $self->convert($client->mainWinSystemMsgFlag),
             '# Set \'main\' window\'s urgency hint when text received',
                 $self->convert($client->mainWinUrgencyFlag),
             '# Show tooltips in a session\'s default tab',
@@ -1119,8 +1149,10 @@
                 $client->charSet,
             '# Maximum concurrent sessions',
                 $client->sessionMax,
+            '# Switch to \'offline\' mode on disconnection',
+                $self->convert($client->offlineOnDisconnectFlag),
             '# Store connection history',
-                $client->connectHistoryFlag,
+                $self->convert($client->connectHistoryFlag),
             '# Use page up (etc) to scroll in textviews',
                 $self->convert($client->useScrollKeysFlag),
             '# Page up (etc) doesn\'t scroll the entire page length',
@@ -1513,7 +1545,7 @@
             $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_free_win_height');
         }
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_insert_cmd_colour');
-        $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_text_colour');
+        $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_system_text_colour');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_error_colour');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_warning_colour');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_debug_colour');
@@ -1729,7 +1761,18 @@
 
             $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_client_version');
         }
+        if ($self->scriptConvertVersion >= 1_001_213) {
+
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'use_ctrl_seq_flag');
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'use_visible_cursor_flag');
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'use_fast_cursor_flag');
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'use_direct_keys_flag');
+        }
         # Set telnet negotiation debug flags
+        if ($self->scriptConvertVersion >= 1_001_214) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_esc_sequence_flag');
+        }
         if ($self->scriptConvertVersion >= 1_000_378) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_telnet_flag');
@@ -1772,6 +1815,10 @@
         # Read misc data
         $failFlag = $self->readList($failFlag, \%dataHash, 'custom_month_list');
         $failFlag = $self->readList($failFlag, \%dataHash, 'custom_day_list');
+        if ($self->scriptConvertVersion >= 1_001_262) {
+
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'commify_mode');
+        }
         if ($self->scriptConvertVersion <= 1_000_922) {
 
             $failFlag = $self->readValue($failFlag, \%dataHash, 'discard_me');
@@ -1814,6 +1861,10 @@
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_busy_win_flag');
         }
+        if ($self->scriptConvertVersion >= 1_001_202) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'main_win_system_msg_flag');
+        }
         if ($self->scriptConvertVersion >= 1_000_344) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'main_win_urgency_flag');
@@ -1844,6 +1895,10 @@
         if ($self->scriptConvertVersion >= 1_000_616) {
 
             $failFlag = $self->readValue($failFlag, \%dataHash, 'session_max');
+        }
+        if ($self->scriptConvertVersion >= 1_001_256) {
+
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'offline_on_disconnect_flag');
         }
         if ($self->scriptConvertVersion >= 1_000_884) {
 
@@ -2090,7 +2145,7 @@
         }
 
         $client->ivPoke('customInsertCmdColour', $dataHash{'custom_insert_cmd_colour'});
-        $client->ivPoke('customShowTextColour', $dataHash{'custom_show_text_colour'});
+        $client->ivPoke('customShowSystemTextColour', $dataHash{'custom_show_system_text_colour'});
         $client->ivPoke('customShowErrorColour', $dataHash{'custom_show_error_colour'});
         $client->ivPoke('customShowWarningColour', $dataHash{'custom_show_warning_colour'});
         $client->ivPoke('customShowDebugColour', $dataHash{'custom_show_debug_colour'});
@@ -2286,7 +2341,18 @@
 
             $client->ivPoke('customClientVersion', $dataHash{'custom_client_version'});
         }
+        if ($self->scriptConvertVersion >= 1_001_213) {
+
+            $client->ivPoke('useCtrlSeqFlag', $dataHash{'use_ctrl_seq_flag'});
+            $client->ivPoke('useVisibleCursorFlag', $dataHash{'use_visible_cursor_flag'});
+            $client->ivPoke('useFastCursorFlag', $dataHash{'use_fast_cursor_flag'});
+            $client->ivPoke('useDirectKeysFlag', $dataHash{'use_direct_keys_flag'});
+        }
         # Set telnet negotiation debug flags
+        if ($self->scriptConvertVersion >= 1_001_214) {
+
+            $client->ivPoke('debugEscSequenceFlag', $dataHash{'debug_esc_sequence_flag'});
+        }
         if ($self->scriptConvertVersion >= 1_000_378) {
 
             $client->ivPoke('debugTelnetFlag', $dataHash{'debug_telnet_flag'});
@@ -2327,6 +2393,10 @@
         # Set misc data
         $client->ivPoke('customMonthList', @{$dataHash{'custom_month_list'}});
         $client->ivPoke('customDayList', @{$dataHash{'custom_day_list'}});
+        if ($self->scriptConvertVersion >= 1_001_262) {
+
+            $client->ivPoke('debugMcpFlag', $dataHash{'commify_mode'});
+        }
         $client->ivPoke('promptWaitTime', $dataHash{'prompt_wait_time'});
         $client->ivPoke('loginWarningTime', $dataHash{'login_warning_time'});
         if ($self->scriptConvertVersion >= 1_000_331) {
@@ -2366,6 +2436,10 @@
 
             $client->ivPoke('allowBusyWinFlag', $dataHash{'allow_busy_win_flag'});
         }
+        if ($self->scriptConvertVersion >= 1_001_202) {
+
+            $client->ivPoke('mainWinSystemMsgFlag', $dataHash{'main_win_system_msg_flag'});
+        }
         if ($self->scriptConvertVersion >= 1_000_344) {
 
             $client->ivPoke('mainWinUrgencyFlag', $dataHash{'main_win_urgency_flag'});
@@ -2396,6 +2470,10 @@
         if ($self->scriptConvertVersion >= 1_000_616) {
 
             $client->ivPoke('sessionMax', $dataHash{'session_max'});
+        }
+        if ($self->scriptConvertVersion >= 1_001_256) {
+
+            $client->ivPoke('offlineOnDisconnectFlag', $dataHash{'offline_on_disconnect_flag'});
         }
         if ($self->scriptConvertVersion >= 1_000_884) {
 
@@ -2481,10 +2559,25 @@
             # The file exists and we are allowed to load it, so try to load it (in overwrite mode)
             if (! $self->loadDataFile()) {
 
-                return $self->writeError(
-                    'Error reading \'' . $self->fileType . '\' data file',
-                    $self->_objClass . '->setupDataFile',
-                );
+                # Try loading the automatic backup, i.e. 'otherprof.axm.bu'
+                if (! $self->loadDataFile(undef, undef, undef, TRUE)) {
+
+                    return $self->writeError(
+                        'Error reading \'' . $self->fileType . '\' data file',
+                        $self->_objClass . '->setupDataFile',
+                    );
+
+                } else {
+
+                    # The contents of the backup, now loaded into memory, must be saved at some
+                    #   point
+                    $self->ivPoke('modifyFlag', TRUE);
+                    # Don't overwrite the existing backup file with the faulty one
+                    $self->ivPoke('preserveBackupFlag', TRUE);
+
+                    # File loaded (from backup)
+                    return 1;
+                }
 
             } else {
 
@@ -2762,11 +2855,20 @@
         # Precautions taken when an emergency save is NOT in progress...
         if (! $emergFlag) {
 
-            # If the call to ->lock_nstore fails, an existing file called $path will be destroyed
-            #   (this could be disastrous, if it contains a world profile, or something)
-            # Create a temporary backup of the file, if it already exists, using File::Copy
-            if (-e $path) {
+            if ($self->preserveBackupFlag) {
 
+                # The file itself was missing/corrupted, so data was loaded from the backup file
+                # Don't replace the (good) backup file; just replace the (faulty) file itself
+                # NB For the config file, nothing in the Axmud code sets this flag to TRUE. Still,
+                #   the code exists, for any future version that needs it
+                $self->ivPoke('preserveBackupFlag', FALSE);
+
+            } elsif (-e $path) {
+
+                # If the call to ->lock_nstore fails, an existing file called $path will be
+                #   destroyed or corrupted (this could be disastrous, especially if it contains a
+                #   world profile, or something)
+                # Create a backup of the file, if the file already exists, using File::Copy
                 $buPath = $path . '.bu';
                 File::Copy::copy($path, $buPath);
             }
@@ -2874,6 +2976,9 @@
         #   $fileName   - The file name, e.g. 'tasks.axm'
         #   $path       - The full path, e.g. '/home/me/axmud-data/data/tasks.axm'
         #   $dir        - The directory, e.g. '/home/me/axmud-data/data/'
+        #   $backupFlag - If TRUE, the function will try to load the automatic backup of the file
+        #                   (e.g. 'tasks.axm.bu'). If FALSE (or 'undef'), the function loads the
+        #                   normal copy of the file (e.g. 'tasks.axm')
         #
         # Notes:
         #   If one optional argument is specified, they must all be specified
@@ -2885,7 +2990,7 @@
         #       flags) or if there is an error loading the data file itself
         #   1 otherwise
 
-        my ($self, $fileName, $path, $dir, $check) = @_;
+        my ($self, $fileName, $path, $dir, $backupFlag, $check) = @_;
 
         # Local variables
         my (
@@ -2919,6 +3024,13 @@
             $fileName = $self->standardFileName;
             $path = $axmud::DATA_DIR . $self->standardPath;
             $dir = $axmud::DATA_DIR . $self->standardDir;
+        }
+
+        # Load the automatic backup of the file, if required
+        if ($backupFlag) {
+
+            $fileName .= '.bu';
+            $path .= '.bu';
         }
 
         # Don't load anything if the global flag forbids it
@@ -6216,6 +6328,213 @@
                 }
             }
 
+            if ($version < 1_001_184 && $self->session) {
+
+                # This version adds an (optional) attribute to triggers, aliases, macros and hooks
+                #   (but not timers)
+                foreach my $cage ($self->session->ivValues('cageHash')) {
+
+                    if (
+                        $cage->{cageType} eq 'trigger'
+                        || $cage->{cageType} eq 'alias'
+                        || $cage->{cageType} eq 'macro'
+                        || $cage->{cageType} eq 'hook'
+                    ) {
+                        foreach my $interfaceObj ($cage->ivValues('interfaceHash')) {
+
+                            $interfaceObj->ivAdd('attribHash', 'cooldown', 0);
+                        }
+                    }
+                }
+            }
+
+            if ($version < 1_001_191) {
+
+                # This version renames a world profile IV and a component object IV
+                foreach my $profObj ($axmud::CLIENT->ivValues('worldProfHash')) {
+
+                    my (@oldList, @newList);
+
+                    if (! exists $profObj->{groupPatternList}) {
+
+                        $profObj->{groupPatternList} = $profObj->{singleBackRefPatternList};
+                        delete $profObj->{singleBackRefPatternList};
+
+                        foreach my $componentObj ($profObj->ivValues('componentHash')) {
+
+                            if (! exists $componentObj->{usePatternGroups}) {
+
+                                $componentObj->{usePatternGroups}
+                                    = $componentObj->{usePatternBackRefs};
+                                delete $componentObj->{usePatternBackRefs};
+                            }
+                        }
+
+                        # ->loginSpecialList is in groups of 3. It was previously necessary to
+                        #   surround the third item in double quotes, if it contained a group
+                        #   substring variable like $1, but that's no longer necessary, so remove
+                        #   the quotes
+                        @oldList = $profObj->loginSpecialList;
+                        while (@oldList) {
+
+                            my ($item, $item2, $item3);
+
+                            $item = shift @oldList;
+                            $item2 = shift @oldList;
+                            $item3 = shift @oldList;
+
+                            $item3 =~ s/^\"(.*)\"$/$1/;
+
+                            push (@newList, $item, $item2, $item3);
+
+                        }
+
+                        $profObj->ivPoke('loginSpecialList', @newList);
+                    }
+                }
+            }
+
+            if ($version < 1_001_258) {
+
+                # Update world profiles to a list in groups of 1 with a list in groups of 2
+                my $profObj = $axmud::CLIENT->ivShow('worldProfHash', $self->name);
+                if ($profObj) {
+
+                    my @newList;
+
+                    foreach my $pattern ($profObj->transientExitPatternList) {
+
+                        push (@newList, $pattern, undef);
+                    }
+
+                    $profObj->ivPoke('transientExitPatternList', @newList);
+                }
+            }
+
+            if ($version < 1_001_262 && $self->session) {
+
+                # Update character profiles with new IVs
+                foreach my $profObj ($self->session->ivValues('profHash')) {
+
+                    if ($profObj->{category} eq 'char' && ! exists $profObj->{qpCurrent}) {
+
+                        $profObj->{qpCurrent} = undef;
+                        $profObj->ivPoke('qpCurrent', 0);
+                        $profObj->{qpNextLevel} = undef;
+                        $profObj->ivPoke('qpNextLevel', 0);
+                        $profObj->{qpTotal} = undef;
+                        $profObj->ivPoke('qpTotal', 0);
+
+                        $profObj->{opCurrent} = undef;
+                        $profObj->ivPoke('opCurrent', 0);
+                        $profObj->{opNextLevel} = undef;
+                        $profObj->ivPoke('opNextLevel', 0);
+                        $profObj->{opTotal} = undef;
+                        $profObj->ivPoke('opTotal', 0);
+                    }
+                }
+            }
+
+            if ($version < 1_001_263 && $self->session) {
+
+                # Modify some IVs in world profiles
+                foreach my $profObj ($axmud::CLIENT->ivValues('worldProfHash')) {
+
+                    my (
+                        $hashRef, $listRef,
+                        %newHash,
+                    );
+
+                    if (exists $profObj->{constLocalWimpyMax}) {
+
+                        # (These are replaced by new character profile IVs)
+                        delete $profObj->{constLocalWimpyMax};
+                        delete $profObj->{remoteWimpyMax};
+
+                        # (->customStatusVarHash is replaced by new ->msdpStatusVarHash, with a
+                        #   subset of its key-value pairs, with the keys/value reversed)
+                        $hashRef = $profObj->{customStatusVarHash};
+                        delete $profObj->{customStatusVarHash};
+
+                        foreach my $key (keys %$hashRef) {
+
+                            my $value = $$hashRef{$key};
+
+                            # A few pre-configured worlds were using the wrong format, so ignore the
+                            #   key-value pairs where the value is 0
+                            if (defined $value && $value ne '0') {
+
+                                $newHash{$value} = $key;
+                            }
+                        }
+
+                        $profObj->{msdpStatusVarHash} = {};
+                        $profObj->ivPoke('msdpStatusVarHash', %newHash);
+
+                        # (->statusFormatList is just a renamed IV)
+                        $listRef = $profObj->{displayFormatList};
+
+                        # While we're at it, convert old custom variables from #var_name# to new
+                        #   @var_name@ format
+                        foreach my $line (@$listRef) {
+
+                            $line =~ s/\#([\w\_]+)\#/\@$1\@/g;
+
+                            # In addition, some old variables have been renamed
+                            $line =~ s/fight_count/fight_string/;
+                            $line =~ s/interact_count/interact_string/;
+                            $line =~ s/interaction_count/interact_string/;
+                            $line =~ s/coward_count/coward_string/;
+                            $line =~ s/temp_fight_count/temp_fight_string/;
+                            $line =~ s/temp_interact_count/temp_interact_string/;
+                            $line =~ s/temp_interaction_count/temp_interact_string/;
+                            $line =~ s/temp_coward_count/temp_coward_string/;
+                            $line =~ s/quest_points/qp_current/;
+                        }
+
+                        $profObj->{statusFormatList} = [];
+                        $profObj->ivPoke('statusFormatList', @$listRef);
+                        delete $profObj->{displayFormatList};
+                    }
+                }
+
+                # Update character profiles with new IVs
+                foreach my $profObj ($self->session->ivValues('profHash')) {
+
+                    if ($profObj->{category} eq 'char' && ! exists $profObj->{healthPoints}) {
+
+                        $profObj->{healthPoints} = undef;
+                        $profObj->ivPoke('healthPoints', 0);
+                        $profObj->{healthPointsMax} = undef;
+                        $profObj->ivPoke('healthPointsMax', 0);
+
+                        $profObj->{magicPoints} = undef;
+                        $profObj->ivPoke('magicPoints', 0);
+                        $profObj->{magicPointsMax} = undef;
+                        $profObj->ivPoke('magicPointsMax', 0);
+
+                        $profObj->{energyPoints} = undef;
+                        $profObj->ivPoke('energyPoints', 0);
+                        $profObj->{energyPointsMax} = undef;
+                        $profObj->ivPoke('energyPointsMax', 0);
+
+                        $profObj->{guildPoints} = undef;
+                        $profObj->ivPoke('guildPoints', 0);
+                        $profObj->{guildPointsMax} = undef;
+                        $profObj->ivPoke('guildPointsMax', 0);
+
+                        $profObj->{socialPoints} = undef;
+                        $profObj->ivPoke('socialPoints', 0);
+                        $profObj->{socialPointsMax} = undef;
+                        $profObj->ivPoke('socialPointsMax', 0);
+
+                        $profObj->{remoteWimpyMax} = undef;
+                        $profObj->ivPoke('remoteWimpyMax', 100);
+                        $profObj->{constLocalWimpyMax} = 199;
+                    }
+                }
+            }
+
         ### worldmodel ###########################################################################
 
         } elsif ($self->fileType eq 'worldmodel') {
@@ -7795,6 +8114,97 @@
                     $wmObj->ivPoke('allowCtrlCopyFlag', TRUE);
                 }
             }
+
+            if ($version < 1_001_234) {
+
+                # This version adds a new IV to the world model
+                if (! exists $wmObj->{mapLabelTextViewFlag}) {
+
+                    $wmObj->{mapLabelTextViewFlag} = undef;
+                    $wmObj->ivPoke('mapLabelTextViewFlag', FALSE);
+                }
+            }
+
+            if ($version < 1_001_235) {
+
+                # This version adds a new IV to all room model objects
+                foreach my $obj ($wmObj->ivValues('roomModelHash')) {
+
+                    if (! exists $obj->{unspecifiedPatternList}) {
+
+                        $obj->{unspecifiedPatternList} = [];
+                        $obj->ivEmpty('unspecifiedPatternList');
+                    }
+                }
+            }
+
+            if ($version < 1_001_240) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{autoSlideMode}) {
+
+                    $wmObj->{autoSlideMode} = undef;
+                    $wmObj->ivPoke('autoSlideMode', 'default');
+                    $wmObj->{autoSlideMax} = undef;
+                    $wmObj->ivPoke('autoSlideMax', 10);
+                }
+            }
+
+            if ($version < 1_001_241) {
+
+                # This version removes an IV from all room model objects
+                foreach my $obj ($wmObj->ivValues('roomModelHash')) {
+
+                    delete $obj->{everMatchedFlag};
+                }
+            }
+
+            if ($version < 1_001_250) {
+
+                # This version adds a new IV to the world model
+                if (! exists $wmObj->{autoRescueFlag}) {
+
+                    $wmObj->{autoRescueFlag} = undef;
+                    $wmObj->ivPoke('autoRescueFlag', FALSE);
+                    $wmObj->{autoRescueFirstFlag} = undef;
+                    $wmObj->ivPoke('autoRescueFirstFlag', FALSE);
+                    $wmObj->{autoRescuePromptFlag} = undef;
+                    $wmObj->ivPoke('autoRescuePromptFlag', FALSE);
+                }
+            }
+
+            if ($version < 1_001_251) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{autoCompareMode}) {
+
+                    $wmObj->{autoCompareMode} = undef;
+                    if (! $wmObj->{autoCompareFlag}) {
+                        $wmObj->ivPoke('autoCompareMode', 'default');
+                    } else {
+                        $wmObj->ivPoke('autoCompareMode', 'new');
+                    }
+
+                    $wmObj->{autoCompareAllFlag} = undef;
+                    $wmObj->ivPoke('autoCompareAllFlag', FALSE);
+                    $wmObj->{autoCompareMax} = undef;
+                    $wmObj->ivPoke('autoCompareMax', 0);
+                }
+            }
+
+            if ($version < 1_001_254) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{autoRescueNoMoveFlag}) {
+
+                    $wmObj->{autoRescueNoMoveFlag} = undef;
+                    $wmObj->ivPoke('autoRescueNoMoveFlag', FALSE);
+                    $wmObj->{autoRescueVisitsFlag} = undef;
+                    $wmObj->ivPoke('autoRescueVisitsFlag', FALSE);
+                    $wmObj->{autoRescueForceFlag} = undef;
+                    $wmObj->ivPoke('autoRescueForceFlag', FALSE);
+                }
+            }
         }
 
         ### new built-in tasks (new IVs for existing tasks are below) #############################
@@ -8578,8 +8988,8 @@
 
             if ($version < 1_000_691 && $self->session) {
 
-                # This version switched the order of some IVs in the Status. Update all initial/
-                #   custom tasks
+                # This version switched the order of some IVs in the Status task. Update all
+                #   initial/custom tasks
                 foreach my $taskObj ($self->compileTasks('status_task')) {
 
                     my $string;
@@ -9166,7 +9576,7 @@
                 }
             }
 
-             if ($version < 1_001_164 && $self->session) {
+            if ($version < 1_001_164 && $self->session) {
 
                 my $class = 'Games::Axmud::Task::System';
 
@@ -9194,6 +9604,154 @@
                     $taskObj->ivPoke('systemMode', 'both');
                     $taskObj->{colourFlag} = undef;
                     $taskObj->ivPoke('colourFlag', TRUE);
+                }
+            }
+
+            if ($version < 1_001_191 && $self->session) {
+
+                # This version renames some Status task IVs. Update all initial/custom tasks
+                foreach my $taskObj ($self->compileTasks('status_task')) {
+
+                    if (! exists $taskObj->{groupVarList}) {
+
+                        $taskObj->{groupVarList} = $taskObj->{singleBackRefVarList};
+                        delete $taskObj->{singleBackRefVarList};
+
+                        $taskObj->{groupVarHash} = $taskObj->{singleBackRefVarHash};
+                        delete $taskObj->{singleBackRefVarHash};
+                    }
+                }
+            }
+
+            if ($version < 1_001_200 && $self->session) {
+
+                # This version updated the RawToken task with new IVs. Update all initial/custom
+                #   tasks
+                foreach my $taskObj ($self->compileTasks('raw_token_task')) {
+
+                    if (! exists $taskObj->{splitLineFlag}) {
+
+                        $taskObj->{splitLineFlag} = undef;
+                        $taskObj->ivPoke('splitLineFlag', FALSE);
+                        $taskObj->{showTypeFlag} = undef;
+                        $taskObj->ivPoke('showTypeFlag', FALSE);
+                        $taskObj->{countPacketFlag} = undef;
+                        $taskObj->ivPoke('countPacketFlag', FALSE);
+                    }
+                }
+            }
+
+            if ($version < 1_001_263 && $self->session) {
+
+                my $tempTask;
+
+                # This version completes a major rewrite of the Status task
+
+                # Create a temporary task so we can access its IVs
+                $tempTask = Games::Axmud::Task::Status->new($axmud::CLIENT);
+
+                # Update IVs in all initial/custom tasks
+                foreach my $taskObj ($self->compileTasks('status_task')) {
+
+                    if (! exists $taskObj->{constCharVarHash}) {
+
+                        # (New IVs)
+                        $taskObj->{constCharVarHash} = {$tempTask->constCharVarHash};
+                        $taskObj->{constFixedVarHash} = {$tempTask->constFixedVarHash};
+                        $taskObj->{constPseudoVarHash} = {$tempTask->constPseudoVarHash};
+                        $taskObj->{constLocalVarHash} = {$tempTask->constLocalVarHash};
+                        $taskObj->{constCounterVarHash} = {$tempTask->constCounterVarHash};
+                        $taskObj->{constCounterRevHash} = {$tempTask->constCounterRevHash};
+                        $taskObj->{constPointHash} = {$tempTask->constPointHash};
+
+                        $taskObj->{localVarHash} = {};
+                        $taskObj->ivPoke('localVarHash', $tempTask->localVarHash);
+                        $taskObj->{counterVarHash} = {};
+                        $taskObj->ivPoke('counterVarHash', $tempTask->counterVarHash);
+                        $taskObj->{counterBaseHash} = {};
+                        $taskObj->ivPoke('counterBaseHash', $tempTask->counterBaseHash);
+
+                        # (Renamed IV)
+                        $taskObj->{counterStartTime} = undef;
+                        $taskObj->ivPoke('counterStartTime', $tempTask->{tempTimerBaseline});
+                        delete $taskObj->{tempTimerBaseline};
+
+                        # (Removed IVs)
+                        delete $taskObj->{defaultFormatList};
+                        delete $taskObj->{displayVarList};
+                        delete $taskObj->{groupVarList};
+                        delete $taskObj->{groupVarHash};
+
+                        delete $taskObj->{lifeStatusOverrideFlag};
+
+                        delete $taskObj->{lifeStatus};
+                        delete $taskObj->{lifeCount};
+                        delete $taskObj->{deathCount};
+                        delete $taskObj->{lifeMax};
+
+                        delete $taskObj->{healthPoints};
+                        delete $taskObj->{healthPointsMax};
+                        delete $taskObj->{magicPoints};
+                        delete $taskObj->{magicPointsMax};
+                        delete $taskObj->{energyPoints};
+                        delete $taskObj->{energyPointsMax};
+                        delete $taskObj->{guildPoints};
+                        delete $taskObj->{guildPointsMax};
+                        delete $taskObj->{socialPoints};
+                        delete $taskObj->{socialPointsMax};
+
+                        delete $taskObj->{xpCurrent};
+                        delete $taskObj->{xpNextLevel};
+                        delete $taskObj->{xpTotal};
+
+                        delete $taskObj->{worldQuestCount};
+                        delete $taskObj->{worldQuestPointCount};
+                        delete $taskObj->{worldQuestXPCount};
+                        delete $taskObj->{worldQuestCashCount};
+
+                        delete $taskObj->{questCount};
+                        delete $taskObj->{questPointCount};
+                        delete $taskObj->{questXPCount};
+                        delete $taskObj->{questCashCount};
+
+                        delete $taskObj->{level};
+                        delete $taskObj->{alignment};
+
+                        delete $taskObj->{localWimpy};
+                        delete $taskObj->{constLocalWimpyMax};
+                        delete $taskObj->{remoteWimpy};
+                        delete $taskObj->{remoteWimpyMax};
+
+                        delete $taskObj->{age};
+                        delete $taskObj->{time};
+
+                        delete $taskObj->{bankBalance};
+                        delete $taskObj->{purseContents};
+
+                        delete $taskObj->{fightCountFlag};
+                        delete $taskObj->{fightCount};
+                        delete $taskObj->{killCount};
+                        delete $taskObj->{wimpyCount};
+                        delete $taskObj->{fightDefeatCount};
+                        delete $taskObj->{interactCountFlag};
+                        delete $taskObj->{interactCount};
+                        delete $taskObj->{interactSuccessCount};
+                        delete $taskObj->{interactFailCount};
+                        delete $taskObj->{interactFightCount};
+                        delete $taskObj->{interactDisasterCount};
+
+                        delete $taskObj->{fleeCount};
+                        delete $taskObj->{escapeCount};
+
+                        delete $taskObj->{tempXPCount};
+                        delete $taskObj->{tempXPBaseline};
+                        delete $taskObj->{tempQuestCount};
+                        delete $taskObj->{tempQuestBaseline};
+                        delete $taskObj->{tempBankCount};
+                        delete $taskObj->{tempBankBaseline};
+                        delete $taskObj->{tempPurseCount};
+                        delete $taskObj->{tempPurseBaseline};
+                    }
                 }
             }
         }
@@ -9893,6 +10451,46 @@
                 }
             }
 
+            if ($version < 1_001_203) {
+
+                # This version adds a new button in 'main' windows, for which we must update the
+                #   equivalent winmaps
+                foreach my $winmapObj ($axmud::CLIENT->ivValues('winmapHash')) {
+
+                    my (@oldList, @newList);
+
+                    if (
+                        $winmapObj->name eq 'main_fill'
+                        || $winmapObj->name eq 'main_part'
+                        || $winmapObj->name eq 'main_empty'
+                    ) {
+                        @oldList = $winmapObj->stripInitList;
+                        if (@oldList) {
+
+                            do {
+
+                                my ($package, $hashRef);
+
+                                $package = shift @oldList;
+                                $hashRef = shift @oldList;
+
+                                if (
+                                    $package eq 'Games::Axmud::Strip::Entry'
+                                    && defined $hashRef
+                                ) {
+                                    $$hashRef{'console_flag'} = TRUE;
+                                }
+
+                                push (@newList, $package, $hashRef);
+
+                            } until (! @oldList);
+
+                            $winmapObj->{stripInitList} = \@newList;
+                        }
+                    }
+                }
+            }
+
         ## tts ####################################################################################
 
         } elsif ($self->fileType eq 'tts') {
@@ -10000,7 +10598,9 @@
         }
 
         # If the user has ever connected to this world, ask permission before patching it
-        if ($worldObj->numberConnects) {
+        # Exception: if GA::Client->mainWin is undefined, it's because the global variable
+        #   $TEST_MODE_FLAG is TRUE; in that case, don't bother asking for permission
+        if ($worldObj->numberConnects && $axmud::CLIENT->mainWin) {
 
             # If the existing file object needs to be saved, asked permission before importing data
             #   into it
@@ -10017,6 +10617,16 @@
             if ($choice eq 'no') {
 
                 return undef;
+            }
+        }
+
+        if ($world eq 'alteraeon' && $worldVersion <= 1_001_270) {
+
+            # Patch to fix bad regex in the 'verb_exit' component
+            my $compObj = $worldObj->ivShow('componentHash', 'verb_exit');
+            if ($compObj) {
+
+                $compObj->ivPoke('startPatternList', '^\[Exits: ');
             }
         }
 
@@ -10068,6 +10678,28 @@
                         '> ',
                         ';login',
                 );
+            }
+        }
+
+        if (
+            ($world eq 'dsdev' || $world eq 'dslocal' || $world eq 'dsprime')
+            && $worldVersion <= 1_001_270
+        ) {
+            my $compObj;
+
+            # Patch to turn off VT100 control sequences, which are just annoying in a test
+            #   environment
+            $worldObj->ivAdd('termOverrideHash', 'useCtrlSeqFlag', FALSE);
+
+            # Also use an excess command delay that doesn't cause a DS refusal
+            $worldObj->ivPoke('excessCmdDelay', 1.5);
+
+            # Also solved problem of command prompts being added to room titles, after several
+            #   simultaneous movement commands
+            $compObj = $worldObj->ivShow('componentHash', 'verb_title');
+            if ($compObj) {
+
+                $compObj->ivPoke('usePatternGroups', 'hp\:.*mp\:.*sp\:.*\>\s(.*)');
             }
         }
 
@@ -10266,7 +10898,196 @@
             }
         }
 
-        if ($world eq 'pict') {
+
+        if ($world eq 'luminari' && $worldVersion <= 1_001_270) {
+
+            # Patch to fix bad regex in the ->channelList
+            $worldObj->ivPoke(
+                'channelList',
+                    '^\w+ chats, \'',
+                        'tell', TRUE,
+                    '^You chat, \'',
+                        'tell', TRUE,
+                    '^\[INFO\] ',
+                        'social', TRUE,
+            );
+        }
+
+        if ($world eq 'mud1' && $worldVersion <= 1_001_270) {
+
+            my $compObj;
+
+            # Update overrides
+            $worldObj->ivAdd('termOverrideHash', 'useVisibleCursorFlag', TRUE);
+
+            # Update problems with room statement detection
+            $worldObj->ivPoke(
+                'notAnchorPatternList',
+                    '^\*',
+                    '^\w+$',
+            );
+
+            $compObj = $worldObj->ivShow('componentHash', 'verb_descrip');
+            if ($compObj) {
+
+                $compObj->{startNoPatternList} = [
+                    '^\*',
+                ];
+                $compObj->{startNoTagList} = [];
+                $compObj->{startNoAllFlag} = FALSE;
+                $compObj->{startNoTagMode} = 'default';
+            }
+        }
+
+        if ($world eq 'mudii' && $worldVersion <= 1_001_270) {
+
+            my ($missionObj, $compObj, $compObj2);
+
+            # Update overrides
+            $worldObj->ivAdd('termOverrideHash', 'useVisibleCursorFlag', TRUE);
+
+            # Update login mission
+            $missionObj = $worldObj->ivShow('missionHash', 'mudii_login');
+            if ($missionObj) {
+
+                $missionObj->ivPoke(
+                    'missionList',
+                        't ^\w+ login\:',
+                        '> mud',
+                        't ^Account ID\:',
+                        'a',
+                        't ^Password\:',
+                        'w',
+                        't Checking your mail',
+                        '> ',
+                        't Option',
+                        '> p',
+                        't By what name shall I call you',
+                        'n',
+                        't Elizabethan tearoom',
+                        ';login',
+                );
+            }
+
+            # Update problems with room statement detection
+            $worldObj->ivPoke(
+                'notAnchorPatternList',
+                    '^\*',
+                    '^\w+$',
+            );
+
+            $compObj = $worldObj->ivShow('componentHash', 'ignore_line');
+            if ($compObj) {
+
+                $compObj->{boldSensitiveFlag} = FALSE;
+
+                $compObj->{startPatternList} = [];
+                $compObj->{startTagList} = [];
+                $compObj->{startAllFlag} = FALSE;
+                $compObj->{startTagMode} = 'default';
+
+                $compObj->{startNoPatternList} = [];
+                $compObj->{startNoTagList} = [
+                    'green',
+                ];
+                $compObj->{startNoAllFlag} = FALSE;
+                $compObj->{startNoTagMode} = 'default';
+
+                $compObj->{stopBeforePatternList} = [];
+                $compObj->{stopBeforeTagList} = [
+                    'green',
+                ];
+                $compObj->{stopBeforeAllFlag} = FALSE;
+                $compObj->{stopBeforeTagMode} = 'default';
+            }
+
+            $compObj2 = $worldObj->ivShow('componentHash', 'verb_descrip');
+            if ($compObj2) {
+
+                $compObj2->{startNoPatternList} = [
+                    '^It is raining\.',
+                ];
+                $compObj2->{startNoTagList} = [];
+                $compObj2->{startNoAllFlag} = FALSE;
+                $compObj2->{startNoTagMode} = 'default';
+            }
+        }
+
+        if ($world eq 'mud2' && $worldVersion <= 1_001_270) {
+
+            my ($missionObj, $compObj, $compObj2);
+
+            # Update overrides
+            $worldObj->ivAdd('termOverrideHash', 'useVisibleCursorFlag', TRUE);
+
+            # Update login mission
+            $missionObj = $worldObj->ivShow('missionHash', 'mud2_login');
+            if ($missionObj) {
+
+                $missionObj->ivPoke(
+                    'missionList',
+                        't ^\w+ login\:',
+                        '> mud',
+                        't ^Account ID\:',
+                        'a',
+                        't ^Password\:',
+                        'w',
+                        't Hit return',
+                        '> ',
+                        't Option',
+                        '> p',
+                        't By what name shall I call you',
+                        'n',
+                        't Elizabethan tearoom',
+                        ';login',
+                );
+            }
+
+            # Update problems with room statement detection
+            $worldObj->ivPoke(
+                'notAnchorPatternList',
+                    '^\*',
+                    '^\w+$',
+            );
+
+            $compObj = $worldObj->ivShow('componentHash', 'ignore_line');
+            if ($compObj) {
+
+                $compObj->{boldSensitiveFlag} = FALSE;
+
+                $compObj->{startPatternList} = [];
+                $compObj->{startTagList} = [];
+                $compObj->{startAllFlag} = FALSE;
+                $compObj->{startTagMode} = 'default';
+
+                $compObj->{startNoPatternList} = [];
+                $compObj->{startNoTagList} = [
+                    'green',
+                ];
+                $compObj->{startNoAllFlag} = FALSE;
+                $compObj->{startNoTagMode} = 'default';
+
+                $compObj->{stopBeforePatternList} = [];
+                $compObj->{stopBeforeTagList} = [
+                    'green',
+                ];
+                $compObj->{stopBeforeAllFlag} = FALSE;
+                $compObj->{stopBeforeTagMode} = 'default';
+            }
+
+            $compObj2 = $worldObj->ivShow('componentHash', 'verb_descrip');
+            if ($compObj2) {
+
+                $compObj2->{startNoPatternList} = [
+                    '^It is raining\.',
+                ];
+                $compObj2->{startNoTagList} = [];
+                $compObj2->{startNoAllFlag} = FALSE;
+                $compObj2->{startNoTagMode} = 'default';
+            }
+        }
+
+        if ($world eq 'pict' && $worldVersion <= 1_001_174) {
 
             # Change of DNS/IP address, replacing pict.genesismuds.com 4200
             $worldObj->ivPoke('dns', undef);
@@ -10417,6 +11238,39 @@
 
                 $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
             }
+        }
+
+        if ($world eq 'threekingdoms' && $worldVersion <= 1_001_270) {
+
+            my $compObj;
+
+            # Patch to fix handling of verbose descriptions in room statements
+            $compObj = $worldObj->ivShow('componentHash', 'verb_descrip');
+            if ($compObj) {
+
+                $compObj->{useExplicitTagsFlag} = TRUE;
+            }
+        }
+
+        if ($world eq 'threescapes' && $worldVersion <= 1_001_270) {
+
+            my $compObj;
+
+            # Patch to fix handling of verbose descriptions in room statements
+            $compObj = $worldObj->ivShow('componentHash', 'verb_descrip');
+            if ($compObj) {
+
+                $compObj->{useExplicitTagsFlag} = TRUE;
+            }
+        }
+
+        if ($world eq 'twotowers' && $worldVersion <= 1_001_270) {
+
+            # Patch to fix handling of brief room statements
+            $worldObj->ivPoke(
+                'briefAnchorPatternList',
+                    '^\w[\w\s\!\?\-\,\.]+\((.*)\)',
+            );
         }
 
         return 1;
@@ -13277,7 +14131,7 @@
 
     sub set_modifyFlag {
 
-        # NB The calling function, $func, is disregarded
+        # NB The calling function, $func, is disregarded if specified
 
         my ($self, $flag, $func, $check) = @_;
 
@@ -13294,6 +14148,27 @@
         }
 
         return $self->modifyFlag;
+    }
+
+    sub set_preserveBackupFlag {
+
+        # NB The calling function, $func, is disregarded if specified
+
+        my ($self, $flag, $func, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_preserveBackupFlag', @_);
+        }
+
+        if ($flag) {
+            $self->{preserveBackupFlag} = TRUE;
+        } else {
+            $self->{preserveBackupFlag} = FALSE;
+        }
+
+        return $self->preserveBackupFlag;
     }
 
     ##################
@@ -13341,6 +14216,8 @@
 
     sub modifyFlag
         { $_[0]->{modifyFlag} }
+    sub preserveBackupFlag
+        { $_[0]->{preserveBackupFlag} }
 }
 
 # Package must return a true value

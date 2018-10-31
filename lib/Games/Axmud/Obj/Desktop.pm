@@ -2070,6 +2070,16 @@
         # Update Gtk2's events queue
         Gtk2->main_iteration() while Gtk2->events_pending();
 
+        # Any textview objects (GA::Obj::TextView) which is waiting to update its size IVs can now
+        #   do so
+        foreach my $textViewObj ($self->ivValues('textViewHash')) {
+
+            if ($textViewObj->sizeUpdateFlag) {
+
+                $textViewObj->updateVisibleSize();
+            }
+        }
+
         # Optionally, write information about the calling function to the terminal (for debugging)
 #        if ($string) {
 #
@@ -2137,7 +2147,7 @@
         my ($self, $buffer, $check) = @_;
 
         # Check for improper arguments
-        if (defined $check) {
+        if (! defined $buffer || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->bufferGetText', @_);
         }
@@ -2290,21 +2300,34 @@
 
         # Called by GA::Win::Internal->winDestroy, etc
 
-        my ($self, $obj, $check) = @_;
+        my ($self, $winObj, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $obj || defined $check) {
+        if (! defined $winObj || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->del_gridWin', @_);
         }
 
-        if (! $self->ivExists('gridWinHash', $obj->number)) {
+        if (! $self->ivExists('gridWinHash', $winObj->number)) {
 
             return undef;
 
         } else {
 
-            $self->ivDelete('gridWinHash', $obj->number);
+            $self->ivDelete('gridWinHash', $winObj->number);
+
+            # If it's a 'main' window, it can exist in several different workspace grids. One of
+            #   them has already been informed; make sure they have all been informed
+            if ($winObj->winType eq 'main') {
+
+                foreach my $gridObj ($self->ivValues('gridHash')) {
+
+                    if ($gridObj->ivExists('gridWinHash', $winObj->number)) {
+
+                        $gridObj->del_gridWin($winObj);
+                    }
+                }
+            }
 
             return 1;
         }

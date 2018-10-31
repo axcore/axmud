@@ -349,6 +349,7 @@
                     'Games::Axmud::Strip::Entry',
                         {
                             'wipe_flag'     => TRUE,
+                            'console_flag'  => TRUE,
                             'input_flag'    => TRUE,
                             'cancel_flag'   => TRUE,
                             'switch_flag'   => TRUE,

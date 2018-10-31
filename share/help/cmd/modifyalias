@@ -44,8 +44,8 @@ mal / modifyalias             Modifies an alias
          -e <boolean>         - Modifies the 'enabled' attribute (1 or 0) 
          -o <boolean>         - Modifies the 'ignore_case' attribute (1 or 0)
          -k <boolean>         - Modifies the 'keep_checking' attribute (1 or 0)
-         -t <boolean>         - Modifies the 'temporary' attribute (1 or 0, 
-                                   default is 0)
+         -t <boolean>         - Modifies the 'temporary' attribute (1 or 0) 
+         -cd <number>         - Modifies the 'cooldown' attribute (0 or above)
       N.B. The 'name' attribute can't be modified.
 
       Group 4 switch options (only modify the inactive alias, so can't be used

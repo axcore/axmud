@@ -7,7 +7,7 @@ ert / editroute               Opens an 'edit' window for a pre-defined route
                Edits the circuit route <name> from room <start>
  
    Notes:
-      Axmud pre-defined routes are an easy way to move between rooms in the game
+      Axmud pre-defined routes are an easy way to move between rooms in the
          world (see the help for ';addroute' for information about routes).
 
       <switches> consist of the following switch options:

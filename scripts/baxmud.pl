@@ -19,8 +19,8 @@ package axmud;
 # Axmud - a Multi-User Dungeon (MUD) client written in Perl5 / Gtk2
 #
 # Most users should use the axmud.pl script. Visually-impaired users might prefer this script
-#   instead, as it automatically enables features for those users, such as built-in screenreader
-#   support
+#   instead, as it automatically enables features for those users, such as built-in text-to-speech
+#   engine support
 
 use strict;
 use diagnostics;
@@ -36,22 +36,23 @@ use vars qw(
     $SCRIPT $VERSION $DATE $NAME_SHORT $NAME_ARTICLE $BASIC_NAME $BASIC_ARTICLE $BASIC_VERSION
     $AUTHORS $COPYRIGHT $URL $DESCRIP $NAME_FILE @COMPAT_FILE_LIST @COMPAT_DIR_LIST @COMPAT_EXT_LIST
     $BLIND_MODE_FLAG $SAFE_MODE_FLAG $TEST_MODE_FLAG @TEST_MODE_LOGIN_LIST $TEST_MODE_CMD_FLAG
-    $TEST_TERM_MODE_FLAG $TEST_GLOB_MODE_FLAG $TEST_PRE_CONFIG_FLAG @LICENSE_LIST @CREDIT_LIST
-    $SHARE_DIR $DATA_DIR $CLIENT
+    $TEST_TERM_MODE_FLAG $TEST_GLOB_MODE_FLAG $TEST_REGEX_FLAG $TEST_REGEX_ERROR
+    $TEST_PRE_CONFIG_FLAG $TEST_CTRL_SEQ_FLAG @LICENSE_LIST @CREDIT_LIST $TOP_DIR $SHARE_DIR
+    $DATA_DIR $CLIENT
 );
 
 $SCRIPT = 'Axmud';              # Name used in system messages
-$VERSION = '1.1.174';           # Version number for this client
-$DATE = '30 Sep 2018';
+$VERSION = '1.1.270';           # Version number for this client
+$DATE = '31 Oct 2018';
 $NAME_SHORT = 'axmud';          # Lower-case version of $SCRIPT; same as the package name above
 $NAME_ARTICLE = 'an Axmud';     # Name with an article
 $BASIC_NAME = 'Axbasic';        # Name of Axmud's built-in scripting library
 $BASIC_ARTICLE = 'an Axbasic';  # Name with an article
-$BASIC_VERSION = '1.000';       # Version number for the Axbasic library
+$BASIC_VERSION = '1.001';       # Version number for the Axbasic library
 $AUTHORS = 'A S Lewis';
 $COPYRIGHT = 'Copyright 2011-2018 A S Lewis';
 $URL = 'http://axmud.sourceforge.net/';
-$DESCRIP = 'A modern MUD client for MS Windows/Linux';
+$DESCRIP = 'A modern MUD client for MS Windows, Linux and *BSD';
 
 # Name used in headers of Axmud config/data files
 $NAME_FILE = 'axmud';
@@ -77,7 +78,7 @@ $SAFE_MODE_FLAG = FALSE;
 #   Connections window
 $TEST_MODE_FLAG = FALSE;
 # If $TEST_MODE_FLAG is TRUE, the login details to use. Must be in the form
-#   (world_name, host, port, username, password, offline_flag)
+#   (world_name, host, port, username, password, online_flag)
 @TEST_MODE_LOGIN_LIST = ();
 # If $TEST_MODE_FLAG is TRUE and this flag is also TRUE, GA::Session->start executes the ;test
 #   command as soon as the session starts
@@ -90,9 +91,17 @@ $TEST_TERM_MODE_FLAG = FALSE;
 #   operation (not including the config file) tests data for this problem, before saving it, writing
 #   the output to the terminal
 $TEST_GLOB_MODE_FLAG = FALSE;
+# Regex test mode: $TEST_REGEX_FLAG is set to TRUE by GA::Client->regexCheck, shortly before it
+#   tests a regex. If the regex is invalid, the Perl error/warning message is intercepted and stored
+#   in $TEST_REGEX_ERROR, so that GA::Client->regexCheck can detect it
+$TEST_REGEX_FLAG = FALSE;
+$TEST_REGEX_ERROR = undef;
 # Pre-configured world test mode: When preparing for a release, the authors set this flag to TRUE to
 #   stop Axmud complaining about missing pre-configured worlds
 $TEST_PRE_CONFIG_FLAG = FALSE;
+# Simple telnet mode: If $TEST_CTRL_SEQ_FLAG is TRUE, VT100 control sequences (except colour/style
+#   sequences) are ignored (equivalent to GA::Client->useCtrlSeqFlag being FALSE)
+$TEST_CTRL_SEQ_FLAG = FALSE;
 
 @LICENSE_LIST = (
     'This program is free software; you can redistribute it and/or modify it under',
@@ -109,10 +118,14 @@ $TEST_PRE_CONFIG_FLAG = FALSE;
 );
 
 @CREDIT_LIST = (
-    'Axbasic library is based on Language::Basic by Amir Karger',
-    'Pathfinding algorithms based on AI::Pathfinding::AStar by Aaron Dalton',
+    'Axbasic based on Language::Basic by Amir Karger',
+    'Binomial heap code copied (unmodified) from Heap::Binomial by John Macdonald',
     'Chat task based on Kildclient plugin by Eduardo M Kalinowski',
+    'Pathfinding algorithms based on AI::Pathfinding::AStar by Aaron Dalton',
     'Roman numeral conversion based on Text::Roman by Stanislaw Pusep',
+    'Simple list code copied (unmodified) from Gtk2::Ex::Simple::List by muppet, Ross',
+    '   McFarland and Gavin Brown',
+    'Telnet code based on Net::Telnet by Jay Rogers',
     'Images/icons by Dave Stokes, www.fatcow.com and A S Lewis. License information',
     '   and full attributions can be found in /images/COPYING and /icons/COPYING',
     'Sound by KevanGC, AirMan, AngryFlash, battlestar10, Brandondorf, Cam Martinez,',
@@ -153,6 +166,7 @@ if ($^O ne 'MSWin32') {
 }
 
 use Gtk2 '-init';
+use HTTP::Tiny;
 use IO::Socket::INET;
 use IO::Socket::INET6;
 use IO::Socket::SSL;
@@ -183,7 +197,13 @@ use Language::Axbasic::Variable;
 # All files required after the Axmud script has been compiled are stored in /share
 $SHARE_DIR = File::ShareDir::dist_dir('Games-Axmud');
 # Axmud's data directory. Axmud creates any data files from scratch if they don't already exist
-$DATA_DIR = File::HomeDir->my_home . '/' . $NAME_SHORT . '-data';
+# (Use literal backwards slashes on MS Windows so that commands like ';listdirectory' show what the
+#   use is expecting to see)
+if ($^O eq 'MSWin32') {
+    $DATA_DIR = File::HomeDir->my_home . '\\' . $NAME_SHORT . '-data';
+} else {
+    $DATA_DIR = File::HomeDir->my_home . '/' . $NAME_SHORT . '-data';
+}
 
 # Put paths to plugins (all of them Perl modules) into @INC
 push (@INC,
@@ -194,23 +214,21 @@ push (@INC,
 # Standard Perl error/warning trapping
 $SIG{__DIE__} = sub {
 
-    my (
-        $errorFlag,
-        @loopList, @sessionList,
-        %hash,
-    );
-
     if ($CLIENT) {
 
         # Errors generated by GA::Session->perlCmd cause a chain of errors, because the Perl Safe
         #   module uses its own namespace and can't call GA::Client->writePerlWarning
         # Workaround is to use a global flag and to generate our own error message if it's set
+        if ($TEST_REGEX_FLAG) {
 
-        # We don't know which GA::Session caused the Perl error, but we can leave Axmud in a (more
-        #   or less) functional state by halting all client loops and session loops; the user can
-        #   restart them, when ready, with the ';restart' command
-        if (! $SAFE_MODE_FLAG) {
+            # Regex test initiated by GA::Client->regexCheck
+            $TEST_REGEX_ERROR = $_[0];
 
+        } elsif (! $SAFE_MODE_FLAG) {
+
+            # We don't know which GA::Session caused the Perl error, but we can leave Axmud in a
+            #   (more or less) functional state by halting all client loops and session loops; the
+            #   user can restart them, when ready, with the ';restart' command
             $CLIENT->writePerlError(@_);
 
             if ($CLIENT->sessionHash && ! $CLIENT->suspendSessionLoopFlag) {
@@ -221,7 +239,7 @@ $SIG{__DIE__} = sub {
 
     } else {
 
-        # (If the GA::Client object doesn't exist yet, better to die, than to carry on)
+        # (If the GA::Client object doesn't exist yet, better to die() than to carry on)
         die(@_);
     }
 };
@@ -229,17 +247,16 @@ $SIG{__DIE__} = sub {
 $SIG{__WARN__} = sub {
 
     # v1.1.159 - filter out same warning messages caused by Perl module/Gtk+ issues, that would
-    #   otherwise spam the Console window and/or terminal
+    #   otherwise spam the Client Console window, Session Console window and/or terminal
     # As of this version, the 'Failed to parse menu bar accelerator' warning is displayed in a *BSD
     #   terminal before being captured by $SIG{__WARN__}, so little we can do about it
 
-#    if ($CLIENT && ! $SAFE_MODE_FLAG) {
-#        $CLIENT->writePerlWarning(@_);
-#    } else {
-#        warn(@_);
-#    }
+    if ($TEST_REGEX_FLAG) {
 
-    if (
+        # Regex test initiated by GA::Client->regexCheck
+        $TEST_REGEX_ERROR = $_[0];
+
+    } elsif (
         ! ($_[0] =~ m/gdk_pixbuf_from_pixdata\(\) called on/)
         && ! ($_[0] =~ m/GdkPixbuf-LOG \*\*\:/)
         && ! ($_[0] =~ m/Failed to parse menu bar accelerator/)
@@ -319,7 +336,7 @@ Its features include:
 Telnet, SSH and SLL connections - ANSI/xterm/OSC/RGB colour - Full support for
 all major MUD protocols, including MXP and GMCP (with partial Pueblo support) -
 Class-based triggers, aliases, macros, timers and hooks - Graphical automapper
-- 90 pre-configured worlds - Multiple approaches to scripting - Fully
+- 100 pre-configured worlds - Multiple approaches to scripting - Fully
 customisable from top to bottom, using the command line or the extensive GUI
 interface - Native support for visually-impaired users
 

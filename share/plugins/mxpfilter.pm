@@ -56,7 +56,7 @@ sub convertFile {
     #
     # Expected arguments
     #   $path   - The full file path of the file to convert, e.g.
-    #               '/home/myname/axmud_data/deathmud/mxp/myimage.gff'
+    #               '/home/myname/axmud_data/mxp/deathmud/myimage.gff'
     #   $src    - The source file extension specified by the MXP <FILTER> tag, e.g. 'gff'
     #   $dest   - The destination file extension specified by the MXP <FILTER> tag, e.g. 'gif'
     #   $proc   - An optional numerical parameter used to support multiple conversions, as needed
@@ -65,7 +65,7 @@ sub convertFile {
     # Return values
     #   'undef' on improper arguments
     #   Otherwise, returns the full file path of the converted file, e.g.
-    #       '/home/myname/axmud_data/deathmud/mxp/myimage.gif'
+    #       '/home/myname/axmud_data/mxp/deathmud/myimage.gif'
     #   1 otherwise
 
     my ($path, $src, $dest, $proc, $check) = @_;
@@ -94,7 +94,7 @@ sub convertFile {
 
     # Convert the file from the world's own file format into one supported by the client
     # In this example plugin, we'll 'convert' the file by changing its file extension, but your
-    #   plugin will have to do an actual conversion of some kind.
+    #   plugin will have to do an actual conversion of some kind
     # If you want a temporary directory to work in, you can use ../axmud_data/tmp/
     # Files in ../axmud_data/tmp/ are deleted whenever the client starts and stops but, in any case,
     #   the calling function will delete the converted file as soon as it's used

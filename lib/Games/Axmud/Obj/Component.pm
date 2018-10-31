@@ -180,13 +180,13 @@
             #   used
             useFirstChars               => 0,
             # Complementary option. Set to a regex. If the regex matches the line, only the
-            #   contents of the backreferences are used (if there is more than one backreference,
-            #   they are joined together as a single line of text).
+            #   contents of the group substrings are used (if there is more than one group
+            #   substring, they are joined together as a single line of text).
             # If the regex doesn't match the line, or if this IV is undefined/an empty string, the
-            #   whole line is  used. Ignored if ->useTextColour, ->ignoreFirstChars or
+            #   whole line is used. Ignored if ->useTextColour, ->ignoreFirstChars or
             #   ->useFirstChars are set
             # NB If ->combineLinesFlag is TRUE, the pattern is matched against the combined line
-            usePatternBackRefs          => undef,
+            usePatternGroups            => undef,
 
             # A list of component types and/or names that the Locator task should NOT attempt to
             #   extract, IF this component can be successfully extracted (added for ZombieMUD, where
@@ -444,7 +444,7 @@
             useTextColour               => $self->useTextColour,
             ignoreFirstChars            => $self->ignoreFirstChars,
             useFirstChars               => $self->useFirstChars,
-            usePatternBackRefs          => $self->usePatternBackRefs,
+            usePatternGroups            => $self->usePatternGroups,
 
             noExtractList               => [$self->noExtractList],
 
@@ -531,8 +531,8 @@
         { $_[0]->{ignoreFirstChars} }
     sub useFirstChars
         { $_[0]->{useFirstChars} }
-    sub usePatternBackRefs
-        { $_[0]->{usePatternBackRefs} }
+    sub usePatternGroups
+        { $_[0]->{usePatternGroups} }
 
     sub noExtractList
         { my $self = shift; return @{$self->{noExtractList}}; }

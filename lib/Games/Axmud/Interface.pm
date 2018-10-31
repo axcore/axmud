@@ -451,6 +451,7 @@
                 'default_pane'          => TRUE,
                 'pane_name'             => '',
                 'temporary'             => FALSE,
+                'cooldown'              => 0,
                 'style_mode'            => 0,
                 'style_text'            => '',
                 'style_underlay'        => '',
@@ -607,6 +608,7 @@
                 'ignore_case'           => TRUE,
                 'keep_checking'         => FALSE,
                 'temporary'             => FALSE,
+                'cooldown'              => 0,
             },
 
             # Ordering
@@ -751,6 +753,7 @@
             # Current values for each macro attribute (initially set to defaults)
             attribHash                  => {
                 'temporary'             => FALSE,
+                'cooldown'              => 0,
             },
 
             # Ordering
@@ -1044,6 +1047,7 @@
             # Current values for each hook attribute (initially set to defaults)
             attribHash                  => {
                 'temporary'             => FALSE,
+                'cooldown'              => 0,
             },
 
             # Ordering

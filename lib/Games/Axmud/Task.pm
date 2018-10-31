@@ -857,7 +857,7 @@
         my ($self, $skill, $check) = @_;
 
         # Local variables
-        my ($guildObj, $charObj, $statusTaskObj);
+        my ($guildObj, $charObj);
 
         # Check for improper arguments
         if (! defined $skill || defined $check)  {
@@ -868,7 +868,6 @@
         # Import current profiles and the Status task
         $guildObj = $self->session->currentGuild;
         $charObj = $self->session->currentChar;
-        $statusTaskObj = $self->session->statusTask;
 
         # Check if the skill is already at the maximum level for this guild
         if (
@@ -886,14 +885,14 @@
 
         # Check that the character has enough XP, if the amount of XP needed is known
         if (
-            $statusTaskObj
-            && $statusTaskObj->xpCurrent                            # Character's XP known
+            $charObj
+            && $charObj->xpCurrent                                  # Character's XP known
             && $charObj->ivShow('skillNextXPHash', $skill)
-            && $statusTaskObj->xpCurrent  < $charObj->ivShow('skillNextXPHash', $skill)
+            && $charObj->xpCurrent  < $charObj->ivShow('skillNextXPHash', $skill)
         ) {
             return $self->writeWarning(
                 'Can\'t advance the skill \'' . $skill . '\' - not enough XP (have '
-                . $statusTaskObj->xpCurrent . ', need '
+                . $charObj->xpCurrent . ', need '
                 . $charObj->ivShow('skillNextXPHash', $skill),
                 $self->_objClass . '->checkAdvancePossible',
             );
@@ -901,14 +900,14 @@
 
         # Check that the character has enough cash, if the amount of cash needed is known
         if (
-            $statusTaskObj
-            && defined $statusTaskObj->purseContents                # Character's purse known
+            $charObj
+            && defined $charObj->purseContents                      # Character's purse known
             && $charObj->ivShow('skillNextCashHash', $skill)
-            && $statusTaskObj->purseContents < $charObj->ivShow('skillNextCashHash', $skill)
+            && $charObj->purseContents < $charObj->ivShow('skillNextCashHash', $skill)
         ) {
             return $self->writeWarning(
                 'Can\'t advance the skill \'' . $skill . '\' - not enough cash (have '
-                . $statusTaskObj->purseContents . ', need '
+                . $charObj->purseContents . ', need '
                 . $charObj->ivShow('skillNextCashHash', $skill),
                 $self->_objClass . '->checkAdvancePossible',
             );
@@ -930,7 +929,7 @@
         #   e.g. 'You improve your skills'
         #
         # The function sets a flag IV to true, enabling $self->doStage to take action when the
-        #   task loop next spins. Backreferences and the interface's ->propertyHash are not used
+        #   task loop next spins. Group substrings and the interface's ->propertyHash are not used
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -938,7 +937,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -951,7 +951,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -961,7 +961,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->advanceSuccessSeen', @_);
@@ -998,7 +998,7 @@
         #   e.g. 'You don't have enough experience to improve your skills'
         #
         # The function sets a flag IV to true, enabling $self->doStage to take action when the
-        #   task loop next spins. Backreferences and the interface's ->propertyHash are not used
+        #   task loop next spins. Group substrings and the interface's ->propertyHash are not used
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -1006,7 +1006,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -1019,7 +1020,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -1029,7 +1030,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->advanceFailSeen', @_);
@@ -1465,15 +1466,15 @@
         @list = $self->session->currentWorld->targetKilledPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $interfaceObj);
+            my ($pattern, $grpNum, $interfaceObj);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
 
             # Check that @list doesn't contain missing or extra arguments
-            if (! defined $backRef) {
+            if (! defined $grpNum) {
 
                 $self->writeWarning(
                     'Missing arguments in current world profile\'s ->targetKilledPatternList IV',
@@ -1504,9 +1505,9 @@
             } else {
 
                 # Give the trigger some properties that will help $self->barPatternSeen to decide
-                #   what to do when the trigger fires (specifically, which backreference contains
+                #   what to do when the trigger fires (specifically, which group substring contains
                 #   the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
             }
         }
 
@@ -1543,15 +1544,15 @@
         @list = $self->session->currentWorld->interactionSuccessPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $interfaceObj);
+            my ($pattern, $grpNum, $interfaceObj);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
 
             # Check that @list doesn't contain missing or extra arguments
-            if (! defined $backRef) {
+            if (! defined $grpNum) {
 
                 $self->writeWarning(
                     'Missing arguments in current world profile\'s'
@@ -1583,9 +1584,9 @@
             } else {
 
                 # Give the trigger some properties that will help $self->interactionSuccessSeen to
-                #   decide what to do when the trigger fires (specifically, which backreference
+                #   decide what to do when the trigger fires (specifically, which group substring
                 #   contains the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
             }
         }
 
@@ -1593,15 +1594,15 @@
         @list = $self->session->currentWorld->interactionFailPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $interfaceObj);
+            my ($pattern, $grpNum, $interfaceObj);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
 
             # Check that @list doesn't contain missing or extra arguments
-            if (! defined $backRef) {
+            if (! defined $grpNum) {
 
                 $self->writeWarning(
                     'Missing arguments in current world profile\'s'
@@ -1633,9 +1634,9 @@
             } else {
 
                 # Give the trigger some properties that will help $self->interactionFailSeen to
-                #   decide what to do when the trigger fires (specifically, which backreference
+                #   decide what to do when the trigger fires (specifically, which group substring
                 #   contains the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
             }
         }
 
@@ -1643,15 +1644,15 @@
         @list = $self->session->currentWorld->interactionFightPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $interfaceObj);
+            my ($pattern, $grpNum, $interfaceObj);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
 
             # Check that @list doesn't contain missing or extra arguments
-            if (! defined $backRef) {
+            if (! defined $grpNum) {
 
                 $self->writeWarning(
                     'Missing arguments in current world profile\'s'
@@ -1683,9 +1684,9 @@
             } else {
 
                 # Give the trigger some properties that will help $self->interactionFightSeen to
-                #   decide what to do when the trigger fires (specifically, which backreference
+                #   decide what to do when the trigger fires (specifically, which group substring
                 #   contains the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
             }
         }
 
@@ -1693,15 +1694,15 @@
         @list = $self->session->currentWorld->interactionDisasterPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $interfaceObj);
+            my ($pattern, $grpNum, $interfaceObj);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
 
             # Check that @list doesn't contain missing or extra arguments
-            if (! defined $backRef) {
+            if (! defined $grpNum) {
 
                 $self->writeWarning(
                     'Missing arguments in current world profile\'s'
@@ -1733,9 +1734,9 @@
             } else {
 
                 # Give the trigger some properties that will help $self->interactionDisasterSeen to
-                #   decide what to do when the trigger fires (specifically, which backreference
+                #   decide what to do when the trigger fires (specifically, which group substring
                 #   contains the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
             }
         }
 
@@ -1755,13 +1756,13 @@
         #
         # The world profile's target killed list occurs in groups of 2 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
+        #   [1] - which group substring contains the data we need
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #
-        # This function checks the appropriate backref and updates IVs for this task and/or the
-        #   Status task. If there are any commands in $self->fightCmdList, they are sent to the
+        # This function checks the appropriate group substring and updates IVs for this task and/or
+        #   the Status task. If there are any commands in $self->fightCmdList, they are sent to the
         #   world.
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
@@ -1770,7 +1771,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -1784,17 +1786,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $victim, $charObj, $taskObj);
+        my ($obj, $grpNum, $victim, $charObj, $taskObj);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->targetKilledSeen', @_);
@@ -1816,9 +1818,9 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         # Get the victim
-        $victim = $$backRefListRef[$backRefNum];
+        $victim = $$grpStringListRef[$grpNum];
         if (! defined $victim) {
 
             return undef;
@@ -1848,14 +1850,14 @@
         # Fight complete. Update the current character profile's IVs
         if ($charObj) {
 
-            # The current version of the Attack task assumes that every fight ends in a kill - if
-            #   this isn't the behaviour you want, you'll need to write code that checks strings
-            #   like 'You attack four orcs' and accurately works out, under all circumstances, how
-            #   many targets have been attacked
-            # Note that the character profile's ->wimpyCount, ->fightDefeatCount, ->fleeCount and
-            #   ->escapedCount IVs aren't updated by this task for the same reason
-            $charObj->ivIncrement('fightCount');
-            $charObj->ivIncrement('killCount');
+#            # The current version of the Attack task assumes that every fight ends in a kill - if
+#            #   this isn't the behaviour you want, you'll need to write code that checks strings
+#            #   like 'You attack four orcs' and accurately works out, under all circumstances, how
+#            #   many targets have been attacked
+#            # Note that the character profile's ->wimpyCount, ->fightDefeatCount, ->fleeCount and
+#            #   ->escapedCount IVs aren't updated by this task for the same reason
+#            $charObj->ivIncrement('fightCount');
+#            $charObj->ivIncrement('killCount');
 
             # ->fightVictimHash is similarly not updated, but we can update the base string hash
             if ($charObj->ivExists('fightVictimStringHash', lc($victim))) {
@@ -1920,14 +1922,14 @@
         # The world profile's successful interaction list occurs in groups of 2 elements,
         #   representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
+        #   [1] - which group substring contains the data we need
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #
-        # This function checks the appropriate backref and updates IVs for this task and/or the
-        #   Status task. If there are any commands in $self->interactCmdList, they are sent to the
-        #   world.
+        # This function checks the appropriate group substring and updates IVs for this task and/or
+        #   the Status task. If there are any commands in $self->interactCmdList, they are sent to
+        #   the world
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -1935,7 +1937,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -1949,17 +1952,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $victim, $charObj, $taskObj);
+        my ($obj, $grpNum, $victim, $charObj, $taskObj);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->interactionSuccessSeen', @_);
@@ -1981,9 +1984,9 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         # Get the victim
-        $victim = $$backRefListRef[$backRefNum];
+        $victim = $$grpStringListRef[$grpNum];
         if (! defined $victim) {
 
             return undef;
@@ -2013,8 +2016,8 @@
         # Update the current character profile's IVs
         if ($charObj) {
 
-            $charObj->ivIncrement('interactCount');
-            $charObj->ivIncrement('interactSuccessCount');
+#            $charObj->ivIncrement('interactCount');
+#            $charObj->ivIncrement('interactSuccessCount');
 
             # ->interactionVictimHash can't be updated because we don't have a main noun; but
             #   we can still update the base string hash
@@ -2082,14 +2085,14 @@
         #
         # The world profile's failed interaction list occurs in groups of 2 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
+        #   [1] - which group substring contains the data we need
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #
-        # This function checks the appropriate backref and updates IVs for this task and/or the
-        #   Status task. If there are any commands in $self->interactCmdList, they are sent to the
-        #   world.
+        # This function checks the appropriate group substring and updates IVs for this task and/or
+        #   the Status task. If there are any commands in $self->interactCmdList, they are sent to
+        #   the world
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -2097,7 +2100,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -2111,17 +2115,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $victim, $charObj, $taskObj);
+        my ($obj, $grpNum, $victim, $charObj, $taskObj);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->interactionFailSeen', @_);
@@ -2143,9 +2147,9 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         # Get the victim
-        $victim = $$backRefListRef[$backRefNum];
+        $victim = $$grpStringListRef[$grpNum];
         if (! defined $victim) {
 
             return undef;
@@ -2172,12 +2176,12 @@
             }
         }
 
-        # Interaction complete. Update the current character profile's IVs
-        if ($charObj) {
-
-            $charObj->ivIncrement('interactCount');
-            $charObj->ivIncrement('interactFailCount');
-        }
+#        # Interaction complete. Update the current character profile's IVs
+#        if ($charObj) {
+#
+#            $charObj->ivIncrement('interactCount');
+#            $charObj->ivIncrement('interactFailCount');
+#        }
 
         # Update the Status task's IVs
         if ($taskObj) {
@@ -2237,14 +2241,14 @@
         #
         # The world profile's interaction fight list occurs in groups of 2 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
+        #   [1] - which group substring contains the data we need
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #
-        # This function checks the appropriate backref and updates IVs for this task and/or the
-        #   Status task. If there are any commands in $self->interactCmdList, they are sent to the
-        #   world.
+        # This function checks the appropriate group substring and updates IVs for this task and/or
+        #   the Status task. If there are any commands in $self->interactCmdList, they are sent to
+        #   the world
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -2252,7 +2256,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -2266,17 +2271,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $victim, $charObj, $taskObj);
+        my ($obj, $grpNum, $victim, $charObj, $taskObj);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->interactionFightSeen', @_);
@@ -2298,9 +2303,9 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         # Get the victim
-        $victim = $$backRefListRef[$backRefNum];
+        $victim = $$grpStringListRef[$grpNum];
         if (! defined $victim) {
 
             return undef;
@@ -2327,12 +2332,12 @@
             }
         }
 
-        # Interaction complete. Update the current character profile's IVs
-        if ($charObj) {
-
-            $charObj->ivIncrement('interactCount');
-            $charObj->ivIncrement('interactFightCount');
-        }
+#        # Interaction complete. Update the current character profile's IVs
+#        if ($charObj) {
+#
+#            $charObj->ivIncrement('interactCount');
+#            $charObj->ivIncrement('interactFightCount');
+#        }
 
         # Update the Status task's IVs
         if ($taskObj) {
@@ -2391,14 +2396,14 @@
         #
         # The world profile's failed interaction list occurs in groups of 2 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
+        #   [1] - which group substring contains the data we need
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #
-        # This function checks the appropriate backref and updates IVs for this task and/or the
-        #   Status task. If there are any commands in $self->interactCmdList, they are sent to the
-        #   world.
+        # This function checks the appropriate group substring and updates IVs for this task and/or
+        #   the Status task. If there are any commands in $self->interactCmdList, they are sent to
+        #   the world
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -2406,7 +2411,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -2420,17 +2426,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $victim, $charObj, $taskObj);
+        my ($obj, $grpNum, $victim, $charObj, $taskObj);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -2455,9 +2461,9 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         # Get the victim
-        $victim = $$backRefListRef[$backRefNum];
+        $victim = $$grpStringListRef[$grpNum];
         if (! defined $victim) {
 
             return undef;
@@ -2484,12 +2490,12 @@
             }
         }
 
-        # Interaction complete. Update the current character profile's IVs
-        if ($charObj) {
-
-            $charObj->ivIncrement('interactCount');
-            $charObj->ivIncrement('interactDisasterCount');
-        }
+#        # Interaction complete. Update the current character profile's IVs
+#        if ($charObj) {
+#
+#            $charObj->ivIncrement('interactCount');
+#            $charObj->ivIncrement('interactDisasterCount');
+#        }
 
         # Update the Status task's IVs
         if ($taskObj) {
@@ -3520,7 +3526,7 @@
         #   e.g. Gandalf tells you, Give me the ring!
         #
         # The function diverts the line to the task window, displaying it in a tab matching the
-        #   pattern's corresponding channel. Backreferences are ignored
+        #   pattern's corresponding channel. Group substrings are ignored
         #
         # The trigger interfaces have the following properties in ->propertyHash:
         #   channel         - Which channel to use
@@ -3531,7 +3537,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -3545,7 +3552,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -3555,7 +3562,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -3938,6 +3945,10 @@
         #   someone else)
         $self->{chatContactObj}         = undef;
 
+        # The user's IP address, set when the task starts. If GA::Client->ipv4Get can't find it,
+        #   it uses a backup value of '127.0.0.1' (which is what we would get from
+        #   IO::Socket::INET->sockhost, if a socket were open)
+        $self->{ip}                     = undef;
         # The port currently used for accepting incoming connections ('undef' when not accepting
         #   any)
         $self->{port}                   = undef;
@@ -4007,7 +4018,7 @@
                                         = undef;
 
         # The name used in chat sessions. Set to the current character's name (albeit capitalised),
-        #   unless changed
+        #   unless changed by the user
         $self->{localName}              = undef;
         # The Windows .bmp file being used as the chat icon ('undef' if no icon used)
         $self->{localIconFile}          = undef;
@@ -4228,8 +4239,8 @@
             'icon'                      => 'setIcon',
             'email'                     => 'setEmail',
             'smiley'                    => 'setSmiley',
-            'help'                      => 'winHelp',
             'save'                      => 'saveContact',
+            'help'                      => 'winHelp',
             'mode'                      => 'setMode',
         };
 
@@ -4669,7 +4680,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my $result;
+        my ($localIP, $result);
 
         # Check for improper arguments
         if (defined $check) {
@@ -4690,6 +4701,19 @@
 
             # Make sure this isn't the lead Chat task
             $self->ivPoke('leadTaskFlag', FALSE);
+        }
+
+        # Fetch the user's IP address
+        $localIP = $axmud::CLIENT->ipv4Get();
+        if (! defined $localIP) {
+
+            # Emergency failsafe; use what we would get from IO::Socket::INET->sockhost, if it were
+            #   open
+            $self->ivPoke('ip', '127.0.0.1');
+
+        } else {
+
+            $self->ivPoke('ip', $localIP);
         }
 
         # Check that there is a current character. If not, change this task's ->status back to
@@ -5340,12 +5364,17 @@
         %ttsHash = $self->ttsFlagAttribHash;
         if (
             $self->ivShow('ttsFlagAttribHash', 'chat')
-            || ($type eq 'chat_out' && $ttsHash{'chatout'})
-            || ($type eq 'chat_in' && $ttsHash{'chatin'})
-            || ($type eq 'echo' && $ttsHash{'chatecho'})
-            || ($type eq 'system' && $ttsHash{'chatsystem'})
-            || ($type eq 'remote' && $ttsHash{'chatremote'})
-            || ($type eq 'snoop' && $ttsHash{'chatsnoop'})
+            || (
+                defined $type
+                && (
+                    ($type eq 'chat_out' && $ttsHash{'chatout'})
+                    || ($type eq 'chat_in' && $ttsHash{'chatin'})
+                    || ($type eq 'echo' && $ttsHash{'chatecho'})
+                    || ($type eq 'system' && $ttsHash{'chatsystem'})
+                    || ($type eq 'remote' && $ttsHash{'chatremote'})
+                    || ($type eq 'snoop' && $ttsHash{'chatsnoop'})
+                )
+            )
         ) {
             $self->ttsQuick($text);
         }
@@ -6018,10 +6047,21 @@
             # If the opcode wasn't restricted...
             if ($result) {
 
-                $self->writeText(
-                    'You chat to ' . $self->remoteName . ', \'' . $argString . '\'',
-                    'chat_out',
-                );
+                # Don't enclose a recognised smiley in quotes
+                if ($axmud::CLIENT->ivExists('constChatSmileyHash', $argString)) {
+
+                    $self->writeText(
+                        'You chat to ' . $self->remoteName . ', ' . $argString,
+                        'chat_out',
+                    );
+
+                } else {
+
+                    $self->writeText(
+                        'You chat to ' . $self->remoteName . ', \'' . $argString . '\'',
+                        'chat_out',
+                    );
+                }
             }
         }
 
@@ -6128,10 +6168,21 @@
                 $self->localGroup,
             );
 
-            $self->writeText(
-                'You chat to the group ' . $self->localGroup . ', \'' . $argString . '\'',
-                'chat_out',
-            );
+            # Don't enclose a recognised smiley in quotes
+            if ($axmud::CLIENT->ivExists('constChatSmileyHash', $argString)) {
+
+                $self->writeText(
+                    'You chat to the group ' . $self->localGroup . ', ' . $argString,
+                    'chat_out',
+                );
+
+            } else {
+
+                $self->writeText(
+                    'You chat to the group ' . $self->localGroup . ', \'' . $argString . '\'',
+                    'chat_out',
+                );
+            }
         }
 
         return 1;
@@ -6238,10 +6289,21 @@
                 $self->formatText($argString, FALSE, $self->ivShow('constOptHash', 'EVERYBODY')),
             );
 
-            $self->writeText(
-                'You chat to everybody, \'' . $argString . '\'',
-                'chat_out',
-            );
+            # Don't enclose a recognised smiley in quotes
+            if ($axmud::CLIENT->ivExists('constChatSmileyHash', $argString)) {
+
+                $self->writeText(
+                    'You chat to everybody, ' . $argString,
+                    'chat_out',
+                );
+
+            } else {
+
+                $self->writeText(
+                    'You chat to everybody, \'' . $argString . '\'',
+                    'chat_out',
+                );
+            }
         }
 
         return 1;
@@ -7231,37 +7293,38 @@
         $line .= '-' x length($header);
         $self->writeText($line);
 
-        $self->writeText('Connection IP     : ' . $self->clientSocket->peerhost());
-        $self->writeText('Advertised IP     : ' . $self->remoteIP);
-        $self->writeText('Advertised port   : ' . $self->remotePort);
+        $self->writeText('Your IP            : ' . $self->ip);
+        $self->writeText('Incoming IP        : ' . $self->clientSocket->peerhost());
+        $self->writeText('IP advertised as   : ' . $self->remoteIP);
+        $self->writeText('Port advertised as : ' . $self->remotePort);
 
         if ($self->chatType == $self->ivShow('constOptHash', 'MM')) {
             $type = 'MudMaster';
         } else {
             $type = 'zChat';
         }
-        $self->writeText('Chat protocol     : ' . $type);
+        $self->writeText('Chat protocol      : ' . $type);
 
         if ($self->publicConnectionFlag) {
             $public = 'Public';
         } else {
             $public = 'Private';
         }
-        $self->writeText('Privacy           : ' . $public);
+        $self->writeText('Privacy            : ' . $public);
 
         if ($self->servingFlag) {
             $serving = 'Yes';
         } else {
             $serving = 'No';
         }
-        $self->writeText('Serving messages  : ' . $serving);
+        $self->writeText('Serving messages   : ' . $serving);
 
         if ($self->localGroup) {
             $group = $self->localGroup;
         } else {
             $group = '<none>';
         }
-        $self->writeText('Group             : ' . $group);
+        $self->writeText('Group              : ' . $group);
 
         if ($self->chatType != $self->ivShow('constOptHash', 'MM')) {
 
@@ -7270,7 +7333,7 @@
             } else {
                 $cmd = 'Not allowed';
             }
-            $self->writeText('Remote commands   : ' . $cmd);
+            $self->writeText('Remote commands    : ' . $cmd);
 
             if ($self->localStatus == 0) {
                 $status = '0 (no status)';
@@ -7281,7 +7344,7 @@
             } elsif ($self->localStatus == 3) {
                 $status = '3 (away from keys)';
             }
-            $self->writeText('zChat status      : ' . $status);
+            $self->writeText('zChat status       : ' . $status);
 
             if ($self->remoteStatus == 0) {
                 $status = '0 (no status)';
@@ -7292,7 +7355,7 @@
             } elsif ($self->remoteStatus == 3) {
                 $status = '3 (away from keys)';
             }
-            $self->writeText('Remote status     : ' . $status);
+            $self->writeText('Remote status      : ' . $status);
         }
 
         if ($self->remoteVersion) {
@@ -7300,57 +7363,57 @@
         } else {
             $version = '<unknown>';
         }
-        $self->writeText('Remote version    : ' . $version);
+        $self->writeText('Remote version     : ' . $version);
 
         if ($self->localEmail) {
             $email = $self->localEmail;
         } else {
             $email = '<not set>';
         }
-        $self->writeText('Local email       : ' . $email);
+        $self->writeText('Local email        : ' . $email);
 
         if ($self->remoteEmail) {
             $email = $self->remoteEmail;
         } else {
             $email = '<unknown>';
         }
-        $self->writeText('Remote email      : ' . $email);
+        $self->writeText('Remote email       : ' . $email);
 
         if ($self->allowSmileyFlag) {
             $allowSmiley = 'on';
         } else {
             $allowSmiley = 'off';
         }
-        $self->writeText('Smileys on        : ' . $allowSmiley);
+        $self->writeText('Smileys on         : ' . $allowSmiley);
 
         if ($self->allowSnoopFlag) {
             $canSnoop = 'yes';
         } else {
             $canSnoop = 'no';
         }
-        $self->writeText('Peer can snoop    : ' . $canSnoop);
+        $self->writeText('Peer can snoop     : ' . $canSnoop);
 
         if ($self->isSnoopedFlag) {
             $isSnoop = 'yes';
         } else {
             $isSnoop = 'no';
         }
-        $self->writeText('Peer is snooping  : ' . $isSnoop);
+        $self->writeText('Peer is snooping   : ' . $isSnoop);
 
         if ($self->fileDir) {
 
             if ($self->fileDir == $self->ivShow('constOptHash', 'SENDING')) {
-                $self->writeText('Sending file      : ' . $self->fileName);
+                $self->writeText('Sending file       : ' . $self->fileName);
             } else {
-                $self->writeText('Receiving file    : ' . $self->fileName);
+                $self->writeText('Receiving file     : ' . $self->fileName);
             }
 
-            $self->writeText('File size         : ' . $self->fileTotalSize);
-            $self->writeText('Bytes transferred : ' . $self->fileSize);
+            $self->writeText('File size          : ' . $self->fileTotalSize);
+            $self->writeText('Bytes transferred  : ' . $self->fileSize);
 
             $bytes = $self->fileTotalSize - $self->fileSize;
             $self->writeText(
-                'Bytes left        : ' . $bytes . ' ('
+                'Bytes left         : ' . $bytes . ' ('
                     . sprintf("%.0f", 100 * ($bytes/$self->fileTotalSize)) . '%)'
             );
         }
@@ -7960,7 +8023,7 @@
                 "CHAT:$localName\n"     # CHAT:<chat name>\n
                 . "%s"                  # <ip address>
                 . "%-5s",               # <port>
-                $socket->sockhost(),
+                $self->ip,
                 $listenPort,
             );
 
@@ -7985,7 +8048,7 @@
                 . "0\n"                 # <ChatID>\lf
                 . "%s"                  # <ClientIPAddress>
                 . "%05u",               # <ClientPort>
-                $socket->sockhost(),
+                $self->ip,
                 $listenPort,
             );
         }
@@ -9416,7 +9479,13 @@
         if (! $isEmoteFlag) {
 
             # e.g. 'Alice chats to Bob, 'hello''
-            $string = $self->localName . ' chats to ' . $destName . ', \'' . $text . "'";
+
+            # Don't enclose a recognised smiley in quotes
+            if ($axmud::CLIENT->ivExists('constChatSmileyHash', $text)) {
+                $string = $self->localName . ' chats to ' . $destName . ', ' . $text;
+            } else {
+                $string = $self->localName . ' chats to ' . $destName . ', \'' . $text . "'";
+            }
 
         } elsif ($destName eq 'you') {
 
@@ -10051,6 +10120,20 @@
         # Display the communication in the task window
         Encode::from_to($text, $self->encoding, 'utf-8-strict');
         $stripText = $self->stripAnsi($text);
+
+        # If an Axmud user types a smiley like :), Axmud will send <You chat to Alice, :)> rather
+        #   than <You chat to Alice, ':)>
+        # Other clients probably won't do that, so check $stripText against smileys. If it ends in
+        #   a smiley, surrounded by quotes, strip the quotes
+        OUTER: foreach my $smiley ($axmud::CLIENT->ivKeys('constChatSmileyHash')) {
+
+            my $modSmiley = quotemeta($smiley);
+            if ($stripText =~ s/\'$modSmiley\'\s*$/$smiley/) {
+
+                # Once one smiley is found, no point checking the others
+                last OUTER;
+            }
+        }
 
         $self->writeText(
             $stripText,
@@ -11528,6 +11611,8 @@
     sub chatContactObj
         { $_[0]->{chatContactObj} }
 
+    sub ip
+        { $_[0]->{ip} }
     sub port
         { $_[0]->{port} }
     sub acceptSocket
@@ -12119,9 +12204,69 @@
         return 1;
     }
 
-#   sub doShutdown {}           # Inherited from generic task
+    sub doShutdown {
 
-#   sub doReset {}              # Inherited from generic task
+        # Called just before the task completes a shutdown
+        # For process tasks, called by $self->main. For activity tasks, called by $self->shutdown
+        #
+        # Destroys any macros created by this task
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doShutdown', @_);
+        }
+
+        # Remove macros, ready for $self->resetMacros to be called to create new ones
+        foreach my $interfaceObj ($self->macroList) {
+
+            # The TRUE argument means 'don't show an error message if the interface doesn't exist'
+            $self->session->deleteInterface($interfaceObj->name, TRUE);
+        }
+
+        return 1;
+    }
+
+    sub doReset {
+
+        # Called just before the task completes a reset
+        # For process tasks, called by $self->main. For activity tasks, called by $self->reset
+        #
+        # Destroys any macros created by this task
+        #
+        # Expected arguments
+        #   $newTaskObj     - The replacement task object
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $newTaskObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $newTaskObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doReset', @_);
+        }
+
+        # Remove macros, ready for $self->resetMacros to be called to create new ones
+        foreach my $interfaceObj ($self->macroList) {
+
+            # The TRUE argument means 'don't show an error message if the interface doesn't exist'
+            $self->session->deleteInterface($interfaceObj->name, TRUE);
+        }
+
+        return 1;
+    }
 
     sub resetMacros {
 
@@ -13675,12 +13820,12 @@
         @list = $self->session->currentWorld->conditionPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $gag, $condition, $interfaceObj, $flag);
+            my ($pattern, $grpNum, $gag, $condition, $interfaceObj, $flag);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
             # 'hide' to use a gag trigger, 'show' to use a non-gag trigger
             $gag = shift @list;
             # The corresponding condition in the range 0-100
@@ -13733,7 +13878,7 @@
 
                 # Give the trigger some properties that will help $self->triggerSeen to decide
                 #   what to do when the trigger fires
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
                 $interfaceObj->ivAdd('propertyHash', 'condition', $condition);
             }
         }
@@ -13811,13 +13956,13 @@
         #
         # The world profile's condition pattern list occurs in groups of 4 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the object (set to 0 if no part of the string is
+        #   [1] - which group substring contains the object (set to 0 if no part of the string is
         #           guaranteed to contain the object)
         #   [2] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger
         #   [3] - the corresponding condition in the range 0-100
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1])
+        #   grp_num         - which group substring contains the data we need (same as [1])
         #   condition       - the corresponding condition (same as [3])
         #
         # This function analyses the matched string and updates IVs accordingly
@@ -13828,7 +13973,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -13842,20 +13988,20 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
         my (
-            $obj, $backRefNum, $condition, $worldModelObj, $invTaskObj, $objString,
+            $obj, $grpNum, $condition, $worldModelObj, $invTaskObj, $objString,
             @objList, @newList,
         );
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->triggerSeen', @_);
@@ -13877,7 +14023,7 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         $condition = $obj->ivShow('propertyHash', 'condition');
 
         # Import the model object and inventory task
@@ -13888,15 +14034,15 @@
         #   and the Inventory task is still in 'active' mode
         if ($self->activeFlag && $self->currentObject && $invTaskObj && $invTaskObj->activeFlag) {
 
-            # If $backRefNum is not 0, the line contains the object itself (e.g. 'The metal axe is
-            #   in an excellent condition'), so we can check whether it matches $self->currentObj
-            # If $backRefNum is 0, then no part of the line contains the actual object (e.g. 'It is
-            #   in an excellent condition'), so we must just assume that the condition refers to
+            # If $grpNum is not 0, the line contains the object itself (e.g. 'The metal axe is in an
+            #   excellent condition'), so we can check whether it matches $self->currentObj
+            # If $grpNum is 0, then no part of the line contains the actual object (e.g. 'It is in
+            #   an excellent condition'), so we must just assume that the condition refers to
             #   $self->currentObj
-            if ($backRefNum) {
+            if ($grpNum) {
 
                 # $objectString is set to a string like 'a metal axe'
-                $objString = $$backRefListRef[$backRefNum];
+                $objString = $$grpStringListRef[$grpNum];
                 # Remove unnecessary whitespace from $objectString, if it was defined (an object
                 #   string might not be needed at this world)
                 if ($objString) {
@@ -13993,7 +14139,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -14006,7 +14153,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -14016,7 +14163,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -14040,7 +14187,7 @@
 
         # Respond to the fired trigger
 
-#       $self->writeDebug('Condition task ignore pattern found: \'' . $$backRefListRef[0] . '\'');
+#       $self->writeDebug('Condition task ignore pattern found: \'' . $$grpStringListRef[0] . '\'');
 
         return 1;
     }
@@ -15234,7 +15381,7 @@
         #   e.g. Gandalf tells you, Give me the ring!
         #
         # The function diverts the line to the task window and modifies its background colour
-        #   (temporarily). Backreferences are ignored
+        #   (temporarily). Group substrings are ignored
         #
         # The trigger interfaces have the following properties in ->propertyHash:
         #   channel         - Which channel to use
@@ -15245,7 +15392,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -15259,7 +15407,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -15269,7 +15417,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -16745,12 +16893,12 @@
         @list = $worldObj->inventoryPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $type, $gag, $posn, $flag, $interfaceObj);
+            my ($pattern, $grpNum, $type, $gag, $posn, $flag, $interfaceObj);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
             # The type of possession: a key in %typeHash
             $type = shift @list;
             # 'hide' to use a gag trigger, 'show' to use a non-gag trigger
@@ -16808,7 +16956,7 @@
 
                 # Give the trigger some properties that will help $self->triggerSeen to decide
                 #   what to do when the trigger fires
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
                 $interfaceObj->ivAdd('propertyHash', 'inv_type', $type);
                 $interfaceObj->ivAdd('propertyHash', 'position', $posn);
             }
@@ -17588,7 +17736,7 @@
         #
         # The world profile's inventory pattern list occurs in groups of 5 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need (might be 0 if the line doesn't
+        #   [1] - which group substring contains the data we need (might be 0 if the line doesn't
         #           contain any objects)
         #   [2] - what kind of possession this is. Standard strings are:
         #           'wield', 'hold', 'wear', 'carry' for objects;
@@ -17604,7 +17752,7 @@
         #           if it is always the end of an inventory list; 'optional' for any other line
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #   inv_type        - 'wield', 'hold', 'wear', 'carry', 'sack', 'purse', 'deposit',
         #                       'deposit_only', 'withdraw', 'withdraw_only', 'balance',
         #                       'empty_purse', 'empty_bank', 'misc', 'ignore' (same as [2] )
@@ -17618,7 +17766,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -17631,17 +17780,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $invType, $posn, $backRefString, $worldObj, $nowFlag);
+        my ($obj, $grpNum, $invType, $posn, $grpString, $worldObj, $nowFlag);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->triggerSeen', @_);
@@ -17663,16 +17812,16 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         $invType = $obj->ivShow('propertyHash', 'inv_type');
         $posn = $obj->ivShow('propertyHash', 'position');
 
-        if ($backRefNum) {
+        if ($grpNum) {
 
-            # Get the correct backref
-            $backRefString = $$backRefListRef[$backRefNum];
+            # Get the correct group substring
+            $grpString = $$grpStringListRef[$grpNum];
             # Trim any unnecessary whitespace from it
-            $backRefString = $axmud::CLIENT->trimWhitespace($backRefString);
+            $grpString = $axmud::CLIENT->trimWhitespace($grpString);
         }
 
         # Shortcut to the current world
@@ -17729,7 +17878,7 @@
                 $self->session->conditionTask->set_previousList($self->previousList);
             }
 
-            # The objects in $backRef must be processed
+            # The objects in $grpString must be processed
             $nowFlag = TRUE;
 
         } elsif ($posn eq 'stop') {
@@ -17764,7 +17913,7 @@
         #   or is between a 'start' and 'stop' line (or if we're in mode 'match_all', in which case
         #   all lines are processed immediately)
         if (
-            $backRefString      # No backreference means the line doesn't contain object(s)
+            $grpString          # No group substring means the line doesn't contain object(s)
             && (
                 $nowFlag
                 || $posn eq 'stop'
@@ -17772,7 +17921,7 @@
                 || $self->startFlag
             )
         ) {
-            $self->processString($backRefString, $invType);
+            $self->processString($grpString, $invType);
         }
 
         # In modes 'start_stop', 'start_empty', store an inventory line which has already been used
@@ -17805,7 +17954,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -17818,7 +17968,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -17828,7 +17978,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -17864,7 +18014,7 @@
             $self->ivPoke('lastLine', $self->session->displayBufferLast);
         }
 
-#       $self->writeDebug('Inventory task ignore pattern found: \'' . $$backRefListRef[0] . '\'');
+#       $self->writeDebug('Inventory task ignore pattern found: \'' . $$grpStringListRef[0] . '\'');
 
         return 1;
     }
@@ -19542,9 +19692,9 @@
         } elsif ($self->stage == 3) {
 
             my (
-                $worldObj, $modelObj, $bufferLast, $bufferObj, $restartLine, $startLine, $stopLine,
-                $step, $roomObj, $exitFlag,
-                @sortedList, @extractList, @notAnchorList, @failExitList, @specialDepartList,
+                $worldObj, $modelObj, $bufferLast, $bufferObj, $restartLine, $startLineNum,
+                $stopLineNum, $step, $lastRoomObj, $lastDestRoomObj,
+                @sortedList,
             );
 
             # Stage 3 of the task analyses each line of text received from the world, looking for
@@ -19612,18 +19762,20 @@
                 #   Situation 2     - move forwards, starting with the line immediately after the
                 #                       last line analysed, the previous time the display buffer was
                 #                       checked (recorded in $self->lastBufferLine)
-                $restartLine = $startLine = $self->lastBufferLine + 1;
-                $stopLine = $bufferLast;
-                # If the display buffer has just been reduced in size by the user, $startLine may be
-                #   outside the buffer
-                if ($startLine < $self->session->displayBufferFirst) {
+                $restartLine = $startLineNum = $self->lastBufferLine + 1;
+                $stopLineNum = $bufferLast;
+                # If the display buffer has just been reduced in size by the user, $startLineNum may
+                #   be outside the buffer
+                if ($startLineNum < $self->session->displayBufferFirst) {
 
-                    $startLine = $self->session->displayBufferFirst;
+                    $startLineNum = $self->session->displayBufferFirst;
                 }
 
                 if ($axmud::CLIENT->debugLocatorFlag) {
 
-                    $self->writeDebug('LOCATOR 111: Start #' . $startLine . ', stop #' . $stopLine);
+                    $self->writeDebug(
+                        'LOCATOR 111: Start #' . $startLineNum . ', stop #' . $stopLineNum,
+                    );
                 }
 
                 if (
@@ -19632,7 +19784,7 @@
                     && ! $worldObj->basicMappingFlag
                 ) {
                     # Situation 1 - move backwards from the end of the display buffer
-                    ($stopLine, $startLine) = ($startLine, $stopLine);
+                    ($stopLineNum, $startLineNum) = ($startLineNum, $stopLineNum);
                     $step = -1;
 
                     if ($axmud::CLIENT->debugLocatorFlag) {
@@ -19647,68 +19799,75 @@
                 }
 
                 # Compose a list of buffer line numbers which we have to process
-                OUTER: for (my $line = $startLine; $line != ($stopLine + $step); $line+= $step) {
-
-                    push (@sortedList, $line);
+                OUTER: for (
+                    my $lineNum = $startLineNum;
+                    $lineNum != ($stopLineNum + $step);
+                    $lineNum+= $step
+                ) {
+                    push (@sortedList, $lineNum);
                 }
 
-                # Compose a list of patterns that match lines which definitely aren't anchor lines
-                @notAnchorList = $worldObj->notAnchorPatternList;
-                # Compose list of failed exit patterns
-                @failExitList = (
-                    $worldObj->doorPatternList,
-                    $worldObj->lockedPatternList,
-                    $worldObj->failExitPatternList,
-                );
-
-                # Compose a list of special departure patterns for the current room (if it is
-                #   known); the list is updated below if the current room changes
-                # NB The contents of this list are changed by $self->processLine when an anchor
-                #   line is found
-                if ($self->modelNumber) {
-
-                    $roomObj = $modelObj->ivShow('modelHash', $self->modelNumber);
-                    if ($roomObj) {
-
-                        @specialDepartList = $roomObj->specialDepartPatternList;
-                    }
-                }
-
-                # Now analyse each line in the display buffer between $startLine and $stopLine,
-                #   looking for anchor lines and failed exit, involuntary exit, dark room and
-                #   unspecified room patterns
+                # Now analyse each line in the display buffer between $startLineNum and
+                #   $stopLineNum, looking for anchor lines and failed exit, involuntary exit, dark
+                #   room and unspecified room patterns
                 do {
 
-                    my ($line, $bufferObj, $roomObj);
+                    my ($lineNum, $bufferObj, $cmdObj, $roomObj, $destRoomObj);
 
-                    $line = shift @sortedList;
-                    $bufferObj = $self->session->ivShow('displayBufferHash', $line);
+                    $lineNum = shift @sortedList;
+                    $bufferObj = $self->session->ivShow('displayBufferHash', $lineNum);
+
+                    # Get the first command GA::Buffer::Cmd in $self->moveList, if any ($cmdObj
+                    #   remains set to 'undef', if there are none)
+                    $cmdObj = $self->ivIndex('moveList', 0);
 
                     # Get the automapper's current room again (in case it has changed since the
                     #   last call to ->processLine
-                    if ($self->modelNumber) {
+                    if (! $self->modelNumber) {
+
+                        # Automapper object doesn't have a current room set
+                        $lastRoomObj = undef;
+                        $lastDestRoomObj = undef;
+
+                    } elsif (! $lastRoomObj || $self->modelNumber != $lastRoomObj->number) {
+
+                        # This is the first iteration of the loop, or the current room has changed
+                        #   since the previous iteration of this loop
                         $roomObj = $modelObj->ivShow('modelHash', $self->modelNumber);
+
+                        # If $cmdObj is set, work out the likely destination room for a move in that
+                        #   direction
+                        if ($cmdObj && $cmdObj->moveFlag) {
+
+                            $destRoomObj = $self->session->mapObj->identifyDestination($cmdObj);
+                        }
+
+                        # ($destRoomObj may be 'undef')
+                        $lastDestRoomObj = $destRoomObj;
+
                     } else {
-                        $roomObj = undef;       # In case the automapper got lost
+
+                        # The current room hasn't changed since the previous iteration of this loop
+                        $roomObj = $lastRoomObj;
+                        $destRoomObj = $lastDestRoomObj;
                     }
 
                     if ($axmud::CLIENT->debugLocatorFlag) {
 
-                        $self->writeDebug('LOCATOR 121: Processing line ' . $line);
+                        $self->writeDebug('LOCATOR 121: Processing line ' . $lineNum);
                     }
 
                     if (
                         ! $self->processLine(
-                            $line,
-                            $bufferObj,
-                            $stopLine,
-                            $restartLine,
                             $worldObj,
                             $modelObj,
-                            \@notAnchorList,
-                            \@failExitList,
-                            \@specialDepartList,
+                            $lineNum,
+                            $bufferObj,
+                            $stopLineNum,
+                            $restartLine,
                             $roomObj,               # May be 'undef'
+                            $cmdObj,                # May be 'undef'
+                            $destRoomObj,           # May be 'undef'
                         )
                     ) {
                         # No more lines should be analysed until some more text is received from
@@ -19760,11 +19919,11 @@
 
                 } elsif ($step == -1) {
 
-                    $self->ivPoke('lastBufferLine', $startLine);
+                    $self->ivPoke('lastBufferLine', $startLineNum);
 
                 } else {
 
-                    $self->ivPoke('lastBufferLine', $stopLine);
+                    $self->ivPoke('lastBufferLine', $stopLineNum);
                 }
 
                 if ($axmud::CLIENT->debugLocatorFlag) {
@@ -19833,7 +19992,6 @@
 
                         # Check any following lines of text
                         $nextLine = $lineList[0];
-#                        if ($nextLine =~ m/^\s*[a-z]/) {
                         if ($nextLine =~ m/^\s*[[:lower:]]/) {
 
                             $nextLine = shift @lineList;
@@ -19861,31 +20019,25 @@
         # Called by $self->doStage (at stage 3) to analyse a single line from the display buffer
         #
         # Expected arguments
+        #   $worldObj       - Shortcut to $self->session->currentWorld
+        #   $modelObj       - Shortcut to $self->session->worldModelObj
         #   $lineNum        - The display buffer number of the line being analysed
         #   $bufferObj      - $lineNum's corresponding display buffer object
-        #   $stopLine       - The display buffer number of last line that can be analysed during
+        #   $stopLineNum    - The display buffer number of last line that can be analysed during
         #                       this task loop (might be the same as $lineNum. If we're checking
         #                       lines from beginning to end, it might be higher than $lineNum; if
         #                       we're checking lines from end to beginning, it might be lower than
         #                       $lineNum)
         #   $restartLineNum - The display buffer number of the first line being analysed during this
         #                       task loop (might be the same as $lineNum)
-        #   $worldObj       - Shortcut to $self->session->currentWorld
-        #   $modelObj       - Shortcut to $self->session->worldModelObj
-        #   $notAnchorListRef
-        #                   - Reference to a list of patterns which match lines that definitely
-        #                       aren't anchor lines
-        #   $failExitListRef
-        #                   - Reference to a combined list of failed exit patterns (comprising
-        #                       $worldObj->doorPatternList, ->lockedPatternList and
-        #                       ->failExitPatternList; may be a reference to an empty list)
-        #   $specialDepartListRef
-        #                   - Reference to a list of special departure patterns for the automapper's
-        #                       current room (if the room is known); otherwise reference to an empty
-        #                       list
         #
         # Optional arguments
         #   $mapRoomObj     - The automapper's current room object, if known (otherwise 'undef')
+        #   $cmdObj         - The first GA::Buffer::Cmd object in $self->moveList that stores a
+        #                       movement command ('undef' if there are none, or if $mapRoomObj is
+        #                       not defined)
+        #   $destRoomObj    - If $cmdObj is set, the likely destination room for that movement, if
+        #                       known ('undef' otherwise
         #
         # Return values
         #   'undef' on improper arguments, if there's an error or if no more lines should be
@@ -19893,26 +20045,24 @@
         #   1 otherwise
 
         my (
-            $self, $lineNum, $bufferObj, $stopLine, $restartLineNum, $worldObj, $modelObj,
-            $notAnchorListRef, $failExitListRef, $specialDepartListRef, $mapRoomObj, $check,
+            $self, $worldObj, $modelObj, $lineNum, $bufferObj, $stopLineNum, $restartLineNum,
+            $mapRoomObj, $cmdObj, $destRoomObj, $check,
         ) = @_;
 
         # Local variables
         my (
-            $lineText, $existsFlag, $failExitFlag, $foundFailPattern, $cmdObj, $moveDir,
+            $lineText, $existsFlag, $failExitFlag, $foundFailPattern, $moveDir,
             $involuntaryExitFlag, $foundInvoluntaryPattern, $specialFlag, $followCmd, $followFlag,
             $followAnchorFlag, $newCmdObj, $ghostRoomObj, $exitNum, $exitObj, $updateFlag,
             $tempRoomObj, $anchorFlag, $promptFlag, $missionObj,
-            @followPatternList, @followAnchorPatternList, @promptList,
+            @followPatternList, @followAnchorPatternList, @unspecifiedList, @promptList,
             %mxpPropHash,
         );
 
         # Check for improper arguments
         if (
-            ! defined $lineNum || ! defined $bufferObj || ! defined $stopLine
-            || ! defined $restartLineNum || ! defined $worldObj || ! defined $modelObj
-            || ! defined $notAnchorListRef || ! defined $failExitListRef
-            || ! defined $specialDepartListRef || defined $check
+            ! defined $worldObj || ! defined $modelObj || ! defined $lineNum || ! defined $bufferObj
+            || ! defined $stopLineNum || ! defined $restartLineNum || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->processLine', @_);
         }
@@ -19926,7 +20076,7 @@
         # Check this line against those which are definitely not anchor lines (these patterns mostly
         #   used in basic mapping mode, when worlds echo back the movement command, as in MUD1 /
         #   British Legends)
-        OUTER: foreach my $pattern (@$notAnchorListRef) {
+        OUTER: foreach my $pattern ($worldObj->notAnchorPatternList) {
 
             if ($lineText =~ m/$pattern/) {
 
@@ -19973,8 +20123,11 @@
         #   patterns defined by the current world profile
         if (! $failExitFlag) {
 
-            OUTER: foreach my $pattern (@$failExitListRef) {
-
+            OUTER: foreach my $pattern (
+                $worldObj->doorPatternList,
+                $worldObj->lockedPatternList,
+                $worldObj->failExitPatternList,
+            ) {
                 if ($lineText =~ m/$pattern/) {
 
                     if ($axmud::CLIENT->debugLocatorFlag) {
@@ -20008,10 +20161,11 @@
         # React to a failed exit pattern from parts 2-3
         if ($failExitFlag) {
 
-            # Find the first command object in the task's move lists that represents a movement
-            #   command, and remove it from the list
-            $cmdObj = $self->removeFirstMove();
             if ($cmdObj) {
+
+                # Remove the command object that represents the first movement command in
+                #   $self->moveList
+                $self->removeFirstMove($cmdObj);
 
                 # Find the direction of the failed move, if known (otherwise, $moveDir remains set
                 #   to 'undef')
@@ -20132,9 +20286,13 @@
         # React to an involuntary (or repulse) exit pattern from parts 5-6
         if ($involuntaryExitFlag) {
 
-            # Find the first command object in the task's move lists that represents a movement
-            #   command, and remove it from the list
-            $cmdObj = $self->removeFirstMove();
+            if ($cmdObj) {
+
+                # Remove the command object that represents the first movement command in
+                #   $self->moveList
+                $self->removeFirstMove($cmdObj);
+            }
+
             # Direction of move is unknown
             $self->ivUndef('prevMoveObj');
             $self->ivUndef('prevMove');
@@ -20162,24 +20320,28 @@
 
             # PART 8
             # Look for special departure patterns
-            OUTER: foreach my $pattern (@$specialDepartListRef) {
+            if ($mapRoomObj && $self->roomCount) {
 
-                if ($lineText =~ m/$pattern/) {
+                OUTER: foreach my $pattern ($mapRoomObj->specialDepartPatternList) {
 
-                    # $line contains one of the current room's special departure patterns, meaning
-                    #   the character has moved, but that the world is not going to send a room
-                    #   statement for the new room
-                    # Treat it as an unspecified room (and therefore an anchor line)
+                    if ($lineText =~ m/$pattern/) {
 
-                    if ($axmud::CLIENT->debugLocatorFlag) {
+                        # $line contains one of the current room's special departure patterns,
+                        #   meaning the character has moved, but that the world is not going to send
+                        #   a room statement for the new room
+                        # Treat it as an unspecified room (and therefore an anchor line)
 
-                        $self->session->writeDebug(
-                            'LOCATOR 251: Found special departure pattern (anchor): ' . $pattern,
-                        );
+                        if ($axmud::CLIENT->debugLocatorFlag) {
+
+                            $self->session->writeDebug(
+                                'LOCATOR 251: Found special departure pattern (anchor): '
+                                . $pattern,
+                            );
+                        }
+
+                        $specialFlag = TRUE;
+                        last OUTER;
                     }
-
-                    $specialFlag = TRUE;
-                    last OUTER;
                 }
             }
 
@@ -20193,18 +20355,18 @@
                 do {
 
                     my (
-                        $pattern, $backRef, $result,
-                        @backRefList,
+                        $pattern, $grpNum, $result,
+                        @grpStringList,
                     );
 
                     $pattern = shift @followPatternList;
-                    $backRef = shift @followPatternList;
+                    $grpNum = shift @followPatternList;
 
-                    $result = @backRefList = ($lineText =~ m/$pattern/);
+                    $result = @grpStringList = ($lineText =~ m/$pattern/);
 
-                    # The direction of travel (e.g. 'north') should be in @backRefList, at index
-                    #   number $backRef
-                    if ($result && scalar (@backRefList) >= $backRef) {
+                    # The direction of travel (e.g. 'north') should be in @grpStringList, at index
+                    #   number $grpNum
+                    if ($result && scalar (@grpStringList) >= $grpNum) {
 
                         # $line contains one of the current room's follow patterns, meaning
                         #   the character has moved and that the world is going to send a room
@@ -20218,8 +20380,8 @@
 
                         # NB The GA::Session converts all world commands to lower case, so we'll do
                         #   the same here
-                        $backRef--;
-                        $followCmd = lc($backRefList[$backRef]);
+                        $grpNum--;
+                        $followCmd = lc($grpStringList[$grpNum]);
 
                         # Leave the loop early
                         @followPatternList = ();
@@ -20240,18 +20402,18 @@
                 do {
 
                     my (
-                        $pattern, $backRef, $result,
-                        @backRefList,
+                        $pattern, $grpNum, $result,
+                        @grpStringList,
                     );
 
                     $pattern = shift @followAnchorPatternList;
-                    $backRef = shift @followAnchorPatternList;
+                    $grpNum = shift @followAnchorPatternList;
 
-                    $result = @backRefList = ($lineText =~ m/$pattern/);
+                    $result = @grpStringList = ($lineText =~ m/$pattern/);
 
-                    # The direction of travel (e.g. 'north') should be in @backRefList, at index
-                    #   number $backRef
-                    if ($result && scalar (@backRefList) >= $backRef) {
+                    # The direction of travel (e.g. 'north') should be in @grpStringList, at index
+                    #   number $grpNum
+                    if ($result && scalar (@grpStringList) >= $grpNum) {
 
                         # $line contains one of the current room's follow anchor patterns, meaning
                         #   the character has moved, but that the world is not going to send a room
@@ -20267,8 +20429,8 @@
 
                         # NB The GA::Session converts all world commands to lower case, so we'll do
                         #   the same here
-                        $backRef--;
-                        $followCmd = lc($backRefList[$backRef]);
+                        $grpNum--;
+                        $followCmd = lc($grpStringList[$grpNum]);
 
                         # Leave the loop early
                         @followPatternList = ();
@@ -20410,7 +20572,14 @@
             # Look for unspecified room patterns
             if (! $specialFlag) {
 
-                INNER: foreach my $pattern ($worldObj->unspecifiedRoomPatternList) {
+                # Check the room's unspecified patterns first, then the world's unspecified patterns
+                if ($destRoomObj) {
+
+                    push (@unspecifiedList, $destRoomObj->unspecifiedPatternList);
+                }
+
+                push (@unspecifiedList, $worldObj->unspecifiedRoomPatternList);
+                INNER: foreach my $pattern (@unspecifiedList) {
 
                     if ($lineText =~ m/$pattern/) {
 
@@ -20539,7 +20708,7 @@
                 #   room statement)
                 $self->processMxpProperties(
                     $lineNum,
-                    $stopLine,
+                    $stopLineNum,
                     $worldObj,
                     %mxpPropHash,
                 );
@@ -20548,7 +20717,7 @@
 
         # PARTS 13-16
         # Look for an anchor line (unless a failed exit, involuntary exit, special departure pattern
-        #   or an MXP room taghas already been found)
+        #   or an MXP room tag has already been found)
         if (! $failExitFlag && ! $involuntaryExitFlag && ! $specialFlag && ! $anchorFlag) {
 
             # PART 13
@@ -20974,14 +21143,16 @@
             $self->ivIncrement('roomCount');
             $self->ivUndef('modelNumber');
 
-            # Get the first command in $self->cmdObjList which represents a look/glance command or a
-            #   movement command (including redirect mode commands, assisted moves and teleport
-            #   commands). We'll assume that it was responsible for the room statement whose anchor
-            #   line appears on this line
-            $cmdObj = $self->getFirstMove();
+            # $cmdObj represents a look/glance command or a movement command (including redirect
+            #   mode commands, assisted moves and teleport commands). We'll assume that it was
+            #   responsible for the room statement whose anchor line appears on this line
+            if ($cmdObj) {
+
+                $self->removeFirstMove($cmdObj);
+            }
 
             # Are the command lists empty of look/glance/movement commands?
-            if (! defined $cmdObj) {
+            if (! $cmdObj) {
 
                 # The move list is empty. Inform the automapper of a move in an unknown direction
                 #   and let it work out where the character is now
@@ -21041,18 +21212,6 @@
             if ($self->taskWinFlag) {
 
                 $self->refreshWin();
-            }
-
-            # Update the local list of special departure patterns, ready for the next
-            #   iteration of this loop
-            if ($self->modelNumber) {
-
-                $mapRoomObj = $self->session->worldModelObj->ivShow(
-                    'modelHash',
-                    $self->modelNumber,
-                );
-
-                @$specialDepartListRef = $mapRoomObj->specialDepartPatternList;
             }
 
             # Also, if there's a current mission running that's on a Locator break, we need to
@@ -21161,7 +21320,7 @@
         # Expected arguments
         #   $lineNum        - The display buffer number of the line containing an MXP tag property,
         #                       the first matching line found for the current room statement
-        #   $stopLine       - The display buffer number of last line that can be analysed during
+        #   $stopLineNum    - The display buffer number of last line that can be analysed during
         #                       this task loop (might be the same as $lineNum. If we're checking
         #                       lines from beginning to end, it might be higher than $lineNum; if
         #                       we're checking lines from end to beginning, it might be lower than
@@ -21174,13 +21333,13 @@
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $lineNum, $stopLine, $worldObj, %mxpPropHash) = @_;
+        my ($self, $lineNum, $stopLineNum, $worldObj, %mxpPropHash) = @_;
 
         # Local variables
         my ($roomObj, $step, $origLineNum, $matchCount, $loopCount, $useLine, $prevProp);
 
         # Check for improper arguments
-        if (! defined $lineNum || ! defined $stopLine || ! defined $worldObj || ! %mxpPropHash) {
+        if (! defined $lineNum || ! defined $stopLineNum || ! defined $worldObj || ! %mxpPropHash) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpProperties', @_);
         }
@@ -21197,7 +21356,7 @@
         );
 
         # Move backwards or forwards (default) in the display buffer
-        if ($stopLine < $lineNum) {
+        if ($stopLineNum < $lineNum) {
             $step = -1;
         } else {
             $step = 1;
@@ -22305,30 +22464,30 @@
                         }
                     }
 
-                    # Use only the backrefrences from a matching pattern, if the component's IV is
-                    #   set and its regex matches the line (but not if ->useTextColour,
+                    # Use only the group substrings from a matching pattern, if the component's IV
+                    #   is set and its regex matches the line (but not if ->useTextColour,
                     #   ->ignoreFirstChars or ->useFirstChars are set)
                     if (
                         ! $componentObj->useTextColour
                         && ! $componentObj->ignoreFirstChars
                         && ! $componentObj->useFirstChars
-                        && $componentObj->usePatternBackRefs
+                        && $componentObj->usePatternGroups
                     ) {
                         foreach my $text (@lineTextList) {
 
                             my (
                                 $regex, $result, $original,
-                                @backRefList,
+                                @grpStringList,
                             );
 
-                            $regex = $componentObj->usePatternBackRefs;
+                            $regex = $componentObj->usePatternGroups;
                             $original = $text;
 
-                            $result = @backRefList = ($text =~ m/$regex/);
+                            $result = @grpStringList = ($text =~ m/$regex/);
                             if ($result) {
 
-                                $text = join('', @backRefList);
-                                # In case the combined backreferences contain no text, restore the
+                                $text = join('', @grpStringList);
+                                # In case the combined group substrings contain no text, restore the
                                 #   original line
                                 if (! $text) {
 
@@ -22863,7 +23022,6 @@
             #   at this line
             if ($componentObj->upperCount) {
 
-#                if ($thisLineText =~ m/^[A-Z]/) {
                 if ($thisLineText =~ m/^[[:upper:]]/) {
 
                     $upperCount++;
@@ -22881,7 +23039,6 @@
 
             if ($componentObj->otherCount) {
 
-#                if ($thisLineText =~ m/^[a-z0-9_]/) {
                 if ($thisLineText =~ m/^[[:lower:]0-9\_]/) {
 
                     $otherCount++;
@@ -23195,7 +23352,6 @@
             #   at this line
             if ($componentObj->upperCount) {
 
-#                if ($thisLineText =~ m/^[A-Z]/) {
                 if ($thisLineText =~ m/^[[:upper:]]/) {
 
                     $upperCount++;
@@ -23213,7 +23369,6 @@
 
             if ($componentObj->otherCount) {
 
-#                if ($thisLineText =~ m/^[a-z0-9_]/) {
                 if ($thisLineText =~ m/^[[:lower:]0-9\_]/) {
 
                     $otherCount++;
@@ -24074,126 +24229,6 @@
         return undef;
     }
 
-    sub getFirstMove {
-
-        # Called by $self->processLine (at stage 3)
-        # Whenever a world command is sent, a GA::Buffer::Cmd object is created, and that object
-        #   is stored in $self->cmdObjList. In most cases, each world command gets its own buffer
-        #   object, but for assisted moves, a sequence of one or more world commands (comprising a
-        #   single assisted move) is assigned to a single buffer object
-        # If it's a look, glance or movement command, the object is also stored in $self->moveList
-        #   (movement commands include redirect mode commands and assisted moves)
-        #
-        # Walk through both lists, looking for the first object representing a look/glance/movement
-        #   command. If one is found, remove everything in the lists up to (and including) that
-        #   object, and return the object. If none are found, empty both lists (we don't need them
-        #   any more).
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments, if the lists don't contain any matching commands or if
-        #       a matching command appears in one list, but not the other (very unlikely)
-        #   Otherwise, return the first maching GA::Buffer::Cmd found
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $thisObj, $matchFlag,
-            @cmdObjList, @moveList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->getFirstMove', @_);
-        }
-
-        # Import the move lists
-        @cmdObjList = $self->cmdObjList;
-        @moveList = $self->moveList;
-
-        # First check @cmdObjList
-        OUTER: for (my $count = 0; $count < scalar @cmdObjList; $count++) {
-
-            my $obj = $cmdObjList[$count];
-
-            if ($obj->lookFlag || $obj->glanceFlag || $obj->moveFlag) {
-
-                # Object representing a look/glance/movement command found
-                $thisObj = $obj;
-                # Remove everything in the list, up to and including this object
-                splice (@cmdObjList, 0, ($count + 1));
-
-                last OUTER;
-            }
-        }
-
-        if ($thisObj) {
-
-            # Look for the same object in @moveList. If it's not there, or if the first object
-            #   representing a movement command is a different object, it's an error
-            OUTER: for (my $count = 0; $count < scalar @moveList; $count++) {
-
-                my $obj = $moveList[$count];
-
-                if ($obj eq $thisObj) {
-
-                    # The same object found
-                    $matchFlag = TRUE;
-                    # Remove everything in the list, up to and including this object
-                    splice (@moveList, 0, ($count + 1));
-
-                    last OUTER;
-
-                } elsif ($obj->lookFlag || $obj->glanceFlag || $obj->moveFlag) {
-
-                    last OUTER;
-                }
-            }
-
-            if (! $matchFlag) {
-
-                $self->writeError(
-                    'Command object lists do not match',
-                    $self->_objClass . '->getFirstMove',
-                );
-
-                # Empty both lists, to prevent a whole stream of errors
-                $self->ivEmpty('cmdObjList');
-                $self->ivEmpty('moveList');
-                $self->ivUndef('prevCmdBufferNum');
-
-                # Update the task window's title bar (if open)
-                $self->prepareTitleBar();
-
-                return undef;
-
-            } else {
-
-                # Object representing a look/glance/movement command found (in both lists)
-
-                # Restore IVs
-                $self->ivPoke('cmdObjList', @cmdObjList);
-                $self->ivPoke('moveList', @moveList);
-                $self->ivUndef('prevCmdBufferNum');
-
-                # Update the task window's title bar (if open)
-                $self->prepareTitleBar();
-
-                # Return the object found
-                return $thisObj;
-            }
-
-        } else {
-
-            # No object representing a look/glance/movement command found
-            return undef;
-        }
-    }
-
     sub removeFirstMove {
 
         # Called by $self->processLine (at stage 3)
@@ -24204,22 +24239,27 @@
         # If it's a look, glance or movement command, the object is also stored in $self->moveList
         #   (movement commands include redirect mode commands and assisted moves)
         #
-        # Check these lists, looking for the first object representing a movement command. If found,
-        #   remove just that object from both lists, and returns it
+        # The calling function can specify a GA::Buffer::Cmd object, which should exist in
+        #   $self->cmdObjList, and be the first item in $self->moveList. If so, remove everything in
+        #   both lists up to (and including) that object
+        # If the calling function doesn't specify a GA::Buffer::Cmd object, empty both lists (as we
+        #   have no further use for their contents)
         #
         # Expected arguments
         #   (none besides $self)
         #
+        # Optional arguments
+        #   $cmdObj     - The GA::Buffer::Cmd object to remove (or 'undef' to empty both lists)
+        #
         # Return values
-        #   'undef' on improper arguments, if the lists don't contain any movement commands or if
-        #       a movement command appears in one list, but not the other (very unlikely)
-        #   Otherwise, return the first GA::Buffer::Cmd found
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
 
-        my ($self, $check) = @_;
+        my ($self, $cmdObj, $check) = @_;
 
         # Local variables
         my (
-            $thisObj, $matchFlag,
+            $matchFlag,
             @cmdObjList, @moveList,
         );
 
@@ -24229,6 +24269,19 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->removeFirstMove', @_);
         }
 
+        if (! $cmdObj) {
+
+            # Just empty both lists
+            $self->ivEmpty('cmdObjList');
+            $self->ivEmpty('moveList');
+            $self->ivUndef('prevCmdBufferNum');
+
+            # Update the task window's title bar (if open)
+            $self->prepareTitleBar();
+
+            return 1;
+        }
+
         # Import the move lists
         @cmdObjList = $self->cmdObjList;
         @moveList = $self->moveList;
@@ -24236,79 +24289,47 @@
         # First check @cmdObjList
         OUTER: for (my $count = 0; $count < scalar @cmdObjList; $count++) {
 
-            my $obj = $cmdObjList[$count];
+            my $thisObj = $cmdObjList[$count];
 
-            if ($obj->moveFlag) {
+            if ($thisObj eq $cmdObj) {
 
                 # Object representing a movement command found
-                $thisObj = $obj;
+                $matchFlag = TRUE;
                 # Remove it from the list
-                splice (@cmdObjList, $count, 1);
+                splice (@cmdObjList, 0, ($count + 1));
 
                 last OUTER;
             }
         }
 
-        if ($thisObj) {
+        if (! $matchFlag || $moveList[0] ne $cmdObj) {
 
-            # Look for the same object in @moveList. If it's not there, or if the first object
-            #   representing a movement command is a different object, it's an error
-            OUTER: for (my $count = 0; $count < scalar @moveList; $count++) {
+            $self->writeError(
+                'Command object lists do not match',
+                $self->_objClass . '->removeFirstMove',
+            );
 
-                my $obj = $moveList[$count];
+            # Empty both lists, to prevent a whole stream of errors
+            $self->ivEmpty('cmdObjList');
+            $self->ivEmpty('moveList');
+            $self->ivUndef('prevCmdBufferNum');
 
-                if ($obj eq $thisObj) {
+            # Update the task window's title bar (if open)
+            $self->prepareTitleBar();
 
-                    # The same object found
-                    $matchFlag = TRUE;
-                    # Remove it from the list
-                    splice (@moveList, $count, 1);
-
-                    last OUTER;
-
-                } elsif ($obj->moveFlag) {
-
-                    last OUTER;
-                }
-            }
-
-            if (! $matchFlag) {
-
-                $self->writeError(
-                    'Command object lists do not match',
-                    $self->_objClass . '->removeFirstMove',
-                );
-
-                # Empty both lists, to prevent a whole stream of errors
-                $self->ivEmpty('cmdObjList');
-                $self->ivEmpty('moveList');
-                $self->ivUndef('prevCmdBufferNum');
-
-                # Update the task window's title bar (if open)
-                $self->prepareTitleBar();
-
-                return undef;
-
-            } else {
-
-                # Object representing a movement command found (in both lists)
-
-                # Restore IVs
-                $self->ivPoke('cmdObjList', @cmdObjList);
-                $self->ivPoke('moveList', @moveList);
-                $self->ivUndef('prevCmdBufferNum');
-
-                # Update the task window's title bar (if open)
-                $self->prepareTitleBar();
-
-                # Return the object found
-                return $thisObj;
-            }
+            return undef;
 
         } else {
 
-            # No object representing a movement command found
-            return undef;
+            # Object representing a movement command found (in both lists). Restore IVs
+            $self->ivPoke('cmdObjList', @cmdObjList);
+            $self->ivPoke('moveList', splice(@moveList, 1));
+            $self->ivUndef('prevCmdBufferNum');
+
+            # Update the task window's title bar (if open)
+            $self->prepareTitleBar();
+
+            return 1;
         }
     }
 
@@ -25365,7 +25386,7 @@
             my ($info, $state, $modExit, $exitObj);
 
             # If any parts of the exit match a pattern in $worldObj->exitInfoPatternList, remove
-            #   them (but keep the first backreference, if any)
+            #   them (but keep the first group substring, if any)
             INNER: foreach my $pattern ($worldObj->exitInfoPatternList) {
 
                 if ($exit =~ m/$pattern/) {
@@ -27933,7 +27954,55 @@
 
 #   sub init {}                 # Inherited from generic task
 
-#   sub doInit {}               # Inherited from generic task
+    sub doInit {
+
+        # Called by $self->init, just before the task completes its setup ($self->init)
+        # If raw text (from before the login sequence was completed) is waiting to be displayed in
+        #   this task's window, display it
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doInit', @_);
+        }
+
+        @list = $self->session->rawTextBufferList;
+
+        if ($self->winObj && @list) {
+
+            do {
+
+                my ($count, $packetText);
+
+                $count = shift @list;
+                $packetText = shift @list;
+
+                $self->insertText('<' . $count . '>', 'WHITE', 'ul_red', 'echo');
+
+                foreach my $string (split(m/\n/, $packetText)) {
+
+                    $self->insertText($string, 'after');
+                }
+
+            } until (! @list);
+        }
+
+        $self->session->reset_rawTextBufferList();
+
+        return 1;
+    }
 
 #   sub doShutdown {}           # Inherited from generic task
 
@@ -28086,7 +28155,14 @@
 #       $self->{activeFlag}             = TRUE;             # Task can't be activated/disactivated
 
         # Task parameters
-        #   (none)
+        # If TRUE, tokens are displayed one-per-line. If FALSE, tokens are displayed in their real
+        #   lines (i.e., a new line is started after a newline token is displayed)
+        $self->{splitLineFlag}          = FALSE;
+        # If TRUE, the token type is displayed alongside the token itself. If FALSE, only the token
+        #   is displayed
+        $self->{showTypeFlag}           = FALSE;
+        # If TRUE, the packet number is displayed. If FALSE, it's not displayed
+        $self->{countPacketFlag}        = FALSE;
 
         # Bless task
         bless $self, $class;
@@ -28115,9 +28191,119 @@
         return $self;
     }
 
-#   sub clone {}                # Inherited from generic task
+    sub clone {
 
-#   sub preserve {}             # Inherited from generic task
+        # Create a clone of an existing task
+        # Usually used upon connection to a world, when every task in the initial tasklists must
+        #   be cloned into a new object, representing a task in the current tasklist
+        # (Also used when cloning a profile object, since all the tasks in its initial tasklist must
+        #   also be cloned)
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world). Custom tasks aren't
+        #                   cloned (at the moment)
+        #
+        # Optional arguments
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
+        #                   existing task is stored
+        #   $profCategory
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
+        #                   'world', 'race', 'char', etc)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be cloned
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # For initial tasks, check that $profName exists
+        if (
+            $taskType eq 'initial'
+            && defined $profName
+            && ! $session->ivExists('profHash', $profName)
+        ) {
+            return $axmud::CLIENT->writeError(
+                'Can\'t create cloned task because \'' . $profName . '\' profile doesn\'t exist',
+                $self->_objClass . '->clone',
+            );
+        }
+
+        # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+        #   cloned)
+        if (! $self->checkPlugins()) {
+
+            return undef;
+        }
+
+        # Create the new task, using default settings and parameters
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
+
+        # Most of the cloned task's settings have default values, but a few are copied from the
+        #   original
+        $self->cloneTaskSettings($clone);
+
+        # Give the new (cloned) task the same initial parameters as the original one
+        $clone->{splitLineFlag}         = $self->splitLineFlag;
+        $clone->{showTypeFlag}          = $self->showTypeFlag;
+        $clone->{countPacketFlag}       = $self->countPacketFlag;
+
+        # Cloning complete
+        return $clone;
+    }
+
+    sub preserve {
+
+        # Called by $self->main whenever this task is reset, in order to preserve some if its task
+        #   parameters (but not necessarily all of them)
+        #
+        # Expected arguments
+        #   $newTask    - The new task which has been created, to which some of this task's instance
+        #                   variables might have to be transferred
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $newTask isn't in the GA::Session's current
+        #       tasklist
+        #   1 on success
+
+        my ($self, $newTask, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $newTask || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->preserve', @_);
+        }
+
+        # Check the task is in the current tasklist
+        if (! $self->session->ivExists('currentTaskHash', $newTask->uniqueName)) {
+
+            return $self->writeWarning(
+                '\'' . $self->uniqueName . '\' task missing from the current tasklist',
+                $self->_objClass . '->preserve',
+            );
+        }
+
+        # Preserve some task parameters (the others are left with their default settings, some of
+        #   which will be re-initialised in stage 2)
+
+        # Preserve the display flags
+        $newTask->ivPoke('splitLineFlag', $self->splitLineFlag);
+        $newTask->ivPoke('showTypeFlag', $self->showTypeFlag);
+        $newTask->ivPoke('countPacketFlag', $self->countPacketFlag);
+
+        return 1;
+    }
 
 #   sub setParentFileObj {}     # Inherited from generic task
 
@@ -28141,11 +28327,178 @@
 
 #   sub init {}                 # Inherited from generic task
 
-#   sub doInit {}               # Inherited from generic task
+    sub doInit {
+
+        # Called by $self->init, just before the task completes its setup ($self->init)
+        # If raw tokens (from before the login sequence was completed) are waiting to be displayed
+        #   in this task's window, display them
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $newlineFlag,
+            @list,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doInit', @_);
+        }
+
+        @list = $self->session->rawTokenBufferList;
+        $newlineFlag = FALSE;
+
+        if ($self->winObj && @list) {
+
+            do {
+
+                my ($count, $listRef);
+
+                $count = shift @list;
+                $listRef = shift @list;
+
+                if ($self->countPacketFlag) {
+
+                    $self->insertText('<' . $count . '>', 'WHITE', 'ul_red');
+                }
+
+                if (@$listRef) {
+
+                    # @$listRef is in the form (type, argument, type, argument...) where
+                    #   'argument' is usually the token itself
+                    do {
+
+                        $newlineFlag = $self->displayRawToken(
+                            shift @$listRef,
+                            shift @$listRef,
+                            $newlineFlag,
+                        );
+
+                    } until (! @$listRef);
+                }
+
+            } until (! @list);
+        }
+
+        $self->session->reset_rawTokenBufferList();
+
+        return 1;
+    }
 
 #   sub doShutdown {}           # Inherited from generic task
 
 #   sub doReset {}              # Inherited from generic task
+
+    sub displayRawToken {
+
+        # Called by GA::Session->displayRawIncomingData to display a single raw token
+        # Also called by $self->doInit
+        #
+        # Expected arguments
+        #   $type           - The token type
+        #   $arg            - Usually the contents of the token itself (but might also be a list
+        #                       reference)
+        #   $newlineFlag    - A value preserved between successive calls to this function
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the new value of $newlineFlag (TRUE or FALSE), ready for the next call
+        #       to this function
+
+        my ($self, $type, $arg, $newlineFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $colour, $listRef, $listRef2,
+            @argList,
+        );
+
+        # Check for improper arguments
+        if (! defined $type || ! defined $arg || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->displayRawToken', @_);
+        }
+
+        $colour = $self->session->ivShow('constRawHash', $type);
+
+        if ($self->showTypeFlag) {
+
+            push (@argList,
+                '[' . $type . ']',
+                [
+                    'RED',
+                ],
+            );
+        }
+
+        # If $type is 'ctrl' or 'seq', then $arg is a reference to a list; otherwise it's a token
+        if ($type eq 'ctrl' || $type eq 'seq') {
+
+            push (@argList,
+                $$arg[0],
+                [
+                    $colour,
+                ],
+            );
+
+        } elsif ($type eq 'nl') {
+
+            push (@argList,
+                'NEWLINE',
+                [
+                    $colour,
+                ],
+            );
+
+        } else {
+
+            push (@argList,
+                $arg,
+                [
+                    $colour,
+                ],
+            );
+        }
+
+        if (! $newlineFlag) {
+
+            $listRef = $argList[1];
+            push (@$listRef, 'echo');
+
+        } else {
+
+            $newlineFlag = FALSE;
+        }
+
+        # If the token type is displayed, must display the second string on the same line as the
+        #   first
+        $listRef2 = $argList[3];
+        if (defined $listRef2) {
+
+            push (@$listRef2, 'echo');
+        }
+
+        # If a newline token has just been displayed, don't add 'echo' on the next iteration of the
+        #   calling function's do loop
+        if ($type eq 'nl') {
+
+            $newlineFlag = TRUE;
+        }
+
+        # Display this token in the task window
+        $self->insertMultipleText(@argList);
+
+        return $newlineFlag;
+    }
 
     ##################
     # Response methods
@@ -28160,6 +28513,13 @@
 
     ##################
     # Accessors - task parameters - get
+
+    sub splitLineFlag
+        { $_[0]->{splitLineFlag} }
+    sub showTypeFlag
+        { $_[0]->{showTypeFlag} }
+    sub countPacketFlag
+        { $_[0]->{countPacketFlag} }
 }
 
 { package Games::Axmud::Task::Script;
@@ -28898,7 +29258,7 @@
 
         } elsif ($self->stage == 4) {
 
-            my ($otherTaskObj, $current);
+            my ($otherTaskObj, $charObj, $current);
 
             # If either the task or the statistic to monitor is unrecognised, simply go back to
             #   stage 3 (resumes execution of the Axbasic programme) as an emergency fallback
@@ -29027,11 +29387,16 @@
             # Monitor the Status task
             } elsif ($self->monitorTask eq 'status') {
 
+                # Since v1.1.263, the health/magic/energy/guild/social point IVs have moved to the
+                #   character profile, but are still being updated by the Status task
+                # For that reason, we need to check both the profile and the task
+
                 $otherTaskObj = $self->session->statusTask;
+                $charObj = $self->session->currentChar;
 
                 # Must resume execution of the Axbasic script if the Status task is no longer
-                #   running...
-                if (! $otherTaskObj) {
+                #   running (or if no current character profile exists)
+                if (! $otherTaskObj || ! $charObj) {
 
                     return $self->ivPoke('stage', 3);
 
@@ -29044,16 +29409,16 @@
                 } elsif ($self->monitorStatistic eq 'hp') {
 
                     if (
-                        ! defined $otherTaskObj->healthPoints
-                        || ! defined $otherTaskObj->healthPointsMax
+                        ! defined $charObj->healthPoints
+                        || ! defined $charObj->healthPointsMax
                         # Can't divide by zero
-                        || ! $otherTaskObj->healthPointsMax
+                        || ! $charObj->healthPointsMax
                     ) {
                         # Statistic not known; resume execution
                         return $self->ivPoke('stage', 3);
                     }
 
-                    $current = 100 * ($otherTaskObj->healthPoints / $otherTaskObj->healthPointsMax);
+                    $current = 100 * ($charObj->healthPoints / $charObj->healthPointsMax);
                     if ($current >= $self->monitorTarget) {
 
                         # HP has recovered; resume execution
@@ -29069,16 +29434,16 @@
                 } elsif ($self->monitorStatistic eq 'mp') {
 
                     if (
-                        ! defined $otherTaskObj->magicPoints
-                        || ! defined $otherTaskObj->magicPointsMax
+                        ! defined $charObj->magicPoints
+                        || ! defined $charObj->magicPointsMax
                         # Can't divide by zero
-                        || ! $otherTaskObj->magicPointsMax
+                        || ! $charObj->magicPointsMax
                     ) {
                         # Statistic not known; resume execution
                         return $self->ivPoke('stage', 3);
                     }
 
-                    $current = 100 * ($otherTaskObj->magicPoints / $otherTaskObj->magicPointsMax);
+                    $current = 100 * ($charObj->magicPoints / $charObj->magicPointsMax);
                     if ($current >= $self->monitorTarget) {
 
                         # MP has recovered; resume execution
@@ -29094,16 +29459,16 @@
                 } elsif ($self->monitorStatistic eq 'ep') {
 
                     if (
-                        ! defined $otherTaskObj->energyPoints
-                        || ! defined $otherTaskObj->energyPointsMax
+                        ! defined $charObj->energyPoints
+                        || ! defined $charObj->energyPointsMax
                         # Can't divide by zero
-                        || ! $otherTaskObj->energyPointsMax
+                        || ! $charObj->energyPointsMax
                     ) {
                         # Statistic not known; resume execution
                         return $self->ivPoke('stage', 3);
                     }
 
-                    $current = 100 * ($otherTaskObj->energyPoints / $otherTaskObj->energyPointsMax);
+                    $current = 100 * ($charObj->energyPoints / $charObj->energyPointsMax);
                     if ($current >= $self->monitorTarget) {
 
                         # EP has recovered; resume execution
@@ -29119,16 +29484,16 @@
                 } elsif ($self->monitorStatistic eq 'gp') {
 
                     if (
-                        ! defined $otherTaskObj->guildPoints
-                        || ! defined $otherTaskObj->guildPointsMax
+                        ! defined $charObj->guildPoints
+                        || ! defined $charObj->guildPointsMax
                         # Can't divide by zero
-                        || ! $otherTaskObj->guildPointsMax
+                        || ! $charObj->guildPointsMax
                     ) {
                         # Statistic not known; resume execution
                         return $self->ivPoke('stage', 3);
                     }
 
-                    $current = 100 * ($otherTaskObj->guildPoints / $otherTaskObj->guildPointsMax);
+                    $current = 100 * ($charObj->guildPoints / $charObj->guildPointsMax);
                     if ($current >= $self->monitorTarget) {
 
                         # GP has recovered; resume execution
@@ -29144,16 +29509,16 @@
                 } elsif ($self->monitorStatistic eq 'sp') {
 
                     if (
-                        ! defined $otherTaskObj->socialPoints
-                        || ! defined $otherTaskObj->socialPointsMax
+                        ! defined $charObj->socialPoints
+                        || ! defined $charObj->socialPointsMax
                         # Can't divide by zero
-                        || ! $otherTaskObj->socialPointsMax
+                        || ! $charObj->socialPointsMax
                     ) {
                         # Statistic not known; resume execution
                         return $self->ivPoke('stage', 3);
                     }
 
-                    $current = 100 * ($otherTaskObj->socialPoints / $otherTaskObj->socialPointsMax);
+                    $current = 100 * ($charObj->socialPoints / $charObj->socialPointsMax);
                     if ($current >= $self->monitorTarget) {
 
                         # SP has recovered; resume execution
@@ -29168,7 +29533,7 @@
                 # Monitor current experience points (XP)
                 } elsif ($self->monitorStatistic eq 'xp_current') {
 
-                    if (! defined $otherTaskObj->xpCurrent) {
+                    if (! defined $charObj->xpCurrent) {
 
                         # Statistic not known; resume execution
                         return $self->ivPoke('stage', 3);
@@ -29187,7 +29552,7 @@
                 # Monitor experience points (XP) to next level
                 } elsif ($self->monitorStatistic eq 'xp_next_level') {
 
-                    if (! defined $otherTaskObj->xpNextLevel) {
+                    if (! defined $charObj->xpNextLevel) {
 
                         # Statistic not known; resume execution
                         return $self->ivPoke('stage', 3);
@@ -29206,7 +29571,7 @@
                 # Monitor total experience points (XP)
                 } elsif ($self->monitorStatistic eq 'xp_total') {
 
-                    if (! defined $otherTaskObj->xpTotal) {
+                    if (! defined $charObj->xpTotal) {
 
                         # Statistic not known; resume execution
                         return $self->ivPoke('stage', 3);
@@ -29227,7 +29592,7 @@
                     $self->monitorStatistic eq 'alive' || $self->monitorStatistic eq 'sleep'
                     || $self->monitorStatistic eq 'passout' || $self->monitorStatistic eq 'dead'
                 ) {
-                    if ($otherTaskObj->lifeStatus eq $self->monitorStatistic) {
+                    if ($charObj->lifeStatus eq $self->monitorStatistic) {
 
                         # Life status matches; resume execution
                         return $self->ivPoke('stage', 3);
@@ -29932,8 +30297,8 @@
         #      e.g. The door swings open!
         #
         # When the pattern is found, the script resumes. This function updates IVs and resumes this
-        #   task, which should be paused. Backreferences and the interface's ->propertyHash are not
-        #   used
+        #   task, which should be paused. Group substrings and the interface's ->propertyHash are
+        #   not used
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -29941,7 +30306,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -29954,7 +30320,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -29964,7 +30330,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -30021,7 +30387,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group subsrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -30034,7 +30401,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -30044,7 +30411,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -30072,7 +30439,7 @@
         $self->scriptObj->interfaceNotification(
             $obj,
             $modLine,
-            @$backRefListRef,
+            @$grpStringListRef,
         );
 
         return 1;
@@ -30087,7 +30454,7 @@
         #   the world
         #      e.g. The orc attacks you
         #
-        # This function executes the second Axbasic script immediately. Backreferences and the
+        # This function executes the second Axbasic script immediately. Group substrings and the
         #   interface's ->propertyHash are not used
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
@@ -30096,7 +30463,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -30109,7 +30477,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -30119,7 +30487,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -30462,16 +30830,19 @@
         # Flag set to TRUE every time the task's window should be updated, and set back to FALSE
         #   when it is actually updated
         $self->{updateFlag}             = FALSE;
-        # Flag set to TRUE when a custom variable is added to $self->customVarHash, which means the
-        #   'main' window gauges (if visible) must be reset, not just redrawn
-        $self->{gaugeResetFlag}         = FALSE;
-        # How to show (long) numbers:
-        #   'none' - don't use commas (1000000)
-        #   'use_comma' - use commas (1,000,000)
-        #   'use_europe' - use European-style full stops (1.000.000)
-        #   'use_brit' - use British-style spaces (1 000 000)
-        #   'use_underline' - use underlines (1_000_000)
-        $self->{commifyMode}            = 'none';
+        # Flag set to TRUE every time the life status changes (so that the background colour of the
+        #   task window can be changed), set back to FALSE once the background colour has actually
+        #   been changed
+        $self->{lifeStatusChangeFlag}   = FALSE;
+        # Flag set to TRUE every time the character's health points change from one band to another
+        #   (which means the task window's background colour must change) - bands are 0-10%, 11-30%,
+        #   31-50%, 51-100%
+        $self->{healthChangeFlag}       = FALSE;
+        # If this flag is set to TRUE, the task attempts to convert time strings (e.g. 'twenty past
+        #   two in the morning') into a 24-hour clock time using the current dictionary. The flag
+        #   is set to TRUE at stage 2 if the current dictionary provides enough vocabulary
+        $self->{convertTimeFlag}        = FALSE;
+
         # When this flag is TRUE, the background colour of the task window changes, depending on
         #   whether the character is alive, dead, asleep (etc) and also depending on how many health
         #   points the character has. If FALSE, the colour scheme never changes
@@ -30492,298 +30863,33 @@
         # Which window background colour to use when character is dead
         $self->{deadColour}             = 'black';
 
-        # Current character's statistics (set to 'undef' or an empty list/hash when unknown)
-
-        # The character's current life status - one of 'alive', 'sleep', 'passout', 'dead'
-        $self->{lifeStatus}             = 'alive';
-        # How many lives the character has left
-        $self->{lifeCount}              = undef;
-        # How many deaths the character has endured
-        $self->{deathCount}             = undef;
-        # How many lives the character has altogether (e.g. ->lifeCount + ->deathCount)
-        $self->{lifeMax}                = undef;
-        # Flag set to TRUE every time the life status changes (so that the background colour of the
-        #   task window can be changed), set back to FALSE once the background colour has actually
-        #   been changed
-        $self->{lifeStatusChangeFlag}   = FALSE;
-        # If this flag is set to TRUE, whenever the character's health points score gets set,
-        #   $self->lifeStatus is changed to 'alive' (suitable for worlds which don't explicity state
-        #   when the character comes round after passing out, wakes up after falling asleep, or
-        #   resurrects after dying)
-        $self->{lifeStatusOverrideFlag} = TRUE;
-
-        # Flag set to TRUE every time the character's health points change from one band to another
-        #   (which means the task window's background colour must change) - bands are 0-10%, 11-30%,
-        #   31-50%, 51-100%
-        $self->{healthChangeFlag}       = FALSE;
-        # Health points / HP (current and maximum)
-        $self->{healthPoints}           = undef;
-        $self->{healthPointsMax}        = undef;
-        # Magic points (current and maximum)
-        $self->{magicPoints}            = undef;
-        $self->{magicPointsMax}         = undef;
-        # Energy points (current and maximum)
-        $self->{energyPoints}           = undef;
-        $self->{energyPointsMax}        = undef;
-        # Guild points (current and maximum)
-        $self->{guildPoints}            = undef;
-        $self->{guildPointsMax}         = undef;
-        # Social points (current and maximum)
-        $self->{socialPoints}           = undef;
-        $self->{socialPointsMax}        = undef;
-        # XP (current, to next level and maximum)
-        $self->{xpCurrent}              = undef;
-        $self->{xpNextLevel}            = undef;
-        $self->{xpTotal}                = undef;
-
-        # Quest statistics for the current world
-        $self->{worldQuestCount}        = undef;
-        $self->{worldQuestPointCount}   = undef;
-        $self->{worldQuestXPCount}      = undef;
-        $self->{worldQuestCashCount}    = undef;
-        # Quest statistics for the current character
-        $self->{questCount}             = undef;
-        $self->{questPointCount}        = undef;
-        $self->{questXPCount}           = undef;
-        $self->{questCashCount}         = undef;
-
-        # Character's level (e.g. 100)
-        $self->{level}                  = undef;
-        # Character's alignment (usually a string)
-        $self->{alignment}              = undef;
-        # Hash of spells (etc) that currently affect the character, in the form
-        #   $affectHash{spell} = undef
-        $self->{affectHash}             = {};
-        # Hash of character's current stats, including bonuses/penalties. Hash in the form
-        #   ->statHash{stat} = value
-        $self->{statHash}               = {};
-
-        # Character's local wimpy setting in range 0-100 (at what percentage of lost HP should
-        #   should something happen - it's up to the user's own tasks and Axbasic scripts to use
-        #   this value)
-        $self->{localWimpy}             = undef;
-        # Maximum local wimpy setting (constant value)
-        $self->{constLocalWimpyMax}     = 100;
-        # Character's wimpy setting at the world (often in range 0-100)
-        $self->{remoteWimpy}            = undef;
-        # Maximum wimpy setting at the world (often 100)
-        $self->{remoteWimpyMax}         = undef;
-
-        # Character's age in the world profile's standard unit
-        $self->{age}                    = undef;
-        # Game time (not real-life time)
-        $self->{time}                   = undef;
-        # If this flag is set to TRUE, the task attempts to convert time strings (e.g. 'twenty past
-        #   two in the morning') into a 24-hour clock time using the current dictionary. The flag
-        #   is set to TRUE at stage 2 if the current dictionary provides enough vocabulary
-        $self->{convertTimeFlag}        = FALSE;
-
-        # Character's current bank balance
-        $self->{bankBalance}            = undef;
-        # How much money character is carrying
-        $self->{purseContents}          = undef;
-
-        # Several variables can be tracked with counters that reset to 0 every time the user types
-        #   the ';resetcounter' command
-        # The fight and interaction counters are updated by the Attack task; ->tempXPCount,
-        #   ->tempQuestCount, ->tempBankCount and ->tempPurseCount are updated by the Status task
+        # The Status task tracks five types of variable - character, fixed, pseudo, local, counter
+        #   and custom
+        # Status task variables have a name_in_this_form. Names must be unique; a custom variable
+        #   called 'xp_current' can't be created because there's already a character variable with
+        #   that name
+        # Character, fixed, local and pseudo variable names are fixed; variable names can't be added
+        #   or removed from the set specified by the constant IVs below
         #
-        # Fight counter - records successes in fights
-        # Is the fight counter running? (TRUE yes, FALSE no)
-        $self->{fightCountFlag}         = FALSE;
-        # How many fights since last counter reset
-        $self->{fightCount}             = 0;
-        # How many kills since last reset
-        $self->{killCount}              = 0;
-        # How many times has wimpy mode engaged since last reset
-        $self->{wimpyCount}             = 0;
-        # How many defeats (other than wimpy mode engage) has the character suffered since last
-        #   reset
-        $self->{fightDefeatCount}       = 0;
-
-        # Interaction counter - record successes in interactions (confrontations that aren't
-        #   fights; usually guild-specific)
-        # Is the interaction counter running? (TRUE yes, FALSE no)
-        $self->{interactCountFlag}      = FALSE;
-        # How many interactions since last reset
-        $self->{interactCount}          = 0;
-        # How many successful interactions since last reset
-        $self->{interactSuccessCount}   = 0;
-        # How many failed interactions since last reset
-        $self->{interactFailCount}      = 0;
-        # How many failed interactions leading to a fight since last reset
-        $self->{interactFightCount}     = 0;
-        # How many successful interactions since last reset
-        $self->{interactDisasterCount}  = 0;
-
-        # How many fights/interactions ended with the target running away, to be pursued
-        $self->{fleeCount}              = 0;
-        # How many fights/interactions ended with the target running away, and can't be pursued
-        $self->{escapeCount}            = 0;
-
-        # Temporary counters - reset when either the fight counter or interaction counter is reset
-        # How much total XP gained since last reset
-        $self->{tempXPCount}            = 0;
-        # The value of ->xpTotal at the last reset
-        $self->{tempXPBaseline}         = 0;
-        # How many quest points gained since last reset
-        $self->{tempQuestCount}         = 0;
-        # The value of ->questCount at the last reset
-        $self->{tempQuestBaseline}      = 0;
-        # How much (bank) money gained since last reset (could be negative)
-        $self->{tempBankCount}          = 0;
-        # The value of ->bankBalance at the last reset
-        $self->{tempBankBaseline}       = 0;
-        # How much (purse) money gained since last reset (could be negative)
-        $self->{tempPurseCount}         = 0;
-        # The value of ->purseContents at the last reset
-        $self->{tempPurseBaseline}      = 0;
-        # The time at which the fight counter or interaction counter was last reset (matches
-        #   GA::Session->sessionTime)
-        $self->{tempTimerBaseline}      = 0;
-
-        # Opponent details, if available (can be supplied by MSDP); set to 'undef' when not
-        #   available (and when there is no opponent)
-        $self->{oppName}                = undef;
-        $self->{oppHealth}              = undef;
-        $self->{oppHealthMax}           = undef;
-        $self->{oppLevel}               = undef;
-        $self->{oppStrength}            = undef;
-
-        # A hash of custom variables and their corresponding values. Each key corresponds to a key
-        #   in GA::Profile::World->customStatusVarHash; the value is the corresponding value, set
-        #   either by $self->singleBackRefPatternSeen or ->set_updateFromMsdp
-        # NB Key-value pairs are updated when a variable's value is received, so not all of the keys
-        #   in GA::Profile::World->customStatusVarHash will exist in this hash
-        $self->{customVarHash}          = {};
-
-        # How the character's statistics should be displayed in the task window - the default
-        #   setting, in case the world profile doesn't provide one
-        # Formatted display of the status variables. Anything enclosed by @...@ is substituted for
-        #   one of the task's instance variables; if the instance variable is currently 'undef', 'x'
-        #   is substituted
-        # Anything enclosed by #...# is substitute for one of the task's custom variables (stored in
-        #   $self->customVarHash)
+        # For character variables like 'health_points', 'xp_current' and 'life_status', values are
+        #   stored in the current character profile as soon as they are received
+        # For fixed variables, values are retrieved from the current character profile, and some of
+        #   those values are updated by this task; but the values are not modified directly by
+        #   incoming text (for example, when a line matches a pattern in
+        #   GA::Profile::World->groupPatternList)
+        # For pseudo variables, $self->getValue compiles a value from other values, whenever
+        #   required (so the values are stored in any Status task IV)
+        # For local variables, values are stored in this task (and are lost, when the task halts)
+        # For counter variables, a current value stored in the character profile is compared against
+        #   some baseline value (which is stored in $self->counterBaseHash)
+        # Custom variables are created just by specifying them, for example, if
+        #   GA::Profile::World->groupPatternList refers to a custom variable called 'my_var', as
+        #   soon as a line of text is received matching the pattern, an entry for 'my_var' is
+        #   created in $self->customVarHash
         #
-        # The strings enclosed by @...@ should be one of
-        #   'world', 'guild', 'race', 'char',
-        #   'health_points', 'health_points_max', 'magic_points', 'magic_points_max',
-        #   'energy_points', 'energy_points_max', 'guild_points', 'guild_points_max',
-        #   'social_points', 'social_points_max',
-        #   'xp_current', 'xp_next_level', 'xp_total',
-        #   'quest_count', 'quest_points', 'quest_xp',  'quest_cash',
-        #   'world_quest_count', 'world_quest_points', 'world_quest_xp', 'world_quest_cash',
-        #   'level', 'alignment', 'affects', 'stats',
-        #   'life_count', 'death_count', 'life_max', 'life_status',
-        #   'local_wimpy', 'local_wimpy_max', 'remote_wimpy', 'remote_wimpy_max',
-        #   'age', 'age_unit', 'time', 'bank_balance', 'purse_contents',
-        #   'fight_count', 'interact_count', 'coward_count',
-        #   'temp_fight_count', 'temp_interaction_count', 'temp_coward_count',
-        #   'temp_xp_count', 'temp_xp_average', 'temp_quest_count',
-        #   'temp_bank_count', 'temp_purse_count', 'temp_money_count'
-        #   'temp_timer'
-        #   'opp_name', 'opp_level', 'opp_health', 'opp_health_max', 'opp_strength',
-        #   'task', 'task_active', 'real_time', 'session_time', 'money_count'
-        #
-        # 'world', 'char', 'race', 'guild' show the names of the current world, char, race and guild
-        # 'fight_count' counts the fights a character has been in since the profile was created, and
-        #   the results (stored in the character profile)
-        # 'interaction_count' counts the guild interactions a character has been in since the
-        #   profile was created, and the results (stored in the character profile)
-        # 'coward_count' counts fight/interaction targets who have fleed or escaped since the
-        #   character was created (stored in the character profile)
-        # 'temp_fight_count' counts the fights a character has been in, and the results (can be set
-        #   to 0 at any time) (stored in this task)
-        # 'temp_interaction_count' counts the interactions a character has been in, and the results
-        #   (can be set to 0 at any time) (stored in this task)
-        # 'temp_coward_count' counts the fight/interaction targets who have fleed or escaped (can be
-        #   set to 0 at any time)
-        # 'temp_xp_count',  'temp_quest_count', 'temp_bank_count', 'temp_purse_count' track changes
-        #   in xp, quest points, the character's bank account and purse contents since either the
-        #   fight counter or interaction counter was last reset
-        # 'temp_xp_average' shows the average xp per kill/successful interaction since the counters
-        #   were reset
-        # 'temp_timer' counts the minutes since either the fight counter or interaction counter was
-        #   last reset
-        # 'stats' displays a list of the character's stats (e.g. 'int 10 dex 15 con 12...')
-        # 'task' displays a short list of currently running standard tasks (e.g. '{St Lc}' for
-        #   Status, Locator). 'task_active' shows whether the Status task is active, or not (i.e.
-        #   shows if ->activeFlag is set)
-        # 'real_time' shows the user's real time (not the internal world time, nor the world's
-        #   internal real time)
-        # 'session_time' shows how many seconds the session has been running (matches
-        #   GA::Session->sessionTime)
-        # 'money_count' is the sum of 'bank_count' and 'purse_count' (could be negative)
-        # 'age_unit' shows the unit (default is days) in which character's 'age' is calculated
-        # 'opp_name' shows the opponent in a fight, 'opp_health', 'opp_health_max', 'opp_level'
-        #   show their details, and 'opp_strength' shows their relative strength (usually via a
-        #   consider command)
-        #
-        # A list containing a default format for the task window
-        $self->{defaultFormatList}      = [
-            'World: @world@ Char: @char@ Race: @race@ Guild: @guild@',
-            'HP: @health_points@ (@health_points_max@) MP: @magic_points@ (@magic_points_max@)'
-            . ' EP: @energy_points@ (@energy_points_max@) GP: @guild_points@ (@guild_points_max@)'
-            . ' SP: @social_points@ (@social_points_max@)',
-            'Current XP: @xp_current@ Next Level: @xp_next_level@ Total XP: @xp_total@'
-            . ' Level: @level@ Alignment: @alignment@',
-            'Quests: @quest_count@ (@world_quest_count@), QP: @quest_points@'
-            . ' (@world_quest_points@), quest XP: @quest_xp@ (@world_quest_xp@), quest cash:'
-            . ' @quest_cash@ (@world_quest_cash@)',
-            'Affects: @affects@ Stats: @stats@ [@task@] @task_active@',
-            'Deaths: @life_count@ (@life_max@) Status: @life_status@',
-            'Time: @time@ Age: @age@ @age_unit@ Bank: @bank_balance@ Purse: @purse_contents@',
-            'Local Wimpy: @local_wimpy@ (@local_wimpy_max@) Remote Wimpy: @remote_wimpy@'
-            . ' (@remote_wimpy_max@)',
-            'Fights: @fight_count@ @temp_fight_count@',
-            'Interactions: @interaction_count@ @temp_interaction_count@',
-            'Cowards: @coward_count@ @temp_coward_count@',
-            'Opp: @opp_name@ HP: @opp_health@ (@opp_health_max@) Lev: @opp_level@'
-            . ' Str: @opp_strength@',
-            'Counters: XP: @temp_xp_count@ (Av: @temp_xp_average@) QP: @temp_quest_count@'
-            . ' Bank: @temp_bank_count@ Purse: @temp_purse_count@, Money: @temp_money_count@,'
-            . ' Timer: @temp_timer@',
-            'Real time: @real_time@ Script time: @session_time@ Standard tasks: @task@',
-        ];
-        # A list of all the variables that can be used in the task window, in a standard order
-        $self->{displayVarList}         = [
-            'world', 'guild', 'race', 'char',
-            'health_points', 'health_points_max', 'magic_points', 'magic_points_max',
-            'energy_points', 'energy_points_max', 'guild_points', 'guild_points_max',
-            'social_points', 'social_points_max',
-            'xp_current', 'xp_next_level', 'xp_total',
-            'quest_count', 'quest_points', 'quest_xp',  'quest_cash',
-            'world_quest_count', 'world_quest_points', 'world_quest_xp',  'world_quest_cash',
-            'level', 'alignment', 'affects', 'stats',
-            'life_count', 'death_count', 'life_max', 'life_status',
-            'local_wimpy', 'local_wimpy_max', 'remote_wimpy', 'remote_wimpy_max',
-            'age', 'age_unit', 'time', 'bank_balance', 'purse_contents',
-            'fight_count', 'interact_count', 'coward_count',
-            'temp_fight_count', 'temp_interaction_count', 'temp_coward_count',
-            'temp_xp_count', 'temp_xp_average', 'temp_quest_count',
-            'temp_bank_count', 'temp_purse_count', 'temp_money_count',
-            'temp_timer',
-            'opp_name', 'opp_health', 'opp_health_max', 'opp_level', 'opp_strength',
-            'task', 'task_active', 'real_time', 'session_time',
-        ];
-        # A list containing a subset of the variables in $self->displayVarList (those that can be
-        #   used as single backref strings)
-        $self->{singleBackRefVarList}   = [
-            'health_points', 'health_points_max',
-            'magic_points', 'magic_points_max',
-            'energy_points', 'energy_points_max',
-            'guild_points', 'guild_points_max',
-            'social_points', 'social_points_max',
-            'xp_current', 'xp_next_level', 'xp_total',
-            'quest_points', 'quest_points_max', 'quest_count', 'quest_count_max',
-            'level', 'alignment', 'life_count', 'death_count', 'life_max',
-            'local_wimpy', 'remote_wimpy', 'remote_wimpy_max',  # 'local_wimpy_max' is constant
-            'bank_balance', 'purse_contents',
-            'opp_name', 'opp_health', 'opp_health_max', 'opp_level', 'opp_strength',
-        ];
-        # A hash containing most of the same variables, and their corresponding Status task IVs
-        #   (used for displaying 'main' window gauges)
-        $self->{singleBackRefVarHash}   = {
+        # A hash of character variables, and their corresponding GA::Profile::Char IV
+        $self->{constCharVarHash}       = {
+            # Character's health/magic/energy/guild/social points
             'health_points'             => 'healthPoints',
             'health_points_max'         => 'healthPointsMax',
             'magic_points'              => 'magicPoints',
@@ -30794,32 +30900,201 @@
             'guild_points_max'          => 'guildPointsMax',
             'social_points'             => 'socialPoints',
             'social_points_max'         => 'socialPointsMax',
+            # eXperience Points (XP), Quest Points (QP) and a spare set of variables for worlds
+            #   which use some other point system for levelling, Other Points (OP)
             'xp_current'                => 'xpCurrent',
             'xp_next_level'             => 'xpNextLevel',
             'xp_total'                  => 'xpTotal',
-            'quest_points'              => 'questPointCount',
-            'quest_points_max'          => 'worldQuestPointCount',
-            'quest_count'               => 'questCount',
-            'quest_count_max'           => 'worldQuestCount',
+            'qp_current'                => 'qpCurrent',
+            'qp_next_level'             => 'qpNextLevel',
+            'qp_total'                  => 'qpTotal',
+            'op_current'                => 'opCurrent',
+            'op_next_level'             => 'opNextLevel',
+            'op_total'                  => 'opTotal',
+            # Character's level and alignment
             'level'                     => 'level',
-#           'alignment'                 => '',                   # Not numeric
-            'life_count'                => 'lifeCount',
-            'death_count'               => 'deathCount',
-            'life_max'                  => 'lifeMax',
+            'alignment'                 => 'alignment',             # Not numeric
+            # Local and remote wimpy (the maximum local wimpy is a fixed value)
             'local_wimpy'               => 'localWimpy',
             'remote_wimpy'              => 'remoteWimpy',
             'remote_wimpy_max'          => 'remoteWimpyMax',
-            'local_wimpy_max'           => 'constLocalWimpyMax', # Const, but displayable in gauges
+            # Character's age (in the unit specified by the pseudo value 'age_unit')
+            'age'                       => 'age',
+            # Character's wealth
             'bank_balance'              => 'bankBalance',
             'purse_contents'            => 'purseContents',
-#           'opp_name'                  => '',                   # Not numeric
-            'opp_health'                => 'oppHealth',
-            'opp_health_max'            => 'oppHealthMax',
-            'opp_level'                 => 'oppLevel',
-            'opp_strength'              => 'oppStrength',
+            # Character's lives
+            'life_count'                => 'lifeCount',
+            'life_max'                  => 'lifeMax',
+        };
+        # A hash of fixed variables, and their corresponding GA::Profile::Char IV
+        $self->{constFixedVarHash}      = {
+            # Character's deaths and life status
+            'death_count'               => 'deathCount',
+            'life_status'               => 'lifeStatus',            # Not numeric
+            # The local wimpy maximum is always 100
+            'local_wimpy_max'           => 'constLocalWimpyMax',
+            # Fight counts
+            'fight_count'               => 'fightCount',
+            'kill_count'                => 'killCount',
+            'wimpy_count'               => 'wimpyCount',
+            'fight_defeat_count'        => 'fightDefeatCount',
+            # Interaction counts
+            'interact_count'            => 'interactCount',
+            'interact_success_count'    => 'interactSuccessCount',
+            'interact_fail_count'       => 'interactFailCount',
+            'interact_fight_count'      => 'interactFightCount',
+            'interact_disaster_count'   => 'interactDisasterCount',
+            # Unresolved fight/interaction counts
+            'flee_count'                => 'fleeCount',
+            'escape_count'              => 'escapeCount',
+        };
+        # A hash of pseudo variables. The value is generated by $self->getValue as and when required
+        $self->{constPseudoVarHash}     = {
+            # 'world', 'guild', 'race', 'char' are the names of the current world, guild, race and
+            #   character
+            'world'                     => undef,
+            'guild'                     => undef,
+            'race'                      => undef,
+            'char'                      => undef,
+            # A summary of character's affects and stats, stored in $self->affectHash and ->statHash
+            'affects'                   => undef,
+            'stats'                     => undef,
+            # The value stored in Games::Axmud::Profile::World->charAgeUnit
+            'age_unit'                  => undef,
+            # 'money_count' is the sum of 'bank_balance' and 'purse_contents'
+            'money_count'               => undef,
+            # 'coward_count' is the sum of 'flee_count' and 'escape_count'
+            'coward_count'              => undef,
+            # A short list of currently running standard tasks (e.g. '{St Lc}' for Status, Locator)
+            'task'                      => undef,
+            # Show whether the Status task is active, or not
+            'task_active'               => undef,
+            # The user's (real) time
+            'local_time'                => undef,
+            # The session time, retrieved from GA::Session->sessionTime
+            'session_time'              => undef,
+            # Values combining values from $self->counterVarHash
+            'temp_xp_average'           => undef,
+            'temp_money_count'          => undef,
+            'temp_timer'                => undef,
+            # Strings displaying several fight/interaction values together as a single string
+            'fight_string'              => undef,
+            'interact_string'           => undef,
+            'coward_string'             => undef,
+            'temp_fight_string'         => undef,
+            'temp_interact_string'      => undef,
+            'temp_coward_string'        => undef,
+        };
+        # Hash of local variables; current values for each variable are stored in
+        #   $self->localVarHash
+        $self->{constLocalVarHash}      = {
+            # The time according to the connected world (fictional and real)
+            'time'                      => undef,
+            'remote_time'               => undef,
+            # Details about the current opponent (for worlds that supply them); including their
+            #   relative strength (normally gathered via a 'consider' command)
+            'opp_name'                  => undef,
+            'opp_level'                 => undef,
+            'opp_health'                => undef,
+            'opp_health_max'            => undef,
+            'opp_strength'              => undef,
+        };
+        # Hash of counter variables. Values stored in the current character profile are compared
+        #   against some baseline value (stored in $self->counterBaseHash and set by a call to
+        #   $self->reset_counters)
+        # The ';resetcounter' command, in its call to $self->reset_counter, adds some or all of
+        #   the keys in this hash to $self->counterVarHash/->counterBaseHash, which sets the
+        #   counter 'running'
+        $self->{constCounterVarHash}    = {
+            'temp_fight_count'          => undef,
+            'temp_kill_count'           => undef,
+            'temp_wimpy_count'          => undef,
+            'temp_fight_defeat_count'   => undef,
+            'temp_interact_count'       => undef,
+            'temp_interact_success_count'
+                                        => undef,
+            'temp_interact_fail_count'  => undef,
+            'temp_interact_fight_count' => undef,
+            'temp_interact_disaster_count'
+                                        => undef,
+            'temp_escape_count'         => undef,
+            'temp_flee_count'           => undef,
+            'temp_xp_count'             => undef,
+            'temp_quest_count'          => undef,
+            'temp_bank_count'           => undef,
+            'temp_purse_count'          => undef,
+        };
+        # Hash of variables which are used to set counter variables. The keys are a subset of keys
+        #   in $self->constCharVarHash and ->constFixedVarHash; the values are all keys that appear
+        #   in $self->constCounterVarHash
+        $self->{constCounterRevHash}    = {
+            # from ->constCharVarHash
+            'xp_total'                  => 'temp_xp_count',
+            'qp_total'                  => 'temp_quest_count',
+            'bank_balance'              => 'temp_bank_count',
+            'purse_contents'            => 'temp_purse_count',
+            # from ->constFixedVarHash
+            'fight_count'               => 'temp_fight_count',
+            'kill_count'                => 'temp_kill_count',
+            'wimpy_count'               => 'temp_wimpy_count',
+            'fight_defeat_count'        => 'temp_fight_defeat_count',
+            'interact_count'            => 'temp_interact_count',
+            'interact_success_count'    => 'temp_interact_success_count',
+            'interact_fail_count'       => 'temp_interact_fail_count',
+            'interact_fight_count'      => 'temp_interact_fight_count',
+            'interact_disaster_count'   => 'temp_interact_disaster_count',
+            'flee_count'                => 'temp_flee_count',
+            'escape_count'              => 'temp_escape_count',
+        };
+        # Hash of variables that require calls to $self->checkHealthChange and/or
+        #   ->checkPointsChange
+        $self->{constPointHash}         = {
+            'health_points'             => undef,
+            'health_points_max'         => undef,
+            'magic_points'              => undef,
+            'magic_points_max'          => undef,
+            'energy_points'             => undef,
+            'energy_points_max'         => undef,
+            'guild_points'              => undef,
+            'guild_points_max'          => undef,
+            'social_points'             => undef,
+            'social_points_max'         => undef,
         };
 
-        # Flag set to TRUE if some values should be displayed in the 'main' window's gauge box
+        # A hash of local variables and their corresponding values, initialised by $self->doStage
+        #   (at stage 2)
+        $self->{localVarHash}           = {};
+        # A hash of custom variables and their corresponding values
+        $self->{customVarHash}          = {};
+
+        # A hash of counter variables and their corresponding values, initialised by
+        #   $self->reset_counters
+        # The call to that function sets one or more of the counters 'running', add some or all of
+        #   the variables stored as keys in $self->constCounterVarHash to these two hashes
+        # A hash of counter variables and their corresponding values, relative to some baseline
+        #   value
+        $self->{counterVarHash}         = {};
+        # A hash of counter variables and their corresponding baseline values
+        $self->{counterBaseHash}        = {};
+        # Is the fight counter running? (TRUE yes, FALSE no; this IV is a shortcut to checking
+        #   whether some counter variables exist in $self->counterVarHash, or not)
+        $self->{fightCountFlag}         = FALSE;
+        # Is the interaction counter running? (TRUE yes, FALSE no; this IV is a shortcut to checking
+        #   whether some counter variables exist in $self->counterVarHash, or not)
+        $self->{interactCountFlag}      = FALSE;
+        # The time at which any counter was last reset (matches GA::Session->sessionTime)
+        $self->{counterStartTime}       = 0;
+
+        # Hash of spells (etc) that currently affect the character, in the form
+        #   $affectHash{spell} = undef
+        $self->{affectHash}             = {};
+        # Hash of character's current stats, including bonuses/penalties. Hash in the form
+        #   ->statHash{stat} = value
+        $self->{statHash}               = {};
+
+        # Flag set to TRUE if the value of some variables should be displayed in the 'main' window's
+        #   gauge box
         $self->{gaugeFlag}              = FALSE;
         # Shortcut to the strip object (GA::Strip::GaugeBox) which handles gauges in this
         #   session's 'main' window; set whenever this task adds it first gauge
@@ -30833,6 +31108,9 @@
         # List of GA::Obj::Gauge objects created by this task, each one corresponding to a gauge
         #   in the 'main' window
         $self->{gaugeObjList}           = [];
+        # Flag set to TRUE in some calls to $self->set_updateFromMsdp, in which the 'main' window
+        #   gauges (if visible) must be reset, not just redrawn
+        $self->{gaugeResetFlag}         = FALSE;
 
         # A hash used for TTS alerts. The keys are TTS alert attributes for this task; the
         #   corresponding values are:
@@ -30970,8 +31248,10 @@
         $clone->{timerHash}             = {$self->timerHash};
 
         $clone->{updateFlag}            = $self->updateFlag;
-        $clone->{gaugeResetFlag}        = $self->gaugeResetFlag;
-        $clone->{commifyMode}           = $self->commifyMode;
+        $clone->{lifeStatusChangeFlag}  = $self->lifeStatusChangeFlag;
+        $clone->{healthChangeFlag}      = $self->healthChangeFlag;
+        $clone->{convertTimeFlag}       = $self->convertTimeFlag;
+
         $clone->{allowColourFlag}       = $self->allowColourFlag;
         $clone->{aliveColour}           = $self->aliveColour;
         $clone->{alive50Colour}         = $self->alive50Colour;
@@ -30981,99 +31261,26 @@
         $clone->{passedOutColour}       = $self->passedOutColour;
         $clone->{deadColour}            = $self->deadColour;
 
-        $clone->{lifeStatus}            = $self->lifeStatus;
-        $clone->{lifeCount}             = $self->lifeCount;
-        $clone->{deathCount}            = $self->deathCount;
-        $clone->{lifeMax}               = $self->lifeMax;
-        $clone->{lifeStatusChangeFlag}  = $self->lifeStatusChangeFlag;
-        $clone->{lifeStatusOverrideFlag}
-                                        = $self->lifeStatusOverrideFlag;
+        # (The constant hashes retain their own values)
 
-        $clone->{healthChangeFlag}      = $self->healthChangeFlag;
-        $clone->{healthPoints}          = $self->healthPoints;
-        $clone->{healthPointsMax}       = $self->healthPointsMax;
-        $clone->{magicPoints}           = $self->magicPoints;
-        $clone->{magicPointsMax}        = $self->magicPointsMax;
-        $clone->{energyPoints}          = $self->energyPoints;
-        $clone->{energyPointsMax}       = $self->energyPointsMax;
-        $clone->{guildPoints}           = $self->guildPoints;
-        $clone->{guildPointsMax}        = $self->guildPointsMax;
-        $clone->{socialPoints}          = $self->socialPoints;
-        $clone->{socialPointsMax}       = $self->socialPointsMax;
-        $clone->{xpCurrent}             = $self->xpCurrent;
-        $clone->{xpNextLevel}           = $self->xpNextLevel;
-        $clone->{xpTotal}               = $self->xpTotal;
-
-        $clone->{worldQuestCount}       = $self->worldQuestCount;
-        $clone->{worldQuestPointCount}  = $self->worldQuestPointCount;
-        $clone->{worldQuestXPCount}     = $self->worldQuestXPCount;
-        $clone->{worldQuestCashCount}   = $self->worldQuestCashCount;
-        $clone->{questCount}            = $self->questCount;
-        $clone->{questPointCount}       = $self->questPointCount;
-        $clone->{questXPCount}          = $self->questXPCount;
-        $clone->{questCashCount}        = $self->questCashCount;
-
-        $clone->{level}                 = $self->level;
-        $clone->{alignment}             = $self->alignment;
-        $clone->{affectHash}            = {$self->affectHash};
-        $clone->{statHash}              = {$self->statHash};
-
-        $clone->{localWimpy}            = $self->localWimpy;
-        $clone->{constLocalWimpyMax}    = $self->constLocalWimpyMax;
-        $clone->{remoteWimpy}           = $self->remoteWimpy;
-        $clone->{remoteWimpyMax}        = $self->remoteWimpyMax;
-
-        $clone->{age}                   = $self->age;
-        $clone->{time}                  = $self->time;
-        $clone->{convertTimeFlag}       = $self->convertTimeFlag;
-
-        $clone->{bankBalance}           = $self->bankBalance;
-        $clone->{purseContents}         = $self->purseContents;
-
-        $clone->{fightCountFlag}        = $self->fightCountFlag;
-        $clone->{fightCount}            = $self->fightCount;
-        $clone->{killCount}             = $self->killCount;
-        $clone->{wimpyCount}            = $self->wimpyCount;
-        $clone->{fightDefeatCount}      = $self->fightDefeatCount;
-
-        $clone->{interactCountFlag}     = $self->interactCountFlag;
-        $clone->{interactCount}         = $self->interactCount;
-        $clone->{interactSuccessCount}  = $self->interactSuccessCount;
-        $clone->{interactFailCount}     = $self->interactFailCount;
-        $clone->{interactFightCount}    = $self->interactFightCount;
-        $clone->{interactDisasterCount} = $self->interactDisasterCount;
-
-        $clone->{fleeCount}             = $self->fleeCount;
-        $clone->{escapeCount}           = $self->escapeCount;
-
-        $clone->{tempXPCount}           = $self->tempXPCount;
-        $clone->{tempXPBaseline}        = $self->tempXPBaseline;
-        $clone->{tempQuestCount}        = $self->tempQuestCount;
-        $clone->{tempQuestBaseline}     = $self->tempQuestBaseline;
-        $clone->{tempBankCount}         = $self->tempBankCount;
-        $clone->{tempBankBaseline}      = $self->tempBankBaseline;
-        $clone->{tempPurseCount}        = $self->tempPurseCount;
-        $clone->{tempPurseBaseline}     = $self->tempPurseBaseline;
-        $clone->{tempTimerBaseline}     = $self->tempTimerBaseline;
-
-        $clone->{oppName}               = $self->oppName;
-        $clone->{oppHealth}             = $self->oppHealth;
-        $clone->{oppHealthMax}          = $self->oppHealthMax;
-        $clone->{oppLevel}              = $self->oppLevel;
-        $clone->{oppStrength}           = $self->oppStrength;
-
+        $clone->{localVarHash}          = {$self->localVarHash};
         $clone->{customVarHash}         = {$self->customVarHash};
 
-        $clone->{defaultFormatList}     = [$self->defaultFormatList];
-        $clone->{displayVarList}        = [$self->displayVarList];
-        $clone->{singleBackRefVarList}  = [$self->singleBackRefVarList];
-        $clone->{singleBackRefVarHash}  = {$self->singleBackRefVarHash};
+        $clone->{counterVarHash}        = {$self->counterVarHash};
+        $clone->{counterBaseHash}       = {$self->counterBaseHash};
+        $clone->{fightCountFlag}        = $self->fightCountFlag;
+        $clone->{interactCountFlag}     = $self->interactCountFlag;
+        $clone->{counterStartTime}      = $self->counterStartTime;
+
+        $clone->{affectHash}            = {$self->affectHash};
+        $clone->{statHash}              = {$self->statHash};
 
         $clone->{gaugeFlag}             = $self->gaugeFlag;
         $clone->{gaugeStripObj}         = $self->gaugeStripObj;
         $clone->{gaugeLevel}            = $self->gaugeLevel;
         $clone->{gaugeValueFlag}        = $self->gaugeValueFlag;
         $clone->{gaugeObjList}          = [$self->gaugeObjList];
+        $clone->{gaugeResetFlag}        = $self->gaugeResetFlag;
 
         $clone->{ttsPointsAlertHash}    = {$self->ttsPointsAlertHash};
         $clone->{ttsPointsAlertMsgHash} = {$self->ttsPointsAlertMsgHash};
@@ -31120,8 +31327,6 @@
 
         # Preserve the list of commands to send
         $newTask->ivPoke('cmdHash', $self->cmdHash);
-        # Preserve commify mode
-        $newTask->ivPoke('commifyMode', $self->commifyMode);
         # Preserve the background colour scheme
         $newTask->ivPoke('allowColourFlag', $self->allowColourFlag);
         $newTask->ivPoke('aliveColour', $self->aliveColour);
@@ -31132,28 +31337,11 @@
         $newTask->ivPoke('passedOutColour', $self->passedOutColour);
         $newTask->ivPoke('deadColour', $self->deadColour);
         # Preserve the counters
+        $newTask->ivPoke('counterVarHash', $self->counterVarHash);
+        $newTask->ivPoke('counterBaseHash', $self->counterBaseHash);
         $newTask->ivPoke('fightCountFlag', $self->fightCountFlag);
-        $newTask->ivPoke('fightCount', $self->fightCount);
-        $newTask->ivPoke('killCount', $self->killCount);
-        $newTask->ivPoke('wimpyCount', $self->wimpyCount);
-        $newTask->ivPoke('fightDefeatCount', $self->fightDefeatCount);
         $newTask->ivPoke('interactCountFlag', $self->interactCountFlag);
-        $newTask->ivPoke('interactCount', $self->interactCount);
-        $newTask->ivPoke('interactSuccessCount', $self->interactSuccessCount);
-        $newTask->ivPoke('interactFailCount', $self->interactFailCount);
-        $newTask->ivPoke('interactFightCount', $self->interactFightCount);
-        $newTask->ivPoke('interactDisasterCount', $self->interactDisasterCount);
-        $newTask->ivPoke('fleeCount', $self->fleeCount);
-        $newTask->ivPoke('escapeCount', $self->escapeCount);
-        $newTask->ivPoke('tempXPCount', $self->tempXPCount);
-        $newTask->ivPoke('tempXPBaseline', $self->tempXPBaseline);
-        $newTask->ivPoke('tempQuestCount', $self->tempQuestCount);
-        $newTask->ivPoke('tempQuestBaseline', $self->tempQuestBaseline);
-        $newTask->ivPoke('tempBankCount', $self->tempBankCount);
-        $newTask->ivPoke('tempBankBaseline', $self->tempBankBaseline);
-        $newTask->ivPoke('tempPurseCount', $self->tempPurseCount);
-        $newTask->ivPoke('tempPurseBaseline', $self->tempPurseBaseline);
-        $newTask->ivPoke('tempTimerBaseline', $self->tempTimerBaseline);
+        $newTask->ivPoke('counterStartTime', $self->counterStartTime);
         # Preserve some gauge variables
         $newTask->ivPoke('gaugeFlag', $self->gaugeFlag);
         $newTask->ivPoke('gaugeValueFlag', $self->gaugeFlag);
@@ -31170,10 +31358,10 @@
         # Called by GA::Cmd::Read->do and PermRead->do
         # Users can use the client command ';read' to interact with individual tasks, typically
         #   getting them to read out information (e.g. the Status task can read out current health
-        #   points).
+        #   points)
         # The ';read' command is in the form ';read <attribute>' or ';read <attribute> <value>'.
         #   The ';read' command looks up the <attribute> in GA::Client->ttsAttribHash, which tells
-        #   it which task to call.
+        #   it which task to call
         #
         # Expected arguments
         #   $attrib     - The TTS attribute specified by the calling function. Must be one of the
@@ -31187,19 +31375,26 @@
         #                   something is usually read aloud, too
         #
         # Return values
-        #   'undef' on improper arguments or if the $attrib doesn't exist in this task's
-        #       ->ttsConfig
+        #   'undef' on improper arguments, if the current character profile isn't set or if the
+        #       $attrib doesn't exist in this task's ->ttsConfig
         #   1 otherwise
 
         my ($self, $attrib, $value, $noReadFlag, $check) = @_;
 
         # Local variables
-        my ($string, $iv, $ivMax);
+        my ($charObj, $string, $iv, $ivMax, $time);
 
         # Check for improper arguments
         if (! defined $attrib || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsReadAttrib', @_);
+        }
+
+        # Import the current character
+        $charObj = $self->session->currentChar;
+        if (! $charObj) {
+
+            return undef;
         }
 
         # TTS attributes are case-insensitive
@@ -31226,39 +31421,39 @@
 
             if ($attrib eq 'status') {
 
-                if (! $self->lifeStatus) {
+                if (! $charObj->lifeStatus) {
                     $string = 'Life status: not set';
                 } else {
-                    $string = 'Life status: ' . $self->lifeStatus;
+                    $string = 'Life status: ' . $charObj->lifeStatus;
                 }
 
             } elsif ($attrib eq 'life' || $attrib eq 'lives') {
 
                 if (
-                    ! defined $self->lifeCount
-                    && ! defined $self->deathCount
-                    && ! defined $self->lifeMax
+                    ! defined $charObj->lifeCount
+                    && ! defined $charObj->deathCount
+                    && ! defined $charObj->lifeMax
                 ) {
                     $string = 'Lives: not set';
 
                 } else {
 
-                    if (! defined $self->lifeCount) {
+                    if (! defined $charObj->lifeCount) {
                         $string = 'Lives: not set, ';
                     } else {
-                        $string = 'Lives: ' . $self->lifeCount . ', ';
+                        $string = 'Lives: ' . $charObj->lifeCount . ', ';
                     }
 
-                    if (! defined $self->lifeMax) {
+                    if (! defined $charObj->lifeMax) {
                         $string .= 'maximum: not set, ';
                     } else {
-                        $string .= 'maximum: ' . $self->lifeMax . ', ';
+                        $string .= 'maximum: ' . $charObj->lifeMax . ', ';
                     }
 
-                    if (! defined $self->deathCount) {
+                    if (! defined $charObj->deathCount) {
                         $string .= 'deaths: not set.';
                     } else {
-                        $string .= 'deaths: ' . $self->deathCount . '.';
+                        $string .= 'deaths: ' . $charObj->deathCount . '.';
                     }
                 }
 
@@ -31272,100 +31467,102 @@
                 $iv = $attrib . 'Points';           # e.g. ->healthPoints
                 $ivMax = $attrib . 'PointsMax';     # e.g. ->healthPointsMax
 
-                if (! defined $self->$iv && ! defined $self->$ivMax) {
+                if (! defined $charObj->$iv && ! defined $charObj->$ivMax) {
 
                     $string = ucfirst($attrib) . ' points: not set';
 
                 } else {
 
-                    if (! defined $self->$iv) {
+                    if (! defined $charObj->$iv) {
                         $string = ucfirst($attrib) . ' points: not set, ';
                     } else {
-                        $string = ucfirst($attrib) . ' points: ' . $self->$iv . ', ';
+                        $string = ucfirst($attrib) . ' points: ' . $charObj->$iv . ', ';
                     }
 
-                    if (! defined $self->$ivMax) {
+                    if (! defined $charObj->$ivMax) {
                         $string .= 'maximum: not set.';
                     } else {
-                        $string .= 'maximum: ' . $self->$ivMax . '.';
+                        $string .= 'maximum: ' . $charObj->$ivMax . '.';
                     }
                 }
 
             } elsif ($attrib eq 'xp' || $attrib eq 'experience') {
 
                 if (
-                    ! defined $self->xpCurrent
-                    && ! defined $self->xpNextLevel
-                    && ! defined $self->xpTotal
+                    ! defined $charObj->xpCurrent
+                    && ! defined $charObj->xpNextLevel
+                    && ! defined $charObj->xpTotal
                 ) {
                     $string = 'Experience: not set';
 
                 } else {
 
-                    if (! defined $self->xpCurrent) {
+                    if (! defined $charObj->xpCurrent) {
                         $string = 'Experience points: not set. ';
                     } else {
-                        $string = 'Experience points: ' . $self->xpCurrent . '. ';
+                        $string = 'Experience points: ' . $charObj->xpCurrent . '. ';
                     }
 
                     # Not all worlds use ->xpNextLevel and ->xpTotal
-                    if (defined $self->xpNextLevel) {
+                    if (defined $charObj->xpNextLevel) {
 
-                        $string .= 'To next level: ' . $self->xpNextLevel . '. ';
+                        $string .= 'To next level: ' . $charObj->xpNextLevel . '. ';
                     }
 
-                    if (defined $self->xpTotal) {
+                    if (defined $charObj->xpTotal) {
 
-                        $string .= 'Total: ' . $self->xpTotal . '. ';
+                        $string .= 'Total: ' . $charObj->xpTotal . '. ';
                     }
                 }
 
             } elsif ($attrib eq 'level') {
 
-                if (! $self->level) {
+                if (! $charObj->level) {
                     $string = 'Level: not set';
                 } else {
-                    $string = 'Level: ' . $self->level;
+                    $string = 'Level: ' . $charObj->level;
                 }
 
             } elsif ($attrib eq 'align' || $attrib eq 'alignment') {
 
-                if (! $self->alignment) {
+                if (! $charObj->alignment) {
                     $string = 'Alignment: not set';
                 } else {
-                    $string = 'Alignment: ' . $self->alignment;
+                    $string = 'Alignment: ' . $charObj->alignment;
                 }
 
             } elsif ($attrib eq 'age') {
 
-                if (! $self->age) {
+                if (! $charObj->age) {
                     $string = 'Age: not set';
                 } else {
-                    $string = 'Age: ' . $self->age;
+                    $string = 'Age: ' . $charObj->age;
                 }
 
             } elsif ($attrib eq 'time') {
 
-                if (! $self->time) {
+                $time = $self->getValue('time');
+
+                if (! $time) {
                     $string = 'Game time: not set';
                 } else {
-                    $string = 'Game time: ' . $self->time;
+                    $string = 'Game time: ' . $time;
                 }
 
             } elsif ($attrib eq 'bank') {
 
-                if (! $self->bankBalance) {
+                if (! $charObj->bankBalance) {
                     $string = 'Bank balance: not set';
                 } else {
-                    $string = 'Bank balance: ' . $self->bankBalance;
+                    $string = 'Bank balance: ' . $charObj->bankBalance;
                 }
 
             } elsif ($attrib eq 'purse') {
 
-                if (! $self->age) {
+                if (! $charObj->age) {
                     $string = 'Purse contents: not set';
                 } else {
-                    $string = 'Purse contents: ' . $self->bankBalance;
+                    $string = 'Purse contents: ' . $charObj->bankBalance;
                 }
             }
 
@@ -31660,8 +31857,6 @@
 
         if ($self->stage == 2) {
 
-            my ($worldObj, $charObj, $dictObj);
-
             # Can't do anything until the current character has been set (we check for logins at
             #   stage 3)
             if (! $self->session->currentChar) {
@@ -31670,50 +31865,20 @@
                 return $self->ivPoke('stage', 2);
             }
 
-            # Initialise the task's instance variables with the variables in the current world and
-            #   character profiles
-            $worldObj = $self->session->currentWorld;
-            $charObj = $self->session->currentChar;
+            # Initialise the hash of local variables
+            $self->ivPoke('localVarHash', $self->constLocalVarHash);
 
-            $self->ivPoke('lifeStatusOverrideFlag', $worldObj->lifeStatusOverrideFlag);
-
-            $self->ivPoke('lifeStatus', $charObj->lifeStatus);
-            $self->ivPoke('lifeCount', $charObj->lifeCount);
-            $self->ivPoke('deathCount', $charObj->deathCount);
-            $self->ivPoke('lifeMax', $charObj->lifeMax);
-
-            $self->ivPoke('xpCurrent', $charObj->xpCurrent);
-            $self->ivPoke('xpNextLevel', $charObj->xpNextLevel);
-            $self->ivPoke('xpTotal', $charObj->xpTotal);
-
-            $self->ivPoke('worldQuestCount', $worldObj->questCount);
-            $self->ivPoke('worldQuestPointCount', $worldObj->questPointCount);
-            $self->ivPoke('worldQuestXPCount', $worldObj->questXPCount);
-            $self->ivPoke('worldQuestCashCount', $worldObj->questCashCount);
-            $self->ivPoke('questCount', $charObj->questCount);
-            $self->ivPoke('questPointCount', $charObj->questPointCount);
-            $self->ivPoke('questXPCount', $charObj->questXPCount);
-            $self->ivPoke('questCashCount', $charObj->questCashCount);
-
-            $self->ivPoke('level', $charObj->level);
-            $self->ivPoke('alignment', $charObj->alignment);
-            $self->ivPoke('affectHash', $charObj->affectHash);
-            $self->ivPoke('statHash', $charObj->statHash);
-
-            $self->ivPoke('localWimpy', $charObj->localWimpy);
-            $self->ivPoke('remoteWimpy', $charObj->remoteWimpy);
-            $self->ivPoke('remoteWimpyMax', $worldObj->remoteWimpyMax);
-
-            $self->ivPoke('age', $charObj->age);
-
-            $self->ivPoke('bankBalance', $charObj->bankBalance);
-            $self->ivPoke('purseContents', $charObj->purseContents);
+            # Initialise this task's own ->statHash
+            $self->ivPoke('statHash', $self->session->currentWorld->statHash);
 
             # Decide whether to try to convert time strings (e.g. 'twenty past two in the morning')
             #   into 24-hour clock strings using the current dictionary
             # If the dictionary's clock string lists are empty, don't try to convert time strings
-            $dictObj = $self->session->currentDict;
-            if ($dictObj->clockDayHash || $dictObj->clockHourHash || $dictObj->clockMinuteHash) {
+            if (
+                $self->session->currentDict->clockDayHash
+                || $self->session->currentDict->clockHourHash
+                || $self->session->currentDict->clockMinuteHash
+            ) {
                 $self->ivPoke('convertTimeFlag', TRUE);
             } else {
                 $self->ivPoke('convertTimeFlag', FALSE);
@@ -31740,7 +31905,8 @@
 
             # Can't do anything until the current character has been set, and has logged in to the
             #   world
-            if (! $self->session->currentChar || ! $self->session->loginFlag) {
+            $charObj = $self->session->currentChar;
+            if (! $charObj || ! $self->session->loginFlag) {
 
                 # Don't start sending commands, or updating the status screen, until login is
                 #   complete. Repeat this stage indefinitely until that time
@@ -31748,7 +31914,6 @@
 
             } else {
 
-                $charObj = $self->session->currentChar;
                 if ($charObj) {
 
                     # Get the list of commands the task can send to the world (usually 'score',
@@ -31782,8 +31947,7 @@
 
         } elsif ($self->stage == 4) {
 
-            # Every time the task loop runs, update the task window and the current character
-            #   profile
+            # Every time the task loop runs, perform any necessary updates
 
             # Read out a TTS message, if required
             if ($self->lifeStatusChangeFlag) {
@@ -31828,12 +31992,6 @@
                     $self->ivPoke('updateFlag', FALSE);
                     $self->ivPoke('lifeStatusChangeFlag', FALSE);
                     $self->ivPoke('gaugeResetFlag', FALSE);
-                }
-
-                # Update the character profile's IVs, while we're at it
-                if ($self->session->currentChar) {
-
-                    $self->updateCharProfile();
                 }
             }
 
@@ -31994,9 +32152,8 @@
 
         # Local variables
         my (
-            $worldObj, $charObj, $taskString, $health, $colour,
-            @formatList, @taskList,
-            %taskHash,
+            $charObj, $health, $colour,
+            @formatList,
         );
 
         # Check for improper arguments
@@ -32005,38 +32162,15 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->refreshWin', @_);
         }
 
-        $worldObj = $self->session->currentWorld;
-        $charObj = $self->session->currentChar;
-
         # This function can be called by $self->disactivate, when Axmud closes down, in which case
         #   there might not be a window still open. If that's the case, there's nothing for this
         #   function to do
-        if (! $self->taskWinFlag) {
+        # Also nothing to do if there's no current character profile
+        $charObj = $self->session->currentChar;
+        if (! $self->taskWinFlag || ! $charObj) {
 
             return undef;
         }
-
-        # Get a list containing the format of the text to display in the task window
-        if ($worldObj && $worldObj->displayFormatList) {
-
-            # Use the list provided by the world profile
-            @formatList = $worldObj->displayFormatList;
-
-        } else {
-
-            # Use the default list provided by this task
-            @formatList = $self->defaultFormatList;
-        }
-
-        # Create a string representing the tasks in the current tasklist, with one addition
-        #   for each type of that's running
-        foreach my $taskObj ($self->session->ivValues('currentTaskHash')) {
-
-            $taskHash{$taskObj->shortName} = undef;
-        }
-
-        @taskList = sort {lc($a) cmp lc($b)} (keys %taskHash);
-        $taskString = '[' . join(' ', @taskList) . ']';
 
         # If there's been a change in life status, or if the character's health points have moved
         #   into a new band, then the task window's background colour must also be changed
@@ -32044,16 +32178,19 @@
             $self->allowColourFlag
             && ($self->lifeStatusChangeFlag || $self->healthChangeFlag)
         ) {
-            if ($self->lifeStatus eq 'alive') {
+            if ($charObj->lifeStatus eq 'alive') {
 
                 # If either ->healthPoints or ->healthPointsMax not known, assume health is 100%
-                if (! defined $self->healthPoints || ! defined $self->healthPointsMax) {
-
+                if (
+                    ! defined $charObj->healthPoints
+                    || ! defined $charObj->healthPointsMax
+                    || $charObj->healthPointsMax == 0
+                ) {
                     $colour = $self->aliveColour;
 
                 } else {
 
-                    $health = $self->healthPoints / $self->healthPointsMax;
+                    $health = $charObj->healthPoints / $charObj->healthPointsMax;
                     if ($health <= 0.10) {
                         $colour = $self->alive10Colour;
                     } elsif ($health <= 0.30) {
@@ -32065,22 +32202,21 @@
                     }
                 }
 
-            } elsif ($self->lifeStatus eq 'sleep') {
+            } elsif ($charObj->lifeStatus eq 'sleep') {
 
                 $colour = $self->asleepColour;
 
-            } elsif ($self->lifeStatus eq 'passout') {
+            } elsif ($charObj->lifeStatus eq 'passout') {
 
                 $colour = $self->passedOutColour;
 
-            } elsif ($self->lifeStatus eq 'dead') {
+            } elsif ($charObj->lifeStatus eq 'dead') {
 
                 $colour = $self->deadColour;
 
             } else {
 
-                # Just in case $self->lifeStatus has been set to a valid value, use the default
-                #   colour
+                # Just in case $lifeStatus has been set to a valid value, use the default colour
                 $colour = $self->aliveColour;
             }
 
@@ -32090,48 +32226,9 @@
             $self->ivPoke('healthChangeFlag', FALSE);
         }
 
-        # Update the temporary counters, if they are turned on, and if the baseline is non-zero
-        if ($self->fightCountFlag || $self->interactCountFlag) {
-
-            if (defined $self->xpTotal && $self->tempXPBaseline) {
-
-                $self->ivPoke('tempXPCount', ($self->xpTotal - $self->tempXPBaseline));
-            }
-
-            if (defined $self->questCount && $self->tempQuestBaseline) {
-
-                $self->ivPoke(
-                    'tempQuestCount',
-                    ($self->questCount - $self->tempQuestBaseline),
-                );
-            }
-
-            # Allow 0 baseline - often have no money
-            if (defined $self->bankBalance && $axmud::CLIENT->floatCheck($self->bankBalance)) {
-
-                # Prevent display of Perl rounding errors by rounding the value (if the world
-                #   profile's ->currencyRounding is set to -1, we don't round anything)
-                $self->ivPoke(
-                    'tempBankCount',
-                    $self->roundCashValue($self->bankBalance - $self->tempBankBaseline),
-                );
-            }
-
-            # Allow 0 baseline - often have no money
-            if (defined $self->purseContents && $axmud::CLIENT->floatCheck($self->purseContents)) {
-
-                $self->ivPoke(
-                    'tempPurseCount',
-                    $self->roundCashValue($self->purseContents - $self->tempPurseBaseline),
-                );
-            }
-        }
-
-        # @formatList can contain any of the variables defined in $self->displayVarList, in the
-        #   format '@variable@'
-        # Check each line in the list, replacing any variables found with the corresponding values
-        #   (mostly) stored in this task's IVs
-        @formatList = $self->processDisplayList($taskString, @formatList);
+        # Get the text to display in the window, with all variables (in the form @variable_name@)
+        #   replaced by their corresponding values
+        @formatList = $self->processFormatList();
         # Display the resulting text
         $self->insertQuick(join("\n", @formatList));
         # Mark the task window as updated
@@ -32152,556 +32249,629 @@
         return 1;
     }
 
-    sub processDisplayList {
+    sub processFormatList {
 
         # Called by $self->refreshWin
-        # Given a list which contains the format of the text to display in the task window,
-        #   replace all the variables with corresponding values (mostly) stored in this task's IVs
+        # Taking the current world profile's ->statusFormatList as a template, replaces all
+        #   variables with their corresponding values
+        # Variables are in the form @variable@, where 'variable' is one of the keys in
+        #   $self->constCharVarHash, ->constFixedVarHash, ->constPseudoVarHash, ->localVarHash or
+        #   ->customVarHash
         #
         # Expected arguments
-        #   $taskString     - A short pre-prepared string listing which tasks are running
-        #   @displayList    - A list of lines, some (or all) of which contain variables which
-        #                       must be replaced
+        #   (none besides $self)
         #
         # Return values
         #   An empty list on improper arguments, or if the task is forced to shut down here
         #   Otherwise, returns the modified @displayList
 
-        my ($self, $taskString, @displayList) = @_;
+        my ($self, $taskString, $check) = @_;
 
         # Local variables
-        my (
-            $worldObj, $worldName, $guildObj, $guildName, $raceObj, $raceName, $charObj, $charName,
-            $dictObj, $string, $average,
-            @emptyList,
-            %hash, %customHash, %affectHash, %statHash,
-        );
+        my (@emptyList, @lineList);
 
         # Check for improper arguments
-        if (! defined $taskString) {
+        if (defined $check) {
 
-            $axmud::CLIENT->writeImproper($self->_objClass . '->processDisplayList', @_);
+            $axmud::CLIENT->writeImproper($self->_objClass . '->processFormatList', @_);
             return @emptyList;
         }
 
-        # Get profiles and their names
-        $worldObj = $self->session->currentWorld;
-        $worldName = $worldObj->name;
+        @lineList = $self->session->currentWorld->statusFormatList;
+        foreach my $line (@lineList) {
 
-        $guildObj = $self->session->currentGuild;
-        if ($guildObj) {
+            my @matchList;
 
-            $guildName = $guildObj->name;
+            # Get a list of variables in the form @variable@
+            @matchList = $line =~ m/\@([\w\_]+)\@/g;
+
+            foreach my $varName (@matchList) {
+
+                my $value = $self->getValue($varName);
+
+                if (! defined $value) {
+
+                    # Unrecognised variable, or a variable whose corresponding value is not set;
+                    #   replace the variable with a ?
+                    $line =~ s/\@$varName\@/?/;
+
+                } else {
+
+                    # Commify a numeric value
+                    if ($axmud::CLIENT->floatCheck($value)) {
+
+                        $value = $axmud::CLIENT->commify($value);
+                    }
+
+                    # Replace the variable with the corresponding value
+                    $line =~ s/\@$varName\@/$value/;
+                }
+            }
         }
 
-        $raceObj = $self->session->currentRace;
-        if ($raceObj) {
+        return @lineList;
+    }
 
-            $raceName = $raceObj->name;
-        }
+    sub getValue {
 
-        $charObj = $self->session->currentChar;
-        if ($charObj) {
+        # Can be called by anything
+        # $self->constCharVarHash, ->constFixedVarHash, ->constPseudoVarHash, ->localVarHash or
+        #   ->customVarHash specify a set of variables recognised by this task
+        # Given one of those variables, returns the corresponding value; either one stored somewhere
+        #   else (typically in the current character profile), as an IV in this task, or a value
+        #   generated by this function
+        #
+        # Expected arguments
+        #   $var    - One of the variables stored as a key in the hashes above, e.g. 'health_points'
+        #
+        # Return values
+        #   'undef' on improper arguments, if $var is not stored as a key in the hashes above, or if
+        #       the variable's corresponding value is not set (i.e. is 'undef')
+        #   Otherwise returns the variable's corresponding value
 
-            $charName = $charObj->name;
-        }
+        my ($self, $var, $check) = @_;
 
-        $dictObj = $self->session->currentDict;
-
-        # Prepare a hash in the form
-        #       $hash{variable} = replacement_value
-        # ...where replacement_value can be 'undef', if an IV hasn't been set
-        # (This has doesn't contain all the variables)
-        # The calls to $self->commify add commas (or full stops, or nothing at all) to certain
-        #   numerical values, depending on the setting of $self->commifyMode (e.g. converts
-        #   1000000 to 1,000,000)
-        %hash = (
-            # 'world', 'guild', 'race', 'char'
-            'world'              => $worldName,
-            'guild'              => $guildName,
-            'race'               => $raceName,
-            'char'               => $charName,
-            # 'health_points', 'health_points_max', 'magic_points', 'magic_points_max',
-            #   'energy_points', 'energy_points_max', 'guild_points', 'guild_points_max',
-            #   'social_points', 'social_points_max', 'xp_current', 'xp_total'
-            'health_points'      => $self->commify($self->healthPoints),
-            'health_points_max'  => $self->commify($self->healthPointsMax),
-            'magic_points'       => $self->commify($self->magicPoints),
-            'magic_points_max'   => $self->commify($self->magicPointsMax),
-            'energy_points'      => $self->commify($self->energyPoints),
-            'energy_points_max'  => $self->commify($self->energyPointsMax),
-            'guild_points'       => $self->commify($self->guildPoints),
-            'guild_points_max'   => $self->commify($self->guildPointsMax),
-            'social_points'      => $self->commify($self->socialPoints),
-            'social_points_max'  => $self->commify($self->socialPointsMax),
-            'xp_current'         => $self->commify($self->xpCurrent),
-            'xp_next_level'      => $self->commify($self->xpNextLevel),
-            'xp_total'           => $self->commify($self->xpTotal),
-            # 'world_quest_count', 'world_quest_points', 'world_quest_xp', 'world_quest_cash'
-            'world_quest_count'  => $self->commify($self->worldQuestCount),
-            'world_quest_points' => $self->commify($self->worldQuestPointCount),
-            'world_quest_xp'     => $self->commify($self->worldQuestXPCount),
-            'world_quest_cash'   => $self->commify($self->worldQuestCashCount),
-            # 'quest_count', 'quest_points', 'quest_xp', 'quest_cash'
-            'quest_count'        => $self->commify($self->questCount),
-            'quest_points'       => $self->commify($self->questPointCount),
-            'quest_xp'           => $self->commify($self->questXPCount),
-            'quest_cash'         => $self->commify($self->questCashCount),
-            # 'level', 'alignment'
-            'level'              => $self->commify($self->level),
-            'alignment'          => $self->alignment,
-            # 'life_count', 'death_count', 'life_max', 'life_status'
-            'life_count'         => $self->commify($self->lifeCount),
-            'death_count'        => $self->commify($self->deathCount),
-            'life_max'           => $self->commify($self->lifeMax),
-            'life_status'        => $self->lifeStatus,
-            # 'local_wimpy', 'local_wimpy_max', 'remote_wimpy', 'remote_wimpy_max'
-            'local_wimpy'        => $self->localWimpy,
-            'local_wimpy_max'    => $self->constLocalWimpyMax,
-            'remote_wimpy'       => $self->remoteWimpy,
-            'remote_wimpy_max'   => $self->remoteWimpyMax,
-
-            # 'time', 'bank_balance', 'purse_contents'
-            'time'               => $self->time,
-            'bank_balance'       => $self->bankBalance,
-            'purse_contents'     => $self->purseContents,
-            # 'task', 'session_time'
-            'task'               => $taskString,
-            'session_time'       => $self->session->sessionTime,
-            # 'age'
-            'age'                => $self->age,
-            # 'real_time'
-            'real_time'          => $axmud::CLIENT->localTime,
+        # Local variables
+        my (
+            $charObj, $iv, $string, $number,
+            @taskList,
+            %taskHash,
         );
 
-        # Import the hash of custom variables (for speed)
-        %customHash = $self->customVarHash;
+        # Check for improper arguments
+        if (! defined $var || defined $check) {
 
-        # Process every line in turn
-        foreach my $line (@displayList) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->getValue', @_);
+        }
 
-            # Check for all variables in %hash
-            foreach my $var (keys %hash) {
+        # Import the current character (for convenience)
+        $charObj = $self->session->currentChar;
+        $string = '';
+        $number = 0;
 
-                my $value = $hash{$var};
-                if (defined $value) {
-                    $line =~ s/\@$var\@/$value/;
-                } else {
-                    $line =~ s/\@$var\@//;
-                }
-            }
+        # Character values
+        if ($self->ivExists('constCharVarHash', $var)) {
 
-            # Check for standard variables not in %hash
+            # Get the character profile IV, and return its value
+            $iv = $self->ivShow('constCharVarHash', $var);
 
-            # 'age_unit'
-            $string = $worldObj->charAgeUnit;
-            # (Convert the unit to a plural, if possible)
-            if ($dictObj && $dictObj->ivExists('timePluralHash', $string)) {
-
-                $string = $dictObj->ivShow('timePluralHash', $string);
-            }
-
-            if (defined $string) {
-                $line =~ s/\@age_unit\@/$string/;
+            if ($charObj && exists $charObj->{$iv}) {
+                return $charObj->$iv;
             } else {
-                $line =~ s/\@age_unit\@//;
+                return undef;
             }
 
-            # 'fight_count'
-            if ($line =~ m/\@fight_count\@/) {
+        # Fixed values
+        } elsif ($self->ivExists('constFixedVarHash', $var)) {
+
+            # Get the character profile IV, and return its value
+            $iv = $self->ivShow('constFixedVarHash', $var);
+
+            if ($charObj && exists $charObj->{$iv}) {
+                return $charObj->$iv;
+            } else {
+                return undef;
+            }
+
+        # Local variables
+        } elsif ($self->ivExists('localVarHash', $var)) {
+
+            return $self->ivShow('localVarHash', $var);
+
+        # Counter variables
+        } elsif ($self->ivExists('counterVarHash', $var)) {
+
+            if ($self->fightCountFlag || $self->interactCountFlag) {
+
+                $string = $self->ivShow('counterVarHash', $var);
+            }
+
+            if (! defined $string || $string eq '') {
+                return '(off)';
+            } else {
+                return $string;
+            }
+
+        } elsif ($self->ivExists('constCounterVarHash', $var)) {
+
+            # No counters are running
+            return '(off)';
+
+        # Custom variables
+        } elsif ($self->ivExists('customVarHash', $var)) {
+
+            return $self->ivShow('customVarHash', $var);
+
+        # Pseudo variables
+        } elsif ($self->ivExists('constPseudoVarHash', $var)) {
+
+            if ($var eq 'world') {
+
+                return $self->session->currentWorld->name;
+
+            } elsif ($var eq 'guild') {
+
+                if ($self->session->currentGuild) {
+                    return $self->session->currentGuild->name;
+                } else {
+                    return undef;
+                }
+
+            } elsif ($var eq 'race') {
+
+                if ($self->session->currentRace) {
+                    return $self->session->currentRace->name;
+                } else {
+                    return undef;
+                }
+
+            } elsif ($var eq 'char') {
 
                 if ($charObj) {
-
-                    $string = 'Fig: ' . $self->commify($charObj->fightCount)
-                        . ' Kl: ' . $self->commify($charObj->killCount)
-                        . ' Wy: ' . $self->commify($charObj->wimpyCount)
-                        . ' Df: ' . $self->commify($charObj->fightDefeatCount);
-                    $line =~ s/\@fight_count\@/$string/;
-
+                    return $charObj->name;
                 } else {
-
-                    $line =~ s/\@fight_count\@/(Unavailable)/;
+                    return undef;
                 }
-            }
 
-            # 'interact_count'
-            if ($line =~ m/\@interaction_count\@/) {
+            } elsif ($var eq 'affects') {
 
-                if (defined $charObj) {
+                foreach my $affect (sort {lc($a) cmp lc($b)} ($self->ivKeys('affectHash'))) {
 
-                    $string = 'Int: ' . $self->commify($charObj->interactCount)
-                        . ' Sc: ' . $self->commify($charObj->interactSuccessCount)
-                        . ' Fl: ' . $self->commify($charObj->interactFailCount)
-                        . ' Ft: ' . $self->commify($charObj->interactFightCount)
-                        . ' Ds: ' . $self->commify($charObj->interactDisasterCount);
-                    $line =~ s/\@interaction_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@interaction_count\@/(Unavailable)/;
-                }
-            }
-
-            # 'coward_count'
-            if ($line =~ m/\@coward_count\@/) {
-
-                if (defined $charObj) {
-
-                    $string = 'Esc: ' . $self->commify($charObj->escapeCount)
-                        . ' Fl: ' . $self->commify($charObj->fleeCount);
-                    $line =~ s/\@coward_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@coward_count\@/Coward count off/;
-                }
-            }
-
-            # 'temp_fight_count'
-            if ($line =~ m/\@temp_fight_count\@/) {
-
-                if ($self->fightCountFlag) {
-
-                    $string = 'Fig: ' . $self->commify($self->fightCount)
-                        . ' Kl: ' . $self->commify($self->killCount)
-                        . ' Wy: ' . $self->commify($self->wimpyCount)
-                        . ' Df: ' . $self->commify($self->fightDefeatCount);
-                    $line =~ s/\@temp_fight_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_fight_count\@/Fight count off/;
-                }
-            }
-
-            # 'temp_interact_count'
-            if ($line =~ m/\@temp_interaction_count\@/) {
-
-                if ($self->interactCountFlag) {
-
-                    $string = 'Int: ' . $self->commify($self->interactCount)
-                        . ' Sc: ' . $self->commify($self->interactSuccessCount)
-                        . ' Fl: ' . $self->commify($self->interactFailCount)
-                        . ' Ft: ' . $self->commify($self->interactFightCount)
-                        . ' Ds: ' . $self->commify($self->interactDisasterCount);
-                    $line =~ s/\@temp_interaction_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_interaction_count\@/Interact count off/;
-                }
-            }
-
-            # 'temp_coward_count'
-            if ($line =~ m/\@temp_coward_count\@/) {
-
-                if ($charObj) {
-
-                    $string = 'Esc: ' . $self->commify($self->escapeCount)
-                        . ' Fl: ' . $self->commify($self->fleeCount);
-                    $line =~ s/\@temp_coward_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_coward_count\@/(Unavailable)/;
-                }
-            }
-
-            # 'temp_xp_count', 'temp_xp_average', 'temp_quest_count', 'temp_bank_count',
-            #   'temp_purse_count', 'temp_money_count'
-            if ($line =~ m/\@temp_xp_count\@/) {
-
-                if ($self->fightCountFlag || $self->interactCountFlag) {
-
-                    $string = $self->commify($self->tempXPCount);
-                    $line =~ s/\@temp_xp_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_xp_count\@/\(off\)/;
-                }
-            }
-
-            if ($line =~ m/\@temp_xp_average\@/) {
-
-                if ($self->fightCountFlag || $self->interactCountFlag) {
-
-                    if (
-                        $self->tempXPCount
-                        && ($self->killCount + $self->interactSuccessCount) > 0
-                    ) {
-                        $average = $self->commify(
-                            int(
-                                $self->tempXPCount
-                                / ($self->killCount + $self->interactSuccessCount)
-                            )
-                        );
-
-                    } else {
-
-                        $average = 'n/a';
-                    }
-
-                    $line =~ s/\@temp_xp_average\@/$average/;
-
-                } else {
-
-                    $line =~ s/\@temp_xp_average\@/n\/a/;   # n/a
-                }
-            }
-
-            if ($line =~ m/\@temp_quest_count\@/) {
-
-                if ($self->fightCountFlag || $self->interactCountFlag) {
-
-                    $string = $self->commify($self->tempQuestCount);
-                    $line =~ s/\@temp_quest_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_quest_count\@/\(off\)/;
-                }
-            }
-
-            if ($line =~ m/\@temp_bank_count\@/) {
-
-                if ($self->fightCountFlag || $self->interactCountFlag) {
-
-                    $string = $self->tempBankCount;
-                    $line =~ s/\@temp_bank_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_bank_count\@/\(off\)/;
-                }
-            }
-
-            if ($line =~ m/\@temp_purse_count\@/) {
-
-                if ($self->fightCountFlag || $self->interactCountFlag) {
-
-                    $string = $self->tempPurseCount;
-                    $line =~ s/\@temp_purse_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_purse_count\@/\(off\)/;
-                }
-            }
-
-            if ($line =~ m/\@temp_money_count\@/) {
-
-                if ($self->fightCountFlag || $self->interactCountFlag) {
-
-                    $string = $self->tempBankCount + $self->tempPurseCount;
-                    $line =~ s/\@temp_money_count\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_money_count\@/\(off\)/;
-                }
-            }
-
-            # 'temp_timer'
-            if ($line =~ m/\@temp_timer\@/) {
-
-                if ($self->fightCountFlag || $self->interactCountFlag) {
-
-                    $string = int (
-                        ($self->session->sessionTime - $self->tempTimerBaseline)
-                        / 60        # Both values in seconds, so convert to minutes
-                    );
-                    $line =~ s/\@temp_timer\@/$string/;
-
-                } else {
-
-                    $line =~ s/\@temp_timer\@/\(off\)/;
-                }
-            }
-
-            # 'opp_name', 'opp_health', 'opp_health_max', 'opp_level', 'opp_strength'
-            if ($line =~ m/\@opp_(name|health|health_max|level|strength)\@/) {
-
-                if ($self->oppName) {
-
-                    if ($line =~ m/\@opp_name\@/) {
-
-                        $string = $self->oppName;
-                        $line =~ s/\@opp_name\@/$string/;
-                    }
-
-                    if ($line =~ m/\@opp_health\@/) {
-
-                        $string = $self->oppHealth;
-                        if (defined $string) {
-                            $line =~ s/\@opp_health\@/$string/;
-                        } else {
-                            $line =~ s/\@opp_health\@//;
-                        }
-                    }
-
-                    if ($line =~ m/\@opp_health_max\@/) {
-
-                        $string = $self->oppHealthMax;
-                        if (defined $string) {
-                            $line =~ s/\@opp_health_max\@/$string/;
-                        } else {
-                            $line =~ s/\@opp_health_max\@//;
-                        }
-                    }
-
-                    if ($line =~ m/\@opp_level\@/) {
-
-                        $string = $self->oppLevel;
-                        if (defined $string) {
-                            $line =~ s/\@opp_level\@/$string/;
-                        } else {
-                            $line =~ s/\@opp_level\@//;
-                        }
-                    }
-
-                    if ($line =~ m/\@opp_strength\@/) {
-
-                        $string = $self->oppStrength;
-                        if (defined $string) {
-                            $line =~ s/\@opp_strength\@/$string/;
-                        } else {
-                            $line =~ s/\@opp_strength\@//;
-                        }
-                    }
-
-                } else {
-
-                    if ($line =~ m/\@opp_name\@/) {
-
-                        $line =~ s/\@opp_name\@/(none)/;
-                    }
-
-                    if ($line =~ m/\@opp_health\@/) {
-
-                        $line =~ s/\@opp_health\@//;
-                    }
-
-                    if ($line =~ m/\@opp_health_max\@/) {
-
-                        $line =~ s/\@opp_health_max\@//;
-                    }
-
-                    if ($line =~ m/\@opp_level\@/) {
-
-                        $line =~ s/\@opp_level\@//;
-                    }
-
-                    if ($line =~ m/\@opp_strength\@/) {
-
-                        $line =~ s/\@opp_strength\@//;
-                    }
-                }
-            }
-
-            # 'affects'
-            if ($line =~ m/\@affects\@/) {
-
-                $string = '';
-                %affectHash = $self->affectHash;
-
-                foreach my $affectName (sort {lc($a) cmp lc($b)} (keys %affectHash)) {
-
-                    $string .= substr($affectName, 0, 3) . ' ';
+                    $string .= substr($affect, 0, 3) . ' ';
                 }
 
                 # Remove the final trailing space, if there is one
                 $string =~ s/\s+$//;
 
-                $line =~ s/\@affects\@/$string/;
-            }
+                return $string;
 
-            # 'stats'
-            if ($line =~ m/\@stats\@/) {
-
-                $string = '';
-                %statHash = $self->statHash;
+            } elsif ($var eq 'stats') {
 
                 # If the current world's ->statOrderList is set, display stats in that order.
                 #   Otherwise, display them alphabetically
                 if ($self->session->currentWorld->statOrderList) {
 
                     # Display in the order specified by the world profile
-                    foreach my $statName ($self->session->currentWorld->statOrderList) {
+                    foreach my $stat ($self->session->currentWorld->statOrderList) {
 
-                        if (exists $statHash{$statName}) {
+                        if ($self->ivExists('statHash', $stat)) {
 
-                            $string .= substr($statName, 0, 4)  . ': ' . $statHash{$statName} . ' ';
+                            $string .= substr($stat, 0, 3)  . ': '
+                                        . $self->ivShow('statHash', $stat) . ' ';
                         }
                     }
 
                 } else {
 
                     # Display alphabetically
-                    foreach my $statName (sort {lc($a) cmp lc($b)} (keys %statHash)) {
+                    foreach my $stat (sort {lc($a) cmp lc($b)} ($self->ivKeys('statHash'))) {
 
-                        $string .= substr($statName, 0, 4)  . ': ' . $statHash{$statName} . ' ';
+                        $string .= substr($stat, 0, 3)  . ': '
+                                        . $self->ivShow('statHash', $stat) . ' ';
                     }
                 }
 
                 # Remove the final trailing space, if there is one
                 $string =~ s/\s+$//;
 
-                $line =~ s/\@stats\@/$string/;
-            }
+                return $string;
 
-            # 'task_active'
-            if ($line =~ m/\@task_active\@/) {
+            } elsif ($var eq 'age_unit') {
 
-                if ($self->activeFlag) {
-                    $line =~ s/\@task_active\@/[ACTIVE]/;
-                } else {
-                    $line =~ s/\@task_active\@/[NOT ACTIVE]/;
+                $string = $self->session->currentWorld->charAgeUnit;
+                # (Convert the unit to a plural, if possible)
+                if ($self->session->currentDict->ivExists('timePluralHash', $string)) {
+
+                    $string = $self->session->currentDict->ivShow('timePluralHash', $string);
                 }
-            }
 
-            # If this line still contains any supposedly-standard variables (in the format @...@),
-            #   it's an error. Show an error message and halt the task on the next task loop
-            while ($line =~ m/\@\w*\@/) {
+                return $string;
 
-                $self->writeError(
-                    'Unrecognised Status task window variable in line \'' . $line . '\'',
-                    $self->_objClass . '->processDisplayList',
-                );
+            } elsif ($var eq 'money_count') {
 
-                # Remove the invalid variable
-                $line =~ s/\@\w*\@//;
-                # Mark the task to be shutdown
-                $self->ivPoke('shutdownFlag', TRUE);
+                if (! $charObj) {
 
-                return @emptyList;
-            }
-
-            # Check for custom variables
-            foreach my $var (keys %customHash) {
-
-                my $val = $customHash{$var};
-
-                if (defined $val) {
-
-                    $line =~ s/\#$var\#/$val/;
+                    return undef;
 
                 } else {
 
-                    # (Corresponding value not received yet)
-                    $line =~ s/\#$var\#//;
+                    if (defined $charObj->bankBalance) {
+
+                        $number += $charObj->bankBalance;
+                    }
+
+                    if (defined $charObj->purseContents) {
+
+                        $number += $charObj->purseContents;
+                    }
+
+                    return $number;
                 }
+
+            } elsif ($var eq 'coward_count') {
+
+                if (! $charObj) {
+
+                    return undef;
+
+                } else {
+
+                    if (defined $charObj->fleeCount) {
+
+                        $number += $charObj->fleeCount;
+                    }
+
+                    if (defined $charObj->escapeCount) {
+
+                        $number += $charObj->escapeCount;
+                    }
+
+                    return $number;
+                }
+
+            } elsif ($var eq 'task') {
+
+                # Create a string representing the tasks in the current tasklist, with one addition
+                #   for each type of that's running
+                foreach my $taskObj ($self->session->ivValues('currentTaskHash')) {
+
+                    $taskHash{$taskObj->shortName} = undef;
+                }
+
+                @taskList = sort {lc($a) cmp lc($b)} (keys %taskHash);
+                $string = '[' . join(' ', @taskList) . ']';
+
+                return $string;
+
+            } elsif ($var eq 'task_active') {
+
+                if (! $self->activeFlag) {
+                    return '[NOT ACTIVE]';
+                } else {
+                    return '[ACTIVE]';
+                }
+
+            } elsif ($var eq 'local_time') {
+
+                return $axmud::CLIENT->localTime;
+
+            } elsif ($var eq 'session_time') {
+
+                return $self->session->sessionTime;
+
+            } elsif ($var eq 'temp_xp_average') {
+
+                my ($xp, $kill, $success);
+
+                if ($self->fightCountFlag || $self->interactCountFlag) {
+
+                    $xp = $self->getCounterValue('temp_xp_count');
+                    $kill = $self->getCounterValue('temp_kill_count');
+                    $success = $self->getCounterValue('temp_interact_success_count');
+
+                    if ($xp && ($kill + $success) > 0) {
+
+                        $string = int($xp / ($kill + $success));
+                    }
+                }
+
+                if ($string eq '') {
+                    return 'n/a';
+                } else {
+                    return $string;
+                }
+
+            } elsif ($var eq 'temp_money_count') {
+
+                if ($self->fightCountFlag || $self->interactCountFlag) {
+
+                    $number = $self->getCounterValue('temp_bank_count')
+                                + $self->getCounterValue('temp_purse_count');
+
+                }
+
+                return $number;
+
+            } elsif ($var eq 'temp_timer') {
+
+                if ($self->fightCountFlag || $self->interactCountFlag) {
+
+                    $string = int (
+                        ($self->session->sessionTime - $self->counterStartTime)
+                        / 60        # Both values in seconds, so convert to minutes
+                    );
+
+                } else {
+
+                    $string = '(off)';
+                }
+
+                return $string;
+
+            } elsif ($var eq 'fight_string') {
+
+                if (! $charObj) {
+
+                    return undef;
+
+                } else {
+
+                    $string = 'Fig: ' . $axmud::CLIENT->commify($charObj->fightCount)
+                        . ' Kl: ' . $axmud::CLIENT->commify($charObj->killCount)
+                        . ' Wy: ' . $axmud::CLIENT->commify($charObj->wimpyCount)
+                        . ' Df: ' . $axmud::CLIENT->commify($charObj->fightDefeatCount);
+
+                    return $string;
+                }
+
+            } elsif ($var eq 'interact_string') {
+
+                if (! $charObj) {
+
+                    return undef;
+
+                } else {
+
+                    $string = 'Int: ' . $axmud::CLIENT->commify($charObj->interactCount)
+                        . ' Sc: ' . $axmud::CLIENT->commify($charObj->interactSuccessCount)
+                        . ' Fl: ' . $axmud::CLIENT->commify($charObj->interactFailCount)
+                        . ' Ft: ' . $axmud::CLIENT->commify($charObj->interactFightCount)
+                        . ' Ds: ' . $axmud::CLIENT->commify($charObj->interactDisasterCount);
+
+                    return $string;
+                }
+
+            } elsif ($var eq 'coward_string') {
+
+                if (! $charObj) {
+
+                    return undef;
+
+                } else {
+
+                    $string = 'Esc: ' . $axmud::CLIENT->commify($charObj->escapeCount)
+                        . ' Fl: ' . $axmud::CLIENT->commify($charObj->fleeCount);
+
+                    return $string;
+                }
+
+            } elsif ($var eq 'temp_fight_string') {
+
+                if (! $self->fightCountFlag) {
+
+                    return '(Fight count off)';
+                }
+
+                $string = 'Fig: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_fight_count'))
+                    . ' Kl: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_kill_count'))
+                    . ' Wy: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_wimpy_count'))
+                    . ' Df: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_fight_defeat_count'));
+
+                return $string;
+
+            } elsif ($var eq 'temp_interact_string') {
+
+                if (! $self->interactCountFlag) {
+
+                    return '(Interact count off)';
+                }
+
+                $string = 'Int: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_interact_count'))
+                    . ' Sc: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_interact_success_count'))
+                    . ' Fl: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_interact_fail_count'))
+                    . ' Ft: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_interact_fight_count'))
+                    . ' Ds: '
+                    . $axmud::CLIENT->commify(
+                        $self->getCounterValue('temp_interact_disaster_count'),
+                    );
+
+                return $string;
+
+            } elsif ($var eq 'temp_coward_string') {
+
+                if (! $self->fightCountFlag && ! $self->interactCountFlag) {
+
+                    return '(Coward count off)';
+                }
+
+                $string = 'Esc: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_escape_count'))
+                    . ' Fl: '
+                    . $axmud::CLIENT->commify($self->getCounterValue('temp_flee_count'));
+
+                return $string;
+
+            } else {
+
+                # Emergency failsafe (this shouldn't be executed)
+                return undef;
             }
 
-            # If this line still contains any custom variables, overlook them (and replace the
-            #   #...# string)
-            while ($line =~ m/\#\w*\#/) {
+        } else {
 
-                $line =~ s/\#\w*\#/?/;
+            # Unrecognised variable
+            return undef;
+        }
+    }
+
+    sub getCounterValue {
+
+        # Called by $self->getValue to extract a numerical value from $self->counterVarHash, or 0 if
+        #   the value isn't defined (for use in sums and concatenated strings)
+        #
+        # Expected arguments
+        #   $var        - A variable stored as a key in $self->counterVarHash, e.g.
+        #                   'temp_fight_count'
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise the specified variable's value (or 0 if the variable's value is 'undef')
+
+        my ($self, $var, $check) = @_;
+
+        # Local variables
+        my $val;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->getCounterValue', @_);
+        }
+
+        $val = $self->ivShow('counterVarHash', $var);
+        if (! defined $val) {
+
+            $val = 0;
+        }
+
+        return $val;
+    }
+
+    sub setValue {
+
+        # Called by several functions in this task, but can be called by anything (especially by
+        #   any code that wants to update the task and the current character profile at the same
+        #   time)
+        # Sets a character, local or custom variable. Any related counter variable is updated at
+        #   the same time
+        # Fixed, pseudo and counter variables are ignored, if specified directly
+        #
+        # Expected arguments
+        #   $var    - A character, local or custom variable (stored as a key in
+        #               $self->constCharVarHash, ->localVarHash or ->customVarHash
+        #
+        # Optional arguments
+        #   $val    - The value to set (can be 'undef')
+        #
+        # Return values
+        #   'undef' on improper arguments, if $var is not a recognised character/local/custom
+        #       variable, or if $val should be stored in the current character profile, but no such
+        #       profile exists
+        #   1 otherwise
+
+        my ($self, $var, $val, $check) = @_;
+
+        # Local variables
+        my ($charObj, $iv, $oppVar, $baseVal, $attrib);
+
+        # Check for improper arguments
+        if (! defined $var || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setValue', @_);
+        }
+
+        # Ignore fixed, pseudo and counter variables
+        if (
+            $self->ivExists('constFixedVarHash', $var)
+            || $self->ivExists('constPseudoVarHash', $var)
+            || $self->ivExists('constCounterVarHash', $var)
+        ) {
+            return undef;
+        }
+
+        # Import the current character profile (for convenience)
+        $charObj = $self->session->currentChar;
+
+        # For the variables 'health_points'/'health_points_max', the task window's background colour
+        #   must be set before setting the IV (so the previous and new values can be compared)
+        if ($charObj) {
+
+            if ($var eq 'health_points') {
+
+                $self->checkHealthChange($val, $charObj->healthPointsMax);
+
+            } elsif ($var eq 'health_points_max') {
+
+                $self->checkHealthChange($charObj->healthPoints, $val);
             }
         }
 
-        return @displayList;
+        # Set character variables (stored in the current character)
+        if ($self->ivExists('constCharVarHash', $var)) {
+
+            $iv = $self->ivShow('constCharVarHash', $var);
+
+            # Update the current character profile
+            $charObj->ivPoke($iv, $val);
+
+        # Set local variables (stored in this task's IVs)
+        } elsif ($self->ivExists('localVarHash', $var)) {
+
+            $self->ivAdd('localVarHash', $var, $val);
+
+        # Set custom variables (stored in this task's IVs; the custom variable is created if it
+        #   doesn't exist already)
+        } else {
+
+            $self->ivAdd('localVarHash', $var, $val);
+        }
+
+        # Update counters
+        if ($self->ivExists('constCounterRevHash', $var)) {
+
+            # e.g. convert 'temp_xp_count' to 'xp_total'
+            $oppVar = $self->ivShow('constCounterRevHash', $var);
+
+            if ($self->ivExists('constCharVarHash', $oppVar)) {
+                $iv = $self->ivShow('constCharVarHash', $oppVar);
+            } elsif ($self->ivExists('constFixedVarHash', $oppVar)) {
+                $iv = $self->ivShow('constFixedVarHash', $oppVar);
+            }
+
+            # If the right counter is running, $var will exist in $self->counterVarHash; otherwise
+            #   it won't
+            if ($iv && $self->ivExists('counterVarHash', $var)) {
+
+                $baseVal = $charObj->$iv;
+
+                if (! defined $val || ! defined $baseVal) {
+                    $self->ivAdd('counterVarHash', $var, undef);
+                } else {
+                    $self->ivAdd('counterVarHash', $var, ($val - $baseVal));
+                }
+            }
+        }
+
+        # For changes to health/magic/energy/guild/social points, Check whether it's necessary to
+        #   read a TTS alert
+        if ($self->ivExists('constPointHash', $var)) {
+
+            ($attrib) = split(/\_/, $var);
+            $self->checkPointsChange($attrib);      # e.g. 'health'
+        }
+
+        # The task window must be updated on the next task loop
+        $self->ivPoke('updateFlag', TRUE);
+
+        return 1;
     }
 
     sub resetGauges {
@@ -32713,14 +32883,15 @@
         #   (none besides $self)
         #
         # Return values
-        #   'undef' on improper arguments or if this task isn't allowed to create gauges
+        #   'undef' on improper arguments, if the current character profile isn't set or if this
+        #       task isn't allowed to create gauges
         #   1 otherwise
 
         my ($self, $check) = @_;
 
         # Local variables
         my (
-            $stripObj, $level,
+            $charObj, $stripObj, $level,
             @formatList,
         );
 
@@ -32732,6 +32903,13 @@
 
         # Do nothing if this task shouldn't create gauges
         if (! $self->gaugeFlag) {
+
+            return undef;
+        }
+
+        # Import the current character profile (for convenience)
+        $charObj = $self->session->currentChar;
+        if (! $charObj) {
 
             return undef;
         }
@@ -32805,29 +32983,39 @@
                 $emptyCol = shift @formatList;
                 $labelCol = shift @formatList;
 
-                # Convert $var/$maxVar (e.g. 'health_points') into Status Task IVs (e.g.
-                #   ->healthPoints)
-                # (Custom variables take precedence over 'standard' variables with the same name)
-                if ($self->ivExists('customVarHash', $var)) {
+                # Convert $var/$maxVar (e.g. 'health_points', 'health_points_max') into current
+                #   character profile IVs (e.g. ->healthPoints, ->healthPointsMax) or, for custom
+                #   variables, the corresponding values stored in $self->customVarHash
+                if ($self->ivExists('constCharVarHash', $var)) {
+
+                    $varIV = $self->ivShow('constCharVarHash', $var);
+                    $value = $charObj->$varIV;
+
+                } elsif ($self->ivExists('constFixedVarHash', $var)) {
+
+                    $varIV = $self->ivShow('constFixedVarHash', $var);
+                    $value = $charObj->$varIV;
+
+                } elsif ($self->ivExists('customVarHash', $var)) {
 
                     $customKey = $var;
                     $value = $self->ivShow('customVarHash', $var);
-
-                } elsif ($self->ivExists('singleBackRefVarHash', $var)) {
-
-                    $varIV = $self->ivShow('singleBackRefVarHash', $var);
-                    $value = $self->$varIV;
                 }
 
-                if ($self->ivExists('customVarHash', $maxVar)) {
+                if ($self->ivExists('constCharVarHash', $maxVar)) {
+
+                    $maxVarIV = $self->ivShow('constCharVarHash', $maxVar);
+                    $maxValue = $charObj->$maxVarIV;
+
+                } elsif ($self->ivExists('constFixedVarHash', $maxVar)) {
+
+                    $maxVarIV = $self->ivShow('constFixedVarHash', $maxVar);
+                    $maxValue = $charObj->$maxVarIV;
+
+                } elsif ($self->ivExists('customVarHash', $maxVar)) {
 
                     $maxCustomKey = $maxVar;
                     $maxValue = $self->ivShow('customVarHash', $maxVar);
-
-                } elsif ($self->ivExists('singleBackRefVarHash', $maxVar)) {
-
-                    $maxVarIV = $self->ivShow('singleBackRefVarHash', $maxVar);
-                    $maxValue = $self->$maxVarIV;
                 }
 
                 if (defined $value && defined $maxValue && $addFlag) {
@@ -32835,8 +33023,8 @@
                     $maxValue += $value;
                 }
 
-                # Sanity check: $var and $maxVar must point at real Status task IVs, or real keys
-                #   in $self->customVarHash, but the other values can be 'undef'
+                # Sanity check: $var and $maxVar must point at real character profile IVs, or real
+                #   keys in $self->customVarHash, but the other values can be 'undef'
                 if (
                     (defined $varIV && defined $maxVarIV)
                     || (defined $customKey && defined $maxCustomKey)
@@ -32888,14 +33076,20 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my $charObj;
+
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setGauges', @_);
         }
 
-        # Do nothing if this task shouldn't create gauges
-        if (! $self->gaugeFlag || ! $self->gaugeStripObj) {
+        # Import the current character profile (for convenience)
+        $charObj = $self->session->currentChar;
+
+        # Do nothing if this task shouldn't create gauges or if there's no current character profile
+        if (! $charObj || ! $self->gaugeFlag || ! $self->gaugeStripObj) {
 
             return undef;
         }
@@ -32917,8 +33111,8 @@
 
             } elsif (defined $varIV && defined $maxVarIV) {
 
-                $value = $self->$varIV;
-                $maxValue = $self->$maxVarIV;
+                $value = $charObj->$varIV;
+                $maxValue = $charObj->$maxVarIV;
             }
 
             if (defined $value && defined $maxValue && $gaugeObj->addFlag) {
@@ -32935,129 +33129,10 @@
         return 1;
     }
 
-    sub updateCharProfile {
-
-        # Called by $self->main, stage 4
-        # Updates the character profile's IVs with statistics gathered by this task
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my $charObj;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateCharProfile', @_);
-        }
-
-        $charObj = $self->session->currentChar;
-        if ($charObj) {
-
-            # Don't update the profile with any unknown statistics (i.e. this task's IVs which are
-            #   set to 'undef')
-            if (defined $self->xpCurrent) {
-
-                $charObj->ivPoke('xpCurrent', $self->xpCurrent);
-            }
-
-            if (defined $self->xpNextLevel) {
-
-                $charObj->ivPoke('xpNextLevel', $self->xpNextLevel);
-            }
-
-            if (defined $self->xpTotal) {
-
-                $charObj->ivPoke('xpTotal', $self->xpTotal);
-            }
-
-            if (defined $self->level) {
-
-                $charObj->ivPoke('level', $self->level);
-            }
-
-            if (defined $self->alignment) {
-
-                $charObj->ivPoke('alignment', $self->alignment);
-            }
-
-            if (defined $self->affectHash) {
-
-                $charObj->ivPoke('affectHash', $self->affectHash);
-            }
-
-            if (defined $self->statHash) {
-
-                $charObj->ivPoke('statHash', $self->statHash);
-            }
-
-            if (defined $self->lifeCount) {
-
-                $charObj->ivPoke('lifeCount', $self->lifeCount);
-            }
-
-            if (defined $self->deathCount) {
-
-                $charObj->ivPoke('deathCount', $self->deathCount);
-            }
-
-            if (defined $self->lifeMax) {
-
-                $charObj->ivPoke('lifeMax', $self->lifeMax);
-            }
-
-            if (defined $self->lifeStatus) {
-
-                $charObj->ivPoke('lifeStatus', $self->lifeStatus);
-            }
-
-            # (NB 'local_wimpy_max' is a constant value)
-
-            if (defined $self->localWimpy) {
-
-                $charObj->ivPoke('localWimpy', $self->localWimpy);
-            }
-
-            if (defined $self->remoteWimpy) {
-
-                $charObj->ivPoke('remoteWimpy', $self->remoteWimpy);
-            }
-
-            if (defined $self->remoteWimpyMax) {
-
-                $self->session->currentWorld->ivPoke('remoteWimpyMax', $self->remoteWimpyMax);
-            }
-
-            if (defined $self->age) {
-
-                $charObj->ivPoke('age', $self->age);
-            }
-
-            if (defined $self->bankBalance) {
-
-                $charObj->ivPoke('bankBalance', $self->bankBalance);
-            }
-
-            if (defined $self->purseContents) {
-
-                $charObj->ivPoke('purseContents', $self->purseContents);
-            }
-        }
-
-        return 1;
-    }
-
     sub resetTriggers {
 
-        # Called by $self->main, stage 2, to create (dependent) triggers that capture statistics
-        #   from the world
+        # Called by $self->main, stage 2, to create (dependent) triggers that capture values from
+        #   the world
         # Also called by $self->activate and $self->disactivate to recreate those triggers, with the
         #   gag settings set to match the task's 'active' or 'disactivated' status
         #
@@ -33094,13 +33169,13 @@
         @list = $worldObj->barPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $varType, $gag, $barString, $maxBars, $interfaceObj, $flag);
+            my ($pattern, $grpNum, $varType, $gag, $barString, $maxBars, $interfaceObj, $flag);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
-            # 'health', 'magic', 'energy', 'guild', 'social', 'xp'
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
+            # 'health', 'magic', 'energy', 'guild', 'social', 'xp', 'qp', 'op'
             $varType = shift @list;
             # 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let
             #   $self->activeFlag decide
@@ -33151,27 +33226,27 @@
             } else {
 
                 # Give the trigger some properties that will help $self->barPatternSeen to decide
-                #   what to do when the trigger fires (specifically, which backreference contains
+                #   what to do when the trigger fires (specifically, which group substring contains
                 #   the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
                 $interfaceObj->ivAdd('propertyHash', 'var_type', $varType);
                 $interfaceObj->ivAdd('propertyHash', 'bar_string', $barString);
                 $interfaceObj->ivAdd('propertyHash', 'max_bars', $maxBars);
             }
         }
 
-        # Single backref patterns
+        # Group substring patterns
         #   e.g. '^(.*)\((.*)\) health points and (.*)\((.*)\) social points\.$'
-        # (...when all we want is nth backref)
-        @list = $worldObj->singleBackRefPatternList;
+        # (...when all we want is nth group substring)
+        @list = $worldObj->groupPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $varType, $gag, $interfaceObj, $flag);
+            my ($pattern, $grpNum, $varType, $gag, $interfaceObj, $flag);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
             # 'health_points', 'health_points_max', 'magic_points', 'magic_points_max',
             #   'energy_points', 'energy_points_max', 'guild_points', 'guild_points_max',
             #   'social_points', 'social_points_max', 'xp_current', 'xp_total', 'level',
@@ -33188,8 +33263,7 @@
             if (! defined $gag || ($gag ne 'show' && $gag ne 'hide' && $gag ne 'choose')) {
 
                 $self->writeWarning(
-                    'Missing or invalid arguments in world profile\'s ->singleBackRefPatternList'
-                    . ' IV',
+                    'Missing or invalid arguments in world profile\'s ->groupPatternList IV',
                     $self->_objClass . '->resetTriggers',
                 );
 
@@ -33209,7 +33283,7 @@
                 'trigger',
                 $pattern,
                 $self,
-                'singleBackRefPatternSeen',
+                'groupPatternSeen',
                 'gag',
                 $flag,
             );
@@ -33217,8 +33291,7 @@
             if (! $interfaceObj) {
 
                 $self->writeWarning(
-                    'Couldn\'t create trigger for current world profile\'s'
-                    . ' ->singleBackRefPatternList IV',
+                    'Couldn\'t create trigger for current world profile\'s ->groupPatternList IV',
                     $self->_objClass . '->resetTriggers',
                 );
 
@@ -33227,9 +33300,9 @@
             } else {
 
                 # Give the trigger some properties that will help $self->barPatternSeen to decide
-                #   what to do when the trigger fires (specifically, which backreference contains
+                #   what to do when the trigger fires (specifically, which group substring contains
                 #   the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
                 $interfaceObj->ivAdd('propertyHash', 'var_type', $varType);
             }
         }
@@ -33239,12 +33312,12 @@
         @list = $worldObj->affectPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $gag, $interfaceObj, $flag);
+            my ($pattern, $grpNum, $gag, $interfaceObj, $flag);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
             # 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let
             #   $self->activeFlag decide
             $gag = shift @list;
@@ -33292,9 +33365,9 @@
             } else {
 
                 # Give the trigger some properties that will help $self->affectPatternSeen to decide
-                #   what to do when the trigger fires (specifically, which backreference contains
+                #   what to do when the trigger fires (specifically, which group substring contains
                 #   the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
             }
         }
 
@@ -33303,12 +33376,12 @@
         @list = $worldObj->statPatternList;
         OUTER: while (@list) {
 
-            my ($pattern, $backRef, $statType, $gag, $interfaceObj, $flag);
+            my ($pattern, $grpNum, $statType, $gag, $interfaceObj, $flag);
 
             # The pattern to match
             $pattern = shift @list;
-            # Which backreference contains the data we need
-            $backRef = shift @list;
+            # Which group substring contains the data we need
+            $grpNum = shift @list;
             # A key in the world profile's stat hash (e.g. 'int', 'con', 'dex')
             $statType = shift @list;
             # 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let
@@ -33357,9 +33430,9 @@
             } else {
 
                 # Give the trigger some properties that will help $self->statPatternSeen to decide
-                #   what to do when the trigger fires (specifically, which backreference contains
+                #   what to do when the trigger fires (specifically, which group substring contains
                 #   the data, and which IV to update with it)
-                $interfaceObj->ivAdd('propertyHash', 'back_ref', $backRef);
+                $interfaceObj->ivAdd('propertyHash', 'grp_num', $grpNum);
                 $interfaceObj->ivAdd('propertyHash', 'stat_type', $statType);
             }
         }
@@ -33870,9 +33943,10 @@
 
     sub checkHealthChange {
 
-        # Called by $self->barPatternSeen or ->singleBackRefPatternSeen
-        # When the character's health point score ($self->healthPoints) changes, it might be
-        #   necessary to change the background colour of the task window
+        # Called by $self->setValue
+        # When the character's health points (GA::Profile::Char->healthPoints) or maximum health
+        #   points (GA::Profile::Char->healthPointsMax) change, it might be necessary to change the
+        #   background colour of the window
         # If the world doesn't explicitly state when the character wakes up after falling asleep,
         #   when they come around after passing out, or when they resurrect after dying, it might
         #   also be necessary to change the life status to 'alive' if the character's health points
@@ -33881,41 +33955,50 @@
         #   so
         #
         # Expected arguments
-        #   $newValue   - the value that's about to be saved in $self->healthPoints, as soon as this
-        #                   function is finished
+        #   $hp     - The new health points value
+        #   $hpMax  - The new maximum health points value
         #
         # Return values
-        #   'undef' on improper arguments or if the task window's background colour doesn't have to
-        #       be changed
+        #   'undef' on improper arguments, if there's no current character set or if the task
+        #       window's background colour doesn't have to be changed
         #   1 if the colour should be changed
 
-        my ($self, $newValue, $check) = @_;
+        my ($self, $hp, $hpMax, $check) = @_;
 
         # Local variables
-        my ($old, $new);
+        my ($charObj, $old, $new);
 
         # Check for improper arguments
-        if (! defined $newValue || defined $check) {
+        if (! defined $hp || ! defined $hpMax || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->checkHealthChange', @_);
         }
 
+        # Do nothing if there's no current character set
+        $charObj = $self->session->currentChar;
+        if (! $charObj) {
+
+            return undef;
+        }
+
         # If the character's life status isn't 'alive' and the override flag is set, the character
         #   is no longer asleep, passed out or dead. Change the life status to 'alive' again
-        if ($self->lifeStatus ne 'alive' && $self->lifeStatusOverrideFlag) {
-
-            $self->ivPoke('lifeStatus', 'alive');
+        if (
+            $charObj->lifeStatus ne 'alive'
+            && $self->session->currentWorld->lifeStatusOverrideFlag
+        ) {
+            $charObj->ivPoke('lifeStatus', 'alive');
             $self->setTaskWinTitle();
 
             # The task window's background colour should be changed
             return $self->ivPoke('healthChangeFlag', TRUE);
 
         # Otherwise, only consider changing the background colour, if the relevant IVs are non-zero
-        } elsif ($self->allowColourFlag && $self->healthPoints && $self->healthPointsMax) {
+        } elsif ($self->allowColourFlag && $charObj->healthPoints && $charObj->healthPointsMax) {
 
             # Get the character's healt points as a percentage of the maximum
-            $old = $self->healthPoints / $self->healthPointsMax;
-            $new = $newValue / $self->healthPointsMax;
+            $old = $charObj->healthPoints / $charObj->healthPointsMax;
+            $new = $hp / $hpMax;
 
             if (
                 (
@@ -33939,27 +34022,29 @@
 
     sub checkPointsChange {
 
-        # Called by $self->barPatternSeen, ->singleBackRefPatternSeen and ->set_updateFromMsdp
+        # Called by $self->setValue
         # When the character's health/magic/energy/guild/social points change, check whether it's
         #   time to read out a TTS alert message and, if so, add the message to
         #   $self->ttsPointsAlertMsgHash
         # All messages are then read out by $self->doStage (stage 4), and ->ttsPointsAlertMsgHash
         #   is reset; in this way, we don't erroneously read out an alert message if the code
-        #   receives (for example) a new ->healthPoints score before a new ->healthPointsMax score
+        #   receives (for example) a new 'health_points' value before a new 'health_points_max'
+        #   value
         #
         # Expected arguments
         #   $attrib     - Which points total has changed: 'health', 'magic', 'energy', 'guild',
         #                   'social'
         #
         # Return values
-        #   'undef' on improper arguments or if nothing is read out
-        #   1 if an alert message is read out (whether the user hears anything, or not, will depend
-        #       on the usual TTS variables)
+        #   'undef' on improper arguments, if there's no current character set or if nothing is to
+        #       be read out
+        #   1 if an alert message is to be read out (whether the user hears anything, or not, will
+        #       depend on the usual TTS variables)
 
         my ($self, $attrib, $check) = @_;
 
         # Local variables
-        my ($iv, $current, $ivMax, $max, $percent);
+        my ($charObj, $iv, $current, $ivMax, $max, $percent);
 
         # Check for improper arguments
         if (
@@ -33972,29 +34057,34 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->checkPointsChange', @_);
         }
 
+        # Do nothing if there's no current character set
+        $charObj = $self->session->currentChar;
+        if (! $charObj) {
+
+            return undef;
+        }
+
         # Get the current and maximum points
         $iv = $attrib . 'Points';
-        $current = $self->$iv;
+        $current = $charObj->$iv;
         $ivMax = $attrib . 'PointsMax';
-        $max = $self->$ivMax;
+        $max = $charObj->$ivMax;
 
-        if (! defined $current || ! defined $max) {
+        if (! defined $current || ! defined $max || $max == 0) {
 
             # Points percentage not currently known
             return undef;
+        }
 
+        # Set the points percentage, in a range 0-100%
+        $percent = ($current / $max) * 100;
+        # Protect ourselves against unexpected errors
+        if ($percent < 0) {
+            $percent = 0;
+        } elsif ($percent > 100) {
+            $percent = 100;
         } else {
-
-            # Set the points percentage, in a range 0-100%
-            $percent = ($current / $max) * 100;
-            # Protect ourselves against unexpected errors
-            if ($percent < 0) {
-                $percent = 0;
-            } elsif ($percent > 100) {
-                $percent = 100;
-            } else {
-                $percent = int($percent);
-            }
+            $percent = int($percent);
         }
 
         if (
@@ -34094,60 +34184,6 @@
         }
     }
 
-    sub commify {
-
-        # Called by anything
-        # Adds commas (etc) to numbers, depending on the value of $self->commifyMode
-        # Returns the modified number
-        #
-        # Expected arguments
-        #   (none)
-        #
-        # Optional arguments
-        #   $number      - An integer or floating point value, e.g. 1.124. If not defined, then
-        #                   'undef' is returned
-        #
-        # Return values
-        #   'undef' if no arguments specified
-        #   Otherwise returns the modified value
-
-        my ($self, $number, $check) = @_;
-
-        # Local variables
-        my $mode;
-
-        # (No check for improper arguments)
-
-        $mode = $self->commifyMode;
-
-        if (! defined $number) {
-
-            return undef;
-
-        } elsif ($mode eq 'use_comma') {
-
-            # (add commas)
-            1 while $number =~ s/^([-+]?\d+)(\d{3})/$1,$2/;
-
-        } elsif ($mode eq 'use_europe') {
-
-            # (add European-style full stops)
-            1 while $number =~ s/^([-+]?\d+)(\d{3})/$1.$2/;
-
-        } elsif ($mode eq 'use_brit') {
-
-            # (add British-style spaces)
-            1 while $number =~ s/^([-+]?\d+)(\d{3})/$1 $2/;
-
-        } elsif ($mode eq 'use_underline') {
-
-            # (add underlines)
-            1 while $number =~ s/^([-+]?\d+)(\d{3})/$1_$2/;
-        }
-
-        return $number;
-    }
-
     ##################
     # Response methods
 
@@ -34160,8 +34196,9 @@
         #
         # The world profile's bar pattern list occurs in groups of 6 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
-        #   [2] - 'health', 'magic', 'energy', 'guild', 'social', 'xp_current', 'xp_next_level'
+        #   [1] - which group substring contains the data we need
+        #   [2] - 'health', 'magic', 'energy', 'guild', 'social', 'xp_current', 'xp_next_level',
+        #           'qp_current', 'qp_next_level', 'op_current', 'op_next_level'
         #   [3] - the string which represents 1 unit, e.g. '*'
         #   [4] - how many units equal the maximum
         #   [5] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'no_trigger' not to
@@ -34169,12 +34206,15 @@
         #           only need a single trigger to detect it)
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
-        #   var_type        - 'health', 'magic', 'energy', 'guild', 'social', 'xp' (same as [2] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
+        #   var_type        - 'health', 'magic', 'energy', 'guild', 'social', 'xp_current',
+        #                       'xp_next_level', 'qp_current', 'qp_next_level', 'op_current',
+        #                       'op_next_level' (same as [2] )
         #   bar_string      - the string which represents 1 unit, e.g. '*' (same as [3] )
         #   max_bars        - how many units equal the maximum (same as [4] )
         #
-        # This function counts the bars in the appropriate backref and updates the task's IVs
+        # This function counts the bars in the appropriate group substring and updates the task's
+        #   IVs
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -34182,7 +34222,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -34195,17 +34236,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $varType, $barString, $maxBars, $backRefString, $numBars);
+        my ($obj, $grpNum, $varType, $barString, $maxBars, $grpString, $numBars);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->barPatternSeen', @_);
@@ -34227,93 +34268,95 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         $varType = $obj->ivShow('propertyHash', 'var_type');
         $barString = $obj->ivShow('propertyHash', 'bar_string');
         $maxBars = $obj->ivShow('propertyHash', 'max_bars');
-        # Get the correct backref
-        $backRefString = $$backRefListRef[$backRefNum];
+        # Get the correct group substring
+        $grpString = $$grpStringListRef[$grpNum];
         # Count the number of bars
-        $numBars = () = $backRefString =~ m/$barString/g;
+        $numBars = () = $grpString =~ m/$barString/g;
 
         # Update the task's instance variables
         if ($varType eq 'health') {
 
-            $self->ivPoke('healthPointsMax', $maxBars);
-            # Change the task window's background colour, if necessary...
-            $self->checkHealthChange($numBars);
-            # ...before setting the new value of ->healthPoints
-            $self->ivPoke('healthPoints', $numBars);
-            # Check whether it's necessary to read a TTS alert
-            $self->checkPointsChange($varType);
+            $self->setValue('health_points_max', $maxBars);
+            $self->setValue('health_points', $numBars);
 
         } elsif ($varType eq 'magic') {
 
-            $self->ivPoke('magicPoints', $numBars);
-            $self->ivPoke('magicPointsMax', $maxBars);
-            $self->checkPointsChange($varType);
+            $self->setValue('magic_points_max', $maxBars);
+            $self->setValue('magic_points', $numBars);
 
         } elsif ($varType eq 'energy') {
 
-            $self->ivPoke('energyPoints', $numBars);
-            $self->ivPoke('energyPointsMax', $maxBars);
-            $self->checkPointsChange($varType);
+            $self->setValue('energy_points_max', $maxBars);
+            $self->setValue('energy_points', $numBars);
 
         } elsif ($varType eq 'guild') {
 
-            $self->ivPoke('guildPoints', $numBars);
-            $self->ivPoke('guildPointsMax', $maxBars);
-            $self->checkPointsChange($varType);
+            $self->setValue('guild_points_max', $maxBars);
+            $self->setValue('guild_points', $numBars);
 
         } elsif ($varType eq 'social') {
 
-            $self->ivPoke('socialPoints', $numBars);
-            $self->ivPoke('socialPointsMax', $maxBars);
-            $self->checkPointsChange($varType);
+            $self->setValue('social_points_max', $maxBars);
+            $self->setValue('social_points', $numBars);
 
         } elsif ($varType eq 'xp_current') {
 
-            $self->ivPoke('xpCurrent', $numBars);
-            $self->ivPoke('xpTotal', $maxBars);
+            $self->setValue('xp_total', $maxBars);
+            $self->setValue('xp_current', $numBars);
 
         } elsif ($varType eq 'xp_next_level') {
 
-            $self->ivPoke('xpNextLevel', $numBars);
-            $self->ivPoke('xpTotal', $maxBars);
-        }
+            $self->setValue('xp_total', $maxBars);
+            $self->setValue('xp_next_level', $numBars);
 
-        $self->ivPoke('updateFlag', TRUE);
+        } elsif ($varType eq 'qp_current') {
+
+            $self->setValue('qp_total', $maxBars);
+            $self->setValue('qp_current', $numBars);
+
+        } elsif ($varType eq 'qp_next_level') {
+
+            $self->setValue('qp_total', $maxBars);
+            $self->setValue('qp_next_level', $numBars);
+
+        } elsif ($varType eq 'op_current') {
+
+            $self->setValue('op_total', $maxBars);
+            $self->setValue('op_current', $numBars);
+
+        } elsif ($varType eq 'op_next_level') {
+
+            $self->setValue('op_total', $maxBars);
+            $self->setValue('op_next_level', $numBars);
+        }
 
         return 1;
     }
 
-    sub singleBackRefPatternSeen {
+    sub groupPatternSeen {
 
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture strings matching
-        #   patterns containing single backreferences
-        #   e.g. ('^Hp: (.*)  Gp: (.*)  Xp: (.*)  Sp: (.*)$',  2)
+        #   patterns containing group substrings, only one of which we want
+        #   e.g. '^Hp: (.*)  Gp: (.*)  Xp: (.*)  Sp: (.*)$'
         #
-        # The world profile's single backref pattern list occurs in groups of 4 elements,
-        #   representing
+        # The world profile's group pattern list occurs in groups of 4 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
-        #   [2] - 'health_points', 'health_points_max', 'magic_points', 'magic_points_max',
-        #           'energy_points', 'energy_points_max', 'guild_points', 'guild_points_max',
-        #           'social_points', 'social_points_max', 'xp_current', 'xp_next_level', 'xp_total',
-        #           'level', 'alignment', 'life_count', 'death_count', 'life_max', 'local_wimpy',
-        #           'remote_wimpy', 'remote_wimpy_max', 'bank_balance', 'purse_contents',
-        #           'opp_name', 'opp_health', 'opp_health_max', 'opp_level', 'opp_strength' or a
-        #           custom variable
+        #   [1] - which group substring contains the data we need
+        #   [2] - a Status task variable; must be a character, local or custom variable
         #   [3] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let the
         #           Status task choose
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #   var_type        - 'health_points', etc (same as [2] )
         #
-        # This function checks the appropriate backref and updates the task's IVs. If var_type is
+        # This function checks the appropriate group substring and updates IVs. If var_type is
         #   'health_points', also checks whether the character's health points have changed from one
         #   band to another (requiring a change in the task window's background colour)
         #
@@ -34323,7 +34366,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -34332,26 +34376,26 @@
         #
         # Return values
         #   'undef' on improper arguments, or if $session is the wrong session, if the interface
-        #       object can't be found, if the corresponding IV can't be found or if the IV's
-        #       new value can't be extracted from the string
+        #       object can't be found, if the variable can't be set or if the variable's new value
+        #       can't be extracted from the string
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $varType, $newValue, $worldObj);
+        my ($obj, $grpNum, $varType, $newValue);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->singleBackRefPatternSeen',
+                $self->_objClass . '->groupPatternSeen',
                 @_,
             );
         }
@@ -34372,10 +34416,10 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         $varType = $obj->ivShow('propertyHash', 'var_type');
         # Get the corresponding IV's new value
-        $newValue = $$backRefListRef[$backRefNum];
+        $newValue = $$grpStringListRef[$grpNum];
         if (! defined $newValue) {
 
             # IV's new value couldn't be extracted from the string
@@ -34385,122 +34429,17 @@
 
             # Remove any leading or trailing whitespace
             $newValue = $axmud::CLIENT->trimWhitespace($newValue);
+
+            # Update IVs
+            if (! $self->setValue($varType, $newValue)) {
+
+                return undef;
+
+            } else {
+
+                return 1;
+            }
         }
-
-        # Import the current world (for convenience)
-        $worldObj = $self->session->currentWorld;
-
-        # Update the task's instance variables. If a Status task custom variable has the same
-        #   name as a standard variable, treat it as a custom variable
-        if (
-            # It's a recognised custom variable...
-            $worldObj->ivExists('customStatusVarHash', $varType)
-            # ...but it's not tied to an MSDP variable
-            && ! $worldObj->ivShow('customStatusVarHash', $varType)
-        ) {
-            $self->ivAdd('customVarHash', $varType, $newValue);
-            # If 'main' window gauges are open, they must be reset, not just redrawn
-            $self->ivPoke('gaugeResetFlag', TRUE);
-
-        } elsif ($varType eq 'health_points') {
-
-            # Change the task window's background colour, if necessary...
-            $self->checkHealthChange($newValue);
-            # ...before setting the new value of ->healthPoints
-            $self->ivPoke('healthPoints', $newValue);
-            # Check whether it's necessary to read a TTS alert
-            $self->checkPointsChange('health');
-
-        } elsif ($varType eq 'health_points_max') {
-
-            $self->ivPoke('healthPointsMax', $newValue);
-            $self->checkPointsChange('health');
-
-        } elsif ($varType eq 'magic_points') {
-
-            $self->ivPoke('magicPoints', $newValue);
-            $self->checkPointsChange('magic');
-
-        } elsif ($varType eq 'magic_points_max') {
-
-            $self->ivPoke('magicPointsMax', $newValue);
-            $self->checkPointsChange('magic');
-
-        } elsif ($varType eq 'energy_points') {
-
-            $self->ivPoke('energyPoints', $newValue);
-            $self->checkPointsChange('energy');
-
-        } elsif ($varType eq 'energy_points_max') {
-
-            $self->ivPoke('energyPointsMax', $newValue);
-            $self->checkPointsChange('energy');
-
-        } elsif ($varType eq 'guild_points') {
-
-            $self->ivPoke('guildPoints', $newValue);
-            $self->checkPointsChange('guild');
-
-        } elsif ($varType eq 'guild_points_max') {
-
-            $self->ivPoke('guildPointsMax', $newValue);
-            $self->checkPointsChange('guild');
-
-        } elsif ($varType eq 'social_points') {
-
-            $self->ivPoke('socialPoints', $newValue);
-            $self->checkPointsChange('social');
-
-        } elsif ($varType eq 'social_points_max') {
-
-            $self->ivPoke('socialPointsMax', $newValue);
-            $self->checkPointsChange('social');
-
-        } elsif ($varType eq 'xp_current') {
-            $self->ivPoke('xpCurrent', $newValue);
-        } elsif ($varType eq 'xp_next_level') {
-            $self->ivPoke('xpNextLevel', $newValue);
-        } elsif ($varType eq 'xp_total') {
-            $self->ivPoke('xpTotal', $newValue);
-        } elsif ($varType eq 'level') {
-            $self->ivPoke('level', $newValue);
-        } elsif ($varType eq 'alignment') {
-            $self->ivPoke('alignment', $newValue);
-        } elsif ($varType eq 'life_count') {
-            $self->ivPoke('lifeCount', $newValue);
-        } elsif ($varType eq 'death_count') {
-            $self->ivPoke('deathCount', $newValue);
-        } elsif ($varType eq 'life_max') {
-            $self->ivPoke('lifeMax', $newValue);
-        } elsif ($varType eq 'local_wimpy') {
-            $self->ivPoke('localWimpy', $newValue);
-        } elsif ($varType eq 'remote_wimpy') {
-            $self->ivPoke('remoteWimpy', $newValue);
-        } elsif ($varType eq 'remote_wimpy_max') {
-            $self->ivPoke('remoteWimpyMax', $newValue);
-        } elsif ($varType eq 'bank_balance') {
-            $self->ivPoke('bankBalance', $newValue);
-        } elsif ($varType eq 'purse_contents') {
-            $self->ivPoke('purseContents', $newValue);
-        } elsif ($varType eq 'opp_name') {
-            $self->ivPoke('oppName', $newValue);
-        } elsif ($varType eq 'opp_health') {
-            $self->ivPoke('oppHealth', $newValue);
-        } elsif ($varType eq 'opp_health_max') {
-            $self->ivPoke('oppHealthMax', $newValue);
-        } elsif ($varType eq 'opp_level') {
-            $self->ivPoke('oppLevel', $newValue);
-        } elsif ($varType eq 'opp_strength') {
-            $self->ivPoke('oppStrength', $newValue);
-        } else {
-
-            # Unrecognised $varType (not a standard or a custom variable)
-            return undef;
-        }
-
-        $self->ivPoke('updateFlag', TRUE);
-
-        return 1;
     }
 
     sub affectPatternSeen {
@@ -34513,14 +34452,14 @@
         #
         # The world profile's affect pattern list occurs in groups of 4 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
+        #   [1] - which group substring contains the data we need
         #   [2] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let the
         #           Status task choose
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #
-        # This function checks the appropriate backref and updates the task's IVs.
+        # This function checks the appropriate group substring and updates IVs
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -34528,7 +34467,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -34542,13 +34482,13 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
         my (
-            $obj, $backRefNum, $newValue,
+            $obj, $grpNum, $newValue,
             @affectList,
             %affectHash,
         );
@@ -34556,7 +34496,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -34581,12 +34521,12 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         # The value 0 means that the character is not affected by any spells (etc)
-        if ($backRefNum) {
+        if ($grpNum) {
 
             # Get the corresponding IV's new value
-            $newValue = $$backRefListRef[$backRefNum];
+            $newValue = $$grpStringListRef[$grpNum];
             if (! defined $newValue) {
 
                 # IV's new value couldn't be extracted from the string
@@ -34602,8 +34542,12 @@
         }
 
         # Update this task's hash. Any affect not captured by this trigger is therefore removed
-        #   from the task's hash; if $backRefNum was 0, the task's hash is emptied
+        #   from the task's hash; if $grpNum was 0, the task's hash is emptied
         $self->ivPoke('affectHash', %affectHash);
+
+        # The task window must be updated on the next task loop
+        $self->ivPoke('updateFlag', TRUE);
+
         return 1;
     }
 
@@ -34617,16 +34561,16 @@
         #
         # The world profile's stat pattern list occurs in groups of 4 elements, representing
         #   [0] - the pattern to match
-        #   [1] - which backreference contains the data we need
+        #   [1] - which group substring contains the data we need
         #   [2] - a key in the stat hash (e.g. 'int', 'con', 'dex')
         #   [3] - 'hide' to use a gag trigger, 'show' to use a non-gag trigger, 'choose' to let the
         #           Status task choose
         #
         # The trigger interfaces have the following properties in ->propertyHash:
-        #   back_ref        - which backreference contains the data we need (same as [1] )
+        #   grp_num         - which group substring contains the data we need (same as [1] )
         #   stat_type       - 'Strength', 'dex', 'foobar' (same as [2] )
         #
-        # This function checks the appropriate backref and updates the task's IVs.
+        # This function checks the appropriate group substring and updates IVs
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -34634,7 +34578,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -34648,17 +34593,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRefNum, $statType, $newValue);
+        my ($obj, $grpNum, $statType, $newValue);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -34683,10 +34628,10 @@
         # Respond to the fired trigger
 
         # Import the trigger's properties
-        $backRefNum = $obj->ivShow('propertyHash', 'back_ref');
+        $grpNum = $obj->ivShow('propertyHash', 'grp_num');
         $statType = $obj->ivShow('propertyHash', 'stat_type');
         # Get the corresponding IV's new value
-        $newValue = $$backRefListRef[$backRefNum];
+        $newValue = $$grpStringListRef[$grpNum];
         if (! defined $newValue) {
 
             # IV's new value couldn't be extracted from the string
@@ -34719,14 +34664,15 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture age strings. All
-        #   backreferences are used, but ->propertyHash isn't used.
+        #   group substrings are used, but ->propertyHash isn't used
         #
         # The world profile defines a list of patterns that tells us the character's age
         #   e.g. 'You are 15 hours, 39 minutes and 7 seconds old.'
         # ...might match the pattern '^You are (.*) old\.'
-        # The function extracts the age from the whole list of backreferences and produces the
+        # The function extracts the age from the whole list of group substrings and produces the
         #   character's age in a single value, expressed in the world profile's standard age unit
         #   (default is 'day')
+        # If extraction is successful, it updates IVs
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -34734,7 +34680,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -34747,7 +34694,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -34760,7 +34707,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ageSeen', @_);
@@ -34781,10 +34728,10 @@
 
         # Respond to the fired trigger
 
-        # Get all the backrefs, removing index #0, which contains the whole matched string
-        shift @$backRefListRef;
+        # Get all the group substrings, removing index #0, which contains the whole matched string
+        shift @$grpStringListRef;
 
-        $age = $self->convertAge(@$backRefListRef);
+        $age = $self->convertAge(@$grpStringListRef);
         if (! defined $age) {
 
             # Conversion failed
@@ -34793,7 +34740,7 @@
         } else {
 
             # Character's age was successfully converted
-            $self->ivPoke('age', $age);
+            $self->setValue('age', $age);
             $self->ivPoke('updateFlag', TRUE);
 
             return 1;
@@ -34805,15 +34752,16 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture time strings. Only
-        #   the first backreference is used, but ->propertyHash isn't needed
+        #   the first group substring is used, but ->propertyHash isn't needed
         #
         # Useful for worlds that have a local game time that reads something like 'It is half past
         #   two in the morning'
-        # The function extracts the time from the first backreference and converts it into a string
-        #   containing the time in the 24-hour clock (e.g. '02:45'), if possible, before storing the
-        #   converted time as $self->time
+        # The function extracts the time from the first group substring and converts it into a
+        #   string containing the time in the 24-hour clock (e.g. '02:45'), if possible, before
+        #   storing the converted time as $self->time
         # However, if self->convertTimeFlag is FALSE, no conversion is attempted (and the first
-        #   backreference is stored as $self->time)
+        #   group substring is stored as $self->time)
+        # If extraction is successful, it updates IVs
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -34821,7 +34769,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -34834,17 +34783,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my ($obj, $backRef, $hours, $minutes);
+        my ($obj, $grpNum, $hours, $minutes);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->timeSeen', @_);
@@ -34864,22 +34813,22 @@
         }
 
         # Respond to the fired trigger
-        $backRef = $$backRefListRef[1];
+        $grpNum = $$grpStringListRef[1];
         if ($self->convertTimeFlag) {
 
-            ($hours, $minutes) = $self->convertTime($backRef);
+            ($hours, $minutes) = $self->convertTime($grpNum);
         }
 
         # If the call to ->convertTime failed (or if no conversion was attempted), $hours is still
         #   set to 'undef'
         if (! defined $hours) {
 
-            $self->ivPoke('time', $backRef);
+            $self->setValue('time', $grpNum);
 
         # Long time string was successfully converted into a shorter string
         } else {
 
-            $self->ivPoke('time', sprintf('%02d:%02d', $hours, $minutes));
+            $self->setValue('time', sprintf('%02d:%02d', $hours, $minutes));
         }
 
         $self->ivPoke('updateFlag', TRUE);
@@ -34892,7 +34841,7 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture ignorable strings.
-        #   Backreferences and ->propertyHash aren't used.
+        #   Group substrings and ->propertyHash aren't used.
         #
         # When commands like 'score', 'time' and 'stats' are sent to the world and $self->activeFlag
         #   is set to TRUE (meaning, don't display the response in the 'main' window), the world may
@@ -34906,7 +34855,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -34919,7 +34869,7 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
@@ -34929,7 +34879,7 @@
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ignorePatternSeen', @_);
@@ -34959,7 +34909,7 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture character falling
-        #   asleep strings. Backreferences and ->propertyHash aren't used.
+        #   asleep strings. Group substrings and ->propertyHash aren't used.
         #
         # Updates some IVs, writes to the logfile which monitors characters falling asleep, and
         #   plays a sound effect (if allowed)
@@ -34970,7 +34920,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -34983,20 +34934,20 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
         my (
-            $obj, $start, $stop,
+            $obj, $charObj, $start, $stop,
             @writeList,
         );
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->asleepSeen', @_);
@@ -35017,10 +34968,13 @@
 
         # Respond to the fired trigger
 
-        # If the character is not already asleep...
-        if ($self->lifeStatus ne 'sleep') {
+        # Import the current character profile
+        $charObj = $self->session->currentChar;
 
-            $self->ivPoke('lifeStatus', 'sleep');
+        # If the character is not already asleep...
+        if ($charObj && $charObj->lifeStatus ne 'sleep') {
+
+            $charObj->ivPoke('lifeStatus', 'sleep');
 
             # Change the task window's title bar (if it is open)
             $self->setTaskWinTitle('(SLEEP)', TRUE);
@@ -35083,12 +35037,12 @@
 
             # Play a sound effect (if allowed)
             $axmud::CLIENT->playSound('notify');
-        }
 
-        # If there is a current mission, it must be told to give up
-         if ($session->currentMission) {
+            # If there is a current mission, it must be told to give up
+            if ($session->currentMission) {
 
-            $session->currentMission->statusTaskChange($self->lifeStatus);
+                $session->currentMission->statusTaskChange($charObj->lifeStatus);
+            }
         }
 
         return 1;
@@ -35099,7 +35053,7 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture character
-        #   resurrection strings. Backreferences and ->propertyHash aren't used.
+        #   resurrection strings. Group substrings and ->propertyHash aren't used
         #
         # Updates some IVs and writes to the logfile which monitors character resurrections
         #
@@ -35109,7 +35063,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -35122,17 +35077,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my $obj;
+        my ($obj, $charObj);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->wakeUpSeen', @_);
@@ -35153,10 +35108,13 @@
 
         # Respond to the fired trigger
 
-        # If the character is not already alive...
-        if ($self->lifeStatus ne 'alive') {
+        # Import the current character profile
+        $charObj = $self->session->currentChar;
 
-            $self->ivPoke('lifeStatus', 'alive');
+        # If the character is not already alive...
+        if ($charObj && $charObj->lifeStatus ne 'alive') {
+
+            $charObj->ivPoke('lifeStatus', 'alive');
 
             # Change the task window's title bar (if it is open)
             $self->setTaskWinTitle();
@@ -35173,7 +35131,7 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture characer passing
-        #   out strings. Backreferences and ->propertyHash aren't used.
+        #   out strings. Group substrings and ->propertyHash aren't used
         #
         # Updates some IVs, writes to the logfile which monitors characters passing out, and plays
         #   a sound effect (if allowed)
@@ -35184,7 +35142,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -35197,20 +35156,20 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
         my (
-            $obj, $start, $stop,
+            $obj, $charObj, $start, $stop,
             @writeList,
         );
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->passedOutSeen', @_);
@@ -35231,10 +35190,13 @@
 
         # Respond to the fired trigger
 
-        # If the character is not already passed out...
-        if ($self->lifeStatus ne 'passout') {
+        # Import the current character profile
+        $charObj = $self->session->currentChar;
 
-            $self->ivPoke('lifeStatus', 'passout');
+        # If the character is not already passed out...
+        if ($charObj && $charObj->lifeStatus ne 'passout') {
+
+            $charObj->ivPoke('lifeStatus', 'passout');
 
             # Change the task window's title bar (if it is open)
             $self->setTaskWinTitle('(PASSED OUT)', TRUE);
@@ -35297,12 +35259,12 @@
 
             # Play a sound effect (if allowed)
             $axmud::CLIENT->playSound('notify');
-        }
 
-        # If there is a current mission, it must be told to give up
-         if ($session->currentMission) {
+            # If there is a current mission, it must be told to give up
+            if ($session->currentMission) {
 
-            $session->currentMission->statusTaskChange($self->lifeStatus);
+                $session->currentMission->statusTaskChange($charObj->lifeStatus);
+            }
         }
 
         return 1;
@@ -35313,7 +35275,7 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture character coming
-        #   around strings. Backreferences and ->propertyHash aren't used.
+        #   around strings. Group substrings and ->propertyHash aren't used.
         #
         # Updates some IVs and writes to the logfile which monitors character revivals
         #
@@ -35323,7 +35285,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -35336,17 +35299,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my $obj;
+        my ($obj, $charObj);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->resurrectSeen', @_);
@@ -35367,10 +35330,13 @@
 
         # Respond to the fired trigger
 
-        # If the character is not already alive...
-        if ($self->lifeStatus ne 'alive') {
+        # Import the current character profile
+        $charObj = $self->session->currentChar;
 
-            $self->ivPoke('lifeStatus', 'alive');
+        # If the character is not already alive...
+        if ($charObj && $charObj->lifeStatus ne 'alive') {
+
+            $charObj->ivPoke('lifeStatus', 'alive');
 
             # Change the task window's title bar (if it is open)
             $self->setTaskWinTitle();
@@ -35387,7 +35353,7 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture character death
-        #   strings. Backreferences and ->propertyHash aren't used.
+        #   strings. Group substrings and ->propertyHash aren't used
         #
         # Updates some IVs, writes to the logfile which monitors character deaths, and plays a
         #   sound effect (if allowed)
@@ -35398,7 +35364,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -35411,20 +35378,20 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
         my (
-            $obj, $start, $stop,
+            $obj, $charObj, $start, $stop,
             @writeList,
         );
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->deadSeen', @_);
@@ -35445,10 +35412,13 @@
 
         # Respond to the fired trigger
 
-        # If the character is not already dead...
-        if ($self->lifeStatus ne 'dead') {
+        # Import the current character profile
+        $charObj = $self->session->currentChar;
 
-            $self->ivPoke('lifeStatus', 'dead');
+        # If the character is not already dead...
+        if ($charObj->lifeStatus ne 'dead') {
+
+            $charObj->ivPoke('lifeStatus', 'dead');
 
             # Change the task window's title bar (if it is open)
             $self->setTaskWinTitle('(DEAD)', TRUE);
@@ -35511,12 +35481,13 @@
 
             # Play a sound effect (if allowed)
             $axmud::CLIENT->playSound('death');
-        }
 
-        # If there is a current mission, it must be told to give up
-         if ($session->currentMission) {
 
-            $session->currentMission->statusTaskChange($self->lifeStatus);
+            # If there is a current mission, it must be told to give up
+            if ($session->currentMission) {
+
+                $session->currentMission->statusTaskChange($charObj->lifeStatus);
+            }
         }
 
         return 1;
@@ -35527,7 +35498,7 @@
         # Called by GA::Session->checkTriggers
         #
         # This task's ->resetTriggers function creates some triggers to capture character
-        #   resurrection strings. Backreferences and ->propertyHash aren't used.
+        #   resurrection strings. Group substrings and ->propertyHash aren't used.
         #
         # Updates some IVs and writes to the logfile which monitors character resurrections
         #
@@ -35537,7 +35508,8 @@
         #   $line           - The line of text received from the world
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $backRefListRef - Reference to a list of backreferences from the pattern match
+        #   $grpStringListRef
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -35550,17 +35522,17 @@
         #   1 otherwise
 
         my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $backRefListRef,
+            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
             $matchMinusListRef, $matchPlusListRef, $check,
         ) = @_;
 
         # Local variables
-        my $obj;
+        my ($obj, $charObj);
 
         # Check for improper arguments
         if (
             ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $backRefListRef || ! defined $matchMinusListRef
+            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->resurrectedSeen', @_);
@@ -35581,10 +35553,13 @@
 
         # Respond to the fired trigger
 
-        # If the character is not already alive...
-        if ($self->lifeStatus ne 'alive') {
+        # Import the current character profile
+        $charObj = $self->session->currentChar;
 
-            $self->ivPoke('lifeStatus', 'alive');
+        # If the character is not already alive...
+        if ($charObj && $charObj->lifeStatus ne 'alive') {
+
+            $charObj->ivPoke('lifeStatus', 'alive');
 
             # Change the task window's title bar (if it is open)
             $self->setTaskWinTitle();
@@ -35612,13 +35587,13 @@
         #                   current world profile, of the pattern
         #
         # Return values
-        #   'undef' on improper arguments
+        #   'undef' on improper arguments or if there is no current character profile
         #   1 on success
 
         my ($self, $type, $cashValue, $check) = @_;
 
         # Local variables
-        my $string;
+        my ($charObj, $purse, $bank, $string);
 
         # Check for improper arguments
         if (
@@ -35637,30 +35612,49 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->set_cashValues', @_);
         }
 
+        # Import the current character profile (for convenience)
+        $charObj = $self->session->currentChar;
+        if (! $charObj) {
+
+            return undef;
+        }
+
         # Prevent Perl rounding errors by rounding the value (if the world profile's
         #   ->currencyRounding is set to -1, we don't round anything)
         $cashValue = $self->roundCashValue($cashValue);
+        # Get the current purse contents/bank balance, using a zero value if they're not defined
+        $purse = $charObj->purseContents;
+        if (! defined $purse) {
+
+            $purse = 0;
+        }
+
+        $bank = $charObj->bankBalance;
+        if (! defined $bank) {
+
+            $bank = 0;
+        }
 
         if ($type eq 'empty_purse') {
 
             # Character is carrying no money
-            $self->ivPoke('purseContents', 0);
+            $self->setValue('purse_contents', 0);
 
         } elsif ($type eq 'empty_bank') {
 
             # Bank account is empty
-            $self->ivPoke('bankBalance', 0);
+            $self->setValue('bank_balance', 0);
 
         } elsif ($type eq 'purse') {
 
             # The character is carrying this much money
-            $self->ivPoke('purseContents', $cashValue);
+            $self->setValue('purse_contents', $cashValue);
 
         } elsif ($type eq 'withdraw') {
 
             # The character has withdrawn some money from their bank account
-            $self->ivMinus('bankBalance', $cashValue);
-            $self->ivPlus('purseContents', $cashValue);
+            $self->setValue('bank_balance', ($bank - $cashValue));
+            $self->setValue('purse_contents', ($purse + $cashValue));
             # Play a sound effect (if allowed)
             $axmud::CLIENT->playSound('withdraw');
 
@@ -35668,15 +35662,15 @@
 
             # The character has withdrawn some money from their bank account, but we only update the
             #   ->purseContents
-            $self->ivPlus('purseContents', $cashValue);
+            $self->setValue('purse_contents', ($purse + $cashValue));
             # Play a sound effect (if allowed)
             $axmud::CLIENT->playSound('withdraw');
 
         } elsif ($type eq 'deposit') {
 
             # The character has withdrawn some money from their bank account
-            $self->ivPlus('bankBalance', $cashValue);
-            $self->ivMinus('purseContents', $cashValue);
+            $self->setValue('bank_balance', ($bank + $cashValue));
+            $self->setValue('purse_contents', ($purse - $cashValue));
             # Play a sound effect (if allowed)
             $axmud::CLIENT->playSound('deposit');
 
@@ -35684,70 +35678,17 @@
 
             # The character has withdrawn some money from their bank account, but we only update the
             #   ->purseContents
-            $self->ivMinus('purseContents', $cashValue);
+            $self->setValue('purse_contents', ($purse - $cashValue));
             # Play a sound effect (if allowed)
             $axmud::CLIENT->playSound('deposit');
 
         } elsif ($type eq 'balance') {
 
             # The character has this much money in their bank account
-            $self->ivPoke('bankBalance', $cashValue);
+            $self->setValue('bank_balance', $cashValue);
         }
-
-        # Update the task window
-        $self->ivPoke('updateFlag', TRUE);
 
         return 1;
-    }
-
-    sub set_charQuests {
-
-        my ($self, $questCount, $pointCount, $xpCount, $cashCount, $check) = @_;
-
-        # Check for improper arguments
-        if (
-            ! defined $questCount || ! defined $pointCount || ! defined $xpCount
-            || ! defined $cashCount || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_charQuests', @_);
-        }
-
-        $self->ivPoke('questCount', $questCount);
-        $self->ivPoke('questPointCount', $pointCount);
-        $self->ivPoke('questXPCount', $xpCount);
-        $self->ivPoke('questCashCount', $cashCount);
-
-        # Update the task window
-        $self->ivPoke('updateFlag', TRUE);
-
-        return 1;
-    }
-
-    sub set_commifyMode {
-
-        my ($self, $mode, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $mode || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_commifyMode', @_);
-        }
-
-        if (
-            $mode ne 'none' && $mode ne 'use_comma' && $mode ne 'use_europe' && $mode ne 'use_brit'
-            && $mode ne 'use_underline'
-        ) {
-            return undef;
-
-        } else {
-
-            $self->ivPoke('commifyMode', $mode);
-
-            # Update the task window
-            $self->ivPoke('updateFlag', TRUE);
-
-            return 1;
-        }
     }
 
     sub reset_counters {
@@ -35759,15 +35700,18 @@
         #   @list   - A list of single-letter strings specifying which counters to reset:
         #               'a' for all counters
         #               'f' for the fight counter, 'i' for the interaction counter, 'x' for the xp
-        #                   counter,
+        #                   counter
         #               'q' for the quest counter, 'm' for the bank and purse counters, 'b' for the
         #                   bank counter, 'p' for the purse counter
         #
         # Return values
-        #   'undef' on improper arguments
+        #   'undef' on improper arguments or if no current character profile is set
         #   1 on success
 
         my ($self, @list) = @_;
+
+        # Local variables
+        my $charObj;
 
         # Check for improper arguments
         if (! @list) {
@@ -35775,80 +35719,127 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->reset_counters', @_);
         }
 
+        # Import the current character profile (for convenience)
+        $charObj = $self->session->currentChar;
+        if (! $charObj) {
+
+            return undef;
+        }
+
         foreach my $counter (@list) {
 
             if ($counter eq 'a' || $counter eq 'f') {
 
                 $self->ivPoke('fightCountFlag', TRUE);
-                $self->ivPoke('fightCount', 0);
-                $self->ivPoke('killCount', 0);
-                $self->ivPoke('wimpyCount', 0);
-                $self->ivPoke('fightDefeatCount', 0);
+
+                $self->ivAdd('counterVarHash', 'temp_fight_count', 0);
+                $self->ivAdd('counterBaseHash', 'temp_fight_count', $charObj->fightCount);
+
+                $self->ivAdd('counterVarHash', 'temp_kill_count', 0);
+                $self->ivAdd('counterBaseHash', 'temp_kill_count', $charObj->killCount);
+
+                $self->ivAdd('counterVarHash', 'temp_wimpy_count', 0);
+                $self->ivAdd('counterBaseHash', 'temp_wimpy_count', $charObj->wimpyCount);
+
+                $self->ivAdd('counterVarHash', 'temp_fight_defeat_count', 0);
+                $self->ivAdd('counterBaseHash', '
+                    temp_fight_defeat_count',
+                    $charObj->fightDefeatCount,
+                );
             }
 
             if ($counter eq 'a' || $counter eq 'i') {
 
                 $self->ivPoke('interactCountFlag', TRUE);
-                $self->ivPoke('interactCount', 0);
-                $self->ivPoke('interactSuccessCount', 0);
-                $self->ivPoke('interactFailCount', 0);
-                $self->ivPoke('interactFightCount', 0);
-                $self->ivPoke('interactDisasterCount', 0);
+
+                $self->ivAdd('counterVarHash', 'temp_interact_count', 0);
+                $self->ivAdd('counterBaseHash', 'temp_interact_count', $charObj->interactCount);
+
+                $self->ivAdd('counterVarHash', 'temp_interact_success_count', 0);
+                $self->ivAdd(
+                    'counterBaseHash',
+                    'temp_interact_success_count',
+                    $charObj->interactSuccessCount,
+                );
+
+                $self->ivAdd('counterVarHash', 'temp_interact_fail_count', 0);
+                $self->ivAdd(
+                    'counterBaseHash',
+                    'temp_interact_fail_count',
+                    $charObj->interactFailCount,
+                );
+
+                $self->ivAdd('counterVarHash', 'temp_interact_fight_count', 0);
+                $self->ivAdd(
+                    'counterBaseHash',
+                    'temp_interact_fight_count',
+                    $charObj->interactFightCount,
+                );
+
+                $self->ivAdd('counterVarHash', 'temp_interact_disaster_count', 0);
+                $self->ivAdd(
+                    'counterBaseHash',
+                    'temp_interact_disaster_count',
+                    $charObj->interactDisasterCount,
+                );
             }
 
             if ($counter eq 'a' || $counter eq 'f' || $counter eq 'i') {
 
-                $self->ivPoke('fleeCount', 0);
-                $self->ivPoke('escapeCount', 0);
+                $self->ivAdd('counterVarHash', 'temp_flee_count', 0);
+                $self->ivAdd('counterBaseHash', 'temp_flee_count', $charObj->fleeCount);
+
+                $self->ivAdd('counterVarHash', 'temp_escape_count', 0);
+                $self->ivAdd('counterBaseHash', 'temp_escape_count', $charObj->escapeCount);
             }
 
             if ($counter eq 'a' || $counter eq 'x') {
 
-                $self->ivPoke('tempXPCount', 0);
+                $self->ivAdd('counterVarHash', 'temp_xp_count', 0);
 
-                if (defined $self->xpTotal) {
-                    $self->ivPoke('tempXPBaseline', $self->xpTotal);
+                if (defined $charObj->xpTotal) {
+                    $self->ivAdd('counterBaseHash', 'temp_xp_count', $charObj->xpTotal);
                 } else {
-                    $self->ivPoke('tempXPBaseline', 0);
+                    $self->ivAdd('counterBaseHash', 'temp_xp_count', 0);
                 }
             }
 
             if ($counter eq 'a' || $counter eq 'q') {
 
-                $self->ivPoke('tempQuestCount', 0);
+                $self->ivAdd('counterVarHash', 'temp_quest_count', 0);
 
-                if (defined $self->questCount) {
-                    $self->ivPoke('tempQuestBaseline', $self->questCount);
+                if (defined $charObj->qpTotal) {
+                    $self->ivAdd('counterBaseHash', 'temp_quest_count', $charObj->qpTotal);
                 } else {
-                    $self->ivPoke('tempQuestBaseline', 0);
+                    $self->ivAdd('counterBaseHash', 'temp_quest_count', 0);
                 }
             }
 
             if ($counter eq 'a' || $counter eq 'm' || $counter eq 'b') {
 
-                $self->ivPoke('tempBankCount', 0);
+                $self->ivAdd('counterVarHash', 'temp_bank_count', 0);
 
-                if (defined $self->bankBalance) {
-                    $self->ivPoke('tempBankBaseline', $self->bankBalance);
+                if (defined $charObj->bankBalance) {
+                    $self->ivAdd('counterBaseHash', 'temp_bank_count', $charObj->bankBalance);
                 } else {
-                    $self->ivPoke('tempBankBaseline', 0);
+                    $self->ivAdd('counterBaseHash', 'temp_bank_count', 0);
                 }
             }
 
             if ($counter eq 'a' || $counter eq 'm' || $counter eq 'p') {
 
-                $self->ivPoke('tempPurseCount', 0);
+                $self->ivAdd('counterVarHash', 'temp_purse_count', 0);
 
-                if (defined $self->purseContents) {
-                    $self->ivPoke('tempPurseBaseline', $self->purseContents);
+                if (defined $charObj->purseContents) {
+                    $self->ivAdd('counterBaseHash', 'temp_purse_count', $charObj->purseContents);
                 } else {
-                    $self->ivPoke('tempPurseBaseline', 0);
+                    $self->ivAdd('counterBaseHash', 'temp_purse_count', 0);
                 }
             }
 
             if ($counter eq 'a' || $counter eq 'f' || $counter eq 'i') {
 
-                $self->ivPoke('tempTimerBaseline', $self->session->sessionTime);
+                $self->ivPoke('counterStartTime', $self->session->sessionTime);
             }
         }
 
@@ -35863,17 +35854,32 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my $charObj;
+
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->inc_fightCount', @_);
         }
 
-        $self->ivIncrement('fightCount');
-        $self->ivIncrement('killCount');
+        $charObj = $self->session->currentChar;
+        if ($charObj) {
 
-        # Update the task window
-        $self->ivPoke('updateFlag', TRUE);
+            # These are fixed variables, so update the current character profile directly
+            $charObj->ivIncrement('fightCount');
+            $charObj->ivIncrement('killCount');
+
+            # Update counters (if the right counter is running)
+            if ($self->fightCountFlag) {
+
+                $self->ivIncHash('counterVarHash', 'temp_fight_count');
+                $self->ivIncHash('counterVarHash', 'temp_kill_count');
+            }
+
+            # Update the task window
+            $self->ivPoke('updateFlag', TRUE);
+        }
 
         return 1;
     }
@@ -35881,6 +35887,9 @@
     sub add_fights {
 
         my ($self, $fightCount, $killCount, $wimpyCount, $fightDefeatCount, $check) = @_;
+
+        # Local variables
+        my $charObj;
 
         # Check for improper arguments
         if (
@@ -35890,10 +35899,46 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->add_fights', @_);
         }
 
-        $self->ivPoke('fightCount', $self->fightCount + $fightCount);
-        $self->ivPoke('killCount', $self->killCount + $killCount);
-        $self->ivPoke('wimpyCount', $self->wimpyCount + $wimpyCount);
-        $self->ivPoke('fightDefeatCount', $self->fightDefeatCount + $fightDefeatCount);
+        $charObj = $self->session->currentChar;
+        if ($charObj) {
+
+            # These are fixed variables, so update the current character profile directly
+            $charObj->ivPoke('fightCount', $charObj->fightCount + $fightCount);
+            $charObj->ivPoke('killCount', $charObj->killCount + $killCount);
+            $charObj->ivPoke('wimpyCount', $charObj->wimpyCount + $wimpyCount);
+            $charObj->ivPoke('fightDefeatCount', $charObj->fightDefeatCount + $fightDefeatCount);
+
+            # Update counters (if the right counter is running)
+            if ($self->fightCountFlag) {
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_fight_count',
+                    $self->ivShow('counterVarHash', 'temp_fight_count') + $fightCount,
+                );
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_kill_count',
+                    $self->ivShow('counterVarHash', 'temp_kill_count') + $killCount,
+                );
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_wimpy_count',
+                    $self->ivShow('counterVarHash', 'temp_wimpy_count') + $wimpyCount,
+                );
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_fight_defeat_count',
+                    $self->ivShow('counterVarHash', 'temp_fight_defeat_count') + $fightDefeatCount,
+                );
+            }
+
+            # Update the task window
+            $self->ivPoke('updateFlag', TRUE);
+        }
 
         return 1;
     }
@@ -35902,14 +35947,44 @@
 
         my ($self, $fleeCount, $escapeCount, $check) = @_;
 
+        # Local variables
+        my $charObj;
+
         # Check for improper arguments
         if (! defined $fleeCount || ! defined $escapeCount || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->add_fleesEscapes', @_);
         }
 
-        $self->ivPoke('fleeCount', $self->fleeCount + $fleeCount);
-        $self->ivPoke('escapeCount', $self->escapeCount + $escapeCount);
+        $charObj = $self->session->currentChar;
+        if ($charObj) {
+
+            # These are fixed variables, so update the current character profile directly
+            $charObj->ivPoke('fleeCount', $charObj->fleeCount + $fleeCount);
+            $charObj->ivPoke('escapeCount', $charObj->escapeCount + $escapeCount);
+
+            # Update counters (if the right counter is running)
+            if ($self->ivExists('counterVarHash', 'temp_escape_count')) {
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_escape_count',
+                    $self->ivShow('counterVarHash', 'temp_escape_count') + $escapeCount,
+                );
+            }
+
+            if ($self->ivExists('counterVarHash', 'temp_flee_count')) {
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_flee_count',
+                    $self->ivShow('counterVarHash', 'temp_flee_count') + $fleeCount,
+                );
+            }
+
+            # Update the task window
+            $self->ivPoke('updateFlag', TRUE);
+        }
 
         return 1;
     }
@@ -35990,6 +36065,9 @@
             $interactDisasterCount, $check
         ) = @_;
 
+        # Local variables
+        my $charObj;
+
         # Check for improper arguments
         if (
             ! defined $interactCount || ! defined $interactSuccessCount
@@ -35999,18 +36077,77 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->add_interactions', @_);
         }
 
-        $self->ivPoke('interactCount', $self->interactCount + $interactCount);
-        $self->ivPoke(
-            'interactSuccessCount',
-            $self->interactSuccessCount + $interactSuccessCount,
-        );
+        $charObj = $self->session->currentChar;
+        if ($charObj) {
 
-        $self->ivPoke('interactFailCount', $self->interactFailCount + $interactFailCount);
-        $self->ivPoke('interactFightCount', $self->interactFightCount + $interactFightCount);
-        $self->ivPoke(
-            'interactDisasterCount',
-            $self->interactDisasterCount + $interactDisasterCount,
-        );
+            # These are fixed variables, so update the current character profile directly
+            $charObj->ivPoke
+                ('interactCount',
+                $charObj->interactCount + $interactCount,
+            );
+
+            $charObj->ivPoke(
+                'interactSuccessCount',
+                $charObj->interactSuccessCount + $interactSuccessCount,
+            );
+
+            $charObj->ivPoke(
+                'interactFailCount',
+                $charObj->interactFailCount + $interactFailCount,
+            );
+
+            $charObj->ivPoke(
+                'interactFightCount',
+                $charObj->interactFightCount + $interactFightCount,
+            );
+
+            $charObj->ivPoke(
+                'interactDisasterCount',
+                $charObj->interactDisasterCount + $interactDisasterCount,
+            );
+
+            # Update counters (if the right counter is running)
+            if ($self->interactCountFlag) {
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_interact_count',
+                    $self->ivShow('counterVarHash', 'temp_interact_count') + $interactCount,
+                );
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_interact_success_count',
+                    $self->ivShow('counterVarHash', 'temp_interact_success_count')
+                        + $interactSuccessCount,
+                );
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_interact_fail_count',
+                    $self->ivShow('counterVarHash', 'temp_interact_fail_count')
+                        + $interactFailCount,
+                );
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_interact_fight_count',
+                    $self->ivShow('counterVarHash', 'temp_interact_fight_count')
+                        + $interactFightCount,
+                );
+
+                $self->ivAdd(
+                    'counterVarHash',
+                    'temp_interact_disaster_count',
+                    $self->ivShow('counterVarHash', 'temp_interact_disaster_count')
+                        + $interactDisasterCount,
+                );
+            }
+
+
+            # Update the task window
+            $self->ivPoke('updateFlag', TRUE);
+        }
 
         return 1;
     }
@@ -36018,6 +36155,9 @@
     sub inc_interactSuccessCount {
 
         my ($self, $check) = @_;
+
+        # Local variables
+        my $charObj;
 
         # Check for improper arguments
         if (defined $check) {
@@ -36028,11 +36168,23 @@
             );
         }
 
-        $self->ivIncrement('interactCount');
-        $self->ivIncrement('interactSuccessCount');
+        $charObj = $self->session->currentChar;
+        if ($charObj) {
 
-        # Update the task window
-        $self->ivPoke('updateFlag', TRUE);
+            # These are fixed variables, so update the current character profile directly
+            $charObj->ivIncrement('interactCount');
+            $charObj->ivIncrement('interactSuccessCount');
+
+            # Update counters (if the right counter is running)
+            if ($self->interactCountFlag) {
+
+                $self->ivIncHash('counterVarHash', 'temp_interact_count');
+                $self->ivIncHash('counterVarHash', 'temp_interact_success_count');
+            }
+
+            # Update the task window
+            $self->ivPoke('updateFlag', TRUE);
+        }
 
         return 1;
     }
@@ -36041,17 +36193,32 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my $charObj;
+
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->inc_interactFailCount', @_);
         }
 
-        $self->ivIncrement('interactCount');
-        $self->ivIncrement('interactFailCount');
+        $charObj = $self->session->currentChar;
+        if ($charObj) {
 
-        # Update the task window
-        $self->ivPoke('updateFlag', TRUE);
+            # These are fixed variables, so update the current character profile directly
+            $charObj->ivIncrement('interactCount');
+            $charObj->ivIncrement('interactFailCount');
+
+            # Update counters (if the right counter is running)
+            if ($self->interactCountFlag) {
+
+                $self->ivIncHash('counterVarHash', 'temp_interact_count');
+                $self->ivIncHash('counterVarHash', 'temp_interact_fail_count');
+            }
+
+            # Update the task window
+            $self->ivPoke('updateFlag', TRUE);
+        }
 
         return 1;
     }
@@ -36060,17 +36227,32 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my $charObj;
+
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->inc_interactFightCount', @_);
         }
 
-        $self->ivIncrement('interactCount');
-        $self->ivIncrement('interactFightCount');
+        $charObj = $self->session->currentChar;
+        if ($charObj) {
 
-        # Update the task window
-        $self->ivPoke('updateFlag', TRUE);
+            # These are fixed variables, so update the current character profile directly
+            $charObj->ivIncrement('interactCount');
+            $charObj->ivIncrement('interactFightCount');
+
+            # Update counters (if the right counter is running)
+            if ($self->interactCountFlag) {
+
+                $self->ivIncHash('counterVarHash', 'temp_interact_count');
+                $self->ivIncHash('counterVarHash', 'temp_interact_fight_count');
+            }
+
+            # Update the task window
+            $self->ivPoke('updateFlag', TRUE);
+        }
 
         return 1;
     }
@@ -36078,6 +36260,9 @@
     sub inc_interactDisasterCount {
 
         my ($self, $check) = @_;
+
+        # Local variables
+        my $charObj;
 
         # Check for improper arguments
         if (defined $check) {
@@ -36088,40 +36273,26 @@
             );
         }
 
-        $self->ivIncrement('interactCount');
-        $self->ivIncrement('interactDisasterCount');
+        $charObj = $self->session->currentChar;
+        if ($charObj) {
+
+            # These are fixed variables, so update the current character profile directly
+            $charObj->ivIncrement('interactCount');
+            $charObj->ivIncrement('interactDisasterCount');
+
+            # Update counters (if the right counter is running)
+            if ($self->interactCountFlag) {
+
+                $self->ivIncHash('counterVarHash', 'temp_interact_count');
+                $self->ivIncHash('counterVarHash', 'temp_interact_disaster_count');
+            }
+
+            # Update the task window
+            $self->ivPoke('updateFlag', TRUE);
+        }
 
         # Update the task window
         $self->ivPoke('updateFlag', TRUE);
-
-        return 1;
-    }
-
-    sub set_lifeStatus {
-
-        # Called by GA::Cmd::SetLife->do
-        # Code borrowed from $self->wakeUpSeen and ->comeAroundSeen
-
-        my ($self, $status, $check) = @_;
-
-        # Check for improper arguments
-        if (
-            ! defined $status
-            || (
-                $status ne 'alive' && $status ne 'sleep' && $status ne 'passout'
-                && $status ne 'dead'
-            ) || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_lifeStatus', @_);
-        }
-
-        $self->ivPoke('lifeStatus', $status);
-
-        # Change the task window's title bar (if it is open)
-        $self->setTaskWinTitle();
-
-        # The next time the task window is updated, its background colour will change
-        $self->ivPoke('lifeStatusChangeFlag', TRUE);
 
         return 1;
     }
@@ -36186,9 +36357,9 @@
 
         # Local variables
         my (
-            $mode, $worldObj,
+            $mode,
             @list,
-            %hash, %importHash, %reverseHash,
+            %msdpHash, %hash,
         );
 
         # Check for improper arguments
@@ -36211,29 +36382,14 @@
             $mode = undef;
         }
 
-        # Import the current world profile's hash of custom variables, and reverse it, so that we
-        #   get a hash of keys which match MSDP variables
-        # The imported hash is in the form:
-        #   $customStatusVarHash{variable_name} = MSDP_VARIABLE
-        #   $customStatusVarHash{variable_name} = undef
-        # Ignore key-value pairs, whose value is 'undef', and produce a hash in the form
-        #   $newHash{MSDP_VARIABLE} = variable_name
-        %importHash = $self->session->currentWorld->customStatusVarHash;
-        foreach my $key (keys %importHash) {
+        # Import the current world profile's hash of MSDP variabless, in the form
+        #   $msdpHash{MSDP_VARIABLE} = status_task_variable_name
+        %msdpHash = $self->session->currentWorld->msdpStatusVarHash;
 
-            my $value = $importHash{$key};
+        # Deal with any MSDP variables for which the world profile provides a Status task variable
+        if (exists $msdpHash{$var}) {
 
-            if (defined $value) {
-
-                $reverseHash{$value} = $key;
-            }
-        }
-
-        # Status task custom variables take priority over standard variables, so check them first
-        $worldObj = $self->session->currentWorld;
-        if (exists $reverseHash{$var}) {
-
-            $self->ivAdd('customVarHash', $reverseHash{$var}, $val);
+            $self->setValue($msdpHash{$var}, $val);
             # If 'main' window gauges are open, they must be reset, not just redrawn
             $self->ivPoke('gaugeResetFlag', TRUE);
 
@@ -36253,7 +36409,7 @@
 
                 if (@list) {
 
-                # Replace any existing affects in $self->affectHash
+                    # Replace any existing affects in $self->affectHash
                     foreach my $affect (@list) {
 
                         $hash{$affect} = undef;
@@ -36263,75 +36419,47 @@
                 }
 
             } elsif ($var eq 'ALIGNMENT' && ! $mode) {
-                $self->ivPoke('alignment', $val);
+                $self->setValue('alignment', $val);
             } elsif ($var eq 'EXPERIENCE' && ! $mode) {
-                $self->ivPoke('xpCurrent', $val);
+                $self->setValue('xp_current', $val);
             } elsif ($var eq 'EXPERIENCE_MAX' && ! $mode) {
-                $self->ivPoke('xpTotal', $val);
+                $self->setValue('xp_total', $val);
             } elsif ($var eq 'EXPERIENCE_TNL' && ! $mode) {
-                $self->ivPoke('xpNextLevel', $val);
+                $self->setValue('xp_next_level', $val);
             } elsif ($var eq 'EXPERIENCE_TNL_MAX' && ! $mode) {
-                $self->ivPoke('xpTotal', $val);
+                $self->setValue('xp_total', $val);
             } elsif ($var eq 'HEALTH' && ! $mode) {
-
-                # Change the task window's background colour, if necessary...
-                $self->checkHealthChange($val);
-                # ...before setting the new value of ->healthPoints
-                $self->ivPoke('healthPoints', $val);
-
+                $self->setValue('health_points', $val);
             } elsif ($var eq 'HEALTH_MAX' && ! $mode) {
-                $self->ivPoke('healthPointsMax', $val);
+                $self->setValue('health_points_max', $val);
             } elsif ($var eq 'LEVEL' && ! $mode) {
-                $self->ivPoke('level', $val);
+                $self->setValue('level', $val);
             } elsif ($var eq 'MANA' && ! $mode) {
-                $self->ivPoke('magicPoints', $val);
+                $self->setValue('magic_points', $val);
             } elsif ($var eq 'MANA_MAX' && ! $mode) {
-                $self->ivPoke('magicPointsMax', $val);
+                $self->setValue('magic_points_max', $val);
             } elsif ($var eq 'MONEY' && ! $mode) {
-                $self->ivPoke('purseContents', $val);
+                $self->setValue('purse_contents', $val);
             } elsif ($var eq 'MOVEMENT' && ! $mode) {
-                $self->ivPoke('energyPoints', $val);
+                $self->setValue('energy_points', $val);
             } elsif ($var eq 'MOVEMENT_MAX' && ! $mode) {
-                $self->ivPoke('energyPointsMax', $val);
+                $self->setValue('energy_points_max', $val);
             } elsif ($var eq 'OPPONENT_LEVEL' && ! $mode) {
-                $self->ivPoke('oppLevel', $val);
+                $self->setValue('opp_level', $val);
             } elsif ($var eq 'OPPONENT_HEALTH' && ! $mode) {
-                $self->ivPoke('oppHealth', $val);
+                $self->setValue('opp_health', $val);
             } elsif ($var eq 'OPPONENT_HEALTH_MAX' && ! $mode) {
-                $self->ivPoke('oppHealthMax', $val);
+                $self->setValue('opp_health_max', $val);
             } elsif ($var eq 'OPPONENT_NAME' && ! $mode) {
-                $self->ivPoke('oppName', $val);
+                $self->setValue('opp_name', $val);
             } elsif ($var eq 'OPPONENT_STRENGTH' && ! $mode) {
-                $self->ivPoke('oppStrength', $val);
+                $self->setValue('opp_strength', $val);
             } elsif ($var eq 'WORLD_TIME' && ! $mode) {
-                $self->ivPoke('time', $val);
+                $self->setValue('time', $val);
             }
         }
 
         # (Regardless of whether an IV was updated, or not, mark the task window to be updated)
-        $self->ivPoke('updateFlag', TRUE);
-
-        return 1;
-    }
-
-    sub set_worldQuests {
-
-        my ($self, $questCount, $pointCount, $xpCount, $cashCount, $check) = @_;
-
-        # Check for improper arguments
-        if (
-            ! defined $questCount || ! defined $pointCount || ! defined $xpCount
-            || ! defined $cashCount || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_worldQuests', @_);
-        }
-
-        $self->ivPoke('worldQuestCount', $questCount);
-        $self->ivPoke('worldQuestPointCount', $pointCount);
-        $self->ivPoke('worldQuestXPCount', $xpCount);
-        $self->ivPoke('worldQuestCashCount', $cashCount);
-
-        # Update the task window
         $self->ivPoke('updateFlag', TRUE);
 
         return 1;
@@ -36352,10 +36480,13 @@
 
     sub updateFlag
         { $_[0]->{updateFlag} }
-    sub gaugeResetFlag
-        { $_[0]->{gaugeResetFlag} }
-    sub commifyMode
-        { $_[0]->{commifyMode} }
+    sub lifeStatusChangeFlag
+        { $_[0]->{lifeStatusChangeFlag} }
+    sub healthChangeFlag
+        { $_[0]->{healthChangeFlag} }
+    sub convertTimeFlag
+        { $_[0]->{convertTimeFlag} }
+
     sub allowColourFlag
         { $_[0]->{allowColourFlag} }
     sub aliveColour
@@ -36373,165 +36504,41 @@
     sub deadColour
         { $_[0]->{deadColour} }
 
-    sub lifeStatus
-        { $_[0]->{lifeStatus} }
-    sub lifeCount
-        { $_[0]->{lifeCount} }
-    sub deathCount
-        { $_[0]->{deathCount} }
-    sub lifeMax
-        { $_[0]->{lifeMax} }
-    sub lifeStatusChangeFlag
-        { $_[0]->{lifeStatusChangeFlag} }
-    sub lifeStatusOverrideFlag
-        { $_[0]->{lifeStatusOverrideFlag} }
+    sub constCharVarHash
+        { my $self = shift; return %{$self->{constCharVarHash}}; }
+    sub constFixedVarHash
+        { my $self = shift; return %{$self->{constFixedVarHash}}; }
+    sub constPseudoVarHash
+        { my $self = shift; return %{$self->{constPseudoVarHash}}; }
+    sub constLocalVarHash
+        { my $self = shift; return %{$self->{constLocalVarHash}}; }
+    sub constCounterVarHash
+        { my $self = shift; return %{$self->{constCounterVarHash}}; }
+    sub constCounterRevHash
+        { my $self = shift; return %{$self->{constCounterRevHash}}; }
+    sub constPointHash
+        { my $self = shift; return %{$self->{constPointHash}}; }
 
-    sub healthChangeFlag
-        { $_[0]->{healthChangeFlag} }
-    sub healthPoints
-        { $_[0]->{healthPoints} }
-    sub healthPointsMax
-        { $_[0]->{healthPointsMax} }
-    sub magicPoints
-        { $_[0]->{magicPoints} }
-    sub magicPointsMax
-        { $_[0]->{magicPointsMax} }
-    sub energyPoints
-        { $_[0]->{energyPoints} }
-    sub energyPointsMax
-        { $_[0]->{energyPointsMax} }
-    sub guildPoints
-        { $_[0]->{guildPoints} }
-    sub guildPointsMax
-        { $_[0]->{guildPointsMax} }
-    sub socialPoints
-        { $_[0]->{socialPoints} }
-    sub socialPointsMax
-        { $_[0]->{socialPointsMax} }
-    sub xpCurrent
-        { $_[0]->{xpCurrent} }
-    sub xpNextLevel
-        { $_[0]->{xpNextLevel} }
-    sub xpTotal
-        { $_[0]->{xpTotal} }
+    sub localVarHash
+        { my $self = shift; return %{$self->{localVarHash}}; }
+    sub customVarHash
+        { my $self = shift; return %{$self->{customVarHash}}; }
 
-    sub worldQuestCount
-        { $_[0]->{worldQuestCount} }
-    sub worldQuestPointCount
-        { $_[0]->{worldQuestPointCount} }
-    sub worldQuestXPCount
-        { $_[0]->{worldQuestXPCount} }
-    sub worldQuestCashCount
-        { $_[0]->{worldQuestCashCount} }
-    sub questCount
-        { $_[0]->{questCount} }
-    sub questPointCount
-        { $_[0]->{questPointCount} }
-    sub questXPCount
-        { $_[0]->{questXPCount} }
-    sub questCashCount
-        { $_[0]->{questCashCount} }
+    sub counterVarHash
+        { my $self = shift; return %{$self->{counterVarHash}}; }
+    sub counterBaseHash
+        { my $self = shift; return %{$self->{counterBaseHash}}; }
+    sub fightCountFlag
+        { $_[0]->{fightCountFlag} }
+    sub interactCountFlag
+        { $_[0]->{interactCountFlag} }
+    sub counterStartTime
+        { $_[0]->{counterStartTime} }
 
-    sub level
-        { $_[0]->{level} }
-    sub alignment
-        { $_[0]->{alignment} }
     sub affectHash
         { my $self = shift; return %{$self->{affectHash}}; }
     sub statHash
         { my $self = shift; return %{$self->{statHash}}; }
-
-    sub localWimpy
-        { $_[0]->{localWimpy} }
-    sub constLocalWimpyMax
-        { $_[0]->{constLocalWimpyMax} }
-    sub remoteWimpy
-        { $_[0]->{remoteWimpy} }
-    sub remoteWimpyMax
-        { $_[0]->{remoteWimpyMax} }
-
-    sub age
-        { $_[0]->{age} }
-    sub time
-        { $_[0]->{time} }
-    sub convertTimeFlag
-        { $_[0]->{convertTimeFlag} }
-
-    sub bankBalance
-        { $_[0]->{bankBalance} }
-    sub purseContents
-        { $_[0]->{purseContents} }
-
-    sub fightCountFlag
-        { $_[0]->{fightCountFlag} }
-    sub fightCount
-        { $_[0]->{fightCount} }
-    sub killCount
-        { $_[0]->{killCount} }
-    sub wimpyCount
-        { $_[0]->{wimpyCount} }
-    sub fightDefeatCount
-        { $_[0]->{fightDefeatCount} }
-
-    sub interactCountFlag
-        { $_[0]->{interactCountFlag} }
-    sub interactCount
-        { $_[0]->{interactCount} }
-    sub interactSuccessCount
-        { $_[0]->{interactSuccessCount} }
-    sub interactFailCount
-        { $_[0]->{interactFailCount} }
-    sub interactFightCount
-        { $_[0]->{interactFightCount} }
-    sub interactDisasterCount
-        { $_[0]->{interactDisasterCount} }
-
-    sub fleeCount
-        { $_[0]->{fleeCount} }
-    sub escapeCount
-        { $_[0]->{escapeCount} }
-
-    sub tempXPCount
-        { $_[0]->{tempXPCount} }
-    sub tempXPBaseline
-        { $_[0]->{tempXPBaseline} }
-    sub tempQuestCount
-        { $_[0]->{tempQuestCount} }
-    sub tempQuestBaseline
-        { $_[0]->{tempQuestBaseline} }
-    sub tempBankCount
-        { $_[0]->{tempBankCount} }
-    sub tempBankBaseline
-        { $_[0]->{tempBankBaseline} }
-    sub tempPurseCount
-        { $_[0]->{tempPurseCount} }
-    sub tempPurseBaseline
-        { $_[0]->{tempPurseBaseline} }
-    sub tempTimerBaseline
-        { $_[0]->{tempTimerBaseline} }
-
-    sub oppName
-        { $_[0]->{oppName} }
-    sub oppHealth
-        { $_[0]->{oppHealth} }
-    sub oppHealthMax
-        { $_[0]->{oppHealthMax} }
-    sub oppLevel
-        { $_[0]->{oppLevel} }
-    sub oppStrength
-        { $_[0]->{oppStrength} }
-
-    sub customVarHash
-        { my $self = shift; return %{$self->{customVarHash}}; }
-
-    sub defaultFormatList
-        { my $self = shift; return @{$self->{defaultFormatList}}; }
-    sub displayVarList
-        { my $self = shift; return @{$self->{displayVarList}}; }
-    sub singleBackRefVarList
-        { my $self = shift; return @{$self->{singleBackRefVarList}}; }
-    sub singleBackRefVarHash
-        { my $self = shift; return %{$self->{singleBackRefVarHash}}; }
 
     sub gaugeFlag
         { $_[0]->{gaugeFlag} }
@@ -36543,6 +36550,8 @@
         { $_[0]->{gaugeValueFlag} }
     sub gaugeObjList
         { my $self = shift; return @{$self->{gaugeObjList}}; }
+    sub gaugeResetFlag
+        { $_[0]->{gaugeResetFlag} }
 
     sub ttsPointsAlertHash
         { my $self = shift; return %{$self->{ttsPointsAlertHash}}; }
@@ -36946,7 +36955,7 @@
         if (! $self->colourFlag) {
             return $self->insertText($msg, @args);
         } else {
-            return $self->insertText($msg, $axmud::CLIENT->customShowTextColour, @args);
+            return $self->insertText($msg, $axmud::CLIENT->customShowSystemTextColour, @args);
         }
     }
 

@@ -18,8 +18,8 @@
 # Games::Axmud::OtherWin::Connect
 # The Connections window, allowing the user to open a connection to a world
 #
-# Games::Axmud::OtherWin::Console
-# The Error Console window, which can display system messages when there is no session running
+# Games::Axmud::OtherWin::ClientConsole
+# The Client Console window, which can display system messages when there is no session running
 #
 # Games::Axmud::OtherWin::QuickInput
 # The Quick Input window, containing a textview in which the user can type text, and some widgets to
@@ -27,6 +27,10 @@
 #
 # Games::Axmud::OtherWin::QuickWord
 # The Quick Word window, containing various widgets for adding words to the current dictionary
+#
+# Games::Axmud::OtherWin::SessionConsole
+# The Session Console window, which can display system messages when it's not possible to display
+#   them in the 'main' window
 #
 # Games::Axmud::OtherWin::Simulate
 # The Simulate window, allowing the user to simulates various things, such as receiving text from a
@@ -1089,6 +1093,7 @@
         # Create a treeview
         my $objModel = Gtk2::TreeStore->new('Glib::String');
         my $treeView = Gtk2::TreeView->new($objModel);
+        $treeView->set_enable_search(FALSE);
         $treeView->get_selection->signal_connect('changed' => sub {
 
             if (! $self->updateFlag) {
@@ -1300,7 +1305,7 @@
         $button6->signal_connect('clicked' => sub {
 
             # Open a dialogue window
-            my ($regex, $language) = $self->showDoubleComboDialogue(
+            my ($regex, $language) = $self->showEntryComboDialogue(
                 'Search worlds',
                 'Enter a search pattern:',
                 '(And/or) search by language:',
@@ -1386,12 +1391,12 @@
             );
         }
 
-        $button8->set_tooltip_text('Show error console');
+        $button8->set_tooltip_text('Show Client Console window');
         $button8->signal_connect('clicked' => sub {
 
-            # Open an Error Console window
+            # Open an Client Console window
             $self->createFreeWin(
-                'Games::Axmud::OtherWin::Console',
+                'Games::Axmud::OtherWin::ClientConsole',
                 $self,
                 undef,      # No GA::Session
                 undef,      # Let the window set its own title
@@ -1433,6 +1438,18 @@
 
         $self->addLabel($self->table, '<i><u>World connection settings</u></i>',
             1, 8, 1, 2);
+        if (@axmud::TEST_MODE_LOGIN_LIST) {
+
+            # Button used for Axmud development, and only visible if the user has edited the
+            #   contents of /scripts/axmud.pl or /scripts/baxmud.pl, in order to modify the global
+            #   variable @TEST_MODE_LOGIN_LIST
+            my $testButton = $self->addButton(
+                $self->table,
+                \&testModeCallback,
+                'TEST MODE SETUP',
+                'Use @TEST_MODE_LOGIN_LIST values',
+                8, 12, 1, 2);
+        }
 
         # GA::Profile::World ->name
         $self->addLabel($self->table, 'Name',
@@ -1636,7 +1653,8 @@
         my $connectButton = $self->addButton(
             $self->table,
             undef,
-            'Connect',
+            # (Add a bit of space, so the Connect button isn't much smaller than the other 3)
+            '   Connect   ',
             'Connect to this world',
             10, 12, 11, 12);
         $connectButton->signal_connect('clicked' => sub {
@@ -2134,6 +2152,8 @@
 
         # Called by $self->selectWorldCallback when the user clicks on a line in the treeview
         #   corresponding to a world profile
+        # Also called by $self->testModeLoginCallback
+        #
         # Updates IVs and updates the widgets in the window's Gtk2::Table, so they show details
         #   about the world
         #
@@ -2287,13 +2307,6 @@
                 $connections .= ', most recent: ' . $worldObj->lastConnectDate . ' at '
                                     . $worldObj->lastConnectTime;
             }
-
-#            $connections = 'Connections: ' . $worldObj->numberConnects . ', previous: ';
-#            if ($worldObj->lastConnectDate && $worldObj->lastConnectTime) {
-#                $connections .= $worldObj->lastConnectDate . ' at ' . $worldObj->lastConnectTime;
-#            } else {
-#                $connections .= '(never connected)';
-#            }
 
         } else {
 
@@ -3532,6 +3545,88 @@
         }
     }
 
+    sub testModeCallback {
+
+        # Function used for Axmud development
+        # $self->createTableWidgets creates a button that's only visible if the user has edited the
+        #   contents of /scripts/axmud.pl or /scripts/baxmud.pl, in order to modify the global
+        #   variable @TEST_MODE_LOGIN_LIST
+        # The button, if visible and if clicked, calls this function, which uses the contents of
+        #   the global variable to set the visible world, address, port, character and password, as
+        #   if the user had entered those values manually
+        #
+        # Expected arguments
+        #   $testButton     - The Gtk2::Button that was clicked
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $testButton, $check) = @_;
+
+        # Local variables
+        my (
+            $worldObj,
+            @testList, @charList,
+        );
+
+        # Check for improper arguments
+        if (! defined $testButton || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->testModeCallback', @_);
+        }
+
+        # Import the global variable (for convenience)
+        @testList = @axmud::TEST_MODE_LOGIN_LIST;
+
+        # If the global variable refers to a world, for which a world profile already exists,
+        #   update table widgets as if the user had entered the global variable's value manually
+        if (defined $testList[0]) {
+
+            $worldObj = $axmud::CLIENT->ivShow('worldProfHash', $testList[0]);
+            if ($worldObj) {
+
+                # Update table widgets for this world, unless that world is already the visible one
+                if (! $self->worldObj || $worldObj ne $self->worldObj) {
+
+                    $self->updateTableWidgets($worldObj, $worldObj->longName);
+                }
+
+                # Update table widgets again, using the values stored in @TEST_MODE_LOGIN_LIST
+
+                # World DNS/IP address
+                if (defined $testList[1]) {
+
+                    $self->entry2->set_text($testList[1]);
+                }
+
+                # World port
+                if (defined $testList[2]) {
+
+                    $self->entry3->set_text($testList[2]);
+                }
+
+                # Character name and password
+                if (defined $testList[3] && defined $testList[4]) {
+
+                    $self->miniWorldObj->ivAdd('passwordHash', $testList[3], $testList[4]);
+                    $self->miniWorldObj->ivAdd('newPasswordHash', $testList[3], $testList[4]);
+
+                    $self->miniWorldObj->ivPoke('selectChar', $testList[3]);
+
+                    # Redraw the combobox
+                    @charList
+                        = sort {lc($a) cmp lc($b)} ($self->miniWorldObj->ivKeys('passwordHash'));
+
+                    my $comboBox = $self->resetComboBox(TRUE, @charList);
+                    $self->ivPoke('comboBox', $comboBox);
+                }
+            }
+        }
+
+        return 1;
+    }
+
     ##################
     # Accessors - set
 
@@ -3547,14 +3642,14 @@
 
         if (! $flag) {
 
-            # No system messages to display in the Error Console window
+            # No system messages to display in the Client Console window
             $self->consoleButton->set_image(
                 Gtk2::Image->new_from_file($axmud::SHARE_DIR . '/icons/connect/icon_console.png'),
             );
 
         } else {
 
-            # At least one system message to display in the Error Console window
+            # At least one system message to display in the Client Console window
             $self->consoleButton->set_image(
                 Gtk2::Image->new_from_file(
                     $axmud::SHARE_DIR . '/icons/connect/icon_console_alert.png',
@@ -3687,7 +3782,7 @@
         { $_[0]->{searchLanguage} }
 }
 
-{ package Games::Axmud::OtherWin::Console;
+{ package Games::Axmud::OtherWin::ClientConsole;
 
     use strict;
     use warnings;
@@ -3706,8 +3801,8 @@
     sub new {
 
         # Called by GA::Generic::Win->createFreeWin
-        # Creates a new instance of the Error Console window, which can display system messages when
-        #   there is no session running
+        # Creates a new instance of the Client Console window, which can display system messages
+        #   when there is no session running
         #
         # Expected arguments
         #   $number         - Unique number for this window object
@@ -3746,7 +3841,7 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        # Only one Error Console window can be open at a time
+        # Only one Client Console window can be open at a time
         if ($axmud::CLIENT->consoleWin) {
 
             $axmud::CLIENT->consoleWin->restoreFocus();
@@ -3824,7 +3919,7 @@
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
 
             # A string to use as the window title. If 'undef', a generic title is used
-            title                       => $axmud::SCRIPT . ' error console',
+            title                       => $axmud::SCRIPT . ' client console',
             # Hash containing any number of key-value pairs needed for this particular 'config'
             #   window; for example, for example, GA::PrefWin::TaskStart uses it to specify a task
             #   name and type. Set to an empty hash if not required
@@ -3862,6 +3957,9 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my @list;
+
         # Check for improper arguments
         if (defined $check) {
 
@@ -3877,9 +3975,19 @@
         $axmud::CLIENT->set_consoleWin($self);
 
         # If any system messages have been stored, we can display them now
-        foreach my $msg ($axmud::CLIENT->systemMsgList) {
+        @list = $axmud::CLIENT->systemMsgList;
+        if (@list) {
 
-            $self->update($msg);
+            do {
+
+                my ($type, $msg);
+
+                $type = shift @list;
+                $msg = shift @list;
+
+                $self->update($type, $msg);
+
+            } until (! @list);
         }
 
         # Each system message is displayed here only once
@@ -3955,7 +4063,7 @@
     sub drawWidgets {
 
         # Called by $self->winSetup
-        # Sets up the Error Console window with its standard widgets
+        # Sets up the Client Console window with its standard widgets
         #
         # Expected arguments
         #   (none besides $self)
@@ -4004,6 +4112,9 @@
         $self->ivPoke('textView', $textView);
         $self->ivPoke('buffer', $buffer);
 
+        # Create some colour tags, so that system messages can be displayed in their usual colours
+        $self->createColourTags();
+
         return 1;
     }
 
@@ -4013,22 +4124,75 @@
 
     # Other functions
 
-    sub update {
+    sub createColourTags {
 
-        # Called by $self->drawWidgets and $axmud::CLIENT->add_systemMsg
-        # Adds a system message to the window's textview
+        # Called by $self->drawWidgets
+        # Create some Gtk2::TextTags, so that system messages can be shown in their usual colours
         #
         # Expected arguments
         #   (none besides $self)
         #
-        # Optional arguments
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->update', @_);
+        }
+
+        $self->buffer->create_tag(
+            'system',
+            'foreground'
+                => $axmud::CLIENT->returnRGBColour($axmud::CLIENT->customShowSystemTextColour),
+        );
+
+        $self->buffer->create_tag(
+            'error',
+            'foreground'
+                => $axmud::CLIENT->returnRGBColour($axmud::CLIENT->customShowErrorColour),
+        );
+
+        $self->buffer->create_tag(
+            'warning',
+            'foreground'
+                => $axmud::CLIENT->returnRGBColour($axmud::CLIENT->customShowWarningColour),
+        );
+
+        $self->buffer->create_tag(
+            'debug',
+            'foreground'
+                => $axmud::CLIENT->returnRGBColour($axmud::CLIENT->customShowDebugColour),
+        );
+
+        $self->buffer->create_tag(
+            'improper',
+            'foreground'
+                => $axmud::CLIENT->returnRGBColour($axmud::CLIENT->customShowImproperColour),
+        );
+
+        return 1;
+    }
+
+    sub update {
+
+        # Called by $self->winEnable and $axmud::CLIENT->add_systemMsg
+        # Adds a system message to the window's textview
+        #
+        # Expected arguments
+        #   $type   - The type of message (which determines the colour in which it's displayed) -
+        #               'system', 'error', 'warning', 'debug' or 'improper'. If an invalid value or
+        #               'undef', then the error message colour is used
         #   $msg    - The message to display. If 'undef' (for some reason), nothing is displayed
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $msg, $check) = @_;
+        my ($self, $type, $msg, $check) = @_;
 
         # Check for improper arguments
         if (defined $check) {
@@ -4038,9 +4202,23 @@
 
         if ($self->enabledFlag && defined $msg) {
 
+            if (
+                ! defined $type
+                || (
+                    $type ne 'system' && $type ne 'error' && $type ne 'warning' && $type ne 'debug'
+                    && $type ne 'improper'
+                )
+            ) {
+                $type = 'error';
+            }
+
             # Only one newline character at the end of the message
             chomp $msg;
-            $self->buffer->insert($self->buffer->get_end_iter(), $msg . "\n");
+            $self->buffer->insert_with_tags_by_name(
+                $self->buffer->get_end_iter(),
+                $msg . "\n",
+                $type,
+            );
 
             # Scroll to the bottom
             $self->textView->scroll_to_mark($self->buffer->get_mark('end'), 0.0, TRUE, 0, 0);
@@ -4152,7 +4330,7 @@
             winType                     => 'other',
             # A name for the window (can be unique to this type of window object, or can be the
             #   same as ->winType)
-            winName                     => 'other',
+            winName                     => 'mcp_simple_edit',
             # The GA::Obj::Workspace object for the workspace in which this window is created
             workspaceObj                => $workspaceObj,
             # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
@@ -4467,7 +4645,7 @@
             winType                     => 'other',
             # A name for the window (can be unique to this type of window object, or can be the
             #   same as ->winType)
-            winName                     => 'other',
+            winName                     => 'quick_input',
             # The GA::Obj::Workspace object for the workspace in which this window is created
             workspaceObj                => $workspaceObj,
             # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
@@ -4729,7 +4907,7 @@
         @list = split(/\n/, $text);
 
         # Save the script as a temporary file
-        $path = $axmud::DATA_DIR . '/tmp/quick.bas';
+        $path = $axmud::DATA_DIR . '/data/temp/quick.bas';
 
         # Open the file for writing, overwriting previous contents
         if (! open ($fileHandle, ">$path")) {
@@ -4843,7 +5021,7 @@
             winType                     => 'other',
             # A name for the window (can be unique to this type of window object, or can be the
             #   same as ->winType)
-            winName                     => 'other',
+            winName                     => 'quick_word',
             # The GA::Obj::Workspace object for the workspace in which this window is created
             workspaceObj                => $workspaceObj,
             # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
@@ -5451,6 +5629,828 @@
     # Accessors - get
 }
 
+{ package Games::Axmud::OtherWin::PatternTest;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::Generic::OtherWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Called by GA::Generic::Win->createFreeWin
+        # Creates a new instance of the Pattern test window, which allows the user to to test
+        #   patterns (regexes) on the fly
+        #
+        # Expected arguments
+        #   $number         - Unique number for this window object
+        #   $workspaceObj   - The GA::Obj::Workspace handling the workspace in which this window
+        #                       should be created
+        #   $owner          - The owner; a 'grid' window object (but not an 'external' window) or a
+        #                       'free' window object. When this window opens/closes, the owner is
+        #                       informed via calls to its ->add_childFreeWin / ->del_childFreeWin
+        #                       functions
+        #
+        # Optional arguments
+        #   $session        - The GA::Session from which this function was called. 'undef' if the
+        #                       calling function didn't specify a session and $owner's ->session IV
+        #                       is also 'undef'
+        #   $title          - Ignored if set (all 'other' windows define their own title)
+        #   $editObj        - Ignored if set
+        #   $tempFlag       - Ignored if set
+        #   %configHash     - Hash containing any number of key-value pairs needed for this
+        #                       particular 'other' window; set to an empty hash if not required
+        #                   - This type of window object recognises these initialisation settings:
+        #
+        #                       ...
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my (
+            $class, $number, $workspaceObj, $owner, $session, $title, $editObj, $tempFlag,
+            %configHash,
+        ) = @_;
+
+        # Local variables
+        my ($widthPixels, $heightPixels);
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        # Setup
+        my $self = {
+            _objName                    => 'other_win_' . $number,
+            _objClass                   => $class,
+            _parentFile                 => undef,       # No parent file object
+            _parentWorld                => undef,       # No parent file object
+            _privFlag                   => TRUE,        # All IVs are private
+
+            # Standard window object IVs
+            # --------------------------
+
+            # Unique number for this window object
+            number                      => $number,
+            # The window category - 'grid' or 'free'
+            winCategory                 => 'free',
+            # The window type, any of the keys in GA::Client->constFreeWinTypeHash
+            winType                     => 'other',
+            # A name for the window (for some 'free' windows, the same as the window type)
+            winName                     => 'pattern_test',
+            # The GA::Obj::Workspace object for the workspace in which this window is created
+            workspaceObj                => $workspaceObj,
+            # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
+            #   object. When this window opens/closes, the owner is informed via calls to its
+            #   ->add_childFreeWin / ->del_childFreeWin functions
+            owner                       => $owner,
+            # The GA::Session from which this function was called. 'undef' if the calling function
+            #   didn't specify a session and $owner's ->session IV is also 'undef'
+            session                     => $session,
+            # When GA::Session->pseudoCmd is called to execute a client command, the mode in which
+            #   it should be called (usually 'win_error' or 'win_only', which causes errors to be
+            #   displayed in a 'dialogue' window)
+            pseudoCmdMode               => 'win_error',
+
+            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk2::Window
+            # The code should use this IV when it wants to do something to the window itself
+            #   (minimise it, make it active, etc)
+            winWidget                   => undef,
+            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            #   the parent GA::Table::PseudoWin table object
+            # The code should use this IV when it wants to add, modify or remove widgets inside the
+            #   window itself
+            winBox                      => undef,
+            # The Gnome2::Wnck::Window, if known
+            wnckWin                     => undef,
+            # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
+            #   FALSE if not
+            enabledFlag                 => FALSE,
+            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
+            visibleFlag                 => TRUE,
+            # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
+            #   is the parent, a subset of GA::Obj::Desktop->freeWinHash. Hash in the form
+            #       $childFreeWinHash{unique_number} = blessed_reference_to_window_object
+            childFreeWinHash            => {},
+
+            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
+            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            #   area)
+            packingBox                  => undef,       # Gtk2::VBox
+
+            # Standard IVs for 'free' windows
+
+            # The window's default size, in pixels
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
+            # Default border/item spacing sizes used in the window, in pixels
+            borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
+            spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
+
+            # A string to use as the window title. If 'undef', a generic title is used
+            title                       => 'Pattern tester',
+            # Hash containing any number of key-value pairs needed for this particular 'config'
+            #   window; for example, for example, GA::PrefWin::TaskStart uses it to specify a task
+            #   name and type. Set to an empty hash if not required
+            configHash                  => {%configHash},
+
+            # IVs for this type of window
+
+            # Tooltips widget used by all buttons
+            tooltips                    => undef,       # Gtk2::Tooltips
+
+            # Standard size of the Gtk2::Table used (a 12x12 table, with a spare cell around every
+            #   border)
+            tableWidth                  => 13,
+            tableHeight                 => 13,
+        };
+
+        # Bless the object into existence
+        bless $self, $class;
+
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winEnable {}        # Inherited from GA::Generic::FreeWin
+
+#   sub winDesengage {}     # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}     # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}       # Inherited from GA::Generic::Win
+
+    sub drawWidgets {
+
+        # Called by $self->winSetup
+        # Sets up the Pattern Test window with its standard widgets
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->drawWidgets', @_);
+        }
+
+        # Create a packing box
+        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        $self->winBox->add($packingBox);
+        $packingBox->set_border_width(0);
+
+        # Create a Gtk2::Tooltips object, used by various buttons
+        my $tooltips = Gtk2::Tooltips->new();
+
+        # Update IVs immediately, so various buttons can use the tooltips
+        $self->ivPoke('packingBox', $packingBox);
+        $self->ivPoke('tooltips', $tooltips);
+
+        # Create an image on the left
+        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->pack_start($hBox, TRUE, TRUE, 0);
+
+        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        $hBox->pack_start($vBox, FALSE, FALSE, 0);
+
+        my $frame = Gtk2::Frame->new(undef);
+        $vBox->pack_start($frame, FALSE, FALSE, 0);
+        $frame->set_size_request(64, 64);
+        $frame->set_shadow_type('etched-in');
+
+        my $image = Gtk2::Image->new_from_file($axmud::CLIENT->getDialogueIcon());
+        $frame->add($image);
+
+        # Create a table inside a scroller on the right
+        my $scroller = Gtk2::ScrolledWindow->new();
+        $hBox->pack_start($scroller, TRUE, TRUE, $self->spacingPixels);
+        $scroller->set_policy(qw/automatic automatic/);
+
+        my $table = Gtk2::Table->new($self->tableHeight, $self->tableWidth, FALSE);
+        $scroller->add_with_viewport($table);
+        $table->set_col_spacings($self->spacingPixels);
+        $table->set_row_spacings($self->spacingPixels);
+
+        # Create a button at the bottom to close the window
+        my $hBox2 = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->pack_end($hBox2, FALSE, FALSE, 0);
+
+        # The button's label includes some extra space characters to make it a little easier to
+        #   click on
+        my $okButton = Gtk2::Button->new('  OK  ');
+        $hBox2->pack_end($okButton, FALSE, FALSE, 0);
+        $okButton->signal_connect('clicked' => sub {
+
+            $self->winDestroy();
+        });
+
+        # Add some editing widgets. The ->signal_connect appear below
+        $self->addLabel($table, '<b>Pattern / regular expression / regex tester</b>',
+            1, 12, 1, 2);
+
+        $self->addLabel($table, 'Pattern',
+            1, 3, 2, 3);
+        my $entry = $self->addEntry($table, undef, undef, TRUE,
+            3, 12, 2, 3);
+        $entry->set_icon_from_stock('secondary', 'gtk-no');
+
+        $self->addLabel($table, 'Line',
+            1, 3, 3, 4);
+        my $entry2 = $self->addEntry($table, undef, undef, TRUE,
+            3, 12, 3, 4);
+
+        $self->addLabel($table, 'Substitution',
+            1, 3, 4, 5);
+        my $entry3 = $self->addEntry($table, undef, undef, TRUE,
+            3, 12, 4, 5);
+
+        my $button = $self->addButton(
+            $table,
+            undef,
+            'Test the pattern\'s validity',
+            'Test the pattern\'s validity',
+            1, 6, 5, 6);
+
+        my $button2 = $self->addButton(
+            $table,
+            undef,
+            'Match the pattern against the line',
+            'i.e. $line =~ m/$pattern/',
+            6, 12, 5, 6);
+        $button2->set_sensitive(FALSE);
+
+        my $button3 = $self->addButton(
+            $table,
+            undef,
+            'Use the pattern to apply the substitution to the line',
+            'i.e. $line =~ s/$pattern/$substitution/',
+            1, 8, 6, 7);
+        $button3->set_sensitive(FALSE);
+
+        my $button4 = $self->addButton(
+            $table,
+            undef,
+            'Clear all',
+            'Clear all the entry boxes',
+            8, 12, 6, 7);
+
+        $self->addLabel($table, 'Result',
+            1, 3, 7, 8);
+        my $entry4 = $self->addEntry($table, undef, undef, TRUE,
+            3, 12, 7, 8);
+        $entry4->set_editable(FALSE);
+
+        # Add a simple list to show group substrings
+        @columnList = (
+            'Substring #', 'int',
+            'Matching substring', 'text',
+        );
+
+        my $frame2 = Gtk2::Frame->new(undef);
+        $table->attach_defaults($frame2, 1, 12, 8, 12);
+        $frame2->set_border_width(0);
+
+        my $scroller2 = Gtk2::ScrolledWindow->new();
+        $frame2->add($scroller2);
+        $scroller2->set_shadow_type('none');
+        $scroller2->set_policy('automatic', 'automatic');
+        $scroller2->set_border_width(0);
+        $scroller2->set_size_request(-1, 180);
+
+        my $slWidget = Games::Axmud::Gtk::Simple::List->new(@columnList);
+        $scroller2->add($slWidget);
+
+        # ->signal_connects
+        $entry->signal_connect('changed' => sub {
+
+            my $regex = $entry->get_text();
+
+            # GA::Client->regexCheck returns 'undef' for a valid regex, or an error message for an
+            #   invalid one
+            if (
+                defined $regex
+                && $regex ne ''
+                && ! defined $axmud::CLIENT->regexCheck($regex)
+            ) {
+                $entry->set_icon_from_stock('secondary', 'gtk-yes');
+
+                if (length $entry2->get_text() > 0) {
+                    $button2->set_sensitive(TRUE);
+                } else {
+                    $button2->set_sensitive(FALSE);
+                }
+
+                if (length $entry3->get_text() > 0) {
+                    $button3->set_sensitive(TRUE);
+                } else {
+                    $button3->set_sensitive(FALSE);
+                }
+
+            } else {
+
+                $entry->set_icon_from_stock('secondary', 'gtk-no');
+                $button2->set_sensitive(FALSE);
+                $button3->set_sensitive(FALSE);
+            }
+        });
+
+        $entry2->signal_connect('changed' => sub {
+
+            my ($regex, $line, $substitution);
+
+            $regex = $entry->get_text();
+            $line = $entry2->get_text();
+            $substitution = $entry3->get_text();
+
+            if (
+                ! defined $axmud::CLIENT->regexCheck($regex)
+                && length $line > 0
+            ) {
+                $button2->set_sensitive(TRUE);
+                if (length $substitution > 0) {
+                    $button3->set_sensitive(TRUE);
+                } else {
+                    $button3->set_sensitive(FALSE);
+                }
+
+            } else {
+
+                $button2->set_sensitive(FALSE);
+                $button3->set_sensitive(FALSE);
+            }
+        });
+
+        $entry3->signal_connect('changed' => sub {
+
+            my ($regex, $line, $substitution);
+
+            $regex = $entry->get_text();
+            $line = $entry2->get_text();
+            $substitution = $entry3->get_text();
+
+            if (
+                ! defined $axmud::CLIENT->regexCheck($regex)
+                && length $line > 0
+                && length $substitution > 0
+            ) {
+                $button3->set_sensitive(TRUE);
+            } else {
+                $button3->set_sensitive(FALSE);
+            }
+        });
+
+        $button->signal_connect('clicked' => sub {
+
+            my ($regex, $result);
+
+            $regex = $entry->get_text();
+
+            if (! defined $regex || $regex eq '') {
+
+                $entry4->set_text('');
+
+            } else {
+
+                $result = $axmud::CLIENT->regexCheck($regex);
+                if (! defined $result) {
+
+                    $entry4->set_text('<Pattern is valid>');
+                    $entry4->set_icon_from_stock('secondary', 'gtk-yes');
+
+                } else {
+
+                    # Perl error message
+                    $entry4->set_text($result);
+                    $entry4->set_icon_from_stock('secondary', 'gtk-no');
+                }
+            }
+        });
+
+        $button2->signal_connect('clicked' => sub {
+
+            my (
+                $regex, $line, $count,
+                @grpStringList, @dataList,
+            );
+
+            $regex = $entry->get_text();
+            $line = $entry2->get_text();
+
+            @grpStringList = ($line =~ m/$regex/);
+            if (@grpStringList) {
+
+                if ((scalar @-) > 1) {
+
+                    $count = 0;
+                    foreach my $grpString (@grpStringList) {
+
+                        $count++;
+                        push (@dataList, [$count, $grpString]);
+                    }
+                }
+
+                $entry4->set_text('<Pattern matches the line>');
+                $entry4->set_icon_from_stock('secondary', 'gtk-yes');
+                @{$slWidget->{data}} = @dataList;
+
+            } else {
+
+                $entry4->set_text('<Pattern does NOT match the line>');
+                $entry4->set_icon_from_stock('secondary', 'gtk-no');
+                @{$slWidget->{data}} = ();
+            }
+        });
+
+        $button3->signal_connect('clicked' => sub {
+
+            my ($regex, $line, $substitution);
+
+            $regex = $entry->get_text();
+            $line = $entry2->get_text();
+            $substitution = $entry3->get_text();
+
+            if ($line =~ s/$regex/$substitution/) {
+
+                $entry4->set_text($line);
+                $entry4->set_icon_from_stock('secondary', 'gtk-yes');
+                @{$slWidget->{data}} = ();
+
+            } else {
+
+                $entry4->set_text('<Pattern does NOT match the line>');
+                $entry4->set_icon_from_stock('secondary', 'gtk-no');
+                @{$slWidget->{data}} = ();
+            }
+        });
+
+        $button4->signal_connect('clicked' => sub {
+
+            $entry->set_text('');
+            $entry->set_icon_from_stock('secondary', undef);
+
+            $entry2->set_text('');
+            $entry3->set_text('');
+
+            $entry4->set_icon_from_stock('secondary', undef);
+            $entry4->set_text('');
+
+            @{$slWidget->{data}} = ();
+        });
+
+        return 1;
+    }
+
+#   sub redrawWidgets {}    # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+
+    sub tooltips
+        { $_[0]->{tooltips} }
+
+    sub tableWidth
+        { $_[0]->{tableWidth} }
+    sub tableHeight
+        { $_[0]->{tableHeight} }
+}
+
+{ package Games::Axmud::OtherWin::SessionConsole;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::OtherWin::ClientConsole Games::Axmud::Generic::OtherWin
+        Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Called by GA::Generic::Win->createFreeWin
+        # Creates a new instance of the Session Console window, which can display system messages
+        #   when it's not possible to display them in the 'main' window
+        #
+        # Expected arguments
+        #   $number         - Unique number for this window object
+        #   $workspaceObj   - The GA::Obj::Workspace handling the workspace in which this window
+        #                       should be created
+        #   $owner          - The owner; a 'grid' window object (but not an 'external' window) or a
+        #                       'free' window object. When this window opens/closes, the owner is
+        #                       informed via calls to its ->add_childFreeWin / ->del_childFreeWin
+        #                       functions
+        #
+        # Optional arguments
+        #   $session        - The GA::Session from which this function was called. 'undef' if the
+        #                       calling function didn't specify a session and $owner's ->session IV
+        #                       is also 'undef'
+        #   $title          - Ignored if set (all 'other' windows define their own title)
+        #   $editObj        - Ignored if set
+        #   $tempFlag       - Ignored if set
+        #   %configHash     - Hash containing any number of key-value pairs needed for this
+        #                       particular 'other' window; set to an empty hash if not required
+        #                   - This type of window object recognises these initialisation settings:
+        #
+        #                       ...
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my (
+            $class, $number, $workspaceObj, $owner, $session, $title, $editObj, $tempFlag,
+            %configHash,
+        ) = @_;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        # Only one Session Console window can be open per session
+        if (! $session) {
+
+            return undef;
+
+        } elsif ($session->consoleWin) {
+
+            $session->consoleWin->restoreFocus();
+            return undef;
+        }
+
+        # Setup
+        my $self = {
+            _objName                    => 'other_win_' . $number,
+            _objClass                   => $class,
+            _parentFile                 => undef,       # No parent file object
+            _parentWorld                => undef,       # No parent file object
+            _privFlag                   => TRUE,        # All IVs are private
+
+            # Standard window object IVs
+            # --------------------------
+
+            # Unique number for this window object
+            number                      => $number,
+            # The window category - 'grid' or 'free'
+            winCategory                 => 'free',
+            # The window type, any of the keys in GA::Client->constFreeWinTypeHash
+            winType                     => 'other',
+            # A name for the window (for some 'free' windows, the same as the window type)
+            winName                     => 'console',
+            # The GA::Obj::Workspace object for the workspace in which this window is created
+            workspaceObj                => $workspaceObj,
+            # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
+            #   object. When this window opens/closes, the owner is informed via calls to its
+            #   ->add_childFreeWin / ->del_childFreeWin functions
+            owner                       => $owner,
+            # The GA::Session from which this function was called. 'undef' if the calling function
+            #   didn't specify a session and $owner's ->session IV is also 'undef'
+            session                     => $session,
+            # When GA::Session->pseudoCmd is called to execute a client command, the mode in which
+            #   it should be called (usually 'win_error' or 'win_only', which causes errors to be
+            #   displayed in a 'dialogue' window)
+            pseudoCmdMode               => 'win_error',
+
+            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk2::Window
+            # The code should use this IV when it wants to do something to the window itself
+            #   (minimise it, make it active, etc)
+            winWidget                   => undef,
+            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            #   the parent GA::Table::PseudoWin table object
+            # The code should use this IV when it wants to add, modify or remove widgets inside the
+            #   window itself
+            winBox                      => undef,
+            # The Gnome2::Wnck::Window, if known
+            wnckWin                     => undef,
+            # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
+            #   FALSE if not
+            enabledFlag                 => FALSE,
+            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
+            visibleFlag                 => TRUE,
+            # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
+            #   is the parent, a subset of GA::Obj::Desktop->freeWinHash. Hash in the form
+            #       $childFreeWinHash{unique_number} = blessed_reference_to_window_object
+            childFreeWinHash            => {},
+
+            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
+            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            #   area)
+            packingBox                  => undef,       # Gtk2::VBox
+
+            # Standard IVs for 'free' windows
+
+            # The window's default size, in pixels
+            widthPixels                 => 600,
+            heightPixels                => 300,
+            # Default border/item spacing sizes used in the window, in pixels
+            borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
+            spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
+
+            # A string to use as the window title. If 'undef', a generic title is used
+            title                       => $axmud::SCRIPT . ' session console #' . $session->number,
+            # Hash containing any number of key-value pairs needed for this particular 'config'
+            #   window; for example, for example, GA::PrefWin::TaskStart uses it to specify a task
+            #   name and type. Set to an empty hash if not required
+            configHash                  => {%configHash},
+
+            # IVs for this window
+            textView                    => undef,       # Gtk2::TextView
+            buffer                      => undef,       # Gtk2::TextBuffer
+        };
+
+        # Bless the object into existence
+        bless $self, $class;
+
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}         # Inherited from GA::Generic::FreeWin
+
+    sub winEnable {
+
+        # Called by GA::Generic::Win->createFreeWin, after the call to $self->winSetup
+        # After the Gtk2::Window has been setup and moved into position, makes it visible
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 on success
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->winEnable', @_);
+        }
+
+        # Make the window appear on the desktop
+        $self->winShowAll($self->_objClass . '->winEnable');
+        $self->ivPoke('enabledFlag', TRUE);
+
+        # This type of window is unique (only one can be open per session); inform the GA::Session
+        #   it has opened
+        $self->session->set_consoleWin($self);
+
+        # If any system messages have been stored, we can display them now
+        @list = $self->session->systemMsgList;
+        if (@list) {
+
+            do {
+
+                my ($type, $msg);
+
+                $type = shift @list;
+                $msg = shift @list;
+
+                $self->update($type, $msg);
+
+            } until (! @list);
+        }
+
+        # Each system message is displayed here only once
+        $self->session->reset_systemMsg();
+
+        return 1;
+    }
+
+#   sub winDesengage {}     # Inherited from GA::Generic::FreeWin
+
+    sub winDestroy {
+
+        # Can be called by anything
+        # Updates IVs
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if the window can't be destroyed or if it has already
+        #       been destroyed
+        #   1 on success
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->winDestroy', @_);
+        }
+
+        if (! $self->winBox) {
+
+            # Window already destroyed in a previous call to this function
+            return undef;
+        }
+
+        # Close any 'free' windows for which this window is a parent
+        foreach my $winObj ($self->ivValues('childFreeWinHash')) {
+
+            $winObj->winDestroy();
+        }
+
+        # Destroy the Gtk2::Window
+        eval { $self->winBox->destroy(); };
+        if ($@) {
+
+            # Window can't be destroyed
+            return undef;
+
+        } else {
+
+            $self->ivUndef('winWidget');
+            $self->ivUndef('winBox');
+        }
+
+        # Inform the owner and the desktop object of this 'free' window's demise
+        $axmud::CLIENT->desktopObj->del_freeWin($self);
+        if ($self->owner) {
+
+            $self->owner->del_childFreeWin($self);
+        }
+
+        # This type of window is unique (only one can be open per session); inform the GA::Session
+        #   it has closed
+        $self->session->set_consoleWin();
+
+        return 1;
+    }
+
+#   sub winShowAll {}       # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}      # Inherited from GA::OtherWin::ClientConsole
+
+#   sub redrawWidgets {}    # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+#   sub createColourTags {} # Inherited from GA::OtherWin::ClientConsole
+
+#   sub update {}           # Inherited from GA::OtherWin::ClientConsole
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+}
+
 { package Games::Axmud::OtherWin::Simulate;
 
     use strict;
@@ -5541,7 +6541,7 @@
             winType                     => 'other',
             # A name for the window (can be unique to this type of window object, or can be the
             #   same as ->winType)
-            winName                     => 'other',
+            winName                     => 'simulate',
             # The GA::Obj::Workspace object for the workspace in which this window is created
             workspaceObj                => $workspaceObj,
             # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
@@ -5914,7 +6914,7 @@
             winType                     => 'other',
             # A name for the window (can be unique to this type of window object, or can be the
             #   same as ->winType)
-            winName                     => 'other',
+            winName                     => 'source_code',
             # The GA::Obj::Workspace object for the workspace in which this window is created
             workspaceObj                => $workspaceObj,
             # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
@@ -6690,6 +7690,7 @@
         # Add a treeview on the left of the window
         my $treeViewModel = Gtk2::TreeStore->new('Glib::String');
         my $treeView = Gtk2::TreeView->new($treeViewModel);
+        $treeView->set_enable_search(FALSE);
         # Append a single column to the treeview
         $treeView->append_column(
             Gtk2::TreeViewColumn->new_with_attributes(
@@ -15359,7 +16360,7 @@
         @comboList = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('taskPackageHash'));
 
         # Prompt the user for a label
-        ($label, $standard) = $self->showDoubleComboDialogue(
+        ($label, $standard) = $self->showEntryComboDialogue(
             'Add task label',
             'Task label',
             'Standard task name',
@@ -17068,7 +18069,12 @@
 
         if ($pattern) {
 
-            if ($obj->stripLine =~ m/$pattern/) {
+            if ($axmud::CLIENT->regexCheck($pattern)) {
+
+                $msg = 'Invalid pattern (regular expression)';
+                $type = 'error';
+
+            } elsif ($obj->stripLine =~ m/$pattern/) {
 
                 $msg = 'Pattern MATCHES line #' . $number;
                 $type = 'info';
@@ -18484,7 +19490,7 @@
         $slWidget->get_selection->unselect_all();
 
         # Prompt the user for the name of the TTS configuration and the engine to use
-        ($name, $engine) = $self->showDoubleComboDialogue(
+        ($name, $engine) = $self->showEntryComboDialogue(
             'Add TTS configuration',
             "Enter a name for the object\n(Max 16 chars: A-Z a-z _ 0-9)",
             "Select the speech engine",

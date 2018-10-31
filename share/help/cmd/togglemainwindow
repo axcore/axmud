@@ -3,12 +3,16 @@ tmw / togglemainwindow        Toggles special features of 'main' windows
    Format:
       ;tmw                    Shows current special features
       
+      ;tmw -s                 Toggles system messages in the 'main' window
       ;tmw -u                 Toggles 'main' window's urgency hint
       ;tmw -t                 Toggles tooltips in session's default tab
       
    Notes:
-      This command enables or disables a couple of features used exclusively in
-         'main' windows.
+      This command enables or disables some behaviours in 'main' windows.
+      The '-s' switch enables or disables displaying system messages in 'main'
+         windows. Note that, even when enabled, individual sessions might still
+         refuse to display system messages in their 'main' window, for example
+         when connected to a world that's using VT100 cursor control sequences.      
       The '-u' switch enables or disables the 'main' window's urgency hint. 
          When text is received from the world and the 'main' window is not on
          the user's current workspace, the window has its urgency hint set. On 

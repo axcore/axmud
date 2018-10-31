@@ -951,24 +951,9 @@
         }
 
         my $button3 = $self->addButton($table,
-            'Choose directory', 'Select a directory where backup files are created', undef,
+            'Set this directory', 'Set the directory where backup files are created', undef,
             6, 9, 5, 6);
         $button3->signal_connect('clicked' => sub {
-
-            my $dir = $self->showFileChooser(
-                'Set backup directory',
-                'select-folder',
-            );
-
-            if ($dir) {
-
-                $entry2->set_text($dir);
-            }
-        });
-        my $button4 = $self->addButton($table,
-            'Set directory', 'Set the directory where backup files are created', undef,
-            9, 12, 5, 6);
-        $button4->signal_connect('clicked' => sub {
 
             # If entry icon is a cross, rather than a tick, reset the directory so the user must
             #   choose it manually every time a backup is done
@@ -979,6 +964,23 @@
                 $self->session->pseudoCmd('autobackup -f ' . $dir);
             } else {
                 $self->session->pseudoCmd('autobackup -o');
+            }
+        });
+
+        my $button4 = $self->addButton($table,
+            '(or) Choose directory', 'Select a directory where backup files are created', undef,
+            9, 12, 5, 6);
+        $button4->signal_connect('clicked' => sub {
+
+            my $dir = $self->showFileChooser(
+                'Set backup directory',
+                'select-folder',
+            );
+
+            if ($dir) {
+
+                $entry2->set_text($dir);
+                $self->session->pseudoCmd('autobackup -f ' . $dir);
             }
         });
 
@@ -1294,6 +1296,7 @@
         $self->settings9Tab($innerNotebook);
         $self->settings10Tab($innerNotebook);
         $self->settings11Tab($innerNotebook);
+        $self->settings12Tab($innerNotebook);
 
         return 1;
     }
@@ -1424,61 +1427,73 @@
         });
 
         # Right column
-        $self->addLabel($table, 'Use xterm title in tab instead (if available)',
+        $self->addLabel($table, 'Switch to \'connect offline\' mode on disconnection',
             7, 11, 1, 2);
 
         my $checkButton = $self->addCheckButton($table, undef, TRUE,
             11, 12, 1, 2);
-        $checkButton->set_active($axmud::CLIENT->xTermTitleFlag);
+        $checkButton->set_active($axmud::CLIENT->offlineOnDisconnectFlag);
         $checkButton->signal_connect('toggled' => sub {
 
-            $self->session->pseudoCmd('setsession -x', $self->pseudoCmdMode);
-            $checkButton->set_active($axmud::CLIENT->xTermTitleFlag);
+            $self->session->pseudoCmd('setsession -o', $self->pseudoCmdMode);
+            $checkButton->set_active($axmud::CLIENT->offlineOnDisconnectFlag);
         });
 
-        $self->addLabel($table, 'Use world\'s long name in tab (if available)',
+        $self->addLabel($table, 'Use xterm title in tab instead (if available)',
             7, 11, 2, 3);
 
         my $checkButton2 = $self->addCheckButton($table, undef, TRUE,
             11, 12, 2, 3);
-        $checkButton2->set_active($axmud::CLIENT->longTabLabelFlag);
+        $checkButton2->set_active($axmud::CLIENT->xTermTitleFlag);
         $checkButton2->signal_connect('toggled' => sub {
 
+            $self->session->pseudoCmd('setsession -x', $self->pseudoCmdMode);
+            $checkButton2->set_active($axmud::CLIENT->xTermTitleFlag);
+        });
+
+        $self->addLabel($table, 'Use world\'s long name in tab (if available)',
+            7, 11, 3, 4);
+
+        my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
+            11, 12, 3, 4);
+        $checkButton3->set_active($axmud::CLIENT->longTabLabelFlag);
+        $checkButton3->signal_connect('toggled' => sub {
+
             $self->session->pseudoCmd('setsession -l', $self->pseudoCmdMode);
-            $checkButton2->set_active($axmud::CLIENT->longTabLabelFlag);
+            $checkButton3->set_active($axmud::CLIENT->longTabLabelFlag);
         });
 
         $self->addLabel($table, 'Don\'t use tabs for a single session',
-            7, 11, 3, 4);
-        my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 3, 4);
-        $checkButton3->set_active($axmud::CLIENT->simpleTabFlag);
-        $checkButton3->signal_connect('toggled' => sub {
-
-            $self->session->pseudoCmd('setsession -s', $self->pseudoCmdMode);
-            $checkButton3->set_active($axmud::CLIENT->simpleTabFlag);
-        });
-
-        $self->addLabel($table, 'Confirm before click-closing \'main\' window',
             7, 11, 4, 5);
         my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
             11, 12, 4, 5);
-        $checkButton4->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
+        $checkButton4->set_active($axmud::CLIENT->simpleTabFlag);
         $checkButton4->signal_connect('toggled' => sub {
 
-            $self->session->pseudoCmd('setsession -m', $self->pseudoCmdMode);
-            $checkButton4->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
+            $self->session->pseudoCmd('setsession -s', $self->pseudoCmdMode);
+            $checkButton4->set_active($axmud::CLIENT->simpleTabFlag);
         });
 
-        $self->addLabel($table, 'Confirm before click-closing tab',
+        $self->addLabel($table, 'Confirm before click-closing \'main\' window',
             7, 11, 5, 6);
         my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
             11, 12, 5, 6);
-        $checkButton5->set_active($axmud::CLIENT->confirmCloseTabFlag);
+        $checkButton5->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
         $checkButton5->signal_connect('toggled' => sub {
 
+            $self->session->pseudoCmd('setsession -m', $self->pseudoCmdMode);
+            $checkButton5->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
+        });
+
+        $self->addLabel($table, 'Confirm before click-closing tab',
+            7, 11, 6, 7);
+        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
+            11, 12, 6, 7);
+        $checkButton6->set_active($axmud::CLIENT->confirmCloseTabFlag);
+        $checkButton6->signal_connect('toggled' => sub {
+
             $self->session->pseudoCmd('setsession -t', $self->pseudoCmdMode);
-            $checkButton5->set_active($axmud::CLIENT->confirmCloseTabFlag);
+            $checkButton6->set_active($axmud::CLIENT->confirmCloseTabFlag);
         });
 
         # Tab complete
@@ -2198,6 +2213,10 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _7', $innerNotebook);
 
+        # (Need just a little extra space to make everything fit)
+        $table->set_col_spacings($self->spacingPixels - 1);
+        $table->set_row_spacings($self->spacingPixels - 1);
+
         # Telnet options
         $self->addLabel($table, '<b>Telnet option negotiations</b>',
             0, 6, 0, 1);
@@ -2271,22 +2290,68 @@
         $self->addLabel($table, '<i>Allow CHARSET (Character Set and translation)</i>',
             2, 6, 7, 8);
 
-        $self->addLabel($table, '<b>OSC colour palette</b>',
+        # Terminal emulation
+        $self->addLabel($table, '<b>Terminal emulation</b>',
             0, 6, 8, 9);
         my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 9, 10);
-        $checkButton8->set_active($axmud::CLIENT->oscPaletteFlag);
+        $checkButton8->set_active($axmud::CLIENT->useCtrlSeqFlag);
         $checkButton8->signal_connect('toggled' => sub {
 
-            if (
-                ($checkButton8->get_active && ! $axmud::CLIENT->oscPaletteFlag)
-                || (! $checkButton8->get_active && $axmud::CLIENT->oscPaletteFlag)
-            ) {
-                $self->session->pseudoCmd('togglepalette',  $self->pseudoCmdMode);
+            $axmud::CLIENT->toggle_termSetting('use_ctrl_seq', $checkButton8->get_active());
+        });
+        $self->addLabel($table, 'Use VT100 control sequences',
+            2, 6, 9, 10);
+
+        my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 10, 11);
+        $checkButton9->set_active($axmud::CLIENT->useVisibleCursorFlag);
+        # ->signal_connect is below
+        $self->addLabel($table, 'Show visible cursor in default textview',
+            2, 6, 10, 11);
+
+        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 11, 12);
+        $checkButton10->set_active($axmud::CLIENT->useFastCursorFlag);
+        # ->signal_connect is below
+        if (! $axmud::CLIENT->useVisibleCursorFlag) {
+
+            $checkButton10->set_sensitive(FALSE);
+        }
+
+        $self->addLabel($table, 'Use a rapidly-blinking cursor',
+            2, 6, 11, 12);
+
+        # ->signal_connects from above
+        $checkButton9->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->toggle_termSetting('show_cursor', $checkButton9->get_active());
+            if ($axmud::CLIENT->useVisibleCursorFlag) {
+
+                $checkButton10->set_sensitive(TRUE);
+
+            } else {
+
+                $checkButton10->set_active(FALSE);
+                $checkButton10->set_sensitive(FALSE);
             }
         });
-        $self->addLabel($table, 'Allow use of OSC colour palette sequences',
-            2, 6, 9, 10);
+
+        $checkButton10->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->toggle_termSetting('fast_cursor', $checkButton10->get_active());
+
+        });
+
+        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 12, 13);
+        $checkButton11->set_active($axmud::CLIENT->useDirectKeysFlag);
+        $checkButton11->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->toggle_termSetting('direct_keys', $checkButton11->get_active());
+        });
+        $self->addLabel($table, 'Use direct keyboard input in terminal',
+            2, 6, 12, 13);
 
         # Terminal type negotiations
         $self->addLabel($table, '<b>Terminal type negotiations</b>',
@@ -2429,6 +2494,23 @@
                 $axmud::CLIENT->set_termTypeMode('send_unknown');
             }
         });
+
+        $self->addLabel($table, '<b>OSC colour palette</b>',
+            7, 13, 12, 13);
+        my $checkButton12 = $self->addCheckButton($table, undef, TRUE,
+            8, 9, 13, 14);
+        $checkButton12->set_active($axmud::CLIENT->oscPaletteFlag);
+        $checkButton12->signal_connect('toggled' => sub {
+
+            if (
+                ($checkButton12->get_active && ! $axmud::CLIENT->oscPaletteFlag)
+                || (! $checkButton12->get_active && $axmud::CLIENT->oscPaletteFlag)
+            ) {
+                $self->session->pseudoCmd('togglepalette',  $self->pseudoCmdMode);
+            }
+        });
+        $self->addLabel($table, 'Allow use of OSC colour palette sequences',
+            9, 13, 13, 14);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -2945,166 +3027,183 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _9', $innerNotebook);
 
+        # (Need just a little extra space to make everything fit)
+        $table->set_col_spacings($self->spacingPixels - 1);
+        $table->set_row_spacings($self->spacingPixels - 1);
+
         # Debugging flags (telnet options/negotiations)
         $self->addLabel($table, '<b>Debugging flags (telnet options/negotiations)</b>',
             0, 12, 0, 1);
 
         my $checkButton = $self->addCheckButton($table, undef, TRUE,
             1, 2, 1, 2);
-        $checkButton->set_active($axmud::CLIENT->debugTelnetFlag);
+        $checkButton->set_active($axmud::CLIENT->debugEscSequenceFlag);
         $checkButton->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugTelnetFlag', $checkButton->get_active());
+            $axmud::CLIENT->set_debugFlag('debugEscSequenceFlag', $checkButton->get_active());
+        });
+
+        $self->addLabel(
+            $table,
+            'Show debug messages for invalid escape sequences',
+            2, 12, 1, 2);
+
+        my $checkButton2 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 2, 3);
+        $checkButton2->set_active($axmud::CLIENT->debugTelnetFlag);
+        $checkButton2->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->set_debugFlag('debugTelnetFlag', $checkButton2->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages while negotiating telnet options/MUD protocols',
-            2, 12, 1, 2);
+            2, 12, 2, 3);
 
-        my $checkButton2 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 2, 3);
-        $checkButton2->set_active($axmud::CLIENT->debugTelnetMiniFlag);
-        $checkButton2->signal_connect('toggled' => sub {
+        my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 3, 4);
+        $checkButton3->set_active($axmud::CLIENT->debugTelnetMiniFlag);
+        $checkButton3->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugTelnetMiniFlag', $checkButton2->get_active());
+            $axmud::CLIENT->set_debugFlag('debugTelnetMiniFlag', $checkButton3->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show short debug messages while negotiating telnet options/MUD protocols',
-            2, 12, 2, 3);
+            2, 12, 3, 4);
 
-        my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 3, 4);
-        $checkButton3->set_active($axmud::CLIENT->debugTelnetLogFlag);
-        $checkButton3->signal_connect('toggled' => sub {
+        my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 4, 5);
+        $checkButton4->set_active($axmud::CLIENT->debugTelnetLogFlag);
+        $checkButton4->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugTelnetLogFlag', $checkButton3->get_active());
+            $axmud::CLIENT->set_debugFlag('debugTelnetLogFlag', $checkButton4->get_active());
         });
 
         $self->addLabel(
             $table,
             'Tell telnet library to write its own negotiation logfile in ' . $axmud::SCRIPT
             . ' base directory',
-            2, 12, 3, 4);
+            2, 12, 4, 5);
 
-        my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 4, 5);
-        $checkButton4->set_active($axmud::CLIENT->debugMsdpFlag);
-        $checkButton4->signal_connect('toggled' => sub {
+        my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 5, 6);
+        $checkButton5->set_active($axmud::CLIENT->debugMsdpFlag);
+        $checkButton5->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugMsdpFlag', $checkButton4->get_active());
+            $axmud::CLIENT->set_debugFlag('debugMsdpFlag', $checkButton5->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages when MSDP data is sent to Status/Locator tasks',
-            2, 12, 4, 5);
+            2, 12, 5, 6);
 
-        my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 5, 6);
-        $checkButton5->set_active($axmud::CLIENT->debugMxpFlag);
-        $checkButton5->signal_connect('toggled' => sub {
+        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 6, 7);
+        $checkButton6->set_active($axmud::CLIENT->debugMxpFlag);
+        $checkButton6->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugMxpFlag', $checkButton5->get_active());
+            $axmud::CLIENT->set_debugFlag('debugMxpFlag', $checkButton6->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages when invalid MXP tags are received',
-            2, 12, 5, 6);
+            2, 12, 6, 7);
 
-        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 6, 7);
-        $checkButton6->set_active($axmud::CLIENT->debugMxpCommentFlag);
-        $checkButton6->signal_connect('toggled' => sub {
+        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 7, 8);
+        $checkButton7->set_active($axmud::CLIENT->debugMxpCommentFlag);
+        $checkButton7->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugMxpCommentFlag', $checkButton6->get_active());
+            $axmud::CLIENT->set_debugFlag('debugMxpCommentFlag', $checkButton7->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages when MXP comments are received',
-            2, 12, 6, 7);
+            2, 12, 7, 8);
 
-        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 7, 8);
-        $checkButton7->set_active($axmud::CLIENT->debugPuebloFlag);
-        $checkButton7->signal_connect('toggled' => sub {
+        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 8, 9);
+        $checkButton8->set_active($axmud::CLIENT->debugPuebloFlag);
+        $checkButton8->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugPuebloFlag', $checkButton7->get_active());
+            $axmud::CLIENT->set_debugFlag('debugPuebloFlag', $checkButton8->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages when invalid Pueblo tags are received',
-            2, 12, 7, 8);
+            2, 12, 8, 9);
 
-        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 8, 9);
-        $checkButton8->set_active($axmud::CLIENT->debugPuebloCommentFlag);
-        $checkButton8->signal_connect('toggled' => sub {
+        my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 9, 10);
+        $checkButton9->set_active($axmud::CLIENT->debugPuebloCommentFlag);
+        $checkButton9->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugPuebloCommentFlag', $checkButton8->get_active());
+            $axmud::CLIENT->set_debugFlag('debugPuebloCommentFlag', $checkButton9->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages when Pueblo comments are received',
-            2, 12, 8, 9);
+            2, 12, 9, 10);
 
-        my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 9, 10);
-        $checkButton9->set_active($axmud::CLIENT->debugZmpFlag);
-        $checkButton9->signal_connect('toggled' => sub {
+        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 10, 11);
+        $checkButton10->set_active($axmud::CLIENT->debugZmpFlag);
+        $checkButton10->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugZmpFlag', $checkButton9->get_active());
+            $axmud::CLIENT->set_debugFlag('debugZmpFlag', $checkButton10->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages for incoming ZMP data',
-            2, 12, 9, 10);
+            2, 12, 10, 11);
 
-        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 10, 11);
-        $checkButton10->set_active($axmud::CLIENT->debugAtcpFlag);
-        $checkButton10->signal_connect('toggled' => sub {
+        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 11, 12);
+        $checkButton11->set_active($axmud::CLIENT->debugAtcpFlag);
+        $checkButton11->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugAtcpFlag', $checkButton10->get_active());
+            $axmud::CLIENT->set_debugFlag('debugAtcpFlag', $checkButton11->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages for incoming ATCP data',
-            2, 12, 10, 11);
+            2, 12, 11, 12);
 
-        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 11, 12);
-        $checkButton11->set_active($axmud::CLIENT->debugGmcpFlag);
-        $checkButton11->signal_connect('toggled' => sub {
+        my $checkButton12 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 12, 13);
+        $checkButton12->set_active($axmud::CLIENT->debugGmcpFlag);
+        $checkButton12->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugGmcpFlag', $checkButton11->get_active());
+            $axmud::CLIENT->set_debugFlag('debugGmcpFlag', $checkButton12->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages for incoming GMCP data',
-            2, 12, 11, 12);
+            2, 12, 12, 13);
 
-        my $checkButton12 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 12, 13);
-        $checkButton12->set_active($axmud::CLIENT->debugMcpFlag);
-        $checkButton12->signal_connect('toggled' => sub {
+        my $checkButton13 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 13, 14);
+        $checkButton13->set_active($axmud::CLIENT->debugMcpFlag);
+        $checkButton13->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugMcpFlag', $checkButton12->get_active());
+            $axmud::CLIENT->set_debugFlag('debugMcpFlag', $checkButton13->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages when invalid MCP messages are received/sent',
-            2, 12, 12, 13);
+            2, 12, 13, 14);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -3416,12 +3515,29 @@
 
         my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 6, 7);
-        $checkButton6->set_active($axmud::CLIENT->mainWinUrgencyFlag);
+        $checkButton6->set_active($axmud::CLIENT->mainWinSystemMsgFlag);
         $checkButton6->signal_connect('toggled' => sub {
 
             if (
-                ($checkButton6->get_active && ! $axmud::CLIENT->mainWinUrgencyFlag)
-                || (! $checkButton6->get_active && $axmud::CLIENT->mainWinUrgencyFlag)
+                ($checkButton6->get_active && ! $axmud::CLIENT->mainWinSystemMsgFlag)
+                || (! $checkButton6->get_active && $axmud::CLIENT->mainWinSystemMsgFlag)
+            ) {
+                $self->session->pseudoCmd('togglemainwindow -s',  $self->pseudoCmdMode);
+            }
+        });
+        $self->addLabel(
+            $table,
+            'Allow system messages to be displayed in \'main\' windows',
+            2, 12, 6, 7);
+
+        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 7, 8);
+        $checkButton7->set_active($axmud::CLIENT->mainWinUrgencyFlag);
+        $checkButton7->signal_connect('toggled' => sub {
+
+            if (
+                ($checkButton7->get_active && ! $axmud::CLIENT->mainWinUrgencyFlag)
+                || (! $checkButton7->get_active && $axmud::CLIENT->mainWinUrgencyFlag)
             ) {
                 $self->session->pseudoCmd('togglemainwindow -u',  $self->pseudoCmdMode);
             }
@@ -3429,16 +3545,16 @@
         $self->addLabel(
             $table,
             'Set the \'main\' window\'s urgency hint when text is received from the world',
-            2, 12, 6, 7);
+            2, 12, 7, 8);
 
-        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 7, 8);
-        $checkButton7->set_active($axmud::CLIENT->mainWinTooltipFlag);
-        $checkButton7->signal_connect('toggled' => sub {
+        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 8, 9);
+        $checkButton8->set_active($axmud::CLIENT->mainWinTooltipFlag);
+        $checkButton8->signal_connect('toggled' => sub {
 
             if (
-                ($checkButton7->get_active && ! $axmud::CLIENT->mainWinTooltipFlag)
-                || (! $checkButton7->get_active && $axmud::CLIENT->mainWinTooltipFlag)
+                ($checkButton8->get_active && ! $axmud::CLIENT->mainWinTooltipFlag)
+                || (! $checkButton8->get_active && $axmud::CLIENT->mainWinTooltipFlag)
             ) {
                 $self->session->pseudoCmd('togglemainwindow -t',  $self->pseudoCmdMode);
             }
@@ -3446,16 +3562,16 @@
         $self->addLabel(
             $table,
             'Show tooltips in a session\'s default tab',
-            2, 12, 7, 8);
+            2, 12, 8, 9);
 
-        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 8, 9);
-        $checkButton8->set_active($axmud::CLIENT->toolbarLabelFlag);
-        $checkButton8->signal_connect('toggled' => sub {
+        my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 9, 10);
+        $checkButton9->set_active($axmud::CLIENT->toolbarLabelFlag);
+        $checkButton9->signal_connect('toggled' => sub {
 
             if (
-                ($checkButton8->get_active && ! $axmud::CLIENT->toolbarLabelFlag)
-                || (! $checkButton8->get_active && $axmud::CLIENT->toolbarLabelFlag)
+                ($checkButton9->get_active && ! $axmud::CLIENT->toolbarLabelFlag)
+                || (! $checkButton9->get_active && $axmud::CLIENT->toolbarLabelFlag)
             ) {
                 $self->session->pseudoCmd('togglelabel',  $self->pseudoCmdMode);
             }
@@ -3463,16 +3579,16 @@
         $self->addLabel(
             $table,
             'Show toolbar labels in the \'main\'/automapper windows',
-            2, 12, 8, 9);
+            2, 12, 9, 10);
 
-        my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 9, 10);
-        $checkButton9->set_active($axmud::CLIENT->irreversibleIconFlag);
-        $checkButton9->signal_connect('toggled' => sub {
+        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 10, 11);
+        $checkButton10->set_active($axmud::CLIENT->irreversibleIconFlag);
+        $checkButton10->signal_connect('toggled' => sub {
 
             if (
-                ($checkButton9->get_active && ! $axmud::CLIENT->irreversibleIconFlag)
-                || (! $checkButton9->get_active && $axmud::CLIENT->irreversibleIconFlag)
+                ($checkButton10->get_active && ! $axmud::CLIENT->irreversibleIconFlag)
+                || (! $checkButton10->get_active && $axmud::CLIENT->irreversibleIconFlag)
             ) {
                 $self->session->pseudoCmd('toggleirreversible',  $self->pseudoCmdMode);
             }
@@ -3480,24 +3596,24 @@
         $self->addLabel(
             $table,
             'Show irreversible icon in \'edit\' windows for actions that take place immediately',
-            2, 10, 9, 10);
+            2, 10, 10, 11);
 
         my $button = $self->addButton($table,
             'Test icons', 'Test irreversible icons', undef,
-            10, 12, 9, 10);
+            10, 12, 10, 11);
         $button->signal_connect('clicked' => sub {
 
             $self->session->pseudoCmd('toggleirreversible -t', $self->pseudoCmdMode);
         });
 
-        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 10, 11);
-        $checkButton10->set_active($axmud::CLIENT->allowBusyWinFlag);
-        $checkButton10->signal_connect('toggled' => sub {
+        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 11, 12);
+        $checkButton11->set_active($axmud::CLIENT->allowBusyWinFlag);
+        $checkButton11->signal_connect('toggled' => sub {
 
             if (
-                ($checkButton10->get_active && ! $axmud::CLIENT->allowBusyWinFlag)
-                || (! $checkButton10->get_active && $axmud::CLIENT->allowBusyWinFlag)
+                ($checkButton11->get_active && ! $axmud::CLIENT->allowBusyWinFlag)
+                || (! $checkButton11->get_active && $axmud::CLIENT->allowBusyWinFlag)
             ) {
                 $self->session->pseudoCmd('togglepopup',  $self->pseudoCmdMode);
             }
@@ -3506,16 +3622,16 @@
             $table,
             'Show popup windows during long operations (loading large files, drawing large maps'
             . ' etc)',
-            2, 12, 10, 11);
+            2, 12, 11, 12);
 
-        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 11, 12);
-        $checkButton11->set_active($axmud::CLIENT->connectHistoryFlag);
-        $checkButton11->signal_connect('toggled' => sub {
+        my $checkButton12 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 12, 13);
+        $checkButton12->set_active($axmud::CLIENT->connectHistoryFlag);
+        $checkButton12->signal_connect('toggled' => sub {
 
             if (
-                ($checkButton11->get_active && ! $axmud::CLIENT->connectHistoryFlag)
-                || (! $checkButton11->get_active && $axmud::CLIENT->connectHistoryFlag)
+                ($checkButton12->get_active && ! $axmud::CLIENT->connectHistoryFlag)
+                || (! $checkButton12->get_active && $axmud::CLIENT->connectHistoryFlag)
             ) {
                 $self->session->pseudoCmd('togglehistory',  $self->pseudoCmdMode);
             }
@@ -3523,7 +3639,121 @@
         $self->addLabel(
             $table,
             'Collect connection histories for each world',
-            2, 12, 11, 12);
+            2, 12, 12, 13);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub settings12Tab {
+
+        # Settings12 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings12Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page 12', $innerNotebook);
+
+        # Commify mode
+        $self->addLabel($table, '<b>Commify mode</b>',
+            0, 12, 0, 1);
+        $self->addLabel(
+            $table,
+            '<i>How long numbers are made more readable (mostly used by the Status task, but'
+            . ' available to plugins/scripts)</i>',
+            1, 12, 1, 2);
+
+        my ($group, $radioButton) = $self->addRadioButton(
+            $table, undef, 'Add commas, e.g. 1,000,000', undef,
+            undef,      # IV set to this value when toggled
+            TRUE,       # Sensitive widget
+            1, 12, 2, 3);
+        if ($axmud::CLIENT->commifyMode eq 'comma') {
+
+            $radioButton->set_active(TRUE);
+        }
+        $radioButton->signal_connect('toggled' => sub {
+
+            if ($radioButton->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('comma');
+            }
+        });
+
+        my ($group2, $radioButton2) = $self->addRadioButton(
+            $table, $group, 'Add full stops/periods, e.g. 1.000.000', undef, undef, TRUE,
+            1, 12, 3, 4);
+        if ($axmud::CLIENT->commifyMode eq 'europe') {
+
+            $radioButton2->set_active(TRUE);
+        }
+        $radioButton2->signal_connect('toggled' => sub {
+
+            if ($radioButton2->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('europe');
+            }
+        });
+
+        my ($group3, $radioButton3) = $self->addRadioButton(
+            $table, $group, 'Add spaces, e.g. 1 000 000', undef, undef, TRUE,
+            1, 12, 4, 5);
+        if ($axmud::CLIENT->commifyMode eq 'brit') {
+
+            $radioButton3->set_active(TRUE);
+        }
+        $radioButton3->signal_connect('toggled' => sub {
+
+            if ($radioButton3->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('brit');
+            }
+        });
+
+        my ($group4, $radioButton4) = $self->addRadioButton(
+            $table, $group, 'Add underlines/undescores, e.g. 1_000_000', undef, undef, TRUE,
+            1, 12, 5, 6);
+        if ($axmud::CLIENT->commifyMode eq 'underline') {
+
+            $radioButton4->set_active(TRUE);
+        }
+        $radioButton4->signal_connect('toggled' => sub {
+
+            if ($radioButton4->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('underline');
+            }
+        });
+
+        my ($group5, $radioButton5) = $self->addRadioButton(
+            $table, $group, 'Don\'t commify large numbers', undef, undef, TRUE,
+            1, 12, 6, 7);
+        if ($axmud::CLIENT->commifyMode eq 'none') {
+
+            $radioButton5->set_active(TRUE);
+        }
+        $radioButton5->signal_connect('toggled' => sub {
+
+            if ($radioButton5->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('none');
+            }
+        });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -6939,8 +7169,8 @@
         $self->colours4Tab_addRow(
             $table,
             2,
-            'customShowTextColour',
-            'constShowTextColour',
+            'customShowSystemTextColour',
+            'constShowSystemTextColour',
             '-m',
             'System message colour',
             \@comboList,
@@ -7001,8 +7231,8 @@
         # Expected arguments
         #   $table      - The Gtk2::Table for this tab
         #   $row        - The number of the row in the Gtk2::Table displayed in this tab
-        #   $iv         - The IV used, e.g. 'customShowTextColour'
-        #   $defaultIV  - The default colour used to set this IV, e.g. 'constShowTextColour'
+        #   $iv         - The IV used, e.g. 'customShowSystemTextColour'
+        #   $defaultIV  - The default colour used to set this IV, e.g. 'constShowSystemTextColour'
         #   $switch     - Switch used in ';setsystemcolour' for this IV
         #   $descrip    - A short description, e.g. 'System message colour'
         #   $listRef    - Reference to a list of standard colour tags to display in a combo
@@ -11151,12 +11381,15 @@
         # Add a simple list
         @columnList = (
             'Num', 'int',
-            'Session', 'int',
-            'Window', 'int',
+            'Ses', 'int',
+            'Win', 'int',
             'Pane', 'int',
             'Lock', 'bool',
+            'O/W', 'bool',
             'Split', 'text',
-            'Colour scheme', 'text',
+            'Wid', 'text',
+            'Hei', 'text',
+            'Scheme', 'text',
             'Mono', 'bool',
             'Text', 'text',
             'Undly', 'text',
@@ -11172,12 +11405,14 @@
         $self->windows5Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add editing widgets
+        $self->addLabel($table, 'Size',
+            1, 2, 10, 11);
         my $entry = $self->addEntryWithIcon($table, undef, 'int', 0, undef,
-            1, 3, 10, 11);
+            2, 4, 10, 11);
         my $button = $self->addButton(
             $table,
             'Set default size', 'Sets the default size for textview objects', undef,
-            3, 6, 10, 11);
+            4, 6, 10, 11);
         $button->signal_connect('clicked' => sub {
 
             if ($self->checkEntryIcon($entry)) {
@@ -11292,7 +11527,10 @@
                 $textViewObj->winObj->number,
                 $paneString,
                 $textViewObj->scrollLockFlag,
+                $textViewObj->overwriteFlag,
                 $textViewObj->splitScreenMode,
+                $textViewObj->textWidthChars,
+                $textViewObj->textHeightChars,
                 $textViewObj->colourScheme,
                 $textViewObj->monochromeFlag,
                 $textViewObj->textColour,
@@ -14352,7 +14590,7 @@
 
         # Add a simple list
         @columnList = (
-            '', 'pixbuf',       # GA::Obj::ChatContact->lastIconScaled
+            'Icon', 'pixbuf',       # GA::Obj::ChatContact->lastIconScaled
             'Name', 'text',
             'Protocol', 'text',
             'IP', 'text',
@@ -14578,7 +14816,7 @@
         # Add a simple list
         @columnList = (
             'Session', 'int',
-            '', 'pixbuf',           # GA::Obj::ChatContact->lastIconScaled
+            'Icon', 'pixbuf',           # GA::Obj::ChatContact->lastIconScaled
             'Name', 'text',
             'Contact', 'text',
             'Protocol', 'text',
@@ -16472,9 +16710,10 @@
             }
         });
 
+        # World commands
         $self->addLabel($table, '<b>World commands</b>',
             0, 12, 7, 8);
-        $self->addLabel($table, 'World commands also shown in \'main\' window',
+        $self->addLabel($table, 'World commands also shown in \'main\' windows',
             1, 6, 8, 9);
         my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
             6, 8, 8, 9);
@@ -16486,6 +16725,42 @@
                 || (! $checkButton9->get_active() && $axmud::CLIENT->confirmWorldCmdFlag)
             ) {
                 $self->session->pseudoCmd('toggleinstruct -c', $self->pseudoCmdMode);
+            }
+        });
+
+        $self->addLabel($table, 'Show a visible cursor in \'main\' windows',
+            1, 6, 9, 10);
+        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
+            6, 8, 9, 10);
+        $checkButton10->set_active($axmud::CLIENT->useVisibleCursorFlag);
+        $checkButton10->signal_connect('toggled' => sub {
+
+            if (
+                ($checkButton10->get_active() && ! $axmud::CLIENT->useVisibleCursorFlag)
+                || (! $checkButton10->get_active() && $axmud::CLIENT->useVisibleCursorFlag)
+            ) {
+                $self->session->pseudoCmd('configureterminal -c', $self->pseudoCmdMode);
+            }
+        });
+
+        # System messages
+        $self->addLabel($table, '<b>System messages</b>',
+            0, 12, 10, 11);
+        $self->addLabel(
+            $table,
+            'Allow system messages to be displayed in \'main\' windows',
+            1, 6, 11, 12);
+
+        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
+            6, 8, 11, 12);
+        $checkButton11->set_active($axmud::CLIENT->mainWinSystemMsgFlag);
+        $checkButton11->signal_connect('toggled' => sub {
+
+            if (
+                ($checkButton11->get_active && ! $axmud::CLIENT->mainWinSystemMsgFlag)
+                || (! $checkButton11->get_active && $axmud::CLIENT->mainWinSystemMsgFlag)
+            ) {
+                $self->session->pseudoCmd('togglemainwindow -s',  $self->pseudoCmdMode);
             }
         });
 
@@ -17301,6 +17576,8 @@
 
         $self->propertiesTab();
         $self->properties2Tab();
+        $self->properties3Tab();
+        $self->properties4Tab();
         $self->resultsTab();
 
         return 1;
@@ -17646,7 +17923,8 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('_Properties 1-4', $self->notebook);
+        my ($vBox, $innerNotebook)
+            = $self->addInnerNotebookTab('_Shared properties', $self->notebook);
 
         # Add tabs to the inner notebook
         $self->propertiesGroup1Tab($innerNotebook);
@@ -17678,19 +17956,91 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('P_roperties 5', $self->notebook);
+        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('Re_gions/Rooms', $self->notebook);
 
         # Add tabs to the inner notebook
         $self->propertiesRegionsTab($innerNotebook);
         $self->propertiesRooms1Tab($innerNotebook);
         $self->propertiesRooms2Tab($innerNotebook);
+
+        return 1;
+    }
+
+    sub properties3Tab {
+
+        # Properties3 tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->properties3Tab', @_);
+        }
+
+        # Tab setup
+        # Create a notebook within the main one, so that we have two rows of tabs
+        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('_Beings', $self->notebook);
+
+        # Add tabs to the inner notebook
         $self->propertiesCharactersTab($innerNotebook);
         $self->propertiesMinionsTab($innerNotebook);
         $self->propertiesSentients1Tab($innerNotebook);
         $self->propertiesSentients2Tab($innerNotebook);
         $self->propertiesCreatures1Tab($innerNotebook);
         $self->propertiesCreatures2Tab($innerNotebook);
-        $self->propertiesPortsDecsTab($innerNotebook);
+
+        return 1;
+    }
+
+    sub properties4Tab {
+
+        # Properties4 tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (@portList, @decList);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->properties4Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Portables/Decorations', $self->notebook);
+
+        # Group 5 properties
+        $self->addLabel($table, '<b>Group 5 properties</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table, '<i>Properties which only apply to portables/decorations</i>',
+            1, 12, 1, 2);
+
+        @portList = $self->session->currentDict->portableTypeList;
+        @decList = $self->session->currentDict->decorationTypeList;
+
+        $self->propertiesTab_addComboBox($table, 'type', 'special',
+            'Portable object type is', \@portList, 2);
+        $self->propertiesTab_addComboBox($table, '_type', 'special',
+            'Decoration object type is', \@decList, 3);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
 
         return 1;
     }
@@ -17717,20 +18067,20 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Group _1', $innerNotebook);
 
-        # Connection details
+        # Group 1 properties
         $self->addLabel($table, '<b>Group 1 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Applies to all categories of world model object</i>',
             1, 12, 1, 2);
 
         $self->propertiesTab_addEntryWithIcon($table, 'name', 'match',
-            'Name matches', 'string', 1, undef, 2);
+            'Name matches (pattern)', 'regex', 1, undef, 2);
         $self->propertiesTab_addEntryWithIcon($table, 'privateHash', 'key',
             'Has private property', 'string', 1, undef, 3);
         $self->propertiesTab_addEntryWithIcon($table, 'sourceCodePath', 'match',
-            'Source code path matches', 'string', 1, undef, 4);
+            'Source code path matches (pattern)', 'regex', 1, undef, 4);
         $self->propertiesTab_addEntryWithIcon($table, 'notesList', 'list_match',
-            'Line in notes matches', 'string', 1, undef, 5);
+            'Line in notes matches (pattern)', 'string', 1, undef, 5);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -17760,7 +18110,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Group _2', $innerNotebook);
 
-        # Connection details
+        # Group 2 properties
         $self->addLabel($table, '<b>Group 2 properties</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -17770,7 +18120,7 @@
         );
 
         $self->propertiesTab_addEntryWithIcon($table, 'noun', 'match',
-            'Main noun matches', 'string', 1, undef, 2);
+            'Main noun matches (pattern)', 'regex', 1, undef, 2);
         $self->propertiesTab_addEntryWithIcon($table, 'otherNounList', 'include',
             'Other noun list includes', 'string', 1, undef, 3);
         $self->propertiesTab_addEntryWithIcon($table, 'adjList', 'include',
@@ -17782,9 +18132,9 @@
         $self->propertiesTab_addEntryWithIcon($table, 'unknownWordList', 'include',
             'Unknown word list includes', 'string', 1, undef, 7);
         $self->propertiesTab_addEntryWithIcon($table, 'baseString', 'match',
-            'Base string matches', 'string', 1, undef, 8);
+            'Base string matches (pattern)', 'regex', 1, undef, 8);
         $self->propertiesTab_addEntryWithIcon($table, 'descrip', 'match',
-            'Description matches', 'string', 1, undef, 9);
+            'Description matches (pattern)', 'regex', 1, undef, 9);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -17814,7 +18164,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Group _3', $innerNotebook);
 
-        # Connection details
+        # Group 3 properties
         $self->addLabel($table, '<b>Group 3 properties</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -17856,7 +18206,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Group _4', $innerNotebook);
 
-        # Connection details
+        # Group 4 properties
         $self->addLabel($table, '<b>Group 4 properties</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -17913,7 +18263,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Re_gions', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to regions</i>',
@@ -17950,16 +18300,16 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Rooms 1', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to rooms (page 1/2)</i>',
             1, 12, 1, 2);
 
         $self->propertiesTab_addEntryWithIcon($table, 'descripHash', 'value_match',
-            'Verbose descrips match', 'string', 1, undef, 2);
+            'Verbose descrips match (pattern)', 'regex', 1, undef, 2);
         $self->propertiesTab_addEntryWithIcon($table, 'titleList', 'list_match',
-            'Room titles match', 'string', 1, undef, 3);
+            'Room titles match (pattern)', 'regex', 1, undef, 3);
         $self->propertiesTab_addEntryWithIcon($table, 'sortedExitList', 'include',
             'Exits include', 'string', 1, undef, 4);
         $self->propertiesTab_addEntryWithIcon($table, 'visitHash', 'key',
@@ -17971,7 +18321,7 @@
         $self->propertiesTab_addEntryWithIcon($table, 'roomFlagHash', 'key',
             'Room flags include', 'string', 1, undef, 8);
         $self->propertiesTab_addEntryWithIcon($table, 'roomGuild', 'match',
-            'Room guild matches', 'string', 1, undef, 9);
+            'Room guild matches (pattern)', 'regex', 1, undef, 9);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -18001,7 +18351,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Rooms 2', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to rooms (page 2/2)</i>',
@@ -18010,11 +18360,11 @@
         $self->propertiesTab_addCheckButton($table, 'hiddenObjHash', 'used_hash',
             'Contains hidden objects?', 2);
         $self->propertiesTab_addEntryWithIcon($table, '_hiddenObjHash', 'special',
-            'Hidden object name matches', 'string', 1, undef, 3);
+            'Hidden object name matches (pattern)', 'regex', 1, undef, 3);
         $self->propertiesTab_addEntryWithIcon($table, 'searchHash', 'key',
             'Search strings include', 'string', 1, undef, 4);
         $self->propertiesTab_addEntryWithIcon($table, '_searchHash', 'value_match',
-            'Search responses match', 'string', 1, undef, 5);
+            'Search responses match (pattern)', 'regex', 1, undef, 5);
         $self->propertiesTab_addEntryWithIcon($table, 'nounList', 'include',
             'Noun list includes', 'string', 1, undef, 6);
         $self->propertiesTab_addEntryWithIcon($table, 'adjList', 'include',
@@ -18056,20 +18406,20 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Characters', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to characters</i>',
             1, 12, 1, 2);
 
         $self->propertiesTab_addEntryWithIcon($table, 'guild', 'match',
-            'Guild matches', 'string', 1, undef, 2);
+            'Guild matches (pattern)', 'regex', 1, undef, 2);
         $self->propertiesTab_addEntryWithIcon($table, 'race', 'match',
-            'Race matches', 'string', 1, undef, 3);
+            'Race matches (pattern)', 'regex', 1, undef, 3);
         $self->propertiesTab_addCheckButton($table, 'ownCharFlag', 'flag',
             'Belongs to you?', 4);
         $self->propertiesTab_addEntryWithIcon($table, 'owner', 'match',
-            'Owner\'s name matches', 'string', 1, undef, 5);
+            'Owner\'s name matches (pattern)', 'regex', 1, undef, 5);
         @list = ('mortal', 'wiz', 'test');
         $self->propertiesTab_addComboBox($table, 'mortalStatus', 'string_equal',
             'Mortal status is', \@list, 6);
@@ -18111,16 +18461,16 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Minions', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to minions</i>',
             1, 12, 1, 2);
 
         $self->propertiesTab_addEntryWithIcon($table, 'guild', 'match',
-            'Guild matches', 'string', 1, undef, 2);
+            'Guild matches (pattern)', 'regex', 1, undef, 2);
         $self->propertiesTab_addEntryWithIcon($table, 'race', 'match',
-            'Race matches', 'string', 1, undef, 3);
+            'Race matches (pattern)', 'regex', 1, undef, 3);
         $self->propertiesTab_addCheckButton($table, 'ownMinionFlag', 'flag',
             'Belongs to you?', 4);
         $self->propertiesTab_addEntryWithRange($table, 'level', 'range',
@@ -18162,24 +18512,24 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Sentients 1', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to sentients (page 1/2)</i>',
             1, 12, 1, 2);
 
         $self->propertiesTab_addEntryWithIcon($table, 'guild', 'match',
-            'Guild matches', 'string', 1, undef, 2);
+            'Guild matches (pattern)', 'regex', 1, undef, 2);
         $self->propertiesTab_addEntryWithIcon($table, 'race', 'match',
-            'Race matches', 'string', 1, undef, 3);
+            'Race matches (pattern)', 'regex', 1, undef, 3);
         $self->propertiesTab_addCheckButton($table, 'talkativeFlag', 'flag',
             'Talkative?', 4);
         $self->propertiesTab_addEntryWithIcon($table, 'talkList', 'list_match',
-            'Talk list includes match', 'string', 1, undef, 5);
+            'Talk list includes match (pattern)', 'regex', 1, undef, 5);
         $self->propertiesTab_addCheckButton($table, 'actionFlag', 'flag',
             'Seen performing actions?', 6);
         $self->propertiesTab_addEntryWithIcon($table, 'actionList', 'list_match',
-            'Action list includes match', 'string', 1, undef, 7);
+            'Action list includes match (pattern)', 'regex', 1, undef, 7);
         $self->propertiesTab_addCheckButton($table, 'unfriendlyFlag', 'flag',
             'Ever initiated combat?', 8);
         @list = ('good', 'evil', 'neutral');
@@ -18217,7 +18567,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Sentients 2', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to sentients (page 2/2)</i>',
@@ -18234,7 +18584,7 @@
         $self->propertiesTab_addCheckButton($table, 'mercyFlag', 'flag',
             'Mercies, rather than kills, opponents?', 6);
         $self->propertiesTab_addEntryWithIcon($table, 'questName', 'match',
-            'Associated with quest matching', 'string', 1, undef, 7);
+            'Associated with quest matching (pattern)', 'regex', 1, undef, 7);
         $self->propertiesTab_addEntryWithRange($table, 'level', 'range',
             'Level', 'int', 0, undef, 8);
         $self->propertiesTab_addEntryWithRange($table, 'cashList', 'range',
@@ -18274,20 +18624,20 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Creatures 1', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to creatures (page 1/2)</i>',
             1, 12, 1, 2);
 
         $self->propertiesTab_addEntryWithIcon($table, 'guild', 'match',
-            'Guild matches', 'string', 1, undef, 2);
+            'Guild matches (pattern)', 'regex', 1, undef, 2);
         $self->propertiesTab_addEntryWithIcon($table, 'race', 'match',
-            'Race matches', 'string', 1, undef, 3);
+            'Race matches (pattern)', 'regex', 1, undef, 3);
         $self->propertiesTab_addCheckButton($table, 'actionFlag', 'flag',
             'Seen performing actions?', 4);
         $self->propertiesTab_addEntryWithIcon($table, 'actionList', 'list_match',
-            'Action list includes match', 'string', 1, undef, 5);
+            'Action list includes match (pattern)', 'regex', 1, undef, 5);
         $self->propertiesTab_addCheckButton($table, 'unfriendlyFlag', 'flag',
             'Ever initiated combat?', 6);
         @list = ('good', 'evil', 'neutral');
@@ -18325,7 +18675,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Creatures 2', $innerNotebook);
 
-        # Connection details
+        # Group 5 properties
         $self->addLabel($table, '<b>Group 5 properties</b>',
             0, 12, 0, 1);
         $self->addLabel($table, '<i>Properties which apply only to creatures (page 2/2)</i>',
@@ -18342,56 +18692,11 @@
         $self->propertiesTab_addCheckButton($table, 'mercyFlag', 'flag',
             'Mercies, rather than kills, opponents?', 6);
         $self->propertiesTab_addEntryWithIcon($table, 'questName', 'match',
-            'Associated with quest matching', 'string', 1, undef, 7);
+            'Associated with quest matching (pattern)', 'regex', 1, undef, 7);
         $self->propertiesTab_addEntryWithRange($table, 'level', 'range',
             'Level', 'int', 0, undef, 8);
         $self->propertiesTab_addEntryWithRange($table, 'cashList', 'range',
             'Average cash', 'float', 0, undef, 9);
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub propertiesPortsDecsTab {
-
-        # PropertiesPortsDecs tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my (@portList, @decList);
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->propertiesPortsDecsTab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Ports/_Decs', $innerNotebook);
-
-        # Connection details
-        $self->addLabel($table, '<b>Group 5 properties</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table, '<i>Properties which only apply to portables/decorations</i>',
-            1, 12, 1, 2);
-
-        @portList = $self->session->currentDict->portableTypeList;
-        @decList = $self->session->currentDict->decorationTypeList;
-
-        $self->propertiesTab_addComboBox($table, 'type', 'special',
-            'Portable object type is', \@portList, 2);
-        $self->propertiesTab_addComboBox($table, '_type', 'special',
-            'Decoration object type is', \@decList, 3);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -18568,6 +18873,7 @@
         #                   values
         #               - if 'string', a string is expected (which might be a number) with the
         #                   specified min/max length
+        #               - if 'regex', a regex is expected with the specified min/max length
         #               - if a function reference, a function is called which should return FALSE or
         #                   TRUE, depending on the value of the entry; the icon is set accordingly
         #   $min, $max  - The values described above (ignored when $mode is a function reference).
@@ -18851,7 +19157,7 @@
                     'ok',
                 );
 
-            } elsif (! $wmObj->model) {
+            } elsif (! $wmObj->modelHash) {
 
                 $self->showMsgDialogue(
                     'Search',
@@ -19090,9 +19396,6 @@
             }
 
             # Sort the objects in the hash in order of model number
-
-#           (Auto-deref is expected to be disabled in future version of Perl)
-#           @objList = sort {$a->number <=> $b->number} (values $self->{'compileHash'});
             @objList = sort {$a->number <=> $b->number} ( values %{$self->{'compileHash'}} );
 
             # Perform the same search as above
@@ -19216,9 +19519,6 @@
         $wmObj = $self->session->worldModelObj;
 
         # Check each IV in turn (for improved speed, we don't use ->ivKeys, etc)
-
-#       (Auto-deref is expected to be disabled in future version of Perl)
-#       OUTER: foreach my $iv (keys $self->{'searchHash'}) {
         OUTER: foreach my $iv ( keys %{$self->{'searchHash'}} ) {
 
             my ($search, $type, $ivCode, $rangeOp, $flag);
@@ -19362,9 +19662,6 @@
 
                 # Perform a regex on all of the values in the hash IV, hoping to find one that
                 #   matches $search
-
-#               (Auto-deref is expected to be disabled in future version of Perl)
-#               INNER: foreach my $value (values $obj->{$iv}) {
                 INNER: foreach my $value ( values %{$obj->{$iv}} ) {
 
                     if ($value =~ m/$search/i) {
@@ -19387,9 +19684,6 @@
                     #   hash{unique_number_of_hidden_object} = 'commands_to_obtain_it'
                     # Check whether the any of the objects stored in this hash have a ->name
                     #   matching $search
-
-#                   (Auto-deref is expected to be disabled in future version of Perl)
-#                   INNER: foreach my $number (keys $obj->{$iv}) {
                     INNER: foreach my $number ( keys %{$obj->{$iv}} ) {
 
                         my $obj = $wmObj->{'modelHash'}{$number};
@@ -19473,9 +19767,6 @@
 #        }
 
         # (For improved speed, don't use ->ivValues, etc)
-
-#       (Auto-deref is expected to be disabled in future version of Perl)
-#       foreach my $childObj (values $obj->{childHash}) {
         foreach my $childObj ( values %{$obj->{childHash}} ) {
 
             # Add the child object to the main hash
@@ -20650,6 +20941,7 @@
             'Indep', 'bool',
             'Enabled', 'bool',
             'Associated profile', 'text',
+            'Cooldown expires (seconds)', 'text',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -20658,7 +20950,7 @@
 
         # Initialise the list
         $listType = 'all';
-        $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+        $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
 
         # Add buttons and combos
         my $button = $self->addButton($table,
@@ -20672,7 +20964,7 @@
                 # Enable the active interface
                 $self->session->pseudoCmd('enableactiveinterface ' . $name, $self->pseudoCmdMode);
                 # Refresh the simple list
-                $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
             }
         });
 
@@ -20687,7 +20979,7 @@
                 # Disable the active interface
                 $self->session->pseudoCmd('disableactiveinterface ' . $name, $self->pseudoCmdMode);
                 # Refresh the simple list
-                $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
             }
         });
 
@@ -20717,12 +21009,12 @@
                 }
 
                 # Refresh the simple list
-                $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
             }
         });
 
         # Prepare a list of combo items. The keys are the combo items themselves, the corresponding
-        #   values are arguments to send to $self->interfacesTab_refreshList
+        #   values are arguments to send to $self->interfaces1Tab_refreshList
         @list = (
             'Numerically'       => 'all',
             'Alphabetically'    => 'alpha',
@@ -20758,7 +21050,7 @@
 
                 # Refresh the simple list
                 $listType = $comboHash{$text};
-                $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
             }
         });
 
@@ -20770,7 +21062,7 @@
             # Enable all active interfaces
             $self->session->pseudoCmd('enableactiveinterface', $self->pseudoCmdMode);
             # Refresh the simple list
-            $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+            $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
         });
 
         my $button5 = $self->addButton($table,
@@ -20781,7 +21073,7 @@
             # Disable all active interfaces
             $self->session->pseudoCmd('disableactiveinterface', $self->pseudoCmdMode);
             # Refresh the simple list
-            $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+            $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
         });
 
         my $button6 = $self->addButton($table,
@@ -20790,7 +21082,7 @@
         $button6->signal_connect('clicked' => sub {
 
             # Refresh the simple list
-            $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+            $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
         });
 
         # Tab complete
@@ -20799,7 +21091,7 @@
         return 1;
     }
 
-    sub interfacesTab_refreshList {
+    sub interfaces1Tab_refreshList {
 
         # Resets the simple list displayed by $self->interface1Tab and ->interface2Tab
         #
@@ -20826,7 +21118,7 @@
         if (! defined $slWidget || ! defined $columns || ! defined $type || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->interfacesTab_refreshList',
+                $self->_objClass . '->interfaces1Tab_refreshList',
                 @_,
             );
         }
@@ -20868,6 +21160,27 @@
         # Compile the simple list data
         foreach my $obj (@sortedList) {
 
+            my $seconds;
+
+            if ($obj->category ne 'timer') {
+
+                $iv = $obj->category . 'CooldownHash';
+                $seconds = $self->session->ivShow($iv, $obj->number);
+                if (defined $seconds) {
+
+                    $seconds = $seconds - $self->session->sessionTime;
+                    if ($seconds < 0) {
+
+                        # Already expired, but IV not updated yet
+                        $seconds = undef;
+
+                    } else {
+
+                        $seconds = sprintf("%.1f", $seconds);
+                    }
+                }
+            }
+
             push (@dataList,
                 $obj->number,
                 $obj->name,
@@ -20875,6 +21188,7 @@
                 $obj->indepFlag,
                 $obj->enabledFlag,
                 $obj->assocProf,
+                $seconds,
             );
         }
 
@@ -20929,6 +21243,7 @@
             'Indep', 'bool',
             'Enabled', 'bool',
             'Associated profile', 'text',
+            'Cooldown expires (seconds)', 'text',
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
@@ -20936,7 +21251,7 @@
             -1, 230);       # Fixed height
 
         # Initialise the list
-        $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $category);
+        $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
 
         # Add buttons and combos
         my $button = $self->addButton($table,
@@ -20951,7 +21266,7 @@
                 $self->session->pseudoCmd('enableactiveinterface ' . $name, $self->pseudoCmdMode);
 
                 # Refresh the simple list
-                $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $category);
+                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
             }
         });
 
@@ -20967,7 +21282,7 @@
                 $self->session->pseudoCmd('disableactiveinterface ' . $name, $self->pseudoCmdMode);
 
                 # Refresh the simple list
-                $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $category);
+                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
             }
         });
 
@@ -20997,7 +21312,7 @@
                 }
 
                 # Refresh the simple list
-                $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $category);
+                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
             }
         });
 
@@ -21026,7 +21341,7 @@
                     );
 
                     # Refresh the simple list
-                    $self->interfacesTab_refreshList(
+                    $self->interfaces1Tab_refreshList(
                         $slWidget,
                         scalar (@columnList / 2),
                         $category,
@@ -21063,7 +21378,7 @@
                     );
 
                     # Refresh the simple list
-                    $self->interfacesTab_refreshList(
+                    $self->interfaces1Tab_refreshList(
                         $slWidget,
                         scalar (@columnList / 2),
                         $category,
@@ -21104,7 +21419,7 @@
         $button7->signal_connect('clicked' => sub {
 
             # Refresh the simple list
-            $self->interfacesTab_refreshList($slWidget, scalar (@columnList / 2), $category);
+            $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
         });
 
         # Tab complete

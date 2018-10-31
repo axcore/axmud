@@ -80,21 +80,23 @@
             # The main desktop object (GA::Obj::Desktop), which arranges windows on the desktop
             #   across one or more workspaces
             desktopObj                  => undef,
+
             # An IV which stores a 'main' window. First set when Axmud starts, and a spare 'main'
             #   window, not belonging to any session, opens before the Connections window opens
             # Briefly set back to 'undef' when the spare 'main' window is destroyed, just before a
             #   new 'main' window for a new session is created to replace it
             # Then set whenever $self->currentSession is set
             mainWin                     => undef,
-            # The Connections window (only one can be open at a time)
-            connectWin                  => undef,       # Set by $self->set_connectWin
+
             # The About window (only one can be open at a time)
             aboutWin                    => undef,       # Set by $self->set_aboutWin
-            # The Error Console window (only one can be open at a time)
-            consoleWin                  => undef,       # Set by $self->set_consoleWin
             # A 'dialogue' window created by a call to GA::Generic::Win->showBusyWin, e.g. the
             #   'Loading...' window created by $self->start
             busyWin                     => undef,       # Set by $self->set_busyWin
+            # The Connections window (only one can be open at a time)
+            connectWin                  => undef,       # Set by $self->set_connectWin
+            # The Client Console window (only one can be open at a time)
+            consoleWin                  => undef,       # Set by $self->set_consoleWin
 
             # Instance variable constants
             # ---------------------------
@@ -588,8 +590,11 @@
 
             # When system messages are written but there's no session open in which they can be
             #   displayed, they are written to the terminal, and also stored here. Then, the next
-            #   time the Error Console window is open, they are displayed there. (If that window is
-            #   already open, they are displayed immediately.)
+            #   time the Client Console window is open, they are displayed there
+            # (If the Client Console window is already open, the system message is displayed there
+            #   immediately and is not added to this list)
+            # List in groups of 2, in the form (type, message), where 'type' is the type of system
+            #   message: 'system', 'error', 'warning', 'debug' or 'improper'
             systemMsgList               => [],
 
             # Sessions
@@ -621,6 +626,11 @@
             #   terminating the script. If it's set to TRUE, GA::Client->stop() has already been
             #   called, and we don't need to call it again
             shutdownFlag                => FALSE,
+            # Flag that determines how a session deals with a disconnection from a world (i.e. when
+            #   its ->status is 'connected'). FALSE if it should switch to 'disconnected' mode, TRUE
+            #   if it should switch to 'offline' mode (as if the user had clicked the 'Connect
+            #   offline' button in the Connections window)
+            offlineOnDisconnectFlag     => FALSE,       # [config]
 
             # The way in which text on each session's tab label (if it's visible) is displayed:
             #   'bracket'   - displayed as 'deathmud (Gandalf)'
@@ -697,7 +707,7 @@
             constClientCmdPrettyList    => [
                 '@Debug commands',
                     'Test', 'HelpTest', 'DumpAscii', 'TestColour', 'TestXTerm', 'TestFile',
-                        'TestModel',
+                        'TestModel', 'TestPattern',
                     'QuickInput',
                     'SimulateWorld', 'SimulatePrompt', 'SimulateCommand', 'SimulateHook',
                     'DebugToggle', 'DebugConnection', 'Restart', 'Peek', 'Poke', 'PeekHelp',
@@ -712,7 +722,7 @@
                         'AbortSelfDestruct', 'StopSession', 'StopClient', 'Panic',
                     'AwayFromKeys', 'SetReminder',
                     'SetCharSet',
-                    'SetCustomMonth', 'SetCustomDay',
+                    'SetCustomMonth', 'SetCustomDay', 'SetCommifyMode',
                     'SetApplication', 'ResetApplication', 'SetPromptDelay',
                     'Repeat', 'IntervalRepeat', 'StopCommand',
                     'RedirectMode', 'SetRedirectMode',
@@ -734,9 +744,9 @@
                     'BackupData', 'RestoreData', 'AutoBackup',
                     'LoadPlugin', 'EnablePlugin', 'DisablePlugin', 'TestPlugin', 'ListPlugin',
                     'AddInitialPlugin', 'DeleteInitialPlugin', 'ListInitialPlugin',
-                    'SetTelnetOption', 'SetMUDProtocol', 'SetTermType', 'MSDP', 'MSSP', 'MXP',
-                        'MSP', 'ZMP', 'SendZMP', 'InputZMP', 'Aardwolf', 'ATCP', 'SendATCP', 'GMCP',
-                        'SendGMCP', 'MCP',
+                    'SetTelnetOption', 'SetMUDProtocol', 'SetTermType', 'ConfigureTerminal',
+                    'MSDP', 'MSSP', 'MXP', 'MSP', 'ZMP', 'SendZMP', 'InputZMP', 'Aardwolf', 'ATCP',
+                        'SendATCP', 'GMCP', 'SendGMCP', 'MCP',
                     'Log',
                 '@Sound and text-to-speech',
                     'Sound', 'ASCIIBell',
@@ -878,8 +888,8 @@
                     'AddChannelPattern', 'DeleteChannelPattern', 'ListChannelPattern',
                         'EmptyChannelsWindow', 'EmptyDivertWindow',
                 '@Chat task',
-                    'ChatListen', 'ChatIgnore', 'AddContact', 'EditContact', 'DeleteContact',
-                        'ListContact',
+                    'GetIP', 'ChatListen', 'ChatIgnore', 'AddContact', 'EditContact',
+                        'DeleteContact', 'ListContact',
                     'ChatCall', 'ChatMCall', 'ChatZCall', 'Chat', 'Emote', 'ChatGroup',
                         'EmoteGroup', 'ChatAll', 'EmoteAll', 'ChatPing', 'ChatDND',  'ChatSubmit',
                         'ChatEscape', 'ChatCommand', 'ChatSendFile', 'ChatStopFile', 'ChatSnoop',
@@ -1060,11 +1070,13 @@
             # However, none of these apply to forced world commands, which are never modified before
             #   being sent to the world
             #
-            # The instruction sigils. Modifying the values of these IVs is strongly discouraged. If
-            #   you do modify them, do not use empty strings or string containing whitespace.
-            #   Axmud system messages do not consult these IVs; they generally assume that the
-            #   sigils have not been modified. Changing these sigils will not affect the way
-            #   missions or the Chat task operate
+            # The instruction sigils. Modifying the values of these IVs is strongly discouraged
+            # If you do modify them, do not use empty strings or strings containing whitespace. Make
+            #   sure each sigil starts with a different character (i.e. don't set the client command
+            #   sigil to '@1' and the echo command sigil to '@2', or something like that)
+            # Axmud system messages do not consult these IVs; they generally assume that the sigils
+            #   have not been modified. Changing these sigils will not affect the way missions or
+            #   the Chat task operate
             constClientSigil            => ';',
             constForcedSigil            => ',,',
             constEchoSigil              => '"',
@@ -1323,6 +1335,7 @@
                 'dslocal'           => '1.0.0',   # Local installation of Dead Souls mudlib
                                                   #     / localhost 6666
                 'dsprime'           => '1.0.0',   # Dead Souls game mud / dead-souls.net 6666
+                'dswords'           => '1.1.270', # Dragon Swords / dragonswordsmud.com 1234
                 'dunemud'           => '1.1.0',   # DuneMUD / dune.servint.com 6789
                 'duris'             => '1.0.0',   # Duris: Land of BloodLust / mud.durismud.com 7777
                 'edmud'             => '1.1.138', # Eternal Darkness / edmud.net 9700
@@ -1330,8 +1343,11 @@
                 'elysium'           => '1.1.050', # Elysium RPG / elysium-rpg.com 7777
                 'empire'            => '1.1.0',   # EmpireMUD 2.0 / empiremud.net 4000
                 'eotl'              => '1.1.0',   # End of the Line / eotl.org 2010
+                'fkingdoms'         => '1.1.270', # Forgotten Kingdoms / forgottenkingdoms.org 23
                 'fourdims'          => '1.0.050', # 4Dimensions / 4dimensions.org 6000
+                'forestsedge'       => '1.1.270', # Forest's Edge / theforestsedge.com 23
                 'genesis'           => '1.0.0',   # Genesis / mud.genesismud.org 3011
+                'greatermud'        => '1.1.270', # GreaterMUD / greatermud.com 23
                 'hellmoo'           => '1.1.050', # HellMOO / hellmoo.org 7777
                 'hexonyx'           => '1.1.138', # HexOnyx / mud.hexonyx.com 7777
                 'holyquest'         => '1.1.0',   # HolyQuest / holyquest.org 8080
@@ -1349,6 +1365,7 @@
                 'magica'            => '1.0.140', # Materia Magica / materiamagica.com 4000
                 'medievia'          => '1.1.0',   # Medievia / medievia.com 4000
                 'merentha'          => '1.0.050', # Merentha / mud.merentha.com 10000
+                'midnightsun'       => '1.1.270', # Midnight Sun / midnightsun2.org 3000
                 'miriani'           => '1.1.050', # Miriani / toastsoft.net 1234
                 'morgengrauen'      => '1.1.0',   # MorgenGrauen / mg.mud.de 23
                 'mud1'              => '1.1.0',   # MUD1 (British Legends)
@@ -1356,6 +1373,7 @@
                 'mud2'              => '1.1.0',   # MUD2 (Canadian server) / mud2.com 23
                 'mudii'             => '1.1.0',   # MUD2 (UK server) / mud2.com 23
                 'mume'              => '1.1.050', # MUME / mume.org 23
+                'nannymud'          => '1.1.270', # NannyMUD / mud.lysator.liu.se 2000
                 'nanvaent'          => '1.0.0',   # Nanvaent / nanvaent.org 23
                 'nodeka'            => '1.0.275', # Nodeka / nodeka.com 23
                 'nuclearwar'        => '1.0.140', # Nuclear War / nuclearwarmudusa.com 4000
@@ -1370,14 +1388,19 @@
                 'roninmud'          => '1.1.050', # RoninMUD / game.roninmud.org 5000
                 'rupert'            => '1.0.275', # Rupert / rupert.twyst.org 9040
                 'slothmud'          => '1.0.140', # SlothMUD III / slothmud.org 6101
+                'stickmud'          => '1.1.270', # StickMUD / stickmud.com 7680
                 'stonia'            => '1.0.376', # Stonia / stonia.ttu.ee 4000
                 'swmud'             => '1.1.0',   # Star Wars Mud / swmud.org 6666
                 'tempora'           => '1.0.0',   # Tempora Heroica / login1.ibiblio.org 2895
+                'theland'           => '1.1.270', # The Land / theland.notroot.com 5000
                 'threekingdoms'     => '1.1.0',   # 3Kingdoms / 3k.org 3000
                 'threescapes'       => '1.1.0',   # 3Scapes / 3scapes.org 3200
+                'tilegacy'          => '1.1.270', # The Inquisition: Legacy / ti-legacy.org 5050
                 'torilmud'          => '1.1.0',   # TorilMUD / torilmud.org 9999
                 'tsunami'           => '1.1.050', # Tsunami / tsunami.thebigwave.net 23
                 'twotowers'         => '1.1.138', # Two Towers / t2tmud.org 9999
+                'uossmud'           => '1.1.270', # Unofficial SquareSoft MUD
+                                                  #     / uossmud.sandwich.net 9000
                 'valhalla'          => '1.0.0',   # Valhalla MUD / valhalla.com 4242
                 'vikingmud'         => '1.0.050', # Viking MUD / connect.vikingmud.org 2001
                 'waterdeep'         => '1.1.138', # Waterdeep / waterdeep.org 4200
@@ -1386,16 +1409,26 @@
                 # Pre-configured worlds from earlier releases => '1.1.0', now defunct
 #               'midkemia'          => '1.0.376', # Midkemia Online / closed 2016
                 # New release
-                #   ...
             },
             # Constant registry hash of pre-configured world profiles that must be patched (because
             #   of serious problems, or because the IP/DNS/port has changed), and the most recent
             #   Axmud version whose saved data requires the patch
             constWorldPatchHash         => {
+                'alteraeon'         => '1.1.270',
                 'avalonrpg'         => '1.1.012',
+                'dsdev'             => '1.1.270',
+                'dslocal'           => '1.1.270',
+                'dsprime'           => '1.1.270',
                 'discworld'         => '1.1.012',
+                'luminari'          => '1.1.270',
+                'mud1'              => '1.1.270',
+                'mud2'              => '1.1.270',
+                'mudii'             => '1.1.270',
                 'pict'              => '1.1.174',
                 'swmud'             => '1.1.012',
+                'threekingdoms'     => '1.1.270',
+                'threescapes'       => '1.1.270',
+                'twotowers'         => '1.1.270',
             },
             # Constant registry list of pre-configured world profiles; all the keys in
             #   $self->constWorldList, sorted alphabetically
@@ -4149,7 +4182,7 @@
             # NB Axmud does not do full xterm-emulation; it merely recognises xterm-256 colours
             #   used by some MUDs (as well as OSC colour palette support)
             constTermTypeList           => [
-                'ansi', 'xterm', 'dumb', 'unknown',
+                'ansi', 'vt100', 'xterm', 'dumb', 'unknown',
             ],
             # Which information is sent to the server during TTYPE option negotiations (when
             #   $self->useMttsFlag is FALSE):
@@ -4183,6 +4216,74 @@
             #   'undef' or an empty string, it is not sent at all)
             customClientVersion         => '',          # [config]
 
+            # Flag set to TRUE if VT100 control sequences should be accepted. If FALSE, they are
+            #   ignored (and 'vt100' is not used in terminal type negotations)
+            # (Even when FALSE, escape sequences in the form 'ESC [ value ; value m' are still
+            #   accepted
+            useCtrlSeqFlag              => TRUE,        # [config]
+            # Flag set to TRUE if a visible cursor should be displayed in each session's default
+            #   textview (only really useful for VT100 emulation, but available all the time)
+            useVisibleCursorFlag        => FALSE,       # [config]
+            # Flag set to TRUE if a visible cursor should blink quickly; FALSE if it should blink at
+            #   a normal rate. Ignored if ->useVisibleCursorFlag is FALSE
+            useFastCursorFlag           => FALSE,       # [config]
+            # Flag set to TRUE if certain keycodes should be sent directly to the world, FALSE
+            #   otherwise
+            # In addition, when TRUE and a session's special echo mode is enabled, world commands
+            #   are sent to the world immediately, each character sent as soon as it's typed
+            useDirectKeysFlag           => FALSE,       # [config]
+            # Keycodes available in numeric keypad alternate mode (GA::Session->ctrlKeypadMode is
+            #   'alternate') and cursor key application mode (GA::Session->ctrlCursorMode is
+            #   'application') (assuming that $self->useDirectKeysFlag is TRUE)
+            constDirectAppKeysHash      => {
+                'up'                    => chr(27) . 'OA',
+                'down'                  => chr(27) . 'OB',
+                'right'                 => chr(27) . 'OC',
+                'left'                  => chr(27) . 'OD',
+            },
+            # Constant hashes of Axmud keycodes and their corresponding VT100 escape sequences
+            # Keycodes available in numeric keypad alternate mode (GA::Session->ctrlKeypadMode is
+            #   'alternate') (assuming that $self->useDirectKeysFlag is TRUE)
+            constDirectAltKeysHash      => {
+                'kp_enter'              => chr(27) . 'OM',
+#               'kp_comma'              => chr(27) . 'Ol',      # This Axmud keycode doesn't exist
+                'kp_subtract'           => chr(27) . 'Om',
+                'kp_0'                  => chr(27) . 'Op',
+                'kp_1'                  => chr(27) . 'Oq',
+                'kp_2'                  => chr(27) . 'Or',
+                'kp_3'                  => chr(27) . 'Os',
+                'kp_4'                  => chr(27) . 'Ot',
+                'kp_5'                  => chr(27) . 'Ou',
+                'kp_6'                  => chr(27) . 'Ov',
+                'kp_7'                  => chr(27) . 'Ow',
+                'kp_8'                  => chr(27) . 'Ox',
+                'kp_9'                  => chr(27) . 'Oy',
+            },
+            # Keycodes available at all times (assuming that $self->useDirectKeysFlag is TRUE, and
+            #   the previous two hashes take precedence)
+            constDirectKeysHash         => {
+                'up'                    => chr(27) . '[A',
+                'down'                  => chr(27) . '[B',
+                'right'                 => chr(27) . '[C',
+                'left'                  => chr(27) . '[D',
+                'num_lock'              => chr(27) . 'OP',      # PF1
+                'kp_divide'             => chr(27) . 'OQ',      # PF2
+                'kp_multiply'           => chr(27) . 'OR',      # PF3
+                'kp_subtract'           => chr(27) . 'OS',      # PF4
+            },
+            # Constant hash of Axmud keycodes which must be intercepted by a ->signal_connect in
+            #   GA::Win::Internal->setKeyPressEvent and sent to the world, whenever a session's
+            #   special echo mode is enabled
+            constDirectSpecialKeysHash  => {
+                'escape'                => chr(27),
+                'tab'                   => chr(11),
+                'backspace'             => chr(8),
+                'delete'                => chr(127),
+            },
+
+            # Debugging flag set to TRUE if invalid escape sequences should be displayed as 'debug'
+            #   messages, FALSE otherwise
+            debugEscSequenceFlag        => FALSE,       # [config]
             # Debugging flag set to TRUE if incoming option negotiations should be displayed as
             #   'debug' messages, FALSE otherwise
             debugTelnetFlag             => FALSE,       # [config]
@@ -4703,14 +4804,14 @@
             # Constant default colours used for particular types of system message
             # (These values never changes; each value is a standard colour tag)
             constInsertCmdColour        => 'green',         # [config]
-            constShowTextColour         => 'YELLOW',        # [config]
+            constShowSystemTextColour   => 'YELLOW',        # [config]
             constShowErrorColour        => 'cyan',          # [config]
             constShowWarningColour      => 'cyan',          # [config]
             constShowDebugColour        => 'GREEN',         # [config]
             constShowImproperColour     => 'MAGENTA',       # [config]
             # Customisable default colours used for particular types of system message
             customInsertCmdColour       => undef,           # [config] Set below
-            customShowTextColour        => undef,           # [config] Set below
+            customShowSystemTextColour  => undef,           # [config] Set below
             customShowErrorColour       => undef,           # [config] Set below
             customShowWarningColour     => undef,           # [config] Set below
             customShowDebugColour       => undef,           # [config] Set below
@@ -4745,6 +4846,10 @@
             # Icon file paths (relative to the main directory) 'internal' window's strip object,
             #   GA::Strip::Entry
             constWipeIconPath           => '/icons/button/broom.png',
+            constEmptyIconPath          => '/icons/button/console.png',
+            constSystemIconPath         => '/icons/button/console_system.png',
+            constDebugIconPath          => '/icons/button/console_debug.png',
+            constErrorIconPath          => '/icons/button/console_error.png',
             constMultiIconPath          => '/icons/button/toggle_expand.png',
             constCancelIconPath         => '/icons/button/wall.png',
             constSwitchIconPath         => '/icons/button/switch_windows.png',
@@ -5454,6 +5559,14 @@
                 'CM'    => 900,
             },
 
+            # List of websites that provide the user's IP address
+            constIPLookupList           => [
+                'https://canihazip.com/s',
+                'http://icanhazip.com/',
+                'http://myip.dnsomatic.com/',
+                'http://ifconfig.me/ip',
+            ],
+
             # Lines in help files should be longer than 80 characters long
             constHelpCharLimit          => 80,          # [config]
 
@@ -5502,11 +5615,27 @@
             # Flag set to TRUE if the popup window created by GA::Generic::Win->showBusyWin should
             #   not be shown at all; FALSE if it can be shown (when required)
             allowBusyWinFlag            => TRUE,        # [config]
+            # Flag set to FALSE if system messages should never be displayed in a session's 'main'
+            #   window, but redirected to the Session Console window; TRUE if the session should
+            #   decide for itself which of those to do
+            mainWinSystemMsgFlag        => TRUE,       # [config]
             # Flag set to TRUE if a session's 'main' window urgency hint should be set, when text
             #   is received from the world
             mainWinUrgencyFlag          => FALSE,       # [config]
             # Flag set to TRUE if tooltips should be shown in session's default tab
             mainWinTooltipFlag          => TRUE,        # [config]
+
+            # Calls to $self->commify can modify a long number like 1000000 into something more
+            #   readable, like 1,000,000 (currently, only used by the Status task, but it's
+            #   available to any code)
+            # The default mode to use when converting numbers with a call to $self->commify
+            #   'none' - don't use commas (1000000)
+            #   'comma' - use commas (1,000,000)
+            #   'europe' - use European-style full stops/periods (1.000.000)
+            #   'brit' - use British-style spaces (1 000 000)
+            #   'underline' - use underlines (1_000_000)
+            commifyMode                 => 'none',      # [config]
+
             # Flag set to TRUE if the session's 'main' window urgency hint should be set once, when
             #   the next text is received from the world; as soon as text is received, the flag is
             #   set back to FALSE.
@@ -5685,7 +5814,8 @@
         $self->{customFreeWinHeight}    = $self->constFreeWinHeight;
 
         $self->{customInsertCmdColour}  = $self->constInsertCmdColour;
-        $self->{customShowTextColour}   = $self->constShowTextColour;
+        $self->{customShowSystemTextColour}
+                                        = $self->constShowSystemTextColour;
         $self->{customShowErrorColour}  = $self->constShowErrorColour;
         $self->{customShowWarningColour}
                                         = $self->constShowWarningColour;
@@ -6102,7 +6232,7 @@
         # Local variables
         my (
             $warningFlag, $tempDir, $keycodeObjName, $keycodeObj, $desktopObj, $host, $port, $world,
-            $profObj, $taskObj,
+            $profObj, $taskObj, $offlineFlag,
             @list,
         );
 
@@ -6191,11 +6321,14 @@
             $self->disableAllFileAccess(TRUE);
         }
 
-        # Delete everything in the temporary directory
-        $tempDir = $axmud::DATA_DIR . '/tmp/*';
-        while ($_ = glob("$tempDir* $tempDir.*")) {
+        # Delete everything in the temporary directories
+        # (The former is for plugins; the latter is for Axmud code)
+        foreach my $tempDir ($axmud::DATA_DIR . '/tmp/', $axmud::DATA_DIR . '/data/temp/') {
 
-            unlink($_);
+            # Simplest way to empty the directory and all its sub-directories seems to be to
+            #   destroy the directory and make a new one
+            File::Path::remove_tree($tempDir);
+            mkdir ($tempDir, 0755);
         }
 
         # Create interface model objects (which store default values for interfaces - triggers,
@@ -6570,6 +6703,12 @@
 
             # In Axmud test mode, connect to a world which is assumed to be running on the local
             #   machine
+            if (! $axmud::TEST_MODE_LOGIN_LIST[5]) {
+                $offlineFlag = TRUE;
+            } else {
+                $offlineFlag = undef;
+            }
+
             if (
                 ! $self->startSession(
                     $axmud::TEST_MODE_LOGIN_LIST[0],        # World
@@ -6580,7 +6719,7 @@
                     undef,                                  # Account
                     undef,                                  # Default protocol
                     undef,                                  # No login mode
-                    $axmud::TEST_MODE_LOGIN_LIST[5],        # Offline flag
+                    $offlineFlag,
                 )
             ) {
                 return undef;
@@ -6672,11 +6811,14 @@
             );
         }
 
-        # Delete everything in the temporary directory
-        $tempDir = $axmud::DATA_DIR . '/tmp/*';
-        while ($_ = glob("$tempDir* $tempDir.*")) {
+        # Delete everything in the temporary directories
+        # (The former is for plugins; the latter is for Axmud code)
+        foreach my $tempDir ($axmud::DATA_DIR . '/tmp/', $axmud::DATA_DIR . '/data/temp/') {
 
-            unlink($_);
+            # Simplest way to empty the directory and all its sub-directories seems to be to
+            #   destroy the directory and make a new one
+            File::Path::remove_tree($tempDir);
+            mkdir ($tempDir, 0755);
         }
 
         # Because of a Gtk issue, using 'exit' will cause a segfault. However, in certain (rare)
@@ -6912,7 +7054,6 @@
 
                     $exitFlag = TRUE;
 
-#                } elsif ($line =~ m/^\w/) {
                 } elsif ($line =~ m/^\s*[[:alnum:]]/) {
 
                     # Ignore empty lines and lines starting with a #
@@ -7199,8 +7340,10 @@
         # Create directories
         mkdir ($axmud::DATA_DIR, 0755);
         mkdir ($axmud::DATA_DIR . '/buffers', 0755);
+        mkdir ($axmud::DATA_DIR . '/custom', 0755);
         mkdir ($axmud::DATA_DIR . '/data', 0755);
         mkdir ($axmud::DATA_DIR . '/data/worlds', 0755);
+        # (Temp directory for use by Axmud code only)
         mkdir ($axmud::DATA_DIR . '/data/temp', 0755);
         mkdir ($axmud::DATA_DIR . '/logos', 0755);
         mkdir ($axmud::DATA_DIR . '/logs', 0755);
@@ -7214,7 +7357,12 @@
         mkdir ($axmud::DATA_DIR . '/screenshots', 0755);
         mkdir ($axmud::DATA_DIR . '/scripts', 0755);
         mkdir ($axmud::DATA_DIR . '/sounds', 0755);
+        mkdir ($axmud::DATA_DIR . '/store', 0755);
+        # (Temp directory for use by plugins)
         mkdir ($axmud::DATA_DIR . '/tmp', 0755);
+
+        # Make sure the data directory's README file is in place
+        File::Copy::copy($axmud::SHARE_DIR . '/items/readme/README', $axmud::DATA_DIR);
 
         return 1;
     }
@@ -8201,8 +8349,20 @@
 
                 if (! $fileObj->loadDataFile($file, $path, $dir)) {
 
-                    # Continue loading world profiles, but this function will return 'undef'
-                    $failFlag = TRUE;
+                    # Try loading the automatic backup, i.e. 'worldprof.axm.bu'
+                    if (! $fileObj->loadDataFile($file, $path, $dir, TRUE)) {
+
+                        # Continue loading world profiles, but this function will return 'undef'
+                        $failFlag = TRUE;
+
+                    } else {
+
+                        # The contents of the backup, now loaded into memory, must be saved at some
+                        #   point
+                        $fileObj->set_modifyFlag(TRUE);
+                        # Don't overwrite the existing backup file with the faulty one
+                        $fileObj->set_preserveBackupFlag(TRUE);
+                    }
                 }
             }
         }
@@ -9337,6 +9497,17 @@
                     $stripObj->removeGaugeBox();
                 }
 
+                # If the GA::Strip::Entry strip object's console button is in flashing mode, make
+                #   it flash once
+                if ($winObj->visibleSession && $winObj->visibleSession->systemMsgCheckTime) {
+
+                    $stripObj = $winObj->ivShow('firstStripHash', 'Games::Axmud::Strip::Entry');
+                    if ($stripObj) {
+
+                        $stripObj->set_consoleIconFlash();
+                    }
+                }
+
                 # Update the GA::Strip::ConnectInfo strip object in every 'internal' window
                 #   approximately every second
                 # (GA::Strip::ConnectInfo are allowed in 'internal' windows besides 'main' windows,
@@ -9401,20 +9572,29 @@
 
         # Update the buffers' text tags (if it's time to do so), making the text appear or disappear
         #   on cue
-        # NB v1.0.882 Because of some weird Gtk issue, colour tags created before these 'blink_slow'
-        #   and 'blink_fast' tags can be made to blink, but colour tags created afterwards will not
-        #   blink. A workaround is to to use both 'foreground-set'/'background-set' and 'invisible'
         if ($self->clientTime > $self->blinkSlowCheckTime) {
 
             foreach my $buffer (@bufferList) {
 
-                my $blinkTag = $buffer->get_tag_table->lookup('blink_slow');
+                my ($blinkTag, $cursorTag);
+
+                $blinkTag = $buffer->get_tag_table->lookup('blink_slow');
+                $cursorTag = $buffer->get_tag_table->lookup('cursor');
 
                 if ($blinkTag) {
 
                     $blinkTag->set_property('foreground-set', $self->blinkSlowFlag);
                     $blinkTag->set_property('background-set', $self->blinkSlowFlag);
-                    $blinkTag->set_property('invisible', $self->blinkSlowFlag);
+                }
+
+                # The textview object's cursor is updated at the same time
+                if ($cursorTag && ! $self->useFastCursorFlag) {
+
+                    if ($self->blinkSlowFlag) {
+                        $cursorTag->set_property('underline', 'single');
+                    } else {
+                        $cursorTag->set_property('underline', 'none');
+                    }
                 }
             }
 
@@ -9431,13 +9611,25 @@
 
             foreach my $buffer (@bufferList) {
 
-                my $blinkTag = $buffer->get_tag_table->lookup('blink_fast');
+                my ($blinkTag, $cursorTag);
+
+                $blinkTag = $buffer->get_tag_table->lookup('blink_fast');
+                $cursorTag = $buffer->get_tag_table->lookup('cursor');
 
                 if ($blinkTag) {
 
                     $blinkTag->set_property('foreground-set', $self->blinkFastFlag);
                     $blinkTag->set_property('background-set', $self->blinkFastFlag);
-                    $blinkTag->set_property('invisible', $self->blinkFastFlag);
+                }
+
+                # The textview object's cursor is updated at the same time
+                if ($cursorTag && $self->useFastCursorFlag) {
+
+                    if ($self->blinkFastFlag) {
+                        $cursorTag->set_property('underline', 'single');
+                    } else {
+                        $cursorTag->set_property('underline', 'none');
+                    }
                 }
             }
 
@@ -10975,7 +11167,6 @@
             # Private plugins begin with an alpha-numeric character and end .pm; all other .pm files
             #   in the directory must begin with an underline character
             # Remove all non-plugin files from the list
-#            if ($path =~ m/private[\\\/][A-Za-z0-9][A-Za-z0-9\_\ ]*\.pm$/) {
             if ($path =~ m/private[\\\/][[:alnum:]][[:word:]\s]*\.pm$/) {
 
                 push (@modList, $path);
@@ -14350,14 +14541,15 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $mediumFlag - If TRUE, use the medium-sized version of the icon. If FALSE or 'undef',
-        #                   use the standard (small-sized) icon
+        #   $mode   - If specified and set to 'large' or 'medium', then the large/medium-size icon
+        #               is used. For any other value (including 'undef'), the standard small icon is
+        #               used
         #
         # Return values
         #   'undef' on improper arguments
         #   Otherwise returns the file path
 
-        my ($self, $mediumFlag, $check) = @_;
+        my ($self, $mode, $check) = @_;
 
         # Local variables
         my ($second, $minute, $hour, $dayOfMonth, $month);
@@ -14373,18 +14565,22 @@
         # NB $month is in the range 0-11
         if (($month == 11 && $dayOfMonth >= 24) || ($month == 0 && $dayOfMonth <= 5)) {
 
-            if (! $mediumFlag) {
-                return $axmud::SHARE_DIR . '/icons/system/dialogue_icon_xmas.png';
-            } else {
+            if (defined $mode && $mode eq 'large') {
+                return $axmud::SHARE_DIR . '/icons/system/dialogue_icon_xmas_large.png';
+            } elsif (defined $mode && $mode eq 'medium') {
                 return $axmud::SHARE_DIR . '/icons/system/dialogue_icon_xmas_medium.png';
+            } else {
+                return $axmud::SHARE_DIR . '/icons/system/dialogue_icon_xmas.png';
             }
 
         } else {
 
-            if (! $mediumFlag) {
-                return $axmud::SHARE_DIR . '/icons/system/dialogue_icon.png';
-            } else {
+           if (defined $mode && $mode eq 'large') {
+                return $axmud::SHARE_DIR . '/icons/system/dialogue_icon_large.png';
+            } elsif (defined $mode && $mode eq 'medium') {
                 return $axmud::SHARE_DIR . '/icons/system/dialogue_icon_medium.png';
+            } else {
+                return $axmud::SHARE_DIR . '/icons/system/dialogue_icon.png';
             }
         }
     }
@@ -14653,7 +14849,6 @@
         # Perform the check
         $maxLength--;
 
-#        if (! ($name =~  m/^[A-Za-z_]{1}[A-Za-z0-9_]{0,$maxLength}$/)) {
         if (! ($name =~  m/^[[:alpha:]\_]{1}[[:word:]]{0,$maxLength}$/)) {
             return undef;
         } else {
@@ -14812,6 +15007,152 @@
         } else {
             return undef;
         }
+    }
+
+    sub ipv4Get {
+
+        # Contact remote servers to fetch the user's IP address
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the IP address can't be fetched
+        #   Otherwise, the user's IP (in the form '101.102.103.104')
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ipv4Get', @_);
+        }
+
+        # $self->constIPLookupList lists several servers, in case one of them isn't available
+        foreach my $url ($self->constIPLookupList) {
+
+            my ($obj, $response);
+
+            $obj = HTTP::Tiny->new();
+            if ($obj) {
+
+                $response = $obj->get('http://canihazip.com/s/');
+                if ($response->{success} && $response->{content} =~ m/^\d+\.\d+\.\d+\.\d+$/) {
+
+                    return $response->{content};
+                }
+            }
+        }
+
+        # No IP address found
+        return undef;
+    }
+
+    sub regexCheck {
+
+        # Test that a regex is valid without generating a Perl error/warning message
+        #
+        # Expected arguments
+        #   $regex  - The regex to test
+        #
+        # Return values
+        #   'undef' on improper arguments or if $regex is a valid regular expression
+        #   Otherwise, returns the error message generated by the invalid regular expression
+
+        my ($self, $regex, $check) = @_;
+
+        # Local variables
+        my $result;
+
+        # Check for improper arguments
+        if (! defined $regex || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->regexCheck', @_);
+        }
+
+        # Set global variables to intercept the Perl error/warning message
+        $axmud::TEST_REGEX_FLAG = TRUE;
+        $axmud::TEST_REGEX_ERROR = undef;
+        # Test the regex
+        eval { qr/$regex/ };
+        # The global variable is already set to 'undef' for a valid regex, or the error message
+        #   generated by an invalid regex
+        $result = $axmud::TEST_REGEX_ERROR;
+        $axmud::TEST_REGEX_FLAG = FALSE;
+
+        if (! defined $result) {
+
+            return undef;
+
+        } else {
+
+            # Remove the 'at lib/Games/Axmud/Client.pm line xxxxx' portion, which the user
+            #   definitely doesn't want
+            $result =~ s/at lib.*Client\.pm line \d+.*//;
+            # Also remove the final newline character
+            chomp $result;
+
+            return $result;
+        }
+    }
+
+    sub commify {
+
+        # Can be called by anything
+        # Adds commas, full stops/periods, spaces or underlines/underscores to long numbers (e.g.
+        #   converts 1000000 to 1,000,000 / 1.000.000 / 1 000 000 / 1_000_000)
+        # Returns the modified string
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $number - An integer or floating point value, e.g. 1.124. If not defined, then 'undef'
+        #                is returned
+        #   $mode   - 'none' to add nothing, 'comma' to add commas, 'europe' to add European-style
+        #               full stops/periods, 'brit' to add British-style spaces, 'underline' to use
+        #               underlines/underscores. If 'undef', $self->commifyMode is used. If an
+        #               unrecognised value is specified, adds nothing
+        #
+        # Return values
+        #   'undef' if no arguments specified
+        #   Otherwise returns the modified string
+
+        my ($self, $number, $mode, $check) = @_;
+
+        # (No check for improper arguments)
+
+        if (! defined $mode) {
+
+            $mode = $self->commifyMode;
+        }
+
+        if (! defined $number) {
+
+            return undef;
+
+        } elsif ($mode eq 'comma') {
+
+            # (add commas)
+            1 while $number =~ s/^([-+]?\d+)(\d{3})/$1,$2/;
+
+        } elsif ($mode eq 'europe') {
+
+            # (add European-style full stops/periods)
+            1 while $number =~ s/^([-+]?\d+)(\d{3})/$1.$2/;
+
+        } elsif ($mode eq 'brit') {
+
+            # (add British-style spaces)
+            1 while $number =~ s/^([-+]?\d+)(\d{3})/$1 $2/;
+
+        } elsif ($mode eq 'underline') {
+
+            # (add underlines/underscores)
+            1 while $number =~ s/^([-+]?\d+)(\d{3})/$1_$2/;
+        }
+
+        return $number;
     }
 
     sub convertKeycodeString {
@@ -16340,6 +16681,30 @@
         return 1;
     }
 
+    sub set_commifyMode {
+
+        my ($self, $mode, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $mode
+            || (
+                $mode ne 'comma' && $mode ne 'europe' && $mode ne 'brit' && $mode ne 'underline'
+                && $mode ne 'none'
+            )
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_commifyMode', @_);
+        }
+
+        $self->ivPoke('commifyMode', $mode);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_commifyMode');
+
+        return 1;
+    }
+
     sub set_configWorldProfList {
 
         my ($self, @list) = @_;
@@ -16876,7 +17241,7 @@
         return 1;
     }
 
-    sub set_customShowTextColour {
+    sub set_customShowSystemTextColour {
 
         my ($self, $value, $check) = @_;
 
@@ -16884,15 +17249,15 @@
         if (! defined $value || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->set_customShowTextColour',
+                $self->_objClass . '->set_customShowSystemTextColour',
                 @_,
             );
         }
 
-        $self->ivPoke('customShowTextColour', $value);
+        $self->ivPoke('customShowSystemTextColour', $value);
 
         # The data stored in this IV is saved in the 'config' file
-        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_customShowTextColour');
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_customShowSystemTextColour');
 
         return 1;
     }
@@ -17045,6 +17410,7 @@
                 && $iv ne 'debugTableFitFlag'
                 && $iv ne 'debugTrapErrorFlag'
                 # Telnet negotiation debug flags
+                && $iv ne 'debugEscSequenceFlag'
                 && $iv ne 'debugTelnetFlag'
                 && $iv ne 'debugTelnetMiniFlag'
                 && $iv ne 'debugTelnetLogFlag'
@@ -17097,6 +17463,7 @@
                 && $iv ne 'debugTableFitFlag'
                 && $iv ne 'debugTrapErrorFlag'
                 # Telnet negotiation debug flags
+                && $iv ne 'debugEscSequenceFlag'
                 && $iv ne 'debugTelnetFlag'
                 && $iv ne 'debugTelnetMiniFlag'
                 && $iv ne 'debugTelnetLogFlag'
@@ -18131,6 +18498,31 @@
         return 1;
     }
 
+    sub set_mainWinSystemMsgFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_mainWinSystemMsgFlag',
+                @_,
+            );
+        }
+
+        if ($flag) {
+            $self->ivPoke('mainWinSystemMsgFlag', TRUE);
+        } else {
+            $self->ivPoke('mainWinSystemMsgFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_mainWinSystemMsgFlag');
+
+        return 1;
+    }
+
     sub set_mainWinTooltipFlag {
 
         my ($self, $flag, $check) = @_;
@@ -18546,7 +18938,7 @@
         return 1;
     }
 
-    sub toggle_sessionTabFlag {
+    sub toggle_sessionFlag {
 
         my ($self, $type, $check) = @_;
 
@@ -18557,11 +18949,11 @@
         if (
             ! defined $type
             || (
-                $type ne 'xterm' && $type ne 'long' && $type ne 'simple'
-                && $type ne 'close_main' && $type ne 'close_tab'
+                $type ne 'xterm' && $type ne 'long' && $type ne 'simple' && $type ne 'close_main'
+                && $type ne 'close_tab' && $type ne 'switch_offline'
             )
         ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggle_sessionTabFlag', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggle_sessionFlag', @_);
         }
 
         if ($type eq 'xterm') {
@@ -18574,6 +18966,8 @@
             $iv = 'confirmCloseMainWinFlag';
         } elsif ($type eq 'close_tab') {
             $iv = 'confirmCloseTabFlag';
+        } elsif ($type eq 'switch_offline') {
+            $iv = 'offlineOnDisconnectFlag';
         }
 
         if ($self->$iv) {
@@ -18583,14 +18977,17 @@
         }
 
         # Redraw the tab title in every session
-        foreach my $session ($self->listSessions()) {
+        if ($type ne 'switch_offline') {
 
-            # The TRUE argument means 'definitely update'
-            $session->checkTabLabels(TRUE);
+            foreach my $session ($self->listSessions()) {
+
+                # The TRUE argument means 'definitely update'
+                $session->checkTabLabels(TRUE);
+            }
         }
 
         # The data stored in these IVs are saved in the 'config' file
-        $self->setModifyFlag('config', TRUE, $self->_objClass . '->toggle_sessionTabFlag');
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->toggle_sessionFlag');
 
         return 1;
     }
@@ -18912,22 +19309,22 @@
 
     sub add_systemMsg {
 
-        my ($self, $msg, $check) = @_;
+        my ($self, $type, $msg, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $msg || defined $check) {
+        if (! defined $type || ! defined $msg || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->add_systemMsg', @_);
         }
 
-        # If the Error Console window is actually open, display it there immediately
+        # If the Client Console window is actually open, display it there immediately
         if ($self->consoleWin) {
 
-            $self->consoleWin->update($msg);
+            $self->consoleWin->update($type, $msg);
 
         } else {
 
-            $self->ivPush('systemMsgList', $msg);
+            $self->ivPush('systemMsgList', $type, $msg);
             # If the Connections window is open, tell it to change the icon on its button, so the
             #   user can see that a system message has arrived
             if ($self->connectWin) {
@@ -19203,6 +19600,76 @@
         } else {
             $self->ivPoke('tempUrgencyFlag', FALSE);
         }
+
+        return 1;
+    }
+
+    sub toggle_termSetting {
+
+        # $flag is not specified when called by ;configureterminal, but is specified when called by
+        #   GA::PrefWin::Client
+
+        my ($self, $type, $flag, $check) = @_;
+
+        # Local variables
+        my $iv;
+
+        # Check for improper arguments
+        if (
+            ! defined $type
+            || (
+                $type ne 'use_ctrl_seq' && $type ne 'show_cursor' && $type ne 'fast_cursor'
+                && $type ne 'direct_keys'
+            )
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggle_termSetting', @_);
+        }
+
+        if ($type eq 'use_ctrl_seq') {
+            $iv = 'useCtrlSeqFlag';
+        } elsif ($type eq 'show_cursor') {
+            $iv = 'useVisibleCursorFlag';
+        } elsif ($type eq 'fast_cursor') {
+            $iv = 'useFastCursorFlag';
+        } elsif ($type eq 'direct_keys') {
+            $iv = 'useDirectKeysFlag';
+        }
+
+        if (defined $flag) {
+
+            if ($flag) {
+                $self->ivPoke($iv, TRUE);
+            } else {
+                $self->ivPoke($iv, FALSE);
+            }
+
+        } elsif ($self->$iv) {
+
+            $self->ivPoke($iv, FALSE);
+
+        } else {
+
+            $self->ivPoke($iv, TRUE);
+        }
+
+        # Inform every session that $self->useVisibleCursorFlag or ->useDirectKeysFlag have changed
+        if ($type eq 'show_cursor') {
+
+            foreach my $session ($self->listSessions()) {
+
+                $session->textViewCursorUpdate();
+            }
+
+        } elsif ($type eq 'direct_keys') {
+
+            foreach my $session ($self->listSessions()) {
+
+                $session->textViewKeysUpdate();
+            }
+        }
+
+        # The data stored in these IVs are saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->toggle_termSetting');
 
         return 1;
     }
@@ -19689,16 +20156,18 @@
 
     sub desktopObj
         { $_[0]->{desktopObj} }
+
     sub mainWin
         { $_[0]->{mainWin} }
-    sub connectWin
-        { $_[0]->{connectWin} }
+
     sub aboutWin
         { $_[0]->{aboutWin} }
-    sub consoleWin
-        { $_[0]->{consoleWin} }
     sub busyWin
         { $_[0]->{busyWin} }
+    sub connectWin
+        { $_[0]->{connectWin} }
+    sub consoleWin
+        { $_[0]->{consoleWin} }
 
     sub constIVHash
         { my $self = shift; return %{$self->{constIVHash}}; }
@@ -19842,6 +20311,8 @@
         { $_[0]->{confirmCloseMainWinFlag} }
     sub confirmCloseTabFlag
         { $_[0]->{confirmCloseTabFlag} }
+    sub offlineOnDisconnectFlag
+        { $_[0]->{offlineOnDisconnectFlag} }
 
     sub constCharSet
         { $_[0]->{constCharSet} }
@@ -20343,6 +20814,25 @@
     sub customClientVersion
         { $_[0]->{customClientVersion} }
 
+    sub useCtrlSeqFlag
+        { $_[0]->{useCtrlSeqFlag} }
+    sub useVisibleCursorFlag
+        { $_[0]->{useVisibleCursorFlag} }
+    sub useFastCursorFlag
+        { $_[0]->{useFastCursorFlag} }
+    sub useDirectKeysFlag
+        { $_[0]->{useDirectKeysFlag} }
+    sub constDirectAppKeysHash
+        { my $self = shift; return %{$self->{constDirectAppKeysHash}}; }
+    sub constDirectAltKeysHash
+        { my $self = shift; return %{$self->{constDirectAltKeysHash}}; }
+    sub constDirectKeysHash
+        { my $self = shift; return %{$self->{constDirectKeysHash}}; }
+    sub constDirectSpecialKeysHash
+        { my $self = shift; return %{$self->{constDirectSpecialKeysHash}}; }
+
+    sub debugEscSequenceFlag
+        { $_[0]->{debugEscSequenceFlag} }
     sub debugTelnetFlag
         { $_[0]->{debugTelnetFlag} }
     sub debugTelnetMiniFlag
@@ -20537,8 +21027,8 @@
 
     sub constInsertCmdColour
         { $_[0]->{constInsertCmdColour} }
-    sub constShowTextColour
-        { $_[0]->{constShowTextColour} }
+    sub constShowSystemTextColour
+        { $_[0]->{constShowSystemTextColour} }
     sub constShowErrorColour
         { $_[0]->{constShowErrorColour} }
     sub constShowWarningColour
@@ -20549,8 +21039,8 @@
         { $_[0]->{constShowImproperColour} }
     sub customInsertCmdColour
         { $_[0]->{customInsertCmdColour} }
-    sub customShowTextColour
-        { $_[0]->{customShowTextColour} }
+    sub customShowSystemTextColour
+        { $_[0]->{customShowSystemTextColour} }
     sub customShowErrorColour
         { $_[0]->{customShowErrorColour} }
     sub customShowWarningColour
@@ -20584,6 +21074,14 @@
 
     sub constWipeIconPath
         { $_[0]->{constWipeIconPath} }
+    sub constEmptyIconPath
+        { $_[0]->{constEmptyIconPath} }
+    sub constSystemIconPath
+        { $_[0]->{constSystemIconPath} }
+    sub constDebugIconPath
+        { $_[0]->{constDebugIconPath} }
+    sub constErrorIconPath
+        { $_[0]->{constErrorIconPath} }
     sub constMultiIconPath
         { $_[0]->{constMultiIconPath} }
     sub constCancelIconPath
@@ -20725,6 +21223,9 @@
     sub constRomanHash
         { my $self = shift; return %{$self->{constRomanHash}}; }
 
+    sub constIPLookupList
+        { my $self = shift; return @{$self->{constIPLookupList}}; }
+
     sub constHelpCharLimit
         { $_[0]->{constHelpCharLimit} }
 
@@ -20757,10 +21258,16 @@
         { $_[0]->{irreversibleIconFlag} }
     sub allowBusyWinFlag
         { $_[0]->{allowBusyWinFlag} }
+    sub mainWinSystemMsgFlag
+        { $_[0]->{mainWinSystemMsgFlag} }
     sub mainWinUrgencyFlag
         { $_[0]->{mainWinUrgencyFlag} }
     sub mainWinTooltipFlag
         { $_[0]->{mainWinTooltipFlag} }
+
+    sub commifyMode
+        { $_[0]->{commifyMode} }
+
     sub tempUrgencyFlag
         { $_[0]->{tempUrgencyFlag} }
     sub tempSoundFlag

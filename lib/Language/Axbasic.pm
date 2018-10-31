@@ -1340,6 +1340,7 @@
                 'sqr'                   => 'N',
                 'tan'                   => 'N',
                 'tanh'                  => 'N',
+                'testpat'               => 'S',
                 'time'                  => '',
                 'trunc'                 => 'N;N',
                 'val'                   => 'S',
@@ -1347,12 +1348,14 @@
                 # Pure BASIC functions (returning a string value)
                 'chr$'                  => 'N',
                 'date$'                 => '',
+                'ip$'                   => '',
                 'lcase$'                => 'S',
                 'ltrim$'                => 'S',
                 'mid$'                  => 'SN;N',
                 'repeat$'               => 'SN',
                 'rtrim$'                => 'S',
                 'str$'                  => 'N',
+                'testpat$'              => 'S',
                 'time$',                => '',
                 'trim$'                 => 'S',
                 'ucase$'                => 'S',
@@ -2567,14 +2570,14 @@
         #                           fire
         #
         # Optional arguments
-        #   @backRefList        - A list of backreferences supplied by the interface (empty if none
-        #                           were supplied)
+        #   @grpStringList      - A list of group substrings supplied by the interface (empty if
+        #                           none were supplied)
         #
         # Return values
         #   'undef' on improper arguments or if the LA::Notification object can't be created
         #   1 otherwise
 
-        my ($self, $interfaceObj, $lineOfText, @backRefList) = @_;
+        my ($self, $interfaceObj, $lineOfText, @grpStringList) = @_;
 
         # Local variables
         my $obj;
@@ -2590,7 +2593,7 @@
             $self,
             $interfaceObj,
             $lineOfText,
-            @backRefList,
+            @grpStringList,
         );
 
         if (! $obj) {
@@ -3735,14 +3738,14 @@
         #   $lineOfText         - The line of text sent by the world which caused the interface to
         #                           fire
         # Optional arguments
-        #   @backRefList        - A list of backreferences supplied by the interface (empty if none
-        #                           were supplied)
+        #   @grpStringList      - A list of group substrings supplied by the interface (empty if
+        #                           none were supplied)
         #
         # Return values
         #   'undef' on improper arguments
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $scriptObj, $interfaceObj, $lineOfText, @backRefList) = @_;
+        my ($class, $scriptObj, $interfaceObj, $lineOfText, @grpStringList) = @_;
 
         if (
             ! defined $class || ! defined $scriptObj || ! defined $interfaceObj
@@ -3776,9 +3779,9 @@
             name                        => $interfaceObj->name,
             time                        => $scriptObj->session->sessionTime,
 
-            # The matching line of text received from the world (and any backreferences)
+            # The matching line of text received from the world (and any group substrings)
             text                        => $lineOfText,
-            backRefList                 => \@backRefList,
+            grpStringList               => \@grpStringList,
         };
 
         # Bless the object into existence
@@ -3811,8 +3814,8 @@
 
     sub text
         { $_[0]->{text} }
-    sub backRefList
-        { my $self = shift; return @{$self->{backRefList}}; }
+    sub grpStringList
+        { my $self = shift; return @{$self->{grpStringList}}; }
 }
 
 { package Language::Axbasic::TokenGroup;

@@ -9,8 +9,8 @@ POKEUNSHIFT axmud-object-property
          the help for the POKE statement for a full explanation).
       POKEUNSHIFT is similar to POKE, but it only modifies list properties such
          as "world.current.doorPatternList". It cannot be used to modify a 
-         scalar property such as "world.current.remoteWimpyMax", a hash property 
-         such as "world.current.currencyHash" or a Perl object such as 
+         scalar property such as "world.current.longName", a hash property such
+         as "world.current.currencyHash" or a Perl object such as
          "world.current".
       POKEUNSHIFT adds the value of the expression to the beginning of the list. 
          If you don't specify an expression, the Perl special value 'undef' is 
