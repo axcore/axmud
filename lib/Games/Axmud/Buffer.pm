@@ -853,7 +853,7 @@
 
         # Local variablesinterpretCmd
         my (
-            $session, $cmd, $dirType, $lookCmd, $shLookCmd, $glanceCmd, $shGlanceCmd,
+            $session, $cmd, $dirType, $lookCmd, $shLookCmd, $glanceCmd, $shGlanceCmd, $moveFlag,
             @patternList, @standardList,
         );
 
@@ -931,11 +931,27 @@
                         # Also store the standard command and the unabbreviated form of the
                         #   specified direction (for convenience)
                         $self->ivPoke('moveVerb', $standardList[$count]);
-                        if ($dirType && $dirType eq 'primaryDir') {
+
+                        if (
+                            $dirType
+                            && ($dirType eq 'primaryDir' || $dirType eq 'primaryAbbrev')
+                        ) {
                             $self->ivPoke('moveDir', $session->currentDict->checkPrimaryDir($1));
-                        } elsif ($dirType && $dirType eq 'secondaryDir') {
+
+                        } elsif (
+                            $dirType
+                            && ($dirType eq 'secondaryDir' || $dirType eq 'secondaryAbbrev')
+                        ) {
                             $self->ivPoke('moveDir', $session->currentDict->checkSecondaryDir($1));
+
+                        } elsif (
+                            $dirType
+                            && ($dirType eq 'relativeDir' || $dirType eq 'relativeAbbrev')
+                        ) {
+                            $self->ivPoke('moveDir', $session->currentDict->checkRelativeDir($1));
+
                         } else {
+
                             $self->ivPoke('moveDir', $1);
                         }
 
@@ -945,35 +961,79 @@
             }
         }
 
-        # If GA::Session->moveCmd = 1, this is definitely a movement command. If ->moveCmd = 0,
-        #   we have to work out for ourselves whether it's a movement command, or not
-        if (
-            $session->moveMode eq 'is_move'
-            || (
-                $session->moveMode eq 'unknown'
-                && (
-                    # It's a command using a recognised custom direction...
-                    defined $dirType
-                    # The automapper knows the current location, and $cmd matches the directions of
-                    #   any of its exits
-                    || (
-                        $session->mapObj->currentRoom
-                        && $session->mapObj->currentRoom->ivExists('exitNumHash', $cmd)
-                    ) || (
-                        $session->mapObj->ghostRoom
-                        && $session->mapObj->ghostRoom->ivExists('exitNumHash', $cmd)
-                    )
+        # If GA::Session->moveMode is 'is_move', this is definitely a movement command. If
+        #   ->moveMose is 'unknown', we have to work out for ourselves whether it's a movement
+        #   command, or not
+        if ($session->moveMode eq 'is_move') {
+
+            $moveFlag = TRUE;
+
+        } elsif ($session->moveMode eq 'unknown') {
+
+            if (
+                # It's a command using a recognised custom direction...
+                defined $dirType
+                # The automapper knows the current location, and $cmd matches the directions of any
+                #   of its exits
+                || (
+                    $session->mapObj->currentRoom
+                    && $session->mapObj->currentRoom->ivExists('exitNumHash', $cmd)
+                ) || (
+                    $session->mapObj->ghostRoom
+                    && $session->mapObj->ghostRoom->ivExists('exitNumHash', $cmd)
                 )
-            )
-        ) {
+            ) {
+                $moveFlag = TRUE;
+            }
+
+            # Also Check alternative nominal directions in the current/ghost rooms' exits
+            if (! $moveFlag && $session->mapObj->currentRoom) {
+
+                OUTER: foreach my $exitNum (
+                    $session->mapObj->currentRoom->ivValues('exitNumHash')
+                ) {
+                    my $exitObj = $session->worldModelObj->ivShow('exitModelHash', $exitNum);
+
+                    if (
+                        defined $exitObj->altDir
+                        && index($exitObj->altDir, $cmd) > -1
+                    ) {
+                        $moveFlag = TRUE;
+                        last OUTER;
+                    }
+                }
+            }
+
+            if (! $moveFlag && $session->mapObj->ghostRoom) {
+
+                OUTER: foreach my $exitNum (
+                    $session->mapObj->ghostRoom->ivValues('exitNumHash')
+                ) {
+                    my $exitObj = $session->worldModelObj->ivShow('exitModelHash', $exitNum);
+
+                    if (
+                        defined $exitObj->altDir
+                        && index($exitObj->altDir, $cmd) > -1
+                    ) {
+                        $moveFlag = TRUE;
+                        last OUTER;
+                    }
+                }
+            }
+        }
+
+        if ($moveFlag) {
+
             # It's a movement command
             $self->ivPoke('moveFlag', TRUE);
             # If it's an abbreviated primary/secondary direction, store the unabbreviated form in
             #   ->moveDir
-            if ($dirType && $dirType eq 'primaryDir') {
+            if ($dirType && ($dirType eq 'primaryDir' || $dirType eq 'primaryAbbrev')) {
                 $self->ivPoke('moveDir', $session->currentDict->checkPrimaryDir($cmd));
-            } elsif ($dirType && $dirType eq 'secondaryDir') {
+            } elsif ($dirType && ($dirType eq 'secondaryDir' || $dirType eq 'secondaryAbbrev')) {
                 $self->ivPoke('moveDir', $session->currentDict->checkSecondaryDir($cmd));
+            } elsif ($dirType && ($dirType eq 'relativeDir' || $dirType eq 'relativeAbbrev')) {
+                $self->ivPoke('moveDir', $session->currentDict->checkRelativeDir($cmd));
             } else {
                 $self->ivPoke('moveDir', $cmd);
             }
@@ -1127,6 +1187,34 @@
 
             $self->ivPoke('followAnchorFlag', TRUE);
         }
+
+        return 1;
+    }
+
+    sub addMove {
+
+        # Called by GA::Task::Locator->processLine (for an involuntary exit in a known direction)
+        # Sets this object's IVs
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 on success
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addMove', @_);
+        }
+
+        # Set IVs
+        $self->ivPoke('moveFlag', TRUE);
+        $self->ivPoke('moveDir', $self->cmd);
+        $self->ivPoke('moveVerb', 'go');
 
         return 1;
     }

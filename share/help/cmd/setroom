@@ -8,7 +8,10 @@ srm / setroom                 Sets the automapper's current room
       ;srm <number> <mode>           
       ;srm -n <number> 
       ;srm -n <number> <mode>
- 
+
+      ;srm -l                 Sets the current room
+      ;srm -l <mode>
+       
    Notes:
       Axmud's automapper is capable of tracking the character's current location
          even when the automapper window isn't open. It's the equivalent of
@@ -20,9 +23,13 @@ srm / setroom                 Sets the automapper's current room
          window does not affect tracking. (See also the help for ';locateroom'.)
 
       You can specify <tag>, the room tag of the current room, or <number>, the
-         current room's unique number in the world model.
+         current room's unique number in the world model. 
       Room tags can be numerical, so if you want to specify room #100 - not the 
          room whose room tag is 100 - use the optional '-n' switch.
+      When the automapper marks the character as lost, the automapper window
+         draws the character's last known room with a green border (by default).
+         If that's the current location, you can use the -l switch.
+         
       You can stop the automapper from tracking the character's location with 
          the ';resetroom' command (or by using the automapper window's 
          functions). See also the help for ';go'.

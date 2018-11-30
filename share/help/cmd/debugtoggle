@@ -10,6 +10,7 @@ dbt / debugtoggle             Toggles Axmud debugging flags
          -e   'main' window shows explicit colour/style tags
          -l   Locator task shows debug messages
          -x   Locator task shows extensive debug messages
+         -d   Illegal exit directions show debug messages
          -m   Locator task shows expected rooms
          -p   Object parsing shows debug messages
          -c   Object comparison shows debug messages

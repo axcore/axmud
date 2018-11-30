@@ -1435,10 +1435,8 @@
 
         # Local variables
         my (
-            $wmObj, $errorCount, $fixCount, $count,
-            @categoryList,
-            %modelHash, %exitModelHash, %regionModelHash, %regionmapHash, %charModelHash,
-            %knownCharHash, %roomModelHash, %roomTagHash, %abandonExitHash,
+            $errorCount, $fixCount,
+            @outputList,
         );
 
         # Check for improper arguments
@@ -1447,1078 +1445,47 @@
             return $self->improper($session, $inputString);
         }
 
-        # Import the world model. Other IVs are imported (or re-imported) as we need them
-        $wmObj = $session->worldModelObj;
-        # When calling support functions, it's easier if $switch is definitely defined
-        if (! $switch) {
-
-            $switch = '';
-        }
-
         # It might be a long wait, so make sure the message is visible right away
         $session->writeText('Testing \'' . $session->currentWorld->name . '\' world model...');
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
 
-        $errorCount = 0;
-        $fixCount = 0;
-
-        # Check that ->modelActualCount and ->exitActualCount are correct
-        %modelHash = $wmObj->modelHash;
-        $count = scalar (keys %modelHash);
-        if ($count != $wmObj->modelActualCount) {
-
-            $session->writeText(
-                '   ->modelActualCount should be ' . $wmObj->modelActualCount . ', but is '
-                . $count,
-            );
-
-            $errorCount++;
-            if ($switch) {
-
-                # When -f is used, fix errors
-                $wmObj->ivPoke('modelActualCount', scalar (keys %modelHash));
-                $fixCount++;
-            }
-        }
-
-        %exitModelHash = $wmObj->exitModelHash;
-        $count = scalar (keys %exitModelHash);
-        if ($count != $wmObj->exitActualCount) {
-
-            $session->writeText(
-                '   ->exitActualCount should be ' . $wmObj->exitActualCount . ', but is '
-                . $count,
-            );
-
-            $errorCount++;
-            if ($switch) {
-
-                $wmObj->ivPoke('exitActualCount', scalar (keys %exitModelHash));
-                $fixCount++;
-            }
-        }
-
-        # Check that ->modelDeletedList and ->exitDeletedList are not still in the model
-        %modelHash = $wmObj->modelHash;
-        foreach my $num ($wmObj->modelDeletedList) {
-
-            if (exists $modelHash{$num}) {
-
-                $session->writeText(
-                    '   Deleted model object #' . $num . ' still exists in the model',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $wmObj->ivDelete('modelHash', $num);
-                    $fixCount++;
-                }
-            }
-        }
-
-        %exitModelHash = $wmObj->exitModelHash;
-        foreach my $num ($wmObj->exitDeletedList) {
-
-            if (exists $exitModelHash{$num}) {
-
-                $session->writeText(
-                    '   Deleted exit model object #' . $num . ' still exists in the exit model',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $wmObj->ivDelete('exitModelHash', $num);
-                    $fixCount++;
-                }
-            }
-        }
-
-        # Check that ->modelBufferList and ->exitBufferList are not still in the model
-        %modelHash = $wmObj->modelHash;
-        foreach my $num ($wmObj->modelBufferList) {
-
-            if (exists $modelHash{$num}) {
-
-                $session->writeText(
-                    '   Buffered model object #' . $num . ' still exists in the model',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $wmObj->ivDelete('modelHash', $num);
-                    $fixCount++;
-                }
-            }
-        }
-
-        %exitModelHash = $wmObj->exitModelHash;
-        foreach my $num ($wmObj->exitBufferList) {
-
-            if (exists $exitModelHash{$num}) {
-
-                $session->writeText(
-                    '   Buffered exit model object #' . $num . ' still exists in the exit model',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $wmObj->ivDelete('exitModelHash', $num);
-                    $fixCount++;
-                }
-            }
-        }
-
-        # Check that everything in ->regionModelHash, etc, is the right category, exists in
-        #   ->modelHash and points to the same object
-        @categoryList = (
-            'region', 'room', 'weapon', 'armour', 'garment', 'char', 'minion', 'sentient',
-            'creature', 'portable', 'decoration', 'custom',
-        );
-
-        %modelHash = $wmObj->modelHash;
-        OUTER: foreach my $category (@categoryList) {
-
-            my (
-                $iv,
-                %thisHash,
-            );
-
-            $iv = $category . 'ModelHash';      # e.g. ->regionModelHash
-            %thisHash = $wmObj->$iv;
-
-            INNER: foreach my $num (keys %thisHash) {
-
-                my ($obj, $realObj);
-
-                $obj = $thisHash{$num};
-
-                if (! exists $modelHash{$num}) {
-
-                    $session->writeText(
-                        '   \'' . $category . '\' object exists in ->' . $iv . ', but not in'
-                        . '->modelHash',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        $wmObj->ivDelete($iv, $num);
-                        $fixCount++;
-                    }
-
-                    next INNER;
-                }
-
-                if ($obj->category ne $category) {
-
-                    $session->writeText(
-                        '   \'' . $category . '\' object exists in ->' . $iv . ', but is not a \''
-                        . $category . '\' object',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        $wmObj->ivDelete($iv, $num);
-                        $fixCount++;
-                    }
-
-                    next INNER;
-                }
-
-                $realObj = $modelHash{$num};
-                if ($realObj ne $obj) {
-
-                    $session->writeText(
-                        '   \'' . $category . '\' object exists in ->' . $iv . ', but is not the'
-                        . ' same object that exists in ->modelHash',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        $wmObj->ivDelete($iv, $num);
-                        $fixCount++;
-                    }
-
-                    next INNER;
-                }
-            }
-        }
-
-        # Check that every exit has a parent room
-        %modelHash = $wmObj->modelHash;
-        %exitModelHash = $wmObj->exitModelHash;
-        OUTER: foreach my $exitObj (values %exitModelHash) {
-
-            my $roomObj = $modelHash{$exitObj->parent};
-            if (! $roomObj) {
-
-                $session->writeText(
-                    '   Exit #'  . $exitObj->number . ' does not have a parent room',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    # Cannot call GA::Obj::WorldModel->deleteExit, as that function assumes the exit
-                    #   has a parent room and that the room has a parent region; instead, use a
-                    #   function written especially for ;testmodel
-                    $wmObj->emergencyDeleteExit($exitObj);
-                    $fixCount++;
-                }
-
-            } elsif ($roomObj->category ne 'room') {
-
-                $session->writeText(
-                    '   Exit #'  . $exitObj->number . ' has a parent room #' . $roomObj->number
-                    . ' which is actually a \'' . $roomObj->category . '\' object',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $wmObj->emergencyDeleteExit($exitObj);
-                    $fixCount++;
-                }
-            }
-        }
-
-        # Check that every exit has a defined ->mapDir (except for unallocatable exits, whose
-        #   ->drawMode is 'temp_unalloc'; in that case, ->mapDir must be 'undef')
-        %exitModelHash = $wmObj->exitModelHash;
-        OUTER: foreach my $exitObj (values %exitModelHash) {
-
-            if ($exitObj->drawMode eq 'temp_unalloc' && defined $exitObj->mapDir) {
-
-                $session->writeText(
-                    '   Unallocatable exit #'  . $exitObj->number . ' has a defined map'
-                    . ' direction \'' . $exitObj->mapDir,
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $wmObj->emergencyDeleteExit($exitObj);
-                    $fixCount++;
-                }
-
-            } elsif ($exitObj->drawMode ne 'temp_unalloc' && ! defined $exitObj->mapDir) {
-
-                $session->writeText(
-                    '   Exit #'  . $exitObj->number . ' has an undefined map direction (and is not'
-                    . ' unallocatable)',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $wmObj->emergencyDeleteExit($exitObj);
-                    $fixCount++;
-                }
-            }
-        }
-
-        # Check that the regionmap list matches the region list
-        %regionModelHash = $wmObj->regionModelHash;
-        %regionmapHash = $wmObj->regionmapHash;
-        OUTER: foreach my $regionName (keys %regionmapHash) {
-
-            my $regionmapObj = $regionmapHash{$regionName};
-
-            if (! exists $regionModelHash{$regionmapObj->number}) {
-
-                $session->writeText(
-                    '   Regionmap \'' . $regionName . '\' does not have a corresponding region'
-                    . ' object in ->regionModelHash (not auto-fixable)',
-                );
-
-                $errorCount++;
-
-                next OUTER;
-
-            } else {
-
-                delete $regionModelHash{$regionmapObj->number};
-            }
-        }
-
-        if (%regionModelHash) {
-
-            foreach my $regionObj (values %regionModelHash) {
-
-                $session->writeText(
-                    '   Region \'' . $regionObj->name . '\' does not have a corresponding'
-                    . ' regionmap in ->regionmapHash (not auto-fixable)',
-                );
-
-                $errorCount++;
-            }
-        }
-
-        # Check that the known character hash matches ->charModelHash
-        %charModelHash = $wmObj->charModelHash;
-        %knownCharHash = $wmObj->knownCharHash;
-        OUTER: foreach my $charName (keys %knownCharHash) {
-
-            my $charObj = $knownCharHash{$charName};
-
-            if (! exists $charModelHash{$charObj->number}) {
-
-                $session->writeText(
-                    '   ->knownCharHash \'' . $charName . '\' does not have a corresponding model'
-                    . ' object in ->charModelHash (not auto-fixable)',
-                );
-
-                $errorCount++;
-
-                next OUTER;
-
-            } else {
-
-                delete $charModelHash{$charObj->number};
-            }
-        }
-
-        if (%charModelHash) {
-
-            foreach my $charObj (values %charModelHash) {
-
-                $session->writeText(
-                    '   Character \'' . $charObj->name . '\' does not have a corresponding'
-                    . ' entry in ->knownCharHash (not auto-fixable)',
-                );
-
-                $errorCount++;
-            }
-        }
-
-        # Check that ->roomTagHash is right
-        %roomModelHash = $wmObj->roomModelHash;
-        %roomTagHash = $wmObj->roomTagHash;
-        OUTER: foreach my $tag (keys %roomTagHash) {
-
-            my ($roomNum, $roomObj);
-
-            $roomNum = $roomTagHash{$tag};
-
-            if (! exists $roomModelHash{$roomNum}) {
-
-                $session->writeText(
-                    '   ->roomTagHash tag \'' . $tag . '\' points to room #' . $roomNum
-                    . ' which is not in ->roomModelHash (not auto-fixable)',
-                );
-
-                $errorCount++;
-
-                next OUTER;
-            }
-
-            $roomObj = $roomModelHash{$roomNum};
-            if (! $roomObj->roomTag) {
-
-                $session->writeText(
-                    '   ->roomTagHash tag \'' . $tag . '\' points to room #' . $roomNum
-                    . ' which does not have a room tag (not auto-fixable)',
-                    );
-
-                $errorCount++;
-
-                next OUTER;
-
-            } elsif ($roomObj->roomTag ne $tag) {
-
-                $session->writeText(
-                    '   ->roomTagHash tag \'' . $tag . '\' points to room #' . $roomNum
-                    . ' which has a different room tag, \'' . $roomObj->roomTag . '\' (not'
-                    . ' auto-fixable)',
-                );
-
-                $errorCount++;
-
-                next OUTER;
-
-            } else {
-
-                delete $roomModelHash{$roomNum};
-            }
-        }
-
-        foreach my $roomObj (values %roomModelHash) {
-
-            if ($roomObj->roomTag) {
-
-                $session->writeText(
-                    '   ->roomModelHash room \'' . $roomObj->number . '\' has a room tag \''
-                    . $roomObj->roomTag . '\' which has no corresponding entry in ->roomTagHash'
-                    . ' (not auto-fixable)',
-                );
-
-                $errorCount++;
-
-                next OUTER;
-            }
-        }
-
-        # Check that every room's exits exist in the exit model
-        %roomModelHash = $wmObj->roomModelHash;
-        %exitModelHash = $wmObj->exitModelHash;
-        OUTER: foreach my $roomObj (values %roomModelHash) {
-
-            my (
-                @sortedExitList,
-                %exitNumHash,
-            );
-
-            @sortedExitList = $roomObj->sortedExitList;
-            %exitNumHash = $roomObj->exitNumHash;
-
-            INNER: foreach my $exitDir (keys %exitNumHash) {
-
-                my $exitNum = $exitNumHash{$exitDir};
-
-                if (! exists $exitModelHash{$exitNum}) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' exit #' . $exitNum . ' does not exist in'
-                        . ' ->exitModelHash',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        my @newList;
-
-                        $roomObj->ivDelete('exitNumHash', $exitDir);
-                        # Remove the corresponding entry in ->sortedExitList
-                        foreach my $item (@sortedExitList) {
-
-                            if ($item ne $exitDir) {
-
-                                push (@newList, $item);
-                            }
-                        }
-
-                        $roomObj->ivPoke('sortedExitList', @newList);
-                        $fixCount++;
-                    }
-                }
-
-                next INNER;
-            }
-        }
-
-        # Check that every room's exit has corresponding entries in ->sortedExitList and
-        #   ->exitNumHash
-        %roomModelHash = $wmObj->roomModelHash;
-        OUTER: foreach my $roomObj (values %roomModelHash) {
-
-            my (
-                @sortedExitList,
-                %exitNumHash,
-            );
-
-            @sortedExitList = $roomObj->sortedExitList;
-            %exitNumHash = $roomObj->exitNumHash;
-
-            foreach my $dir (@sortedExitList) {
-
-                if (! exists $exitNumHash{$dir}) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' exit in direction \'' . $dir . '\' does'
-                        . ' not have a corresponding entry in ->exitNumHash (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-
-                } else {
-
-                    delete $exitNumHash{$dir};
-                }
-            }
-
-            if (%exitNumHash) {
-
-                foreach my $dir (keys %exitNumHash) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' exit #' . $dir . '\' does not have a'
-                        . ' corresponding entry in ->sortedExitList (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                }
-            }
-        }
-
-        # Check that every twinned exit's twin still exists, and knows about its twin
-        %exitModelHash = $wmObj->exitModelHash;
-        OUTER: foreach my $exitObj (values %exitModelHash) {
-
-            my $twinExitObj;
-
-            if ($exitObj->twinExit) {
-
-                if (! exists $exitModelHash{$exitObj->twinExit}) {
-
-                    $session->writeText(
-                        '   Exit #' . $exitObj->number . ' has a twin exit #' . $exitObj->twinExit
-                         . ' which no longer exists',
-                    );
-
-                    $errorCount++;
-                    # We'll get all the mismatched twin exits to abandon each other all in one go,
-                    #   in a moment
-                    $abandonExitHash{$exitObj->number} = $exitObj;
-
-                } else {
-
-                    $twinExitObj = $exitModelHash{$exitObj->twinExit};
-                    if (! $twinExitObj->twinExit) {
-
-                        $session->writeText(
-                            '   Exit #' . $exitObj->number . ' has a twin exit #'
-                            . $exitObj->twinExit . ' which is not itself twinned to anything',
-                        );
-
-                        $errorCount++;
-                        $abandonExitHash{$exitObj->number} = $exitObj;
-
-                    } elsif ($twinExitObj->twinExit != $exitObj->number) {
-
-                        $session->writeText(
-                            '   Exit #' . $exitObj->number . ' has a twin exit #'
-                            . $exitObj->twinExit . ' which is twinned to some other exit (#'
-                            . $twinExitObj->twinExit . ')',
-                        );
-
-                        $errorCount++;
-                        $abandonExitHash{$exitObj->number} = $exitObj;
-                    }
-                }
-            }
-        }
-
+        # Perform the test
         if ($switch) {
 
-            # Abandon any rogue twin exits in %abandonExitHash
-            foreach my $exitObj (values %abandonExitHash) {
-
-                $wmObj->abandonTwinExit(
-                    FALSE,          # Don't update Automapper windows yet
-                    $exitObj,
-                );
-
-                $fixCount++;
-            }
-        }
-
-        # Check that every incoming uncertain, one way and random exit still exists, and actually
-        #   points to its room
-        %exitModelHash = $wmObj->exitModelHash;
-        %roomModelHash = $wmObj->roomModelHash;
-        OUTER: foreach my $roomObj (values %roomModelHash) {
-
-            my (%uncertainExitHash, %oneWayExitHash, %randomExitHash);
-
-            %uncertainExitHash = $roomObj->uncertainExitHash;
-            %oneWayExitHash = $roomObj->oneWayExitHash;
-            %randomExitHash = $roomObj->randomExitHash;
-
-            INNER: foreach my $exitNum (keys %uncertainExitHash) {
-
-                my $exitObj;
-
-                if (! exists $exitModelHash{$exitNum}) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' incoming uncertain exit #' . $exitNum
-                        . ' does not exist in ->exitModelHash (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                    next INNER;
-                }
-
-                $exitObj = $exitModelHash{$exitNum};
-                if (! $exitObj->destRoom || $exitObj->destRoom != $roomObj->number) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' incoming uncertain exit #' . $exitNum
-                        . ' does not lead to the room (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                    next INNER;
-                }
-            }
-
-            INNER: foreach my $exitNum (keys %oneWayExitHash) {
-
-                my $exitObj;
-
-                if (! exists $exitModelHash{$exitNum}) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' incoming one-way exit #' . $exitNum
-                        . ' does not exist in ->exitModelHash (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                    next INNER;
-                }
-
-                $exitObj = $exitModelHash{$exitNum};
-                if (! $exitObj->destRoom || $exitObj->destRoom != $roomObj->number) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' incoming one-way exit #' . $exitNum
-                        . ' does not lead to the room (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                    next INNER;
-                }
-            }
-
-            INNER: foreach my $exitNum (keys %randomExitHash) {
-
-                my ($exitObj, $matchFlag);
-
-                if (! exists $exitModelHash{$exitNum}) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' incoming random exit #' . $exitNum
-                        . ' does not exist in ->exitModelHash (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                    next INNER;
-                }
-
-                $exitObj = $exitModelHash{$exitNum};
-                if ($exitObj->randomType eq 'none') {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' incoming random exit #' . $exitNum
-                        . ' is not marked as a random exit (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                    next INNER;
-
-                } elsif ($exitObj->randomType ne 'room_list') {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' incoming random exit #' . $exitNum
-                        . ' is marked as a random exit of the wrong type (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                    next INNER;
-                }
-
-                DEEPER: foreach my $destRoomNum ($exitObj->randomDestList) {
-
-                    if ($destRoomNum == $roomObj->number) {
-
-                        $matchFlag = TRUE;
-                        last DEEPER;
-                    }
-                }
-
-                if (! $matchFlag) {
-
-                    $session->writeText(
-                        '   Room #' . $roomObj->number . ' incoming random exit #' . $exitNum
-                        . ' does not know that it leads to the room (not auto-fixable)',
-                    );
-
-                    $errorCount++;
-                }
-            }
-        }
-
-        # Check every random exit
-        %exitModelHash = $wmObj->exitModelHash;
-        %roomModelHash = $wmObj->roomModelHash;
-        OUTER: foreach my $exitObj (values %exitModelHash) {
-
-            if ($exitObj->randomType ne 'room_list' && $exitObj->randomDestList) {
-
-                $session->writeText(
-                    '   Random exit #' . $exitObj->number . ' has a list of destination rooms,'
-                    . ' but its ->randomType is not set to \'room_list\' (not auto-fixable)',
-                );
-
-                $errorCount++;
-                next OUTER;
-
-            } elsif ($exitObj->randomType eq 'room_list') {
-
-                INNER: foreach my $roomNum ($exitObj->randomDestList) {
-
-                    my $roomObj;
-
-                    if (! exists $roomModelHash{$roomNum}) {
-
-                        $session->writeText(
-                            '   Random exit #' . $exitObj->number . ' destination room #' . $roomNum
-                            . ' does not exist (not auto-fixable)',
-                        );
-
-                        $errorCount++;
-
-                    } else {
-
-                        $roomObj = $roomModelHash{$roomNum};
-                        if (! $roomObj->ivExists('randomExitHash', $exitObj->number)) {
-
-                            $session->writeText(
-                                '   Random exit #' . $exitObj->number . ' destination room #'
-                                . $roomNum . ' does not know about the incoming random exit (not'
-                                . ' auto-fixable)',
-                            );
-
-                            $errorCount++;
-                        }
-                    }
-                }
-            }
-        }
-
-        # Check every region exit
-        %modelHash = $wmObj->modelHash;
-        %exitModelHash = $wmObj->exitModelHash;
-        OUTER: foreach my $exitObj (values %exitModelHash) {
-
-            my ($roomObj, $destRoomObj);
-
-            if ($exitObj->destRoom) {
-
-                $roomObj = $modelHash{$exitObj->parent};
-                $destRoomObj = $modelHash{$exitObj->destRoom};
-                if (! $roomObj->parent || ! $destRoomObj->parent) {
-
-                    # This kind of error will have been detected (or created by) the code above
-                    next OUTER;
-
-                } elsif ($exitObj->regionFlag && $roomObj->parent == $destRoomObj->parent) {
-
-                    $session->writeText(
-                        '   Region exit #' . $exitObj->number . ' destination room #'
-                        . $roomObj->parent . ' is actually in the same region',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        # Delete the original exit, and replace it with an incomplete exit in the
-                        #   same direction
-                        $wmObj->deleteExits(
-                            $session,
-                            FALSE,      # Don't update Automapper window
-                            $exitObj,
-                        );
-
-                        $wmObj->addExit(
-                            $session,
-                            FALSE,      # Don't update Automapper window
-                            $roomObj,
-                            $exitObj->dir,
-                            $exitObj->mapDir,
-                        );
-
-                        $fixCount++;
-                    }
-
-                } elsif (! $exitObj->regionFlag && $roomObj->parent != $destRoomObj->parent) {
-
-                    $session->writeText(
-                        '   Non-region exit #' . $exitObj->number . ' destination room #'
-                        . $roomObj->parent . ' is not in the same region',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        # Delete the original exit, and replace it with an incomplete exit in the
-                        #   same direction
-                        $wmObj->deleteExits(
-                            $session,
-                            FALSE,      # Don't update Automapper window
-                            $exitObj,
-                        );
-
-                        $wmObj->addExit(
-                            $session,
-                            FALSE,      # Don't update Automapper window
-                            $roomObj,
-                            $exitObj->dir,
-                            $exitObj->mapDir,
-                        );
-
-                        $fixCount++;
-                    }
-                }
-            }
-        }
-
-        # Check the integrity of every regionmap
-        %modelHash = $wmObj->modelHash;
-        %exitModelHash = $wmObj->exitModelHash;
-        %regionmapHash = $wmObj->regionmapHash;
-        OUTER: foreach my $regionmapObj (values %regionmapHash) {
-
-            my (
-                %gridRoomHash, %gridRoomTagHash, %gridRoomGuildHash, %gridExitHash,
-                %gridExitTagHash, %regionExitHash, %regionPathHash,
+            ($errorCount, $fixCount, @outputList) = $session->worldModelObj->testModel(
+                $session,
+                TRUE,           # Fix problems
+                TRUE,           # Use a list of return values
             );
 
-            # Check ->gridRoomHash
-            %gridRoomHash = $regionmapObj->gridRoomHash;
-            INNER: foreach my $posn (keys %gridRoomHash) {
+        } else {
 
-                my ($roomNum, $roomObj, $eCount, $fCount);
-
-                $roomNum = $gridRoomHash{$posn};
-                $roomObj = $modelHash{$roomNum};
-                # Check the room actually exists, and so on
-                ($eCount, $fCount) = $self->checkRoom(
-                    $session,
-                    $switch,
-                    $regionmapObj,
-                    $posn,
-                    $roomNum,
-                    $roomObj,
-                    'gridRoomHash',
-                    \%modelHash,
-                );
-
-                $errorCount += $eCount;
-                $fixCount += $fCount;
-            }
-
-            # Check ->gridRoomTagHash
-            %gridRoomTagHash = $regionmapObj->gridRoomTagHash;
-            INNER: foreach my $posn (keys %gridRoomTagHash) {
-
-                my ($roomNum, $roomObj, $eCount, $fCount);
-
-                $roomNum = $gridRoomTagHash{$posn};
-                $roomObj = $modelHash{$roomNum};
-                # Check the room actually exists, and so on
-                ($eCount, $fCount) = $self->checkRoom(
-                    $session,
-                    $switch,
-                    $regionmapObj,
-                    $posn,
-                    $roomNum,
-                    $roomObj,
-                    'gridRoomTagHash',
-                    \%modelHash,
-                );
-
-                $errorCount += $eCount;
-                $fixCount += $fCount;
-
-                if (! $eCount && ! $fCount && ! $roomObj->roomTag) {
-
-                    $session->writeText(
-                        '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
-                        . $roomNum . ' in ->gridRoomTagHash which doesn\'t have a room tag',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        $regionmapObj->ivDelete('gridRoomTagHash', $posn);
-                        $fixCount++;
-                    }
-                }
-            }
-
-            # Check ->gridRoomGuildHash
-            %gridRoomGuildHash = $regionmapObj->gridRoomGuildHash;
-            INNER: foreach my $posn (keys %gridRoomGuildHash) {
-
-                my ($roomNum, $roomObj, $eCount, $fCount);
-
-                $roomNum = $gridRoomGuildHash{$posn};
-                $roomObj = $modelHash{$roomNum};
-                # Check the room actually exists, and so on
-                ($eCount, $fCount) = $self->checkRoom(
-                    $session,
-                    $switch,
-                    $regionmapObj,
-                    $posn,
-                    $roomNum,
-                    $roomObj,
-                    'gridRoomGuildHash',
-                    \%modelHash,
-                );
-
-                $errorCount += $eCount;
-                $fixCount += $fCount;
-
-                if (! $eCount && ! $fCount && ! $roomObj->roomGuild) {
-
-                    $session->writeText(
-                        '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
-                        . $roomNum . ' in ->gridRoomGuildHash which doesn\'t have a room guild',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        $regionmapObj->ivDelete('gridRoomGuildHash', $posn);
-                        $fixCount++;
-                    }
-                }
-            }
-
-            # Check ->gridExitHash
-            %gridExitHash = $regionmapObj->gridExitHash;
-            INNER: foreach my $exitNum (keys %gridExitHash) {
-
-                my ($exitObj, $roomObj, $eCount, $fCount);
-
-                $exitObj = $exitModelHash{$exitNum};
-                # Check the exit actually exists, and so on
-                ($eCount, $fCount) = $self->checkExit(
-                    $session,
-                    $switch,
-                    $regionmapObj,
-                    $exitNum,
-                    $exitObj,
-                    'gridExitHash',
-                    \%modelHash,
-                    \%exitModelHash,
-                );
-
-                $errorCount += $eCount;
-                $fixCount += $fCount;
-            }
-
-            # Check ->gridExitTagHash
-            %gridExitTagHash = $regionmapObj->gridExitTagHash;
-            INNER: foreach my $exitNum (keys %gridExitTagHash) {
-
-                my ($exitObj, $roomObj, $eCount, $fCount);
-
-                $exitObj = $exitModelHash{$exitNum};
-                # Check the exit actually exists, and so on
-                ($eCount, $fCount) = $self->checkExit(
-                    $session,
-                    $switch,
-                    $regionmapObj,
-                    $exitNum,
-                    $exitObj,
-                    'gridExitTagHash',
-                    \%modelHash,
-                    \%exitModelHash,
-                );
-
-                $errorCount += $eCount;
-                $fixCount += $fCount;
-
-                if (! $eCount && ! $fCount && ! $exitObj->exitTag) {
-
-                    $session->writeText(
-                        '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
-                        . $exitNum . ' in ->gridExitTagHash which doesn\'t have an exit tag',
-                    );
-
-                    $errorCount++;
-                    if ($switch) {
-
-                        $regionmapObj->ivDelete('gridExitTagHash', $exitNum);
-                        $fixCount++;
-                    }
-                }
-            }
-
-            # Check ->regionExitHash
-            %regionExitHash = $regionmapObj->regionExitHash;
-            INNER: foreach my $exitNum (keys %regionExitHash) {
-
-                my ($exitObj, $roomObj, $eCount, $fCount);
-
-                $exitObj = $exitModelHash{$exitNum};
-                # Check the exit actually exists, and so on
-                ($eCount, $fCount) = $self->checkExit(
-                    $session,
-                    $switch,
-                    $regionmapObj,
-                    $exitNum,
-                    $exitObj,
-                    'regionExitHash',
-                    \%modelHash,
-                    \%exitModelHash,
-                );
-
-                $errorCount += $eCount;
-                $fixCount += $fCount;
-
-                if (! $eCount && ! $fCount) {
-
-                    if (! $exitObj->regionFlag) {
-
-                        $session->writeText(
-                            '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
-                            . $exitNum . ' in ->regionExitHash which isn\'t a region exit',
-                        );
-
-                        $errorCount++;
-                        if ($switch) {
-
-                            $regionmapObj->ivDelete('regionExitHash', $exitNum);
-                            $fixCount++;
-                        }
-
-                    } elsif (! $wmObj->ivExists('regionModelHash', $regionExitHash{$exitNum})) {
-
-                        $session->writeText(
-                            '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
-                            . $exitNum . ' in ->regionExitHash which leads to a model object #'
-                            . $regionExitHash{$exitNum} . ' which isn\'t a region',
-                        );
-
-                        $errorCount++;
-                        if ($switch) {
-
-                            $regionmapObj->ivDelete('regionExitHash', $exitNum);
-                            $fixCount++;
-                        }
-                    }
-                }
-            }
-
-            # Check ->regionPathHash
-            %regionPathHash = $regionmapObj->regionPathHash;
-            INNER: foreach my $posn (keys %regionPathHash) {
-
-                my @posnList = split('_', $posn);
-                if (
-                    scalar @posnList != 2
-                    || ! exists $exitModelHash{$posnList[0]}
-                    || ! exists $exitModelHash{$posnList[1]}
-                ) {
-                    $session->writeText(
-                        '   Regionmap \'' . $regionmapObj->name . '\' references a region path at'
-                        . ' an invalid position \'' . $posn . '\' (not auto-fixable)',
-                    );
-                }
-            }
+            ($errorCount, $fixCount, @outputList) = $session->worldModelObj->testModel(
+                $session,
+                FALSE,          # Don't problems
+                TRUE,           # Use a list of return values
+            );
         }
 
-        # That's the end of the check. Update all Automapper windows for this world
-        $wmObj->updateRegion();
+        # That's the end of the test
+        # Display any output. If a very large number of error messages have been generated, don't
+        #   show all of them
+        if ((scalar @outputList) > 100) {
+
+            $session->writeText((scalar @outputList) . ' error messages; curtailing output');
+
+            for (my $index = 0; $index < 100; $index++) {
+
+                $session->writeText($outputList[$index]);
+            }
+
+        } else {
+
+            foreach my $msg (@outputList) {
+
+                $session->writeText($msg);
+            }
+        }
 
         return $self->complete(
             $session, $standardCmd,
@@ -2527,207 +1494,6 @@
         );
     }
 
-    sub checkRoom {
-
-        # Called by $self->do to check one of the hashes in a GA::Obj::Regionmap
-        # Checks that each room in the hash actually exists, and so on
-        #
-        # Expected arguments
-        #   $session        - The calling function's GA::Session
-        #   $switch         - Set to '-f' if the user specified a switch; an empty string, if not
-        #   $regionmapObj   - The regionmap object to check
-        #   $posn           - A key in one of the regionmap's hashes
-        #   $roomNum        - $posn's corresponding value
-        #   $roomObj        - $roomNum's corresponding room object
-        #   $iv             - The hash being checked, e.g. 'gridRoomHash'
-        #   $modelHashRef   - Reference to a hash containing the contents of ->modelHash
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise returns a list in the form (number_of_errors, number_of_fixes)
-
-        my (
-            $self, $session, $switch, $regionmapObj, $posn, $roomNum, $roomObj, $iv, $modelHashRef,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my (
-            $errorCount, $fixCount,
-            @emptyList, @posnList,
-        );
-
-        # Check for improper arguments
-        if (
-            ! defined $session || ! defined $switch || ! defined $regionmapObj || ! defined $posn
-            || ! defined $roomNum || ! defined $roomObj || ! defined $iv || ! defined $modelHashRef
-            || defined $check
-        ) {
-            $axmud::CLIENT->writeImproper($self->_objClass . '->checkRoom', @_);
-            return @emptyList;
-        }
-
-        $errorCount = 0;
-        $fixCount = 0;
-
-        if (! exists $$modelHashRef{$roomNum}) {
-
-            $session->writeText(
-                '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
-                . $roomNum . ' in ->' . $iv . ' which is not in ->modelHash',
-            );
-
-            $errorCount++;
-            if ($switch) {
-
-                $regionmapObj->ivDelete($iv, $posn);
-                $fixCount++;
-            }
-        }
-
-        if (! $errorCount) {
-
-            if ($roomObj->category ne 'room') {
-
-                $session->writeText(
-                    '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
-                    . $roomNum . ' in ->' . $iv . ' which is not actually a room object',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $regionmapObj->ivDelete($iv, $posn);
-                    $fixCount++;
-                }
-            }
-        }
-
-        if (! $errorCount) {
-
-            if ($roomObj->parent ne $regionmapObj->number) {
-
-                $session->writeText(
-                    '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
-                    . $roomNum . ' in ->' . $iv . ' which is actually in a different region',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $regionmapObj->ivDelete($iv, $posn);
-                    $fixCount++;
-                }
-            }
-        }
-
-        if (! $errorCount) {
-
-            @posnList = split('_', $posn);
-            if (
-                scalar @posnList != 3
-                || $posnList[0] != $roomObj->xPosBlocks
-                || $posnList[1] != $roomObj->yPosBlocks
-                || $posnList[2] != $roomObj->zPosBlocks
-            ) {
-                $session->writeText(
-                    '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
-                    . $roomNum . ' in ->' . $iv . ' whose position \'' . $posn . '\' is incorrect'
-                    . ' (not auto-fixable)',
-                );
-
-                $errorCount++;
-            }
-        }
-
-        return ($errorCount, $fixCount);
-    }
-
-    sub checkExit {
-
-        # Called by $self->do to check one of the hashes in a GA::Obj::Regionmap
-        # Checks that each exit in the hash actually exists, and so on
-        #
-        # Expected arguments
-        #   $session        - The calling function's GA::Session
-        #   $switch         - Set to '-f' if the user specified a switch; an empty string, if not
-        #   $regionmapObj   - The regionmap object to check
-        #   $exitNum        - A key in one of the regionmap's hashes
-        #   $exitObj        - $exitNum's corresponding room object ('undef' value allowed)
-        #   $iv             - The hash being checked, e.g. 'gridRoomHash'
-        #   $modelHashRef   - Reference to a hash containing the contents of ->modelHash
-        #   $exitModelHashRef
-        #                   - Reference to a hash containing the contents of ->exitModelHash
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise returns a list in the form (number_of_errors, number_of_fixes)
-
-        my (
-            $self, $session, $switch, $regionmapObj, $exitNum, $exitObj, $iv, $modelHashRef,
-            $exitModelHashRef, $check,
-        ) = @_;
-
-        # Local variables
-        my (
-            $errorCount, $fixCount, $roomObj,
-            @emptyList,
-        );
-
-        # Check for improper arguments
-        if (
-            ! defined $session || ! defined $switch || ! defined $regionmapObj || ! defined $exitNum
-            || ! defined $iv || ! defined $modelHashRef || ! defined $exitModelHashRef
-            || defined $check
-        ) {
-            $axmud::CLIENT->writeImproper($self->_objClass . '->checkExit', @_);
-            return @emptyList;
-        }
-
-        $errorCount = 0;
-        $fixCount = 0;
-
-        if (! exists $$exitModelHashRef{$exitNum}) {
-
-            $session->writeText(
-                '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
-                . $exitNum . ' in ->' . $iv . ' which is not in ->exitModelHash',
-            );
-
-            $errorCount++;
-            if ($switch) {
-
-                $regionmapObj->ivDelete($iv, $exitNum);
-                $fixCount++;
-            }
-        }
-
-        if (! $errorCount) {
-
-            $roomObj = $$modelHashRef{$exitObj->parent};
-            if (
-                # (Must check $roomObj exists and has a parent region, because some earlier checks
-                #   produce errors that might not be fixed)
-                $roomObj
-                && $roomObj->parent
-                && $roomObj->parent != $regionmapObj->number
-            ) {
-                $session->writeText(
-                    '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
-                    . $exitNum . ' in ->' . $iv . ' which is actually in a different region',
-                );
-
-                $errorCount++;
-                if ($switch) {
-
-                    $regionmapObj->ivDelete($iv, $exitNum);
-                    $fixCount++;
-                }
-            }
-        }
-
-        return ($errorCount, $fixCount);
-    }
 }
 
 { package Games::Axmud::Cmd::TestPattern;
@@ -3377,6 +2143,10 @@
 
             $event = 'map_no_room';
 
+        } elsif ($switch eq 'map_lost' || $switch eq '-ml') {
+
+            $event = 'map_lost';
+
         } elsif ($switch eq 'map_rescue_on' || $switch eq '-mo') {
 
             $event = 'map_rescue_on';
@@ -3515,6 +2285,7 @@
                 'debugLineTagsFlag'     => '\'Main\' window shows explict colour/style tags ',
                 'debugLocatorFlag'      => 'Locator task shows debug messages             ',
                 'debugMaxLocatorFlag'   => 'Locator task shows extensive debug messages   ',
+                'debugExitFlag'         => 'Illegal exit directions show debug messages   ',
                 'debugMoveListFlag'     => 'Locator task shows expected rooms             ',
                 'debugParseObjFlag'     => 'Object parsing shows debug messages           ',
                 'debugCompareObjFlag'   => 'Object comparison shows debug messages        ',
@@ -3557,6 +2328,8 @@
                 $iv = 'debugLocatorFlag';
             } elsif ($switch eq '-x') {
                 $iv = 'debugMaxLocatorFlag';
+            } elsif ($switch eq '-d') {
+                $iv = 'debugExitFlag';
             } elsif ($switch eq '-m') {
                 $iv = 'debugMoveListFlag';
             } elsif ($switch eq '-p') {
@@ -3749,15 +2522,6 @@
             }
 
             $axmud::CLIENT->toggle_debugFlag($iv);
-
-            if (
-                $iv eq 'debugLocatorFlag'
-                && ! $axmud::CLIENT->debugLocatorFlag
-                && $axmud::CLIENT->debugMaxLocatorFlag
-            ) {
-                # Turning off ->debugLocatorFlag also turns off ->debugMaxLocatorFlag
-                $axmud::CLIENT->toggle_debugFlag('debugMaxLocatorFlag');
-            }
 
             if ($axmud::CLIENT->$iv) {
                 $string = 'on';
@@ -5253,8 +4017,7 @@
 
             foreach my $string (@list) {
 
-                # One of the lines contains with a URL to the GNU website. If so, make the link
-                #   clickable
+                # One of the lines contains a URL to the GNU website. If so, make the link clickable
                 if ($string =~ m/$urlRegex/i) {
 
                     my ($start, $stop);
@@ -10110,7 +8873,7 @@
             if ($session->redirectMode eq 'primary_only') {
                 $msg .= ' redirect primary directions only';
             } elsif ($session->redirectMode eq 'primary_secondary') {
-                $msg .= ' redirect both primary and secondary directions';
+                $msg .= ' redirect primary/secondary/relative directions';
             } else {
                 $msg .= ' redirect all direction commands';
             }
@@ -10134,7 +8897,7 @@
 
             return $self->complete(
                 $session, $standardCmd,
-                'Redirect mode now redirecting both primary and secondary directions',
+                'Redirect mode now redirecting primary/secondary/relative directions',
             );
 
         # ;srd -a
@@ -15069,6 +13832,83 @@
     }
 }
 
+{ package Games::Axmud::Cmd::ToggleShortLink;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('toggleshortlink', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['tsl', 'togglelink', 'toggleshortlink'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Toggles detection of short weblinks';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Toggle the flag
+        if (! $axmud::CLIENT->shortUrlFlag) {
+
+            $axmud::CLIENT->set_shortUrlFlag(TRUE);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Auto-detection of short weblinks turned ON',
+            );
+
+        } else {
+
+            $axmud::CLIENT->set_shortUrlFlag(FALSE);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Auto-detection of short weblinks turned OFF',
+            );
+        }
+    }
+}
+
 { package Games::Axmud::Cmd::ShowFile;
 
     use strict;
@@ -15654,9 +14494,9 @@
         # Local variables
         my (
             $switch, $forceFlag, $allSessionFlag, $configFlag, $allProfFlag, $tasksFlag,
-            $scriptsFlag, $contactsFlag, $keycodesFlag, $dictsFlag, $toolbarFlag, $userCmdFlag,
-            $zonemapsFlag, $winmapsFlag, $ttsFlag, $currentWorldFlag, $otherWorldFlag,
-            $worldNoModelFlag, $modelFlag, $count, $errorCount, $saveMsg,
+            $scriptsFlag, $contactsFlag, $dictsFlag, $toolbarFlag, $userCmdFlag, $zonemapsFlag,
+            $winmapsFlag, $ttsFlag, $currentWorldFlag, $otherWorldFlag, $worldNoModelFlag,
+            $modelFlag, $count, $errorCount, $saveMsg,
             @otherWorldList,
             %fileObjHash, %profHash, %worldHash, %otherHash,
         );
@@ -15719,7 +14559,6 @@
             $tasksFlag = TRUE;
             $scriptsFlag = TRUE;
             $contactsFlag = TRUE;
-            $keycodesFlag = TRUE;
             $dictsFlag = TRUE;
             $toolbarFlag = TRUE;
             $userCmdFlag = TRUE;
@@ -15796,12 +14635,6 @@
                 $contactsFlag = TRUE;
             }
 
-            ($switch, @args) = $self->extract('-k', 0, @args);
-            if (defined $switch) {
-
-                $keycodesFlag = TRUE;
-            }
-
             ($switch, @args) = $self->extract('-y', 0, @args);
             if (defined $switch) {
 
@@ -15839,8 +14672,8 @@
             }
 
             # @args should now contain 0, 1 or more arguments. Any remaining arguments must be one
-            #   of the strings 'config', 'worldmodel', 'tasks', 'scripts', 'contacts', 'keycodes',
-            #   'dicts', 'toolbar', 'usercmds', 'zonemaps', 'winmaps', 'tts'
+            #   of the strings 'config', 'worldmodel', 'tasks', 'scripts', 'contacts', 'dicts',
+            #   'toolbar', 'usercmds', 'zonemaps', 'winmaps', 'tts'
             while (@args) {
 
                 my $string = shift @args;
@@ -15855,8 +14688,6 @@
                     $scriptsFlag = TRUE;
                 } elsif ($string eq 'contacts') {
                     $contactsFlag = TRUE;
-                } elsif ($string eq 'keycodes') {
-                    $keycodesFlag = TRUE;
                 } elsif ($string eq 'dicts') {
                     $dictsFlag = TRUE;
                 } elsif ($string eq 'toolbar') {
@@ -16018,11 +14849,6 @@
         if ($contactsFlag) {
 
             $otherHash{'contacts'} = undef;
-        }
-
-        if ($keycodesFlag) {
-
-            $otherHash{'keycodes'} = undef;
         }
 
         if ($dictsFlag) {
@@ -16281,9 +15107,9 @@
 
                 if (
                     $string eq 'worldmodel' || $string eq 'tasks' || $string eq 'scripts'
-                    || $string eq 'contacts' || $string eq 'keycodes' || $string eq 'dicts'
-                    || $string eq 'toolbar' || $string eq 'usercmds' || $string eq 'zonemaps'
-                    || $string eq 'winmaps' || $string eq 'tts'
+                    || $string eq 'contacts' || $string eq 'dicts' || $string eq 'toolbar'
+                    || $string eq 'usercmds' || $string eq 'zonemaps' || $string eq 'winmaps'
+                    || $string eq 'tts'
                 ) {
                     $loadHash{$string} = undef;
                 } elsif ($string eq '-m') {
@@ -16294,8 +15120,6 @@
                     $loadHash{'scripts'} = undef;
                 } elsif ($string eq '-n') {
                     $loadHash{'contacts'} = undef;
-                } elsif ($string eq '-k') {
-                    $loadHash{'keycodes'} = undef;
                 } elsif ($string eq '-y') {
                     $loadHash{'dicts'} = undef;
                 } elsif ($string eq '-b') {
@@ -16348,7 +15172,6 @@
             $loadHash{'tasks'} = undef;
             $loadHash{'scripts'} = undef;
             $loadHash{'contacts'} = undef;
-            $loadHash{'keycodes'} = undef;
             $loadHash{'dicts'} = undef;
             $loadHash{'toolbar'} = undef;
             $loadHash{'usercmds'} = undef;
@@ -16795,8 +15618,8 @@
         # Local variables
         my (
             $switch, $string, $worldFlag, $modelFlag, $tasksFlag, $scriptsFlag, $contactsFlag,
-            $keycodesFlag, $dictsFlag, $toolbarFlag, $userCmdFlag, $zonemapsFlag, $winmapsFlag,
-            $ttsFlag, $exportPath, $tarObj,
+            $dictsFlag, $toolbarFlag, $userCmdFlag, $zonemapsFlag, $winmapsFlag, $ttsFlag,
+            $exportPath, $tarObj,
             @exportList, @namedWorldList, @namedModelList, @combinedList,
         );
 
@@ -16828,7 +15651,6 @@
             push (@exportList, 'data/tasks.axm');
             push (@exportList, 'data/scripts.axm');
             push (@exportList, 'data/contacts.axm');
-            push (@exportList, 'data/keycodes.axm');
             push (@exportList, 'data/dicts.axm');
             push (@exportList, 'data/toolbar.axm');
             push (@exportList, 'data/usercmds.axm');
@@ -16902,12 +15724,6 @@
                 $contactsFlag = TRUE;
             }
 
-            ($switch, @args) = $self->extract('-k', 0, @args);
-            if (defined $switch) {
-
-                $keycodesFlag = TRUE;
-            }
-
             ($switch, @args) = $self->extract('-y', 0, @args);
             if (defined $switch) {
 
@@ -16945,8 +15761,8 @@
             }
 
             # @args should now contain 0, 1 or more arguments. Any remaining arguments must be one
-            #   of the strings 'tasks', 'contacts', 'keycodes', 'dicts', 'toolbar', 'usercmds',
-            #   'zonemaps', 'winmaps' or 'tts'
+            #   of the strings 'tasks', 'contacts', 'dicts', 'toolbar', 'usercmds', 'zonemaps',
+            #   'winmaps' or 'tts'
             while (@args) {
 
                 my $string = shift @args;
@@ -16957,8 +15773,6 @@
                     $scriptsFlag = TRUE;
                 } elsif ($string eq 'contacts') {
                     $contactsFlag = TRUE;
-                } elsif ($string eq 'keycodes') {
-                    $keycodesFlag = TRUE;
                 } elsif ($string eq 'dicts') {
                     $dictsFlag = TRUE;
                 } elsif ($string eq 'toolbar') {
@@ -17060,11 +15874,6 @@
             if ($contactsFlag) {
 
                 push (@exportList, 'data/contacts.axm');
-            }
-
-            if ($keycodesFlag) {
-
-                push (@exportList, 'data/keycodes.axm');
             }
 
             if ($dictsFlag) {
@@ -17394,6 +16203,8 @@
             if (
                 ! %headerHash
                 || ! $axmud::CLIENT->configFileObj->checkCompatibility($headerHash{'script_name'})
+                || $axmud::CLIENT->convertVersion($headerHash{'script_version'})
+                    > $axmud::CLIENT->convertVersion($axmud::VERSION)
             ) {
                 push (@failList, $file);
                 next OUTER;
@@ -17516,7 +16327,7 @@
             if (! File::Copy::copy($headerHash{'file'}, $newFile)) {
                 push (@failList, $headerHash{'file'});
             } else {
-                push (@successList, $headerHash{'file'});
+                push (@successList, $newFile);
             }
         }
 
@@ -17544,7 +16355,7 @@
                 if (! File::Copy::copy($headerHash{'file'}, $newFile)) {
                     push (@failList, $headerHash{'file'});
                 } else {
-                    push (@successList, $headerHash{'file'});
+                    push (@successList, $newFile);
                 }
             }
         }
@@ -17564,7 +16375,7 @@
             if (! File::Copy::copy($headerHash{'file'}, $newFile)) {
                 push (@failList, $headerHash{'file'});
             } else {
-                push (@successList, $headerHash{'file'});
+                push (@successList, $newFile);
             }
         }
 
@@ -17572,7 +16383,7 @@
         if (@successList) {
 
             $session->writeText('Files imported:');
-            foreach my $file (@successList) {
+            foreach my $file (sort {$a cmp $b} (@successList)) {
 
                 $session->writeText('   ' . $file);
             }
@@ -17581,19 +16392,29 @@
         if (@failList) {
 
             $session->writeText('Files not imported:');
-            foreach my $file (@failList) {
+            foreach my $file (sort {$a cmp $b} (@failList)) {
 
                 $session->writeText('   ' . $file);
             }
         }
 
-        if (! @successList || @failList) {
+        if (! @successList) {
 
             $axmud::CLIENT->set_fileFailFlag(TRUE);
 
             return $self->error(
                 $session, $inputString,
                 'No files imported (errors: ' . scalar @failList . ')',
+            );
+
+        } elsif (@failList) {
+
+            $axmud::CLIENT->set_fileFailFlag(TRUE);
+
+            return $self->error(
+                $session, $inputString,
+                'Not all files imported (imported: ' . scalar @successList . ', errors: '
+                . scalar @failList . ')',
             );
 
         } else {
@@ -17770,20 +16591,6 @@
                 return $self->error(
                     $session, $inputString,
                     'Unknown (global) custom task \'' . $name . '\'',
-                );
-            }
-
-        # ;exd -k <obj>
-        } elsif ($switch eq '-k') {
-
-            # Check the keycode object exists
-            if (! $axmud::CLIENT->ivExists('keycodeObjHash', $name)) {
-
-                $axmud::CLIENT->set_fileFailFlag(TRUE);
-
-                return $self->error(
-                    $session, $inputString,
-                    'Unknown keycode object \'' . $name . '\'',
                 );
             }
 
@@ -18088,6 +16895,265 @@
                     $session, $standardCmd,
                     'Retention of copies of old files turned \'off\' (copies created during file'
                     . ' save operations are deleted automatically)',
+                );
+            }
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::ListDataDirectory;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+    # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
+    use Archive::Tar;
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('listdatadirectory', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['ldd', 'listdatadir', 'listdatafolder', 'listdatadirectory'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Shows the location of the ' . $axmud::SCRIPT . ' data directory';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my ($fileHandle, $nextDir);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Read the data directory location that will be used the next time Axmud starts
+        if (-e $axmud::TOP_DIR . '/datadir.cfg') {
+
+            if (open $fileHandle, '<', $axmud::TOP_DIR . '/datadir.cfg') {
+
+                $nextDir = <$fileHandle>;
+                close $fileHandle;
+            }
+        }
+
+        if (defined $nextDir) {
+            chomp $nextDir;
+        } else {
+            $nextDir = $axmud::DATA_DIR;
+        }
+
+        # Show header
+        $session->writeText('List of Axmud data directories (folders)');
+
+        # Show list
+        $session->writeText('   Directory used when ' . $axmud::SCRIPT . ' started:');
+        $session->writeText('      ' . $axmud::DATA_DIR);
+        $session->writeText('   Directory to be used when ' . $axmud::SCRIPT . ' next starts:');
+        $session->writeText('      ' . $nextDir);
+        $session->writeText('   Default directory:');
+        $session->writeText('      ' . $axmud::DEFAULT_DATA_DIR);
+
+        # Show footer
+        return $self->complete($session, $standardCmd, 'End of list');
+    }
+}
+
+{ package Games::Axmud::Cmd::SetDataDirectory;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+    # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
+    use Archive::Tar;
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setdatadirectory', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['sdd', 'setdatadir', 'setdatafolder', 'setdatadirectory'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sets the location of the ' . $axmud::SCRIPT . ' data directory';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $dirPath,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my ($configPath, $fileHandle);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        $configPath = $axmud::TOP_DIR . '/datadir.cfg';
+
+        # ;sdd
+        if (! defined $dirPath) {
+
+            # Prompt the user to choose a directory
+            $dirPath = $session->mainWin->showFileChooser(
+                'Set ' . $axmud::SCRIPT . ' data directory',
+                'create-folder',
+            );
+
+            if (! defined $dirPath) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Set data directory operation cancelled',
+                );
+
+            } else {
+
+                # Update datadir.cfg
+                if (! open ($fileHandle, '>', $configPath)) {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'Unable to set the location of ' . $axmud::SCRIPT . '\'s data directory'
+                        . ' (internal error)',
+                    );
+
+                } else {
+
+                    print $fileHandle $dirPath;
+                    close $fileHandle;
+
+                    return $self->complete(
+                        $session, $standardCmd,
+                        'The location of ' . $axmud::SCRIPT . '\'s data directory has been set'
+                        . ' to \'' . $dirPath . '\' (restart ' . $axmud::SCRIPT
+                        . ' to load data files from this location)',
+                    );
+                }
+            }
+
+        # ;sdd -r
+        } elsif ($dirPath eq '-r') {
+
+            # Reset the data directory to the default one by emptying data.cfg
+            if (! open ($fileHandle, '>', $configPath)) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Unable to reset the location of ' . $axmud::SCRIPT . '\'s data directory'
+                    . ' (internal error)',
+                );
+
+            } else {
+
+                print $fileHandle "";
+                close $fileHandle;
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The location of ' . $axmud::SCRIPT . '\'s data directory has been reset to \''
+                    . $axmud::DEFAULT_DATA_DIR . '\' (restart ' . $axmud::SCRIPT . ' to load'
+                    . ' data files from this location)',
+                );
+            }
+
+        # ;sdd <path>
+        } else {
+
+            # For this option, the path must exist
+            if (! -e $dirPath) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'The directory \'' . $dirPath . '\' doesn\'t exist (try using this command'
+                    . ' without arguments instead)',
+                );
+            }
+
+            # Update datadir.cfg
+            if (! open ($fileHandle, '>', $configPath)) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Unable to set the location of ' . $axmud::SCRIPT . '\'s data directory'
+                    . ' (internal error)',
+                );
+
+            } else {
+
+                print $fileHandle $dirPath;
+                close $fileHandle;
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The location of ' . $axmud::SCRIPT . '\'s data directory has been set'
+                    . ' to \'' . $dirPath . '\' (restart ' . $axmud::SCRIPT
+                    . ' to load data files from this location)',
                 );
             }
         }
@@ -18893,35 +17959,54 @@
         #   to load
 
         # ;lpl
-        if (! $arg) {
+        # ;lpl -s
+        # ;lpl <path>
+        if (! defined $arg || $arg ne '-a') {
 
-            $arg = $session->mainWin->showFileChooser(
-                'Load plugin',
-                'open',
-                $axmud::DATA_DIR . '/plugins',
-            );
-
+            # ;lpl
             if (! $arg) {
 
-                return $self->complete($session, $standardCmd, 'Plugin not loaded');
+                $arg = $session->mainWin->showFileChooser(
+                    'Load plugin',
+                    'open',
+                    $axmud::DATA_DIR . '/plugins',
+                );
+
+                if (! $arg) {
+
+                    return $self->complete($session, $standardCmd, 'Plugin not loaded');
+                }
+
+            # ;lpl -s
+            } elsif ($arg eq '-s') {
+
+                $arg = $session->mainWin->showFileChooser(
+                    'Load plugin',
+                    'open',
+                    $axmud::SHARE_DIR . '/plugins',
+                );
+
+                if (! $arg) {
+
+                    return $self->complete($session, $standardCmd, 'Plugin not loaded');
+                }
             }
 
-        # ;lpl -s
-        } elsif ($arg eq '-s') {
+            $name = $axmud::CLIENT->loadPlugin($arg);
+            if (! $name) {
 
-            $arg = $session->mainWin->showFileChooser(
-                'Load plugin',
-                'open',
-                $axmud::SHARE_DIR . '/plugins',
-            );
+                return $self->error($session, $inputString, 'Plugin not loaded');
 
-            if (! $arg) {
+            } else {
 
-                return $self->complete($session, $standardCmd, 'Plugin not loaded');
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Plugin \'' . $name . '\' loaded',
+                );
             }
 
         # ;lpl -a
-        } elsif ($arg eq '-a') {
+        } else {
 
             # Get a list of standard plugins
             if (! opendir ($dirHandle, $axmud::SHARE_DIR . '/plugins')) {
@@ -18966,23 +18051,6 @@
                 $session, $standardCmd,
                 'Standard plugins loaded: ' . $count . ', errors: ' . $errorCount,
             );
-
-        # ;lpl <path>
-        } else {
-
-            # Load the specified plugin
-            $name = $axmud::CLIENT->loadPlugin($arg);
-            if (! $name) {
-
-                return $self->error($session, $inputString, 'Plugin not loaded');
-
-            } else {
-
-                return $self->complete(
-                    $session, $standardCmd,
-                    'Plugin \'' . $name . '\' loaded',
-                );
-            }
         }
     }
 }
@@ -19759,10 +18827,7 @@
         if (! defined $switch) {
 
             # Display header
-            $session->writeText(
-                'Global telnet option settings (* - not implemented in this version of '
-                . $axmud::SCRIPT . ')',
-            );
+            $session->writeText('Global telnet option settings');
 
             # Display list
             if ($axmud::CLIENT->useEchoFlag) {
@@ -19796,15 +18861,15 @@
             }
 
             if ($axmud::CLIENT->useNewEnvironFlag) {
-                $session->writeText(' * NEW-ENVIRON (New Environment option)    - on');
+                $session->writeText('   NEW-ENVIRON (New Environment option)    - on');
             } else {
-                $session->writeText(' * NEW-ENVIRON (New Environment option)    - off');
+                $session->writeText('   NEW-ENVIRON (New Environment option)    - off');
             }
 
             if ($axmud::CLIENT->useCharSetFlag) {
-                $session->writeText(' * CHARSET (Character set and translation) - on');
+                $session->writeText('   CHARSET (Character set and translation) - on');
             } else {
-                $session->writeText(' * CHARSET (Character set and translation) - off');
+                $session->writeText('   CHARSET (Character set and translation) - off');
             }
 
             # Display footer. Use a message consistent with other client commands
@@ -19887,15 +18952,26 @@
                 $session->writeText('      Server has suggested NAWS and client has refused');
             }
 
-            $session->writeText('   NEW_ENVIRON (New Environment option)');
-            $session->writeText(
-                '      (not implemented in this version of ' . $axmud::SCRIPT . ')',
-            );
+            $session->writeText('   NEW-ENVIRON (New Environment option)');
+            if ($session->nawsMode eq 'no_invite') {
+                $session->writeText('      Server has not suggested NEW-ENVIRON yet');
+            } elsif ($session->nawsMode eq 'client_agree') {
+                $session->writeText('      Server has suggested NEW-ENVIRON and client has agreed');
+            } elsif ($session->nawsMode eq 'client_refuse') {
+
+                $session->writeText(
+                    '      Server has suggested NEW-ENVIRON and client has refused',
+                );
+            }
 
             $session->writeText('   CHARSET (Character Set and translation)');
-            $session->writeText(
-                '      (not implemented in this version of ' . $axmud::SCRIPT . ')',
-            );
+            if ($session->nawsMode eq 'no_invite') {
+                $session->writeText('      Server has not suggested CHARSET yet');
+            } elsif ($session->nawsMode eq 'client_agree') {
+                $session->writeText('      Server has suggested CHARSET and client has agreed');
+            } elsif ($session->nawsMode eq 'client_refuse') {
+                $session->writeText('      Server has suggested CHARSET and client has refused');
+            }
 
             # Display footer. Use a message consistent with other client commands
             return $self->complete(
@@ -19953,11 +19029,40 @@
                 return $self->complete($session, $standardCmd, 'Telnet NAWS has been disabled');
             }
 
+        # ;sto -v
+        } elsif ($switch eq '-v') {
+
+            $axmud::CLIENT->toggle_telnetOption('new_environ');
+            if ($axmud::CLIENT->useNawsFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Telnet NEW-ENVIRON has been enabled',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Telnet NEW-ENVIRON has been disabled',
+                );
+            }
+
+        # ;sto -c
+        } elsif ($switch eq '-c') {
+
+            $axmud::CLIENT->toggle_telnetOption('charset');
+            if ($axmud::CLIENT->useNawsFlag) {
+                return $self->complete($session, $standardCmd, 'Telnet CHARSET has been enabled');
+            } else {
+                return $self->complete($session, $standardCmd, 'Telnet CHARSET has been disabled');
+            }
+
         } else {
 
             return $self->error(
                 $session, $inputString,
-                'Unrecognised switch \'' . $switch . '\' - try -l, -e, -s, -t, -r or -n',
+                'Unrecognised switch \'' . $switch . '\' - try -l, -e, -s, -t, -r, -n, -v or -c',
             );
         }
     }
@@ -31651,12 +30756,26 @@
             $checkHash{$key} = $key;
         }
 
+        foreach my $key ($dictObj->ivKeys('relativeDirHash')) {
+
+            my $value = $dictObj->ivShow('relativeDirHash', $key);
+
+            $checkHash{$value} = undef;
+        }
+
+        foreach my $key ($dictObj->ivKeys('relativeAbbrevHash')) {
+
+            my $value = $dictObj->ivShow('relativeAbbrevHash', $key);
+
+            $checkHash{$value} = undef;
+        }
+
         if (exists $checkHash{$custom} && $checkHash{$custom} ne $standard) {
 
             return $self->error(
                 $session, $inputString,
                 'The direction \'' . $custom . '\' already exists in the current dictionary as a'
-                . ' primary or secondary direction (perhaps abbreviated)',
+                . ' primary, secondary or relative direction (perhaps abbreviated)',
             );
 
         } elsif (
@@ -31666,8 +30785,8 @@
         ) {
             return $self->error(
                 $session, $inputString,
-                'The abbreivated direction \'' . $abbrev . '\' already exists in the current'
-                . ' dictionary as a primary or secondary direction (perhaps abbreviated)',
+                'The abbreviated direction \'' . $abbrev . '\' already exists in the current'
+                . ' dictionary as a primary, secondary or relative direction (perhaps abbreviated)',
             );
         }
 
@@ -31735,7 +30854,7 @@
 
         my (
             $self, $session, $inputString, $userCmd, $standardCmd,
-            $custom, $abbrev, $opp, $oppAbbrev,
+            $custom, $abbrev,
             $check,
         ) = @_;
 
@@ -31768,31 +30887,43 @@
             );
         }
 
-        # $custom must not already exist anywhere in the dictionary (unless it's the entry
-        #   corresponding to $standard, in which case this function updates its abbreviated
-        #   direction)
+        # $custom must not already exist anywhere in the dictionary
         foreach my $key ($dictObj->ivKeys('primaryDirHash')) {
 
             my $value = $dictObj->ivShow('primaryDirHash', $key);
 
-            $checkHash{$value} = $key;
+            $checkHash{$value} = undef;
         }
 
         foreach my $key ($dictObj->ivKeys('primaryAbbrevHash')) {
 
             my $value = $dictObj->ivShow('primaryDirHash', $key);
 
-            $checkHash{$value} = $key;
+            $checkHash{$value} = undef;
         }
 
         foreach my $key ($dictObj->ivKeys('secondaryDirHash')) {
 
-            $checkHash{$key} = $key;
+            $checkHash{$key} = undef;
         }
 
         foreach my $key ($dictObj->ivKeys('secondaryAbbrevHash')) {
 
-            $checkHash{$key} = $key;
+            $checkHash{$key} = undef;
+        }
+
+        foreach my $key ($dictObj->ivKeys('relativeDirHash')) {
+
+            my $value = $dictObj->ivShow('relativeDirHash', $key);
+
+            $checkHash{$value} = undef;
+        }
+
+        foreach my $key ($dictObj->ivKeys('relativeAbbrevHash')) {
+
+            my $value = $dictObj->ivShow('relativeAbbrevHash', $key);
+
+            $checkHash{$value} = undef;
         }
 
         if (exists $checkHash{$custom}) {
@@ -31800,15 +30931,15 @@
             return $self->error(
                 $session, $inputString,
                 'The direction \'' . $custom . '\' already exists in the current dictionary as a'
-                . ' primary or secondary direction (perhaps abbreviated)',
+                . ' primary, secondary or relative direction (perhaps abbreviated)',
             );
 
         } elsif (defined $abbrev && exists $checkHash{$abbrev}) {
 
             return $self->error(
                 $session, $inputString,
-                'The abbreivated direction \'' . $abbrev . '\' already exists in the current'
-                . ' dictionary as a primary or secondary direction (perhaps abbreviated)',
+                'The abbreviated direction \'' . $abbrev . '\' already exists in the current'
+                . ' dictionary as a primary, secondary or relative direction (perhaps abbreviated)',
             );
         }
 
@@ -32043,6 +31174,301 @@
     }
 }
 
+{ package Games::Axmud::Cmd::AddRelative;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('addrelative', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['arl', 'addrel', 'addrelative'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Adds a relative direction';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $type, $dir, $abbrev,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            $dictObj,
+            %checkHash, %standardHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $type || ! defined $dir || defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Use 'undef' rather than an empty string
+        if (defined $abbrev && $abbrev eq '') {
+
+            $abbrev = undef;
+        }
+
+        # Check there is a current dictionary
+        $dictObj = $session->currentDict;
+        if (! $dictObj) {
+
+            return $self->error(
+                $session, $inputString,
+                'Can\'t add relative directions because there is no current dictionary for this'
+                . ' session',
+            );
+        }
+
+        # $type should be an integer in the range 0-7, but it can also be one of a subset of
+        #   standard or custom primary direction (namely, n/ne/e/se/s/sw/w/nw)
+        # If $type is a direction, convert it into an integer
+        if (! $axmud::CLIENT->intCheck($type, 0, 7)) {
+
+            %standardHash = (
+                'north'     => 0,
+                'northeast' => 0,
+                'east'      => 0,
+                'southeast' => 0,
+                'south'     => 0,
+                'southwest' => 0,
+                'west'      => 0,
+                'northwest' => 0,
+            );
+
+            # $type can be a standard or custom primary direction; convert it into the standard form
+            $type = $dictObj->convertStandardDir($type);
+            if (! defined $type || ! exists $standardHash{$type}) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'You must specify (as the first argument) a standard primary direction like'
+                    . ' \'north\' or \'southeast\' (but not \'up\', \'down\', \'northnortheast\''
+                    . ' etc), or an integer equivalent in the range 0-7 (moving clockwise from 0,'
+                    . ' representing \'north\')',
+                );
+            }
+
+            # Convert the standard form to an integer
+            $type = $standardHash{$type};
+        }
+
+        # $custom must not already exist anywhere in the dictionary
+        foreach my $key ($dictObj->ivKeys('primaryDirHash')) {
+
+            my $value = $dictObj->ivShow('primaryDirHash', $key);
+
+            $checkHash{$value} = undef;
+        }
+
+        foreach my $key ($dictObj->ivKeys('primaryAbbrevHash')) {
+
+            my $value = $dictObj->ivShow('primaryDirHash', $key);
+
+            $checkHash{$value} = undef;
+        }
+
+        foreach my $key ($dictObj->ivKeys('secondaryDirHash')) {
+
+            $checkHash{$key} = undef;
+        }
+
+        foreach my $key ($dictObj->ivKeys('secondaryAbbrevHash')) {
+
+            $checkHash{$key} = undef;
+        }
+
+        foreach my $key ($dictObj->ivKeys('relativeDirHash')) {
+
+            my $value = $dictObj->ivShow('relativeDirHash', $key);
+
+            $checkHash{$value} = undef;
+        }
+
+        foreach my $key ($dictObj->ivKeys('relativeAbbrevHash')) {
+
+            my $value = $dictObj->ivShow('relativeAbbrevHash', $key);
+
+            $checkHash{$value} = undef;
+        }
+
+        if (exists $checkHash{$dir}) {
+
+            return $self->error(
+                $session, $inputString,
+                'The direction \'' . $dir . '\' already exists in the current dictionary as a'
+                . ' primary, secondary or relative direction (perhaps abbreviated)',
+            );
+
+        } elsif (defined $abbrev && exists $checkHash{$abbrev}) {
+
+            return $self->error(
+                $session, $inputString,
+                'The abbreviated direction \'' . $abbrev . '\' already exists in the current'
+                . ' dictionary as a primary, secondary or relative direction (perhaps abbreviated)',
+            );
+        }
+
+        # Update the dictonary
+        if (! $dictObj->addRelativeDir($type, $dir, $abbrev)) {
+
+            return $self->error(
+                $session, $inputString,
+                'Unable to update the current dictionary (internal error)',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Added the relative direction \'' . $dir . '\' to the current dictionary at'
+                . ' position ' . $type,
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::DeleteRelative;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('deleterelative', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['drl', 'delrel', 'deleterelative'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Deletes a relative direction';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $arg,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my ($dictObj, $index, $result, $string);
+
+        # Check for improper arguments
+        if (! defined $arg || defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check there is a current dictionary
+        $dictObj = $session->currentDict;
+        if (! $dictObj) {
+
+            return $self->error(
+                $session, $inputString,
+                'Can\'t delete relative directions because there is no current dictionary for this'
+                . ' session',
+            );
+        }
+
+        # $arg can be a relative direction (one of the values in $dictObj->relativeDirHash or
+        #   ->relativeAbbrevHash), or it can be an integer in the range 0-7, or it can be one of a
+        #   subset of standard or custom primary direction (namely, n/ne/e/se/s/sw/w/nw)
+        $index = $dictObj->convertRelativeDir($arg);
+        if ($axmud::CLIENT->intCheck($arg, 0, 7)) {
+
+            $result = $dictObj->deleteRelativeDir($arg);
+            $string = $dictObj->ivShow('relativeDirHash', $arg);
+
+        } elsif (defined $index) {
+
+            $result = $dictObj->deleteRelativeDir($index);
+            $string = $arg;
+
+        } else {
+
+            $result = $dictObj->deleteRelativeDir(undef, $arg);
+            $string = $arg;
+        }
+
+        if (! $result) {
+
+            return $self->error(
+                $session, $inputString,
+                'Unable to update the current dictionary (internal error)',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Deleted the relative direction direction \'' . $string
+                . '\' in the current dictionary',
+            );
+        }
+    }
+}
+
 { package Games::Axmud::Cmd::ListDirection;
 
     use strict;
@@ -32115,7 +31541,7 @@
         # Display header
         $session->writeText('List of primary directions in dictionary');
         $session->writeText(
-            '   Standard         Custom           Abbrev.          Opposite         Opp. abbrev.',
+            '   Standard         Custom           Abbreviation     Opposite         Opp. abbrev.',
         );
 
         # Display list
@@ -32136,7 +31562,7 @@
         # Display header
         $session->writeText('List of secondary directions (no standard forms exist)');
         $session->writeText(
-            '                    Custom           Abbrev.          Opposite         Opp. abbrev.',
+            '                    Custom           Abbreviation     Opposite         Opp. abbrev.',
         );
 
         # Display list
@@ -32167,11 +31593,66 @@
             );
         }
 
+        # Display header
+        $session->writeText('List of relative directions');
+        $session->writeText(
+            '   Slot             Direction        Abbreviation     Opposite         Opp. abbrev.',
+        );
+
+        # Display list
+        for (my $index = 0; $index < 8; $index++) {
+
+            my ($dir, $abbrev, $oppDir, $oppAbbrev, $oppIndex);
+
+            $dir = $dictObj->ivShow('relativeDirHash', $index);
+            if (! defined $dir || $dir eq '') {
+
+                $dir = '<not set>';
+            }
+
+            $abbrev = $dictObj->ivShow('relativeAbbrevHash', $index);
+            if (! defined $abbrev || $abbrev eq '') {
+
+                $abbrev = '<not set>';
+            }
+
+            # There are eight slots in a circle, so $index + 4 is the opposite slot on that circle
+            $oppIndex = $index + 4;
+            if ($oppIndex > 7) {
+
+                $oppIndex -= 8;
+            }
+
+            $oppDir = $dictObj->ivShow('relativeDirHash', $oppIndex);
+            if (! defined $oppDir || $oppDir eq '') {
+
+                $oppDir = '<not set>';
+            }
+
+            $oppAbbrev = $dictObj->ivShow('relativeAbbrevHash', $oppIndex);
+            if (! defined $oppAbbrev || $oppAbbrev eq '') {
+
+                $oppAbbrev = '<not set>';
+            }
+
+            $session->writeText(
+                sprintf(
+                    '   %-16.16s %-16.16s %-16.16s %-16.16s %-16.16s',
+                    $index,
+                    $dir,
+                    $abbrev,
+                    $oppDir,
+                    $oppAbbrev,
+                ),
+            );
+        }
+
         # Display footer
         return $self->complete(
             $session, $standardCmd,
             'End of lists (primary directions: ' . scalar ($axmud::CLIENT->constPrimaryDirList)
-            . ', secondary directions: ' . scalar ($dictObj->secondaryDirList) . ')',
+            . ', secondary directions: ' . scalar ($dictObj->secondaryDirList)
+            . ', relative directions: 8)',
         );
     }
 }
@@ -43514,951 +42995,6 @@
 
 # Keycodes
 
-{ package Games::Axmud::Cmd::AddKeycodeObject;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('addkeycodeobject', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['ako', 'addko', 'addkeycodeobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Adds a new keycode object';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $name,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (! defined $name || defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Check that the keycode object doesn't already exist
-        if ($axmud::CLIENT->ivExists('keycodeObjHash', $name)) {
-
-            return $self->error(
-                $session, $inputString,
-                'The keycode object \'' . $name . '\' already exists',
-            );
-        }
-
-        # Check that $name is a valid name
-        if (! $axmud::CLIENT->nameCheck($name, 16)) {
-
-            return $self->error(
-                $session, $inputString,
-                'Could not add keycode object \'' . $name . '\' - invalid name',
-            );
-        }
-
-        # Add the keycode object
-        $obj = Games::Axmud::Obj::Keycode->new($session, $name);
-        if (! $obj) {
-
-            return $self->error(
-                $session, $inputString,
-                'Couldn\'t add the keycode object \'' . $name . '\'',
-            );
-
-        } else {
-
-            # Update IVs
-            $axmud::CLIENT->add_keycodeObj($obj);
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Added the keycode object \'' . $name . '\'',
-            );
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::SetKeycodeObject;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('setkeycodeobject', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['sko', 'setko', 'setkeycodeobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Sets the current keycode object';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $name,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (! defined $name || defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Check that the object isn't already the current keycode object
-        if ($axmud::CLIENT->currentKeycodeObj && $axmud::CLIENT->currentKeycodeObj->name eq $name) {
-
-            return $self->error(
-                $session, $inputString,
-                '\'' . $name . '\' is already the current keycode object',
-            );
-        }
-
-        # If the object already exists, make it the current keycode object
-        if ($axmud::CLIENT->ivExists('keycodeObjHash', $name)) {
-
-            $obj = $axmud::CLIENT->ivShow('keycodeObjHash', $name);
-            $axmud::CLIENT->set_currentKeycodeObj($obj);
-
-            return $self->complete(
-                $session, $standardCmd,
-                'The current keycode object has been set to \'' . $name . '\'',
-            );
-        }
-
-        # Otherwise, check that <name> isn't too long
-        if (! $axmud::CLIENT->nameCheck($name, 16)) {
-
-            return $self->error(
-                $session, $inputString,
-                'Could not add keycode object \'' . $name . '\' - invalid name',
-            );
-        }
-
-        # Add the keycode object
-        $obj = Games::Axmud::Obj::Keycode->new($session, $name);
-        if (! $obj) {
-
-            return $self->error(
-                $session, $inputString,
-                'Couldn\'t add the keycode object \'' . $name . '\'',
-            );
-
-        } else {
-
-            # Update IVs
-            $axmud::CLIENT->add_keycodeObj($obj);
-            $axmud::CLIENT->set_currentKeycodeObj($obj);
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Added the current keycode object \'' . $name . '\'',
-            );
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::CloneKeycodeObject;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('clonekeycodeobject', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['cko', 'cloneko', 'clonekeycodeobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Clones a keycode object';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $original, $copy,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my ($originalObj, $copyObj);
-
-        # Check for improper arguments
-        if (! defined $original || ! defined $copy || defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Check that <original> exists, and <copy> doesn't
-        if (! $axmud::CLIENT->ivExists('keycodeObjHash', $original)) {
-
-            return $self->error(
-                $session, $inputString,
-                'The keycode object \'' . $original . '\' doesn\'t exist',
-            );
-
-        } elsif ($axmud::CLIENT->ivExists('keycodeObjHash', $copy)) {
-
-            return $self->error(
-                $session, $inputString,
-                'The keycode object \'' . $copy . '\' already exists',
-            );
-
-        } else {
-
-            $originalObj = $axmud::CLIENT->ivShow('keycodeObjHash', $original);
-        }
-
-        # Check that the name $copy isn't too long
-        if (! $axmud::CLIENT->nameCheck($copy, 16)) {
-
-            return $self->error(
-                $session, $inputString,
-                'Could not add keycode object \'' . $copy . '\' - invalid name',
-            );
-        }
-
-        # Clone the keycode object
-        $copyObj = $originalObj->clone($session, $copy);
-        if (! $copyObj) {
-
-            return $self->error(
-                $session, $inputString,
-                'Couldn\'t clone the keycode object \'' . $original . '\'',
-            );
-
-        } else {
-
-            # Update IVs
-            $axmud::CLIENT->add_keycodeObj($copyObj);
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Cloned the current keycode object \'' . $original . '\' into one named \''
-                . $copy . '\'',
-            );
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::EditKeycodeObject;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('editkeycodeobject', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['eko', 'editko', 'editkeycodeobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Opens an \'edit\' window for a keycode object';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $name,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Check the keycode object exists
-        if (! $name) {
-
-            $obj = $axmud::CLIENT->currentKeycodeObj;
-            $name = $obj->name;
-
-        } elsif (! $axmud::CLIENT->ivExists('keycodeObjHash', $name)) {
-
-            return $self->error(
-                $session, $inputString,
-                'Could not edit the \'' . $name . '\' keycode object - object does not exist',
-            );
-
-        } else {
-
-            $obj = $axmud::CLIENT->ivShow('keycodeObjHash', $name);
-        }
-
-        # Open an 'edit' window for the keycode object
-        if (
-            ! $session->mainWin->createFreeWin(
-                'Games::Axmud::EditWin::Keycode',
-                $session->mainWin,
-                $session,
-                'Edit keycode object \'' . $name . '\'',
-                $obj,
-                FALSE,                  # Not temporary
-            )
-        ) {
-            return $self->error(
-                $session, $inputString,
-                'Could not edit the \'' . $name . '\' keycode object',
-            );
-
-        } else {
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Opened \'edit\' window for the \'' . $name . '\' keycode object',
-            );
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::ResetKeycodeObject;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('resetkeycodeobject', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['rko', 'resetko', 'resetkeycodeobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Resets a keycode object';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $name,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (! defined $name || defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Check that the object exists
-        if (! $axmud::CLIENT->ivExists('keycodeObjHash', $name)) {
-
-            return $self->error(
-                $session, $inputString,
-                'The keycode object \'' . $name . '\' doesn\'t exist',
-            );
-
-        } else {
-
-            $obj = $axmud::CLIENT->ivShow('keycodeObjHash', $name);
-        }
-
-        # Restore the keycode object's default values
-        if (! $obj->reset) {
-
-            return $self->error(
-                $session, $inputString,
-                'Failed to reset the keycode object \'' . $name . '\'',
-            );
-
-        } else {
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Reset the keycode object \'' . $name . '\'',
-            );
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::DeleteKeycodeObject;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('deletekeycodeobject', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['dko', 'delko', 'deletekeycodeobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Deletes a keycode object';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $name,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (! defined $name || defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Check that the object exists
-        if (! $axmud::CLIENT->ivExists('keycodeObjHash', $name)) {
-
-            return $self->error(
-                $session, $inputString,
-                'The keycode object \'' . $name . '\' doesn\'t exist',
-            );
-
-        } else {
-
-            $obj = $axmud::CLIENT->ivShow('keycodeObjHash', $name);
-        }
-
-        # The current keycode object can't be deleted
-        if ($axmud::CLIENT->currentKeycodeObj && $axmud::CLIENT->currentKeycodeObj eq $obj) {
-
-            return $self->error(
-                $session, $inputString,
-                'The current keycode object can\'t be deleted',
-            );
-
-        } else {
-
-            $axmud::CLIENT->del_keycodeObj($obj);
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Deleted the keycode object \'' . $name . '\'',
-            );
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::ListKeycodeObject;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('listkeycodeobject', TRUE, TRUE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['lko', 'listko', 'listkeycodeobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Lists keycode objects';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my (
-            @list,
-            %hash,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Import the keycode registry
-        %hash = $axmud::CLIENT->keycodeObjHash;
-        # Get a list of keycode object names in ascending order
-        @list = sort {lc($a) cmp lc($b)} (keys %hash);
-        if (! @list) {
-
-            return $self->complete($session, $standardCmd, 'The keycode object list is empty');
-        }
-
-        # Display header
-        $session->writeText('List of keycode objects (* = current object, # = customised)');
-        $session->writeText('    Name');
-
-        # Display list
-        foreach my $name (@list) {
-
-            my ($obj, $string);
-
-            $obj = $hash{$name};
-
-            if ($axmud::CLIENT->currentKeycodeObj && $axmud::CLIENT->currentKeycodeObj eq $obj) {
-                $string = ' *';
-            } else {
-                $string = '  ';
-            }
-
-            if ($obj->customisedFlag) {
-                $string .= '# ';
-            } else {
-                $string .= '  ';
-            }
-
-            $session->writeText($string . $name);
-        }
-
-        # Display footer
-        if (@list == 1) {
-
-            return $self->complete(
-                $session, $standardCmd,
-                'End of list (1 keycode object found)',
-            );
-
-        } else {
-
-            return $self->complete(
-                $session, $standardCmd,
-                'End of list (' . scalar @list . ' keycode objects found)',
-            );
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::GetKeycode;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('getkeycode', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['gkc', 'getkc', 'getkeycode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Gets system keycodes';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $check,
-        ) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Set the value
-        if (! $session->mainWin->showKeycodeDialogue($session)) {
-            return $self->complete($session, $standardCmd, 'Current keycode object not modified');
-        } else {
-            return $self->complete($session, $standardCmd, 'Current keycode object modified');
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::SetKeycode;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('setkeycode', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['skc', 'setkc', 'setkeycode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Sets an individual keycode';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $type, $value,
-            $check,
-        ) = @_;
-
-        # Check for improper arguments
-        if (! defined $type || ! defined $value || defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Set the value
-        if (! $axmud::CLIENT->currentKeycodeObj->setValue($session, $type, $value)) {
-
-            return $self->error(
-                $session, $inputString,
-                'Couldn\'t set the keycode \'' . $type . '\' to \'' . $value . '\' in the current'
-                . ' keycode object',
-            );
-
-        } else {
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Set the keycode \'' . $type . '\' to \'' . $value . '\' in the current keycode'
-                . ' object',
-            );
-        }
-    }
-}
-
-{ package Games::Axmud::Cmd::ResetKeycode;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('resetkeycode', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['rkc', 'resetkc', 'resetkeycode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Resets an individual keycode';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $type,
-            $check,
-        ) = @_;
-
-        # Check for improper arguments
-        if (! defined $type || defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Reset the value
-        if (! $axmud::CLIENT->currentKeycodeObj->resetValue($session, $type)) {
-
-            return $self->error(
-                $session, $inputString,
-                'Couldn\'t reset the keycode \'' . $type . '\' in the current keycode object'
-                . ' keycode object',
-            );
-
-        } else {
-
-            # If $type was an alternative keycode type, the corresponding standard type would have
-            #   been used
-            if ($axmud::CLIENT->ivExists('constAltKeycodeHash', $type)) {
-
-                $type = $axmud::CLIENT->ivShow('constAltKeycodeHash', $type);
-            }
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Reset the keycode \'' . $type . '\' to \''
-                . $axmud::CLIENT->currentKeycodeObj->getKeycode($type)
-                . '\' in the current keycode object',
-            );
-        }
-    }
-}
-
 { package Games::Axmud::Cmd::ListKeycode;
 
     use strict;
@@ -44491,7 +43027,7 @@
 
         $self->{defaultUserCmdList} = ['lkc', 'listkc', 'listkeycode'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Lists keycodes for current keycode object';
+        $self->{descrip} = 'Lists keycodes for the current system';
 
         # Bless the object into existence
         bless $self, $class;
@@ -44510,24 +43046,13 @@
         ) = @_;
 
         # Local variables
-        my (
-            $obj,
-            @list,
-            %hash, %constKeycodeHash,
-        );
+        my @list;
 
         # Check for improper arguments
         if ((defined $switch && $switch ne '-s') || defined $check) {
 
             return $self->improper($session, $inputString);
         }
-
-        # Get the current keycode object
-        $obj = $axmud::CLIENT->currentKeycodeObj;
-        # Import the keycode hash from the current keycode object
-        %hash = $obj->keycodeHash;
-        # Import the hash of Axmud standard keycode values
-        %constKeycodeHash = $axmud::CLIENT->constKeycodeHash;
 
         # Get a list of keycode types in their standard order
         @list = $axmud::CLIENT->constKeycodeList;
@@ -44538,26 +43063,22 @@
         }
 
         # Display header
-        $session->writeText('List of keycodes for the current keycode object');
-        $session->writeText('   Keycode type     Keycode value(s)         Default value(s)');
+        $session->writeText('List of keycodes for the current system');
+        $session->writeText('   Standard keycode     System keycode(s)');
 
         # Display list
-        foreach my $type (@list) {
+        foreach my $standard (@list) {
 
             $session->writeText(
-                sprintf(
-                    '   %-16.16s %-24.24s (%-.24s)',
-                    $type,
-                    $hash{$type},
-                    $constKeycodeHash{$type},
-                ),
+                sprintf('   %-20.20s', $standard) . ' '
+                . $axmud::CLIENT->ivShow('keycodeHash', $standard),
             );
         }
 
         # Display footer
         return $self->complete(
             $session, $standardCmd,
-           'End of list (' . scalar @list . ' keycodes found)',
+           'End of list (' . scalar @list . ' standard keycodes found)',
         );
     }
 }
@@ -44612,11 +43133,7 @@
         ) = @_;
 
         # Local variables
-        my (
-            $obj,
-            @list,
-            %hash,
-        );
+        my @list;
 
         # Check for improper arguments
         if (defined $check) {
@@ -44624,26 +43141,19 @@
             return $self->improper($session, $inputString);
         }
 
-        # Get the current keycode object
-        $obj = $axmud::CLIENT->currentKeycodeObj;
-        # Import the alternative keycode hash from the current keycode object (for convenience; the
-        #   list is the same for all keycode objects)
-        %hash = $axmud::CLIENT->constAltKeycodeHash;
-        # Sort them alphabetically
-        @list = sort {lc($a) cmp lc($b)} (keys %hash);
-
         # Display header
         $session->writeText('List of recognised alternatives for keycode types');
-        $session->writeText('   Alternative type         Standard type');
+        $session->writeText('   Alternative              Standard keycode');
 
         # Display list
-        foreach my $altType (@list) {
+        @list = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('constAltKeycodeHash'));
+        foreach my $alt (@list) {
 
             $session->writeText(
                 sprintf(
                     '   %-24.24s %-24.24s',
-                    $altType,
-                    $hash{$altType},
+                    $alt,
+                    $axmud::CLIENT->ivShow('constAltKeycodeHash', $alt),
                 )
             );
         }
@@ -63551,11 +62061,17 @@
             $check,
         ) = @_;
 
+        # Local variables
+        my $stripObj;
+
         # Check for improper arguments
         if (defined $check) {
 
             return $self->improper($session, $inputString);
         }
+
+        # Import the 'main' window's entry strip object (if any), so we can update its icon
+        $stripObj = $session->mainWin->getStrip('entry');
 
         # If there is no recording in progress...
         if (! $session->recordingFlag) {
@@ -63570,6 +62086,12 @@
             $session->set_recordingFlag(TRUE);
             $session->set_recordingPausedFlag(FALSE);
 
+            # Update the comamnd entry box's icon
+            if ($stripObj) {
+
+                $stripObj->set_recordIcon($session);
+            }
+
             return $self->complete($session, $standardCmd, 'New recording started');
 
         } else {
@@ -63577,6 +62099,12 @@
             # Update
             $session->set_recordingFlag(FALSE);
             $session->set_recordingPausedFlag(FALSE);
+
+            # Update the comamnd entry box's icon
+            if ($stripObj) {
+
+                $stripObj->set_recordIcon($session);
+            }
 
             if ($session->recordingPausedFlag) {
 
@@ -63639,11 +62167,17 @@
             $check,
         ) = @_;
 
+        # Local variables
+        my $stripObj;
+
         # Check for improper arguments
         if (defined $check) {
 
             return $self->improper($session, $inputString);
         }
+
+        # Import the 'main' window's entry strip object (if any), so we can update its icon
+        $stripObj = $session->mainWin->getStrip('entry');
 
         # If there is no recording in progress...
         if (! $session->recordingFlag) {
@@ -63655,7 +62189,13 @@
 
         } elsif ($session->recordingPausedFlag) {
 
-            $session->ivPoke('recordingPausedFlag', FALSE);
+            $session->set_recordingPausedFlag(FALSE);
+
+            # Update the comamnd entry box's icon
+            if ($stripObj) {
+
+                $stripObj->set_recordIcon($session);
+            }
 
             return $self->complete(
                 $session, $standardCmd,
@@ -63664,7 +62204,13 @@
 
         } else {
 
-            $session->ivPoke('recordingPausedFlag', TRUE);
+            $session->set_recordingPausedFlag(TRUE);
+
+            # Update the comamnd entry box's icon
+            if ($stripObj) {
+
+                $stripObj->set_recordIcon($session);
+            }
 
             return $self->complete(
                 $session, $standardCmd,
@@ -64746,8 +63292,15 @@
         # Show unabbreviated and abbreviated versions
         foreach my $item (@list) {
 
+            my $abbrevDir = $session->currentDict->abbrevDir($item);
+
             push (@list2, $session->currentDict->unabbrevDir($item));
-            push (@list3, $session->currentDict->abbrevDir($item));
+
+            if (defined $abbrevDir) {
+                push (@list3, $session->currentDict->abbrevDir($item));
+            } else {
+                push (@list3, $item);
+            }
         }
 
         $session->writeText(' ');
@@ -64757,6 +63310,7 @@
         $session->writeText(' ');
         $session->writeText('Abbreviated version:');
         $session->writeText(join ($axmud::CLIENT->cmdSep, @list3));
+        $session->writeText(' ');
 
         # Display footer
         if (@list == 1) {
@@ -68991,7 +67545,7 @@
         my (
             $switch, $numberFlag, $room, $roomTag, $roomNum, $roomObj, $label, $result, $dictObj,
             $roomListRef, $exitListRef,
-            @roomList, @exitList, @cmdList,
+            @roomList, @exitList, @cmdList, @modList,
         );
 
         # Extract the optional switch
@@ -69013,11 +67567,11 @@
         # Is $room a tag that the world model recognises?
         if (! $numberFlag) {
 
-            if ($session->worldModelObj->ivExists('roomTagHash', $room)) {
+            if ($session->worldModelObj->ivExists('roomTagHash', lc($room))) {
 
                 # It's a room tag
                 $roomTag = $room;
-                $roomNum = $session->worldModelObj->ivShow('roomTagHash', $room);
+                $roomNum = $session->worldModelObj->ivShow('roomTagHash', lc($room));
                 $roomObj = $session->worldModelObj->ivShow('modelHash', $roomNum);
 
             } elsif (! $axmud::CLIENT->intCheck($room)) {
@@ -69165,11 +67719,17 @@
             }
 
             # Move the character, abbreviating any primary/secondary directions, if possible
+            # Compile a single string of world commands (e.g. 'north;east;north'), which allows
+            #   GA::Session->worldCmd to avoid drawing the automapper's ghost room dozens or
+            #   hundreds of times (and matches the behaviour of ';drive', etc, which also make a
+            #   single call to GA::Session->worldCmd)
             $dictObj = $session->currentDict;
             foreach my $cmd (@cmdList) {
 
-                $session->worldCmd($dictObj->abbrevDir($cmd));
+                push (@modList, $dictObj->abbrevDir($cmd));
             }
+
+            $session->worldCmd(join($axmud::CLIENT->cmdSep, @modList));
 
             if (@cmdList == 1) {
 
@@ -79681,10 +78241,10 @@
 
             # If $roomName is a recognised room tag or world model room number, set the destination
             #   room
-            if ($wmObj->ivExists('roomTagHash', $roomName)) {
+            if ($wmObj->ivExists('roomTagHash', lc($roomName))) {
 
                 # Room tag
-                $roomNum = $wmObj->ivShow('roomTagHash', $roomName);
+                $roomNum = $wmObj->ivShow('roomTagHash', lc($roomName));
 
             } elsif ($wmObj->ivExists('modelHash', $roomName)) {
 
@@ -79714,9 +78274,9 @@
             $cmd =~ s/room/$roomName/;
 
             # If $roomName is a recognised room tag, set the destination room
-            if ($wmObj->ivExists('roomTagHash', $roomName)) {
+            if ($wmObj->ivExists('roomTagHash', lc($roomName))) {
 
-                $roomNum = $wmObj->ivShow('roomTagHash', $roomName);
+                $roomNum = $wmObj->ivShow('roomTagHash', lc($roomName));
             }
         }
 
@@ -80293,8 +78853,12 @@
 
         my (
             $self, $session, $inputString, $userCmd, $standardCmd,
+            $dir,
             $check,
         ) = @_;
+
+        # Local variables
+        my $standardDir;
 
         # Check for improper arguments
         if (defined $check) {
@@ -80306,25 +78870,147 @@
         if (! $session->locatorTask) {
 
             return $self->error($session, $inputString, 'There is no Locator task running');
+        }
+
+        # If $dir was specified, it must be a standard or custom primary cardinal or intercardinal
+        #   direction (i.e. n/ne/e/se/s/sw/w/nw - not up or down)
+        if (defined $dir) {
+
+            $standardDir = $session->currentDict->convertStandardDir($dir);
+            if (
+                ! defined $standardDir
+                || ! $axmud::CLIENT->ivExists('constShortPrimaryDirHash', $standardDir)
+                || $standardDir eq 'up'
+                || $standardDir eq 'down'
+            ) {
+                return $self->error(
+                    $session, $inputString,
+                    'If you specify the direction the character is facing, it must be a cardinal'
+                    . ' or intercardinal direction (i.e. n/ne/e/se/s/sw/w/nw)',
+                );
+
+            } else {
+
+                # Update the automapper object's IV
+                $session->mapObj->set_facingDir($standardDir);
+            }
+        }
+
+        # Mark the task as needing to be reset
+        $session->locatorTask->set_status('reset');
+        $session->locatorTask->set_manualResetFlag(TRUE);
+
+        # Tell the automapper object to mark the character as lost, if a current room is set
+        if ($session->mapObj->currentRoom) {
+
+            # (Let the automapper display a system message)
+            return $session->mapObj->setCurrentRoom();
 
         } else {
 
-            # Mark the task as needing to be reset
-            $session->locatorTask->set_status('reset');
-            $session->locatorTask->set_manualResetFlag(TRUE);
+            # (Display our own system message)
+            return $self->complete($session, $standardCmd, 'Locator task told to reset');
+        }
+    }
+}
 
-            # If the automapper object is running, we need to make sure it knows it's lost (the
-            #   automapper's title bar is also reset)
-            if ($session->mapObj->currentRoom) {
+{ package Games::Axmud::Cmd::SetFacing;
 
-                return $session->mapObj->setCurrentRoom(
-                    undef,
-                    $self->_objClass . '->do',    # Character now lost
-                    FALSE,                        # Don't use auto-rescue mode
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setfacing', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['sfc', 'facing', 'setfacing'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sets the direction the character is facing';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $dir,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $standardDir;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # ;sfc
+        if (! defined $dir) {
+
+            $session->mapObj->set_facingDir();
+
+            return $self->complete(
+                $session, $standardCmd,
+                'The character\'s facing directon has been reset',
+            );
+
+        # ;sfc <dir>
+        } else {
+
+            # $dir must be a standard or custom primary cardinal or intercardinal direction (i.e.
+            #   n/ne/e/se/s/sw/w/nw - not up or down)
+            $standardDir = $session->currentDict->convertStandardDir($dir);
+            if (
+                ! defined $standardDir
+                || ! $axmud::CLIENT->ivExists('constShortPrimaryDirHash', $standardDir)
+                || $standardDir eq 'up'
+                || $standardDir eq 'down'
+            ) {
+                return $self->error(
+                    $session, $inputString,
+                    'If you specify the direction the character is facing, it must be a cardinal'
+                    . ' or intercardinal direction (i.e. n/ne/e/se/s/sw/w/nw)',
+                );
+
+            } else {
+
+                # Update the automapper object's IV
+                $session->mapObj->set_facingDir($standardDir);
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The character\'s facing directon has been set as \'' . $standardDir . '\'',
                 );
             }
-
-            return $self->complete($session, $standardCmd, 'Locator task told to reset');
         }
     }
 }
@@ -80724,7 +79410,7 @@
             ) {
                 return $self->error(
                     $session, $inputString,
-                    'The current world profile\'s involunatry exit pattern list doesn\'t contain'
+                    'The current world profile\'s involuntary exit pattern list doesn\'t contain'
                     . ' that pattern',
                 );
 
@@ -82311,23 +80997,16 @@
                 'This command can only be used when the Status task is running and when there\'s'
                 . ' a current character profile',
             );
+        }
 
-        } elsif ($status eq '-a' || $status eq 'alive') {
-
-            $result = $session->statusTask->setValue('life_status', 'alive');
-
+        if ($status eq '-a' || $status eq 'alive') {
+            $session->currentChar->ivPoke('lifeStatus', 'alive');
         } elsif ($status eq '-s' || $status eq 'sleep') {
-
-            $result = $session->statusTask->setValue('life_status', 'sleep');
-
+            $session->currentChar->ivPoke('lifeStatus', 'sleep');
         } elsif ($status eq '-p' || $status eq 'passout') {
-
-            $result = $session->statusTask->setValue('life_status', 'passout');
-
+            $session->currentChar->ivPoke('lifeStatus', 'passout');
         } elsif ($status eq '-d' || $status eq 'dead') {
-
-            $result = $session->statusTask->setValue('life_status', 'dead');
-
+            $session->currentChar->ivPoke('lifeStatus', 'dead');
         } else {
 
             return $self->error(
@@ -82336,21 +81015,15 @@
             );
         }
 
-        if (! $result) {
+        # Tell the Status task that its task window must be updated with a new background colour
+        $session->statusTask->set_lifeStatusChangeFlag();
 
-            return $self->error(
-                $session, $inputString,
-                'Could not set current character\'s life status',
-            );
-
-        } else {
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Current character\'s life status set to \'' . $session->currentChar->lifeStatus
-                . '\'',
-            );
-        }
+        # Operation complete
+        return $self->complete(
+            $session, $standardCmd,
+            'Current character\'s life status set to \'' . $session->currentChar->lifeStatus
+            . '\'',
+        );
     }
 }
 
@@ -85141,6 +83814,341 @@
     }
 }
 
+{ package Games::Axmud::Cmd::MergeModel;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('mergemodel', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['mmd', 'mergemd', 'mergemodel'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Imports and merges a world model file';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $importPath,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            $extractObj, $tempDir, $modelPath, $hashRef, $wmObj, $tempSession, $tempWorldObj,
+            $tempFileObj, $tempMapObj, $fileVersion,
+            $errorCount, $fixCount,
+            @fileList, @outputList,
+            %loadHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            $axmud::CLIENT->set_fileFailFlag(TRUE);
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check that loading is allowed at all
+        if (! $axmud::CLIENT->loadDataFlag) {
+
+            $axmud::CLIENT->set_fileFailFlag(TRUE);
+
+            return $self->error(
+                $session, $inputString,
+                'File load/save is disabled in all sessions',
+            );
+        }
+
+        # If a file path was not specified, open a file chooser dialog to decide which file to
+        #   import
+        if (! $importPath) {
+
+            $importPath = $session->mainWin->showFileChooser(
+                'Merge world model',
+                'open',
+            );
+
+            if (! $importPath) {
+
+                $axmud::CLIENT->set_fileFailFlag(TRUE);
+
+                return $self->complete($session, $standardCmd, 'File(s) not imported');
+            }
+        }
+
+        # Check that $importPath is a valid compressed file (ending .tar, .tar.gz, .tgz, .gz, .zip,
+        #   .bz2, .tar.bz2, .tbz or .lzma)
+        if (
+            ! ($importPath =~ m/\.tar$/)
+            && ! ($importPath =~ m/\.tgz$/)
+            && ! ($importPath =~ m/\.gz$/)
+            && ! ($importPath =~ m/\.zip$/)
+            && ! ($importPath =~ m/\.bz2$/)
+            && ! ($importPath =~ m/\.tbz$/)
+            && ! ($importPath =~ m/\.lzma$/)
+        ) {
+            $axmud::CLIENT->set_fileFailFlag(TRUE);
+
+            return $self->error(
+                $session, $inputString,
+                'File(s) not imported (you specified something that doesn\'t appear to be a'
+                . ' compressed archive, e.g. a .zip or .tar.gz file)',
+            );
+        }
+
+        # For large files (e.g. world models containing tens of thousands of rooms), we need to
+        #   display an initial message to explain the pause
+        $session->writeText('Importing file(s)...');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
+
+        # Build an Archive::Extract object
+        $extractObj = Archive::Extract->new(archive => $importPath);
+        if (! $extractObj) {
+
+            $axmud::CLIENT->set_fileFailFlag(TRUE);
+
+            return $self->error(
+                $session, $inputString,
+                'No files imported (file decompression error)',
+            );
+        }
+
+        # Extract the object to a temporary directory
+        $tempDir = $axmud::DATA_DIR . '/data/temp';
+        if (! $extractObj->extract(to => $tempDir)) {
+
+            $axmud::CLIENT->set_fileFailFlag(TRUE);
+
+            return $self->error(
+                $session, $inputString,
+                'No files imported (file decompression error)',
+            );
+        }
+
+        # All the files are now in /data/temp/export. Get a list of paths, relative to $tempDir, of
+        #   all the extracted files
+        @fileList = @{$extractObj->files};  # e.g. export/tasks.axm
+        # Convert all the paths into absolute paths
+        foreach my $file (@fileList) {
+
+            $file = $axmud::DATA_DIR . '/data/temp/' . $file;
+        }
+
+        # Extract from @fileList the world model file (there should only be one, if any)
+        OUTER: foreach my $file (@fileList) {
+
+            my (
+                $matchFlag,
+                %headerHash,
+            );
+
+            # Ignore files that don't end with a compatible file extension (like .axm)
+            INNER: foreach my $ext (@axmud::COMPAT_EXT_LIST) {
+
+                if ($file =~ m/\.$ext$/) {
+
+                    $matchFlag = TRUE;
+                    last INNER;
+                }
+            }
+
+            if (! $matchFlag) {
+
+                next OUTER;
+            }
+
+            # Check it's really an Axmud file by loading the file into a hash
+            %headerHash = $axmud::CLIENT->configFileObj->examineDataFile($file, 'return_header');
+            if (
+                ! %headerHash
+                || ! $axmud::CLIENT->configFileObj->checkCompatibility($headerHash{'script_name'})
+                || $axmud::CLIENT->convertVersion($headerHash{'script_version'})
+                        > $axmud::CLIENT->convertVersion($axmud::VERSION)
+            ) {
+                next OUTER;
+            }
+
+            # If it's a world model file, we can use it
+            if ($headerHash{'file_type'} eq 'worldmodel') {
+
+                $modelPath = $file;
+                last OUTER;
+            }
+        }
+
+        if (! $modelPath) {
+
+            return $self->error(
+                $session, $inputString,
+                'The specified archive doesn\'t contain a readable world model file',
+            );
+        }
+
+        # Now retrieve the world model data from $modelPath
+        # (We already have a world model in memory that we don't want to overwrite, so we can't call
+        #   GA::Obj::File->loadDataFile)
+        eval { $hashRef = Storable::lock_retrieve($modelPath); };
+        if (! $hashRef) {
+
+            # ->lock_retrieve() failed
+            return $self->error(
+                $session, $inputString,
+                'Failed to merge the world model file (internal error)',
+            );
+        }
+
+        # Retrieve the world model itself
+        $wmObj = $$hashRef{'world_model_obj'};
+        if (
+            ! $wmObj
+            # After v1.0.868
+            || (exists $wmObj->{_objName} && $wmObj->{_objName} ne 'world_model')
+            # Before v1.0.868
+            || (exists $wmObj->{_name} && $wmObj->{_name} ne 'world_model')
+        ) {
+            return $self->error(
+                $session, $inputString,
+                'The specified archive doesn\'t contain a readable world model file',
+            );
+        }
+
+        # Much of the code in GA::Obj::File for updating data from previous Axmud versions
+        #   assumes that every GA::Session has a world model; this means that we can't simply
+        #   call GA::Obj::File->updateExtractedData for this extra world model
+        # Solution is to create a fake (temporary) session and assign the imported world model
+        #   to it
+        $tempSession = Games::Axmud::Session->new(-1, $session->currentWorld->name);
+        $tempSession->ivPoke('worldModelObj', $wmObj);
+        # Set the 'main' window, as GA::File::Obj->updateExtractedData needs it
+        $tempSession->ivPoke('mainWin', $session->mainWin);
+        # Also create a temporary world profile
+        $tempWorldObj = Games::Axmud::Profile::World->new(
+            $tempSession,
+            $session->currentWorld->name,
+            TRUE,
+        );
+
+        # Also create a temporary file object for the world model
+        $tempFileObj = Games::Axmud::Obj::File->new(
+            'worldmodel',
+            $session->currentWorld->name,
+               $tempSession,
+        );
+
+        # Also create a temporary map object
+        $tempMapObj = Games::Axmud::Obj::Map->new($tempSession);
+
+        $tempSession->ivPoke('currentWorld', $tempWorldObj);
+        $tempSession->ivAdd('sessionFileObjHash', 'worldmodel', $tempFileObj);
+        $tempSession->ivPoke('mapObj', $tempMapObj);
+
+        # If the file was created by an earlier version of Axmud, we have to update the model's
+        #   data in the usual way
+        $fileVersion = $axmud::CLIENT->convertVersion($$hashRef{'script_version'});
+        if ($fileVersion < $axmud::CLIENT->convertVersion($axmud::VERSION)) {
+
+            $session->writeText('Updating data for this ' . $axmud::SCRIPT . ' version...');
+            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
+
+            # Now we can update the imported world model
+            if ($fileVersion < 1_000_868) {
+
+                $tempFileObj->update_obj_world_model($wmObj);
+            }
+
+            $tempFileObj->updateExtractedData($fileVersion);
+        }
+
+        # If the imported world model has any temporary regions, remove them
+        $wmObj->deleteTempRegions($tempSession, FALSE);
+
+        # To avoid unforeseen complications, get rid of the temporary objects immediately
+        $tempSession = undef;
+        $tempWorldObj = undef;
+        $tempFileObj = undef;
+        $tempMapObj = undef;
+
+        # Now we're ready to merge one model into another
+        $session->writeText('Merging data...');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
+
+        # Pass this imported world model to this session's own model, so it can merge rooms, labels
+        #   and so on
+        if (! $session->worldModelObj->mergeModel($session, $wmObj)) {
+
+            return $self->error(
+                $session, $inputString,
+                'The specified archive contained a readable world model file, but ' . $axmud::SCRIPT
+                . ' was not able to merge its contents into the existing world model',
+            );
+        }
+
+        $session->writeText('Running model test...');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
+
+        # Run the usual model test
+        ($errorCount, $fixCount, @outputList) = $session->worldModelObj->testModel(
+            $session,
+            FALSE,          # Don't problems
+            TRUE,           # Use a list of return values
+        );
+
+        if ($errorCount) {
+
+            $session->writeText(
+                'Model test reports the following inconsistencies (use \';testmodel -f\' to fix'
+                . ' them):',
+            );
+        }
+
+        # That's the end of the test. Display any output
+        foreach my $msg (@outputList) {
+
+            $session->writeText($msg);
+        }
+
+        return $self->complete(
+            $session, $standardCmd,
+            'Merge operation complete (new regions: ' . $wmObj->ivPairs('regionmapHash')
+            . ', new rooms: ' . $wmObj->ivPairs('roomModelHash') . ', new exits: '
+            . $wmObj->ivPairs('exitModelHash') . ')',
+        );
+    }
+}
+
 { package Games::Axmud::Cmd::UpdateModel;
 
     use strict;
@@ -86353,7 +85361,7 @@
 
             my (
                 $exitTotal, $unallocatedTotal, $unallocatableTotal, $uncertainTotal,
-                $incompleteTotal, $incompleteImpassTotal,
+                $incompleteTotal, $incompleteImpassTotal, $incompleteMysteryTotal,
             );
 
             # Initialise counts
@@ -86373,7 +85381,7 @@
 
                 my (
                     $exitCount, $unallocatedCount, $unallocatableCount, $uncertainCount,
-                    $incompleteCount, $incompImpassCount,
+                    $incompleteCount, $incompImpassCount, $incompMysteryCount,
                 ) = $regionObj->countExits($session);
 
                 $exitTotal += $exitCount;
@@ -86382,6 +85390,7 @@
                 $uncertainTotal += $uncertainCount;
                 $incompleteTotal += $incompleteCount;
                 $incompleteImpassTotal += $incompImpassCount;
+                $incompleteMysteryTotal += $incompMysteryCount;
 
                 $session->writeText(
                     '   Region \'' . $regionObj->name . '\' (total exits: ' . $exitCount . ')',
@@ -86412,9 +85421,14 @@
                     $session->writeText('      Incomplete (impassable) : ' . $incompImpassCount);
                 }
 
+                if ($incompImpassCount) {
+
+                    $session->writeText('      Incomplete (mystery)    : ' . $incompMysteryCount);
+                }
+
                 if (
                     ! $unallocatedCount && ! $unallocatableCount && ! $uncertainCount
-                    && ! $incompleteCount && ! $incompImpassCount
+                    && ! $incompleteCount && ! $incompImpassCount && ! $incompMysteryCount
                 ) {
                     $session->writeText('      (no unfinished exits)');
                 }
@@ -86428,7 +85442,8 @@
                 'End of exit report (total exits: ' . $exitTotal . ', unallocated: '
                 . $unallocatedTotal . ', unallocatable: ' . $unallocatableTotal . ', uncertain: '
                 . $uncertainTotal . ', incomplete: ' . $incompleteTotal
-                . ', incomplete/impassable: ' . $incompleteImpassTotal . ')',
+                . ', incomplete/impassable: ' . $incompleteImpassTotal . ', incomplete/mystery: '
+                . $incompleteMysteryTotal . ')',
             );
 
         # ;mrp -h
@@ -87373,6 +86388,85 @@
             return $self->complete(
                 $session, $standardCmd,
                 'End of list (' . @list . ' map label styles found)',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::QuickLabelDelete;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('quicklabeldelete', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['qld', 'quicklabel', 'quicklabeldelete'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Opens a window to quickly delete map labels';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Open an 'other' window
+        if (
+            ! $session->mainWin->createFreeWin(
+                'Games::Axmud::OtherWin::LabelDelete',
+                $session->mainWin,
+                $session,
+                'Quick word adder',
+            )
+        ) {
+            return $self->error(
+                $session, $inputString,
+                'Could not open the label deletion window',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Opened the label deletion window',
             );
         }
     }
@@ -88500,8 +87594,8 @@
 
         # Local variables
         my (
-            $switch, $roomNum, $numberFlag, $waitFlag, $followFlag, $updateFlag, $flagCount,
-            $roomTag, $roomObj, $result, $msg,
+            $switch, $roomNum, $numberFlag, $lostFlag, $waitFlag, $followFlag, $updateFlag,
+            $flagCount, $roomTag, $roomObj, $result, $msg,
         );
 
         # Extract switches
@@ -88511,7 +87605,12 @@
         if (defined $switch) {
 
             $numberFlag = TRUE;
-            # ($flagCount update not required)
+        }
+
+        ($switch, @args) = $self->extract('-l', 0, @args);
+        if (defined $switch) {
+
+            $lostFlag = TRUE;
         }
 
         ($switch, @args) = $self->extract('-w', 0, @args);
@@ -88546,25 +87645,40 @@
             );
         }
 
-        # Some switches can't be combined
+        # Some arguments can't be combined
         if ($flagCount > 1) {
 
             return $self->error(
                 $session, $inputString,
                 'The switches -w, -f and -u can\'t be combined',
             );
+
+        } elsif ($numberFlag && $lostFlag) {
+
+            return $self->error(
+                $session, $inputString,
+                'The switches -n and -l can\'t be combined',
+            );
+
+        } elsif ($lostFlag && defined $roomTag) {
+
+            return $self->error(
+                $session, $inputString,
+                'The -l switch can\'t be combined with a room tag/room number argument',
+            );
         }
 
         # Check for improper arguments
-        if (@args || (! defined $roomTag && ! defined $roomNum)) {
+        if (@args || (! defined $roomTag && ! defined $roomNum && ! $lostFlag)) {
 
             return $self->improper($session, $inputString);
         }
 
         # Can't do anything if the Locator is not running, if it doesn't know anything about the
         #   current location (exception: when the session is in 'connect offline' mode, the call to
-        #   GA::Obj::Map->setCurrentRoom creates a pseudo-room statement for the Locator task) or if
-        #   the Locator is expecting more room statements
+        #   GA::Obj::Map->setCurrentRoom creates a pseudo-room statement for the Locator task), if
+        #   the Locator is expecting more room statements or if the -l switch was specified and the
+        #   automapper hasn't set the last known room (in which the character got lost)
         if (! $session->locatorTask) {
 
             return $self->error(
@@ -88587,12 +87701,27 @@
                 'Can\'t set the automapper\'s current room because the Locator task is expecting'
                 . ' more room statements (use \';resetlocator\' to reset it)',
             );
+
+        } elsif ($lostFlag && ! $session->mapObj->lastKnownRoom) {
+
+            return $self->error(
+                $session, $inputString,
+                'Can\'t set the automapper\'s current room because the character\'s location before'
+                . ' getting lost is not known',
+            );
         }
+
+        # ;srm -l
+        # ;srm -l <mode>
+        if ($lostFlag) {
+
+            $roomNum = $session->mapObj->lastKnownRoom->number;
 
         # ;srm <tag>
         # ;srm <tag> <mode>
+        # ;srm <number>
         # ;srm <number> <mode>
-        if (! $numberFlag) {
+        } elsif (! $numberFlag) {
 
             # Check that the world model is using this room tag (or one with that's the same, after
             #   we convert all capital letters to lower-case). The call to ->checkRoomTag converts
@@ -89083,7 +88212,14 @@
         # Compare the Locator task's current room with every room in the model
         foreach my $roomObj ($session->worldModelObj->ivValues('roomModelHash')) {
 
-            my ($result) = $session->worldModelObj->compareRooms($session, $roomObj);
+            my ($result) = $session->worldModelObj->compareRooms(
+                $session,
+                $roomObj,
+                undef,              # Compare against the Locator task's current room
+                FALSE,              # Don't match dark rooms
+                TRUE,               # Don't match rooms if one has a title/descrip & other doesn't
+            );
+
             if ($result) {
 
                 push (@roomList, $roomObj);
@@ -90542,6 +89678,16 @@
             if ($result) {
 
                 $dir = $result;
+
+            } else {
+
+                # There's no point specifying relative directions in this command but, nevertheless,
+                #   unabbreviate any relation direction the user specifies
+                $result = $session->currentDict->checkRelativeDir($dir);
+                if ($result) {
+
+                    $dir = $result;
+                }
             }
         }
 
@@ -91318,7 +90464,7 @@
         # The first argument is a primary direction (standard or custom, abbreviated or not)
         $dir = shift @args;
         # Translate it into a standard primary direction
-        $standardDir = $session->currentDict->checkStandardDir($dir);
+        $standardDir = $session->currentDict->convertStandardDir($dir);
         if (! defined $standardDir) {
 
             return $self->error(
@@ -91425,6 +90571,112 @@
             'Couldn\'t find an unallocated exit matching \'' . $string . '\' in the automapper\'s'
             . ' current room',
         );
+    }
+}
+
+{ package Games::Axmud::Cmd::AlternativeExit;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('alternativeexit', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['ale', 'altexit', 'alternativeexit'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sets an exit\'s alternative direction(s)';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $dir, $altDir,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my ($roomObj, $exitNum, $exitObj);
+
+        # Check for improper arguments
+        if (! defined $dir || defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Import the automapper's current room (for convenience)
+        $roomObj = $session->mapObj->currentRoom;
+
+        # Check that allocating an exit is feasible
+        if (! $roomObj) {
+
+            return $self->error(
+                $session, $inputString,
+                'Can\'t set an alternative direction until a current room is set',
+            );
+        }
+
+        # Get an exit in the current room matching $dir
+        $exitNum = $roomObj->ivShow('exitNumHash', $dir);
+        if (! defined $exitNum) {
+
+            return $self->error(
+                $session, $inputString,
+                'The automapper\'s current room doesn\'t have an exit in the direction \''
+                . $dir . '\'',
+            );
+
+        } else {
+
+            $exitObj = $session->worldModelObj->ivShow('exitModelHash', $exitNum);
+        }
+
+        # Set (or reset) the exit's alternative direction(s)
+        $session->worldModelObj->set_exitAltDir($exitObj, $altDir);
+
+        if (! defined $altDir) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Reset alternative directions for the \'' . $dir . '\' exit',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Set alternative directions for the \'' . $dir . '\' exit to \'' . $altDir . '\'',
+            );
+        }
     }
 }
 

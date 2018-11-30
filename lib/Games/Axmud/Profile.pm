@@ -138,6 +138,8 @@
             #   will set up cages etc when this profile first becomes a current profile)
             # NB The flag will be TRUE for all pre-configured worlds, as the code that creates them
             #   also creates cages for each world
+            # NB Will also be TRUE for a cloned world, if the original's value was TRUE. Although
+            #   the clone has never been a current world, it does have cages etc)
             setupCompleteFlag           => FALSE,
             # List containing notes written by this user for this profile, and available to the
             #   Notepad task when it's running
@@ -496,35 +498,15 @@
             #   for an explicit regenerated, come around or woken up trigger to fire.
             lifeStatusOverrideFlag      => FALSE,
 
-            # Command prompt patterns - a list of patterns which match the world's command prompts.
-            #   Any received packet of text (comprising one or more lines, split by newline
-            #   characters) is tested against these patterns, before anything else is done. If any
-            #   of the patterns match, a newline character is inserted immediately after the match -
-            #   UNLESS the matching text is already followed by a newline character, or occurs at
-            #   the end of the packet
-            # The text is tested BEFORE being matched against triggers
-            # NB The Session code assumes that each pattern matches the WHOLE of the prompt, so it
-            #   should definitely contain an initial ^ character, but not a final $ character
+            # Command prompt patterns - a list of patterns which match the world's command prompts
+            # Useful at worlds that don't use EOR or GA, since we don't want to test triggers
+            #   against incomplete lines, but we do want to test them against prompts
+            # Also useful at worlds (like Dead Souls) that, when display several room statements
+            #   at once, add the beginning of the room statement to the end of the previous prompt
+            #   (as the GA::Session code is able to split the line, at that point)
+            # The pattern should normally begin with an initial ^ character, but must not end with
+            #   a terminal $ character (because if it does, it can't be used to split lines)
             cmdPromptPatternList        => [],
-            # 'Strict prompts' mode, for worlds that don't use EOR or IAC GA to show a prompt. When
-            #   a line is received in two or more pieces - perhaps separated by some fractions of a
-            #   second - trigger patterns that are supposed to match the whole line are tested
-            #   against each piece, and therefore don't match
-            # When this flag is TRUE, 'Strict prompts' mode is in force. The Session only
-            #   recognises prompts which match (the whole of) one of the patterns in
-            #   $self->cmdPromptPatternList; everything else is assumed to be part of a line which
-            #   hasn't been fully received yet (the text is not processed until the rest of the
-            #   line is received). If TRUE, ->cmdPromptPatternList should contain the initial
-            #   'Enter your name' and 'Enter your password' prompts, as well as the usual '> '
-            #   prompt
-            # When this flag is FALSE, a line that doesn't end in a with a newline character (or
-            #   is terminated with EOR or IAC GA) is processed (and displayed) immediately; it can
-            #   be marked as a prompt some fractions of a second later, if no text is received
-            # Strict prompts mode is not applied when $self->specialEchoMode is 'enabled' (because
-            #   if world commands are sent to the world, one character at a time, and then echoed
-            #   back to us, the patterns in $self->cmdPromptPatternList won't recognise them as
-            #   valid prompts)
-            strictPromptsMode           => FALSE,
             # Empty line suppression. If set to 0, no empty lines are suppressed. If set to 1, all
             #   empty lines are suppressed. If set to n (where n > 1), all consecutive lines from
             #   n onwards are suppressed (e.g. n = 3, 2 consecutive empty lines are preserved, all
@@ -675,11 +657,17 @@
             ],
             # Hash of Status task variables, whose values can be set when MSDP variables are
             #   received. Hash in the form
-            #       $msdpStatusVarHash{MSDP_VARIABLE} = status_task_variable
+            #       $msdpStatusVarHash{msdp_variable} = status_task_variable
             # Normally, the Status task only accepts a subset of MSDP variables for the categories
             #   'Character', 'Combat' and 'World'. Adding key-value pairs to this hash allow the
             #   Status task to accept other MSDP variables too
             msdpStatusVarHash           => {},
+            # Hash of Status task variables, whose values can be set when MXP entities are created
+            #   or modified. Hash in the form
+            #       $mspStatusVarHash{mxp_entity_name} = status_task_variable
+            # (There are no pre-existing MXP entities which the Status task accepts, as there are
+            #   for MSDP variables)
+            mxpStatusVarHash            => {},
             # Bar string pattern groups (groups of 6)
             #   [0] - the pattern to match
             #   [1] - the number of the group substring that contains the data we need
@@ -1426,7 +1414,9 @@
             initMission                 => $self->initMission,
             initCmdList                 => [$self->initCmdList],
 
-            setupCompleteFlag           => FALSE,           # Clone never been a current profile
+            # (Although the clone hasn't actually been a current world, it does have the same cages
+            #   etc that the original had, so its ->setupCompleteFlag can be TRUE)
+            setupCompleteFlag           => $self->setupCompleteFlag,
             notepadList                 => [$self->notepadList],
             privateHash                 => {},
 
@@ -1496,7 +1486,6 @@
             lifeStatusOverrideFlag      => $self->lifeStatusOverrideFlag,
 
             cmdPromptPatternList        => [$self->cmdPromptPatternList],
-            strictPromptsMode           => $self->strictPromptsMode,
             suppressEmptyLineCount      => $self->suppressEmptyLineCount,
             suppressBeforeLoginFlag     => $self->suppressBeforeLoginFlag,
 
@@ -1525,6 +1514,7 @@
             statusFormatList            => [$self->statusFormatList],
             gaugeFormatList             => [$self->gaugeFormatList],
             msdpStatusVarHash           => {$self->msdpStatusVarHash},
+            mxpStatusVarHash            => {$self->mxpStatusVarHash},
             barPatternList              => [$self->barPatternList],
             groupPatternList            => [$self->groupPatternList],
             affectPatternList           => [$self->affectPatternList],
@@ -2061,6 +2051,7 @@
 
         # Merge Status task patterns
         $self->mergeHash('msdpStatusVarHash', $otherObj);
+        $self->mergeHash('mxpStatusVarHash', $otherObj);
         $self->mergeGroupList('barPatternList', $otherObj, 6);
         $self->mergeGroupList('groupPatternList', $otherObj, 4);
         $self->mergeGroupList('affectPatternList', $otherObj, 3);
@@ -2560,8 +2551,6 @@
 
     sub cmdPromptPatternList
         { my $self = shift; return @{$self->{cmdPromptPatternList}}; }
-    sub strictPromptsMode
-        { $_[0]->{strictPromptsMode} }
     sub suppressEmptyLineCount
         { $_[0]->{suppressEmptyLineCount} }
     sub suppressBeforeLoginFlag
@@ -2613,6 +2602,8 @@
         { my $self = shift; return @{$self->{gaugeFormatList}}; }
     sub msdpStatusVarHash
         { my $self = shift; return %{$self->{msdpStatusVarHash}}; }
+    sub mxpStatusVarHash
+        { my $self = shift; return %{$self->{mxpStatusVarHash}}; }
     sub barPatternList
         { my $self = shift; return @{$self->{barPatternList}}; }
     sub groupPatternList

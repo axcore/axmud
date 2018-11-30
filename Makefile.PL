@@ -67,6 +67,8 @@ WriteMakefile(
                             => '6.52',
         "File::ShareDir::Install"
                             => 0,
+        "Path::Tiny"
+                            => 0,
     },
     PREREQ_PM               => { %prereqHash },
     INSTALLDIRS             => 'site',

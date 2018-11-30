@@ -19,7 +19,7 @@ lka / listkeycodealternative  Lists alternative forms for keycodes
          can also be called 'pageup'.
       A few American English forms are also recognised; for example, 'full_stop'
          and 'period' are equivalent.
-      Use ';listkeycodealternative' to get a list of alternative forms for 
+      Use this command to display a complete list of alternative forms for
          Axmud's standard keycodes.
  
    User commands:

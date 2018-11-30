@@ -1,4 +1,4 @@
-# Axmud list of all worlds, created Wed Oct 31, 2018
+# Axmud list of all worlds, created Fri Nov 30, 2018
 
 Aabahran, The Forsaken Lands
 aabahran
@@ -5041,7 +5041,7 @@ swaoa-mush.com
 English
 
 Swords of Chaos
-swchaois
+swchaos
 bbs.soc4ever.com
 23
 0

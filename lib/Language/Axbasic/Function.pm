@@ -3815,7 +3815,7 @@
         my ($self, @args) = @_;
 
         # Local variables
-        my ($mapObj, $wmObj, $regionObj, $regionmapObj, $xPos, $yPos, $zPos, $labelObj);
+        my ($mapObj, $wmObj, $regionmapObj, $xPos, $yPos, $zPos, $labelObj);
 
         # (No improper arguments to check)
 
@@ -3832,8 +3832,7 @@
         }
 
         # Get the current room's parent regionmap
-        $regionObj = $wmObj->ivShow('modelHash', $mapObj->currentRoom->parent);
-        $regionmapObj = $wmObj->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $wmObj->findRegionmap($mapObj->currentRoom->parent);
         if (! $regionmapObj) {
 
             # Failsafe
@@ -3950,7 +3949,7 @@
         my ($self, @args) = @_;
 
         # Local variables
-        my ($mapObj, $wmObj, $regionObj, $regionmapObj, $xPos, $yPos, $zPos, $roomObj);
+        my ($mapObj, $wmObj, $regionmapObj, $xPos, $yPos, $zPos, $roomObj);
 
         # (No improper arguments to check)
 
@@ -3965,8 +3964,7 @@
         }
 
         # Get the current room's parent regionmap
-        $regionObj = $wmObj->ivShow('modelHash', $mapObj->currentRoom->parent);
-        $regionmapObj = $wmObj->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $wmObj->findRegionmap($mapObj->currentRoom->parent);
         if (! $regionmapObj) {
 
             # Failsafe
@@ -5829,6 +5827,9 @@
         $mapObj = $self->scriptObj->session->mapObj;
         $wmObj = $mapObj->worldModelObj;
 
+        # Room tags are stored as lower-case letters
+        $arg = lc($arg);
+
         # Check that $arg is a tag used by a world model room, if it was specified
         if ($arg && ! $wmObj->ivExists('roomTagHash', $arg)) {
 
@@ -6456,6 +6457,10 @@
                 if ($obj->exitOrnament eq 'impass') {
 
                     return 'impassable';
+
+                } elsif ($obj->exitOrnament eq 'mystery') {
+
+                    return 'mystery';
 
                 } elsif ($obj->drawMode eq 'temp_alloc' || $obj->drawMode eq 'temp_unalloc') {
 

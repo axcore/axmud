@@ -1847,17 +1847,8 @@
             }
         }
 
-        # Fight complete. Update the current character profile's IVs
+        # Fight complete. Update the current character profile's IVs (via the Status task)
         if ($charObj) {
-
-#            # The current version of the Attack task assumes that every fight ends in a kill - if
-#            #   this isn't the behaviour you want, you'll need to write code that checks strings
-#            #   like 'You attack four orcs' and accurately works out, under all circumstances, how
-#            #   many targets have been attacked
-#            # Note that the character profile's ->wimpyCount, ->fightDefeatCount, ->fleeCount and
-#            #   ->escapedCount IVs aren't updated by this task for the same reason
-#            $charObj->ivIncrement('fightCount');
-#            $charObj->ivIncrement('killCount');
 
             # ->fightVictimHash is similarly not updated, but we can update the base string hash
             if ($charObj->ivExists('fightVictimStringHash', lc($victim))) {
@@ -1865,13 +1856,12 @@
             } else {
                 $charObj->ivAdd('fightVictimStringHash', lc($victim), 1);
             }
-        }
 
-        # Update the Status task's IVs
-        if ($taskObj) {
+            if ($taskObj) {
 
-            # Updates ->fightCount, ->killCount
-            $taskObj->inc_fightCount();
+                # Updates ->fightCount, ->killCount
+                $taskObj->inc_fightCount();
+            }
         }
 
         # Write something in the 'main' window, if allowed
@@ -2013,11 +2003,8 @@
             }
         }
 
-        # Update the current character profile's IVs
+        # Update the current character profile's IVs (via the Status task)
         if ($charObj) {
-
-#            $charObj->ivIncrement('interactCount');
-#            $charObj->ivIncrement('interactSuccessCount');
 
             # ->interactionVictimHash can't be updated because we don't have a main noun; but
             #   we can still update the base string hash
@@ -2026,13 +2013,12 @@
             } else {
                 $charObj->ivAdd('interactionVictimStringHash', lc($victim), 1);
             }
-        }
 
-        # Update the Status task's IVs
-        if ($taskObj) {
+            if ($taskObj) {
 
-            # Updates ->interactCount, ->interactSuccessCount
-            $taskObj->inc_interactSuccessCount();
+                # Updates ->interactCount, ->interactSuccessCount
+                $taskObj->inc_interactSuccessCount();
+            }
         }
 
         # Write something in the 'main' window, if allowed
@@ -2176,15 +2162,8 @@
             }
         }
 
-#        # Interaction complete. Update the current character profile's IVs
-#        if ($charObj) {
-#
-#            $charObj->ivIncrement('interactCount');
-#            $charObj->ivIncrement('interactFailCount');
-#        }
-
-        # Update the Status task's IVs
-        if ($taskObj) {
+        # Interaction complete. Update the current character profile's IVs (via the Status task)
+        if ($charObj && $taskObj) {
 
             # Updates ->interactCount, ->interactFailCount
             $taskObj->inc_interactFailCount();
@@ -2332,15 +2311,8 @@
             }
         }
 
-#        # Interaction complete. Update the current character profile's IVs
-#        if ($charObj) {
-#
-#            $charObj->ivIncrement('interactCount');
-#            $charObj->ivIncrement('interactFightCount');
-#        }
-
-        # Update the Status task's IVs
-        if ($taskObj) {
+        # Interaction complete. Update the current character profile's IVs (via the Status task)
+        if ($charObj && $taskObj) {
 
             # Updates ->interactCount, ->interactFightCount
             $taskObj->inc_interactFightCount();
@@ -2490,15 +2462,8 @@
             }
         }
 
-#        # Interaction complete. Update the current character profile's IVs
-#        if ($charObj) {
-#
-#            $charObj->ivIncrement('interactCount');
-#            $charObj->ivIncrement('interactDisasterCount');
-#        }
-
-        # Update the Status task's IVs
-        if ($taskObj) {
+        # Interaction complete. Update the current character profile's IVs (via the Status task)
+        if ($charObj && $taskObj) {
 
             # Updates ->interactCount, ->interactDisasterCount
             $taskObj->inc_interactDisasterCount();
@@ -4550,10 +4515,10 @@
         # Users can use the client command ';switch' to interact with individual tasks, typically
         #   telling them to turn on/off the automatic reading out of information (e.g. the Locator
         #   task can be told to start or stop reading out room titles as they are received from
-        #   the world).
+        #   the world)
         # The ';switch' command is in the form ';switch <flag_attribute>'. The ';switch' command
         #   looks up the <flag_attribute> (which is a string, not a TRUE/FALSE value) in
-        #   GA::Client->ttsFlagAttribHash, which tells it which task to call.
+        #   GA::Client->ttsFlagAttribHash, which tells it which task to call
         #
         # Expected arguments
         #   $flagAttrib - The TTS flag attribute specified by the calling function. Must be one of
@@ -14708,10 +14673,10 @@
         # Users can use the client command ';switch' to interact with individual tasks, typically
         #   telling them to turn on/off the automatic reading out of information (e.g. the Locator
         #   task can be told to start or stop reading out room titles as they are received from
-        #   the world).
+        #   the world)
         # The ';switch' command is in the form ';switch <flag_attribute>'. The ';switch' command
         #   looks up the <flag_attribute> (which is a string, not a TRUE/FALSE value) in
-        #   GA::Client->ttsFlagAttribHash, which tells it which task to call.
+        #   GA::Client->ttsFlagAttribHash, which tells it which task to call
         #
         # Expected arguments
         #   $flagAttrib - The TTS flag attribute specified by the calling function. Must be one of
@@ -18216,7 +18181,7 @@
 
         # Task parameters
         #
-        # Table object handling the GA::Gtk::Simple::List
+        # Table object handling the GA::Obj::Simple::List
         $self->{slTableObj}             = undef;
         # A hash of scripts displayed in the window, in the form
         #   $fileHash{script_name} = full_file_path
@@ -19390,10 +19355,10 @@
         # Called by GA::Cmd::Read->do and PermRead->do
         # Users can use the client command ';read' to interact with individual tasks, typically
         #   getting them to read out information (e.g. the Status task can read out current health
-        #   points).
+        #   points)
         # The ';read' command is in the form ';read <attribute>' or ';read <attribute> <value>'.
         #   The ';read' command looks up the <attribute> in GA::Client->ttsAttribHash, which tells
-        #   it which task to call.
+        #   it which task to call
         #
         # Expected arguments
         #   $attrib     - The TTS attribute specified by the calling function. Must be one of the
@@ -19590,7 +19555,37 @@
         return 1;
     }
 
-#   sub doReset {}              # Inherited from generic task
+    sub doReset {
+
+        # Called just before the task completes a reset
+        # For process tasks, called by $self->main. For activity tasks, called by $self->reset
+        #
+        # Resets the automapper's current room, so the user see a 'Lost after a move in an unknown
+        #   direction' message after typing ';resettask locator'
+        #
+        # Expected arguments
+        #   $newTaskObj     - The replacement task object
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $newTaskObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $newTaskObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doReset', @_);
+        }
+
+        # Update the automapper
+        if ($self->session->mapObj->currentRoom) {
+
+            $self->session->mapObj->setCurrentRoom();
+        }
+
+        return 1;
+    }
 
     sub doFirstStage {
 
@@ -20037,7 +20032,7 @@
         #                       movement command ('undef' if there are none, or if $mapRoomObj is
         #                       not defined)
         #   $destRoomObj    - If $cmdObj is set, the likely destination room for that movement, if
-        #                       known ('undef' otherwise
+        #                       known ('undef' otherwise)
         #
         # Return values
         #   'undef' on improper arguments, if there's an error or if no more lines should be
@@ -20052,7 +20047,7 @@
         # Local variables
         my (
             $lineText, $existsFlag, $failExitFlag, $foundFailPattern, $moveDir,
-            $involuntaryExitFlag, $foundInvoluntaryPattern, $specialFlag, $followCmd, $followFlag,
+            $involuntaryExitFlag, $involuntaryValue, $specialFlag, $followCmd, $followFlag,
             $followAnchorFlag, $newCmdObj, $ghostRoomObj, $exitNum, $exitObj, $updateFlag,
             $tempRoomObj, $anchorFlag, $promptFlag, $missionObj,
             @followPatternList, @followAnchorPatternList, @unspecifiedList, @promptList,
@@ -20196,10 +20191,10 @@
         #   patterns (assuming that we've already found the first room statement, but don't look if
         #   a failed exit pattern already found)
         # NB Although room model objects have separate involuntary / repulse pattern lists,
-        #   the Locator task treats them both as an involuntary exit pattern
+        #   the Locator task treats them in the same way
         if (! $failExitFlag && $mapRoomObj && $self->roomCount) {
 
-            OUTER: foreach my $pattern ($mapRoomObj->involuntaryExitPatternList) {
+            OUTER: foreach my $pattern ($mapRoomObj->ivKeys('involuntaryExitPatternHash')) {
 
                 if ($lineText =~ m/$pattern/) {
 
@@ -20212,16 +20207,15 @@
 
                     # $lineText contains one of the room's own involuntary exit patterns
                     $involuntaryExitFlag = TRUE;
+                    $involuntaryValue = $mapRoomObj->ivShow('involuntaryExitPatternHash', $pattern);
                     # If one involuntary exit found on a line, don't need to check for others
-                    $foundInvoluntaryPattern = $pattern;
-
                     last OUTER;
                 }
             }
 
             if (! $involuntaryExitFlag) {
 
-                OUTER: foreach my $pattern ($mapRoomObj->repulseExitPatternList) {
+                OUTER: foreach my $pattern ($mapRoomObj->ivKeys('repulseExitPatternHash')) {
 
                     if ($lineText =~ m/$pattern/) {
 
@@ -20235,9 +20229,18 @@
                         # $lineText contains one of the room's own repulse exit patterns, which the
                         #   task treats as just another involuntary exit
                         $involuntaryExitFlag = TRUE;
-                        # If one involuntary exit found on a line, don't need to check for others
-                        $foundInvoluntaryPattern = $pattern;
+                        $involuntaryValue
+                            = $mapRoomObj->ivShow('repulseExitPatternHash', $pattern);
 
+                        # The movement command described by $cmdObj was rejected by the world, so
+                        #   we need to discard it
+                        if ($cmdObj) {
+
+                            $self->removeFirstMove($cmdObj);
+                            $cmdObj = undef;
+                        }
+
+                        # If one involuntary exit found on a line, don't need to check for others
                         last OUTER;
                     }
                 }
@@ -20245,8 +20248,8 @@
         }
 
         # PART 6
-        # Look out for involuntary exit patterns (but don't look if a failed or involuntary exit
-        #   pattern already found)
+        # Look out for the world profile's involuntary exit patterns (but don't look if a failed or
+        #   involuntary exit pattern already found)
         if (! $failExitFlag && ! $involuntaryExitFlag) {
 
             OUTER: foreach my $pattern ($worldObj->involuntaryExitPatternList) {
@@ -20274,8 +20277,6 @@
 
                         # If one failed involuntary exit found on a line, don't need to check for
                         #   others
-                        $foundInvoluntaryPattern = $pattern;
-
                         last OUTER;
                     }
                 }
@@ -20283,8 +20284,83 @@
         }
 
         # PART 7
-        # React to an involuntary (or repulse) exit pattern from parts 5-6
-        if ($involuntaryExitFlag) {
+        # React to an involuntary/repulse exit pattern from parts 5-6
+        if (defined $involuntaryValue) {
+
+            # If defined, $involuntaryValue is the involuntary/repulse exit pattern's corresponding
+            #   direction or destination room
+            if ($self->session->worldModelObj->ivExists('modelHash', $involuntaryValue)) {
+
+                # Create a temporary command buffer object, treating the move as if the user had
+                #   typed a teleport command to the destination room whose model number is
+                #   $involuntaryValue
+                $cmdObj = Games::Axmud::Buffer::Cmd->new(
+                    $self->session,
+                    'session',
+                    # Not a real world command, but an involuntary movement
+                    -1,
+                    'teleport',                 # A fake world command
+                    $self->session->sessionTime,
+                );
+
+                $cmdObj->addTeleport($involuntaryValue);
+
+            } else {
+
+                # $involuntaryValue can be a custom or standard direction. If standard, convert it
+                #   to custom
+                if ($self->session->currentDict->ivExists('primaryDirHash', $involuntaryValue)) {
+
+                    $involuntaryValue = $self->session->currentDict->ivShow(
+                        'primaryDirHash',
+                        $involuntaryValue,
+                    );
+                }
+
+                # Create a temporary command buffer object, as if the user had a typed a command in
+                #   the direction $involuntaryValue, which is assumed to lead to a destination room
+                $cmdObj = Games::Axmud::Buffer::Cmd->new(
+                    $self->session,
+                    'session',
+                    # Not a real world command, but an involuntary move
+                    -1,
+                    $involuntaryValue,
+                    $self->session->sessionTime,
+                );
+
+                $cmdObj->addMove();
+            }
+
+            # Update $self->cmdObjList and ->moveList
+            $self->add_cmdObj($cmdObj);
+
+            # Treat this as an anchor line
+            $updateFlag = TRUE;
+
+            # Remember the position in the display buffer of the most recent anchor line found
+            $self->ivPoke('lastAnchorLine', $lineNum);
+            $self->ivPoke('lastStatementEndLine', $lineNum);
+            $self->ivPoke('lastStatementStartLine', $lineNum);
+
+            # Archive the previous current room object (if there was one)
+            if ($self->roomObj) {
+
+                $self->ivPoke('prevRoomObj', $self->roomObj);
+            }
+
+            # Create a non-model object for this room
+            $tempRoomObj = Games::Axmud::ModelObj::Room->new(
+                $self->session,
+                '<temporary name>',     # Room description
+                FALSE,                  # Non-model object
+            );
+
+            $self->ivPoke('roomObj', $tempRoomObj);     # Even if $tempRoomObj is 'undef'
+
+            # Mark this non-model room as (currently) unspecified
+            $self->roomObj->ivPoke('unspecifiedFlag', TRUE);
+
+        } elsif ($involuntaryExitFlag) {
 
             if ($cmdObj) {
 
@@ -25346,8 +25422,8 @@
         #   $verboseFlag    - Flag set to TRUE for verbose exits, FALSE for brief exits
         #
         # Optional arguments
-        #   @exitList       - A list of exits, e.g. ('north', 'east', 'enter cave'). Might be an
-        #                       empty list, if the room statement contained a line like
+        #   @exitList       - A list of exit directions, e.g. ('north', 'east', 'enter cave'). Might
+        #                       be an empty list, if the room statement contained a line like
         #                       'Obvious exits: none', an if 'none' is one the world profile's
         #                       non-delimiter strings (stored in ->verboseExitNonDelimiterList or
         #                       ->briefExitNonDelimiterList)
@@ -28454,6 +28530,15 @@
 
             push (@argList,
                 'NEWLINE',
+                [
+                    $colour,
+                ],
+            );
+
+        } elsif ($type eq 'ga') {
+
+            push (@argList,
+                'GOAHEAD',
                 [
                     $colour,
                 ],
@@ -31586,10 +31671,10 @@
         # Users can use the client command ';alert' to interact with individual tasks, typically
         #   instructing them to read out information some time later (e.g. the Status task can read
         #   out an alert when health points drop below a certain level or recover to a certain
-        #   level).
+        #   level)
         # The ';alert' command is in the form ';alert <alert_attribute>' or
         #   ';alert <alert_attribute> <value>'. The ';alert' command looks up the <alert_attribute>
-        #   in GA::Client->ttsAlertAttribHash, which tells it which task to call.
+        #   in GA::Client->ttsAlertAttribHash, which tells it which task to call
         #
         # Expected arguments
         #   $alertAttrib    - The TTS attribute specified by the calling function. Must be one of
@@ -35482,7 +35567,6 @@
             # Play a sound effect (if allowed)
             $axmud::CLIENT->playSound('death');
 
-
             # If there is a current mission, it must be told to give up
             if ($session->currentMission) {
 
@@ -36293,6 +36377,24 @@
 
         # Update the task window
         $self->ivPoke('updateFlag', TRUE);
+
+        return 1;
+    }
+
+    sub set_lifeStatusChangeFlag {
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_lifeStatusChangeFlag',
+                @_,
+            );
+        }
+
+        $self->ivPoke('lifeStatusChangeFlag', TRUE);
 
         return 1;
     }

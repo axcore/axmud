@@ -56,11 +56,11 @@
 
         # Set standard blinker colours
         if ($number == 0) {
-            $onColour = '#800080',      # HTML purple
+            $onColour = '#B966D7',      # Custom purple
         } elsif ($number == 1) {
             $onColour = '#FFFFFF',      # HTML white
         } elsif ($number == 2) {
-            $onColour = '#FF0000',      # HTML red
+            $onColour = '#EB3D3B',      # Custom red
         } else {
             $onColour = '#FFFF00',      # Fallback: HTML yellow
         }

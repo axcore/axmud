@@ -198,6 +198,7 @@
         $self->client4Tab($innerNotebook);
         $self->client5Tab($innerNotebook);
         $self->client6Tab($innerNotebook);
+        $self->client7Tab($innerNotebook);
 
         return 1;
     }
@@ -604,7 +605,7 @@
         # Resets the simple list displayed by $self->client2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -691,150 +692,45 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
 
-        # Directories (folders)
-        $self->addLabel($table, '<b>Directories (folders)</b>',
-            0, 12, 0, 1);
-
-        $self->addLabel($table, 'Base directory',
-            1, 3, 1, 2);
-        my $entry = $self->addEntry($table, undef, FALSE,
-            3, 12, 1, 2);
-        $entry->set_text($axmud::SHARE_DIR);
-
-        $self->addLabel($table, 'Data directory',
-            1, 3, 2, 3);
-        my $entry2 = $self->addEntry($table, undef, FALSE,
-            3, 12, 2, 3);
-        $entry2->set_text($axmud::DATA_DIR);
-
         # File permissions
         $self->addLabel($table, '<b>File permissions</b>',
-            0, 12, 3, 4);
+            0, 12, 0, 1);
 
         $self->addLabel($table, 'Load config file',
-            1, 5, 4, 5);
+            1, 5, 1, 2);
         my $checkButton = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 4, 5);
+            5, 6, 1, 2);
         $checkButton->set_active($axmud::CLIENT->loadConfigFlag);
 
         $self->addLabel($table, 'Save config file',
-            1, 5, 5, 6);
+            1, 5, 2, 3);
         my $checkButton2 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 5, 6);
+            5, 6, 2, 3);
         $checkButton2->set_active($axmud::CLIENT->saveConfigFlag);
 
         $self->addLabel($table, 'Load other files',
-            1, 5, 6, 7);
+            1, 5, 3, 4);
         my $checkButton3 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 6, 7);
+            5, 6, 3, 4);
         $checkButton3->set_active($axmud::CLIENT->loadDataFlag);
 
         $self->addLabel($table, 'Save other files',
-            7, 11, 4, 5);
+            7, 11, 1, 2);
         my $checkButton4 = $self->addCheckButton($table, undef, FALSE,
-            11, 12, 4, 5);
+            11, 12, 1, 2);
         $checkButton4->set_active($axmud::CLIENT->saveDataFlag);
 
         $self->addLabel($table, 'All files deleted at startup',
-            7, 11, 5, 6);
+            7, 11, 2, 3);
         my $checkButton5 = $self->addCheckButton($table, undef, FALSE,
-            11, 12, 5, 6);
+            11, 12, 2, 3);
         $checkButton5->set_active($axmud::CLIENT->deleteFilesAtStartFlag);
 
         $self->addLabel($table, 'File operation has failed',
-            7, 11, 6, 7);
+            7, 11, 3, 4);
         my $checkButton6 = $self->addCheckButton($table, undef, FALSE,
-            11, 12, 6, 7);
+            11, 12, 3, 4);
         $checkButton6->set_active($axmud::CLIENT->fileFailFlag);
-
-        # File permissions
-        $self->addLabel($table, '<b>Temporary backup file retention</b>',
-            0, 12, 7, 8);
-
-        $self->addLabel($table, 'Retain backup copies after saving',
-            1, 5, 8, 9);
-        my $checkButton7 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 8, 9);
-        $checkButton7->set_active($axmud::CLIENT->autoRetainFileFlag);
-
-        my $button = $self->addButton($table,
-            'Turn on', 'Retain backup copies after saving files', undef,
-            7, 9, 8, 9);
-        $button->signal_connect('clicked' => sub {
-
-            # Retain backups on
-            $self->session->pseudoCmd('retainbackups on', $self->pseudoCmdMode);
-
-            # Update the checkbutton
-            $checkButton7->set_active($axmud::CLIENT->autoRetainFileFlag);
-        });
-
-        my $button2 = $self->addButton($table,
-            'Turn off', 'Don\'t retain backup copies after saving files', undef,
-            9, 12, 8, 9);
-        $button2->signal_connect('clicked' => sub {
-
-            # Retain backups off
-            $self->session->pseudoCmd('retainbackups off', $self->pseudoCmdMode);
-
-            # Update the checkbutton
-            $checkButton7->set_active($axmud::CLIENT->autoRetainFileFlag);
-        });
-
-        # Auto-save
-        $self->addLabel($table, '<b>Auto-save</b>',
-            0, 12, 9, 10);
-
-        $self->addLabel($table, 'Enable auto-saves',
-            1, 5, 10, 11);
-        my $checkButton8 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 10, 11);
-        $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
-
-        my $button3 = $self->addButton($table,
-            'Turn on', 'Turns autosaves on', undef,
-            7, 9, 10, 11);
-        $button3->signal_connect('clicked' => sub {
-
-            # Turn autosave on
-            $self->session->pseudoCmd('autosave on', $self->pseudoCmdMode);
-
-            # Update the checkbutton
-            $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
-        });
-
-        my $button4 = $self->addButton($table,
-            'Turn off', 'Turns autosaves off', undef,
-            9, 12, 10, 11);
-        $button4->signal_connect('clicked' => sub {
-
-            # Turn autosave off
-            $self->session->pseudoCmd('autosave off', $self->pseudoCmdMode);
-
-            # Update the checkbutton
-            $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
-        });
-
-        $self->addLabel($table, 'Time interval (minutes)',
-            1, 3, 11, 12);
-        my $entry3 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
-            3, 6, 11, 12);
-        $entry3->set_text($axmud::CLIENT->autoSaveWaitTime);
-
-        my $button5 = $self->addButton($table,
-            'Set interval', 'Set the time between successive auto-saves', undef,
-            7, 9, 11, 12);
-        $button5->signal_connect('clicked' => sub {
-
-            if ($self->checkEntryIcon($entry3)) {
-
-                # Set autosave time
-                $self->session->pseudoCmd('autosave ' . $entry3->get_text(), $self->pseudoCmdMode);
-
-                # Update the checkbutton
-                $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
-            }
-        });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -855,6 +751,169 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->client4Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+
+        # Directories (folders)
+        $self->addLabel($table, '<b>Directories (folders)</b>',
+            0, 12, 0, 1);
+
+        $self->addLabel($table, 'Installation (base) directory',
+            1, 3, 1, 2);
+        my $entry = $self->addEntry($table, undef, FALSE,
+            3, 12, 1, 2);
+        $entry->set_text($axmud::TOP_DIR);
+
+        $self->addLabel($table, 'Shared install file directory',
+            1, 3, 2, 3);
+        my $entry2 = $self->addEntry($table, undef, FALSE,
+            3, 12, 2, 3);
+        $entry2->set_text($axmud::SHARE_DIR);
+
+        $self->addLabel($table, 'Current data directory',
+            1, 3, 3, 4);
+        my $entry3 = $self->addEntry($table, undef, FALSE,
+            3, 12, 3, 4);
+        $entry3->set_text($axmud::DATA_DIR);
+
+        my $button = $self->addButton($table,
+            'Set', 'Sets the location of ' . $axmud::SCRIPT . '\'s data directory', undef,
+            7, 9, 4, 5);
+        $button->signal_connect('clicked' => sub {
+
+            # Set the directory
+            $self->session->pseudoCmd('setdatadirectory', $self->pseudoCmdMode);
+        });
+
+        my $button2 = $self->addButton($table,
+            'Reset', 'Resets the location of ' . $axmud::SCRIPT . '\'s data directory', undef,
+            9, 12, 4, 5);
+        $button2->signal_connect('clicked' => sub {
+
+            # Reset the directory
+            $self->session->pseudoCmd('setdatadirectory -r', $self->pseudoCmdMode);
+        });
+
+        $self->addLabel($table, 'Default data directory',
+            1, 3, 5, 6);
+        my $entry4 = $self->addEntry($table, undef, FALSE,
+            3, 12, 5, 6);
+        $entry4->set_text($axmud::DEFAULT_DATA_DIR);
+
+        # Temporary backup file retention
+        $self->addLabel($table, '<b>Temporary backup file retention</b>',
+            0, 12, 6, 7);
+
+        $self->addLabel($table, 'Retain backup copies after saving',
+            1, 5, 7, 8);
+        my $checkButton7 = $self->addCheckButton($table, undef, FALSE,
+            5, 6, 7, 8);
+        $checkButton7->set_active($axmud::CLIENT->autoRetainFileFlag);
+
+        my $button3 = $self->addButton($table,
+            'Turn on', 'Retain backup copies after saving files', undef,
+            7, 9, 7, 8);
+        $button3->signal_connect('clicked' => sub {
+
+            # Retain backups on
+            $self->session->pseudoCmd('retainbackups on', $self->pseudoCmdMode);
+
+            # Update the checkbutton
+            $checkButton7->set_active($axmud::CLIENT->autoRetainFileFlag);
+        });
+
+        my $button4 = $self->addButton($table,
+            'Turn off', 'Don\'t retain backup copies after saving files', undef,
+            9, 12, 7, 8);
+        $button4->signal_connect('clicked' => sub {
+
+            # Retain backups off
+            $self->session->pseudoCmd('retainbackups off', $self->pseudoCmdMode);
+
+            # Update the checkbutton
+            $checkButton7->set_active($axmud::CLIENT->autoRetainFileFlag);
+        });
+
+        # Auto-save
+        $self->addLabel($table, '<b>Auto-save</b>',
+            0, 12, 8, 9);
+
+        $self->addLabel($table, 'Enable auto-saves',
+            1, 5, 9, 10);
+        my $checkButton8 = $self->addCheckButton($table, undef, FALSE,
+            5, 6, 9, 10);
+        $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
+
+        my $button5 = $self->addButton($table,
+            'Turn on', 'Turns autosaves on', undef,
+            7, 9, 9, 10);
+        $button5->signal_connect('clicked' => sub {
+
+            # Turn autosave on
+            $self->session->pseudoCmd('autosave on', $self->pseudoCmdMode);
+
+            # Update the checkbutton
+            $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
+        });
+
+        my $button6 = $self->addButton($table,
+            'Turn off', 'Turns autosaves off', undef,
+            9, 12, 9, 10);
+        $button6->signal_connect('clicked' => sub {
+
+            # Turn autosave off
+            $self->session->pseudoCmd('autosave off', $self->pseudoCmdMode);
+
+            # Update the checkbutton
+            $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
+        });
+
+        $self->addLabel($table, 'Time interval (minutes)',
+            1, 3, 10, 11);
+        my $entry5 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
+            3, 6, 10, 11);
+        $entry5->set_text($axmud::CLIENT->autoSaveWaitTime);
+
+        my $button7 = $self->addButton($table,
+            'Set interval', 'Set the time between successive auto-saves', undef,
+            7, 9, 10, 11);
+        $button7->signal_connect('clicked' => sub {
+
+            if ($self->checkEntryIcon($entry5)) {
+
+                # Set autosave time
+                $self->session->pseudoCmd('autosave ' . $entry5->get_text(), $self->pseudoCmdMode);
+
+                # Update the checkbutton
+                $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
+            }
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub client5Tab {
+
+        # Client5 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
         # Local variables
         my (
             @initList, @initList2, @comboList, @comboList2,
@@ -864,11 +923,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->client4Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->client5Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
 
         # Auto-backup operations
         $self->addLabel($table, '<b>Auto-backup operations</b>',
@@ -1080,136 +1139,6 @@
         return 1;
     }
 
-    sub client5Tab {
-
-        # Client5 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->client5Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
-
-        # Client file objects
-        $self->addLabel($table, '<b>Client file objects</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table,
-            '<i>List of data files currently in use by the client (session-independent)</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Not saved', 'bool',
-            'File type', 'text',
-            'File name', 'text',
-            'Path', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 10,
-            -1, 270);       # Fixed height
-
-        # Initialise the simple list
-        $self->client5Tab_refreshList($slWidget, scalar (@columnList / 2));
-
-        # Add buttons
-        my $button = $self->addButton($table,
-            'Save', 'Save all files whose data has been modified', undef,
-            1, 3, 10, 11);
-        $button->signal_connect('clicked' => sub {
-
-            # Save files
-            $self->session->pseudoCmd('save', $self->pseudoCmdMode);
-
-            # Refresh the simple list
-            $self->client5Tab_refreshList($slWidget, scalar (@columnList / 2));
-        });
-
-        my $button2 = $self->addButton($table,
-            'Force save', 'Save all files, even if their data has not been modified', undef,
-            3, 6, 10, 11);
-        $button2->signal_connect('clicked' => sub {
-
-            # Save files
-            $self->session->pseudoCmd('save -f', $self->pseudoCmdMode);
-
-            # Refresh the simple list
-            $self->client5Tab_refreshList($slWidget, scalar (@columnList / 2));
-        });
-
-        my $button3 = $self->addButton($table,
-            'Refresh list', 'Refresh the list of file objects', undef,
-            10, 12, 10, 11);
-        $button3->signal_connect('clicked' => sub {
-
-            # Refresh the simple list
-            $self->client5Tab_refreshList($slWidget, scalar (@columnList / 2));
-        });
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub client5Tab_refreshList {
-
-        # Resets the simple list displayed by $self->client3Tab
-        #
-        # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
-        #   $columns        - The number of columns
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $slWidget, $columns, $check) = @_;
-
-        # Local variables
-        my (@fileList, @dataList);
-
-        # Check for improper arguments
-        if (! defined $slWidget || ! defined $columns || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->client5Tab_refreshList', @_);
-        }
-
-        # Import the list of file objects
-        @fileList = sort {lc($a->name) cmp lc($b->name)} ($axmud::CLIENT->ivValues('fileObjHash'));
-
-        # Compile the simple list data
-        foreach my $obj (@fileList) {
-
-            push (@dataList,
-                $obj->modifyFlag,
-                $obj->fileType,
-                $obj->name,
-                $obj->actualPath,
-            );
-        }
-
-        # Reset the simple list
-        $self->resetListData($slWidget, [@dataList], $columns);
-
-        return 1;
-    }
-
     sub client6Tab {
 
         # Client6 tab
@@ -1234,6 +1163,136 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
+
+        # Client file objects
+        $self->addLabel($table, '<b>Client file objects</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of data files currently in use by the client (session-independent)</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Not saved', 'bool',
+            'File type', 'text',
+            'File name', 'text',
+            'Path', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 10,
+            -1, 270);       # Fixed height
+
+        # Initialise the simple list
+        $self->client6Tab_refreshList($slWidget, scalar (@columnList / 2));
+
+        # Add buttons
+        my $button = $self->addButton($table,
+            'Save', 'Save all files whose data has been modified', undef,
+            1, 3, 10, 11);
+        $button->signal_connect('clicked' => sub {
+
+            # Save files
+            $self->session->pseudoCmd('save', $self->pseudoCmdMode);
+
+            # Refresh the simple list
+            $self->client6Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        my $button2 = $self->addButton($table,
+            'Force save', 'Save all files, even if their data has not been modified', undef,
+            3, 6, 10, 11);
+        $button2->signal_connect('clicked' => sub {
+
+            # Save files
+            $self->session->pseudoCmd('save -f', $self->pseudoCmdMode);
+
+            # Refresh the simple list
+            $self->client6Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        my $button3 = $self->addButton($table,
+            'Refresh list', 'Refresh the list of file objects', undef,
+            10, 12, 10, 11);
+        $button3->signal_connect('clicked' => sub {
+
+            # Refresh the simple list
+            $self->client6Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub client6Tab_refreshList {
+
+        # Resets the simple list displayed by $self->client3Tab
+        #
+        # Expected arguments
+        #   $slWidget       - The GA::Obj::Simple::List
+        #   $columns        - The number of columns
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my (@fileList, @dataList);
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->client6Tab_refreshList', @_);
+        }
+
+        # Import the list of file objects
+        @fileList = sort {lc($a->name) cmp lc($b->name)} ($axmud::CLIENT->ivValues('fileObjHash'));
+
+        # Compile the simple list data
+        foreach my $obj (@fileList) {
+
+            push (@dataList,
+                $obj->modifyFlag,
+                $obj->fileType,
+                $obj->name,
+                $obj->actualPath,
+            );
+        }
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [@dataList], $columns);
+
+        return 1;
+    }
+
+    sub client7Tab {
+
+        # Client7 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->client7Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _7', $innerNotebook);
 
         # Reserved names
         $self->addLabel($table, '<b>Reserved names</b>',
@@ -1333,8 +1392,92 @@
         $self->addLabel($table, '<b>Session settings</b>',
             0, 12, 0, 1);
 
-        $self->addLabel($table, 'Tab format',
+        $self->addLabel($table, 'Maximum sessions',
             1, 3, 1, 2);
+        my $entry = $self->addEntry($table, undef, FALSE,
+            3, 6, 1, 2);
+        $entry->set_text($axmud::CLIENT->sessionMax);
+
+        my $entry2 = $self->addEntryWithIcon(
+            $table,
+            undef,
+            'int',
+            1,
+            $axmud::CLIENT->constSessionMax,
+            3, 5, 2, 3);
+        my $button = $self->addButton(
+            $table, 'Set', 'Set the maximum number of concurrent sessions', undef,
+            5, 6, 2, 3);
+        $button->signal_connect('clicked' => sub {
+
+            my $num = $entry2->get_text();
+
+            if ($self->checkEntryIcon($entry2)) {
+
+                $self->session->pseudoCmd('maxsession ' . $num);
+
+                $entry2->set_text('');
+                $entry->set_text($axmud::CLIENT->sessionMax);
+            }
+        });
+
+        $self->addLabel($table, 'Default character set',
+            1, 3, 3, 4);
+
+        @setList = $axmud::CLIENT->charSetList;
+        # (Find the current character set, and put it at the top of the list)
+        foreach my $item (@setList) {
+
+            if ($item ne $axmud::CLIENT->charSet) {
+
+                push (@comboList2, $item);
+            }
+        }
+
+        unshift(@comboList2, $axmud::CLIENT->charSet);
+
+        my $comboBox2 = $self->addComboBox($table, undef, \@comboList2, '',
+            TRUE,               # No 'undef' value used
+            3, 6, 3, 4);
+        $comboBox2->signal_connect('changed' => sub {
+
+            my ($choice, $index);
+
+            $choice = $comboBox2->get_active_text();
+            if ($choice) {
+
+                $self->session->pseudoCmd(
+                    'setcharset -d ' . $choice,
+                    $self->pseudoCmdMode,
+                );
+            }
+        });
+
+        $self->addLabel($table, 'Switch to \'connect offline\' mode on disconnection',
+            1, 5, 4, 5);
+        my $checkButton = $self->addCheckButton($table, undef, TRUE,
+            5, 6, 4, 5);
+        $checkButton->set_active($axmud::CLIENT->offlineOnDisconnectFlag);
+        $checkButton->signal_connect('toggled' => sub {
+
+            $self->session->pseudoCmd('setsession -o', $self->pseudoCmdMode);
+            $checkButton->set_active($axmud::CLIENT->offlineOnDisconnectFlag);
+        });
+
+        $self->addLabel($table, 'Make short weblinks like <u>deathmud.com</u> clickable',
+            1, 5, 5, 6);
+        my $checkButton2 = $self->addCheckButton($table, undef, TRUE,
+            5, 6, 5, 6);
+        $checkButton2->set_active($axmud::CLIENT->shortUrlFlag);
+        $checkButton2->signal_connect('toggled' => sub {
+
+            $self->session->pseudoCmd('toggleshortlink', $self->pseudoCmdMode);
+            $checkButton2->set_active($axmud::CLIENT->shortUrlFlag);
+        });
+
+        # Right column
+        $self->addLabel($table, 'Tab format',
+            7, 9, 1, 2);
 
         @initList = (
             'b'     => 'World (Character)',
@@ -1357,7 +1500,7 @@
 
         my $comboBox = $self->addComboBox($table, undef, \@comboList, 'Select format:',
             TRUE,               # No 'undef' value used
-            3, 6, 1, 2);
+            9, 12, 1, 2);
         $comboBox->signal_connect('changed' => sub {
 
             my $choice = $comboBox->get_active_text();
@@ -1365,135 +1508,61 @@
             $self->session->pseudoCmd('setsession -' . $comboHash{$choice}, $self->pseudoCmdMode);
         });
 
-        $self->addLabel($table, 'Maximum sessions',
-            1, 3, 2, 3);
-        my $entry = $self->addEntry($table, undef, FALSE,
-            3, 6, 2, 3);
-        $entry->set_text($axmud::CLIENT->sessionMax);
-
-        my $entry2 = $self->addEntryWithIcon(
-            $table,
-            undef,
-            'int',
-            1,
-            $axmud::CLIENT->constSessionMax,
-            3, 5, 3, 4);
-        my $button = $self->addButton(
-            $table, 'Set', 'Set the maximum number of concurrent sessions', undef,
-            5, 7, 3, 4);
-        $button->signal_connect('clicked' => sub {
-
-            my $num = $entry2->get_text();
-
-            if ($self->checkEntryIcon($entry2)) {
-
-                $self->session->pseudoCmd('maxsession ' . $num);
-
-                $entry2->set_text('');
-                $entry->set_text($axmud::CLIENT->sessionMax);
-            }
-        });
-
-        $self->addLabel($table, 'Default character set',
-            1, 3, 4, 5);
-
-        @setList = $axmud::CLIENT->charSetList;
-        # (Find the current character set, and put it at the top of the list)
-        foreach my $item (@setList) {
-
-            if ($item ne $axmud::CLIENT->charSet) {
-
-                push (@comboList2, $item);
-            }
-        }
-
-        unshift(@comboList2, $axmud::CLIENT->charSet);
-
-        my $comboBox2 = $self->addComboBox($table, undef, \@comboList2, '',
-            TRUE,               # No 'undef' value used
-            3, 6, 4, 5);
-        $comboBox2->signal_connect('changed' => sub {
-
-            my ($choice, $index);
-
-            $choice = $comboBox2->get_active_text();
-            if ($choice) {
-
-                $self->session->pseudoCmd(
-                    'setcharset -d ' . $choice,
-                    $self->pseudoCmdMode,
-                );
-            }
-        });
-
-        # Right column
-        $self->addLabel($table, 'Switch to \'connect offline\' mode on disconnection',
-            7, 11, 1, 2);
-
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 1, 2);
-        $checkButton->set_active($axmud::CLIENT->offlineOnDisconnectFlag);
-        $checkButton->signal_connect('toggled' => sub {
-
-            $self->session->pseudoCmd('setsession -o', $self->pseudoCmdMode);
-            $checkButton->set_active($axmud::CLIENT->offlineOnDisconnectFlag);
-        });
-
         $self->addLabel($table, 'Use xterm title in tab instead (if available)',
             7, 11, 2, 3);
 
-        my $checkButton2 = $self->addCheckButton($table, undef, TRUE,
+        my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
             11, 12, 2, 3);
-        $checkButton2->set_active($axmud::CLIENT->xTermTitleFlag);
-        $checkButton2->signal_connect('toggled' => sub {
+        $checkButton3->set_active($axmud::CLIENT->xTermTitleFlag);
+        $checkButton3->signal_connect('toggled' => sub {
 
             $self->session->pseudoCmd('setsession -x', $self->pseudoCmdMode);
-            $checkButton2->set_active($axmud::CLIENT->xTermTitleFlag);
+            $checkButton3->set_active($axmud::CLIENT->xTermTitleFlag);
         });
 
         $self->addLabel($table, 'Use world\'s long name in tab (if available)',
             7, 11, 3, 4);
 
-        my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
+        my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
             11, 12, 3, 4);
-        $checkButton3->set_active($axmud::CLIENT->longTabLabelFlag);
-        $checkButton3->signal_connect('toggled' => sub {
+        $checkButton4->set_active($axmud::CLIENT->longTabLabelFlag);
+        $checkButton4->signal_connect('toggled' => sub {
 
             $self->session->pseudoCmd('setsession -l', $self->pseudoCmdMode);
-            $checkButton3->set_active($axmud::CLIENT->longTabLabelFlag);
+            $checkButton4->set_active($axmud::CLIENT->longTabLabelFlag);
         });
 
         $self->addLabel($table, 'Don\'t use tabs for a single session',
             7, 11, 4, 5);
-        my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
+        my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
             11, 12, 4, 5);
-        $checkButton4->set_active($axmud::CLIENT->simpleTabFlag);
-        $checkButton4->signal_connect('toggled' => sub {
+        $checkButton5->set_active($axmud::CLIENT->simpleTabFlag);
+        $checkButton5->signal_connect('toggled' => sub {
 
             $self->session->pseudoCmd('setsession -s', $self->pseudoCmdMode);
-            $checkButton4->set_active($axmud::CLIENT->simpleTabFlag);
+            $checkButton5->set_active($axmud::CLIENT->simpleTabFlag);
         });
 
         $self->addLabel($table, 'Confirm before click-closing \'main\' window',
             7, 11, 5, 6);
-        my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
+        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
             11, 12, 5, 6);
-        $checkButton5->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
-        $checkButton5->signal_connect('toggled' => sub {
+        $checkButton6->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
+        $checkButton6->signal_connect('toggled' => sub {
 
             $self->session->pseudoCmd('setsession -m', $self->pseudoCmdMode);
-            $checkButton5->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
+            $checkButton6->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
         });
 
         $self->addLabel($table, 'Confirm before click-closing tab',
             7, 11, 6, 7);
-        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
+        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
             11, 12, 6, 7);
-        $checkButton6->set_active($axmud::CLIENT->confirmCloseTabFlag);
-        $checkButton6->signal_connect('toggled' => sub {
+        $checkButton7->set_active($axmud::CLIENT->confirmCloseTabFlag);
+        $checkButton7->signal_connect('toggled' => sub {
 
             $self->session->pseudoCmd('setsession -t', $self->pseudoCmdMode);
-            $checkButton6->set_active($axmud::CLIENT->confirmCloseTabFlag);
+            $checkButton7->set_active($axmud::CLIENT->confirmCloseTabFlag);
         });
 
         # Tab complete
@@ -1689,7 +1758,7 @@
         # Resets the simple list displayed by $self->settings4Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -2279,15 +2348,21 @@
         my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 6, 7);
         $checkButton6->set_active($axmud::CLIENT->useNewEnvironFlag);
-        $checkButton6->set_sensitive(FALSE);
-        $self->addLabel($table, '<i>Allow NEW-ENVIRON (New Environment option)</i>',
+        $checkButton6->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->toggle_telnetOption('new_environ', $checkButton6->get_active());
+        });
+        $self->addLabel($table, 'Allow NEW-ENVIRON (New Environment option)',
             2, 6, 6, 7);
 
         my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 7, 8);
         $checkButton7->set_active($axmud::CLIENT->useCharSetFlag);
-        $checkButton7->set_sensitive(FALSE);
-        $self->addLabel($table, '<i>Allow CHARSET (Character Set and translation)</i>',
+        $checkButton7->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->toggle_telnetOption('charset', $checkButton7->get_active());
+        });
+        $self->addLabel($table, 'Allow CHARSET (Character Set and translation)',
             2, 6, 7, 8);
 
         # Terminal emulation
@@ -2497,8 +2572,10 @@
 
         $self->addLabel($table, '<b>OSC colour palette</b>',
             7, 13, 12, 13);
+#        my $checkButton12 = $self->addCheckButton($table, undef, TRUE,
+#            8, 9, 13, 14);
         my $checkButton12 = $self->addCheckButton($table, undef, TRUE,
-            8, 9, 13, 14);
+            8, 13, 13, 14);
         $checkButton12->set_active($axmud::CLIENT->oscPaletteFlag);
         $checkButton12->signal_connect('toggled' => sub {
 
@@ -2509,8 +2586,9 @@
                 $self->session->pseudoCmd('togglepalette',  $self->pseudoCmdMode);
             }
         });
-        $self->addLabel($table, 'Allow use of OSC colour palette sequences',
-            9, 13, 13, 14);
+#        $self->addLabel($table, 'Allow use of OSC colour palette sequences',
+#            9, 13, 13, 14);
+        $checkButton12->set_label('Allow use of OSC colour palette sequences');
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -3310,93 +3388,106 @@
 
         my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 5, 6);
-        $checkButton5->set_active($axmud::CLIENT->debugMoveListFlag);
+        $checkButton5->set_active($axmud::CLIENT->debugExitFlag);
         $checkButton5->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugMoveListFlag', $checkButton5->get_active());
+            $axmud::CLIENT->set_debugFlag('debugExitFlag', $checkButton5->get_active());
+        });
+
+        $self->addLabel(
+            $table,
+            'Illegal exit directions (e.g. longer than 64 characters) show debug messages',
+            2, 12, 5, 6);
+
+        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 6, 7);
+        $checkButton6->set_active($axmud::CLIENT->debugMoveListFlag);
+        $checkButton6->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->set_debugFlag('debugMoveListFlag', $checkButton6->get_active());
         });
 
         $self->addLabel(
             $table,
             'Locator task shows a summary of the number of room statements it\'s expecting',
-            2, 12, 5, 6);
-
-        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 6, 7);
-        $checkButton6->set_active($axmud::CLIENT->debugParseObjFlag);
-        $checkButton6->signal_connect('toggled' => sub {
-
-            $axmud::CLIENT->set_debugFlag('debugParseObjFlag', $checkButton6->get_active());
-        });
-
-        $self->addLabel(
-            $table, 'Object parsing routines shows debug messages when parsing text',
             2, 12, 6, 7);
 
         my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
             1, 2, 7, 8);
-        $checkButton7->set_active($axmud::CLIENT->debugCompareObjFlag);
+        $checkButton7->set_active($axmud::CLIENT->debugParseObjFlag);
         $checkButton7->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugCompareObjFlag', $checkButton7->get_active());
+            $axmud::CLIENT->set_debugFlag('debugParseObjFlag', $checkButton7->get_active());
+        });
+
+        $self->addLabel(
+            $table, 'Object parsing routines shows debug messages when parsing text',
+            2, 12, 7, 8);
+
+        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 8, 9);
+        $checkButton8->set_active($axmud::CLIENT->debugCompareObjFlag);
+        $checkButton8->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->set_debugFlag('debugCompareObjFlag', $checkButton8->get_active());
         });
 
         $self->addLabel(
             $table,
             'Object comparison routines shows debug messages when comparing objects',
-            2, 12, 7, 8);
+            2, 12, 8, 9);
 
-        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 8, 9);
-        $checkButton8->set_active($axmud::CLIENT->debugExplainPluginFlag);
-        $checkButton8->signal_connect('toggled' => sub {
+        my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 9, 10);
+        $checkButton9->set_active($axmud::CLIENT->debugExplainPluginFlag);
+        $checkButton9->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugExplainPluginFlag', $checkButton8->get_active());
+            $axmud::CLIENT->set_debugFlag('debugExplainPluginFlag', $checkButton9->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages when a plugin fails to load, explaining the reason why',
-            2, 12, 8, 9);
+            2, 12, 9, 10);
 
-        my $checkButton9 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 9, 10);
-        $checkButton9->set_active($axmud::CLIENT->debugCheckIVFlag);
-        $checkButton9->signal_connect('toggled' => sub {
+        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 10, 11);
+        $checkButton10->set_active($axmud::CLIENT->debugCheckIVFlag);
+        $checkButton10->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugCheckIVFlag', $checkButton9->get_active());
+            $axmud::CLIENT->set_debugFlag('debugCheckIVFlag', $checkButton10->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show debug messages when any code accesses a non-existent property (IV)',
-            2, 12, 9, 10);
+            2, 12, 10, 11);
 
-        my $checkButton10 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 10, 11);
-        $checkButton10->set_active($axmud::CLIENT->debugTableFitFlag);
-        $checkButton10->signal_connect('toggled' => sub {
+        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 11, 12);
+        $checkButton11->set_active($axmud::CLIENT->debugTableFitFlag);
+        $checkButton11->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugTableFitFlag', $checkButton10->get_active());
+            $axmud::CLIENT->set_debugFlag('debugTableFitFlag', $checkButton11->get_active());
         });
 
         $self->addLabel(
             $table,
             'Show error messages when table objects can\'t be added/resized in their windows',
-            2, 12, 10, 11);
+            2, 12, 11, 12);
 
-        my $checkButton11 = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 11, 12);
-        $checkButton11->set_active($axmud::CLIENT->debugTrapErrorFlag);
-        $checkButton11->signal_connect('toggled' => sub {
+        my $checkButton12 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 12, 13);
+        $checkButton12->set_active($axmud::CLIENT->debugTrapErrorFlag);
+        $checkButton12->signal_connect('toggled' => sub {
 
-            $axmud::CLIENT->set_debugFlag('debugTrapErrorFlag', $checkButton11->get_active());
+            $axmud::CLIENT->set_debugFlag('debugTrapErrorFlag', $checkButton12->get_active());
         });
 
         $self->addLabel(
             $table,
             'Trap Perl errors/warnings and display them in the \'main\' window',
-            2, 12, 11, 12);
+            2, 12, 12, 13);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -3660,6 +3751,9 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Local variables
+        my (@columnList, @columnList2);
+
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -3669,94 +3763,132 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page 12', $innerNotebook);
 
-        # Commify mode
-        $self->addLabel($table, '<b>Commify mode</b>',
+         # Custom months/days
+        $self->addLabel($table, '<b>Custom months/days</b>',
             0, 12, 0, 1);
-        $self->addLabel(
-            $table,
-            '<i>How long numbers are made more readable (mostly used by the Status task, but'
-            . ' available to plugins/scripts)</i>',
+        $self->addLabel($table,
+            '<i>List of months of the year and days of the week</i>',
             1, 12, 1, 2);
 
-        my ($group, $radioButton) = $self->addRadioButton(
-            $table, undef, 'Add commas, e.g. 1,000,000', undef,
-            undef,      # IV set to this value when toggled
-            TRUE,       # Sensitive widget
-            1, 12, 2, 3);
-        if ($axmud::CLIENT->commifyMode eq 'comma') {
+        # Add simple lists
+        @columnList = (
+            'Month', 'text',
+        );
 
-            $radioButton->set_active(TRUE);
-        }
-        $radioButton->signal_connect('toggled' => sub {
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 6, 2, 8,
+            -1, 220);      # Fixed height
 
-            if ($radioButton->get_active()) {
+        @columnList2 = (
+            'Day', 'text',
+        );
 
-                $axmud::CLIENT->set_commifyMode('comma');
+        my $slWidget2 = $self->addSimpleList($table, undef, \@columnList,
+            7, 12, 2, 8,
+            -1, 220);      # Fixed height
+
+        # Initialise the lists
+        $self->settings12Tab_refreshList($slWidget, $slWidget2);
+
+        # Add editing widgets
+        $self->addLabel($table, 'New list of custom months <i>e.g. Gen Feb Mar...</i>',
+            1, 6, 8, 9);
+        my $entry = $self->addEntry($table, undef, TRUE,
+            1, 6, 9, 10);
+        my $button = $self->addButton($table,
+            'Set', 'Set the list of custom months', undef,
+            1, 3, 10, 11);
+        my $button2 = $self->addButton($table,
+            'Reset', 'Reset the list of custom months', undef,
+            3, 6, 10, 11);
+
+        $self->addLabel($table, 'New list of custom days <i>e.g. Lun Mar Mer...</i>',
+            7, 12, 8, 9);
+        my $entry2 = $self->addEntry($table, undef, TRUE,
+            7, 12, 9, 10);
+        my $button3 = $self->addButton($table,
+            'Set', 'Set the list of custom days', undef,
+            7, 9, 10, 11);
+        my $button4 = $self->addButton($table,
+            'Reset', 'Reset the list of custom days', undef,
+            9, 12, 10, 11);
+
+        # (->signal_connects from above)
+        $button->signal_connect('clicked' => sub {
+
+            my $string = $entry->get_text();
+
+            if ($string ne '') {
+
+                $self->session->pseudoCmd('setcustommonth ' . $string, $self->pseudoCmdMode);
+
+                # Refresh the lists and reset the entries
+                $self->settings12Tab_refreshList($slWidget, $slWidget2);
+                $self->resetEntryBoxes($entry, $entry2);
             }
         });
+        $button2->signal_connect('clicked' => sub {
 
-        my ($group2, $radioButton2) = $self->addRadioButton(
-            $table, $group, 'Add full stops/periods, e.g. 1.000.000', undef, undef, TRUE,
-            1, 12, 3, 4);
-        if ($axmud::CLIENT->commifyMode eq 'europe') {
+            $self->session->pseudoCmd('setcustommonth -r', $self->pseudoCmdMode);
 
-            $radioButton2->set_active(TRUE);
-        }
-        $radioButton2->signal_connect('toggled' => sub {
+            # Refresh the lists and reset the entries
+            $self->settings12Tab_refreshList($slWidget, $slWidget2);
+            $self->resetEntryBoxes($entry, $entry2);
+        });
+        $button3->signal_connect('clicked' => sub {
 
-            if ($radioButton2->get_active()) {
+            my $string = $entry2->get_text();
 
-                $axmud::CLIENT->set_commifyMode('europe');
+            if ($string ne '') {
+
+                $self->session->pseudoCmd('setcustomday ' . $string, $self->pseudoCmdMode);
+
+                # Refresh the lists and reset the entries
+                $self->settings12Tab_refreshList($slWidget, $slWidget2);
+                $self->resetEntryBoxes($entry, $entry2);
             }
         });
+        $button4->signal_connect('clicked' => sub {
 
-        my ($group3, $radioButton3) = $self->addRadioButton(
-            $table, $group, 'Add spaces, e.g. 1 000 000', undef, undef, TRUE,
-            1, 12, 4, 5);
-        if ($axmud::CLIENT->commifyMode eq 'brit') {
+            $self->session->pseudoCmd('setcustomday -r', $self->pseudoCmdMode);
 
-            $radioButton3->set_active(TRUE);
-        }
-        $radioButton3->signal_connect('toggled' => sub {
-
-            if ($radioButton3->get_active()) {
-
-                $axmud::CLIENT->set_commifyMode('brit');
-            }
-        });
-
-        my ($group4, $radioButton4) = $self->addRadioButton(
-            $table, $group, 'Add underlines/undescores, e.g. 1_000_000', undef, undef, TRUE,
-            1, 12, 5, 6);
-        if ($axmud::CLIENT->commifyMode eq 'underline') {
-
-            $radioButton4->set_active(TRUE);
-        }
-        $radioButton4->signal_connect('toggled' => sub {
-
-            if ($radioButton4->get_active()) {
-
-                $axmud::CLIENT->set_commifyMode('underline');
-            }
-        });
-
-        my ($group5, $radioButton5) = $self->addRadioButton(
-            $table, $group, 'Don\'t commify large numbers', undef, undef, TRUE,
-            1, 12, 6, 7);
-        if ($axmud::CLIENT->commifyMode eq 'none') {
-
-            $radioButton5->set_active(TRUE);
-        }
-        $radioButton5->signal_connect('toggled' => sub {
-
-            if ($radioButton5->get_active()) {
-
-                $axmud::CLIENT->set_commifyMode('none');
-            }
+            # Refresh the lists and reset the entries
+            $self->settings12Tab_refreshList($slWidget, $slWidget2);
+            $self->resetEntryBoxes($entry, $entry2);
         });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub settings12Tab_refreshList {
+
+        # Resets the simple lists displayed by $self->settings12Tab
+        #
+        # Expected arguments
+        #   $slWidget, $slWidget2
+        #       - The GA::Obj::Simple::Lists to reset
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $slWidget2, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $slWidget2 || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->settings12Tab_refreshList',
+                @_,
+            );
+        }
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [$axmud::CLIENT->customMonthList], 1);
+        $self->resetListData($slWidget2, [$axmud::CLIENT->customDayList], 1);
 
         return 1;
     }
@@ -3954,7 +4086,7 @@
         # Resets the simple list displayed by $self->plugins1Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -4152,7 +4284,7 @@
         # Resets the simple list displayed by $self->plugins2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -4257,7 +4389,7 @@
         # Resets the simple list displayed by $self->plugins3Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -4363,7 +4495,7 @@
         # Resets the simple list displayed by $self->plugins4Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -4471,7 +4603,7 @@
         # Resets the simple list displayed by $self->plugins5Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -4584,7 +4716,7 @@
         # Resets the simple list displayed by $self->plugins6Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -4690,7 +4822,7 @@
         # Resets the simple list displayed by $self->plugins7Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -4796,7 +4928,7 @@
         # Resets the simple list displayed by $self->plugins8Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -4902,7 +5034,7 @@
         # Resets the simple list displayed by $self->plugins9Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -5802,10 +5934,10 @@
 
     sub commands4Tab_refreshList {
 
-        # Called by $self->commands4Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->commands4Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -6236,7 +6368,6 @@
         $self->logs1Tab($innerNotebook);
         $self->logs2Tab($innerNotebook);
         $self->logs3Tab($innerNotebook);
-        $self->logs4Tab($innerNotebook);
 
         return 1;
     }
@@ -6267,10 +6398,10 @@
         $self->addLabel($table, '<b>Log settings</b>',
             0, 12, 0, 1);
 
-        $self->addLabel($table, 'Enable logging in general',
-            1, 11, 1, 2);
         my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 1, 2);
+            1, 2, 1, 2);
+        $self->addLabel($table, 'Enable logging in general',
+            2, 12, 1, 2);
         $checkButton->set_active($axmud::CLIENT->allowLogsFlag);
         $checkButton->signal_connect('toggled' => sub {
 
@@ -6278,12 +6409,12 @@
             $checkButton->set_active($axmud::CLIENT->allowLogsFlag);
         });
 
+        my $checkButton2 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 2, 3);
         $self->addLabel(
             $table, 'Enable deletion of standard logfiles (written by every session) when the'
             . ' client starts',
-            1, 11, 2, 3);
-        my $checkButton2 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 2, 3);
+            2, 12, 2, 3);
         $checkButton2->set_active($axmud::CLIENT->deleteStandardLogsFlag);
         $checkButton2->signal_connect('toggled' => sub {
 
@@ -6291,12 +6422,12 @@
             $checkButton2->set_active($axmud::CLIENT->deleteStandardLogsFlag);
         });
 
+        my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 3, 4);
         $self->addLabel(
             $table, 'Enable deletion of world logfiles (written by every session) when a session'
             . ' starts',
-            1, 11, 3, 4);
-        my $checkButton3 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 3, 4);
+            2, 12, 3, 4);
         $checkButton3->set_active($axmud::CLIENT->deleteWorldLogsFlag);
         $checkButton3->signal_connect('toggled' => sub {
 
@@ -6304,11 +6435,11 @@
             $checkButton3->set_active($axmud::CLIENT->deleteWorldLogsFlag);
         });
 
+        my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 4, 5);
         $self->addLabel(
             $table, 'Enable creation of new logfiles when the client starts',
-            1, 11, 4, 5);
-        my $checkButton4 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 4, 5);
+            2, 12, 4, 5);
         $checkButton4->set_active($axmud::CLIENT->logClientFlag);
         $checkButton4->signal_connect('toggled' => sub {
 
@@ -6316,11 +6447,11 @@
             $checkButton4->set_active($axmud::CLIENT->logClientFlag);
         });
 
+        my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 5, 6);
         $self->addLabel(
             $table, 'Enable creation of new logfiles at the start of every day',
-            1, 11, 5, 6);
-        my $checkButton5 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 5, 6);
+            2, 12, 5, 6);
         $checkButton5->set_active($axmud::CLIENT->logDayFlag);
         $checkButton5->signal_connect('toggled' => sub {
 
@@ -6328,11 +6459,11 @@
             $checkButton5->set_active($axmud::CLIENT->logDayFlag);
         });
 
+        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 6, 7);
         $self->addLabel(
             $table, 'Lines in logfiles are prefixed by the current date',
-            1, 11, 6, 7);
-        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 6, 7);
+            2, 12, 6, 7);
         $checkButton6->set_active($axmud::CLIENT->logPrefixDateFlag);
         $checkButton6->signal_connect('toggled' => sub {
 
@@ -6340,11 +6471,11 @@
             $checkButton6->set_active($axmud::CLIENT->logPrefixDateFlag);
         });
 
+        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 7, 8);
         $self->addLabel(
             $table, 'Lines in logfiles are prefixed by the current time',
-            1, 11, 7, 8);
-        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 7, 8);
+            2, 12, 7, 8);
         $checkButton7->set_active($axmud::CLIENT->logPrefixTimeFlag);
         $checkButton7->signal_connect('toggled' => sub {
 
@@ -6352,11 +6483,11 @@
             $checkButton7->set_active($axmud::CLIENT->logPrefixTimeFlag);
         });
 
+        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
+            1, 2, 8, 9);
         $self->addLabel(
             $table, 'Logfiles record image filenames',
-            1, 11, 8, 9);
-        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 8, 9);
+            2, 12, 8, 9);
         $checkButton8->set_active($axmud::CLIENT->logImageFlag);
         $checkButton8->signal_connect('toggled' => sub {
 
@@ -6530,7 +6661,7 @@
         # Resets the simple list displayed by $self->logs3Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -6564,158 +6695,6 @@
 
         # Reset the simple list
         $self->resetListData($slWidget, [@dataList], $columns);
-
-        return 1;
-    }
-
-    sub logs4Tab {
-
-        # Logs4 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my (@columnList, @columnList2);
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->logs3Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
-
-         # Custom months/days
-        $self->addLabel($table, '<b>Custom months/days</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table,
-            '<i>List of months of the year and days of the week, mostly used to write logfiles</i>',
-            1, 12, 1, 2);
-
-        # Add simple lists
-        @columnList = (
-            'Month', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 6, 2, 8,
-            -1, 220);      # Fixed height
-
-        @columnList2 = (
-            'Day', 'text',
-        );
-
-        my $slWidget2 = $self->addSimpleList($table, undef, \@columnList,
-            7, 12, 2, 8,
-            -1, 220);      # Fixed height
-
-        # Initialise the lists
-        $self->logs4Tab_refreshList($slWidget, $slWidget2);
-
-        # Add editing widgets
-        $self->addLabel($table, 'New list of custom months <i>e.g. Gen Feb Mar...</i>',
-            1, 6, 8, 9);
-        my $entry = $self->addEntry($table, undef, TRUE,
-            1, 6, 9, 10);
-        my $button = $self->addButton($table,
-            'Set', 'Set the list of custom months', undef,
-            1, 3, 10, 11);
-        my $button2 = $self->addButton($table,
-            'Reset', 'Reset the list of custom months', undef,
-            3, 6, 10, 11);
-
-        $self->addLabel($table, 'New list of custom days <i>e.g. Lun Mar Mer...</i>',
-            7, 12, 8, 9);
-        my $entry2 = $self->addEntry($table, undef, TRUE,
-            7, 12, 9, 10);
-        my $button3 = $self->addButton($table,
-            'Set', 'Set the list of custom days', undef,
-            7, 9, 10, 11);
-        my $button4 = $self->addButton($table,
-            'Reset', 'Reset the list of custom days', undef,
-            9, 12, 10, 11);
-
-        # (->signal_connects from above)
-        $button->signal_connect('clicked' => sub {
-
-            my $string = $entry->get_text();
-
-            if ($string ne '') {
-
-                $self->session->pseudoCmd('setcustommonth ' . $string, $self->pseudoCmdMode);
-
-                # Refresh the lists and reset the entries
-                $self->logs4Tab_refreshList($slWidget, $slWidget2);
-                $self->resetEntryBoxes($entry, $entry2);
-            }
-        });
-        $button2->signal_connect('clicked' => sub {
-
-            $self->session->pseudoCmd('setcustommonth -r', $self->pseudoCmdMode);
-
-            # Refresh the lists and reset the entries
-            $self->logs4Tab_refreshList($slWidget, $slWidget2);
-            $self->resetEntryBoxes($entry, $entry2);
-        });
-        $button3->signal_connect('clicked' => sub {
-
-            my $string = $entry2->get_text();
-
-            if ($string ne '') {
-
-                $self->session->pseudoCmd('setcustomday ' . $string, $self->pseudoCmdMode);
-
-                # Refresh the lists and reset the entries
-                $self->logs4Tab_refreshList($slWidget, $slWidget2);
-                $self->resetEntryBoxes($entry, $entry2);
-            }
-        });
-        $button4->signal_connect('clicked' => sub {
-
-            $self->session->pseudoCmd('setcustomday -r', $self->pseudoCmdMode);
-
-            # Refresh the lists and reset the entries
-            $self->logs4Tab_refreshList($slWidget, $slWidget2);
-            $self->resetEntryBoxes($entry, $entry2);
-        });
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub logs4Tab_refreshList {
-
-        # Resets the simple lists displayed by $self->logs4Tab
-        #
-        # Expected arguments
-        #   $slWidget, $slWidget2
-        #       - The GA::Gtk::Simple::Lists to reset
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $slWidget, $slWidget2, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $slWidget || ! defined $slWidget2 || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->logs4Tab_refreshList', @_);
-        }
-
-        # Reset the simple list
-        $self->resetListData($slWidget, [$axmud::CLIENT->customMonthList], 1);
-        $self->resetListData($slWidget2, [$axmud::CLIENT->customDayList], 1);
 
         return 1;
     }
@@ -7077,10 +7056,10 @@
 
     sub colours3Tab_refreshList {
 
-        # Called by $self->colours3Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->colours3Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -7571,10 +7550,10 @@
 
     sub colours5Tab_refreshList {
 
-        # Called by $self->colours5Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->colours5Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -8333,10 +8312,10 @@
 
     sub workspaces3Tab_refreshList {
 
-        # Called by $self->workspaces3Tab to refresh the first GA::Gtk::Simple::List
+        # Called by $self->workspaces3Tab to refresh the first GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -8398,10 +8377,10 @@
 
     sub workspaces3Tab_refreshList2 {
 
-        # Called by $self->workspaces3Tab to refresh the second GA::Gtk::Simple::List
+        # Called by $self->workspaces3Tab to refresh the second GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -8599,10 +8578,10 @@
 
     sub workspaces4Tab_refreshList {
 
-        # Called by $self->workspaces4Tab to refresh the first GA::Gtk::Simple::List
+        # Called by $self->workspaces4Tab to refresh the first GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -9132,10 +9111,10 @@
 
     sub workspaces6Tab_refreshList {
 
-        # Called by $self->workspaces6Tab to refresh the first GA::Gtk::Simple::List
+        # Called by $self->workspaces6Tab to refresh the first GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -9448,10 +9427,10 @@
 
     sub workspaces7Tab_refreshList {
 
-        # Called by $self->workspaces7Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->workspaces7Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -9625,10 +9604,10 @@
 
     sub workspaces8Tab_refreshList {
 
-        # Called by $self->workspaces8Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->workspaces8Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -10146,10 +10125,10 @@
 
     sub windows1Tab_refreshList {
 
-        # Called by $self->windows1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->windows1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Optional arguments
@@ -10391,10 +10370,10 @@
 
     sub windows2Tab_refreshList {
 
-        # Called by $self->windows2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->windows2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -10696,10 +10675,10 @@
 
     sub windows3Tab_refreshList {
 
-        # Called by $self->windows3Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->windows3Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -11260,10 +11239,10 @@
 
     sub windows4Tab_refreshList {
 
-        # Called by $self->windows4Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->windows4Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns in the list
         #   $buttonListRef  - Reference to a list containing a local copy of GA::Client->buttonList
         #   $buttonHashRef  - Reference to a hash containing a local copy of GA::Client->buttonHash
@@ -11486,10 +11465,10 @@
 
     sub windows5Tab_refreshList {
 
-        # Called by $self->windows5Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->windows5Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -11869,10 +11848,10 @@
 
     sub sound1Tab_refreshList {
 
-        # Called by $self->sound1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->sound1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns in the list
         #   $standardFlag   - If TRUE, only standard sound effects in the sound effects bank are
         #                       shown. If FALSE, all sound effects in the sound effects bank are
@@ -12497,10 +12476,10 @@
 
     sub sound4Tab_refreshList {
 
-        # Called by $self->sound4Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->sound4Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -12614,10 +12593,10 @@
     sub sound5Tab_refreshList {
 
         # Called by $self->sound5Tab, ->sound6Tab and ->sound7Tab Tab to refresh the
-        #   GA::Gtk::Simple::List
+        #   GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #   $iv         - 'ttsAttribHash', 'ttsFlagAttribHash' or 'ttsAlertAttribHash'
         #
@@ -12823,6 +12802,7 @@
         # Add tabs to the inner notebook
         $self->tasks1Tab($innerNotebook, 'first');
         $self->tasks1Tab($innerNotebook, 'last');
+        $self->tasks3Tab($innerNotebook);
 
         return 1;
     }
@@ -13175,10 +13155,10 @@
 
     sub tasks1Tab_refreshList {
 
-        # Called by $self->tasks1Tab to refresh the GA::Gtk::Simple::Lists
+        # Called by $self->tasks1Tab to refresh the GA::Obj::Simple::Lists
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List (not used here)
+        #   $slWidget       - The GA::Obj::Simple::List (not used here)
         #   $columns        - The number of columns in the list
         #
         # Return values
@@ -13213,6 +13193,120 @@
 
             $self->resetListData($thisSimpleList, [@lastList], $columns);
         }
+
+        return 1;
+    }
+
+    sub tasks3Tab {
+
+        # Tasks3 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->tasks3Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
+
+        # Commify mode
+        $self->addLabel($table, '<b>Commify mode</b>',
+            0, 12, 0, 1);
+        $self->addLabel(
+            $table,
+            '<i>How long numbers are made more readable (mostly used by the Status task, but'
+            . ' available to plugins/scripts)</i>',
+            1, 12, 1, 2);
+
+        my ($group, $radioButton) = $self->addRadioButton(
+            $table, undef, 'Add commas, e.g. 1,000,000', undef,
+            undef,      # IV set to this value when toggled
+            TRUE,       # Sensitive widget
+            1, 12, 2, 3);
+        if ($axmud::CLIENT->commifyMode eq 'comma') {
+
+            $radioButton->set_active(TRUE);
+        }
+        $radioButton->signal_connect('toggled' => sub {
+
+            if ($radioButton->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('comma');
+            }
+        });
+
+        my ($group2, $radioButton2) = $self->addRadioButton(
+            $table, $group, 'Add full stops/periods, e.g. 1.000.000', undef, undef, TRUE,
+            1, 12, 3, 4);
+        if ($axmud::CLIENT->commifyMode eq 'europe') {
+
+            $radioButton2->set_active(TRUE);
+        }
+        $radioButton2->signal_connect('toggled' => sub {
+
+            if ($radioButton2->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('europe');
+            }
+        });
+
+        my ($group3, $radioButton3) = $self->addRadioButton(
+            $table, $group, 'Add spaces, e.g. 1 000 000', undef, undef, TRUE,
+            1, 12, 4, 5);
+        if ($axmud::CLIENT->commifyMode eq 'brit') {
+
+            $radioButton3->set_active(TRUE);
+        }
+        $radioButton3->signal_connect('toggled' => sub {
+
+            if ($radioButton3->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('brit');
+            }
+        });
+
+        my ($group4, $radioButton4) = $self->addRadioButton(
+            $table, $group, 'Add underlines/undescores, e.g. 1_000_000', undef, undef, TRUE,
+            1, 12, 5, 6);
+        if ($axmud::CLIENT->commifyMode eq 'underline') {
+
+            $radioButton4->set_active(TRUE);
+        }
+        $radioButton4->signal_connect('toggled' => sub {
+
+            if ($radioButton4->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('underline');
+            }
+        });
+
+        my ($group5, $radioButton5) = $self->addRadioButton(
+            $table, $group, 'Don\'t commify large numbers', undef, undef, TRUE,
+            1, 12, 6, 7);
+        if ($axmud::CLIENT->commifyMode eq 'none') {
+
+            $radioButton5->set_active(TRUE);
+        }
+        $radioButton5->signal_connect('toggled' => sub {
+
+            if ($radioButton5->get_active()) {
+
+                $axmud::CLIENT->set_commifyMode('none');
+            }
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
 
         return 1;
     }
@@ -13495,10 +13589,10 @@
 
     sub scriptsTab_refreshList {
 
-        # Called by $self->scriptsTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->scriptsTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - Number of columns in the simple list
         #
         # Return values
@@ -14729,10 +14823,10 @@
 
     sub chat4Tab_refreshList {
 
-        # Called by $self->chat4Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->chat4Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -14854,10 +14948,10 @@
 
     sub chat5Tab_refreshList {
 
-        # Called by $self->chat5Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->chat5Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -15487,10 +15581,10 @@
 
     sub summaryTab_refreshList {
 
-        # Called by $self->summaryTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->summaryTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -16222,7 +16316,7 @@
 
         my $button14 = $self->addButton($table,
             'Open automapper', 'Opens the automapper window', undef,
-            1, 6, 11, 12);
+            1, 4, 11, 12);
         $button14->signal_connect('clicked' => sub {
 
             $self->session->pseudoCmd('openautomapper', $self->pseudoCmdMode);
@@ -16230,7 +16324,7 @@
 
         my $button15 = $self->addButton($table,
             'Open object viewer', 'Opens the object viewer window', undef,
-            6, 12, 11, 12);
+            4, 8, 11, 12);
         $button15->signal_connect('clicked' => sub {
 
             $self->session->pseudoCmd('openobjectviewer', $self->pseudoCmdMode);
@@ -16238,7 +16332,7 @@
 
         my $button16 = $self->addButton($table,
             'Open Locator wizard', 'Opens the Locator wizard window', undef,
-            1, 6, 12, 13);
+            8, 12, 11, 12);
         $button16->signal_connect('clicked' => sub {
 
             $self->session->pseudoCmd('locatorwizard', $self->pseudoCmdMode);
@@ -16246,10 +16340,18 @@
 
         my $button17 = $self->addButton($table,
             'Open About window', 'Opens the About window', undef,
-            6, 12, 12, 13);
+            1, 6, 12, 13);
         $button17->signal_connect('clicked' => sub {
 
             $self->session->pseudoCmd('openaboutwindow', $self->pseudoCmdMode);
+        });
+
+        my $button18 = $self->addButton($table,
+            'Open Pattern Test window', 'Opens the Pattern Test window', undef,
+            6, 12, 12, 13);
+        $button18->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd('testpattern', $self->pseudoCmdMode);
         });
 
         # Tab complete
@@ -19314,7 +19416,7 @@
         #   stored (mainly) in $self->searchHash
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $matchMax       - The maximum number of matching model objects before the search
         #                       algorithm gives up
         #   $objMax         - The maximum number of model objects searched before the search
@@ -20324,7 +20426,7 @@
         # Resets the simple list displayed by $self->session2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #   $checkButton, $entry, $entry2
         #                   - Three widgets whose values should be refreshed at the same time
@@ -21096,7 +21198,7 @@
         # Resets the simple list displayed by $self->interface1Tab and ->interface2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #   $type           - A string desribing the subset of active interfaces to show - set to
         #                       'all', 'alpha', 'dependent', 'independent', 'trigger', 'alias',
@@ -21558,10 +21660,10 @@
 
     sub tasksTab_refreshList {
 
-        # Called by $self->tasksTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->tasksTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -22022,10 +22124,10 @@
 
     sub recordingTab_refreshList {
 
-        # Called by $self->recordingTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->recordingTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns in the list
         #   $checkButton, $checkButton2, $entry, $entry2, $entry3
         #                   - Widgets which must be updated at the same time as the simple list
@@ -22300,9 +22402,21 @@
             $entry5->set_text('Server has suggested NAWS and client has refused');
         }
 
-        $entry6->set_text('(not yet implemented)');
+        if ($self->session->nawsMode eq 'no_invite') {
+            $entry6->set_text('Server has not suggested NEW-ENVIRON yet');
+        } elsif ($self->session->nawsMode eq 'client_agree') {
+            $entry6->set_text('Server has suggested NEW-ENVIRON and client has agreed');
+        } elsif ($self->session->nawsMode eq 'client_refuse') {
+            $entry6->set_text('Server has suggested NEW-ENVIRON and client has refused');
+        }
 
-        $entry7->set_text('(not yet implemented)');
+        if ($self->session->nawsMode eq 'no_invite') {
+            $entry7->set_text('Server has not suggested CHARSET yet');
+        } elsif ($self->session->nawsMode eq 'client_agree') {
+            $entry7->set_text('Server has suggested CHARSET and client has agreed');
+        } elsif ($self->session->nawsMode eq 'client_refuse') {
+            $entry7->set_text('Server has suggested CHARSET and client has refused');
+        }
 
         $checkButton->set_active($axmud::CLIENT->useEchoFlag);
         $checkButton2->set_active($axmud::CLIENT->useSgaFlag);
@@ -22488,15 +22602,15 @@
         }
 
         if ($self->session->mspMode eq 'no_invite') {
-            $entry4->set_text('0 - Server has not suggested MSP yet');
+            $entry4->set_text('Server has not suggested MSP yet');
         } elsif ($self->session->mspMode eq 'client_agree') {
-            $entry4->set_text('1 - Server has suggested MSP and client has agreed');
+            $entry4->set_text('Server has suggested MSP and client has agreed');
         } elsif ($self->session->mspMode eq 'client_refuse') {
-            $entry4->set_text('2 - Server has suggested MSP and client has refused');
+            $entry4->set_text('Server has suggested MSP and client has refused');
         } elsif ($self->session->mspMode eq 'client_simulate') {
 
             $entry4->set_text(
-                '3 - Server did not suggest MSP, but ' . $axmud::SCRIPT
+                'Server did not suggest MSP, but ' . $axmud::SCRIPT
                 . ' is responding to MSP sound/music triggers',
             );
         }
@@ -22799,7 +22913,7 @@
         # Resets the simple list displayed by $self->msdp1Tab, etc
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #   $iv             - The hash IV whose key-value pairs should be displayed
         #
@@ -23122,7 +23236,7 @@
         # Resets the simple list displayed by $self->msdp5Tab, etc
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #   $iv, $iv2       - The hash IVs whose key-value pairs should be displayed
         #
@@ -23322,7 +23436,7 @@
         # Resets the simple list displayed by $self->msdp7Tab, etc
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #   $iv, $iv2, $iv3, $iv4
         #                   - The hash IVs whose key-value pairs should be displayed
@@ -23696,7 +23810,7 @@
         # Resets the simple list displayed by $self->mssp1Tab and ->mssp2Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #   $type       - 'official' or 'custom'
         #
@@ -23867,7 +23981,7 @@
         # Resets the simple list displayed by $self->mxpTab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -23984,7 +24098,7 @@
         # Resets the simple list displayed by $self->zmpTab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -24189,7 +24303,7 @@
         # Resets the simple list displayed by $self->atcpTab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -24292,7 +24406,7 @@
         # Resets the simple list displayed by $self->gmcpTab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -24428,7 +24542,7 @@
         # Resets the simple list displayed by $self->mcp1Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -24544,7 +24658,7 @@
         # Resets the simple list displayed by $self->mcp2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values

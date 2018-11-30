@@ -36,6 +36,7 @@ shk / simulatehook            Simulates an Axmud hook event
       ;shk -x                 Simulates the 'close_disconnect' hook event
       ;shk -mr                Simulates the 'map_room' hook event
       ;shk -mn                Simulates the 'map_no_room' hook event
+      ;shk -ml                Simulates the 'map_lost' hook event
       ;shk -mo                Simulates the 'map_rescue_on' hook event
       ;shk -mm                Simulates the 'map_rescue_merge' hook event
       ;shk -mf                Simulates the 'map_rescue_off' hook event
@@ -98,9 +99,11 @@ shk / simulatehook            Simulates an Axmud hook event
       The 'get_focus' event occurs when this session becomes the current session
          and the 'lose_focus' event occurs when another session becomes the 
          current session.
-      The 'map_room' event occurs when the automapper's current room is set and
-         the 'map_no_room' event occurs when it is reset (for example, when the
-         automapper gets lost).
+      The 'map_room' event occurs when the automapper's current room is set.
+      The 'map_no_room' and 'map_lost' hook events both occur when the
+         automapper's current room is reset. 'map_no_room' occurs when the
+         Locator task is reset, and 'map_lost' doesn't occur when the Locator
+         task is reset.
       Three hook events occur during auto-rescue mode (when the automapper
          window switches to a temporary region, rather than marking the
          character as lost). 'map_rescue_on' occurs when auto-rescue mode

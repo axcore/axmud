@@ -171,9 +171,13 @@
             #       'error'     - at least one system error/warning/improper arguments message
             systemMsgMode               => 'empty',
             # When a system error/warning/debug/improper argument message is added to the list of
-            #   messages waiting to be displayed, the icon's button flashes. The length of time (in
-            #   seconds) to flash
-            systemMsgWaitTime           => 1.5,
+            #   messages waiting to be displayed, the icon's button flashes
+            # What kind of system message is the most recent one, which determines the colour of the
+            #   flashing button ('system', 'debug' or 'error', matching values of
+            #   $self->systemMsgMode)
+            systemMsgTempMode           => 'empty',
+            # The length of time (in seconds) to flash
+            systemMsgWaitTime           => 2,
             # The time (matches $self->sessionTime) at which to stop flashing
             systemMsgCheckTime          => undef,
 
@@ -197,7 +201,7 @@
             #   empty
             loginPromptPatternList      => [
                 # Used in a m/.../i expression
-                # Use regexes similar to those used by GA::Net::Telnet, but abbreviate 'username'
+                # Use regexes similar to those used by GA::Obj::Telnet, but abbreviate 'username'
                 #   to 'name', allow it to end with a question mark as well as a colon, and also
                 #   allow it to end with 'wish', so that 'telnet' mode logins works on the default
                 #   Dead Souls mudlib
@@ -233,26 +237,34 @@
             #   $self->spinIncomingLoop
             loginConfirmText            => undef,
 
-            # When $self->processLineSegment notices some text that looks like a prompt, it
-            #   updates these IVs
-            # The number of prompts received during this session and processed by
+            # When Axmud decides that a prompt has been received, $self->processPrompt is called to
+            #   handle it. Once that happens, the prompt becomes a 'command prompt', in the
+            #   expectation that the world is now waiting for us to send a world command
+            # Usually it's because the world has sent a Go Ahead (GA) or End Of Record (EOR)
+            #   sequence, or a line ending in text which matches a pattern in
+            #   GA::Profile::World->cmdPromptPatternList
+            # Otherwise, when we receive a line of text that doesn't end with a newline character,
+            #   we wait a short time (GA::Client->promptWaitTime seconds) in the expectation that
+            #   the world is sending more text; if that time expires and no more text is received,
+            #   $self->processPrompt is called anyway
+            #
+            # The number of command prompts received during this session and processed by
             #   $self->processPrompt (the total won't include prompts that were processed by
             #   ->dispatchCmd, if the user types a world command before ->processPrompt can act)
             promptCount                 => 0,
-            # The actual line of text received
-            promptLine                  => undef,
-            # The line of text, stripped of escape sequences
-            promptStripLine             => undef,
-            # When something that looks like a prompt is received, we wait a short time
-            #   (GA::Client->promptWaitTime seconds); if nothing else is received in the meantime,
-            #   treat it as a prompt. This value matches $self->sessionTime; if the time passes and
-            #   no more text is received, it's a prompt
+            # A flag set to TRUE when $self->processPrompt is called; set back to FALSE when more
+            #   text (or a new line) is handled
+            promptFlag                  => FALSE,
+            # A flag set to TRUE when $self->processPrompt is called by $self->processLinePortion,
+            #   after it displays a line matching a recognised command prompt pattern. The flag's
+            #   TRUE value instructs $self->processIncomingData to insert an artificial newline
+            #   after the prompt if one has not already been inserted, and if the next packet of
+            #   text received from the world doesn't begin with one
+            promptInsertFlag            => FALSE,
+            # When waiting to see if the most recently-received text is a command prompt, or not,
+            #   the time (matches $self->sessionTime) at which we should stop waiting and process
+            #   the incomplete line as a command prompt
             promptCheckTime             => undef,
-            # Flag set to TRUE when ->processIncomingData deals with a packet of text that ends in a
-            #   recognised command prompt (matches one of the patterns in
-            #   GA::Profile::World->cmdPromptPatternList). Set back to FALSE when the function
-            #   receives the next packet of text
-            cmdPromptFlag               => FALSE,
 
             # Value set whenever $self->tokeniseIncomingData extracts a token, recording the type
             #   of token that was extracted
@@ -282,6 +294,7 @@
             #   display in the RawToken task window
             constRawHash                => {
                 'nl'                    => 'BLUE',
+                'ga'                    => 'blue',
                 'esc'                   => 'YELLOW',
                 'inv'                   => 'YELLOW',
                 'ctrl'                  => 'cyan',
@@ -302,6 +315,7 @@
             #   (type, argument, type, argument...)
             #   - 'type' is one of the strings:
             #           - 'nl' (newline token)
+            #           - 'ga' (IAC GA 'go ahed' token)
             #           - 'esc' (token containing single escape character)
             #           - 'inv' (token containing invalid escape sequence)
             #           - 'ctrl' (token containing valid escape sequence; any undisplayed text
@@ -486,7 +500,7 @@
             aliasOrderList              => [],
             # Registry hash of active macro interface objects, in the form
             #   $macroHash{number} = keycode
-            # ...where keycode is an Axmud standard keycode (or keycode string)
+            # ...where 'keycode' is an Axmud standard keycode (or keycode string)
             macroHash                   => {},
             # Registry hash of active macro interface objects which are in a cooldown period
             #   (contains a subset of $self->triggerHash). Hash in the form
@@ -789,6 +803,12 @@
             # This flag is set to TRUE at the start of a call to ->worldCmd, and FALSE at the end
             #   of it
             worldCmdProcessFlag         => FALSE,
+            # When $self->worldCmd is called with a string of world commands (e.g.
+            #   'north;east;north'), we don't want to redraw the automapper's ghost room once for
+            #   each movement command (of which there might be hundreds)
+            # Instead, the function temporarily stores the ghost room (if one exists at the time
+            #   the function is called) here, to guarantee that it gets redrawn
+            worldCmdGhostRoom           => undef,
 
             # Delayed quit. If this IV is set, it is the moment in the future (matches
             #   $self->sessionTime) at which some kind of 'quit' or 'exit' client command must be
@@ -837,7 +857,7 @@
             # Which connection protocol this session is using: 'telnet', 'ssh' or 'ssl' ('undef'
             #   when not connected)
             protocol                    => undef,
-            # The GA::Net::Telnet handling the connection ('undef' when not connected)
+            # The GA::Obj::Telnet handling the connection ('undef' when not connected)
             connectObj                  => undef,
             # For SSH connections, the Net::OpenSSH and Perl pty (an IO::Tty filehandle) objects
             #   ('undef' for telnet/SSL connections and when not connected)
@@ -866,7 +886,7 @@
             #   TRUE
             doDisconnectFlag            => FALSE,
             # On disconnection, $self->reactDisconnect is called from several places in the session
-            #   code. In rare circumstances (such as the GA::Net::Telnet object returning TRUE to
+            #   code. In rare circumstances (such as the GA::Obj::Telnet object returning TRUE to
             #   an ->eof() call), it might be called more than once
             # On the first call, this flag is set to TRUE. On any subsequent calls, nothing happens
             #   if this flag is TRUE
@@ -1262,11 +1282,27 @@
             #   'client_agree' - The server has suggested EOR, and the client has agreed
             #   'client_refuse' - The client refuses to use EOR
             eorMode                     => 'no_invite',
+            # Flag set to TRUE if a single IAC EOR or IAC GA sequence (indicating a prompt) has been
+            #   received from the world, in which case $self->processLinePortion doesn't need to
+            #   check that lines that don't end in a newline do end with text matching a pattern in
+            #   the world profile's ->cmdPromptPatternList
+            eorgaFlag                   => FALSE,
             # NAWS mode:
             #   'no_invite' - The server has not suggested NAWS yet, but the client is willing
             #   'client_agree' - The server has suggested NAWS, and the client has agreed
             #   'client_refuse' - The client refuses to use NAWS
             nawsMode                    => 'no_invite',
+            # NEW-ENVIRON mode:
+            #   'no_invite' - The server has not suggested NEW-ENVIRON yet, but the client is
+            #                   willing
+            #   'client_agree' - The server has suggested NEW-ENVIRON, and the client has agreed
+            #   'client_refuse' - The client refuses to use NEW-ENVIRON
+            newEnvironMode              => 'no_invite',
+            # CHARSET mode:
+            #   'no_invite' - The server has not suggested CHARSET yet, but the client is willing
+            #   'client_agree' - The server has suggested CHARSET, and the client has agreed
+            #   'client_refuse' - The client refuses to use CHARSET
+            charSetMode                 => 'no_invite',
 
             # IVs for MUD protocols
             # ---------------------
@@ -1796,7 +1832,8 @@
             redirectString              => undef,
             # Redirect mode can operate in one of three states:
             #   'primary_only' - redirect primary directions
-            #   'primary_secondary' - redirect primary and secondary directions
+            #   'primary_secondary' - redirect primary and secondary directions (but not relative
+            #       directions; redirect mode doesn't work with relative directions)
             #   'all_exits' - redirect primary and secondary directions, plus any command matching
             #       an exit in the current room (if set; actually the automapper's ->ghostRoom)
             # NB Redirect mode takes priority over assisted moves, if they are turned on
@@ -1832,7 +1869,7 @@
             # When the user imports a world model via the Automapper window's 'Import/load world
             #   model' menu item, this flag gets set to TRUE. It allows ;importfiles to transfer a
             #    world model whose ->_parentWorld is not the current world, into the current world's
-            #   file structure, after a prompt to the user. Once the operation is complete, the
+            #   file structure, after first prompting the user. Once the operation is complete, the
             #   Automapper window loads the file, sets its ->_parentWorld to the rigth value, saves
             #   the file, and then resets this flag
             transferWorldModelFlag      => FALSE,
@@ -6152,7 +6189,8 @@
 
         # Local variables
         my (
-            $modText, $lastObj, $gagFlag, $gagLogFlag, $firstFireFlag,
+            $prevLength, $bufferObj, $prevText, $modText, $fullText, $firstFireFlag, $lastObj,
+            $gagFlag, $gagLogFlag,
             @emptyList, @instructList, @dependentCallList, @deleteList,
             %hash,
         );
@@ -6166,16 +6204,41 @@
 
         # Import the active trigger registry for quick lookup
         %hash = $self->triggerHash;
+        # If some part of this line has already been displayed, we can test non-rewriter triggers
+        #   against the whole line, ignoring any matches that match only the previously-displayed
+        #   portion of the line
+        # However, rewriter triggers can only be tested against the new portion of the line, stored
+        #   in $stripText
+        # Get the previously-displayed portion, if any
+        $prevLength = 0;
+        if ($self->displayBufferLast) {
+
+            $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
+            if ($bufferObj && ! $bufferObj->newLineFlag) {
+
+                $prevText = $bufferObj->stripLine;
+                $prevLength = length($prevText);
+            }
+        }
+
+        # ($fullText, containing the whole line, is updated every time $modText is updated, i.e.
+        #   whenever a rewriter trigger fires)
+        $modText = $stripText;
+        if ($prevLength) {
+            $fullText = $prevText . $modText;
+        } else {
+            $fullText = $modText;
+        }
 
         # Check every active trigger interface, in the correct order, to see if it is due to fire
-        $modText = $stripText;
         OUTER: foreach my $number ($self->triggerOrderList) {
 
             my (
-                $obj, $regex, $paneName, $substitution, $instruction, $result, $ignoreFlag,
-                $thisObj, $perlFlag, $class, $method, $startOffset, $stopOffset, $lengthChange,
-                $mode, $start, $stop, $globalFlag, $compareString, $loopCount, $modInstruct,
-                @itemList, @matchMinusList, @matchPlusList, @grpStringList,
+                $obj, $regex, $paneName, $substitution, $result, $compareString, $ignoreFlag,
+                $globalFlag, $loopCount, $thisObj, $startOffset, $stopOffset, $lengthChange,
+                $grpStringListRef, $matchMinusListRef, $matchPlusListRef, $instruction,
+                $modInstruct, $perlFlag, $class, $method, $mode, $start, $stop,
+                @matchMinusList, @matchPlusList,
                 %oldTagHash,
             );
 
@@ -6184,7 +6247,8 @@
 
             # If the trigger is disabled, don't fire it
             # If the trigger is in the middle of its cooldown period, don't fire it
-            # If the trigger is a splitter trigger, don't fire it
+            # If the trigger is a splitter trigger, don't fire it (splitter triggers are tested
+            #   elsewhere)
             # If the trigger requires a line ending with a newline character and the line doesn't
             #   end with one, don't fire it
             # If the trigger requires a login and the character isn't logged in, don't fire it
@@ -6215,8 +6279,8 @@
 
                 # An independent trigger
 
-                # If the trigger ->response begins with a forward slash, checking against other
-                #   triggers halts and the Perl command is evaluated
+                # If the trigger ->response begins with the Perl command sigil, checking against
+                #   other triggers halts and the Perl command is evaluated
                 # Otherwise, the ->response is executed as an instruction and checking against
                 #   other triggers continues (if allowed)
                 #
@@ -6359,56 +6423,98 @@
 
                     # Future modifier triggers modify the modified line
                     $modText = $result;
+                    if ($prevLength) {
+                        $fullText = $prevText . $modText;
+                    } else {
+                        $fullText = $modText;
+                    }
 
                 } else {
 
                     # An independent trigger (not a rewriter). Perform the pattern match
                     if ($obj->ivShow('attribHash', 'ignore_case')) {
 
-                        @grpStringList = ($modText =~ m/$regex/i);
-                        if (@grpStringList) {
+#                        @grpStringList = ($modText =~ m/$regex/i);
+#                        if (@grpStringList) {
+#
+#                            $result = TRUE;
+#
+#                            # Group substring data is local to this code block, so store it now
+#                            @matchMinusList = @-;
+#                            @matchPlusList = @+;
+#
+#                            # If the regex contained groups, @grpStringList contains the matching
+#                            #   substrings. If it didn't, @grpStringList contains a single value, 1
+#                            if ((scalar @matchMinusList) == 1) {
+#
+#                                # Remove the single value
+#                                @grpStringList = ();
+#                            }
+#
+#                            # (Index 0 should contain the whole matched string, index 1 should be
+#                            #   the first matched substring, corresponding to $1, etc)
+#                            unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
+#                        }
 
-                            $result = TRUE;
+                        # Test the regex against the whole line, including any previously-displayed
+                        #   portion, but ignore a match if it applies only to the previously-
+                        #   displayed portion
+                        # The TRUE argument means to do a case-insensitive match
+                        (
+                            $result, $ignoreFlag, $grpStringListRef, $matchMinusListRef,
+                            $matchPlusListRef,
+                        ) = $self->matchTrigger($fullText, $regex, $prevLength, TRUE);
 
-                            # Group substring data is local to this code block, so store it now
-                            @matchMinusList = @-;
-                            @matchPlusList = @+;
+                        if ($ignoreFlag) {
 
-                            # If the regex contained groups, @grpStringList contains the matching
-                            #   substrings. If it didn't, @grpStringList contains a single value, 1
-                            if ((scalar @matchMinusList) == 1) {
-
-                                # Remove the single value
-                                @grpStringList = ();
-                            }
-
-                            # (Index 0 should contain the whole matched string, index 1 should be
-                            #   the first matched substring, corresponding to $1, etc)
-                            unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
+                            # $regex matches the previously-displayed portion of the line
+                            # Having ignored that, we now test $regex against the line portion that
+                            #   hasn't been displayed yet, $modText, in case there's a match there
+                            (
+                                $result, $ignoreFlag, $grpStringListRef, $matchMinusListRef,
+                                $matchPlusListRef,
+                            ) = $self->matchTrigger($modText, $regex, 0, TRUE);
                         }
 
                     } else {
 
-                        @grpStringList = ($modText =~ m/$regex/);
-                        if (@grpStringList) {
+#                        @grpStringList = ($modText =~ m/$regex/);
+#                        if (@grpStringList) {
+#
+#                            $result = TRUE;
+#
+#                            # Group substring data is local to this code block, so store it now
+#                            @matchMinusList = @-;
+#                            @matchPlusList = @+;
+#
+#                            # If the regex contained groups, @grpStringList contains the matching
+#                            #   substrings. If it didn't, @grpStringList contains a single value, 1
+#                            if ((scalar @matchMinusList) == 1) {
+#
+#                                # Remove the single value
+#                                @grpStringList = ();
+#                            }
+#
+#                            # (Index 0 should contain the whole matched string, index 1 should be
+#                            #   the first matched substring, corresponding to $1, etc)
+#                            unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
+#                        }
 
-                            $result = TRUE;
+                        # The FALSE argument means to do a case-insensitive match
+                        (
+                            $result, $ignoreFlag, $grpStringListRef, $matchMinusListRef,
+                            $matchPlusListRef,
+                        ) = $self->matchTrigger($fullText, $regex, $prevLength, FALSE);
 
-                            # Group substring data is local to this code block, so store it now
-                            @matchMinusList = @-;
-                            @matchPlusList = @+;
+                        if ($ignoreFlag) {
 
-                            # If the regex contained groups, @grpStringList contains the matching
-                            #   substrings. If it didn't, @grpStringList contains a single value, 1
-                            if ((scalar @matchMinusList) == 1) {
-
-                                # Remove the single value
-                                @grpStringList = ();
-                            }
-
-                            # (Index 0 should contain the whole matched string, index 1 should be
-                            #   the first matched substring, corresponding to $1, etc)
-                            unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
+                            # $regex matches the previously-displayed portion of the line
+                            # Having ignored that, we now test $regex against the line portion that
+                            #   hasn't been displayed yet, $modText, in case there's a match there
+                            (
+                                $result, $ignoreFlag, $grpStringListRef, $matchMinusListRef,
+                                $matchPlusListRef,
+                            ) = $self->matchTrigger($modText, $regex, 0, FALSE);
                         }
                     }
 
@@ -6447,7 +6553,7 @@
                             $self->ivAdd('perlCmdDataHash', '_stripLine', $stripText);
                             $self->ivAdd('perlCmdDataHash', '_modLine', $modText);
                             $self->ivPoke('perlCmdTagHash', %tagHash);
-                            $self->ivPoke('perlCmdGrpStringList', @grpStringList);
+                            $self->ivPoke('perlCmdGrpStringList', @$grpStringListRef);
                             # (Also store the interface which fired)
                             $self->ivAdd('perlCmdDataHash', '_interface', undef);
 
@@ -6490,7 +6596,6 @@
                                     $self->sessionTime + $thisObj->ivShow('attribHash', 'cooldown'),
                                 );
                             }
-
                         }
                     }
                 }
@@ -6503,52 +6608,77 @@
                 # Perform the pattern match
                 if ($obj->ivShow('attribHash', 'ignore_case')) {
 
-                    @grpStringList = ($modText =~ m/$regex/i);
-                    if (@grpStringList) {
+#                    @grpStringList = ($modText =~ m/$regex/i);
+#                    if (@grpStringList) {
+#
+#                        $result = TRUE;
+#
+#                        # Group substring data is local to this code block, so store it now
+#                        @matchMinusList = @-;
+#                        @matchPlusList = @+;
+#
+#                        # If the regex contained groups, @grpStringList contains the matching
+#                        #   substrings. If it didn't, @grpStringList contains a single value, 1
+#                        if ((scalar @matchMinusList) == 1) {
+#
+#                            # Remove the single value
+#                            @grpStringList = ();
+#                        }
+#
+#                        # (Index 0 should contain the whole matched string, index 1 should be the
+#                        #   first matched substring, corresponding to $1, etc)
+#                        unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
+#                    }
 
-                        $result = TRUE;
+                    # The TRUE argument means to do a case-insensitive match
+                    ($result, $ignoreFlag, $grpStringListRef, $matchMinusListRef, $matchPlusListRef)
+                        = $self->matchTrigger($fullText, $regex, $prevLength, TRUE);
 
-                        # Group substring data is local to this code block, so store it now
-                        @matchMinusList = @-;
-                        @matchPlusList = @+;
+                    if ($ignoreFlag) {
 
-                        # If the regex contained groups, @grpStringList contains the matching
-                        #   substrings. If it didn't, @grpStringList contains a single value, 1
-                        if ((scalar @matchMinusList) == 1) {
-
-                            # Remove the single value
-                            @grpStringList = ();
-                        }
-
-                        # (Index 0 should contain the whole matched string, index 1 should be the
-                        #   first matched substring, corresponding to $1, etc)
-                        unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
-
+                        # $regex matches the previously-displayed portion of the line
+                        # Having ignored that, we now test $regex against the line portion that
+                        #   hasn't been displayed yet, $modText, in case there's a match there
+                        (
+                            $result, $ignoreFlag, $grpStringListRef, $matchMinusListRef,
+                            $matchPlusListRef,
+                        ) = $self->matchTrigger($modText, $regex, $prevLength, TRUE);
                     }
 
                 } else {
 
-                    @grpStringList = ($modText =~ m/$regex/);
-                    if (@grpStringList) {
+#                    @grpStringList = ($modText =~ m/$regex/);
+#                    if (@grpStringList) {
+#
+#                        $result = TRUE;
+#
+#                        # Group substring data is local to this code block, so store it now
+#                        @matchMinusList = @-;
+#                        @matchPlusList = @+;
+#
+#                        # If the regex contained groups, @grpStringList contains the matching
+#                        #   substrings. If it didn't, @grpStringList contains a single value, 1
+#                        if ((scalar @matchMinusList) == 1) {
+#
+#                            # Remove the single value
+#                            @grpStringList = ();
+#                        }
+#
+#                        # (Index 0 should contain the whole matched string, index 1 should be the
+#                        #   first matched substring, corresponding to $1, etc)
+#                        unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
+#                    }
 
-                        $result = TRUE;
+                    # The FALSE argument means to do a case-insensitive match
+                    ($result, $ignoreFlag, $grpStringListRef, $matchMinusListRef, $matchPlusListRef)
+                        = $self->matchTrigger($fullText, $regex, $prevLength, FALSE);
 
-                        # Group substring data is local to this code block, so store it now
-                        @matchMinusList = @-;
-                        @matchPlusList = @+;
+                    if ($ignoreFlag) {
 
-                        # If the regex contained groups, @grpStringList contains the matching
-                        #   substrings. If it didn't, @grpStringList contains a single value, 1
-                        if ((scalar @matchMinusList) == 1) {
-
-                            # Remove the single value
-                            @grpStringList = ();
-                        }
-
-                        # (Index 0 should contain the whole matched string, index 1 should be the
-                        #   first matched substring, corresponding to $1, etc)
-                        unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
-
+                        (
+                            $result, $ignoreFlag, $grpStringListRef, $matchMinusListRef,
+                            $matchPlusListRef,
+                        ) = $self->matchTrigger($modText, $regex, $prevLength, FALSE);
                     }
                 }
 
@@ -6587,9 +6717,9 @@
                             $text,
                             $stripText,
                             $modText,
-                            \@grpStringList,
-                            \@matchMinusList,
-                            \@matchPlusList,
+                            $grpStringListRef,
+                            $matchMinusListRef,
+                            $matchPlusListRef,
                         ],
                     );
                  }
@@ -6599,6 +6729,14 @@
 
                 # The trigger did fire
                 $lastObj = $thisObj;        # At least one trigger has fired
+
+                # If $self->matchTrigger was called, dereference $matchMinusListRef. If a rewriter
+                #   trigger fired, we already have @matchMinusList
+                if (defined $matchMinusListRef) {
+
+                    @matchMinusList = @$matchMinusListRef;
+                    @matchPlusList = @$matchPlusListRef;
+                }
 
                 # If it's an independent trigger and the 'style_mode' attribute is set, we need to
                 #   apply the style to the whole (or part of) $modText (styles can't be applied to
@@ -6684,6 +6822,105 @@
             }
 
             return ($modText, $gagFlag, $gagLogFlag, \@instructList, \@dependentCallList, %tagHash);
+        }
+    }
+
+    sub matchTrigger {
+
+        # Called by $self->checkTriggers (only) to check a non-rewriter trigger against a line of
+        #   received text (whole or partial)
+        #
+        # Expected arguments
+        #   $text       - The whole or partial line of text
+        #   $regex      - The trigger stimulus to be compared against $text
+        #   $prevLength - The first part of $text might be text that's already been displayed. If
+        #                   so, $prevLength is the length of that portion. This function will
+        #                   ignore any match that lies exclusively within the previously-displayed
+        #                   text, but will accept any match that lies partially inside it. If $text
+        #                   doesn't contain any text that's been displayed, $prevLength will be 0
+        #   $noCaseFlag - Flag set to TRUE for a case-insensitive match, FALSE for a case-sensitive
+        #                   match
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   If $regex does not match $text, returns a list in the form
+        #       (FALSE, ignore_flag)
+        #   ...where 'ignore_flag' is TRUE if $regex matches $text, but exclusively within the
+        #       previously-displayed portion; FALSE if $regex matches $text partially inside any
+        #       previously-displayed portion or wholly outside of it
+        #   If $regex matches $text, returns a list in the form
+        #       (TRUE, FALSE, group_string_list_ref, match_minus_list_ref, match_plus_list_ref)
+        #   ...where 'group_string_list_ref' is a reference to a list of matching substrings,
+        #       'match_minus_list_ref' is a reference to @-, and 'match_plus_list_ref' is a
+        #       reference to @+
+        my ($self, $text, $regex, $prevLength, $noCaseFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $result,
+            @emptyList, @grpStringList, @matchMinusList, @matchPlusList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $text || ! defined $regex || ! defined $prevLength || ! defined $noCaseFlag
+            || defined $check
+        ) {
+            $axmud::CLIENT->writeImproper($self->_objClass . '->matchTrigger', @_);
+            return @emptyList;
+        }
+
+        if ($noCaseFlag) {
+
+            @grpStringList = ($text =~ m/$regex/i);
+            if (@grpStringList) {
+
+                $result = TRUE;
+
+                # Group substring data is local to this code block, so store it now
+                @matchMinusList = @-;
+                @matchPlusList = @+;
+            }
+
+        } else {
+
+            @grpStringList = ($text =~ m/$regex/);
+            if (@grpStringList) {
+
+                $result = TRUE;
+
+                # Group substring data is local to this code block, so store it now
+                @matchMinusList = @-;
+                @matchPlusList = @+;
+            }
+        }
+
+        if (! $result) {
+
+            return (FALSE);
+
+        } elsif ($prevLength && $matchPlusList[0] < $prevLength) {
+
+            return (FALSE, TRUE);
+
+        } else {
+
+            # If the regex contained groups, @grpStringList contains the matching substrings. If it
+            #   didn't, @grpStringList contains a single value, 1
+            if ((scalar @matchMinusList) == 1) {
+
+                # Remove the single value
+                @grpStringList = ();
+            }
+
+            # (Index 0 should contain the whole matched string, index 1 should be the first matched
+            #   substring, corresponding to $1, etc)
+            unshift (
+                @grpStringList,
+                substr($text, $matchMinusList[0], $matchPlusList[0] - $matchMinusList[0]),
+            );
+
+            return (TRUE, FALSE, \@grpStringList, \@matchMinusList, \@matchPlusList);
         }
     }
 
@@ -7585,8 +7822,13 @@
         #   map_room            GA::Obj::Map->setCurrentRoom
         #                                                   The automapper's current room number
         #   map_no_room         GA::Obj::Map->setCurrentRoom
-        #                                                   The last current room, or 0 if last
-        #                                                       current room not set
+        #                                                   The number of the last current room, or
+        #                                                       0 if last current room not set
+        #                                                       (does fire when Locator resets)
+        #   map_lost            GA::Obj::Map->setCurrentRoom
+        #                                                   The number of the last current room, or
+        #                                                       0 if last current room not set
+        #                                                       (doesn't fire when Locator resets)
         #   map_rescue_on       GA::Obj::Map->setCurrentRoom
         #                                                   The temporary region name
         #   map_rescue_merge    GA::Obj::Map->reset_rescueCheckFlag
@@ -9117,11 +9359,11 @@
             }
         }
 
-        # If some text has been received that looks like a prompt, see if the waiting time has
+        # If some text has been received that might be a command prompt, see if the waiting time has
         #   expired
-        if (defined $self->promptLine && $self->promptCheckTime < $self->sessionTime) {
+        if (defined $self->promptCheckTime && $self->promptCheckTime < $self->sessionTime) {
 
-            # The time has expired. Process the prompt
+            # The time has expired. Process the incomplete line as a command prompt
             $self->processPrompt();
         }
 
@@ -10308,7 +10550,7 @@
 
             if (defined $currentTab && $currentTab eq 'Current tasklist') {
 
-                # If there are currently any selected lines in the tab's GA::Gtk::Simple::List,
+                # If there are currently any selected lines in the tab's GA::Obj::Simple::List,
                 #   remember them, so we can select them again as soon as the list is redrawn
                 @selectedList = $self->viewerWin->notebookGetSelectedLines();
 
@@ -11166,8 +11408,8 @@
 
         # v1.0.242 - Surprisingly, ->get doesn't return all the data that has been received; this
         #   can lead to ->processIncomingData being called to process half a line, when the rest of
-        #   the line has actually been received by GA::Net::Telnet (bad news for any triggers that
-        #   might match the whole line). Therefore we need to continue polling GA::Net::Telnet until
+        #   the line has actually been received by GA::Obj::Telnet (bad news for any triggers that
+        #   might match the whole line). Therefore we need to continue polling GA::Obj::Telnet until
         #   it returns 'undef'
         $text = '';
         do {
@@ -11405,8 +11647,8 @@
         # Connect to the world using the specified protocol
         if ($protocol eq 'telnet') {
 
-            # Connect using GA::Net::Telnet
-            $connectObj = Games::Axmud::Net::Telnet->new(
+            # Connect using GA::Obj::Telnet
+            $connectObj = Games::Axmud::Obj::Telnet->new(
                 Axmud_session   => $self,
                 Errmode         => 'return',
                 Timeout         => $self->connectTimeOut,
@@ -11466,7 +11708,7 @@
 
                 if ($ptyObj) {
 
-                    $connectObj = Games::Axmud::Net::Telnet->new(
+                    $connectObj = Games::Axmud::Obj::Telnet->new(
                         -fhopen                     => $ptyObj,
                         Axmud_session               => $self,
                         Errmode                     => 'return',
@@ -11491,7 +11733,7 @@
 
         } elsif ($protocol eq 'ssl') {
 
-            # Connect using IO::Socket::SSL and GA::Net::Telnet
+            # Connect using IO::Socket::SSL and GA::Obj::Telnet
             $sslObj = IO::Socket::SSL->new(
                 PeerAddr        => $host,
                 PeerPort        => $port,
@@ -11500,7 +11742,7 @@
 
             if ($sslObj) {
 
-                $connectObj = Games::Axmud::Net::Telnet->new(
+                $connectObj = Games::Axmud::Obj::Telnet->new(
                     -fhopen         => $sslObj,
                     Axmud_session   => $self,
                     Errmode         => 'return',
@@ -11545,7 +11787,7 @@
             return $self->subOptCallback($obj, $option, $parameters);
         });
 
-        # Use GA::Net::Telnet's option negotiation ability to write logfiles, if the GA::Client's
+        # Use GA::Obj::Telnet's option negotiation ability to write logfiles, if the GA::Client's
         #   flag is set
         if ($axmud::CLIENT->debugTelnetLogFlag) {
 
@@ -11787,7 +12029,7 @@
 
     sub reactDisconnect {
 
-        # Called by $self->connectionError when the GA::Net::Telnet object reports an error (usually
+        # Called by $self->connectionError when the GA::Obj::Telnet object reports an error (usually
         #   due to the host disconnecting us)
         # Also called by ->incomingDataLoop when it reads an end-of-file (usually due to the host
         #   disconnecting us)
@@ -11821,7 +12063,7 @@
             return undef;
 
         # On disconnection, this function is called from several places in the session code. In
-        #   rare circumstances (such as the GA::Net::Telnet object returning TRUE to an ->eof()
+        #   rare circumstances (such as the GA::Obj::Telnet object returning TRUE to an ->eof()
         #   call), it might be called more than once. Use a flag to ignore subsequent calls
         } elsif ($self->reactDisconnectFlag) {
 
@@ -12062,11 +12304,11 @@
 
     sub connectionError {
 
-        # Callback, called by $self->doConnect when the GA::Net::Telnet object reports an error
+        # Callback, called by $self->doConnect when the GA::Obj::Telnet object reports an error
         #   (usually due to a disconnection)
         #
         # Expected arguments
-        #   $errorMsg   - The error message passed by GA::Net::Telnet
+        #   $errorMsg   - The error message passed by GA::Obj::Telnet
         #
         # Return values
         #   'undef'
@@ -12087,7 +12329,7 @@
             return undef;
         }
 
-        # If GA::Net::Telnet's error message is one we recognise, use our own error message
+        # If GA::Obj::Telnet's error message is one we recognise, use our own error message
         if (
             $errorMsg =~ m/Name or service not known/i
             || $errorMsg =~ m/Unknown (remote|local) host/i
@@ -12158,7 +12400,7 @@
 
         } else {
 
-            # Otherwise, use the error message GA::Net::Telnet gave us
+            # Otherwise, use the error message GA::Obj::Telnet gave us
             $self->writeError(
                 ucfirst($errorMsg),
                 $self->_objClass . '->connectionError',
@@ -12169,7 +12411,7 @@
             $self->reactDisconnect(FALSE);
         }
 
-        # GA::Net::Telnet requires us to return 'undef'
+        # GA::Obj::Telnet requires us to return 'undef'
         return undef;
     }
 
@@ -12303,12 +12545,11 @@
             $self->turnOnBlinker(0);
         }
 
-        # If the last text received from the world didn't end with a newline character, it was
-        #   stored as a possible prompt. If so, we can erase the stored details now
-        if ($self->promptLine) {
+        # If the last text received from the world was an incomplete line that might have been #
+        #   either a command prompt or just an incomplete line, we can now say that it was
+        #   definitely an incomplete line
+        if (defined $self->promptCheckTime) {
 
-            $self->ivUndef('promptLine');
-            $self->ivUndef('promptStripLine');
             $self->ivUndef('promptCheckTime');
         }
 
@@ -12323,21 +12564,23 @@
         # Insert an initial newline character in certain circumstances
         if (
             # There needs to be a newline character
-            ($self->cmdPromptFlag || $self->nlEchoFlag)
+            ($self->promptInsertFlag || $self->nlEchoFlag)
             # ...and the world hasn't supplied one
             && ! ($text =~ m/^[\n\r]/)
             # And the current textview object hasn't just inserted one (e.g. after a system message)
             && ! $self->currentTabObj->textViewObj->insertNewLineFlag
             && $self->currentTabObj->textViewObj->bufferTextFlag
         ) {
-            # Don't insert a newline character if in special echo mode...
+            # Don't actually insert a newline character if in special echo mode...
             if ($self->specialEchoMode ne 'enabled') {
 
                 $text = "\n" . $text;
             }
 
             # ...but reset the IVs regardless
-            $self->ivPoke('cmdPromptFlag', FALSE);
+            $self->ivPoke('promptFlag', FALSE);
+            $self->ivPoke('promptInsertFlag', FALSE);
+            $self->ivUndef('promptCheckTime');
             $self->ivPoke('nlEchoFlag', FALSE);
         }
 
@@ -12392,8 +12635,8 @@
                 );
 
                 # $self->currentTokenList is in the form (type, argument, type, argument...)
-                #   - 'type' is one of the strings 'nl', 'esc', 'inv', 'ctrl', 'seq', 'bsp', 'msp',
-                #       'mxp', 'ent', 'pueblo', 'mcp', 'nomcp', 'text' or 'go'
+                #   - 'type' is one of the strings 'nl', 'ga', 'esc', 'inv', 'ctrl', 'seq', 'bsp',
+                #       'msp', 'mxp', 'ent', 'pueblo', 'mcp', 'nomcp', 'text' or 'go'
                 #   - (NB 'part' is used in calls to $self->respondIncomingData to show that an
                 #       incomplete line is to be shown, but it's never added to this IV)
                 #   - 'argument' is usually the token itself. For type 'ctrl' and 'seq', it's a list
@@ -12408,9 +12651,18 @@
                 $stripLine = $self->processStripLine;
                 %lineTagHash = $self->processTagHash;
 
-                # Remember the current setting of $self->mxpTempMode, so that this code block can
-                #   notice if it has been applied
+                # Remember the current setting of $self->mxpTempMode after the previous iteration of
+                #   this do.. loop
                 $tempMode = $self->mxpTempMode;
+
+                # A text or newline token cancels a prompt in all circumstances
+                if ($type eq 'nl' || $type eq 'text') {
+
+                    $self->ivUndef('promptCheckTime');
+                    $self->ivPoke('promptFlag', FALSE);
+                    $self->ivPoke('promptInsertFlag', FALSE);
+                    $self->ivUndef('promptCheckTime');
+                }
 
                 # If Pueblo had been waiting for a new line which has since been processed, we can
                 #   insert the Axmud style tag 'justify_default' on this loop
@@ -12477,15 +12729,22 @@
                         }
                     }
 
-                # 2. Tokens consisting of a single escape character "\e" immediately followed by an
-                #   "\e", "\n" or "\r" character, or an alphanumeric character (rare, but possible)
+                # 2. Tokens consisting of an IAC GA 'go ahead' sequence
+                } elsif ($type eq 'ga') {
+
+                    $origLine .= $arg;
+                    $backup = $arg;
+
+                # 3. Tokens consisting of a single escape character "\e" immediately followed by a
+                #       character that doesn't start a valid escape sequence (e.g. "\e", "\n" or
+                #       "\r", or the IAC character chr(255))
                 } elsif ($type eq 'esc') {
 
                     @tagList = $self->processEscChar($arg);
                     $origLine .= $arg;
                     $backup = $arg;
 
-                # 3. Tokens consisting of an invalid escape sequence, starting with the escape
+                # 4. Tokens consisting of an invalid escape sequence, starting with the escape
                 #   character "\e"
                 } elsif ($type eq 'inv') {
 
@@ -12493,7 +12752,7 @@
                     $origLine .= $arg;
                     $backup = $arg;
 
-                # 4. Tokens consisting of a valid escape sequence, starting with the escape
+                # 5. Tokens consisting of a valid escape sequence, starting with the escape
                 #   character "\e" (any undisplayed text must be displayed, before processing this
                 #   sequence)
                 } elsif ($type eq 'ctrl') {
@@ -12532,7 +12791,7 @@
 
                     %lineTagHash = (0, \@emptyList);
 
-                # 5. Tokens consisting of a valid escape sequence, starting with the escape
+                # 6. Tokens consisting of a valid escape sequence, starting with the escape
                 #   character "\e" (any undisplayed text doesn't need to be displayed yet)
                 } elsif ($type eq 'seq') {
 
@@ -12542,7 +12801,7 @@
                     $origLine .= $$arg[0];
                     $backup = $$arg[0];
 
-                # 6. Backspace tokens in the form "\b \b" or just "\b"
+                # 7. Backspace tokens in the form "\b \b" or just "\b"
                 } elsif ($type eq 'bsp') {
 
                     if ($stripLine ne '') {
@@ -12574,7 +12833,7 @@
 
                     %lineTagHash = (0, \@emptyList);
 
-                # 6. MSP tokens, starting '!!SOUND' or '!!MUSIC' (if MSP is enabled)
+                # 8. MSP tokens, starting '!!SOUND' or '!!MUSIC' (if MSP is enabled)
                 } elsif ($type eq 'msp') {
 
                     # Process the MSP sound token's parameters
@@ -12589,7 +12848,7 @@
                         $backup = $arg;
                     }
 
-                # 7. MXP/Pueblo elements (if MXP or Pueblo are enabled)
+                # 9. MXP/Pueblo elements (if MXP or Pueblo are enabled)
                 } elsif ($type eq 'mxp' || $type eq 'pueblo') {
 
                     # Line spacing tags <NOBR>, <P>, </P>, <BR>, <SBR>, as well as the HTML element
@@ -12642,7 +12901,7 @@
                         }
                     }
 
-                # 8. MXP entities (if MXP is enabled)
+                # 10. MXP entities (if MXP is enabled)
                 } elsif ($type eq 'ent') {
 
                     $value = $self->processMxpEntity($arg, $text);
@@ -12660,7 +12919,7 @@
                         $arg = $value;
                     }
 
-                # 9. MCP tokens, starting '#$#', and non-MCP tokens, starting '#$"' (if MCP is
+                # 11. MCP tokens, starting '#$#', and non-MCP tokens, starting '#$"' (if MCP is
                 #   enabled)
                 } elsif ($type eq 'mcp') {
 
@@ -12674,7 +12933,7 @@
                     $backup = $arg;
                 }
 
-                # 10. An ordinary text token (possibly converted from some other token in the code
+                # 12. An ordinary text token (possibly converted from some other token in the code
                 #   above)
                 if ($type eq 'text') {
 
@@ -12717,7 +12976,7 @@
                 # Handle MXP temp secure mode, if it is marked as 'on'
                 if (defined $self->mxpTempMode) {
 
-                    push (@tagList, $self->checkMxpSecureMode($text, $tempMode));
+                    push (@tagList, $self->checkMxpSecureMode($tempMode));
                 }
 
                 # $stripLine contains only the combined text tags. Note the positions (offsets) in
@@ -12742,10 +13001,8 @@
                 # If a newline tag has just been processed (and not ignored), or if some other part
                 #   of the code (e.g. the MXP code) has just signalled that it wants a newline by
                 #   artificially inserting the token type 'go'...
-                if (
-                    ($type eq 'nl' && $respondFlag)
-                    || $type eq 'go'
-                ) {
+                if (($type eq 'nl' && $respondFlag) || $type eq 'go') {
+
                     # Apply triggers to the complete or partial line, and display it
                     $self->respondIncomingData(
                         $type,
@@ -12783,6 +13040,26 @@
                     #   reset after the newline token, so we can now discard the contents of
                     #   $origLine, $stripLine and %lineTagHash
                     $self->ivPoke('processRetainFlag', FALSE);
+
+                # If an IAC GA 'go ahead' sequence has just been processed...
+                } elsif ($type eq 'ga') {
+
+                    # Don't allow $self->processLinePortion to check for command prompts matching
+                    #   the world profile's ->cmdPromptPatternList (for the rest of the session)
+                    $self->ivPoke('eorgaFlag', TRUE);
+
+                    # Apply triggers to the complete or partial line, and display it
+                    $self->respondIncomingData(
+                        $type,
+                        $origLine,
+                        $stripLine,
+                        %lineTagHash,
+                    );
+
+                    # The TRUE value tells ->processPrompt to set ->promptInsertFlag, which in turn
+                    #   instructs ->processIncomingData to insert an artificial newline character,
+                    #   if necessary
+                    $self->processPrompt(TRUE);
 
                 } else {
 
@@ -12945,9 +13222,10 @@
         # Called by $self->processIncomingData
         # Tokenises the text received from the world, producing a list in groups of two, in the form
         #   (type, argument, type, argument...)
-        # Where 'type' is one of the strings 'nl', 'esc', 'inv', 'ctrl', 'seq', 'bsp', 'msp', 'mxp',
-        #   'ent', 'pueblo' or 'text', and 'argument' is usually the token, but in the case of an
-        #   escape sequence is a reference to a list of values, the first of which is the token
+        # Where 'type' is one of the strings 'nl', 'ga', 'esc', 'inv', 'ctrl', 'seq', 'bsp', 'msp',
+        #   'mxp', 'ent', 'pueblo' or 'text', and 'argument' is usually the token, but in the case
+        #   of an escape sequence is a reference to a list of values, the first of which is the
+        #   token
         #
         # The list is stored in $self->currentTokenList, rather than in a local variable in the
         #   calling function
@@ -12963,7 +13241,7 @@
 
         # Local variables
         my (
-            $mspFlag, $mxpPuebloFlag, $nextChar,
+            $mspFlag, $mxpPuebloFlag, $gaString, $nextChar,
             @tokenList,
         );
 
@@ -12992,15 +13270,19 @@
             $mxpPuebloFlag = TRUE;
         }
 
+        # Save a bit of time by putting the 'IAC GA' sequence in a string
+        $gaString = chr(255) . chr(249);
+
         # Tokenise $text, removing each token one by one until $text an empty string
         do {
 
             my (
-                $firstChar, $mcpString, $mspString, $token, $data, $seqType, $offset, $mspPosn,
-                $someText,
+                $firstChar, $firstPair, $mcpString, $mspString, $token, $data, $seqType, $offset,
+                $mspPosn, $someText,
             );
 
             $firstChar = substr($text, 0, 1);
+            $firstPair = substr($text, 0, 2);
             $mcpString = substr($text, 0, 3);
             $mspString = substr($text, 0, 7);
 
@@ -13011,11 +13293,19 @@
                 $text = substr($text, 1);
                 $self->ivPoke('lastTokenType', 'nl');
 
-            # 2. Tokens consisting of a single escape character "\e" immediately followed by an
-            #       "\e", "\n" or "\r" character, or an alphanumeric character (rare, but possible)
-            # 3. Tokens consisting of an invalid escape sequence, starting with the escape
+            # 2. Tokens consisting of an IAC GA 'go ahead' sequence
+            } elsif ($firstPair eq $gaString) {
+
+                push (@tokenList, 'ga', $firstPair);
+                $text = substr($text, 2);
+                $self->ivPoke('lastTokenType', 'ga');
+
+            # 3. Tokens consisting of a single escape character "\e" immediately followed by a
+            #       character that doesn't start a valid escape sequence (e.g. "\e", "\n" or "\r",
+            #       or the IAC character chr(255))
+            # 4. Tokens consisting of an invalid escape sequence, starting with the escape
             #       character "\e"
-            # 4. Tokens consisting of a valid escape sequence, starting with the escape character
+            # 5. Tokens consisting of a valid escape sequence, starting with the escape character
             #       "\e"
             } elsif ($firstChar eq "\e") {
 
@@ -13090,7 +13380,7 @@
                     }
                 }
 
-            # 5. Backspace tokens, in the form "\b \b" or just "\b"
+            # 6. Backspace tokens, in the form "\b \b" or just "\b"
             } elsif ($firstChar eq "\b") {
 
                 if ($mcpString eq "\b \b") {
@@ -13103,7 +13393,7 @@
                 $text = substr($text, length($token));
                 $self->ivPoke('lastTokenType', 'bsp');
 
-            # 6. MSP tokens, starting '!!SOUND' or '!!MUSIC' (if MSP is enabled)
+            # 7. MSP tokens, starting '!!SOUND' or '!!MUSIC' (if MSP is enabled)
             } elsif (
                 ($mspString eq '!!SOUND' || $mspString eq '!!MUSIC')
                 && $mspFlag
@@ -13140,7 +13430,7 @@
                     $self->ivPoke('lastTokenType', 'msp');
                 }
 
-            # 7. MXP/Pueblo elements (if MXP or Pueblo are enabled)
+            # 8. MXP/Pueblo elements (if MXP or Pueblo are enabled)
             } elsif ($firstChar eq '<' && $mxpPuebloFlag) {
 
                 # Attempt to extract a valid MXP/Pueblo element/tag
@@ -13189,7 +13479,7 @@
                     $self->ivPoke('lastTokenType', 'text');
                 }
 
-            # 8. MXP/Pueblo entities (if MXP or Pueblo are enabled)
+            # 9. MXP/Pueblo entities (if MXP or Pueblo are enabled)
             } elsif ($firstChar eq '&' && $mxpPuebloFlag) {
 
                 # Attempt to extract a valid MXP/Pueblo entity
@@ -13209,7 +13499,7 @@
                     $self->ivPoke('lastTokenType', 'ent');
                 }
 
-            # 9. MCP tokens, starting '#$#', and non-MCP tokens, starting '#$"' (if MCP is enabled)
+            # 10. MCP tokens, starting '#$#', and non-MCP tokens, starting '#$"' (if MCP is enabled)
             } elsif (
                 ($mcpString eq '#$#' || $mcpString eq '#$"')
                 && $self->mcpMode eq 'client_agree'
@@ -13275,8 +13565,9 @@
                     }
                 }
 
-            # 10. An ordinary text token, everything from the beginning of $text up to:
-            #       - The last character which isn't an "\n", "\r", "\e", "\b"
+            # 11. An ordinary text token, everything from the beginning of $text up to:
+            #       - The last character which isn't an "\n", "\r", "\e", "\b" or the IAC character
+            #           chr(255)
             #       - The last character which isn't "<" or "&", when MXP/Pueblo are enabled
             #       - The last character before a !!SOUND or !!MUSIC tag, when MSP flexible tag
             #           placement is enabled
@@ -13307,7 +13598,7 @@
                 # Check for the end of a token, up to the end of $someText
                 if ($mxpPuebloFlag) {
 
-                    if ($someText =~ m/^([^\n\r\e\b].*?)[\n\r\e\b\<\&]/) {
+                    if ($someText =~ m/^([^\n\r\e\b\377].*?)[\n\r\e\b\377\<\&]/) {
 
                         $token = $1;
 
@@ -13318,7 +13609,7 @@
                         $token = $someText;
                     }
 
-                } elsif ($text =~ m/^([^\n\r\e\b].*?)[\n\r\e\b]/) {
+                } elsif ($text =~ m/^([^\n\r\e\b\377].*?)[\n\r\e\b\377]/) {
 
                     $token = $1;
 
@@ -13354,7 +13645,8 @@
         #
         # Expected arguments
         #   $type           - 'nl' for a newline token, 'go' for an artificially-inserted newline
-        #                       token or 'part' if the calling function has run out of tokens
+        #                       token, 'ga' for an IAC GA 'go ahead' token or 'part' if the calling
+        #                       function has run out of tokens
         #   $origLine       - The original text received from the world, before any tokens were
         #                       extracted
         #   $stripLine      - $origLine, but with all non-text tokens removed
@@ -13386,7 +13678,6 @@
         #   be displayed, so we can check for empty line suppression
         $wholeText =  $self->getPartialLine() . $stripLine;
 
-        # If an incomplete line (i.e. one not ending in a newline character) is the last
         # If empty line suppression is turned on (and the character is marked as logged in, when
         #   required), suppress empty lines, as necessary
         if (
@@ -13451,7 +13742,8 @@
         #
         # Expected arguments
         #   $type           - 'nl' if the line portion ends with a newline token, 'go' if the line
-        #                       portion ends with an artificially-inserted newline token or 'part'
+        #                       portion ends with an artificially-inserted newline token, 'ga' if
+        #                       the line portion ends in an IAC GA 'go ahead' sequences, or 'part'
         #                       if the line portion doesn't end with a newline character at all
         #   $origPortion    - The original line portion received from the world, before any tokens
         #                       were extracted
@@ -13463,9 +13755,7 @@
         #                       reset, it's always given an entry at offset 0
         #
         # Return values
-        #   'undef' on improper arguments or if (in 'strict prompts mode') an unrecognised
-        #       prompt is found, which is assumed to be the first part of a complete line we haven't
-        #       received yet
+        #   'undef' on improper arguments
         #   1 otherwise
 
         my ($self, $type, $origPortion, $stripPortion, %lineTagHash) = @_;
@@ -13489,40 +13779,7 @@
             $newLineFlag = FALSE;
         }
 
-        # Check for strict prompts, if necessary
-        if (
-            $type eq 'part'
-            && $self->currentWorld->strictPromptsMode
-            # Strict promps mode doesn't apply in special echo mode, as it leads to unfortuante
-            #   effects
-            && $self->specialEchoMode ne 'enabled'
-            # If $self->processIncomingData found an incomplete escape sequence at the end of a
-            #   packet, it's been saved in $self->emergencyBuffer. In that case, there is no doubt
-            #   that $stripPortion is not a prompt, so we don't have to check strict prompts
-            && ! $self->emergencyBuffer
-        ) {
-            # GA::Profile::World->cmdPromptPatternList contains a list of patterns which are the
-            #   world's command prompts (prompts don't have a newline character after them, as most
-            #   other lines sent by the world do)
-            # Test the line portion for recognised command prompts. If none are found, divert this
-            #    text into the emergency buffer until some more text is received
-            INNER: foreach my $pattern ($self->currentWorld->cmdPromptPatternList) {
-
-                if ($stripPortion =~ m/$pattern/g) {
-
-                    $matchFlag = TRUE;
-                }
-            }
-
-            if (! $matchFlag) {
-
-                # This line portion and any remaining lines not yet processed by
-                #   $self->processIncomingData will be copied into $self->emergencyBuffer
-                return undef;
-            }
-        }
-
-        # Because of the lack of a newline character in a command prompt, if the user types
+        # Because of the lack of a newline character in a prompt, if the user types
         #   'north;north;north', the command prompt and the following text appear on the same line
         # Test $stripPortion against known command prompt patterns. If the line portion matches any
         #   of the patterns, we have to split the line portion at that point (unless the matching
@@ -13632,16 +13889,21 @@
             }
         }
 
-        if (! $newLineFlag) {
+        if (! $newLineFlag && ! $self->promptFlag && ! $self->eorgaFlag) {
 
             # $stripPortion (the whole line portion, before it was divided into segments) ends with
-            #   a prompt (i.e., doesn't end with a newline character). If it's a recognised command
-            #   prompt, we have to set $self->cmdPromptFlag
+            #   a prompt (i.e., doesn't end with a newline character)
+            # If it's a recognised command prompt, we have to call $self->processPrompt to handle it
+            #   (but don't bother if any Go Ahead (GA) or End of Record (EOR) has been received by
+            #   this session; assume that the world will tell us when to process a command prompt)
             OUTER: foreach my $pattern ($self->currentWorld->cmdPromptPatternList) {
 
                 if ($stripPortion =~ m/$pattern$/) {
 
-                    $self->ivPoke('cmdPromptFlag', TRUE);
+                    # The TRUE value tells ->processPrompt to set ->promptInsertFlag, which in turn
+                    #   instructs ->processIncomingData to insert an artificial newline character,
+                    #   if necessary
+                    $self->processPrompt(TRUE);
                     last OUTER;
                 }
             }
@@ -13990,28 +14252,20 @@
             $promptFlag = TRUE;
         }
 
-        # Handle prompts generally
-        if ($promptFlag || (! $newLineFlag)) {
+        # Handle command prompts generally
+        if ($promptFlag) {
 
-            # Record details of the prompt, in case anything needs to react to it. If the last
-            #   batch of text received was also a prompt
-            $self->ivPoke('promptLine', $origPortion);
-            $self->ivPoke('promptStripLine', $origPortion);
+            # Process the (definite) command prompt on the next spin of the maintain loop
+            $self->ivPoke('promptCheckTime', $self->sessionTime);
 
-            if (! $promptFlag) {
+        } elsif (! $newLineFlag) {
 
-                # If $self->sessionTime reaches this time without any more text being received
-                #   from the world, treat it as a prompt
-                $self->ivPoke(
-                    'promptCheckTime',
-                    $self->sessionTime + $axmud::CLIENT->promptWaitTime,
-                );
-
-            } else {
-
-                # Process the prompt on the next spin of the maintain loop
-                $self->ivPoke('promptCheckTime', $self->sessionTime);
-            }
+            # If $self->sessionTime reaches this time without any more text being received from the
+            #   world, treat is as a command prompt
+            $self->ivPoke(
+                'promptCheckTime',
+                $self->sessionTime + $axmud::CLIENT->promptWaitTime,
+            );
         }
 
         # Perform any instructions created by any triggers that fired, but don't allow Perl
@@ -14836,9 +15090,10 @@
         # Expected arguments
         #   $type           - 'nl' if the received line of text ended with a newline token (which
         #                       has since been removed from $stripText), 'go' if the received line
-        #                       of text ended with an artificially-inserted newline token or 'part'
-        #                       if the received line of text didn't end with a newline character at
-        #                       all
+        #                       of text ended with an artificially-inserted newline token, 'ga' if
+        #                       the received line of text ended with an IAC GA 'go ahead' token, or
+        #                       'part' if the received line of text didn't end with a newline
+        #                       character at all
         #   $stripText      - The line portion (containing only combined text tokens)
         #
         # Return values
@@ -14898,7 +15153,7 @@
                 ! $obj->ivShow('attribHash', 'splitter')
                 || ! $obj->indepFlag
                 || ! $obj->enabledFlag
-                || ($obj->ivShow('attribHash', 'need_prompt') && $type ne 'part')
+                || ($obj->ivShow('attribHash', 'need_prompt') && $type ne 'ga' && $type ne 'part')
                 || ($obj->ivShow('attribHash', 'need_login') && ! $self->loginFlag)
             ) {
                next OUTER;
@@ -15220,9 +15475,8 @@
         # Check there is some text after the initial "<" character
         if (length $text <= 1) {
 
-            # Treat like an abnormally terminated element, so that the calling function uses it as
-            #   non-MXP text
-            return undef;
+            # Incomplete MXP element, probably because it is split across two packets
+            return '';
         }
 
         # Extract an MXP comment, if one is found
@@ -15476,7 +15730,7 @@
 
         if ($bracketCount) {
 
-            # Incomlete MXP element, probably because it is split across two packets
+            # Incomplete MXP element, probably because it is split across two packets
             return '';
 
         } else {
@@ -18377,7 +18631,7 @@
         my ($self, $stripText, $tagHashRef, $check) = @_;
 
         # Local variables
-        my ($urlRegex, $emailRegex);
+        my ($regex, $emailRegex);
 
         # Check for improper arguments
         if (! defined $stripText || ! defined $tagHashRef || defined $check) {
@@ -18390,10 +18644,19 @@
         if ($axmud::CLIENT->browserCmd) {
 
             # Import the regexes for recognising URLs
-            $urlRegex = $axmud::CLIENT->constUrlRegex;
+            if ($axmud::CLIENT->shortUrlFlag) {
 
-            while ($stripText =~ m/($urlRegex)/gi) {
+                $regex = '(' . $axmud::CLIENT->constUrlRegex . '|'
+                            . $axmud::CLIENT->constShortUrlRegex . ')';
 
+            } else {
+
+                $regex = $axmud::CLIENT->constUrlRegex;
+            }
+
+            while (
+                $stripText =~ m/($regex)/gi
+            ) {
                 my ($match, $start, $stop, $listRef);
 
                 $match = $1;
@@ -18696,24 +18959,37 @@
 
     sub processPrompt {
 
-        # Called by $self->spinMaintainLoop after receiving some text that looks like a prompt, and
-        #   after the waiting time has expired
-        # Also called by $self->optCallback after a TELOPT_EOR is received from the server
-        # Processes the next part of an automatic login, if necessary, and causes the 'prompt'
-        #   hook event
+        # Called by $self->spinMaintainLoop after receiving some text that doesn't end with a
+        #   newline character, Go Ahead (GA) sequence or EOR (End of Record) sequence, and after
+        #   waiting for a short time for more text to be received
+        # Also called by $self->optCallback after a TELOPT_EOR is received from the server, and by
+        #   $self->processIncomingData after an IAC GA 'go ahead' sequence is processed
+        # Called by $self->processLinePortion after displaying a line that ends with text matching
+        #   a pattern in the world profile's ->cmdPromptPatternList
+        #
+        # Once this function is called, a prompt (any received text that doesn't end with a newline
+        #   character) because a command prompt, for which Axmud assumes the world is now waiting
+        #   for the user to send a world command
+        # Updates IVs, processes the next part of an automatic login (if necessary), and fires the
+        #   'prompt' hook event
         #
         # Expected arguments
         #   (none besides $self)
+        #
+        # Optional arguments
+        #   $insertFlag     - TRUE when called by $self->processLinePortion, in which case this
+        #                       function instructs $self->processIncomingData to insert an
+        #                       artificial newline character, if necesssary
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $check) = @_;
+        my ($self, $insertFlag, $check) = @_;
 
         # Local variables
         my (
-            $pattern, $initChar, $initAccount, $initPass,
+            $bufferObj, $pattern, $initChar, $initAccount, $initPass,
             @loginCmdList,
         );
 
@@ -18724,6 +19000,9 @@
         }
 
         $self->ivIncrement('promptCount');
+        # We'll need the current line of text, after any non-text tokens have been stripped from it,
+        #    so get the display buffer object that stores it
+        $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
 
         # In login mode 'lp', 'world_cmd' and 'telnet', we're waiting for prompts so that we can do
         #   an automatic login
@@ -18756,7 +19035,7 @@
             } elsif ($self->loginPromptsMode eq 'telnet' && $self->loginPromptPatternList) {
 
                 $pattern = $self->ivShift('loginPromptPatternList');
-                if ($self->promptStripLine =~ m/$pattern/i) {
+                if ($bufferObj->stripLine =~ m/$pattern/i) {
 
                     if ($self->loginPromptPatternList) {
 
@@ -18784,11 +19063,16 @@
         }
 
         # Fire any hooks that are using the 'login' hook event
-        $self->checkHooks('prompt', $self->promptStripLine);
+        $self->checkHooks('prompt', $bufferObj->stripLine);
 
-        # Cancel the prompt
-        $self->ivUndef('promptLine');
-        $self->ivUndef('promptStripLine');
+        # Update IVs
+        $self->ivPoke('promptFlag', TRUE);
+        if ($insertFlag) {
+            $self->ivPoke('promptInsertFlag', TRUE);
+        } else {
+            $self->ivPoke('promptInsertFlag', FALSE);
+        }
+
         $self->ivUndef('promptCheckTime');
 
         return 1;
@@ -22897,11 +23181,15 @@
         }
 
         # Set the maximum value
+        # For graphical gauges, when no entity provides a maximum value, the gauge is drawn full
+        # For text gauges, when no entity provides a maximum value, then only a single value is
+        #   displayed (i.e. 'xp: 0' rather than 'xp: 0/?'). This is accomplished by leaving
+        #   $maxValue undefined, a situation that GA::Strip::GaugeBox->drawGauges looks out for
         if ($maxEntityObj) {
 
             $maxValue = $maxEntityObj->value;
 
-        } else {
+        } elsif ($keyword eq 'GAUGE') {
 
             # Gauge is always full
             $maxValue = $entityObj->value;
@@ -26828,31 +27116,35 @@
 
     sub checkMxpSecureMode {
 
-        # Called by $self->processIncomingData just after a token is extracted from text received
-        #   from the world
-        # When temp secure mode is on, check whether it needs to be turned off and, if not,
-        #   whether the next character in the stream is a "<" character
+        # Called by $self->processIncomingData just after a token is processed and
+        #   $self->mxpTempMode is set (to the value 0, 1 or 2)
+        # If temp secure mode was on before that token was processed, and it's still on, then we
+        #   can turn it off
+        # If temp secure mode has been turned on by that token, check the next token that will be
+        #   processed, which must be an 'mxp' token
         #
         # Expected arguments
-        #   $text       - Any remaining text from the world that's not been processed yet (may be
-        #                   an empty string)
+        #   (none besides $self)
         #
         # Optional arguments
         #   $tempMode   - The value of $self->mxpTempMode, before the most recent token was
-        #                   extracted from text received from the world (may be 'undef')
+        #                   processed (may be 'undef')
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, returns a list of equivalent Axmud colour/style tags, when required (may be
         #       an empty list)
 
-        my ($self, $text, $tempMode, $check) = @_;
+        my ($self, $tempMode, $check) = @_;
 
         # Local variables
-        my (@emptyList, @tagList);
+        my (
+            $type,
+            @emptyList, @tagList,
+        );
 
         # Check for improper arguments
-        if (! defined $text || defined $check) {
+        if (defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->checkMxpSecureMode', @_);
             return @emptyList;
@@ -26868,13 +27160,12 @@
         } else {
 
             # MXP temporary secure mode was applied by the token just processed by the calling
-            #   function. Check that the next character in the stream is the compulsory "<"
-            #   character
-            # (For consistency with other functions, we'll allow whitesace before the "<" character,
-            #   but not newline characters, etc)
-            if (! $text || ! ($text =~ m/^\s*\</)) {
+            #   function
+            # Check that the next token to process is an MXP token
+            $type = $self->ivFirst('currentTokenList');
+            if (defined $type && $type ne 'mxp') {
 
-                $self->mxpDebug('n/a', 'Temp secure mode not followed by a possible MXP tag', 5004);
+                $self->mxpDebug('n/a', 'Temp secure mode not followed by an MXP tag', 5004);
 
                 # Disable temp secure mode
                 push (@tagList, $self->setMxpLineMode($self->mxpTempMode, TRUE));
@@ -27233,8 +27524,10 @@
         # When an MXP entity is modified (including being created or deleted), an entry is added
         #   to $self->mxpGaugeUpdateHash
         # Once per maintenance loop, this function is called. The function checks whether any of the
-        #   modified entities has corresponding 'main' window gauges and, if so, updates the
+        #   modified entities have corresponding 'main' window gauges and, if so, updates the
         #   GA::Obj::Gauge objects and redraws the gauges
+        # This function also checks the world profile's ->mxpStatusVarHash. If a modified MXP
+        #   entity has an equivalent Status task variable, it is passed on to the Status task
         #
         # Expected arguments
         #   (none besides $self)
@@ -27259,7 +27552,7 @@
 
         foreach my $entName ($self->ivKeys('mxpGaugeUpdateHash')) {
 
-            my ($entityObj, $gaugeObj);
+            my ($entityObj, $gaugeObj, $taskVar);
 
             # If the entity has been deleted, its gauge must be removed
             if (! $self->ivExists('mxpEntityHash', $entName)) {
@@ -27280,6 +27573,13 @@
                     } else {
                         $gaugeObj->ivPoke('maxValue', $entityObj->value);
                     }
+                }
+
+                # Pass the value on to the Status task, if possible
+                $taskVar = $self->currentWorld->ivShow('mxpStatusVarHash', $entName);
+                if (defined $taskVar && $self->statusTask) {
+
+                    $self->statusTask->setValue($taskVar, $entityObj->value);
                 }
             }
         }
@@ -28615,7 +28915,7 @@
         #   handling which telnet option/MUD protocol
         #
         # Expected arguments
-        #   $connectObj - The GA::Net::Telnet object to be used in the connection
+        #   $connectObj - The GA::Obj::Telnet object to be used in the connection
         #
         # Return values
         #   'undef' on improper arguments
@@ -28625,7 +28925,7 @@
 
         # Local variables
         my (
-            $echoFlag, $sgaFlag, $ttypeFlag, $eorFlag, $nawsFlag,
+            $echoFlag, $sgaFlag, $ttypeFlag, $eorFlag, $nawsFlag, $newEnvironFlag, $charSetFlag,
             %telConstHash,
         );
 
@@ -28656,13 +28956,13 @@
 
         if (! $echoFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL ECHO
             #   SENT DONT ECHO
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL ECHO
             #   SENT DO ECHO
             #   RCVD WONT ECHO
@@ -28672,7 +28972,11 @@
 
         # SGA (http://www.ietf.org/rfc/rfc858.txt)
         #
-        #   (Negotiation sequence never seen)
+        #   Server: IAC WILL TELOPT_SGA
+        #   Client: IAC DO TELOPT_SGA
+        #
+        #   Server: IAC WILL TELOPT_SGA
+        #   Client: IAC DONT TELOPT_SGA
         #
         if ($self->currentWorld->ivExists('telnetOverrideHash', 'sga')) {
             $sgaFlag = FALSE;
@@ -28682,14 +28986,15 @@
 
         if (! $sgaFlag) {
 
-            # GA::Net::Telnet option log
-            #   (Negotiation sequence never seen)
+            # GA::Obj::Telnet option log
+            #   RCVD WILL SUPPRESS GO AHEAD
+            #   SENT DONT SUPPRESS GO AHEAD
 
         } else {
 
-            # GA::Net::Telnet option log
-            #   (Negotiation sequence never seen. I think both are required)
-            $connectObj->option_accept(Will => $telConstHash{'TELOPT_SGA'});
+            # GA::Obj::Telnet option log
+            #   RCVD WILL SUPPRESS GO AHEAD
+            #   SENT DO SUPPRESS GO AHEAD
             $connectObj->option_accept(Do => $telConstHash{'TELOPT_SGA'});
         }
 
@@ -28743,13 +29048,13 @@
 
         if (! $ttypeFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD DO TERMINAL TYPE
             #   SENT WONT TERMINAL TYPE
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD DO TERMINAL TYPE
             #   SENT WILL TERMINAL TYPE
             $connectObj->option_accept(Do => $telConstHash{'TELOPT_TTYPE'});
@@ -28772,14 +29077,14 @@
 
         if (! $eorFlag) {
 
-            # (Presumed) GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL EOR
             #   SENT DONT EOR
             $self->ivPoke('eorMode', 'client_refuse');
 
         } else {
 
-            # (Presumed) GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL TELEOPT_EOR
             #   SENT DO TELEOPT_EOR
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_EOR'});
@@ -28814,24 +29119,82 @@
 
         if (! $nawsFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD DO NAWS
             #   SENT WONT NAWS
             $self->ivPoke('nawsMode', 'client_refuse');
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD DO NAWS
             #   SENT WILL NAWS
             $connectObj->option_accept(Do => $telConstHash{'TELOPT_NAWS'});
         }
 
         # NEW-ENVIRON (New Environment option - RFC 1572, http://www.ietf.org/rfc/rfc1572.txt)
-        # NOT IMPLEMENTED
+        #
+        #   Server: IAC DO TELOPT_NEW_ENVIRON
+        #   Client: IAC WILL TELOPT_NEW_ENVIRON
+        #   Server: IAC SB NEW-ENVIRON SEND [ type ... [ type ... [ ... ] ] ] IAC SE
+        #   Client: IAC SB NEW-ENVIRON IS type ... [ VALUE ... ] [ type ... [ VALUE ... ] [ ... ] ]
+        #               IAC SE
+        #   ...
+        #
+        #   Server: IAC DO TELOPT_NEW_ENVIRON
+        #   Client: IAC WONT TELOPT_NEW_ENVIRON
+        #
+        if ($self->currentWorld->ivExists('telnetOverrideHash', 'new_environ')) {
+            $newEnvironFlag = FALSE;
+        } else {
+            $newEnvironFlag = $axmud::CLIENT->useNewEnvironFlag;
+        }
+
+        if (! $newEnvironFlag) {
+
+            # GA::Obj::Telnet option log
+            #   RCVD DO NEW-ENVIRON
+            #   SENT WILL NEW-ENVIRON
+            $self->ivPoke('newEnvironMode', 'client_refuse');
+
+        } else {
+
+            # GA::Obj::Telnet option log
+            #   RCVD DO NEW-ENVIRON
+            #   SENT WONT NEW-ENVIRON
+            $connectObj->option_accept(Do => $telConstHash{'TELOPT_NEW_ENVIRON'});
+        }
 
         # CHARSET (Character encoding - RFC 1073, http://www.ietf.org/rfc/rfc2066.txt)
-        # NOT IMPLEMENTED
+        #
+        #   Server: IAC DO TELOPT_CHARSET
+        #   Client: IAC WILL TELOPT_CHARSET
+        #   Server: IAC SB CHARSET REQUEST { "[TTABLE ]" <Version> } <char set list> IAC SE
+        #   ...
+        #
+        #   Server: IAC DO TELOPT_CHARSET
+        #   Client: IAC WONT TELOPT_CHARSET
+        #
+        if ($self->currentWorld->ivExists('telnetOverrideHash', 'charset')) {
+            $charSetFlag = FALSE;
+        } else {
+            $charSetFlag = $axmud::CLIENT->useCharSetFlag;
+        }
+
+        if (! $charSetFlag) {
+
+            # GA::Obj::Telnet option log
+            #   RCVD DO CHARSET
+            #   SENT WILL CHARSET
+            $self->ivPoke('charSetMode', 'client_refuse');
+
+        } else {
+
+            # GA::Obj::Telnet option log
+            #   RCVD DO CHARSET
+            #   SENT WONT CHARSET
+            $connectObj->option_accept(Do => $telConstHash{'TELOPT_CHARSET'});
+        }
 
         return 1;
     }
@@ -28907,13 +29270,19 @@
 
             $self->optSendWont($telConstHash{'TELOPT_NAWS'});
             $self->ivPoke('nawsMode', 'client_refuse');
-        }
 
         # NEW-ENVIRON (New Environment option - RFC 1572, http://www.ietf.org/rfc/rfc1572.txt)
-        # NOT IMPLEMENTED
+        } elsif ($option eq 'new_environ' && $self->newEnvironMode eq 'client_agree') {
+
+            $self->optSendWont($telConstHash{'TELOPT_NEW_ENVIRON'});
+            $self->ivPoke('newEnvironMode', 'client_refuse');
 
         # CHARSET (Character encoding - RFC 1073, http://www.ietf.org/rfc/rfc2066.txt)
-        # NOT IMPLEMENTED
+        } elsif ($option eq 'charset' && $self->charSetMode eq 'client_agree') {
+
+            $self->optSendWont($telConstHash{'TELOPT_CHARSET'});
+            $self->ivPoke('charSetMode', 'client_refuse');
+        }
 
         return 1;
     }
@@ -28924,7 +29293,7 @@
         # Sets up NUD protocols
         #
         # Expected arguments
-        #   $connectObj - The GA::Net::Telnet object to be used in the connection
+        #   $connectObj - The GA::Obj::Telnet object to be used in the connection
         #
         # Return values
         #   'undef' on improper arguments
@@ -28964,14 +29333,14 @@
 
         if (! $msdpFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL MSDP
             #   SENT DONT MSDP
             $self->ivPoke('msdpMode', 'client_refuse');
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL MSDP
             #   SENT DO MSDP
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_MSDP'});
@@ -28995,14 +29364,14 @@
 
         if (! $msspFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL MSSP
             #   SENT DONT MSSP
             $self->ivPoke('msspMode', 'client_refuse');
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL MSSP
             #   SENT DO MSSP
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_MSSP'});
@@ -29024,14 +29393,14 @@
 
         if (! $mccpFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL MCCP1 / RCVD WILL MCCP2
             #   SENT DONT MCCP1 / SENT DONT MCCP2
             $self->ivPoke('mccpMode', 'client_refuse');
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL MCCP1 / RCVD WILL MCCP2
             #   SENT DO MCCP1 / SENT DO MCCP2
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_MCCP1'});
@@ -29058,7 +29427,7 @@
 
         if (! $mspFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   (Negotiation sequence never seen)
             $self->ivPoke('mspMode', 'client_refuse');
 
@@ -29099,7 +29468,7 @@
 
         if (! $mxpFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   (Negotiation sequence never seen)
             $self->ivPoke('mxpMode', 'client_refuse');
 
@@ -29127,14 +29496,14 @@
 
         if (! $zmpFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL ZMP
             #   SENT DONT ZMP
             $self->ivPoke('atcpMode', 'client_refuse');
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL ZMP
             #   SENT DO ZMP
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_ZMP'});
@@ -29163,7 +29532,7 @@
 
         if (! $aard102Flag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD DO AARD102
             #   SENT wONT AARD102
             #
@@ -29173,7 +29542,7 @@
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD DO AARD102
             #   SENT WILL AARD102
             #
@@ -29199,14 +29568,14 @@
 
         if (! $atcpFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL ATCP
             #   SENT DONT ATCP
             $self->ivPoke('atcpMode', 'client_refuse');
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL ATCP
             #   SENT DO ATCP
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_ATCP'});
@@ -29229,14 +29598,14 @@
 
         if (! $gmcpFlag) {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL GMCP
             #   SENT DONT GMCP
             $self->ivPoke('gmcpMode', 'client_refuse');
 
         } else {
 
-            # GA::Net::Telnet option log
+            # GA::Obj::Telnet option log
             #   RCVD WILL GMCP
             #   SENT DO GMCP
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_GMCP'});
@@ -29312,7 +29681,7 @@
         # MCCP (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/)
         } elsif ($protocol eq 'mccp') {
 
-            # (Nothing to do; GA::Net::Telnet handles it)
+            # (Nothing to do; GA::Obj::Telnet handles it)
 
         # MSP (Mud Sound Protocol - http://www.zuggsoft.com/zmud/msp.htm)
         } elsif ($protocol eq 'msp') {
@@ -29374,7 +29743,7 @@
         #   option
         #
         # Expected arguments
-        #   $connectObj     - The GA::Net::Telnet object used in the connection
+        #   $connectObj     - The GA::Obj::Telnet object used in the connection
         #   $option         - The TELNET option (e.g. 31 for NAWS)
         #
         # Optional arguments
@@ -29537,7 +29906,14 @@
 
             } elsif ($remoteFlag) {
 
-                $self->processPrompt();
+                # Don't allow $self->processLinePortion to check for prompts matching the world
+                #   profile's ->cmdPromptPatternList (for the rest of the session)
+                $self->ivPoke('eorgaFlag', TRUE);
+
+                # The TRUE value tells ->processPrompt to set ->promptInsertFlag, which in turn
+                #   instructs ->processIncomingData to insert an artificial newline character, if
+                #   necessary
+                $self->processPrompt(TRUE);
             }
 
         # NAWS (Negotiate About Window Size - RFC 1073, http://www.ietf.org/rfc/rfc1073.txt)
@@ -29554,10 +29930,22 @@
             }
 
         # NEW-ENVIRON (New Environment option - RFC 1572, http://www.ietf.org/rfc/rfc1572.txt)
-        # NOT IMPLEMENTED
+        } elsif ($option == $telConstHash{'TELOPT_NEW_ENVIRON'}) {
+
+            # Client: IAC WILL TELOPT_NEW_ENVIRON
+            if ($enabledFlag) {
+
+                $self->ivPoke('newEnvironMode', 'client_agree');
+            }
 
         # CHARSET (Character encoding - RFC 1073, http://www.ietf.org/rfc/rfc2066.txt)
-        # NOT IMPLEMENTED
+        } elsif ($option == $telConstHash{'TELOPT_CHARSET'}) {
+
+            # Client: IAC WILL TELOPT_CHARSET
+            if ($enabledFlag) {
+
+                $self->ivPoke('charSetMode', 'client_agree');
+            }
 
         # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.net/msdp/)
         } elsif ($option == $telConstHash{'TELOPT_MSDP'}) {
@@ -29722,7 +30110,7 @@
         #   sub-option
         #
         # Expected arguments
-        #   $connectObj     - The GA::Net::Telnet used in the connection
+        #   $connectObj     - The GA::Obj::Telnet used in the connection
         #   $option         - The TELNET option (e.g. 31 for NAWS)
         #   $parameters     - A string of 0, 1 or more characters appearing between IAC SB and
         #                       ICA SE in the sub-negotiation
@@ -29780,6 +30168,24 @@
             if (@tokenList == 1 && $tokenList[0] == $telConstHash{'TELNET_SEND'}) {
 
                 $self->optSendTType();
+            }
+
+        # NEW-ENVIRON (New Environment option - RFC 1572, http://www.ietf.org/rfc/rfc1572.txt)
+        } elsif ($option == $telConstHash{'TELOPT_NEW_ENVIRON'}) {
+
+            #   Server: IAC SB NEW-ENVIRON SEND [ type ... [ type ... [ ... ] ] ] IAC SE
+            if ($self->newEnvironMode eq 'client_agree') {
+
+                $self->processNewEnvironData($parameters);
+            }
+
+        # CHARSET (Character encoding - RFC 1073, http://www.ietf.org/rfc/rfc2066.txt)
+        } elsif ($option == $telConstHash{'TELOPT_CHARSET'}) {
+
+            #   Server: IAC SB CHARSET REQUEST { "[TTABLE ]" <Version> } <char set list> IAC SE
+            if ($self->charSetMode eq 'client_agree') {
+
+                $self->processCharSetData($parameters);
             }
 
         # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.net/msdp/)
@@ -30286,6 +30692,196 @@
             $telConstHash{'TELNET_IAC'},
             $telConstHash{'TELNET_SE'},
         );
+
+        if (
+            ! $self->connectObj->put(
+                String => $telCmd,
+                Telnetmode => 0,
+            )
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub optSendNewEnviron {
+
+        # Called by $self->processNewEnvironData
+        # Sends environment variables to the server
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   @argList    - a list in groups of 3, in the form
+        #                   (type, name, value)
+        #                 ...where 'type' is TELOPT_VAR or TELOPT_USERVAR, 'name' is an
+        #                   environment variable like 'SYSTEMTYPE', and 'value' is the variable's
+        #                   value (or 'undef', if Axmud doesn't use the variable)
+        #
+        # Return values
+        #   'undef' on improper arguments or in 'offline' mode
+        #   1 otherwise
+
+        my ($self, @argList) = @_;
+
+        # Local variables
+        my (
+            $telCmd, $string,
+            @list,
+            %telConstHash, %teloptHash,
+        );
+
+        # (No improper arguments to check)
+
+        # Import the hash of telnet constants (for convenience)
+        %telConstHash = $axmud::CLIENT->constTelnetHash;
+        # A hash of NEW-ENVIRON telopt codes
+        %teloptHash = (
+            'TELOPT_IS'         => 0,
+            'TELOPT_SEND'       => 1,
+            'TELOPT_INFO'       => 2,
+            'TELOPT_VAR'        => 0,
+            'TELOPT_VALUE'      => 1,
+            'TELOPT_ESC'        => 2,
+            'TELOPT_USERVAR'    => 3,
+        );
+
+        # Do nothing in offline mode
+        if (! $self->connectObj) {
+
+            return undef;
+        }
+
+        # IAC SB NEW-ENVIRON IS type ... [ VALUE ... ] [ type ... [ VALUE ... ] [ ... ] ] IAC SE
+        $string = "C4";
+        push (@list,
+            $telConstHash{'TELNET_IAC'},
+            $telConstHash{'TELNET_SB'},
+            $telConstHash{'TELOPT_NEW_ENVIRON'},
+            $teloptHash{'TELOPT_IS'},
+        );
+
+        if (@argList) {
+
+            do {
+
+                my ($type, $name, $value);
+
+                $type = shift @argList;
+                $name = shift @argList;
+                $value = shift @argList;
+
+                # (Basic sanity checking)
+                if (defined $name) {
+
+                    # Append type ... [ VALUE ... ]
+                    $string .= " C1 A" . length($name);
+                    push (@list,
+                        $type,              # TELOPT_VAR or TELOPT_USERVAR
+                        $name,
+                    );
+
+                    if (defined $value) {
+
+                        $string .= " C1 A" . length($value);
+                        push (@list,
+                            $teloptHash{'TELOPT_VALUE'},
+                            $value,
+                        );
+                    }
+                }
+
+            } until (! @argList);
+        }
+
+        $string .= " C2";
+        push (@list,
+            $telConstHash{'TELNET_IAC'},
+            $telConstHash{'TELNET_SE'},
+        );
+
+        $telCmd = pack($string, @list);
+
+        if (
+            ! $self->connectObj->put(
+                String => $telCmd,
+                Telnetmode => 0,
+            )
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub optSendCharSet {
+
+        # Called by $self->processCharSetData
+        # Sends character set acceptance/rejection to the server
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $charSet    - If specified, sends an acceptance to the server. If 'undef' or an empty
+        #                   string, sends a rejection to the server
+        #
+        # Return values
+        #   'undef' on improper arguments or in 'offline' mode
+        #   1 otherwise
+
+        my ($self, $charSet, $check) = @_;
+
+        # Local variables
+        my (
+            $telCmd,
+            %telConstHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->optSendCharSet', @_);
+        }
+
+        # Import the hash of telnet constants (for convenience)
+        %telConstHash = $axmud::CLIENT->constTelnetHash;
+
+        # Do nothing in offline mode
+        if (! $self->connectObj) {
+
+            return undef;
+        }
+
+        if (! defined $charSet || $charSet eq '') {
+
+            # Client:   IAC SB TELOPT_CHARSET REJECTED IAC SE
+            $telCmd = pack(
+                "C6",
+                $telConstHash{'TELNET_IAC'},
+                $telConstHash{'TELNET_SB'},
+                $telConstHash{'TELOPT_CHARSET'},
+                3,
+                $telConstHash{'TELNET_IAC'},
+                $telConstHash{'TELNET_SE'},
+            );
+
+        } else {
+
+            # Client:   IAC SB CHARSET ACCEPTED <Charset> IAC SE
+            $telCmd = pack(
+                "C4 A* C2",
+                $telConstHash{'TELNET_IAC'},
+                $telConstHash{'TELNET_SB'},
+                $telConstHash{'TELOPT_CHARSET'},
+                2,
+                $charSet,
+                $telConstHash{'TELNET_IAC'},
+                $telConstHash{'TELNET_SE'},
+            );
+        }
 
         if (
             ! $self->connectObj->put(
@@ -31700,6 +32296,262 @@
 
             $self->ivPoke('sendTTypeList', @itemList);
             $self->ivPoke('specifiedTType', $itemList[1]);
+        }
+
+        return 1;
+    }
+
+    sub processNewEnvironData {
+
+        my ($self, $parameters, $check) = @_;
+
+        # Local variables
+        my (
+            $cmd, $data,
+            @knownList, @customList, @argList,
+            %teloptHash, %envHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $parameters || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processNewEnvironData', @_);
+        }
+
+        # A hash of NEW-ENVIRON telopt codes
+        %teloptHash = (
+            'TELOPT_IS'         => 0,
+            'TELOPT_SEND'       => 1,
+            'TELOPT_INFO'       => 2,
+            'TELOPT_VAR'        => 0,
+            'TELOPT_VALUE'      => 1,
+            'TELOPT_ESC'        => 2,
+            'TELOPT_USERVAR'    => 3,
+        );
+
+        # A hash of 'well-known' environment variables. If Axmud can send a value, it's added to
+        #   the hash; otherwise a key's corresponding value is 'undef'
+        # Axmud doesn't have use NEW-ENVIRON "user-defined" environment variables
+        if (! $self->currentChar) {
+
+            $envHash{'USER'} = undef;
+            $envHash{'ACCT'} = undef;
+
+        } else {
+
+            $envHash{'USER'} = $self->currentChar->name;
+            # (If no account name exists for this character, the value set is 'undef')
+            $envHash{'ACCT'} = $self->currentWorld->ivShow('accountHash', $self->currentChar->name);
+        }
+
+        # System names are those defined by RFT1340
+        if ($^O eq 'MSWin32') {
+            $envHash{'SYSTEMTYPE'} = 'WIN32';
+        } elsif ($^O eq 'linux') {
+            $envHash{'SYSTEMTYPE'} = 'UNIX';
+        } elsif ($^O eq 'MacOS') {
+            $envHash{'SYSTEMTYPE'} = 'MACOS';
+        } elsif ($^O =~ m/bsd/i) {
+            $envHash{'SYSTEMTYPE'} = 'UNIX_BSD';
+        } else {
+            $envHash{'SYSTEMTYPE'} = undef;
+        }
+
+        # Axmud doesn't send values for these 'well-known' environment variables
+        $envHash{'JOB'} = undef;
+        $envHash{'PRINTER'} = undef;
+        $envHash{'DISPLAY'} = undef;
+
+        # $parameters is in the form <cmd_char><data>
+        $cmd = substr($parameters, 0, 1);
+        $data = substr($parameters, 1);
+
+        # All NEW-ENVIRON commands except TELOPT_SEND are ignored
+        if (ord($cmd) == $teloptHash{'TELOPT_SEND'}) {
+
+            # IAC SB NEW-ENVIRON SEND [ type ... [ type ... [ ... ] ] ] IAC SE
+
+            # $data can be an empty string, 'TELOPT_VAR', 'TELOPT_USERVAR',
+            #   'TELOPT_VAR TELOPT_USERVAR', a single variable <name> (usually 'SYSTEMTYPE') or a
+            #   sequence of 'VAR <name>' and 'USERVAR <name>' components
+            if (
+                $data eq ''
+                || $data eq chr($teloptHash{'TELOPT_VAR'})
+                || $data eq ( chr($teloptHash{'TELOPT_VAR'}) . chr($teloptHash{'TELOPT_USERVAR'}) )
+            ) {
+                push (@knownList, 'USER', 'JOB', 'ACCT', 'PRINTER', 'SYSTEMTYPE', 'DISPLAY');
+
+            } elsif ($data eq chr($teloptHash{'TELOPT_USERVAR'})) {
+
+                # (No user-defined environment variables to send)
+                @knownList = ();
+
+            } elsif (! ($data =~ m/^[\x00\x03]/)) {
+
+                if (exists $envHash{$data}) {
+                    push (@knownList, $data);
+                } else {
+                    push (@customList, $data);
+                }
+
+            } else {
+
+                # Extract 'VAR <name>' and 'USERVAR <name>' components, one by one
+                do {
+
+                    my ($char, $index, $name);
+
+                    # Get the inintial VAR or USERVAR
+                    $char = substr($data, 0, 1);
+                    $data = substr($data, 1);
+
+                    if (
+                        ord($char) ne $teloptHash{'TELOPT_VAR'}
+                        && ord($char) ne $teloptHash{'TELOPT_USERVAR'}
+                    ) {
+                        # The remaining portion of $data doesn't start with VAR or USERVAR, so
+                        #   discard it
+                        $data = '';
+
+                    } else {
+
+                        # Extract the <name>
+                        $index = index($data, chr($teloptHash{'TELOPT_VAR'}));
+                        if ($index == -1) {
+
+                            $index = index($data, chr($teloptHash{'TELOPT_USERVAR'}));
+                        }
+
+                        if ($index == -1) {
+
+                            $name = $data;
+                            $data = '';
+
+                        } else {
+
+                            $name = substr($data, 0, $index);
+                            $data = substr($data, $index);
+                        }
+
+                        # Mark it to be sent
+                        if (exists $envHash{$name}) {
+                            push (@knownList, $name);
+                        } else {
+                            push (@customList, $name);
+                        }
+                    }
+
+                } until ($data eq '');
+            }
+
+            # Any requested well-known environment variables are in @knownList, and any user-defined
+            #   environment variables are in @customList
+            # Combine them into a list in groups of 3, in the form
+            #   (type, name, value)
+            # ...where 'type' is TELOPT_VAR or TELOPT_USERVAR, 'name' is an environment variable
+            #   like 'SYSTEMTYPE', and 'value' is the variable's value (or 'undef', if Axmud doesn't
+            #   use the variable)
+            foreach my $item (@knownList) {
+
+                push (@argList, $teloptHash{'TELOPT_VAR'}, $item, $envHash{$item});
+            }
+
+            foreach my $item (@customList) {
+
+                push (@argList, $teloptHash{'TELOPT_USERVAR'}, $item, undef);
+            }
+
+            # Send the list to the world
+            $self->optSendNewEnviron(@argList);
+        }
+
+        return 1;
+    }
+
+    sub processCharSetData {
+
+        # Called by $self->subOptCallback
+        # CHARSET is partially implemented; translation tables are ignored (as they are probably
+        #   obsolete, and no known world uses them)
+        # This function receives CHARSET REQUEST commands, and sends an ACCEPTED or REJECTED
+        #   command in response
+        # Other CHARSET commands, such as TTABLE-IS and TTABLE-REJECTED, are ignored
+        #
+        # Expected arguments
+        #   $parameters     - A CHARSET data string to process
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $parameters, $check) = @_;
+
+        # Local variables
+        my (
+            $cmd, $data, $sep,
+            @setList,
+        );
+
+        # Check for improper arguments
+        if (! defined $parameters || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->processCharSetData', @_);
+        }
+
+        # $parameters is in the form <cmd_char><data>
+        $cmd = substr($parameters, 0, 1);
+        $data = substr($parameters, 1);
+
+        # All CHARSET commands except REQUEST are ignored
+        if (ord($cmd) == 1) {
+
+            # Translation tables are not implemented (by Axmud or by any known MU*)
+            # Remove the optional { "[TTABLE]" <Version> } component, if present (the <Version> is
+            #   a single character whose value we can ignore)
+            $data =~ s/^\[TTABLE\].//;
+
+            # The first character identifies the separator in the list of character sets, i.e.,
+            #   $data is in the form <sep> <char_set> { ... <sep> <char_set>
+            $sep = substr($data, 0, 1);
+            @setList = split($sep, $data);
+
+            # Check character sets against those known to be available on the system
+            # RFC2066 specifies that <char_set> is case-insensitive, so use lc() throughout
+            foreach my $set (@setList) {
+
+                # Deal with 'UTF-8', which appears in GA::CLIENT->charSetList as 'utf8'
+                if (lc($set) eq 'utf-8' && $axmud::CLIENT->ivFind('charSetList', 'utf8')) {
+
+                    # Send IAC SB TELOPT_CHARSET ACCEPTED <Charset> IAC SE
+                    if ($self->optSendCharSet($set)) {
+
+                        # Use this character set from now on
+                        $self->ivPoke('sessionCharSet', 'utf8');
+
+                        return 1;
+                    }
+                }
+
+                # Otherwise, check literal values of $set
+                foreach my $otherSet ($axmud::CLIENT->charSetList) {
+
+                    if (lc($set) eq lc($otherSet)) {
+
+                        # Send IAC SB TELOPT_CHARSET ACCEPTED <Charset> IAC SE
+                        if ($self->optSendCharSet($set)) {
+
+                            # Use this character set from now on
+                            $self->ivPoke('sessionCharSet', $otherSet);
+
+                            return 1;
+                        }
+                    }
+                }
+            }
+
+            # None of the character sets suggested by the world are available
+            # Send IAC SB TELOPT_CHARSET REJECTED IAC SE
+            $self->optSendCharSet();
         }
 
         return 1;
@@ -35170,7 +36022,7 @@
 
         # Local variables
         my (
-            $result, $cage, $cmdSep, $cmdLimit, $cmdDelay,
+            $result, $cage, $cmdLimit, $cmdDelay, $cmdSep,
             @cmdList,
         );
 
@@ -35251,6 +36103,12 @@
             @cmdList = ('');
         }
 
+        # To avoid redrawing the ghost room dozens or hundreds of times (which seriously slows down
+        #   the execution of this function), remember the automapper's current ghost room so we can
+        #   mark it to be redrawn later
+        $self->ivPoke('worldCmdGhostRoom', $self->mapObj->ghostRoom);
+
+        # Process each individual world command in turn
         OUTER: foreach my $cmd (@cmdList) {
 
             my (
@@ -35341,6 +36199,17 @@
                     last OUTER;
                 }
             }
+        }
+
+        # Now we can redraw the ghost room, if necessary
+        if ($self->worldCmdGhostRoom) {
+
+            $self->mapObj->setGhostRoom(
+                $self->mapObj->ghostRoom,       # Don't actually change the current ghost room...
+                $self->worldCmdGhostRoom,       # ...but make sure the earlier one is redrawn
+            );
+
+            $self->ivUndef('worldCmdGhostRoom');
         }
 
         # That's the end of the call to this function...
@@ -35682,7 +36551,8 @@
         #   $self->prepareCmd for more information about this process)
         #
         # Expected arguments
-        #   $cmd    - Matches a client command in GA::Cage::Cmd->cmdHash
+        #   $cmd    - Matches a standard command in GA::Cage::Cmd->cmdHash, e.g. 'get', 'move_dir',
+        #               'loot_corpse'
         #
         # Optional arguments
         #   @args   - List of arguments in the form
@@ -35700,7 +36570,7 @@
         my ($self, $cmd, @args) = @_;
 
         # Local variables
-        my ($count, $modCmd);
+        my ($count, $obscureString, $modCmd);
 
         # Check for improper arguments
         $count = scalar @args;
@@ -35709,12 +36579,21 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->sendModCmd', @_);
         }
 
+        # Special arrangements for the standard command 'connect'. If world commands are visible in
+        #   the session's default textview, we don't want the password to be unboscured
+        if ($cmd eq 'connect' && $self->currentChar) {
+
+            # Value may be set to, or remain as, 'undef', in which case $self->worldCmd won't
+            #   obscure anything
+            $obscureString = $self->initPass;
+        }
+
         # Interpolate the command
         $modCmd = $self->prepareCmd($cmd, @args);
         if ($modCmd) {
 
             # Send the world command
-            if (! $self->worldCmd($modCmd)) {
+            if (! $self->worldCmd($modCmd, $obscureString)) {
 
                 # Interpolated command could not be sent
                 return undef;
@@ -35924,7 +36803,7 @@
 
                 $self->currentTabObj->textViewObj->insertCmd($decodeCmd);
 
-            } else {
+            } elsif ($self->promptFlag) {
 
                 # Sending a newline character cancels any prompt; even if the world command
                 #   isn't explicitly echoed in the textview, the newline must be
@@ -35946,35 +36825,32 @@
             }
         }
 
-        # If the most recently-received text from the world looked like a prompt,
-        #   $self->promptCheckTime would have been set. When this time expires, $self->processPrompt
-        #   gets called. In between these two events, if the user sends a world command, there's no
-        #   need to call ->processPrompt - it definitely was a prompt
-        if ($self->promptLine) {
+        # If $self->promptFlag is set, the most recently-received text is a command prompt
+        # A world command, displayed in the 'main' window's default textview, requires a newline
+        #   character in that textview; but we only add a newline character to the received text
+        #   (stored in the display buffer) if that received text ends in a command prompt
+        # (If we added a newline character all the time, a vital line in a room statement might be
+        #   split in two, and then the Locator task won't be able to read it and the automapper will
+        #   get lost)
+        # Exception - we don't insert a newline into the display buffer if echo mode is turned on;
+        #   that's the world's responsibility
+        if ($self->promptFlag) {
 
-            # Cancel the prompt IVs
-            $self->ivUndef('promptLine');
-            $self->ivUndef('promptStripLine');
-            $self->ivUndef('promptCheckTime');
-        }
+            $self->ivPoke('promptFlag', FALSE);
+            $self->ivPoke('promptInsertFlag', FALSE);
 
-        # If an extra newline character was due to be added at the beginning of the next packet,
-        #   don't bother (the displayed forces the next packet onto a new line, anyway)
-        $self->ivPoke('cmdPromptFlag', FALSE);
+            if ($self->displayBufferCount && $self->echoMode ne 'client_agree') {
 
-        # Regardless of whether ->promptLine was set, or not, sending a world command starts a new
-        #   line in the 'main' window - so, if the last line in the display buffer isn't marked as
-        #   ending with a newline character, that should be added
-        # (Exception - don't start a newline if echo mode is turned on; that's the world's
-        #   responsibility)
-        if ($self->displayBufferCount && $self->echoMode ne 'client_agree') {
+                $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
+                if ($bufferObj && ! $bufferObj->newLineFlag) {
 
-            $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
-            if ($bufferObj && ! $bufferObj->newLineFlag) {
-
-                $bufferObj->ivPoke('newLineFlag', TRUE);
+                    $bufferObj->ivPoke('newLineFlag', TRUE);
+                }
             }
         }
+
+        # (Reset this IV in either case)
+        $self->ivUndef('promptCheckTime');
 
         # If the connection is open, send the command to the world
         if ($self->status eq 'connecting' || $self->status eq 'connected') {
@@ -36018,7 +36894,7 @@
 
                 # Send the command to the world
                 # Occasionally encounter an error in which this function was called to send a world
-                #   command to a GA::Net::Telnet object whose filehandle had just closed, so need
+                #   command to a GA::Obj::Telnet object whose filehandle had just closed, so need
                 #   to check for that
                 if (! $self->connectObj->eof()) {
 
@@ -36139,43 +37015,39 @@
                 $self->ivPoke('nlEchoFlag', TRUE);
             }
 
-        } else {
+        } elsif ($self->promptFlag) {
 
             # Sending a newline character cancel any prompt; even if the world command isn't
             #   explicitly echoed in the textview, the newline must be
             $self->currentTabObj->textViewObj->insertCmd('');
         }
 
-        # If the most recently-received text from the world looked like a prompt,
-        #   $self->promptCheckTime would have been set. When this time expires, $self->processPrompt
-        #   gets called. In between these two events, if the user sends a world command, there's no
-        #   need to call ->processPrompt - it definitely was a prompt
-        if ($self->promptLine) {
+        # If $self->promptFlag is set, the most recently-received text is a command prompt
+        # A world command, displayed in the 'main' window's default textview, requires a newline
+        #   character in that textview; but we only add a newline character to the received text
+        #   (stored in the display buffer) if that received text ends in a command prompt
+        # (If we added a newline character all the time, a vital line in a room statement might be
+        #   split in two, and then the Locator task won't be able to read it and the automapper will
+        #   get lost)
+        # Exception - we don't insert a newline into the display buffer if echo mode is turned on;
+        #   that's the world's responsibility
+        if ($self->promptFlag) {
 
-            # Cancel the prompt IVs
-            $self->ivUndef('promptLine');
-            $self->ivUndef('promptStripLine');
-            $self->ivUndef('promptCheckTime');
-        }
+            $self->ivPoke('promptFlag', FALSE);
+            $self->ivPoke('promptInsertFlag', FALSE);
 
-        # If an extra newline character was due to be added at the beginning of the next packet,
-        #   don't bother (the displayed forces the next packet onto a new line, anyway)
-        $self->ivPoke('cmdPromptFlag', FALSE);
+            if ($self->displayBufferCount && $self->echoMode ne 'client_agree') {
 
-        # Regardless of whether ->promptLine was set, or not, sending a world command starts a new
-        #   line in the 'main' window - so, if the last line in the display buffer isn't marked as
-        #   ending with a newline character, that should be added
-        # (Exception - if $self->nlEchoFlag was set to TRUE above, in which case we'll wait for the
-        #   world to send a newline character, or let $self->processIncomingData insert an
-        #   artificial one)
-        if ($self->displayBufferCount && ! $self->nlEchoFlag) {
+                $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
+                if ($bufferObj && ! $bufferObj->newLineFlag) {
 
-            $bufferObj = $self->ivShow('displayBufferHash', $self->displayBufferLast);
-            if ($bufferObj && ! $bufferObj->newLineFlag) {
-
-                $bufferObj->ivPoke('newLineFlag', TRUE);
+                    $bufferObj->ivPoke('newLineFlag', TRUE);
+                }
             }
         }
+
+        # (Reset this IV in either case)
+        $self->ivUndef('promptCheckTime');
 
         # Turn on the window blinker, and update IVs
         $self->turnOnBlinker(2);
@@ -36237,9 +37109,14 @@
         ) {
             $flag = TRUE;
 
-        # Redirect mode 'primary_secondary' - redirect primary and secondary directions
-        } elsif ($self->redirectMode eq 'primary_secondary' && defined $dirType) {
-
+        # Redirect mode 'primary_secondary' - redirect primary and secondary directions (but not
+        #   relative directions)
+        } elsif (
+            $self->redirectMode eq 'primary_secondary'
+            && defined $dirType
+            && $dirType ne 'relativeDir'
+            && $dirType ne 'relativeAbbrev'
+        ) {
             $flag = TRUE;
 
         # Redirect mode 'all_exits' - redirect primary and secondary directions, plus any command
@@ -36312,7 +37189,7 @@
         #
         # Expected arguments
         #   $cmd        - The command to check
-        #   $cage      - The highest-priority command cage
+        #   $cage       - The highest-priority command cage
         #
         # Return values
         #   'undef' on improper arguments or if $cmd cannot be processed as an assisted move
@@ -36321,7 +37198,10 @@
         my ($self, $cmd, $cage, $check) = @_;
 
         # Local variables
-        my ($cmdSep, $roomObj, $standard, $exitObj, $assisted, $bufferObj);
+        my (
+            $cmdSep, $dictObj, $currentObj, $taskRoomObj, $ghostObj, $standard, $exitObj, $assisted,
+            $relativeDir, $bufferObj,
+        );
 
         # Check for improper arguments
         if (! defined $cmd || ! defined $cage || defined $check) {
@@ -36329,25 +37209,30 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->checkAssistedMove', @_);
         }
 
-        # Import the standard command separator (to use in a regex)
+        # Import the standard command separator (to use in a regex) and the current dictionary (for
+        #   convenience)
         $cmdSep = $axmud::CLIENT->cmdSep;
+        $dictObj = $self->currentDict;
 
         # GA::Obj::Map->currentRoom stores the automapper's current location, based on room
         #   statements received by the Locator task. However, if previously-sent world commands have
         #   not yet been processed by the world - specifically, if we type 'north' 10 times and
         #   the world hasn't yet sent ten room statements in reply - ->currentRoom will be out of
         #   date
+        $currentObj = $self->mapObj->currentRoom;
         # GA::Obj::Map->ghostRoom stores the character's current location, based on the commands
         #   actually sent; we check this IV, not ->currentRoom
         # Import the ghost room
-        $roomObj = $self->mapObj->ghostRoom;
+        $ghostObj = $self->mapObj->ghostRoom;
+        # Also import the Locator task's current room, in case it's requried
+        $taskRoomObj = $self->session->locatorTask->roomObj;
         # Check whether $cmd is a custom primary direction (if so, we can substitute the user's
         #   primary direction command, like 'n', for the equivalent assisted move, e.g. 'enter
         #   cave')
-        $standard = $self->currentDict->checkStandardDir($cmd);
+        $standard = $self->currentDict->convertStandardDir($cmd);
 
         # Find a matching exit
-        OUTER: foreach my $thisExitNum ($roomObj->ivValues('exitNumHash')) {
+        OUTER: foreach my $thisExitNum ($ghostObj->ivValues('exitNumHash')) {
 
             my (
                 $thisExitObj, $thisAssisted,
@@ -36402,13 +37287,26 @@
         # If a matching exit was found...
         if ($exitObj) {
 
-            # If protected moves are turned on, don't allow a move through an impassable exit
-            if ($self->worldModelObj->protectedMovesFlag && $exitObj->exitOrnament eq 'impass') {
+            # If protected moves are turned on, don't allow a move through an impassable or myster
+            #   exit
+            if (
+                $self->worldModelObj->protectedMovesFlag
+                && ($exitObj->exitOrnament eq 'impass' || $exitObj->exitOrnament eq 'mystery')
+            ) {
+                if ($exitObj->exitOrnament eq 'impass') {
 
-                $self->writeText(
-                    'PROTECTED MOVES: \'' . $cmd . '\' uses an impassable exit, so it has been'
-                    . ' blocked (use \';setprotectedmoves off\' to stop these messages)',
-                );
+                    $self->writeText(
+                        'PROTECTED MOVES: \'' . $cmd . '\' uses an impassable exit, so it has been'
+                        . ' blocked (use \';setprotectedmoves off\' to stop these messages)',
+                    );
+
+                } else {
+
+                    $self->writeText(
+                        'PROTECTED MOVES: \'' . $cmd . '\' uses a mystery exit, so it has been'
+                        . ' blocked (use \';setprotectedmoves off\' to stop these messages)',
+                    );
+                }
 
                 if ($self->worldModelObj->superProtectedMovesFlag) {
 
@@ -36423,25 +37321,45 @@
                 return 1;
             }
 
-            if (! $assisted) {
-
-                # Use the exit's (nominal) direction as the assisted move - so, if the exit is in
-                #   the direction 'enter cave' and it's drawn as a north-facing exit, the user can
-                #   move through that exit by typing 'n'
+            if (
+                ! $assisted
+                && $standard       # Not set if $exitObj->mapDir is 'undef'
+                && $self->currentDict->ivShow('primaryDirHash', $standard) eq $exitObj->dir
+            ) {
+                # If the current dictionary contains relative directions, and if the current and
+                #   ghost rooms are the same, then we can potentially convert a primary direction
+                #   like 'north' into a relative direction like 'forward'
                 if (
-                    $standard       # Not set if $exitObj->mapDir is 'undef'
-                    && $self->currentDict->ivShow('primaryDirHash', $standard) eq $exitObj->dir
+                    ($dictObj->relativeDirHash || $dictObj->relativeAbbrevHash)
+                    && $self->mapObj->facingDir
+                    && $taskRoomObj
+                    && $currentObj
+                    && $ghostObj
+                    && $currentObj eq $ghostObj
                 ) {
-                    # No need to process this as an assisted move - the user typed something like
-                    #   'north' (or 'n'), and the exit's nominal direction is north
-                    return undef;
-
-                } else {
-
-                    # Use the exit's nominal direction, which might be something completely
-                    #   different, e.g. 'enter cave'
-                    $assisted = $exitObj->dir;
+                    # Given the direction the character is about to moving, and the direction
+                    #   they're facing, get the equivalent relative direction
+                    $relativeDir = $dictObj->fetchRelativeDir($standard, $self->mapObj->facingDir);
+                    if (
+                        defined $relativeDir
+                        && $taskRoomObj->ivExists('exitNumHash', $relativeDir)
+                    ) {
+                        $assisted = $relativeDir;
+                    }
                 }
+
+                if (! $assisted) {
+
+                    # No need to process this as an assisted move - the user typed something
+                    #   like 'north' (or 'n'), and the exit's nominal direction is north
+                    return undef;
+                }
+
+           } elsif (! $assisted) {
+
+                # Use the exit's nominal direction, which might be something completely different,
+                #   e.g. 'enter cave'
+                $assisted = $exitObj->dir;
            }
 
            # Update the world command buffer
@@ -36476,7 +37394,7 @@
             $standard
             && $self->worldModelObj->protectedMovesFlag
             # Protected moves mode is not required for rooms in wilderness mode
-            && $roomObj->wildMode eq 'normal'
+            && $ghostObj->wildMode eq 'normal'
         ) {
             $self->writeText(
                 'PROTECTED MOVES: \'' . $cmd . '\' does not correspond to a world model exit, so it'
@@ -36705,41 +37623,44 @@
 
         # Check every line in the instruction buffer, looking for an instruction which starts with
         #   $currentText, and continues with one or more extra characters
-        for (my $num = $last; $num >= $first; $num--) {
+        if (%bufferHash) {
 
-            my ($bufferObj, $string, $diff);
+            for (my $num = $last; $num >= $first; $num--) {
 
-            $bufferObj = $bufferHash{$num};
-            if ($bufferObj) {
+                my ($bufferObj, $string, $diff);
 
-                $string = $bufferObj->$iv;
-                $diff = length($string) - length($currentText);
+                $bufferObj = $bufferHash{$num};
+                if ($bufferObj) {
 
-                if (
-                    (
-                        $diff > 0
-                        && $string ne $currentText
-                        && substr($string, 0, length($originalText)) eq $originalText
-                    ) || (
-                        $diff == 0
-                        && $string ne $currentText
-                        && $string gt $currentText
-                    )
-                ) {
-                    # Potential match found. Use it if...
+                    $string = $bufferObj->$iv;
+                    $diff = length($string) - length($currentText);
+
                     if (
-                        # It's the first match found
-                        ! defined $matchString
-                        # It is shorter than the previous matched string
-                        || length($string) < length($matchString)
-                        # In alphabetical order, it appears earlier than the matched string
-                        || (
-                            length($string) == length($matchString)
-                            && $string lt $matchString
+                        (
+                            $diff > 0
+                            && $string ne $currentText
+                            && substr($string, 0, length($originalText)) eq $originalText
+                        ) || (
+                            $diff == 0
+                            && $string ne $currentText
+                            && $string gt $currentText
                         )
                     ) {
-                        $matchString = $string;
-                        $matchNum = $num;
+                        # Potential match found. Use it if...
+                        if (
+                            # It's the first match found
+                            ! defined $matchString
+                            # It is shorter than the previous matched string
+                            || length($string) < length($matchString)
+                            # In alphabetical order, it appears earlier than the matched string
+                            || (
+                                length($string) == length($matchString)
+                                && $string lt $matchString
+                            )
+                        ) {
+                            $matchString = $string;
+                            $matchNum = $num;
+                        }
                     }
                 }
             }
@@ -37010,7 +37931,8 @@
 
     sub updateCmdBuffer {
 
-        # Called by $self->worldCmd for each individual command sent to the world
+        # Called by $self->dispatchCmd, ->teleportCmd, and also by ->checkRedirect and
+        #   ->checkAssistedMove
         # Also called by $self->teleportCmd, after an earlier call by GA::Cmd::Teleport->do
         #
         # Updates the world command buffer
@@ -37106,7 +38028,8 @@
             # Mark the buffer object as being generated by a redirect mode command
             $obj->addRedirect($redirectCmd);
 
-        # For assisted moves...
+        # For assisted moves (in this function, both $standardCmd and $assistedCmd are only set when
+        #   it's an assisted move)
         } elsif ($standardCmd) {
 
             # Mark the buffer object as being generated by an assisted move
@@ -38608,6 +39531,7 @@
             # F debug.line.tags
             # F debug.locator.some
             # F debug.locator.all
+            # F debug.locator.exit
             # F debug.locator.move
             # F debug.obj.parse
             # F debug.obj.compare
@@ -38636,6 +39560,7 @@
                 'debug.line.tags'       => 'debugLineTagsFlag',
                 'debug.locator.some'    => 'debugLocatorFlag',
                 'debug.locator.all'     => 'debugMaxLocatorFlag',
+                'debug.locator.exit'    => 'debugExitFlag',
                 'debug.locator.move'    => 'debugMoveListFlag',
                 'debug.obj.parse'       => 'debugParseObjFlag',
                 'debug.obj.compare'     => 'debugCompareObjFlag',
@@ -39433,107 +40358,6 @@
                 $error = $genError;
             }
 
-        } elsif ($first eq 'keycode') {
-
-            # O keycode.obj.current
-            # O keycode.obj.NAME
-            if ($second eq 'obj') {
-
-
-                if ($size < 3 || $size > 4) {
-
-                    $error = $genError
-
-                } elsif ($third eq 'current') {
-
-                    if (! defined $axmud::CLIENT->currentKeycodeObj) {
-
-                        $error = 'No current keycode object set';
-
-                    } else {
-
-                        $blessed = $axmud::CLIENT->currentKeycodeObj;
-                        $privFlag = $blessed->_privFlag;
-                        if (defined $fourth) {
-
-                            $var = $blessed->{$last};
-                            $ivName = $last;
-
-                        } else {
-
-                            $objFlag = TRUE;
-                        }
-                    }
-
-                } else {
-
-                    if (! $axmud::CLIENT->ivExists('keycodeObjHash', $third)) {
-
-                        if ($size == 3) {
-                            $error = 'Keycode object named \'' . $string . '\' doesn\'t exist';
-                        } else {
-                            $error = 'Keycode object named \'' . $obj . '\' doesn\'t exist';
-                        }
-
-                    } else {
-
-                        $blessed = $axmud::CLIENT->ivShow('keycodeObjHash', $third);
-                        $privFlag = $blessed->_privFlag;
-                        if (defined $fourth) {
-
-                            $var = $blessed->{$last};
-                            $ivName = $last;
-
-                        } else {
-
-                            $objFlag = TRUE;
-                        }
-                    }
-                }
-
-            # S keycode.current.KEYCODE
-            } elsif ($second eq 'current') {
-
-                if ($size != 3) {
-
-                    $error = $genError;
-
-                } elsif (! $axmud::CLIENT->ivExists('constKeycodeHash', $third)) {
-
-                    $error = 'The standard keycode value \'' . $third . '\' doesn\'t exist';
-
-                } else {
-
-                    $blessed = undef;
-                    $var = $axmud::CLIENT->currentKeycodeObj->ivShow('keycodeHash', $third);
-                    $ivName = 'keycodeHash';
-                    $privFlag = TRUE;
-                }
-
-            # S keycode.default.KEYCODE
-            } elsif ($second eq 'default') {
-
-                if ($size != 3) {
-
-                    $error = $genError;
-
-                } elsif (! $axmud::CLIENT->ivExists('constKeycodeHash', $third)) {
-
-                    $error = 'The standard keycode value \'' . $third . '\' doesn\'t exist';
-
-                } else {
-
-                    $blessed = undef;
-                    $var = $axmud::CLIENT->ivShow('constKeycodeHash', $third);
-                    $ivName = 'keycodeHash';
-                    $privFlag = TRUE;
-                }
-
-            } else {
-
-                $error = $genError;
-            }
-
         } elsif ($first eq 'log') {
 
             my %clientHash;
@@ -39972,7 +40796,7 @@
 
                     $error = $genError;
 
-                } elsif (! $wmObj->ivExists('roomTagHash', $third)) {
+                } elsif (! $wmObj->ivExists('roomTagHash', lc($third))) {
 
                     if ($size == 3) {
                         $error = 'World model room tag \'' . $string . '\' doesn\'t exist';
@@ -39982,7 +40806,7 @@
 
                 } else {
 
-                    $number = $wmObj->ivShow('roomTagHash', $third);
+                    $number = $wmObj->ivShow('roomTagHash', lc($third));
                     $blessed = $wmObj->ivShow('roomModelHash', $number);
                     $privFlag = $blessed->_privFlag;
                     if (defined $fourth) {
@@ -40852,18 +41676,34 @@
 
         } elsif ($first eq 'regex') {
 
-            # S regex.url
+            # S regex.url.long
+            # S regex.url.short
             # S regex.email
-            if ($size != 2) {
+            if ($size < 2 || $size > 3) {
 
                 $error = $genError;
 
             } else {
 
                 if ($second eq 'url') {
-                    $ivName = 'constUrlRegex';
-                } elsif ($second eq 'email') {
-                    $ivName = 'constEmailRegex';
+
+                    if (! $third) {
+                        $error = $genError;
+                    } elsif ($third eq 'long') {
+                        $ivName = 'constUrlRegex';
+                    } elsif ($third eq 'short') {
+                        $ivName = 'constShortUrlRegex';
+                    } else {
+                        $error = $genError;
+                    }
+
+               } elsif ($second eq 'email') {
+
+                    if ($size > 2) {
+                        $error = $genError;
+                    } else {
+                        $ivName = 'constEmailRegex';
+                    }
                 }
 
                 if ($ivName) {
@@ -42876,7 +43716,7 @@
 
     sub set_mccpMode {
 
-        # Called by GA::Net::Telnet->_fillbuf, in those situations where $self->mccpMode must be
+        # Called by GA::Obj::Telnet->_fillbuf, in those situations where $self->mccpMode must be
         #   set directly
 
         my ($self, $mode, $check) = @_;
@@ -43633,6 +44473,14 @@
                 $self->ivPoke('systemMsgMode', 'system');
             }
 
+            # (The colour of the button, while flashing, might be different to the colour when it
+            #   stops flashing)
+            if ($type eq 'error' || $type eq 'warning' || $type eq 'improper') {
+                $self->ivPoke('systemMsgTempMode', 'error');
+            } else {
+                $self->ivPoke('systemMsgTempMode', $type);
+            }
+
             $self->ivPoke(
                 'systemMsgCheckTime',
                 ($self->sessionTime + $self->systemMsgWaitTime),
@@ -43644,7 +44492,7 @@
                 my $stripObj = $winObj->ivShow('firstStripHash', 'Games::Axmud::Strip::Entry');
                 if ($stripObj) {
 
-                    $stripObj->updateConsoleButton($self->systemMsgMode);
+                    $stripObj->updateConsoleButton($self->systemMsgMode, $self->systemMsgTempMode);
                 }
             }
         }
@@ -43664,6 +44512,7 @@
 
         $self->ivEmpty('systemMsgList');
         $self->ivPoke('systemMsgMode', 'empty');
+        $self->ivPoke('systemMsgTempMode', 'empty');
         $self->ivUndef('systemMsgCheckTime');
 
         # Update strip objects for any 'internal' windows used by this session
@@ -43964,6 +44813,8 @@
         { my $self = shift; return @{$self->{systemMsgList}}; }
     sub systemMsgMode
         { $_[0]->{systemMsgMode} }
+    sub systemMsgTempMode
+        { $_[0]->{systemMsgTempMode} }
     sub systemMsgWaitTime
         { $_[0]->{systemMsgWaitTime} }
     sub systemMsgCheckTime
@@ -43990,14 +44841,12 @@
 
     sub promptCount
         { $_[0]->{promptCount} }
-    sub promptLine
-        { $_[0]->{promptLine} }
-    sub promptStripLine
-        { $_[0]->{promptStripLine} }
+    sub promptFlag
+        { $_[0]->{promptFlag} }
+    sub promptInsertFlag
+        { $_[0]->{promptInsertFlag} }
     sub promptCheckTime
         { $_[0]->{promptCheckTime} }
-    sub cmdPromptFlag
-        { $_[0]->{cmdPromptFlag} }
 
     sub lastTokenType
         { $_[0]->{lastTokenType} }
@@ -44225,6 +45074,8 @@
         { my $self = shift; return @{$self->{emergencyCmdList}}; }
     sub worldCmdProcessFlag
         { $_[0]->{worldCmdProcessFlag} }
+    sub worldCmdGhostRoom
+        { $_[0]->{worldCmdGhostRoom} }
 
     sub delayedQuitTime
         { $_[0]->{delayedQuitTime} }
@@ -44425,8 +45276,14 @@
         { $_[0]->{specifiedTType} }
     sub eorMode
         { $_[0]->{eorMode} }
+    sub eorgaFlag
+        { $_[0]->{eorgaFlag} }
     sub nawsMode
         { $_[0]->{nawsMode} }
+    sub newEnvironMode
+        { $_[0]->{newEnvironMode} }
+    sub charSetMode
+        { $_[0]->{charSetMode} }
 
     sub msdpMode
         { $_[0]->{msdpMode} }

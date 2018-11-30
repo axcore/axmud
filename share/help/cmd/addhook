@@ -71,7 +71,9 @@ ahk / addhook                 Adds a hook
                      - 'map_room' (fires when the automapper's current room is
                            set)
                      - 'map_no_room' (fires when the automapper's current room
-                           is reset)
+                           is reset; does fire when the Locator task is reset)
+                     - 'map_lost' (fires when the automapper's current room is
+                           reset; doesn't fire when the Locator task is reset)
                      - 'map_rescue_on' (fires when auto-rescue mode activates)
                      - 'map_rescue_merge' (fires in auto-rescue mode when rooms
                            are merged back into the previous region)

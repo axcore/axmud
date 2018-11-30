@@ -3,7 +3,7 @@ srd / setredirectmode         Fine-tunes redirect mode
    Format:
       ;srd -p                 Converts only primary directions
       ;srd -b                 Converts both primary and secondary directions
-      ;srd -a                 Converts all directions
+      ;srd -a                 Converts most directions
 
       ;srd                    Shows redirect mode status
  
@@ -19,6 +19,9 @@ srd / setredirectmode         Fine-tunes redirect mode
       Primary directions are the cardinal directions 'north', 'southwest' etc
          (including abbrevitions like 'n' and 'sw'), as well as 'up' and 'down'.
          Typical secondary directions include 'in', 'out', 'enter' and 'exit'.
+      If you u se the '-a' switch, redirect mode will be applied to primary and
+         secondary directions, as well as any directions matching an exit in the
+         current room. Redirect mode is not applied to relative exits.
 
    User commands:
       srd / setredirect / setredirectmode

@@ -37,19 +37,18 @@ sv / save                     Saves a file (or files)
          -t   Saves the task data file, 'tasks'
          -s   Saves the script data file, 'scripts'
          -n   Saves the contacts data file, 'contacts'
-         -k   Saves the keycode data file, 'keycodes'
          -y   Saves the dictionary data file, 'dicts'
          -b   Saves the toolbar button data file, 'toolbar'
          -u   Saves the user command data file, 'usercmds'
          -z   Saves the zonemaps data file, 'zonemaps'
          -p   Saves the winmaps data file, 'winmaps'
          -x   Saves the text-to-speech data file, 'tts'
-      File names used are: 'worldmodel', 'tasks', 'contacts', 'keycodes',
-         'dicts', 'usercmds', 'zonemaps', 'winmaps', 'tts'.
+      File names used are: 'worldmodel', 'tasks', 'contacts', 'dicts',
+         'usercmds', 'zonemaps', 'winmaps', 'tts'.
 
       <options> can be specified in any order:
       
-         ';save -k tasks -z dicts'
+         ';save -n tasks -z dicts'
          
       Each file is only saved once, so duplicate <options> won't cause an error.
  

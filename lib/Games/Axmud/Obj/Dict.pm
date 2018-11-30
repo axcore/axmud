@@ -961,21 +961,37 @@
             # Directions
             # ----------
 
-            # Axmud divides all directions (and therefore exit names) into three groups
+            # Axmud divides all directions (and therefore exit names) into four groups
             # Primary directions are the sixteen compass directions (including 'north', 'northeast'
             #   and 'northnortheast', etc) plus 'up' and 'down'. Axmud assumes that all worlds use
             #   these directions to organise rooms in three-dimensional space
             # Secondary directions are a customisable list of directions commonly found in worlds
             #   using the dictionary's language (words such as 'entrance', 'exit', 'in', 'out', etc)
-            # Tertiary directions are any direction not in the above two lists. Axmud treats any
-            #   direction (or any exit in an unrecognised direction) as a tertiary direction.
+            # Relative directions are those that change, depending on which way the character is
+            #   facing (i.e., from which direction the character entered the room). For example,
+            #   Discworld uses exits called 'forward', 'backward', 'left', 'forward-left' and so on;
+            #   a single exit in a room might be described as 'forward' if the character entered
+            #   from the north, or 'backward' if they entered from the south. Axmud translates
+            #   relative directions into primary directions before using them
+            # Unrecognised directions are any direction not in the above three lists. Axmud treats
+            #   any such direction as an unrecognised direction
             #
             # For example, in a room statement like this:
             #
-            #       You are in a dark room.
-            #       Obvious exits: north, out, expungiate
+            #       You are in a boring room.
+            #       Obvious exits: north, out, wibble
             #
-            # ...we have a primary, secondary and tertiary direction
+            # ...we have a primary, secondary and unrecognised direction
+            #
+            # In a room statement like this:
+            #
+            #       You are in an exciting room.
+            #       Obvious exits: forward, forward-left, backward, out
+            #
+            # ...we have three relative directions and a secondary direction. If entering from the
+            #   south, 'forward' is translated as 'north', 'forward-left' is translated as
+            #   'northwest' and 'backward' is translated as 'south'. 'out' is treated like any other
+            #   secondary direction
             #
             # Axmud uses 'standard' primary directions internally:
             #   nort northnortheast northeast eastnortheast east eastsoutheast southeast
@@ -1232,6 +1248,26 @@
                 'vortex'                => undef,
             },
 
+            # Relative directions, which are translated into the eight cardinal directions,
+            #   depending on the direction of entry
+            # One or more relative directions can be defined. For any relative direction that's
+            #   defined, the opposite should probably be defined too. If no relative directions are
+            #   defined, then Axmud doesn't use relative directions
+            # If the direction of entry into a room is not known, Axmud uses the direction of the
+            #   first incoming exit that's not itself a relative direction; if that too fails, the
+            #   direction of entry is taken to be 'south'
+            # Keys in the hash are integers in the range 0-7. Axmud help files describe them as
+            #   'slots'. 0 represents 'forward', i.e. movement in the same direction as the
+            #   direction of entry. Then we move clockwise, so 1 represents 'forward-right',
+            #   2 'right', 3 'backward-right', 4 'backward', 5 'backward-left', 6 'left',
+            #   7 'forward-left'
+            # A key's corresponding value is the relative direction, e.g.
+            #   $relativeDirHash{4} = 'backward'
+            relativeDirHash             => {},
+            # Corresponding hash of abbreviated relative directions, for example
+            #   $relativeAbbrevHash{4] = 'bw'
+            relativeAbbrevHash          => {},
+
             # Speedwalk directions
             # --------------------
 
@@ -1311,13 +1347,14 @@
             # Combined hash of customised directions, in the form
             #   $combDirHash{custom_direction} = direction_type
             # ...where 'direction_type' is one of 'primaryDir', 'primaryAbbrev', 'secondaryDir',
-            #   'secondaryAbbrev'
+            #   'secondaryAbbrev', 'relativeDir' or 'relativeAbbrev'
             combDirHash                 => {},      # Set below
             # Combined hash of customised opposite directions, in the form
             #   $combOppDirHash{custom_direction} = custom_opposite_direction
             combOppDirHash              => {},      # Set below
             # Combined hash of customised directions, converting the customised direction into the
-            #   standard (fixed) form of the primary or secondary direction. Hash in the form
+            #   standard (fixed) form of the primary or secondary direction (relative directions are
+            #   not included). Hash in the form
             #   $combRevDirHash{custom_direction} = standard_direction
             combRevDirHash              => {},      # Set below
         };
@@ -1456,6 +1493,9 @@
             secondaryOppHash            => {$self->secondaryOppHash},
             secondaryOppAbbrevHash      => {$self->secondaryOppAbbrevHash},
             secondaryAutoHash           => {$self->secondaryAutoHash},
+
+            relativeDirHash             => {$self->relativeDirHash},
+            relativeAbbrevHash          => {$self->relativeAbbrevHash},
 
             speedDirHash                => {$self->speedDirHash},
             speedModifierHash           => {$self->speedModifierHash},
@@ -1806,9 +1846,12 @@
 
         # A hash of customised directions, in the form
         #   ->combDirHash{custom_direction} = direction_type
-        # ...where 'direction_type' is one of 'primaryDir', 'primaryAbbrev', 'secondaryDir',
-        #   'secondaryAbbrev'
-        @typeList = ('primaryDir', 'primaryAbbrev', 'secondaryDir', 'secondaryAbbrev');
+        # ...where 'direction_type' is one of these values:
+        @typeList = (
+            'primaryDir', 'primaryAbbrev', 'secondaryDir', 'secondaryAbbrev', 'relativeDir',
+            'relativeAbbrev',
+        );
+
         foreach my $type (@typeList) {
 
             my $hashName = $type . 'Hash';
@@ -1819,7 +1862,7 @@
                 # ->secondaryAbbrevHash can have 'undef' values in its key-value pairs, so don't add
                 #   those to the combined hash
                 # If the customised direction has already been added, don't replace it
-                if ($value && ! exists $combHash{$value}) {
+                if (defined $value && ! exists $combHash{$value}) {
 
                     $combHash{$value} = $type;
                 }
@@ -1859,13 +1902,43 @@
                 # ->secondaryOppAbbrevHash can have empty string values in its key-value pairs, so
                 #   don't add those either
                 # If the customised direction has already been added, don't replace it
-                if ($value && (! exists $combOppHash{$value})) {
+                if (defined $value && $value ne '' && ! exists $combOppHash{$value}) {
 
                     $combOppHash{$value} = $oppValue;
                 }
             }
 
         } until (! @ivList);
+
+        # Need some special code to add relative directions to %combOppHash. The comments in ->new
+        #   recommend that if a relative direction is added to $self->relativeDirHash or
+        #   ->relativeAbbrevHash, the opposite relative direction is added too, but there's no way
+        #   to guarantee the user won't miss one out
+        for (my $key = 0; $key < 8; $key++) {
+
+            my ($oppKey, $dir, $oppDir);
+
+            # (Keys in the hash are in the range 0-7, so the opposite of 0 is 4, the opposite of 7
+            #   is 3, etc)
+            $oppKey = $key + 4;
+            if ($oppKey > 7) {
+
+                $oppKey -= 8;
+            }
+
+            foreach my $iv ('relativeDirHash', 'relativeAbbrevHash') {
+
+                my ($value, $oppValue);
+
+                $value = $self->ivShow($iv, $key);
+                $oppValue = $self->ivShow($iv, $oppKey);
+
+                if (defined $value && $value ne '' && defined $oppValue && $oppValue ne '') {
+
+                    $combOppHash{$value} = $oppValue;
+                }
+            }
+        }
 
         # A hash of customised directions, in the form
         #   ->combRevDirHash{custom_direction} = standard_direction       (for primary directions)
@@ -2184,47 +2257,11 @@
         %abbrevHash = $self->primaryAbbrevHash;
 
         # Use them to update these IVs
-        %oppHash = (
-            north               => $dirHash{'south'},
-            northnortheast      => $dirHash{'southsouthwest'},
-            northeast           => $dirHash{'southwest'},
-            eastnortheast       => $dirHash{'westsouthwest'},
-            east                => $dirHash{'west'},
-            eastsoutheast       => $dirHash{'westnorthwest'},
-            southeast           => $dirHash{'northwest'},
-            southsoutheast      => $dirHash{'northnorthwest'},
-            south               => $dirHash{'north'},
-            southsouthwest      => $dirHash{'northnortheast'},
-            southwest           => $dirHash{'northeast'},
-            westsouthwest       => $dirHash{'eastnortheast'},
-            west                => $dirHash{'east'},
-            westnorthwest       => $dirHash{'eastsoutheast'},
-            northwest           => $dirHash{'southeast'},
-            northnorthwest      => $dirHash{'southsoutheast'},
-            up                  => $dirHash{'down'},
-            down                => $dirHash{'up'},
-        );
+        foreach my $key ($axmud::CLIENT->constPrimaryDirList) {
 
-        %oppAbbrevHash = (
-            north               => $abbrevHash{'south'},
-            northnortheast      => $abbrevHash{'southsouthwest'},
-            northeast           => $abbrevHash{'southwest'},
-            eastnortheast       => $abbrevHash{'westsouthwest'},
-            east                => $abbrevHash{'west'},
-            eastsoutheast       => $abbrevHash{'westnorthwest'},
-            southeast           => $abbrevHash{'northwest'},
-            southsoutheast      => $abbrevHash{'northnorthwest'},
-            south               => $abbrevHash{'north'},
-            southsouthwest      => $abbrevHash{'northnortheast'},
-            southwest           => $abbrevHash{'northeast'},
-            westsouthwest       => $abbrevHash{'eastnortheast'},
-            west                => $abbrevHash{'east'},
-            westnorthwest       => $abbrevHash{'eastsoutheast'},
-            northwest           => $abbrevHash{'southeast'},
-            northnorthwest      => $abbrevHash{'southsoutheast'},
-            up                  => $abbrevHash{'down'},
-            down                => $abbrevHash{'up'},
-        );
+            $oppHash{$key} = $dirHash{$axmud::CLIENT->ivShow('constOppDirHash', $key)};
+            $oppAbbrevHash{$key} = $abbrevHash{$axmud::CLIENT->ivShow('constOppDirHash', $key)};
+        }
 
         $self->ivPoke('primaryOppHash', %oppHash);
         $self->ivPoke('primaryOppAbbrevHash', %oppAbbrevHash);
@@ -2486,7 +2523,7 @@
         #
         # NB So that a calling function can replace all directions in one go, it's the calling
         #   function's responsibility to check that a custom direction doesn't already exist as a
-        #   custom primary OR secondary direction, before calling this function
+        #   custom primary, secondary or relative direction, before calling this function
         #
         # Expected arguments
         #   $standardDir    - The standard primary direction, a key in $self->primaryDirHash
@@ -2539,18 +2576,18 @@
         #
         # NB So that a calling function can replace all directions in one go, it's the calling
         #   function's responsibility to check that a custom direction doesn't already exist as a
-        #   custom primary OR secondary direction, before calling this function
+        #   custom primary, secondary or relative direction direction, before calling this function
         # NB Note that $self->secondaryDirList exists, but no $self->primaryDirList exists; also
         #   abbreviated secondary directions are set to 'undef' by default; so this function behaves
         #   slightly differently to $self->modifyPrimaryDir
         #
         # Expected arguments
-        #   $customDir      - A custom secondary direction, stored as both a key and an item in
+        #   $customDir      - A custom secondary direction, stored as both a key and a value in
         #                       $self->secondaryDirHash
         #
         # Optional arguments
         #   $customAbbrev   - The abbreviated custom secondary direction. If 'undef' or an empty
-        #                       string, the custom, the abbreviation is stored as 'undef'
+        #                       string, the abbreviation is stored as 'undef'
         #   $noUpdateFlag   - If TRUE, the calling function expects to call this function several
         #                       times, in which case $self->updateOppDirHash is not called (it's up
         #                       to the calling function to do it, when ready). If FALSE (or
@@ -2595,8 +2632,12 @@
         # Sets the opposite direction of an existing custom secondary direction, updating others
         #   hashes as required
         #
+        # NB So that a calling function can replace all directions in one go, it's the calling
+        #   function's responsibility to check that a custom direction doesn't already exist as a
+        #   custom primary, secondary or relative direction, before calling this function
+        #
         # Expected arguments
-        #   $customDir      - A custom secondary direction, stored as both a key and an item in
+        #   $customDir      - A custom secondary direction, stored as both a key and a value in
         #                       $self->secondaryDirList
         #
         # Optional arguments
@@ -2657,7 +2698,7 @@
         #   required
         #
         # Expected arguments
-        #   $customDir      - A custom secondary direction, stored as both a key and an item in
+        #   $customDir      - A custom secondary direction, stored as both a key and a value in
         #                       $self->secondaryDirHash
         #
         # Optional arguments
@@ -2688,6 +2729,127 @@
         $self->ivDelete('secondaryDirHash', $customDir);
         $self->ivDelete('secondaryAbbrevHash', $customDir);
         $self->ivDelete('secondaryAutoHash', $customDir);
+
+        if (! $noUpdateFlag) {
+
+            $self->updateOppDirHash();
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub addRelativeDir {
+
+        # Called by GA::Cmd::AddRelative->do or any other code
+        # Adds a relative direction and its abbreviation (if any), updating others hashes as
+        #   required
+        #
+        # NB So that a calling function can replace all directions in one go, it's the calling
+        #   function's responsibility to check that a relative direction doesn't already exist as a
+        #   custom primary, secondary or relative direction, before calling this function
+        #
+        # Expected arguments
+        #   $index          - An integer in the range 0-7, matching the keys in
+        #                       $self->relativeDirHash. 0 represents 'forward', 2 represents 'right'
+        #                       and so on
+        #   $relativeDir    - A relative direction, stored as both a key and a value in
+        #                       $self->relativeDirHash
+        #
+        # Optional arguments
+        #   $relativeAbbrev - The abbreviated relative direction. If 'undef' or an empty
+        #                       string, no key-value pair is added to $self->relativeAbbrevHash
+        #   $noUpdateFlag   - If TRUE, the calling function expects to call this function several
+        #                       times, in which case $self->updateOppDirHash is not called (it's up
+        #                       to the calling function to do it, when ready). If FALSE (or
+        #                       'undef'), other hashes are updated as required
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $index, $relativeDir, $relativeAbbrev, $noUpdateFlag, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $index
+            || ! $axmud::CLIENT->intCheck($index, 0, 7)
+            || ! defined $relativeDir || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addRelativeDir', @_);
+        }
+
+        $self->ivAdd('relativeDirHash', $index, $relativeDir);
+        if (defined $relativeAbbrev && $relativeAbbrev ne '') {
+
+            $self->ivAdd('relativeAbbrevHash', $index, $relativeAbbrev);
+        }
+
+        if (! $noUpdateFlag) {
+
+            $self->updateOppDirHash();
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub deleteRelativeDir {
+
+        # Called by GA::Cmd::DeleteRelative->do or any other code
+        # Deletes a relative direction and its abbreviation (if any), updating others hashes as
+        #   required
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments (one or both can be specified)
+        #   $index          - An integer in the range 0-7, matching a key in $self->relativeDirHash
+        #   $relativeDir    - A relative direction, matching a value in $self->relativeDirHash
+        #   $noUpdateFlag   - If TRUE, the calling function expects to call this function several
+        #                       times, in which case $self->updateOppDirHash is not called (it's up
+        #                       to the calling function to do it, when ready). If FALSE (or
+        #                       'undef'), other hashes are updated as required
+        #
+        # Return values
+        #   'undef' on improper arguments, if both $index and $relativeDir are undefined, or if the
+        #       specified index or relative direction doesn't exist
+        #   1 otherwise
+
+        my ($self, $index, $relativeDir, $noUpdateFlag, $check) = @_;
+
+        # Local variables
+        my %revHash;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteRelativeDir', @_);
+        }
+
+        # If neither $index nor $relativeDir are specified, then there's nothing to delete
+        if (
+            ! $axmud::CLIENT->intCheck($index, 0, 7)
+            && (! defined $relativeDir || $relativeDir eq '')
+        ) {
+            return undef;
+        }
+
+        if (! defined $index) {
+
+            %revHash = reverse $self->relativeDirHash;
+            if (! exists $revHash{$relativeDir}) {
+
+                return undef;
+
+            } else {
+
+                $index = $revHash{$relativeDir};
+            }
+        }
+
+        $self->ivDelete('relativeDirHash', $index);
+        $self->ivDelete('relativeAbbrevHash', $index);
 
         if (! $noUpdateFlag) {
 
@@ -2860,42 +3022,59 @@
         return undef;
     }
 
-    sub checkStandardDir {
+    sub checkRelativeDir {
 
-        # Can be called by anything, but often used for creating exit objects
-        # Checks whether a specified direction is a primary direction. If so, returns the
-        #   equivalent standard direction (e.g. converts 'nord', 'n' to 'north')
+        # Can be called by anything
+        # Checks whether a specified direction is a relative direction. If so, returns the
+        #   unabbreviated form of the (recognised) relative direction
         #
         # Expected arguments
         #   $dir        - The direction to check (full or abbreviated form)
         #
         # Return values
-        #   'undef' on improper arguments or if $dir isn't a primary direction
-        #   Otherwise returns the standard primary direction
+        #   'undef' on improper arguments or if $dir isn't a relative direction
+        #   Otherwise returns the unabbreviated relative direction
 
         my ($self, $dir, $check) = @_;
 
         # Local variables
-        my $type;
+        my (
+            $type, $index,
+            %revHash,
+        );
 
         # Check for improper arguments
         if (! defined $dir || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkStandardDir', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkRelativeDir', @_);
         }
 
         # Perform the check
         $type = $self->ivShow('combDirHash', $dir);
         if (defined $type) {
 
-            if ($type eq 'primaryDir' || $type eq 'primaryAbbrev') {
+            if ($type eq 'relativeDir') {
 
-                # Return the standard direction
-                return $self->ivShow('combRevDirHash', $dir);
+                # $dir is already a relative direction
+                return $dir;
+
+            } elsif ($type eq 'relativeAbbrev') {
+
+                # $self->combRevDirHash doesn't contain relative directions
+                %revHash = reverse $self->relativeAbbrevHash;
+                if (! exists $revHash{$dir}) {
+
+                    return undef;
+
+                } else {
+
+                    $index = $revHash{$dir};
+                    return $self->ivShow('relativeDirHash', $index);
+                }
             }
         }
 
-        # Not a (custom) primary direction
+        # Not a (recognised) relative direction
         return undef;
     }
 
@@ -2956,6 +3135,243 @@
         return undef;
     }
 
+    sub convertStandardDir {
+
+        # Can be called by anything, but often used for creating exit objects
+        # Checks whether a specified direction is a primary direction. If so, returns the
+        #   equivalent standard direction (e.g. converts 'nord', 'n' to 'north')
+        #
+        # Expected arguments
+        #   $dir        - The direction to check (full or abbreviated form)
+        #
+        # Return values
+        #   'undef' on improper arguments or if $dir isn't a primary direction
+        #   Otherwise returns the standard primary direction
+
+        my ($self, $dir, $check) = @_;
+
+        # Local variables
+        my $type;
+
+        # Check for improper arguments
+        if (! defined $dir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->convertStandardDir', @_);
+        }
+
+        # Perform the check
+        $type = $self->ivShow('combDirHash', $dir);
+        if (defined $type && ($type eq 'primaryDir' || $type eq 'primaryAbbrev')) {
+
+            # Return the standard direction
+            return $self->ivShow('combRevDirHash', $dir);
+
+        } else {
+
+            # $dir is not a (custom) primary direction
+            return undef;
+        }
+    }
+
+    sub convertRelativeDir {
+
+        # Can be called by anything
+        # Checks whether a specified direction is a relative direction. If so, returns an integer
+        #   in the range 0-7 matching the keys in $self->relativeDirHash. 0 represents 'forward', 2
+        #   represents 'right' and so on
+        #
+        # Expected arguments
+        #   $dir        - The direction to check (full or abbreviated form)
+        #
+        # Return values
+        #   'undef' on improper arguments or if $dir isn't a relative direction
+        #   Otherwise returns the equivalent integer
+
+        my ($self, $dir, $check) = @_;
+
+        # Local variables
+        my (
+            $type,
+            %revHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $dir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->convertRelativeDir', @_);
+        }
+
+        # Perform the check
+        $type = $self->ivShow('combDirHash', $dir);
+        if (defined $type) {
+
+            # (For other $types, %revHash remains empty, so the return value will be 'undef'
+            if ($type eq 'relativeDir') {
+                %revHash = reverse $self->relativeDirHash;
+            } elsif ($type eq 'relativeAbbrev') {
+                %revHash = reverse $self->relativeAbbrevHash;
+            }
+
+            return $revHash{$dir};
+
+        } else {
+
+            # Not a relative direction
+            return undef;
+        }
+    }
+
+    sub rotateRelativeDir {
+
+        # Can be called by anything, usually after a call to $self->convertRelativeDir
+        # Given one of the relative direction slots (an integer in the range 0-7 matching the keys
+        #   in $self->relativeDirHash. 0 represents 'forward', 2 represents 'right' and so on) and
+        #   the direction the character is currently facing, returns the equivalent standard primary
+        #   direction. For example:
+        #
+        #   Character is facing     Specified slot      Returns
+        #   west                    0                   west
+        #   west                    1                   northwest
+        #   west                    2                   north
+        #
+        #   southwest               0                   southwest
+        #   southwest               4                   northeast
+        #   southwest               7                   south
+        #
+        # Expected arguments
+        #   $slot       - An integer in the range 0-7
+        #
+        # Optional arguments
+        #   $facingDir  - The direction the character is currently facing (must be one of the
+        #                   following standard primary directions: north/northeast/east/southeast/
+        #                   south/southwest/west/northwest). If it's a different direction, this
+        #                   function returns 'undef'; but if $facingDir is not defined at all,
+        #                   we'll assume the character is facing north
+        #
+        # Return values
+        #   'undef' on improper arguments, if $slot is invalid or if $facingDir is specified and
+        #       invalid
+        #   Otherwise returns the equivalent standard primary direction
+
+        my ($self, $slot, $facingDir, $check) = @_;
+
+        # Local variables
+        my $otherSlot;
+
+        # Check for improper arguments
+        if (! defined $slot || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->rotateRelativeDir', @_);
+        }
+
+        # Check any arguments are valid
+        if (
+            ! $axmud::CLIENT->intCheck($slot, 0, 7)
+            || (
+                defined $facingDir
+                && (
+                    ! $axmud::CLIENT->ivExists('constShortPrimaryDirHash', $facingDir)
+                    || $facingDir eq 'up'
+                    || $facingDir eq 'down'
+                )
+            )
+        ) {
+            return undef;
+        }
+
+        # If $facingDir is not defined, assume the character is facing north
+        if (! defined $facingDir) {
+
+            $facingDir = 'north';
+        }
+
+        # Find the slot number representing $facingDir. By good fortune, the first eight items in
+        #   GA::Client->constShortPrimaryDirList are in the correct order
+        $otherSlot = $axmud::CLIENT->ivFind('constShortPrimaryDirList', $facingDir);
+
+        # Rotate $slot to take into account the direction the character is facing
+        $slot += $otherSlot;
+        if ($slot > 7) {
+
+            $slot -= 8;
+        }
+
+        return $axmud::CLIENT->ivIndex('constShortPrimaryDirList', $slot);
+    }
+
+    sub fetchRelativeDir {
+
+        # Can be called by anything
+        # Fetch the direction, relative to the direction in which the character is facing, of a
+        #   primary direction. For example:
+        #
+        #   Character is facing     Specified direction Returns
+        #   east                    east                forward
+        #   east                    south               right
+        #   east                    west                backward
+        #   east                    north               left
+        #
+        # Expected arguments
+        #   $dir        - The specified direction (must be one of the following standard primary
+        #                   directions: north/northeast/east/southeast/south/southwest/west/
+        #                   northwest)
+        #
+        # Optional arguments
+        #   $facingDir  - The direction the character is currently facing (must be one of the
+        #                   following standard primary directions: north/northeast/east/southeast/
+        #                   south/southwest/west/northwest)
+        #               - GA::Obj::Map->facingDir can be 'undef', so this function won't complain of
+        #                   improper arguments if $facingDir is 'undef', but no relative direction
+        #                   will be returned
+        #
+        # Return values
+        #   'undef' on improper arguments, if either argument is an invalid direction, if
+        #       $facingDir is 'undef' or if the corresponding relative direction has not been
+        #       defined
+        #   Otherwise returns the equivalent relative direction
+
+        my ($self, $dir, $facingDir, $check) = @_;
+
+        # Local variables
+        my ($slot, $otherSlot);
+
+        # Check for improper arguments
+        if (! defined $dir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->fetchRelativeDir', @_);
+        }
+
+        # Unlike other dictionary object functions, here we don't assume the character is facing
+        #   'north' if $facingDir is not defined
+        if (! $facingDir) {
+
+            return undef;
+        }
+
+        # Check the directions are valid
+        $slot = $axmud::CLIENT->ivFind('constShortPrimaryDirList', $dir);
+        if (! $axmud::CLIENT->intCheck($slot, 0, 7)) {
+
+            return undef;
+        }
+
+        $otherSlot = $axmud::CLIENT->ivFind('constShortPrimaryDirList', $facingDir);
+        if (! $axmud::CLIENT->intCheck($otherSlot, 0, 7)) {
+
+            return undef;
+        }
+
+        # Rotate $slot to take into account the direction the character is facing
+        $slot += $otherSlot;
+        if ($slot > 7) {
+
+            $slot -= 8;
+        }
+
+        # Return the corresponding relative direction (or 'undef' if it's not defined)
+        return $self->ivShow('relativeDirHash', $slot);
+    }
+
     sub sortExits {
 
         # Can be called by anything (no longer called by GA::Task::Locator->processExits)
@@ -2979,6 +3395,7 @@
         my (
             @primaryDirList, @secondaryDirList, @sortedList, @otherList,
             %exitHash, %primaryDirHash, %primaryAbbrevHash, %secondaryDirHash, %secondaryAbbrevHash,
+            %relativeDirHash, %relativeAbbrevHash,
         );
 
         # (No improper arguments to check)
@@ -3005,6 +3422,8 @@
         @secondaryDirList = $self->secondaryDirList;
         %secondaryDirHash = $self->secondaryDirHash;
         %secondaryAbbrevHash = $self->secondaryAbbrevHash;
+        %relativeDirHash = $self->relativeDirHash;
+        %relativeAbbrevHash = $self->relativeAbbrevHash;
 
         # @sortedList is the list of exits, in the default order. Add primary directions
         foreach my $standard (@primaryDirList) {
@@ -3051,6 +3470,37 @@
                 && exists $exitHash{$secondaryAbbrevHash{$recognised}}
             ) {
                 $match = $secondaryAbbrevHash{$recognised};
+                $number = $exitHash{$match};
+                delete $exitHash{$match};
+            }
+
+            if ($match) {
+
+                for (my $count = 0; $count < $number; $count++) {
+
+                    push (@sortedList, $match);
+                }
+            }
+        }
+
+        # Add relative directions
+        for (my $count = 0; $count < 8; $count++) {
+
+            my ($match, $number);
+
+            if (
+                exists $relativeDirHash{$count}
+                && exists $exitHash{$relativeDirHash{$count}}
+            ) {
+                $match = $relativeDirHash{$count};
+                $number = $exitHash{$match};
+                delete $exitHash{$match};
+
+            } elsif (
+                exists $relativeAbbrevHash{$count}
+                && exists $exitHash{$relativeAbbrevHash{$count}}
+            ) {
+                $match = $relativeAbbrevHash{$count};
                 $number = $exitHash{$match};
                 delete $exitHash{$match};
             }
@@ -3111,7 +3561,7 @@
         my (
             @primaryDirList, @secondaryDirList, @sortedList, @otherList,
             %dirHash, %objHash, %primaryDirHash, %primaryAbbrevHash, %secondaryDirHash,
-            %secondaryAbbrevHash,
+            %secondaryAbbrevHash, %relativeDirHash, %relativeAbbrevHash,
         );
 
         # (No improper arguments to check)
@@ -3148,6 +3598,8 @@
         @secondaryDirList = $self->secondaryDirList;
         %secondaryDirHash = $self->secondaryDirHash;
         %secondaryAbbrevHash = $self->secondaryAbbrevHash;
+        %relativeDirHash = $self->relativeDirHash;
+        %relativeAbbrevHash = $self->relativeAbbrevHash;
 
         # @sortedList is the list of exit objects, in the default order. Add primary directions
         foreach my $standard (@primaryDirList) {
@@ -3215,6 +3667,41 @@
             }
         }
 
+        # Add relative directions
+        for (my $count = 0; $count < 8; $count++) {
+
+            my ($match, $matchObj, $number);
+
+            if (
+                exists $relativeDirHash{$count}
+                && exists $dirHash{$relativeDirHash{$count}}
+            ) {
+                $match = $relativeDirHash{$count};
+                $matchObj = $objHash{$match};
+                $number = $dirHash{$match};
+
+                delete $dirHash{$match};
+
+            } elsif (
+                exists $relativeAbbrevHash{$count}
+                && exists $dirHash{$relativeAbbrevHash{$count}}
+            ) {
+                $match = $relativeAbbrevHash{$count};
+                $matchObj = $objHash{$match};
+                $number = $dirHash{$match};
+
+                delete $dirHash{$match};
+            }
+
+            if ($match) {
+
+                for (my $count = 0; $count < $number; $count++) {
+
+                    push (@sortedList, $matchObj);
+                }
+            }
+        }
+
         # Now, any exits in @objList which aren't primary or secondary directions will still be
         #   in %dirHash. Add them to @otherList in their original order
         foreach my $exitObj (@objList) {
@@ -3254,20 +3741,28 @@
         # If the recognised secondary direction doesn't have an abbreviation (which it doesn't, by
         #   default), returns 'undef')
         #
+        # Given a recognised relative direction, returns the corresponding abbreviated direction
+        #       (re.g. converts 'forward' to 'fw')
+        # If the recognised relative direction doesn't have an abbreviation (which it doesn't, by
+        #   default), returns 'undef')
+        #
         # Otherwise, returns the direction unmodified
         #
         # Expected arguments
-        #   $dir    - The standard or custom primary direction to abbreviate
+        #   $dir    - The standard, custom primary/secondary or relative direction to abbreviate
         #
         # Return values
-        #   'undef' on improper arguments or if $dir is a recognised secondary direction which has
-        #       no abbreviation
+        #   'undef' on improper arguments or if $dir is a recognised secondary/relative direction
+        #       which has no abbreviation
         #   The abbreviated (or original) direction, otherwise
 
         my ($self, $dir, $check) = @_;
 
         # Local variables
-        my ($type, $standard, $recognised);
+        my (
+            $type, $standard, $recognised, $index,
+            %revHash,
+        );
 
         # Check for improper arguments
         if (! defined $dir || defined $check) {
@@ -3283,28 +3778,40 @@
         }
 
         $type = $self->ivShow('combDirHash', $dir);
+        if (defined $type) {
 
-        # If it's a custom primary direction...
-        if (defined $type && $type eq 'primaryDir') {
+            # If it's a custom primary direction...
+            if ($type eq 'primaryDir') {
 
-            # Find the standard primary direction
-            $standard = $self->ivShow('combRevDirHash', $dir);
-            # Convert that into the custom abbreviated direction
-            return $self->ivShow('primaryAbbrevHash', $standard);
+                # Find the standard primary direction
+                $standard = $self->ivShow('combRevDirHash', $dir);
+                # Convert that into the custom abbreviated direction
+                return $self->ivShow('primaryAbbrevHash', $standard);
 
-        # If it's a recognised secondary direction...
-        } elsif (defined $type && $type eq 'secondaryDir') {
+            # If it's a recognised secondary direction...
+            } elsif ($type eq 'secondaryDir') {
 
-            # Find the recognised secondary direction
-            $recognised = $self->ivShow('combRevDirHash', $dir);
-            # Convert that into the custom abbreviated direction
-            return $self->ivShow('secondaryAbbrevHash', $recognised);
+                # Find the recognised secondary direction
+                $recognised = $self->ivShow('combRevDirHash', $dir);
+                # Convert that into the custom abbreviated direction
+                return $self->ivShow('secondaryAbbrevHash', $recognised);
 
-        } else {
+            # If it's a recognised relative direction...
+            } elsif ($type eq 'relativeDir') {
 
-            # Return the direction, unmodified
-            return $dir;
+                # $dir is a value in $self->relativeDirHash; find the corresponding key
+                %revHash = reverse $self->relativeDirHash;
+                $index = $revHash{$dir};
+                if (defined $index) {
+
+                    # Convert it into the abbreviated relative direction
+                    return ($self->ivShow('relativeAbbrevHash', $index));
+                }
+            }
         }
+
+        # Return the direction, unmodified
+        return $dir;
     }
 
     sub unabbrevDir {
@@ -3314,14 +3821,18 @@
         # Given an abbreviated custom primary direction, returns the corresponding unabbreviated
         #   direction (e.g. converts 'n' to 'nord')
         #
-        # Given an abbreviated recognised secondary direction, returns the corresponding
+        # Given a recognised abbreviated secondary direction, returns the corresponding
         #   unabbreviated direction
         #       (e.g. converts 'o' to 'out')
+        #
+        # Given a recognised abbreviated relative direction, returns the corresponding
+        #   unabbreviated direction
+        #       (e.g. converts 'forward' to 'fw')
         #
         # Otherwise, returns the direction unmodified
         #
         # Expected arguments
-        #   $dir    - The abbreviated custom primary direction to unabbreviate
+        #   $dir    - The standard, custom primary/secondary or relative direction to unabbreviate
         #
         # Return values
         #   'undef' on improper arguments
@@ -3330,7 +3841,10 @@
         my ($self, $dir, $check) = @_;
 
         # Local variables
-        my ($type, $standard, $recognised);
+        my (
+            $type, $standard, $recognised, $index,
+            %revHash,
+        );
 
         # Check for improper arguments
         if (! defined $dir || defined $check) {
@@ -3339,28 +3853,40 @@
         }
 
         $type = $self->ivShow('combDirHash', $dir);
+        if (defined $type) {
 
-        # If it's an abbreviated custom primary direction...
-        if (defined $type && $type eq 'primaryAbbrev') {
+            # If it's an abbreviated custom primary direction...
+            if (defined $type && $type eq 'primaryAbbrev') {
 
-            # Find the standard primary direction
-            $standard = $self->ivShow('combRevDirHash', $dir);
-            # Convert that into the custom unabbreviated direction
-            return $self->ivShow('primaryDirHash', $standard);
+                # Find the standard primary direction
+                $standard = $self->ivShow('combRevDirHash', $dir);
+                # Convert that into the custom unabbreviated direction
+                return $self->ivShow('primaryDirHash', $standard);
 
-        # If it's an abbreviated recognised secondary direction...
-        } elsif (defined $type && $type eq 'secondaryAbbrev') {
+            # If it's a recognised abbreviated secondary direction...
+            } elsif (defined $type && $type eq 'secondaryAbbrev') {
 
-            # Find the recognised secondary direction
-            $recognised = $self->ivShow('combRevDirHash', $dir);
-            # Convert that into the recognised unabbreviated direction
-            return $self->ivShow('secondaryDirHash', $recognised);
+                # Find the recognised secondary direction
+                $recognised = $self->ivShow('combRevDirHash', $dir);
+                # Convert that into the recognised unabbreviated direction
+                return $self->ivShow('secondaryDirHash', $recognised);
 
-        } else {
+            # If it's a recognised abbreviated relative direction...
+            } elsif ($type eq 'relativeDir') {
 
-            # Return the direction, unmodified
-            return $dir;
+                # $dir is a value in $self->relativeAbbrevHash; find the corresponding key
+                %revHash = reverse $self->relativeAbbrevHash;
+                $index = $revHash{$dir};
+                if (defined $index) {
+
+                    # Convert it into the unabbreviated relative direction
+                    return ($self->ivShow('relativeDirHash', $index));
+                }
+            }
         }
+
+        # Return the direction, unmodified
+        return $dir;
     }
 
     ##################
@@ -3495,6 +4021,11 @@
         { my $self = shift; return %{$self->{secondaryOppAbbrevHash}}; }
     sub secondaryAutoHash
         { my $self = shift; return %{$self->{secondaryAutoHash}}; }
+
+    sub relativeDirHash
+        { my $self = shift; return %{$self->{relativeDirHash}}; }
+    sub relativeAbbrevHash
+        { my $self = shift; return %{$self->{relativeAbbrevHash}}; }
 
     sub speedDirHash
         { my $self = shift; return %{$self->{speedDirHash}}; }

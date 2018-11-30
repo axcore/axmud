@@ -1,11 +1,24 @@
-lkc / listkeycode             Lists keycodes for current keycode object
+lkc / listkeycode             Lists keycodes for the current system
  
    Format:
       ;lkc                    Lists all keycodes (in the normal order)
       ;lkc -s                 Lists all keycodes (sorted alphabetically)
  
    Notes:
-      See the help for ';setkeycode' for more information about keycodes.
+       Keycodes are used by the system to recognise the keys on your keyboard.
+         For example, the F5 key usually has the keycode 'F5', and the two SHIFT 
+         keys often have the keycodes 'Shift_L' and 'Shift_R'.
+      Keycodes vary between systems, so Axmud offers a set of standard keycodes
+         (for example 'f5' and 'shift'). Axmud represents two keys pressed down
+         together as a keycode string like 'shift f5' or 'ctrl c'. 
+      Axmud's standard keycodes are mostly used with macros; they allow you to 
+         design macros that will work on all systems, not just the one you're 
+         using right now.
+         
+      This command lists Axmud's standard keycodes and the equivalent keycodes
+         on your current system.
+      Use ';listkeycodealternative' to get a list of alternative forms for 
+         Axmud's standard keycodes.
  
    User commands:
       lkc / listkc / listkeycode

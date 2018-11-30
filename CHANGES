@@ -1,3 +1,226 @@
+v1.1.343 (30 Nov 2018)
+--------------------------------------------------------------------------------
+
+Features removed
+- Keycode objects along with the 'keycodes' data file have been completely
+    removed
+- Some Axmud standard keycodes ('kp_up', 'kp_down', 'kp_left', 'kp_right',
+    'kp_page_up', 'kp_page_down', 'kp_home', 'kp_end', 'kp_insert', 'kp_delete')
+    have been removed as they weren't available to MS Windows users. As a
+    result, the cursor up and keypad up keys now share the same standard
+    keycode, 'up'. The same applies to the other keycodes listed above. To
+    update your scripts, just remove the 'kp_' portion of the keycode. Any
+    existing macros will be updated automatically
+
+Automapper new features
+- You can now merge someone else's maps with your own. Firstly, export the
+    world model. The quickest way is from the automapper menu; select
+    'File > Save/export world model...'. Send this file to your friend, who can
+    merge your map into their own by selecting 'File > Merge world model...'.
+    Your friend must be using the same version of Axmud as you (or a later
+    version). There is also a new ';mergemodel' command, if you prefer to work
+    from the command line
+- The automapper has a new dialogue window for use when you want to share your
+    maps with other people, but don't want them to see all of your labels. From
+    the automapper window menu, select 'Labels > Quick label deletion...'; this
+    opens a window in which all labels in all regions are displayed. You can
+    quickly choose which labels to delete and which to keep, before exporting
+    your map in the normal way. (This change is permanent, so before deleting
+    any labels you should make a backup of your map!)
+- In the automapper window, added a new toolbar button set. To use it, use the
+    blue/white paintbrush icon to add some coloured buttons. Click the button
+    and then click a room; the equivalent room flag is added to (or removed
+    from) the room. If multiple rooms are selected, the operation is applied to
+    all of them. See also the Axmud Guide, Section 15.22.2
+- Added relative directions. As far as we know, only Discworld uses them (but
+    Axmud's relative direction are available for any world that needs them). At
+    Discworld, the direction the character is facing changes the way exits are
+    described; so, the exits might be 'forward' and 'left', or they might be
+    'backward' and 'right'. This is now handled automatically; Axmud works out
+    which direction the character is facing, and converts an exit named
+    'forward' into the equivalent map direction like 'east'. If assisted moves
+    are turned on, you can move through the 'forward' exit by typing 'east' or
+    'e', as normal. Discworld players can use the new ';addrelative' and
+    ';deleterelative' commands if they are helpful. For other worlds, you can
+    specify relative directions in the dictionary 'edit' window
+- The direction the character is facing can be set (or reset) artficially by the
+    new ';setfacing' command, or by using ';resetlocator <direction>'
+- Exits can now have an alternative direction (in case an 'enter blue portal'
+    exit sometimes becomes an 'enter red portal' exit, or something)
+- Involuntary exit patterns (seen when your character is moved to a new room
+    without any input from you) and repulse exit patterns (seen when your
+    character tries to move to one room, but is instead moved to a different
+    room) now have an optional destination room. If you specify the destination,
+    the automapper won't get lost. This only applies to patterns stored in a
+    particular room; involuntary/repulse exit patterns for the whole world
+    (stored in the world profile) don't have a destination room at all
+- Added a new exit ornament, 'mystery' (drawn as a dark red square). If you
+    don't know how to pass through an exit, but think it's probably possible to
+    pass through it, you can mark it as a mystery exit
+- You can now select all rooms, exits, labels (etc) in the whole map. You can
+    also now select all impassable or mystery exits
+- The 'Find room...' operation can now look for room tags, as well as room
+    numbers
+- When using crafty moves, 2-way exits (rather than a 1-way exit) are now
+    created, when appropriate
+- You can now add multiple exits to multiple rooms at the same time
+- A map label's style can now be set directly from the popup menu after right-
+    clicking the label
+- The ';setroom' command has been updated with a new switch, ';setroom -l',
+    which sets the last known location (drawn in green) as the new current
+    location. This switch can be combined with others, e.g. use ';setroom -f -l'
+    to set the location and switch to 'follow' mode
+
+Automapper fixes
+- At a few worlds, the automapper was unreliable, in that it frequently got
+    confused about the current location for no obvious reason. The reason, in
+    fact, was incorrect handling of prompts, an issue that only affected those
+    worlds. The prompt handling code has been overhauled and should now be
+    working perfectly at all worlds
+- Axmud's pathfinding algorithms have been improved so that they can create
+    paths through adjacent regions. This should permanently solve the problem of
+    finding a path between two rooms in the same region A, if the only path
+    between them goes via a region B. You can modify the way this is handled.
+    From the automapper menu, click 'Edit > Edit world model ... > Settings
+    > Page 6', and find the 'Simple pathfinding - adjacent region mode'
+- Pathfinding operations failed badly in certain rare situations. Fixed them all
+- After double-clicking a room in a different region, Axmud finds the shortest
+    path to that room, and sends a large number of world commands to get there.
+    The destination room is drawn brown until the character arrives. Axmud no
+    longer draws and then re-draws every room along the path in brown, which
+    greatly reduces the response time after double-clicking a room, or when
+    using a command like ';go' or ';drive'
+- Selected labels were handled badly; you could select a label in one region,
+    and then discovert that a completely separate label in a differnt region was
+    also selected. This is now fixed
+- Very old exported world models (from 2016 or earlier) could not be loaded or
+    imported. Fixed
+- The ';locateroom' command often produced too many false positives, or not
+    enough matches, depending on various factors. It should be working much
+    better now
+- 'Illegal direction' error messages are now optional, and turned off by
+    default. From the 'main' window, select 'Edit > Axmud preferences...
+    > Settings > Page 10 > Illegal exit directions' to turn them back on
+- Fixed a nasty error message seen when moving using an assisted move like
+    'backward' and when the destination room doesn't match the expected one
+- The way non-standard directions is handled has been improved. An exit like
+    'swim east' is now automatically drawn as an east exit. Some problems with
+    clashing directions have been fixed
+- After dragging multiple rooms/labels around the map, and when connecting an
+    exit to a room by clicking on the room, Axmud doesn't try to redraw the
+    whole region any more
+- Fixed several problems with the automapper code that could cause
+    inconsistencies in the world model (and which can be detected using the
+    ';testmodel' command)
+- The ';testmodel' command now limits the number of error messages it will show
+    (so it will no longer try to show 100,000 error messages, if there's some
+    inconsistency in all of the exits in the map)
+- Improved the look of several of the automapper window's dialogue windows
+- When transferring rooms to a different region, the map is now automatically
+    centred over the transferred rooms
+- When dragging a map label with a border, only the text was dragged. Fixed
+- Fixed issues with the map's background colouring. The blue selection box did
+    not appear if the starting position was over a coloured portion of the map.
+    Also, when trying to delete a coloured portion, several adjacent coloured
+    portions were often deleted
+- Coloured buttons in several of the automapper window's toolbars were
+    effectively invisible if they were the same colour as the surrounding
+    window. Added a black border to make them visible
+- Fixed several issues with automapper tracking, which keeps the current room
+    in the visible portion of the map
+- When moving around a map in 'connect offline' mode, Axmud displays room
+    titles/descriptions. For some worlds, the description was displayed twice;
+    this will no longer happen
+- Users are now prompted for confirmation before deleting a single room
+
+Major new features
+- Axmud now supports the CHARSET and NEW-ENVIRON protocols, IAC GA control
+    sequences and TCP keep alive packets
+- If you want Axmud to store its data files in a different location (for
+    example, on an external hard drive, on a USB stick or on a network drive),
+    you can now do so without editing the Axmud source code. In Axmud's
+    installation directory (folder) there's an empty file called 'datadir.cfg'.
+    You can edit that file to specify a path to a directory, e.g.
+    'F:\mydata\axmud' or '/home/myname/data/axmud'. Alternatively, you can use
+    the new ';setdatadirectory' and ';listdatadirectory' commands. Restart Axmud
+    to apply the changes
+- Axmud could already auto-detect weblinks like 'http://deathmud.com', and make
+    them clickable. It can now detect shorter weblinks like 'deathmud.com'.
+    Detection of shorter weblinks can be turned off if they are an annoyance
+    (from the 'main' window menu, deselect 'Edit > Axmud preferences...
+    > Settings > Page 1 > Make short links like deathmud.com clickable') or use
+    the new ';toggleshortlink' command
+- A few worlds send information about the character's health points, and so on,
+    via MXP. This data is displayed in an additional gauge at the bottom of the
+    'main' window. Axmud can now automatically convert and store this data. For
+    this, you must specify which MXP variables correspond to which Status task
+    variables. From the 'main' window menu, click 'Edit > Edit current world...
+    > Status > Page 5'. Enter an MXP entity like 'hp' and the equivalent Status
+    task variable like 'health_points'. For an example, connect to Discworld (in
+    online or offline mode), for which the variables have already been entered
+- For worlds (such as Discworld) that use MXP text gauges, Axmud no longer tries
+    to show a maximum value if none exists (e.g. maximum health points are shown
+    but maximum experience points are not)
+
+Major fixes
+- At many worlds, Axmud did not display bold text correctly if it was in the
+    default text colour. Fixed
+- Users can use their TAB key to cycle through recent commands in the 'main'
+    window's command entry box. However, it didn't work in 'connect offline'
+    mode. Fixed
+- Fixed several problems with MXP clickable links, which meant that exits at
+    Discworld were not clickable and that, occasionally, MXP tags were actually
+    visible in the 'main' window (which could confuse the automapper)
+- In some situations, when multiple clickable links appeared on the same line,
+    only the first one was actually clickable. Fixed
+- Fixed several issues with the ';exportfiles' and ';importfiles' commands
+- Some tasks, such as the Channels and Divert tasks, were an inserting an empty
+    line at the top of their task windows after being reset. Fixed
+- Fixed ';loadplugin' command which didn't work at all if no file path was
+    specified
+- For pre-configured worlds that require a patch, a dialogue window appears
+    asking for confirmation. This window appeared every time Axmud started; it
+    should now appear only once
+- When a world was cloned, its triggers, aliases, macros, timers and hooks were
+    not cloned. This is now fixed, and cloning a world should create clones of
+    its interfaces
+
+Minor new features
+- The search box in the Connections window now initiates a search when you press
+    your ENTER key
+- You can now create temporary triggers, aliases, macros, timers and hooks from
+    the main 'edit' window; it's no longer necessary to create the interface,
+    open its own 'edit' window and mark it as temporary from there
+- When system messages can't be displayed in the 'main' window, the flashing '!'
+    button now flashes in a colour that matches the most recent system message
+- Several improvements to the way recordings are handled. When recordings are
+    in progressed, or paused, an icon appears in the 'main' window's command
+    entry box. 'Main' window menu items are now desensitised to prevent you
+    stopping a recording, when you only wanted to resume a paused recording
+- New hook event, 'map_lost', which fires whenever the automapper gets lost
+    (Axmud already had 'map_no_room', which fires when the automapper gets lost
+    but also when the Locator task is reset)
+
+Minor fixes
+- Following changes to the Status task in the previous release, the ';setlife'
+    command was unusable. Fixed that, and also fixed the character 'edit' window
+    so that changes to a character's life status were transmitted to the Status
+    task immediately
+- Updated version numbers in incorporated code to fix CPAN Kwalitee issues
+- Fixed 'Use of unitialized value' error seen at login in Luminari
+- Fixed crash seen at logoff in Materia Magica, caused by ATCP/GMCP issues
+- The ';copyrecording' command tripped up an a direction like 'in' that can't be
+    abbreviated; fixed it. The format of the command's output has also been
+    improved
+- When doing an automatic login in 'tiny' mode (for example, at HellMOO), the
+    character's password is now obscured when it's displayed (in green) in the
+    'main' window
+
+v1.1.273 (1 Nov 2018)
+--------------------------------------------------------------------------------
+Minor fixes
+- CPAN-only release to fix indexing issues
+
 v1.1.270 (31 Oct 2018)
 --------------------------------------------------------------------------------
 
@@ -71,7 +294,7 @@ Automapper new features
     search. The search was also broken, and has been fixed
 - The automapper will now prompt you before deleting multiple rooms and/or
     labels
-   
+
 Automapper fixes
 - Pathfinding routines were unable to find a path between two rooms in the same
     region, going via another region. This problem has been fixed
@@ -124,7 +347,7 @@ Major new features
     TESTPAT() and TESTPAT$()
 - All interfaces (triggers, aliases, macros, timers and hooks) now have an
     optional cooldown attribute. If set, the interface won't fire again until
-    the cooldown period has expired 
+    the cooldown period has expired
 - For rewriter triggers and aliases that use group substrings, it's no longer
     necessary to enclose the substitution in double quotes "..." (existing
     triggers and aliases will continue to work as before, so there's no need to
@@ -144,7 +367,7 @@ Major new features
     changes, although some values that were not captured correctly (most notably
     quest points) will now work. A nice bonus is that coloured gauges are
     visible as soon as the session starts
-- In the Status task, the distinction between standard and custom values has 
+- In the Status task, the distinction between standard and custom values has
     been removed; if you capture a number and call it something like
     'cats_total', that number is automatically available for display in the
     task window or the main window's gauges
@@ -170,7 +393,7 @@ Major fixes
     room was moved in a fixed direction (or transferred to a new region)
 - Macros created by the Compass task were not destroyed when the task was halted
     or reset. Fixed
-    
+
 Minor new features
 - Routes (see the help for ';addroute') can now use speedwalk commands like
     '.3nw2s', as well as the more conventional 'n;n;n;w;s;s' and
@@ -198,7 +421,7 @@ Minor new features
     each of the sub-directories. A few new sub-directories have been added there
 - You can use ';loadplugin -s' to load all of Axmud's standard plugins at the
     same time (but this is only useful for developers)
-    
+
 Minor fixes
 - New hook events, 'map_room', 'map_no_room', 'map_rescue_on',
     'map_rescue_merge', 'map_rescue_off', 'textview_resize', 'system_text',

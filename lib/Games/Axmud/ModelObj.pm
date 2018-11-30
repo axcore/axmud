@@ -95,9 +95,6 @@
         #   everything it contains) at the end of the current session, or if that's not possible, at
         #   the beginning of the next one
         $self->{tempRegionFlag}     = FALSE;
-        # Blessed reference of the regionmap (GA::Obj::Regionmap) which is attached to this region
-        #   (if any)
-        $self->{regionmapObj}       = undef;            # Set by GA::Obj::WorldModel->addRegion
 
         # Bless the object into existence
         bless $self, $class;
@@ -640,7 +637,7 @@
         #   GA::ModelObj::Room objects, and then counts each of their exits)
         # Keeps track of the number of unallocated, unallocatable, uncertain and incomplete exits,
         #   as well as the total number of exits. (Distinguishes between normal incomplete exits,
-        #   and incomplete exits which have been marked as 'impassabe')
+        #   and incomplete exits which have been marked as 'impassabe'/'mystery')
         #
         # Expected arguments
         #   $session    - The calling function's GA::Session
@@ -650,7 +647,7 @@
         #   Otherwise, returns the counts as a list in the form
         #       (
         #           total_exits_in_region, unallocated_count, unallocatable_count, uncertain_count,
-        #           incomplete_not_impassable, incomplete_impassable_count,
+        #           incomplete_not_impassable, incomplete_impassable_count, incomplete_myster_count,
         #       )
 
         my ($self, $session, $check) = @_;
@@ -658,7 +655,7 @@
         # Local variables
         my (
             $exitCount, $unallocatedCount, $unallocatableCount, $uncertainCount, $incompleteCount,
-            $incompImpassCount,
+            $incompImpassCount, $incompMysteryCount,
             @emptyList,
         );
 
@@ -676,6 +673,7 @@
         $uncertainCount = 0;
         $incompleteCount = 0;
         $incompImpassCount = 0;
+        $incompMysteryCount = 0;
 
         OUTER: foreach my $num ($self->ivKeys('childHash')) {
 
@@ -711,6 +709,8 @@
 
                         if ($exitObj->exitOrnament eq 'impass') {
                             $incompImpassCount++;
+                        } elsif ($exitObj->exitOrnament eq 'mystery') {
+                            $incompMysteryCount++;
                         } elsif ($exitObj->randomType eq 'none') {
                             $incompleteCount++;
                         }
@@ -721,7 +721,7 @@
 
         return (
             $exitCount, $unallocatedCount, $unallocatableCount, $uncertainCount, $incompleteCount,
-            $incompImpassCount,
+            $incompImpassCount, $incompMysteryCount,
         );
     }
 
@@ -810,8 +810,6 @@
     # Group 5 IVs
     sub tempRegionFlag
         { $_[0]->{tempRegionFlag} }
-    sub regionmapObj
-        { $_[0]->{regionmapObj} }
 }
 
 { package Games::Axmud::ModelObj::Room;
@@ -938,7 +936,12 @@
         # When an one-way exit is created, the exit's destination room - this object - is told to
         #   update the hash
         $self->{oneWayExitHash}         = {};
-        # We have the same issue with random exits which lead to a defined list of rooms, one of
+        # Also the same issue with involuntary/repulse exits patterns which have a defined
+        #   destination room which is this room. When a pattern with a destination room is added, it
+        #   is stored here. Hash in the form
+        #       $invRepExitHash{departure_room_number} = undef
+        $self->{invRepExitHash}         = {};
+        # Also the same issue with random exits which lead to a defined list of rooms, one of which
         #   which is this room. When a random exit adds this room to its list, it is stored here.
         #   Hash in the form
         #       $randomExitHash{exit_number} = undef
@@ -1002,25 +1005,44 @@
         #       ('direction' matches an element in $self->sortedExitList)
         # For non-model rooms, this hash won't include hidden exits
         $self->{exitNumHash}            = {};
+
         # List of failed exit patterns for this room, which tells the Locator task that a movement
         #   command has failed (but that the exit used was blocked only temporarily, for example
         #   when a guard is sometimes present, and sometimes not)
         $self->{failExitPatternList}
-                                        = [];
-        # List of involuntary exit patterns for this room, which tells the Locator task that an
-        #   involuntary move has taken place
-        $self->{involuntaryExitPatternList}
-                                        = [];
-        # List of repulsed exit patterns for this room, which tells the Locator that not only did
-        #   an attempted move fail, but that the character has been moved to a new (different)
-        #   room - often in the opposite direction
-        $self->{repulseExitPatternList}
                                         = [];
         # A list of strings which match the text sent by the world, when we leave this room and
         #   arrive at the destination room, but when the world doesn't send a room statement for the
         #   destination room (called a 'faller' in LPmuds)
         $self->{specialDepartPatternList}
                                         = [];
+        # Hash of involuntary exit patterns for this room, which tells the Locator task that an
+        #   involuntary move has taken place (for example, when dragged by a river from one room to
+        #   another)
+        # The keys in the hash are patterns matching a line of received text
+        # The corresponding values can be 'undef' if the destination room is unknown. Otherwise, it
+        #   can be any of these (checked in this order):
+        #       1. The destination room's number
+        #       2. A direction matching which matches an exit object's nominal direction, >dir
+        #       3. A standard primary direction which matches an exit object's drawn map direction,
+        #           ->mapDir
+        #       4. Any other value (including if no matching exits exist) is treated like an unknown
+        #           destination room
+        $self->{involuntaryExitPatternHash}
+                                        = {};
+        # Hash of repulsed exit patterns for this room, which tells the Locator that not only did
+        #   an attempted move fail, but that the character has been moved to a new (different)
+        #   room - often in the opposite direction
+        # The keys in the hash are patterns matching a line of received text
+        # The corresponding values can be 'undef' if the destination room is unknown. Otherwise, it
+        #   can be any of these (checked in this order):
+        #       1. The destination room's number
+        #       2. A direction matching which matches an exit object's nominal direction, >dir
+        #       3. A standard primary direction which matches an exit object's drawn map direction,
+        #           ->mapDir
+        #       4. Any other value (including if no matching exits exist) is treated like an unknown
+        #           destination room
+        $self->{repulseExitPatternHash} = {};
 
         # For worlds that provide a list of commands available in the room (typically instead of an
         #   exit list, but not necessarily), a list of those commands
@@ -1149,6 +1171,8 @@
         { my $self = shift; return %{$self->{uncertainExitHash}}; }
     sub oneWayExitHash
         { my $self = shift; return %{$self->{oneWayExitHash}}; }
+    sub invRepExitHash
+        { my $self = shift; return %{$self->{invRepExitHash}}; }
     sub randomExitHash
         { my $self = shift; return %{$self->{randomExitHash}}; }
     sub checkedDirHash
@@ -1173,12 +1197,12 @@
         { my $self = shift; return %{$self->{exitNumHash}}; }
     sub failExitPatternList
         { my $self = shift; return @{$self->{failExitPatternList}}; }
-    sub involuntaryExitPatternList
-        { my $self = shift; return @{$self->{involuntaryExitPatternList}}; }
-    sub repulseExitPatternList
-        { my $self = shift; return @{$self->{repulseExitPatternList}}; }
     sub specialDepartPatternList
         { my $self = shift; return @{$self->{specialDepartPatternList}}; }
+    sub involuntaryExitPatternHash
+        { my $self = shift; return %{$self->{involuntaryExitPatternHash}}; }
+    sub repulseExitPatternHash
+        { my $self = shift; return %{$self->{repulseExitPatternHash}}; }
 
     sub roomCmdList
         { my $self = shift; return @{$self->{roomCmdList}}; }

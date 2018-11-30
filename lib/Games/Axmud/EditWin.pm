@@ -438,10 +438,10 @@
 
     sub tagsTab_refreshList {
 
-        # Called by $self->tagsTab to refresh the GA::Gtk::Simple::List and Gtk2::TextView
+        # Called by $self->tagsTab to refresh the GA::Obj::Simple::List and Gtk2::TextView
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #   $textView, $textView2, $textView3
         #               - The Gtk2::TextViews used
@@ -639,10 +639,10 @@
 
     sub mxpTab_refreshList {
 
-        # Called by $self->mxpTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->mxpTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - Number of columns in the simple list
         #
         # Return values
@@ -1695,11 +1695,11 @@
     sub addCageButtons {
 
         # Called by $self->commandsTab and $self->wordsTab to create the editing buttons
-        #   beneath the GA::Gtk::Simple::List
+        #   beneath the GA::Obj::Simple::List
         #
         # Expected arguments
         #   $table      - The current Gtk2::Table displayed in the notebook
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $entry      - A Gtk2::Entry needed by one of the buttons
         #   $iv         - The IV being edited in this tab - 'cmdHash' or 'wordHash'
         #   $columns    - The number of columns
@@ -1794,10 +1794,10 @@
     sub refreshList {
 
         # Called by $self->commandsTab and $self->wordsTab to reset the
-        #   GA::Gtk::Simple::List
+        #   GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #   $iv         - The IV being edited in this tab - 'cmdHash' or 'wordHash'
         #
@@ -2053,7 +2053,7 @@
 
     sub interfaces1Tab_refreshList {
 
-        # Called by $self->interfaces1Tab (etc) to reset the GA::Gtk::Simple::List
+        # Called by $self->interfaces1Tab (etc) to reset the GA::Obj::Simple::List
         #
         # Expected arguments
         #   (none besides $self)
@@ -2168,7 +2168,7 @@
 
     sub interfaces2Tab_refreshList {
 
-        # Called by $self->interfaces2Tab (etc) to reset the GA::Gtk::Simple::List
+        # Called by $self->interfaces2Tab (etc) to reset the GA::Obj::Simple::List
         #
         # Expected arguments
         #   (none besides $self)
@@ -2228,11 +2228,11 @@
     sub interfacesTab_addButtons {
 
         # Called by $self->interfaces1Tab and $self->interfaces2Tab to create the editing buttons
-        #   beneath the GA::Gtk::Simple::List
+        #   beneath the GA::Obj::Simple::List
         #
         # Expected arguments
         #   $table      - The current Gtk2::Table displayed in the notebook
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -2296,24 +2296,30 @@
 
         $self->addLabel($table, 'Name <i>(optional)</i>',
             1, 3, 10, 11);
-        my $entry3 = $self->addEntryWithIcon($table, undef, 'string', undef, undef,
-            3, 6, 10, 11);
 
-        my ($checkButton, $checkButton2, $checkButton3);
+        my ($entry3, $checkButton, $checkButton2, $checkButton3, $checkButton4);
         if ($self->singular eq 'trigger') {
 
+            $entry3 = $self->addEntryWithIcon($table, undef, 'string', undef, undef,
+                3, 4, 10, 11);
+
             $self->addLabel($table, 'Starts enabled',
-                6, 7, 10, 11);
+                4, 5, 10, 11);
             $checkButton = $self->addCheckButton($table, undef, TRUE,
-                7, 8, 10, 11, 1, 0.5);
+                5, 6, 10, 11, 1, 0.5);
             $self->addLabel($table, 'Splitter',
-                8, 9, 10, 11);
+                6, 7, 10, 11);
             $checkButton2 = $self->addCheckButton($table, undef, TRUE,
-                9, 10, 10, 11, 1, 0.5);
+                7, 8, 10, 11, 1, 0.5);
             $self->addLabel($table, 'Rewriter',
-                10, 11, 10, 11);
+                8, 9, 10, 11);
             $checkButton3 = $self->addCheckButton($table, undef, TRUE,
+                9, 10, 10, 11, 1, 0.5);
+            $self->addLabel($table, 'Temp',
+                10, 11, 10, 11);
+            $checkButton4 = $self->addCheckButton($table, undef, TRUE,
                 11, 12, 10, 11, 1, 0.5);
+
             $checkButton2->signal_connect('toggled' => sub {
 
                 if ($checkButton2->get_active()) {
@@ -2346,9 +2352,17 @@
 
         } else {
 
+            $entry3 = $self->addEntryWithIcon($table, undef, 'string', undef, undef,
+                3, 6, 10, 11);
+
             $self->addLabel($table, 'Starts enabled',
-                7, 11, 10, 11);
+                6, 8, 10, 11);
             $checkButton = $self->addCheckButton($table, undef, TRUE,
+                8, 9, 10, 11, 1, 0.5);
+
+            $self->addLabel($table, 'Temporary',
+                9, 11, 10, 11);
+            $checkButton4 = $self->addCheckButton($table, undef, TRUE,
                 11, 12, 10, 11, 1, 0.5);
         }
         # New interfaces should be enabled by default
@@ -2365,9 +2379,10 @@
         $button->signal_connect('clicked' => sub {
 
             my (
-                $stimulus, $response, $interfaceName, $enabledFlag, $rewriterFlag, $stimulusSwitch,
-                $responseSwitch, $enabledSwitch, $rewriterSwitch, $nameSwitch, $rewriterString,
-                $splitterFlag, $splitterSwitch, $splitterString, $result,
+                $stimulus, $response, $interfaceName, $enabledFlag, $stimulusSwitch,
+                $responseSwitch, $nameSwitch, $enabledSwitch, $splitterFlag, $splitterSwitch,
+                $splitterString, $rewriterFlag, $rewriterSwitch, $rewriterString, $tempSwitch,
+                $tempString, $result,
             );
 
             # Get the interface stimulus
@@ -2425,6 +2440,17 @@
                     $rewriterString = '';
                 }
 
+                if ($checkButton4->get_active()) {
+
+                    $tempSwitch
+                        = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'temporary');
+                    $tempString = ' -' . $tempSwitch . ' 1';
+
+                } else {
+
+                    $tempString = '';
+                }
+
                 if ($stimulus =~ m/[\<|\>]/ || $response =~ m/[\<|\>]/) {
 
                     $self->showMsgDialogue(
@@ -2444,7 +2470,7 @@
                         . ' -' . $stimulusSwitch . ' <' . $stimulus
                         . '> -' . $responseSwitch . ' <' . $response
                         . '> -' . $enabledSwitch . ' ' . $enabledFlag
-                        . $splitterString . $rewriterString
+                        . $splitterString . $rewriterString . $tempString
                         . ' -' . $nameSwitch . ' <' . $interfaceName
                         . '> -d ' . $self->editObj->profName,
                         $self->pseudoCmdMode,
@@ -2457,7 +2483,7 @@
                         . ' -' . $stimulusSwitch . ' <' . $stimulus
                         . '> -' . $responseSwitch . ' <' . $response
                         . '> -' . $enabledSwitch . ' ' . $enabledFlag
-                        . $splitterString . $rewriterString
+                        . $splitterString . $rewriterString . $tempString
                         . ' -d ' . $self->editObj->profName,
                         $self->pseudoCmdMode,
                     );
@@ -2525,7 +2551,7 @@
             'Delete',
             'Delete the selected ' . $self->singular,
             undef,
-            3, 5, 11, 12,
+            3, 4, 11, 12,
             TRUE,               # Irreversible
         );
         $button3->signal_connect('clicked' => sub {
@@ -2558,7 +2584,7 @@
             'Dump',
             'Display this list of ' . $self->plural . ' in the \'main\' window',
             undef,
-            8, 10, 11, 12,
+            6, 9, 11, 12,
         );
         $button4->signal_connect('clicked' => sub {
 
@@ -2582,7 +2608,7 @@
             'Refresh list',
             'Refresh the list of ' . $self->plural,
             undef,
-            10, 12, 11, 12,
+            9, 12, 11, 12,
         );
         $button5->signal_connect('clicked' => sub {
 
@@ -3562,7 +3588,7 @@
 
     sub routes1Tab_refreshList {
 
-        # Called by $self->routes1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->routes1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
         #   (none besides $self)
@@ -3684,7 +3710,7 @@
 
     sub routes2Tab_refreshList {
 
-        # Called by $self->routes2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->routes2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
         #   (none besides $self)
@@ -3737,11 +3763,11 @@
     sub routesTab_addEditButtons {
 
         # Called by $self->routes1Tab and $self->routes2Tab to create the editing buttons beneath
-        #   the GA::Gtk::Simple::List
+        #   the GA::Obj::Simple::List
         #
         # Expected arguments
         #   $table      - The current Gtk2::Table displayed in the notebook
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -4821,10 +4847,10 @@
 
     sub overrideTab_refreshList {
 
-        # Called by $self->overrideTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->overrideTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -7288,12 +7314,12 @@
 
     sub numbersTab_refreshList {
 
-        # Called by $self->numbersTab to refresh the GA::Gtk::Simple::List, ordering the data by
+        # Called by $self->numbersTab to refresh the GA::Obj::Simple::List, ordering the data by
         #   each key-value pair's value (instead of ordering it by key, as usual)
         # Also called by $self->clock1Tab, ->clock2Tab and ->clock3Tab to do the same job
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #   $iv         - The IV being edited
         #
@@ -10091,7 +10117,7 @@
             'Unknown word', 'text',
         );
 
-        my $slWidget = Games::Axmud::Gtk::Simple::List->new(@columnList);
+        my $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
         $slWidget->get_selection->set_mode('multiple');
 
         # Make the simple list scrollable
@@ -10194,11 +10220,11 @@
 
         # Called by $self->words2Tab
         # Adds a single button that, when clicked, runs the client command ';addword' on the
-        #   selected item(s) in the GA::Gtk::Simple::List displayed in this tab
+        #   selected item(s) in the GA::Obj::Simple::List displayed in this tab
         #
         # Expected arguments
         #   $table      - The Gtk2::Table for the tab
-        #   $slWidget   - The GA::Gtk::Simple::List displayed
+        #   $slWidget   - The GA::Obj::Simple::List displayed
         #   $title      - The button's title
         #   $tooltips   - Tooltips for the button
         #   $cmd        - The text of the command to send, e.g. 'addword -r' to which the selected
@@ -10509,10 +10535,10 @@
 
     sub contents3Tab_refreshList {
 
-        # Called by $self->contentsTab to refresh the GA::Gtk::Simple::List, displaying only keys
+        # Called by $self->contentsTab to refresh the GA::Obj::Simple::List, displaying only keys
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -10576,6 +10602,7 @@
         $self->directions2Tab($innerNotebook);
         $self->directions3Tab($innerNotebook);
         $self->directions4Tab($innerNotebook);
+        $self->directions5Tab($innerNotebook);
 
         return 1;
     }
@@ -10695,6 +10722,7 @@
             my (
                 $standard, $dir, $abbrev, $opp, $oppAbbrev, $msg, $hashRef,
                 %dirHash, %abbrevHash, %oppHash, %oppAbbrevHash, %secDirHash, %secAbbrevHash,
+                %relDirHash, %relAbbrevHash,
                 %combDirHash,
             );
 
@@ -10746,6 +10774,9 @@
                     %secAbbrevHash = $self->editObj->secondaryAbbrevHash;
                 }
 
+                %relDirHash = $self->editObj->relativeDirHash;
+                %relAbbrevHash = $self->editObj->relativeAbbrevHash;
+
                 # (Compose our own temporary %combDirHash, in the form
                 #   $combDirHash{custom_primary_dir} = undef
                 #   $combDirHash{recognised_secondary_dir} = undef
@@ -10769,12 +10800,22 @@
 
                 foreach my $key (keys %secDirHash) {
 
-                    $combDirHash{$key} = undef;   # Hash in form $hash{$key} = $key
+                    $combDirHash{$key} = undef;         # Hash in form $hash{$key} = $key
                 }
 
                 foreach my $key (keys %secAbbrevHash) {
 
-                    $combDirHash{$key} = undef;   # Hash in form $hash{$key} = undef
+                    $combDirHash{$key} = undef;         # Hash in form $hash{$key} = undef
+                }
+
+                foreach my $value (values %relDirHash) {
+
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$slot} = $value
+                }
+
+                foreach my $value (values %relAbbrevHash) {
+
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$slot} = $value
                 }
 
                 # Now we can test whether the directions entered by the user are already in use, or
@@ -10884,10 +10925,10 @@
 
     sub directions1Tab_refreshList {
 
-        # Called by $self->directions1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->directions1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns in the list
         #
         # Optional arguments
@@ -11346,7 +11387,7 @@
                 $dir, $abbrev, $opp, $oppAbbrev, $msg, $auto, $listRef, $hashRef, $count,
                 @dirList,
                 %primDirHash, %primAbbrevHash, %dirHash, %abbrevHash, %oppHash, %oppAbbrevHash,
-                %autoHash, %combDirHash,
+                %autoHash, %relDirHash, %relAbbrevHash, %combDirHash,
             );
 
             if ($self->checkEntryIcon($entry, $entry2, $entry3, $entry4)) {
@@ -11407,6 +11448,9 @@
                     %primAbbrevHash = $self->editObj->primaryAbbrevHash;
                 }
 
+                %relDirHash = $self->editObj->relativeDirHash;
+                %relAbbrevHash = $self->editObj->relativeAbbrevHash;
+
                 if ($self->ivExists('editHash', 'secondaryDirList')) {
 
                     # (If any secondary dir IVs have been changed, then they are ALL in ->editHash)
@@ -11438,12 +11482,12 @@
                 #   $combDirHash{recognised_secondary_dir} = undef
                 foreach my $value (values %primDirHash) {
 
-                    $combDirHash{$value} = undef;   # Hash in form $hash{$key} = $value
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$key} = $value
                 }
 
                 foreach my $value (values %primAbbrevHash) {
 
-                    $combDirHash{$value} = undef;   # Hash in form $hash{$key} = $value
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$key} = $value
                 }
 
                 foreach my $key (keys %dirHash) {
@@ -11452,7 +11496,7 @@
                     #   so we don't add that to %combDirHash)
                     if (! $thisDir || $key ne $thisDir) {
 
-                        $combDirHash{$key} = undef;   # Hash in form $hash{$key} = $key
+                        $combDirHash{$key} = undef;     # Hash in form $hash{$key} = $key
                     }
                 }
 
@@ -11460,8 +11504,18 @@
 
                     if (! $thisDir || $key ne $thisDir) {
 
-                        $combDirHash{$key} = undef;   # Hash in form $hash{$key} = undef
+                        $combDirHash{$key} = undef;     # Hash in form $hash{$key} = undef
                     }
+                }
+
+                foreach my $value (values %relDirHash) {
+
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$slot} = $value
+                }
+
+                foreach my $value (values %relAbbrevHash) {
+
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$slot} = $value
                 }
 
                 # Now we can test whether the directions entered by the user are already in use, or
@@ -11607,10 +11661,10 @@
 
     sub directions2Tab_refreshList {
 
-        # Called by $self->directions2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->directions2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -11698,7 +11752,10 @@
         my ($self, $innerNotebook, $check) = @_;
 
         # Local variables
-        my @columnList;
+        my (
+            @columnList, @list, @comboList,
+            %descripHash,
+        );
 
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
@@ -11708,6 +11765,339 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
+
+        # Relative directions
+        $self->addLabel($table, '<b>Relative directions</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of relative directions (which depend on the direction of movement)</i>',
+            1, 12, 1, 2);
+
+        # Create the simple list
+        @columnList = (
+            'Slot #', 'int',
+            'Relative dir', 'text',
+            'Abbreviation', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 8,
+            -1, 200);      # Fixed height
+
+        # Initialise the list
+        $self->directions3Tab_refreshList($slWidget, (scalar @columnList / 2));
+
+        # Add editing widgets
+        @list = (
+            'Slot 0 (equivalent of north)'      => 0,
+            'Slot 1 (equivalent of northeast)'  => 1,
+            'Slot 2 (equivalent of east)'       => 2,
+            'Slot 3 (equivalent of southeast)'  => 3,
+            'Slot 4 (equivalent of south)'      => 4,
+            'Slot 5 (equivalent of southwest)'  => 5,
+            'Slot 6 (equivalent of west)'       => 6,
+            'Slot 7 (equivalent of northwest)'  => 7,
+        );
+
+        do {
+
+            my ($descrip, $slot);
+
+            $descrip = shift @list;
+            $slot = shift @list;
+
+            push (@comboList, $descrip);
+            $descripHash{$descrip} = $slot;
+
+        } until (! @list);
+
+        $self->addLabel($table, 'Slot # (assuming movement from the south)',
+            1, 6, 8, 9);
+        my $combo = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,               # No 'undef' value used
+            6, 12, 8, 9);
+
+        $self->addLabel($table, 'Direction',
+            1, 2, 9, 10);
+        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+            2, 6, 9, 10);
+
+        $self->addLabel($table, 'Abbreviation',
+            6, 8, 9, 10);
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', undef, undef,
+            8, 12, 9, 10);
+
+        # 'Move down' button
+        my $button = $self->addButton($table,
+            'Add', 'Add this relative direction', undef,
+            1, 3, 10, 11);
+        $button->signal_connect('clicked' => sub {
+
+            my (
+                $slot, $dir, $abbrev, $hashRef, $listRef, $msg,
+                @dirList,
+                %primDirHash, %primAbbrevHash, %dirHash, %abbrevHash, %oppHash, %oppAbbrevHash,
+                %relDirHash, %relAbbrevHash, %combDirHash,
+            );
+
+            $slot = $descripHash{$combo->get_active_text()};
+            $dir = lc($entry->get_text());
+            $abbrev = lc($entry2->get_text());
+
+            if ($self->checkEntryIcon($entry, $entry2)) {
+
+                # $abbrev should be 'undef', rather than an empty string
+                if (! $abbrev) {
+
+                    $abbrev = undef;
+                }
+
+                # (Definitely need to remove any leading/trailing whitespace, as well as replace two
+                #   or more whitespace characters in the middle with a single whitespace character
+                $dir = $axmud::CLIENT->trimWhitespace($dir, TRUE);
+                if ($abbrev) {
+
+                    $abbrev = $axmud::CLIENT->trimWhitespace($abbrev, TRUE);
+                }
+
+                # Need to check that the user hasn't added a primary direction (standard or custom)
+                #   or an existing secondary direction
+                # Import data from the affected IVs. We can't use ->combDirHash because it hasn't
+                #   been updated yet, if any changes have been made in this window
+                if ($self->ivExists('editHash', 'primaryDirHash')) {
+
+                    # (If any primary dir IVs have been changed, then they are ALL in ->editHash)
+                    $hashRef = $self->ivShow('editHash', 'primaryDirHash');
+                    %primDirHash = %$hashRef;
+                    $hashRef = $self->ivShow('editHash', 'primaryAbbrevHash');
+                    %primAbbrevHash = %$hashRef;
+
+                } else {
+
+                    %primDirHash = $self->editObj->primaryDirHash;
+                    %primAbbrevHash = $self->editObj->primaryAbbrevHash;
+                }
+
+                if ($self->ivExists('editHash', 'secondaryDirList')) {
+
+                    # (If any secondary dir IVs have been changed, then they are ALL in ->editHash)
+                    $listRef = $self->ivShow('editHash', 'secondaryDirList');
+                    @dirList = @$listRef;
+                    $hashRef = $self->ivShow('editHash', 'secondaryDirHash');
+                    %dirHash = %$hashRef;
+                    $hashRef = $self->ivShow('editHash', 'secondaryAbbrevHash');
+                    %abbrevHash = %$hashRef;
+                    $hashRef = $self->ivShow('editHash', 'secondaryOppHash');
+                    %oppHash = %$hashRef;
+                    $hashRef = $self->ivShow('editHash', 'secondaryOppAbbrevHash');
+                    %oppAbbrevHash = %$hashRef;
+
+                } else {
+
+                    @dirList = $self->editObj->secondaryDirList;
+                    %dirHash = $self->editObj->secondaryDirHash;
+                    %abbrevHash = $self->editObj->secondaryAbbrevHash;
+                    %oppHash = $self->editObj->secondaryOppHash;
+                    %oppAbbrevHash = $self->editObj->secondaryOppAbbrevHash;
+                }
+
+                %relDirHash = $self->editObj->relativeDirHash;
+                %relAbbrevHash = $self->editObj->relativeAbbrevHash;
+
+                # (Compose our own temporary %combDirHash, in the form
+                #   $combDirHash{custom_primary_dir} = undef
+                #   $combDirHash{recognised_secondary_dir} = undef
+                foreach my $value (values %primDirHash) {
+
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$key} = $value
+                }
+
+                foreach my $value (values %primAbbrevHash) {
+
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$key} = $value
+                }
+
+                foreach my $key (keys %dirHash) {
+
+                    $combDirHash{$key} = undef;         # Hash in form $hash{$key} = $key
+                }
+
+                foreach my $key (keys %abbrevHash) {
+
+                    $combDirHash{$key} = undef;         # Hash in form $hash{$key} = undef
+                }
+
+                foreach my $value (values %relDirHash) {
+
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$slot} = $value
+                }
+
+                foreach my $value (values %relAbbrevHash) {
+
+                    $combDirHash{$value} = undef;       # Hash in form $hash{$slot} = $value
+                }
+
+                # Now we can test whether the directions entered by the user are already in use, or
+                #   not
+                if ($axmud::CLIENT->ivExists('constOppDirHash', $dir)) {
+
+                    $msg = '\'' . $dir . '\' is not available because it is a standard primary'
+                                . ' direction';
+
+                } elsif ($abbrev && $axmud::CLIENT->ivExists('constOppDirHash', $abbrev)) {
+
+                    $msg = '\'' . $abbrev . '\' is not available because it is a standard primary'
+                                . ' direction';
+
+                } elsif (exists $combDirHash{$dir}) {
+
+                    $msg = '\'' . $dir . '\' is not available because it is already in use as a'
+                            . ' custom primary or a secondary direction';
+
+                } elsif ($abbrev && exists $combDirHash{$abbrev}) {
+
+                    $msg = '\'' . $abbrev . '\' is not available because it is already in use as a'
+                            . ' custom primary or a secondary direction';
+                }
+
+                if ($msg) {
+
+                    # Don't make any changes
+                    $self->showMsgDialogue(
+                        'Add relative direction',
+                        'error',
+                        $msg,
+                        'ok',
+                    );
+
+                } else {
+
+                    # Update IVs
+                    $self->modifyEditHash_hashIV('relativeDirHash', $slot, $dir);
+                    $self->modifyEditHash_hashIV('relativeAbbrevHash', $slot, $abbrev);
+                    # Refresh the list to show the changes
+                    $self->directions3Tab_refreshList($slWidget, (scalar @columnList / 2));
+                }
+            }
+        });
+
+        # 'Delete direction' button
+        my $button2 = $self->addButton($table,
+            'Delete', 'Empty the selected slot', undef,
+            3, 5, 10, 11);
+        $button2->signal_connect('clicked' => sub {
+
+            my $slot;
+
+            ($slot) = $self->getSimpleListData($slWidget, 0);
+            if (defined $slot) {
+
+                # Update IVs. The TRUE arguments means to delete the key-value pair
+                $self->modifyEditHash_hashIV('relativeDirHash', $slot, undef, TRUE);
+                $self->modifyEditHash_hashIV('relativeAbbrevHash', $slot, undef, TRUE);
+                # Refresh the list to show the changes
+                $self->directions3Tab_refreshList($slWidget, (scalar @columnList / 2));
+            }
+        });
+
+
+        # 'Reset list' button
+        my $button3 = $self->addButton($table,
+            'Reset list', 'Reset the list of relative directions', undef,
+            10, 12, 10, 11);
+        $button3->signal_connect('clicked' => sub {
+
+            # Remove the IVs from $self->editHash, so that the IVs in $self->editObj take over
+            $self->ivDelete('editHash', 'relativeDirHash');
+            $self->ivDelete('editHash', 'relativeAbbrevHash');
+            # Refresh the list to show the changes
+            $self->directions3Tab_refreshList($slWidget, (scalar @columnList / 2));
+
+            # Empty the widgets below the simple list
+            $combo->set_active(0);
+            $entry->set_text('');
+            $entry2->set_text('');
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub directions3Tab_refreshList {
+
+        # Called by $self->directions3Tab to refresh the GA::Obj::Simple::List
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Obj::Simple::List
+        #   $columns    - The number of columns in the list
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my (
+            @dataList,
+            %dirHash, %abbrevHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->directions3Tab_refreshList',
+                @_,
+            );
+        }
+
+        # Import the IVs
+        %dirHash = $self->getEditHash_hashIV('relativeDirHash');
+        %abbrevHash = $self->getEditHash_hashIV('relativeAbbrevHash');
+
+        # Compile the simple list data
+        for (my $index = 0; $index < 8; $index++) {
+
+            push (@dataList,
+                $index,
+                $dirHash{$index},
+                $abbrevHash{$index},
+            );
+        }
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [@dataList], $columns);
+
+        return 1;
+    }
+
+    sub directions4Tab {
+
+        # Directions4 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->directions4Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
 
         # Speedwalking characters
         $self->addLabel($table, '<b>Speedwalking characters</b>',
@@ -11734,7 +12124,7 @@
         my $entry = $self->addEntryWithIcon(
             $table,
             undef,
-            \&directions3Tab_checkEntry,
+            \&directions4Tab_checkEntry,
             undef,
             undef,
             4, 6, 10, 11,
@@ -11776,9 +12166,9 @@
         return 1;
     }
 
-    sub directions3Tab_checkEntry {
+    sub directions4Tab_checkEntry {
 
-        # Called by $self->directions3Tab to check the text in the Gtk2::Entry
+        # Called by $self->directions4Tab to check the text in the Gtk2::Entry
         #
         # Expected arguments
         #   $text       - The contents of the Gtk2::Entry
@@ -11793,7 +12183,7 @@
         if (! defined $text || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->directions3Tab_checkEntry',
+                $self->_objClass . '->directions4Tab_checkEntry',
                 @_,
             );
         }
@@ -11805,9 +12195,9 @@
         }
     }
 
-    sub directions4Tab {
+    sub directions5Tab {
 
-        # Directions4 tab
+        # Directions5 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -11827,11 +12217,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->directions4Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->directions5Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
 
         # Get the current highest-priority command cage
         $cageObj = $self->session->findHighestCage('cmd');
@@ -12196,6 +12586,21 @@
                 $self->ivDelete('editHash', 'randomDestList');
             }
 
+#            if ($self->ivExists('editHash', 'altDir')) {
+#
+#                if ($self->ivShow('editHash', 'altDir') eq '') {
+#
+#                    # Use 'undef' rather than an empty string
+#                    $self->editObj->ivUndef('altDir');
+#
+#                } else {
+#
+#                    $self->editObj->ivPoke('altDir', $self->ivShow('editHash', 'altDir'));
+#                }
+#
+#                $self->ivDelete('editHash', 'altDir');
+#            }
+
             # Store the changes the user has made
             foreach my $key ($self->ivKeys('editHash')) {
 
@@ -12281,31 +12686,35 @@
             1, 3, 5, 6);
         $self->addEntry($table, 'dir', FALSE,
             3, 6, 5, 6);
-        $self->addLabel($table, 'Mapped as direction',
+        $self->addLabel($table, 'Alternative direction(s)',
             1, 3, 6, 7);
-        my $entry = $self->addEntry($table, undef, FALSE,
+        $self->addEntry($table, 'altDir', FALSE,
             3, 6, 6, 7);
+        $self->addLabel($table, 'Mapped as direction',
+            1, 3, 7, 8);
+        my $entry = $self->addEntry($table, undef, FALSE,
+            3, 6, 7, 8);
         if ($self->editObj->mapDir) {
             $entry->set_text($self->editObj->mapDir);
         } else {
             $entry->set_text('unallocatable');
         }
         $self->addLabel($table, 'Draw mode',
-            1, 3, 7, 8);
-        $self->addEntry($table, 'drawMode', FALSE,
-            3, 6, 7, 8);
-        $self->addLabel($table, 'Destination room #',
             1, 3, 8, 9);
-        $self->addEntry($table, 'destRoom', FALSE,
+        $self->addEntry($table, 'drawMode', FALSE,
             3, 6, 8, 9);
-        $self->addLabel($table, 'Twin exit #',
+        $self->addLabel($table, 'Destination room #',
             1, 3, 9, 10);
-        $self->addEntry($table, 'twinExit', FALSE,
+        $self->addEntry($table, 'destRoom', FALSE,
             3, 6, 9, 10);
-        $self->addLabel($table, 'Shadow exit #',
+        $self->addLabel($table, 'Twin exit #',
             1, 3, 10, 11);
-        $self->addEntry($table, 'shadowExit', FALSE,
+        $self->addEntry($table, 'twinExit', FALSE,
             3, 6, 10, 11);
+        $self->addLabel($table, 'Shadow exit #',
+            1, 3, 11, 12);
+        $self->addEntry($table, 'shadowExit', FALSE,
+            3, 6, 11, 12);
 
 
         # Right column
@@ -12337,18 +12746,22 @@
             7, 11, 7, 8);
         $self->addCheckButton($table, 'retraceFlag', FALSE,
             11, 12, 7, 8, 1, 0.5);
+        $self->addLabel($table, 'Hidden exit flag',
+            7, 11, 8, 9);
+        $self->addCheckButton($table, 'hiddenFlag', FALSE,
+            11, 12, 8, 9);
         $self->addLabel($table, 'Exit tag',
-            7, 9, 8, 9);
-        $self->addEntry($table, 'exitTag', FALSE,
-            9, 12, 8, 9);
-        $self->addLabel($table, 'Exit tag X offset',
             7, 9, 9, 10);
-        $self->addEntry($table, 'exitTagXOffset', FALSE,
+        $self->addEntry($table, 'exitTag', FALSE,
             9, 12, 9, 10);
-        $self->addLabel($table, 'Exit tag Y offset',
+        $self->addLabel($table, 'Exit tag X offset',
             7, 9, 10, 11);
-        $self->addEntry($table, 'exitTagYOffset', FALSE,
+        $self->addEntry($table, 'exitTagXOffset', FALSE,
             9, 12, 10, 11);
+        $self->addLabel($table, 'Exit tag Y offset',
+            7, 9, 11, 12);
+        $self->addEntry($table, 'exitTagYOffset', FALSE,
+            9, 12, 11, 12);
 
         return 1;
     }
@@ -12665,6 +13078,10 @@
             1, 5, 5, 6);
         my $button5 = $self->addCheckButton($table, undef, FALSE,
             5, 6, 5, 6);
+        $self->addLabel($table, 'Mystery exit',
+            1, 5, 6, 7);
+        my $button6 = $self->addCheckButton($table, undef, FALSE,
+            5, 6, 6, 7);
 
         if ($self->editObj->exitOrnament eq 'break') {
             $button->set_active(TRUE);
@@ -12676,25 +13093,20 @@
             $button4->set_active(TRUE);
         } elsif ($self->editObj->exitOrnament eq 'impass') {
             $button5->set_active(TRUE);
+        } elsif ($self->editObj->exitOrnament eq 'mystery') {
+            $button6->set_active(TRUE);
         }
-
-        $self->addLabel($table, '<b>Hidden exits</b>',
-            0, 6, 6, 7);
-        $self->addLabel($table, 'Exit is hidden',
-            1, 5, 7, 8);
-        $self->addCheckButton($table, 'hiddenFlag', FALSE,
-            5, 6, 7, 8);
 
         $self->addLabel(
             $table,
             '<b>Exit information</b>',
-            0, 6, 8, 9);
+            0, 6, 7, 8);
         $self->addLabel(
             $table,
             '<i>(e.g. further details about the destination room)</i>',
-            1, 6, 9, 10);
+            1, 6, 8, 9);
         $self->addEntryWithButton($table, 'exitInfo', TRUE,
-            1, 6, 10, 11);
+            1, 6, 9, 10);
 
         # Right column
         $self->addLabel($table, '<b>Exit current state</b>',
@@ -14799,479 +15211,6 @@
     # Accessors - get
 }
 
-{ package Games::Axmud::EditWin::Keycode;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::Generic::EditWin Games::Axmud::Generic::ConfigWin
-        Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    sub checkEditObj {
-
-        # Called by $self->winEnable
-        # Checks that the object stored in $self->editObj is the correct class of object
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the check fails
-        #   1 if the check succeeds
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
-        }
-
-        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Obj::Keycode')) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-    sub enableButtons {
-
-        # Called by $self->drawWidgets
-        # We only need a single button so, instead of calling the generic ->enableButtons, call a
-        #   method that creates just one button
-        #
-        # Expected arguments
-        #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
-        #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise, a list containing the Gtk::Button object created
-
-        my ($self, $hBox, $tooltips, $check) = @_;
-
-        # Local variables
-        my @emptyList;
-
-        # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
-            return @emptyList;
-        }
-
-        return $self->enableSingleButton($hBox, $tooltips);
-    }
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
-
-    sub expandNotebook {
-
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $self->valuesTab();
-        $self->alternativesTab();
-
-        return 1;
-    }
-
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
-
-    # Notebook tabs
-
-    sub nameTab {
-
-        # Name tab - called by $self->setupNotebook
-        #
-        # Expected arguments
-        #   $table  - The Gtk2::Table
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $table, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
-        }
-
-#       # Tab setup (already created by the calling function)
-#       my ($vBox, $table) = $self->addTab('_Name', $self->notebook);
-
-        # Keycode object name
-        $self->addLabel($table, '<b>Keycode object name</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table, 'Name',
-            1, 3, 1, 2);
-        $self->addEntry($table, 'name', FALSE,
-            3, 6, 1, 2);
-        $self->addLabel($table, 'Keycodes customised (not using defaults)',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'customisedFlag', FALSE,
-            11, 12, 1, 2);
-
-#       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub valuesTab {
-
-        # Values tab
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (@columnList);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->valuesTab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('_Values', $self->notebook);
-
-        # Keycode values
-        $self->addLabel($table, '<b>Keycode values</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table, '<i>List of current and default values for each keycode</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Standard value', 'text',
-            'Current value', 'text',
-            'Default value', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 10,
-            -1, 300);     # Fixed height
-
-        # Initialise the list
-        $self->valuesTab_refreshList($slWidget, (scalar @columnList / 2));
-
-        # If the keycode object being edited is the current one...
-        if ($self->editObj eq $axmud::CLIENT->currentKeycodeObj) {
-
-            # Add entry boxes and edit buttons
-            $self->addLabel($table, 'For the selected keycode:',
-                1, 4, 10, 12);
-            my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-                4, 6, 10, 11);
-
-            my $button = $self->addButton(
-                $table,
-                'Set new value',
-                'Set the current value of the selected keycode',
-                undef,
-                6, 8, 10, 11,
-                TRUE,               # Irreversible
-            );
-            $button->signal_connect('clicked' => sub {
-
-                my ($keycode, $value);
-
-                ($keycode) = $self->getSimpleListData($slWidget, 0);
-                if (defined $keycode && $self->checkEntryIcon($entry)) {
-
-                    # Get the new value of the selected keycode
-                    $value = $entry->get_text();
-
-                    # Set the new value
-                    $self->session->pseudoCmd(
-                        'setkeycode ' . $keycode . ' <' . $value . '>',
-                        $self->pseudoCmdMode,
-                    );
-
-                    # Refresh the simple list and reset entry boxes
-                    $self->valuesTab_refreshList($slWidget, (scalar @columnList / 2));
-                    $self->resetEntryBoxes($entry);
-                }
-            });
-
-            my $button2 = $self->addButton(
-                $table,
-                'Use default',
-                'Set the default value for the selected keycode',
-                undef,
-                8, 10, 10, 11,
-                TRUE,               # Irreversible
-            );
-            $button2->signal_connect('clicked' => sub {
-
-                my ($keyCode) = $self->getSimpleListData($slWidget, 0);
-                if (defined $keyCode) {
-
-                    # Set the new value of the selected keycode to its default
-                    $self->session->pseudoCmd(
-                        'resetkeycode ' . $keyCode,
-                        $self->pseudoCmdMode,
-                    );
-
-                    # Refresh the simple list and reset entry boxes
-                    $self->valuesTab_refreshList($slWidget, (scalar @columnList / 2));
-                    $self->resetEntryBoxes($entry);
-                }
-            });
-
-        } else {
-
-            $self->addLabel($table,
-                '<i>Keycode values can only be changed on the current keycode object</i>',
-                1, 10, 10, 11);
-        }
-
-        my $button3 = $self->addButton(
-            $table,
-            'Dump',
-            'Display keycode values in the \'main\' window',
-            undef,
-            10, 12, 10, 11,
-        );
-        $button3->signal_connect('clicked' => sub {
-
-            # Display the values
-            $self->session->pseudoCmd('listkeycode', $self->pseudoCmdMode);
-        });
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub valuesTab_refreshList {
-
-        # Called by $self->valuesTab to refresh the GA::Gtk::Simple::List
-        #
-        # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
-        #   $columns    - The number of columns in the list
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $slWidget, $columns, $check) = @_;
-
-        # Local variables
-        my (
-            @dataList,
-            %keycodeHash, %constHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $slWidget || ! defined $columns || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->valuesTab_refreshList', @_);
-        }
-
-        # Import IVs (for speed)
-        %keycodeHash = $self->editObj->keycodeHash;
-        %constHash = $axmud::CLIENT->constKeycodeHash;
-
-        # Compile the simple list data (these IVs are not saved to $self->editHash)
-        foreach my $keycode ($axmud::CLIENT->constKeycodeList) {
-
-            push (@dataList,
-                $keycode,
-                $keycodeHash{$keycode},
-                $constHash{$keycode},
-            );
-        }
-
-        # Reset the simple list
-        $self->resetListData($slWidget, [@dataList], $columns);
-
-        return 1;
-    }
-
-    sub alternativesTab {
-
-        # Alternatives tab
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->alternativesTab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('_Alternatives', $self->notebook);
-
-        # Alternative keycode types
-        $self->addLabel($table, '<b>Alternative keycode values</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table,
-            '<i>These alternatives can be used in place of standard keycode values</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Alternative keycode value', 'text',
-            'Equivalent standard keycode value', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 10,
-            -1, 300);     # Fixed height
-
-        # Initialise the list
-        $self->alternativesTab_refreshList($slWidget, (scalar @columnList / 2));
-
-        # Add edit buttons
-        my $button = $self->addButton(
-            $table,
-            'Dump',
-            'Display a list of alternative keycode types in the \'main\' window',
-            undef,
-            10, 12, 10, 11,
-        );
-        $button->signal_connect('clicked' => sub {
-
-            # Display the values
-            $self->session->pseudoCmd('listkeycodealternative', $self->pseudoCmdMode);
-        });
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub alternativesTab_refreshList {
-
-        # Called by $self->alternativesTab to refresh the GA::Gtk::Simple::List
-        #
-        # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
-        #   $columns    - The number of columns in the list
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $slWidget, $columns, $check) = @_;
-
-        # Local variables
-        my (
-            @sortedList, @dataList,
-            %hash,
-        );
-
-        # Check for improper arguments
-        if (! defined $slWidget || ! defined $columns || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->alternativesTab_refreshList',
-                @_,
-            );
-        }
-
-        # Import the hash of alternative forms of keycodes, and sort them
-        %hash = $axmud::CLIENT->constAltKeycodeHash;
-        @sortedList = sort {lc($a) cmp lc($b)} (keys %hash);
-
-        # Compile the simple list data
-        foreach my $alt (@sortedList) {
-
-            push (@dataList,
-                $alt,
-                $hash{$alt},
-            );
-        }
-
-        # Refresh the simple list
-        $self->resetListData($slWidget, [@dataList], $columns);
-
-        return 1;
-    }
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-}
-
 { package Games::Axmud::EditWin::Generic::CageMask;
 
     use strict;
@@ -15603,10 +15542,10 @@
 
     sub maskTab_refreshList {
 
-        # Called by $self->maskTab to reset the GA::Gtk::Simple::List
+        # Called by $self->maskTab to reset the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns in the list
         #
         # Return values
@@ -17104,10 +17043,10 @@
 
     sub family1Tab_refreshList {
 
-        # Called by $self->family1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->family1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -17153,10 +17092,10 @@
 
     sub family2Tab_refreshList {
 
-        # Called by $self->family2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->family2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -17844,7 +17783,7 @@
         # Resets the simple list displayed by $self->exclusiveTab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -18624,7 +18563,101 @@
         return 1;
     }
 
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
+    sub saveChanges {
+
+        # Called by $self->buttonOK and $self->buttonSave (usually for 'edit' windows only, not
+        #   'pref' windows)
+        # Saves any changes made to data stored by the edit object
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($wmObj, $hashRef);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->saveChanges', @_);
+        }
+
+        if ($self->editHash) {
+
+            # For changes to ->involuntaryExitPatternHash, other objects in the world model must be
+            #   updated
+            if ($self->ivExists('editHash', 'involuntaryExitPatternHash')) {
+
+                # Import the world model (for convenience)
+                $wmObj = $self->session->worldModelObj;
+
+                # Simplest way to deal with changes to involuntary exits is to delete all the
+                #   existing patterns (if any), then add new ones (if any)
+                foreach my $pattern ($self->editObj->ivKeys('involuntaryExitPatternHash')) {
+
+                    $wmObj->removeInvoluntaryExit($self->editObj, $pattern);
+                }
+
+                $hashRef = $self->ivShow('editHash', 'involuntaryExitPatternHash');
+                foreach my $pattern (keys %$hashRef) {
+
+                    $wmObj->addInvoluntaryExit($self->editObj, $pattern, $$hashRef{$pattern});
+                }
+
+                $self->ivDelete('editHash', 'involuntaryExitPatternHash');
+            }
+
+            # Same process for ->repulseExitPatternHash
+            if ($self->ivExists('editHash', 'repulseExitPatternHash')) {
+
+                # Import the world model (for convenience)
+                $wmObj = $self->session->worldModelObj;
+
+                # Simplest way to deal with changes to repulse exits is to delete all the existing
+                #   patterns (if any), then add new ones (if any)
+                foreach my $pattern ($self->editObj->ivKeys('repulseExitPatternHash')) {
+
+                    $wmObj->removeRepulseExit($self->editObj, $pattern);
+                }
+
+                $hashRef = $self->ivShow('editHash', 'repulseExitPatternHash');
+                foreach my $pattern (keys %$hashRef) {
+
+                    $wmObj->addRepulseExit($self->editObj, $pattern, $$hashRef{$pattern});
+                }
+
+                $self->ivDelete('editHash', 'repulseExitPatternHash');
+            }
+
+            # Store the changes the user has made
+            foreach my $key ($self->ivKeys('editHash')) {
+
+                $self->editObj->{$key} = $self->ivShow('editHash', $key);
+            }
+
+            # The changes can now be cleared
+            $self->ivEmpty('editHash');
+
+            # Mark the object's corresponding file object as needing to be saved, if it exists
+            if ($self->editObj->_parentFile) {
+
+                $self->editObj->doModify('saveChanges');
+            }
+
+            # Update the current session's object viewer window, if it is open
+            if ($self->session->viewerWin) {
+
+                $self->session->viewerWin->updateNotebook();
+            }
+        }
+
+        return 1;
+    }
 
     # Group 5
 
@@ -18972,10 +19005,10 @@
 
     sub room2Tab_refreshList {
 
-        # Called by $self->room2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->room2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -19507,6 +19540,8 @@
         $self->exits5Tab($innerNotebook);
         $self->exits6Tab($innerNotebook);
         $self->exits7Tab($innerNotebook);
+        $self->exits8Tab($innerNotebook);
+        $self->exits9Tab($innerNotebook);
 
         return 1;
     }
@@ -19551,6 +19586,7 @@
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
             -1, 130);                   # Fixed height
+
         # Special departure patterns
         $self->addLabel($table, '<b>Special departure patterns</b>',
             0, 12, 6, 8);
@@ -19559,6 +19595,7 @@
             '<i>Patterns which mean we\'ve left the room (when a new room statement isn\'t'
             . ' sent)</i>',
             1, 12, 8, 10);
+
         $self->addTextView($table, 'specialDepartPatternList', TRUE,
             1, 12, 10, 12,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
@@ -19583,6 +19620,9 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Local variables
+        my @columnList;
+
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -19592,37 +19632,77 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
 
-        # Failed exit patterns
-        $self->addLabel($table, '<b>Repulse exit patterns</b>',
-            0, 10, 0, 2);
-        $self->addLabel(
-            $table,
-            '<i>Patterns which mean the character has left the room involuntarily after a failed'
-            . ' move</i>',
-            1, 10, 2, 4);
-        $self->addRegexButton($table,
-            [
-                'list', 'repulseExitPatternList',
-                'list', 'involuntaryExitPatternList',
-            ],
-            10, 12, 0, 4);
-
-        $self->addTextView($table, 'repulseExitPatternList', TRUE,
-            1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 130);                   # Fixed height
-
         # Involuntary exit patterns
         $self->addLabel($table, '<b>Involuntary exit patterns</b>',
-            0, 12, 6, 8);
+            0, 12, 0, 2);
         $self->addLabel(
             $table,
             '<i>Patterns which mean the character has left the room involuntarily</i>',
-            1, 12, 8, 10);
-        $self->addTextView($table, 'involuntaryExitPatternList', TRUE,
-            1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 130);                   # Fixed height
+            1, 10, 2, 4);
+
+        # Add a simple list
+        @columnList = (
+            'Pattern', 'text',
+            'Optional direction or destination room #', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 8,
+            -1, 220);      # Fixed height
+
+        # Initialise the list
+        $self->refreshList_hashIV(
+            $slWidget,
+            scalar (@columnList / 2),
+            'involuntaryExitPatternHash',
+        );
+
+        # Add entries/comboboxes for adding new patterns
+        $self->addLabel($table, 'Pattern',
+            1, 3, 8, 9);
+        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+            3, 12, 8, 9);
+
+        $self->addLabel($table, '(Optional) direction or destination room number',
+            1, 4, 9, 10);
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', undef, undef,
+            4, 12, 9, 10);
+
+        # Add standard editing buttons to the simple list
+        my $button = $self->addSimpleListButtons_hashIV(
+            $table,
+            $slWidget,
+            'involuntaryExitPatternHash',
+            10,
+            $entry,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            my ($pattern, $value);
+
+            $pattern = $entry->get_text();
+            $value = $entry2->get_text();
+            # Use 'undef' rather than an empty string
+            if ($value eq '') {
+
+                $value = undef;
+            }
+
+            if ($self->checkEntryIcon($entry)) {
+
+                # Add a new key-value pair
+                $self->modifyEditHash_hashIV('involuntaryExitPatternHash', $pattern, $value);
+
+                # Refresh the simple list and reset entry boxes
+                $self->refreshList_hashIV(
+                    $slWidget,
+                    scalar (@columnList / 2),
+                    'involuntaryExitPatternHash',
+                );
+
+                $self->resetEntryBoxes($entry, $entry2);
+            }
+        });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -19655,6 +19735,110 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
 
+        # Repulse exit patterns
+        $self->addLabel($table, '<b>Repulse exit patterns</b>',
+            0, 12, 0, 2);
+        $self->addLabel(
+            $table,
+            '<i>Patterns which mean the character has left the room involuntarily after a failed'
+            . ' move</i>',
+            1, 10, 2, 4);
+
+        # Add a simple list
+        @columnList = (
+            'Pattern', 'text',
+            'Optional direction or destination room #', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 8,
+            -1, 220);      # Fixed height
+
+        # Initialise the list
+        $self->refreshList_hashIV(
+            $slWidget,
+            scalar (@columnList / 2),
+            'repulseExitPatternHash',
+        );
+
+        # Add entries/comboboxes for adding new patterns
+        $self->addLabel($table, 'Pattern',
+            1, 3, 8, 9);
+        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+            3, 12, 8, 9);
+
+        $self->addLabel($table, '(Optional) direction or destination room number',
+            1, 4, 9, 10);
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', undef, undef,
+            4, 12, 9, 10);
+
+        # Add standard editing buttons to the simple list
+        my $button = $self->addSimpleListButtons_hashIV(
+            $table,
+            $slWidget,
+            'repulseExitPatternHash',
+            10,
+            $entry,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            my ($pattern, $value);
+
+            $pattern = $entry->get_text();
+            $value = $entry2->get_text();
+            # Use 'undef' rather than an empty string
+            if ($value eq '') {
+
+                $value = undef;
+            }
+
+            if ($self->checkEntryIcon($entry)) {
+
+                # Add a new key-value pair
+                $self->modifyEditHash_hashIV('repulseExitPatternHash', $pattern, $value);
+
+                # Refresh the simple list and reset entry boxes
+                $self->refreshList_hashIV(
+                    $slWidget,
+                    scalar (@columnList / 2),
+                    'repulseExitPatternHash',
+                );
+
+                $self->resetEntryBoxes($entry, $entry2);
+            }
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub exits4Tab {
+
+        # Exits4 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits4Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+
         # Exit objects
         $self->addLabel($table, '<b>Exit objects</b>',
             0, 12, 0, 1);
@@ -19673,7 +19857,7 @@
             -1, 230);     # Fixed height
 
         # Initialise the list
-        $self->exits3Tab_refreshList($slWidget, scalar (@columnList / 2));
+        $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add entry box for adding new exit objects
         $self->addLabel($table, 'Direction',
@@ -19704,7 +19888,7 @@
                 );
 
                 # Refresh the simple list
-                $self->exits3Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2));
             }
         });
 
@@ -19735,7 +19919,7 @@
                 );
 
                 # Refresh the simple list and reset entry boxes
-                $self->exits3Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry);
             }
         });
@@ -19765,7 +19949,7 @@
                 );
 
                 # Refresh the simple list and reset entry boxes
-                $self->exits3Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry);
             }
         });
@@ -19795,7 +19979,7 @@
                 );
 
                 # Refresh the simple list and reset entry boxes
-                $self->exits3Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry);
             }
         });
@@ -19811,7 +19995,7 @@
         $button5->signal_connect('clicked' => sub {
 
             # Refresh the simple list and reset entry boxes
-            $self->exits3Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2));
             $self->resetEntryBoxes($entry);
         });
 
@@ -19831,12 +20015,12 @@
         return 1;
     }
 
-    sub exits3Tab_refreshList {
+    sub exits4Tab_refreshList {
 
-        # Called by $self->exits3Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->exits3Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -19854,7 +20038,7 @@
         # Check for improper arguments
         if (! defined $slWidget || ! defined $columns || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits3Tab_refreshList', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits4Tab_refreshList', @_);
         }
 
         # Import the IVs directly from the edited object (because changes are made directly, and
@@ -19908,9 +20092,9 @@
         return 1;
     }
 
-    sub exits4Tab {
+    sub exits5Tab {
 
-        # Exits4 tab
+        # Exits5 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -19927,11 +20111,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits4Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits5Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
 
         # Incoming uncertain exits
         $self->addLabel($table, '<b>Incoming uncertain exits</b>',
@@ -19942,7 +20126,7 @@
 
         # Add a simple list
         @columnList = (
-            'Other room #', 'text',
+            'Room #', 'text',
             'Region', 'text',
             'Exit #', 'text',
             'Direction', 'text',
@@ -19954,7 +20138,7 @@
             -1, 270);     # Fixed height
 
         # Initialise the list
-        $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2), 'uncertainExitHash');
+        $self->exits5Tab_refreshList($slWidget, scalar (@columnList / 2), 'uncertainExitHash');
 
         # Add a single button
         my $button = $self->addButton(
@@ -19967,7 +20151,7 @@
         $button->signal_connect('clicked' => sub {
 
             # Refresh the simple list
-            $self->exits4Tab_refreshList(
+            $self->exits5Tab_refreshList(
                 $slWidget,
                 scalar (@columnList / 2),
                 'uncertainExitHash',
@@ -19980,13 +20164,13 @@
         return 1;
     }
 
-    sub exits4Tab_refreshList {
+    sub exits5Tab_refreshList {
 
         # Called by $self->exits4Tab, ->exits5Tab and ->exits6Tab to refresh the
-        #   GA::Gtk::Simple::List
+        #   GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #   $iv         - The IV to show
         #
@@ -20002,7 +20186,7 @@
         # Check for improper arguments
         if (! defined $slWidget || ! defined $columns || ! defined $iv || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits4Tab_refreshList', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits5Tab_refreshList', @_);
         }
 
         # Import the IV
@@ -20032,74 +20216,6 @@
         return 1;
     }
 
-    sub exits5Tab {
-
-        # Exits5 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits5Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
-
-        # Incoming one-way exits
-        $self->addLabel($table, '<b>Incoming one-way exits</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table,
-            '<i>List of one-way exits belonging to other rooms which point to this room</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Other room #', 'text',
-            'Region', 'text',
-            'Exit #', 'text',
-            'Direction', 'text',
-            'Map direction', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 10,
-            -1, 270);     # Fixed height
-
-        # Initialise the list
-        $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2), 'oneWayExitHash');
-
-        # Add a single button
-        my $button = $self->addButton(
-            $table,
-            'Refresh list',
-            'Refresh the list of incoming one-way exits',
-            undef,
-            9, 12, 10, 11,
-        );
-        $button->signal_connect('clicked' => sub {
-
-            # Refresh the simple list
-            $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2), 'oneWayExitHash');
-        });
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
     sub exits6Tab {
 
         # Exits6 tab
@@ -20125,16 +20241,16 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
 
-        # Incoming random exits
-        $self->addLabel($table, '<b>Incoming random exits</b>',
+        # Incoming one-way exits
+        $self->addLabel($table, '<b>Incoming one-way exits</b>',
             0, 12, 0, 1);
         $self->addLabel($table,
-            '<i>List of random exits belonging to other rooms which point to this room</i>',
+            '<i>List of one-way exits belonging to other rooms which point to this room</i>',
             1, 12, 1, 2);
 
         # Add a simple list
         @columnList = (
-            'Other room #', 'text',
+            'Room #', 'text',
             'Region', 'text',
             'Exit #', 'text',
             'Direction', 'text',
@@ -20146,24 +20262,20 @@
             -1, 270);     # Fixed height
 
         # Initialise the list
-        $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2), 'randomExitHash');
+        $self->exits5Tab_refreshList($slWidget, scalar (@columnList / 2), 'oneWayExitHash');
 
         # Add a single button
         my $button = $self->addButton(
             $table,
             'Refresh list',
-            'Refresh the list of incoming random exits',
+            'Refresh the list of incoming one-way exits',
             undef,
             9, 12, 10, 11,
         );
         $button->signal_connect('clicked' => sub {
 
             # Refresh the simple list
-            $self->exits4Tab_refreshList(
-                $slWidget,
-                scalar (@columnList / 2),
-                'randomExitHash',
-            );
+            $self->exits5Tab_refreshList($slWidget, scalar (@columnList / 2), 'oneWayExitHash');
         });
 
         # Tab complete
@@ -20196,6 +20308,175 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _7', $innerNotebook);
+
+        # Incoming involuntary exits
+        $self->addLabel($table, '<b>Incoming involuntary exits</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of rooms with involuntary exit patterns whose corresponding destination is'
+            . ' this room</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Room #', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 10,
+            -1, 270);     # Fixed height
+
+        # Initialise the list
+        $self->exits7Tab_refreshList($slWidget, scalar (@columnList / 2));
+
+        # Add a single button
+        my $button = $self->addButton(
+            $table,
+            'Refresh list',
+            'Refresh the list of incoming involuntary exits',
+            undef,
+            9, 12, 10, 11,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            # Refresh the simple list
+            $self->exits7Tab_refreshList($slWidget, scalar (@columnList / 2));
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub exits7Tab_refreshList {
+
+        # Called by $self->exits6Tab to refresh the GA::Obj::Simple::List
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Obj::Simple::List
+        #   $columns    - The number of columns in the list
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my @dataList;
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits7Tab_refreshList', @_);
+        }
+
+        # Import the IV
+        @dataList = sort {$a <=> $b} ($self->editObj->ivValues('invRepExitHash'));
+
+        # Reset the simple list
+        $self->resetListData($slWidget, [@dataList], $columns);
+
+        return 1;
+    }
+
+    sub exits8Tab {
+
+        # Exits8 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits8Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _8', $innerNotebook);
+
+        # Incoming random exits
+        $self->addLabel($table, '<b>Incoming random exits</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of random exits belonging to other rooms which point to this room</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Room #', 'text',
+            'Region', 'text',
+            'Exit #', 'text',
+            'Direction', 'text',
+            'Map direction', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 10,
+            -1, 270);     # Fixed height
+
+        # Initialise the list
+        $self->exits5Tab_refreshList($slWidget, scalar (@columnList / 2), 'randomExitHash');
+
+        # Add a single button
+        my $button = $self->addButton(
+            $table,
+            'Refresh list',
+            'Refresh the list of incoming random exits',
+            undef,
+            9, 12, 10, 11,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            # Refresh the simple list
+            $self->exits5Tab_refreshList(
+                $slWidget,
+                scalar (@columnList / 2),
+                'randomExitHash',
+            );
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub exits9Tab {
+
+        # Exits9 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->exits9Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _9', $innerNotebook);
 
         # Checked directions
         $self->addLabel($table, '<b>Checked directions</b>',
@@ -20394,10 +20675,10 @@
 
     sub contents1Tab_refreshList {
 
-        # Called by $self->contents1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->contents1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -23641,10 +23922,10 @@
 
     sub initial1Tab_refreshList {
 
-        # Called by $self->initial1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->initial1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - Number of columns in the simple list
         #
         # Return values
@@ -24038,10 +24319,10 @@
 
     sub initial2Tab_refreshList {
 
-        # Called by $self->initial2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->initial2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - Number of columns in the simple list
         #
         # Return values
@@ -24849,7 +25130,7 @@
         # Resets the simple list displayed by $self->settings2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #   $reverseFlag    - If TRUE, the most recent connection is shown first. If FALSE, the
         #                       earliest connection is shown first
@@ -25744,7 +26025,7 @@
         # Resets the simple list displayed by $self->settings8Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #   $obscureFlag    - Flag set to TRUE if passwords should be obscured, FALSE otherwise
         #
@@ -26152,16 +26433,19 @@
             -1, 100);                 # Fixed width/height
 
         # Command prompt patterns
-        $self->addLabel($table, '<b>Command prompt patterns (matches whole prompt)</b>',
-            0, 12, 6, 7);
-        $self->addLabel($table, 'Enable strict prompts mode',
-            7, 11, 6, 7);
-        $self->addCheckButton($table, 'strictPromptsMode', TRUE,
-            11, 12, 6, 7);
+        $self->addLabel(
+            $table,
+            '<b>Command prompt patterns</b>',
+            0, 5, 6, 7);              # Use 5, rather than 12, to avoid Gtk layout problems
+        $self->addLabel(
+            $table,
+#            '<i>You can add an initial ^ character, but do not add a terminating $ character</i>',
+            '<i>Do not add a terminating $ character</i>',
+            1, 12, 7, 8);
         $self->addTextView($table, 'cmdPromptPatternList', TRUE,
-            1, 13, 7, 12,
+            1, 12, 8, 12,
             TRUE, TRUE, FALSE, FALSE, # Treat as a list, remove empty lines, don't remove whitespace
-            -1, 160);                 # Fixed height
+            -1, 150);                 # Fixed height
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -26255,7 +26539,7 @@
         # Resets the simple list displayed by $self->settings12Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -26540,7 +26824,7 @@
         # Resets the simple list displayed by $self->override2Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -26756,7 +27040,7 @@
         # Resets the simple list displayed by $self->override3Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -27324,7 +27608,7 @@
         # Resets the simple list displayed by $self->override5Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -27716,7 +28000,7 @@
         # Resets the simple list displayed by $self->rooms1Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -28182,7 +28466,7 @@
         # Resets the simple list displayed by $self->rooms2Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #   $iv         - The IV to display - one of 'verboseComponentList', 'shortComponentList'
         #                   and 'briefComponentList'
@@ -28851,7 +29135,7 @@
         # Resets the simple list displayed by $self->rooms14Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -29775,8 +30059,8 @@
         $self->status2Tab($innerNotebook, $taskObj);
         $self->status3Tab($innerNotebook, $taskObj);
         $self->status4Tab($innerNotebook);
-        $self->status5Tab($innerNotebook, $taskObj);
-        $self->status6Tab($innerNotebook);
+        $self->status5Tab($innerNotebook);
+        $self->status6Tab($innerNotebook, $taskObj);
         $self->status7Tab($innerNotebook);
         $self->status8Tab($innerNotebook);
         $self->status9Tab($innerNotebook);
@@ -29784,6 +30068,7 @@
         $self->status11Tab($innerNotebook);
         $self->status12Tab($innerNotebook);
         $self->status13Tab($innerNotebook);
+        $self->status14Tab($innerNotebook);
 
         return 1;
     }
@@ -30250,7 +30535,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
 
-        # Status task custom variables
+        # Status task MSDP variables
         $self->addLabel($table, '<b>Status task MSDP variables</b>',
             0, 12, 0, 1);
         $self->addLabel($table,
@@ -30324,6 +30609,100 @@
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->status5Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
+
+        # Status task MXP variables
+        $self->addLabel($table, '<b>Status task MXP variables</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>MXP entities whose values should be converted directly into Status task'
+            . ' variables</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'MXP variable', 'text',
+            'Status task variable', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 8,
+            -1, 240);      # Fixed height
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'mxpStatusVarHash');
+
+        # Add entries/comboboxes for adding new variables
+        $self->addLabel($table, 'MXP entity',
+            1, 3, 8, 9);
+        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+            3, 6, 8, 9);
+
+        $self->addLabel($table, 'Status task variable',
+            6, 9, 8, 9);
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+            9, 12, 8, 9);
+
+        # Add standard editing buttons to the simple list
+        my $button = $self->addSimpleListButtons_hashIV(
+            $table,
+            $slWidget,
+            'mxpStatusVarHash',
+            9,
+            $entry, $entry2,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            my ($mxpEnt, $var);
+
+            $mxpEnt = $entry->get_text();
+            $var = $entry2->get_text();
+
+            if ($self->checkEntryIcon($entry, $entry2)) {
+
+                # Add a new key-value pair
+                $self->modifyEditHash_hashIV('mxpStatusVarHash', $mxpEnt, $var);
+
+                # Refresh the simple list and reset entry boxes
+                $self->refreshList_hashIV(
+                    $slWidget,
+                    scalar (@columnList / 2),
+                    'mxpStatusVarHash',
+                );
+
+                $self->resetEntryBoxes($entry, $entry2);
+            }
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub status6Tab {
+
+        # Status6 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
         #   $taskObj        - A temporary Status task object
         #
         # Return values
@@ -30341,11 +30720,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || ! defined $taskObj || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->status5Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->status6Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
 
         # Status task - general patterns
         $self->addLabel($table, '<b>Status task - general patterns</b>',
@@ -30468,9 +30847,9 @@
         return 1;
     }
 
-    sub status6Tab {
+    sub status7Tab {
 
-        # Status6 tab
+        # Status7 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -30487,11 +30866,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->status6Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->status7Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _7', $innerNotebook);
 
         # Status task - bar patterns
         $self->addLabel($table, '<b>Status task - bar patterns</b>',
@@ -30595,9 +30974,9 @@
         return 1;
     }
 
-    sub status7Tab {
+    sub status8Tab {
 
-        # Status7 tab
+        # Status8 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -30614,11 +30993,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->status7Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->status8Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _7', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _8', $innerNotebook);
 
         # Status task - character affect patterns
         $self->addLabel($table, '<b>Status task - character affect patterns</b>',
@@ -30700,9 +31079,9 @@
         return 1;
     }
 
-    sub status8Tab {
+    sub status9Tab {
 
-        # Status8 tab
+        # Status9 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -30719,11 +31098,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->status8Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->status9Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _8', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _9', $innerNotebook);
 
         # Status task - character stat patterns
         $self->addLabel($table, '<b>Status task - character stat patterns</b>',
@@ -30818,9 +31197,9 @@
         return 1;
     }
 
-    sub status9Tab {
+    sub status10Tab {
 
-        # Status9 tab
+        # Status10 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -30834,11 +31213,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->status9Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->status10Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _9', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page 1_0', $innerNotebook);
 
         # Status task ignore patterns
         $self->addLabel($table, '<b>Status task ignore patterns</b>',
@@ -30871,9 +31250,9 @@
         return 1;
     }
 
-    sub status10Tab {
+    sub status11Tab {
 
-        # Status10 tab
+        # Status11 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -30887,11 +31266,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->status10Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->status11Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page 1_0', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page 11', $innerNotebook);
 
         # Status task age patterns
         $self->addLabel($table, '<b>Status task age patterns</b>',
@@ -30924,56 +31303,6 @@
         return 1;
     }
 
-    sub status11Tab {
-
-        # Status11 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->status11Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page 11', $innerNotebook);
-
-        # Life patterns
-        $self->addLabel($table, '<b>Life patterns</b>',
-            0, 10, 0, 2);
-        $self->addLabel($table, '<i>Patterns seen when the character dies</i>',
-            1, 10, 2, 4);
-        $self->addRegexButton($table,
-            [
-                'list', 'deathPatternList',
-                'list', 'resurrectPatternList',
-            ],
-            10, 12, 0, 4);
-
-        $self->addTextView($table, 'deathPatternList', TRUE,
-            1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
-
-        $self->addLabel($table, '<i>Patterns seen when the character is resurrected</i>',
-            1, 12, 6, 8);
-        $self->addTextView($table, 'resurrectPatternList', TRUE,
-            1, 12, 8, 10,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
     sub status12Tab {
 
         # Status12 tab
@@ -30996,25 +31325,25 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page 12', $innerNotebook);
 
-        # Passing out patterns
-        $self->addLabel($table, '<b>Passing out patterns</b>',
+        # Life patterns
+        $self->addLabel($table, '<b>Life patterns</b>',
             0, 10, 0, 2);
-        $self->addLabel($table, '<i>Patterns seen when the character passes out</i>',
+        $self->addLabel($table, '<i>Patterns seen when the character dies</i>',
             1, 10, 2, 4);
         $self->addRegexButton($table,
             [
-                'list', 'passedOutPatternList',
-                'list', 'comeAroundPatternList',
+                'list', 'deathPatternList',
+                'list', 'resurrectPatternList',
             ],
             10, 12, 0, 4);
 
-        $self->addTextView($table, 'passedOutPatternList', TRUE,
+        $self->addTextView($table, 'deathPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
 
-        $self->addLabel($table, '<i>Patterns seen when the character comes around</i>',
+        $self->addLabel($table, '<i>Patterns seen when the character is resurrected</i>',
             1, 12, 6, 8);
-        $self->addTextView($table, 'comeAroundPatternList', TRUE,
+        $self->addTextView($table, 'resurrectPatternList', TRUE,
             1, 12, 8, 10,
             TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
 
@@ -31045,6 +31374,56 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page 13', $innerNotebook);
+
+        # Passing out patterns
+        $self->addLabel($table, '<b>Passing out patterns</b>',
+            0, 10, 0, 2);
+        $self->addLabel($table, '<i>Patterns seen when the character passes out</i>',
+            1, 10, 2, 4);
+        $self->addRegexButton($table,
+            [
+                'list', 'passedOutPatternList',
+                'list', 'comeAroundPatternList',
+            ],
+            10, 12, 0, 4);
+
+        $self->addTextView($table, 'passedOutPatternList', TRUE,
+            1, 12, 4, 6,
+            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+
+        $self->addLabel($table, '<i>Patterns seen when the character comes around</i>',
+            1, 12, 6, 8);
+        $self->addTextView($table, 'comeAroundPatternList', TRUE,
+            1, 12, 8, 10,
+            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub status14Tab {
+
+        # Status14 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->status14Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page 14', $innerNotebook);
 
         # Sleep patterns
         $self->addLabel($table, '<b>Sleep patterns</b>',
@@ -34665,7 +35044,7 @@
         # Resets the simple list displayed by $self->missionsTab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -34945,7 +35324,7 @@
         # Resets the simple list displayed by $self->questsTab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -36021,6 +36400,14 @@
 
                     $self->editObj->{$key} = $self->ivShow('editHash', $key);
                 }
+
+                # If the session's Status task is open, tell it to redraw its task window
+                #   (including the background colour, in case the profile's ->lifeStatus IV has been
+                #   updated)
+                if ($self->session->statusTask) {
+
+                    $self->session->statusTask->set_lifeStatusChangeFlag();
+                }
             }
 
             # The changes can now be cleared
@@ -36460,7 +36847,7 @@
         # Resets the simple list displayed by $self->settings5Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -36768,7 +37155,7 @@
         #   $self->questsTab_resetSolvedList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -36804,7 +37191,7 @@
         #   $self->questsTab_resetSolvedList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #   $worldObj   - Blessed reference of the parent world profile
         #
@@ -37058,7 +37445,7 @@
         # Resets the simple list displayed by $self->skills1Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -38967,11 +39354,11 @@
     sub propertiesTab_refreshList {
 
         # Called by $self->propertiesTab
-        # Populates the GA::Gtk::Simple::List displayed in this window with all the properties (IVs)
+        # Populates the GA::Obj::Simple::List displayed in this window with all the properties (IVs)
         #   stored in the template, except the standard ones which can't be edited in this tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::list
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -39346,11 +39733,11 @@
     sub propertiesTab_refreshList {
 
         # Called by $self->propertiesTab
-        # Populates the GA::Gtk::Simple::List displayed in this window with all the properties (IVs)
+        # Populates the GA::Obj::Simple::List displayed in this window with all the properties (IVs)
         #   stored in the template, except the standard ones which can't be edited in this tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::list
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -40788,10 +41175,10 @@
 
     sub objects1Tab_refreshList {
 
-        # Called by $self->objects1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->objects1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -40902,10 +41289,10 @@
 
     sub objects2Tab_refreshList {
 
-        # Called by $self->objects2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->objects2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41022,10 +41409,10 @@
 
     sub objects3Tab_refreshList {
 
-        # Called by $self->objects3Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->objects3Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41192,10 +41579,10 @@
 
     sub objects4Tab_refreshList {
 
-        # Called by $self->objects4Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->objects4Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41316,10 +41703,10 @@
 
     sub objects5Tab_refreshList {
 
-        # Called by $self->objects5Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->objects5Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41433,10 +41820,10 @@
 
     sub objects6Tab_refreshList {
 
-        # Called by $self->objects6Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->objects6Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41552,10 +41939,10 @@
 
     sub countsTab_refreshList {
 
-        # Called by $self->countsTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->countsTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41695,11 +42082,11 @@
     sub boundaries1Tab_addButtons {
 
         # Called by $self->boundaries1Tab and ->boundaries2Tab to add editing buttons below the
-        #   GA::Gtk::Simple::List
+        #   GA::Obj::Simple::List
         #
         # Expected arguments
         #   $table          - The Gtk2::Table
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns in the simple list
         #
         # Optional arguments
@@ -41929,10 +42316,10 @@
     sub boundaries1Tab_refreshList {
 
         # Called by $self->boundaries1Tab, >boundaries2Tab and ->boundaries1Tab_addButtons refresh
-        #   the GA::Gtk::Simple::List
+        #   the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Optional arguments
@@ -42162,10 +42549,10 @@
     sub boundaries3Tab_refreshList {
 
         # Called by both $self->boundaries3Tab and $self->boundaries4Tab to refresh their
-        #   GA::Gtk::Simple::List
+        #   GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #   $iv         - The IV being accessed - 'regionPathHash' or 'safeRegionPathHash'
         #
@@ -44140,10 +44527,10 @@
     sub settings3Tab_refreshList {
 
         # Called by $self->settings3Tab, ->settings4Tab and ->settings5 Tab to refresh the
-        #   GA::Gtk::Simple::List
+        #   GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #   $iv         - 'ttsAttribHash', 'ttsFlagAttribHash' or 'ttsAlertAttribHash'
         #
@@ -44723,7 +45110,7 @@
         my $checkButton3 = $self->addCheckButton($table, 'useColourStyleFlag', TRUE,
             1, 12, 8, 9);
         $checkButton3->set_label(
-            'The line\'s original colour/style tags are presereved in the task window',
+            'The line\'s original colour/style tags are preserved in the task window',
         );
 
         $self->addLabel($table,
@@ -46831,10 +47218,10 @@
 
     sub actionsInventory2Tab_refreshList {
 
-        # Called by $self->actionsInventory2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->actionsInventory2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -48844,7 +49231,7 @@
         # Resets the simple list displayed by $self->internal1Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -48990,7 +49377,7 @@
         # Resets the simple list displayed by $self->internal2Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -49341,10 +49728,10 @@
 
     sub nameTab_refreshList {
 
-        # Called by $self->nameTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->nameTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -50060,10 +50447,10 @@
 
     sub stripsTab_refreshList {
 
-        # Called by $self->stripsTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->stripsTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns in the list
         #   %tempObjHash    - A hash of temporary strip objects, one for each package name, so we
         #                       can access their IVs
@@ -52005,7 +52392,7 @@
         # Resets the simple list displayed by $self->file2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #
         # Return values
@@ -52549,10 +52936,10 @@
 
     sub gridsTab_refreshList {
 
-        # Called by $self->gridTab to refresh the first GA::Gtk::Simple::List
+        # Called by $self->gridTab to refresh the first GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -52937,10 +53324,10 @@
 
     sub zonesTab_refreshList {
 
-        # Called by $self->zonesTab to refresh the first GA::Gtk::Simple::List
+        # Called by $self->zonesTab to refresh the first GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -53108,10 +53495,10 @@
 
     sub windowsTab_refreshList {
 
-        # Called by $self->windowsTab to refresh the first GA::Gtk::Simple::List
+        # Called by $self->windowsTab to refresh the first GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -53400,7 +53787,6 @@
             @ivList = (
                 # ->settings1Tab
                 'trackPosnFlag', 'track_current_room', 'icon_track_current_room',
-                'paintAllRoomsFlag', 'paint_all', 'icon_paint_all',
                 'drawOrnamentsFlag', 'draw_ornaments', 'icon_draw_ornaments',
                 # ->settings2Tab
                 'matchTitleFlag', 'match_title', undef,
@@ -54104,10 +54490,10 @@
 
     sub model2Tab_refreshList {
 
-        # Called by $self->model2Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->model2Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -54259,10 +54645,10 @@
 
     sub model3Tab_refreshList {
 
-        # Called by $self->model3Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->model3Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -54513,10 +54899,10 @@
 
     sub model4Tab_refreshList {
 
-        # Called by $self->model4Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->model4Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -54667,10 +55053,10 @@
 
     sub model5Tab_refreshList {
 
-        # Called by $self->model5Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->model5Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -54885,7 +55271,7 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
 
-        # Set up some hashes, so that entry boxes in this tab can display text, not just a number
+        # Set up some hashes, so that entry boxes in this tab can display explanatory text
         %currentModeHash = (
             'single'        => '\'single\' - Draw normal room',
             'double'        => '\'double\' - Draw emphasised room',
@@ -54958,6 +55344,10 @@
             1, 5, 10, 11);
         $self->addCheckButton($table, 'paintAllRoomsFlag', FALSE,
             5, 6, 10, 11, 1, 0.5);
+        $self->addLabel($table, 'Quick-paint without resetting',
+            1, 5, 11, 12);
+        $self->addCheckButton($table, 'quickPaintMultiFlag', FALSE,
+            5, 6, 11, 12, 1, 0.5);
 
         # Right column
         $self->addLabel($table, '<u>Drawing modes</u>',
@@ -55363,6 +55753,13 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Local variables
+        my (
+            $useIndex,
+            @list, @comboList,
+            %descripHash,
+        );
+
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -55409,6 +55806,17 @@
         $self->addCheckButton($table, 'locateRandomAnywhereFlag', TRUE,
             5, 6, 9, 10, 1, 0.5);
 
+        $self->addLabel($table, '<u>Show \'Working...\' dialogue</u>',
+            1, 6, 10, 11);
+        $self->addLabel($table, 'Draw objects (100+)',
+            1, 3, 11, 12);
+        $self->addEntryWithIcon($table, 'drawPauseNum', 'int', 100, undef,
+            3, 6, 11, 12, 8, 8);
+        $self->addLabel($table, 'Calculate region paths (10+)',
+            1, 3, 12, 13);
+        $self->addEntryWithIcon($table, 'recalculatePauseNum', 'int', 10, undef,
+            3, 6, 12, 13, 8, 8);
+
         # Right column
         $self->addLabel($table, '<u>Exit lengths</u>',
             7, 12, 1, 2);
@@ -55431,16 +55839,52 @@
         $self->addEntry($table, 'maxExitLengthBlocks', FALSE,
             9, 12, 4, 5, 4, 4);
 
-        $self->addLabel($table, '<u>Show \'Working...\' dialogue</u>',
+        $self->addLabel($table, '<u>Checked directions</u>',
             7, 12, 5, 6);
-        $self->addLabel($table, 'Draw objects (100+)',
-            7, 9, 6, 7);
-        $self->addEntryWithIcon($table, 'drawPauseNum', 'int', 100, undef,
-            9, 12, 6, 7, 8, 8);
-        $self->addLabel($table, 'Calculate region paths (10+)',
-            7, 9, 7, 8);
-        $self->addEntryWithIcon($table, 'recalculatePauseNum', 'int', 10, undef,
-            9, 12, 7, 8, 8, 8);
+        $self->addLabel($table, 'Collect checked directions',
+            7, 11, 6, 7);
+        $self->addCheckButton($table, 'collectCheckedDirsFlag', TRUE,
+            11, 12, 6, 7, 1, 0.5);
+        $self->addLabel($table, 'Draw checked directions',
+            7, 11, 7, 8);
+        $self->addCheckButton($table, 'drawCheckedDirsFlag', TRUE,
+            11, 12, 7, 8, 1, 0.5);
+        $self->addLabel($table, 'Checkable directions to count',
+            7, 12, 8, 9);
+
+        @list = (
+            'simple', '\'simple\' - count NSEW', 0,
+            'diku', '\'diku\' - count NSEWUD', 1,
+            'lp', '\'lp\' - count NSEWUD, NE/NW/SE/SW', 2,
+            'complex', '\'complex\' - count all primary directions', 3,
+        );
+
+        do {
+
+            my $value = shift @list;
+            my $descrip = shift @list;
+            my $index = shift @list;
+
+            push (@comboList, $descrip);
+            $descripHash{$descrip} = $value;
+
+            if ($self->editObj->checkableDirMode eq $value) {
+
+                $useIndex = $index;
+            }
+
+        } until (! @list);
+
+        my $combo = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,              # 'undef' value not used
+            7, 10, 9, 10);
+        $combo->set_active($useIndex);
+        $combo->signal_connect('changed' => sub {
+
+            my $text = $combo->get_active_text();
+
+            $self->ivAdd('editHash', 'checkableDirMode', $descripHash{$text});
+        });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -55460,13 +55904,6 @@
         #   1 otherwise
 
         my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my (
-            $useIndex,
-            @list, @comboList,
-            %descripHash,
-        );
 
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
@@ -55569,52 +56006,24 @@
             7, 10, 7, 8);
         $self->addEntryWithIcon($table, 'pathFindStepLimit', 'int', 0, undef,
             10, 12, 7, 8, 8, 8);
-        $self->addLabel($table, '<u>Checked directions</u>',
+
+        $self->addLabel($table, '<u>Simple pathfinding - adjacent region mode</u>',
             7, 12, 8, 9);
-        $self->addLabel($table, 'Collect checked directions',
-            7, 11, 9, 10);
-        $self->addCheckButton($table, 'collectCheckedDirsFlag', TRUE,
-            11, 12, 9, 10, 1, 0.5);
-        $self->addLabel($table, 'Draw checked directions',
-            7, 11, 10, 11);
-        $self->addCheckButton($table, 'drawCheckedDirsFlag', TRUE,
-            11, 12, 10, 11, 1, 0.5);
-        $self->addLabel($table, 'Checkable directions to count',
+
+        my ($radioGroup, $radioButton, $radioButton2, $radioButton3);
+        ($radioGroup, $radioButton) = $self->addRadioButton($table,
+            undef, 'Path must be in a single region', 'adjacentMode', 'default', TRUE,
+            7, 12, 9, 10);
+        ($radioGroup, $radioButton2) = $self->addRadioButton($table,
+            $radioGroup, 'Path can use adjacent regions', 'adjacentMode', 'near', TRUE,
+            7, 12, 10, 11);
+        ($radioGroup, $radioButton3) = $self->addRadioButton($table,
+            $radioGroup, 'Path can use all regions', 'adjacentMode', 'all', TRUE,
             7, 12, 11, 12);
-
-        @list = (
-            'simple', '\'simple\' - count NSEW', 0,
-            'diku', '\'diku\' - count NSEWUD', 1,
-            'lp', '\'lp\' - count NSEWUD, NE/NW/SE/SW', 2,
-            'complex', '\'complex\' - count all primary directions', 3,
-        );
-
-        do {
-
-            my $value = shift @list;
-            my $descrip = shift @list;
-            my $index = shift @list;
-
-            push (@comboList, $descrip);
-            $descripHash{$descrip} = $value;
-
-            if ($self->editObj->checkableDirMode eq $value) {
-
-                $useIndex = $index;
-            }
-
-        } until (! @list);
-
-        my $combo = $self->addComboBox($table, undef, \@comboList, '',
-            TRUE,              # 'undef' value not used
-            7, 11, 12, 13);
-        $combo->set_active($useIndex);
-        $combo->signal_connect('changed' => sub {
-
-            my $text = $combo->get_active_text();
-
-            $self->ivAdd('editHash', 'checkableDirMode', $descripHash{$text});
-        });
+        $self->addLabel($table, 'Adjacent regions to use (0 - none)',
+            7, 10, 12, 13);
+        $self->addEntryWithIcon($table, 'adjacentCount', 'int', 0, undef,
+            10, 12, 12, 13, 4, 4);
 
         # ->signal_connects from above
         $checkButton->signal_connect('toggled' => sub {
@@ -56203,6 +56612,14 @@
         $self->coloursTab_addRow(
             $table,
             8,
+            'mysteryExitColour',
+            'defaultMysteryExitColour',
+            'mystery exit',
+        );
+
+        $self->coloursTab_addRow(
+            $table,
+            9,
             'checkedDirColour',
             'defaultCheckedDirColour',
             'checked dir',
@@ -56210,7 +56627,7 @@
 
         $self->coloursTab_addRow(
             $table,
-            9,
+            10,
             'dragExitColour',
             'defaultDragExitColour',
             'draggable exit',
@@ -56510,7 +56927,7 @@
         # Resets the simple list displayed by $self->stylesTab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns
         #
         # Return values
@@ -57158,10 +57575,10 @@
 
     sub roomFlags1Tab_refreshList {
 
-        # Called by $self->roomFlags1Tab to refresh the GA::Gtk::Simple::List
+        # Called by $self->roomFlags1Tab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #   $sortMode   - 'priority' - sort room flags by priority, 'filter' - sort by filter,
         #                   'name' - sort room flags by name
@@ -57778,10 +58195,10 @@
 
     sub lightTab_refreshList {
 
-        # Called by $self->lightTab to refresh the GA::Gtk::Simple::List
+        # Called by $self->lightTab to refresh the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Return values

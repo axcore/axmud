@@ -1355,7 +1355,6 @@
         # Update IVs
         $self->ivPoke('nextDeleteLine', 0);
         $self->ivPoke('bufferTextFlag', FALSE);
-        $self->ivPoke('bufferTextFlag', TRUE);
         $self->ivPoke('newLineFlag', TRUE);
         $self->ivPoke('insertNewLineFlag', TRUE);
         $self->ivPoke('clearAfterInsertFlag', FALSE);
@@ -2001,6 +2000,7 @@
         $lineNum = $startIter->get_line();
         $posn = $startIter->get_visible_line_offset();
         $stopIter = $self->buffer->get_end_iter();
+        $oldBufferSize = $stopIter->get_line();
         if (! $startIter || ! $stopIter) {
 
             return undef;
@@ -3501,7 +3501,7 @@
 
         # Local variables
         my (
-            $url, $longMail, $mail, $result,
+            $url, $shortUrl, $longMail, $mail, $result,
             @firstArgs, @lastArgs, @otherArgs,
         );
 
@@ -3547,6 +3547,7 @@
         # (Unlike $self->setupLink, it's safe to assume that we have the entire link contained
         #   within $text)
         $url = $axmud::CLIENT->constUrlRegex;
+        $shortUrl = $axmud::CLIENT->constShortUrlRegex;
         $longMail = "mailto\: " . $axmud::CLIENT->constEmailRegex;
         $mail = $axmud::CLIENT->constEmailRegex;
 
@@ -3558,6 +3559,7 @@
 
             if (
                 $text =~ m/($url)/
+                || ($axmud::CLIENT->shortUrlFlag && $text =~ m/($shortUrl)/)
                 || $text =~ m/($longMail)/
                 || $text =~ m/($mail)/
                 || $text =~ m/(telnet\:\/\/([^\:\s]+)(\:(\d+))?)/
@@ -6441,8 +6443,11 @@
 
                         $tagHash{'bold'} = TRUE;
 
-                        if ($tagHash{'real_text'}) {
-
+                        # (If %tagHash currently contains no text colour, we have to add one, so
+                        #   that the bold text is visible)
+                        if (! $tagHash{'real_text'}) {
+                            $tagHash{'real_text'} = uc($self->textColour);
+                        } else {
                             $tagHash{'real_text'} = uc($tagHash{'real_text'});
                         }
 
@@ -7866,7 +7871,7 @@
         my ($self, $iter, $text, $check) = @_;
 
         # Local variables
-        my ($lineNum, $posn, $email, $type, $listRef, $objNum, $linkObj);
+        my ($lineNum, $posn, $short, $email, $type, $listRef, $objNum, $linkObj);
 
         # Check for improper arguments
         if (! defined $iter || ! defined $text || defined $check) {
@@ -7880,6 +7885,7 @@
 
         # Check $text to see if it matches the start of an acceptable link, in the form
         #   http://deathmud.org         - a URL opened by GA::Client->browserCmd
+        #   deathmud.org                - a URL opened by GA::Client->browserCmd
         #   mailto:god@deathmud.org     - an email sent by GA::Client->emailCmd
         #   admin@deathmud.org          - an email sent by GA::Client->emailCmd
         #   telnet://deathmud.org:6666  - a new connection to a world, using telnet
@@ -7888,14 +7894,18 @@
         #   ssh://deathmud.org          - a new connection to a world, generic port
         #   ssl://deathmud.org:6666     - a new connection to a world, using SSL
         #   ssl://deathmud.org          - a new connection to a world, generic port
-        # NB We don't check against GA::Client->urlRegex, etc, because $text might not contain
-        #   the whole link, but we do check against an email link without the mailto: part, in the
-        #   expectation that it was probably displayed by a single call to $self->insertText, etc
+        # NB We don't check against GA::Client->constUrlRegex, etc, because $text might not contain
+        #   the whole link, but we do check against GA::Client->constShortUrlRegex and against an
+        #   email link without the mailto: part, in the hope that it was probably displayed by a
+        #   single call to $self->insertText, etc
         # NB This function isn't used for MXP links, for which a GA::Obj::Link has already been
         #   created
+        $short = '^' . $axmud::CLIENT->constShortUrlRegex;
         $email = '^' . $axmud::CLIENT->constEmailRegex;
-        if ($text =~ m/^http(s?)\:\/\//i) {
-
+        if (
+            $text =~ m/^https?\:\/\//i
+            || ($axmud::CLIENT->shortUrlFlag && $text =~ m/$short/i)
+        ) {
             $type = 'www';
 
         } elsif ($text =~ m/^mailto\:/i || $text =~ m/$email/i) {
@@ -7913,6 +7923,11 @@
         } elsif ($text =~ m/^ssl\:\/\//i) {
 
             $type = 'ssl';
+
+        } else {
+
+            # This shouldn't happen
+            $type = 'other';
         }
 
         # A single link may be created by one or more successive calls to $self->insertText (etc).
@@ -7923,27 +7938,7 @@
         #       ->linkObjLineHash{line} = reference_to_list_of_GA::Obj::Link_objects
         $listRef = $self->ivShow('linkObjLineHash', $lineNum);
 
-        if (! defined $listRef) {
-
-            # Set its IVs
-            if (! $type) {
-
-                # This shouldn't happen
-                $type = 'other';
-            }
-
-            # Create a new GA::Obj::Link object
-            $linkObj = $self->add_link($lineNum, $posn, $type);
-            if (! $linkObj) {
-
-                return undef;
-            }
-
-            # (For non-MXP links, ->href and ->text are the same)
-            $linkObj->ivPoke('href', $text);
-            $linkObj->ivPoke('text', $text);
-
-        } elsif (! $type) {
+        if (defined $listRef) {
 
             # Check each GA::Obj::Link object in turn. If there's one which ends at $posn, we'll
             #   need to check if $text is part of the same link, or the start of a new link
@@ -7961,12 +7956,20 @@
                     last OUTER;
                 }
             }
+        }
 
+        if (! $linkObj) {
+
+            # Create a new GA::Obj::Link object
+            $linkObj = $self->add_link($lineNum, $posn, $type);
             if (! $linkObj) {
 
-                # Could not add $text to the end of an existing link
                 return undef;
             }
+
+            # (For non-MXP links, ->href and ->text are the same)
+            $linkObj->ivPoke('href', $text);
+            $linkObj->ivPoke('text', $text);
         }
 
         return 1;
@@ -8841,7 +8844,10 @@
         my ($self, $linkObj, $check) = @_;
 
         # Local variables
-        my ($listRef, $startIter, $length, $stopPosn, $stopIter, $endIter);
+        my (
+            $listRef, $beginIter, $length, $endIter, $lastLineFlag, $startPosn, $startIter,
+            $stopPosn, $stopIter,
+        );
 
         # Check for improper arguments
         if (! defined $linkObj || defined $check) {
@@ -8871,15 +8877,34 @@
 
         $self->ivIncrement('linkObjCount');
 
-        # Add Axmud 'link' and 'link_off' tags at the appropriate places
-        $startIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, $linkObj->posn);
+        # This function has historically been the cause of sudden crashes when $stopIter or even
+        #   $startIter have been outside the length of the line, so we need to check both of them
+        $beginIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, 0);
+        $length = $self->getLineLength($beginIter);
         $endIter = $self->buffer->get_end_iter();
 
-        # Need to check that the 'link_off' is going to be inserted into the buffer at a position
-        #   that actually exists; if the line is too short, Axmud will crash
-        $length = $self->getLineLength($startIter);
-        $stopPosn = $linkObj->posn + length ($linkObj->text);
+        if ($endIter->get_line() == $beginIter->get_line()) {
 
+            $lastLineFlag = TRUE;
+        }
+
+        # If the link starts beyond the end of the line (an unlikely but actually observed error),
+        #   don't display a clickable link at all
+        $startPosn = $linkObj->posn;
+        if (
+            ($lastLineFlag && $startPosn > $length)
+            || (! $lastLineFlag && $startPosn > ($length - 1))
+        ) {
+            return undef;
+
+        } else {
+
+            $startIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, $startPosn);
+        }
+
+        # If the link ends beyond the end of the line, move the end of the link to the end of the
+        #   line so a clickable link can be displayed
+        $stopPosn = $linkObj->posn + length ($linkObj->text);
         if ($endIter->get_line() == $startIter->get_line() && $stopPosn > $length) {
             $stopPosn = $length;
         } elsif ($endIter->get_line() != $startIter->get_line() && $stopPosn > ($length - 1)) {
@@ -8891,12 +8916,16 @@
             $stopPosn,
         );
 
+        # Add Axmud 'link' and 'link_off' tags at the appropriate places
         if ($startIter && $stopIter) {
 
             $self->buffer->apply_tag_by_name('link', $startIter, $stopIter);
-        }
+            return 1;
 
-        return 1;
+        } else {
+
+            return undef;
+        }
     }
 
     sub add_link {

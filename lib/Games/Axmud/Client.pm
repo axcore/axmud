@@ -46,7 +46,7 @@
 
         # Local variables
         my (
-            $urlRegex, $emailRegex,
+            $urlRegex, $shortRegex, $emailRegex,
             @cmdList,
             %soundHash, %msspHash,
         );
@@ -60,9 +60,10 @@
             return undef;
         }
 
-        # Set a regex to recognise URLs
+        # Set regexes to recognise URLs
         $urlRegex = 'http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)'
                         . '([a-zA-Z0-9\-?\.\?\,\'\/\\\+&amp;%\$#_\=\~]*)?';
+        $shortRegex = '[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*\.(com|org|net|int|edu|gov|mil|io|uk)';
         # Set a regex to recognise email addresses
         $emailRegex = '\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b';
 
@@ -399,7 +400,6 @@
             #   'tasks'      <SCRIPT_DIR>/data/tasks.axm                     tasks           Client
             #   'scripts'    <SCRIPT_DIR>/data/scripts.axm                   scripts         Client
             #   'contacts'   <SCRIPT_DIR>/data/contacts.axm                  contacts        Client
-            #   'keycodes'   <SCRIPT_DIR>/data/keycodes.axm                  keycodes        Client
             #   'dicts'      <SCRIPT_DIR>/data/dicts.axm                     dicts           Client
             #   'toolbar'    <SCRIPT_DIR>/data/toolbar.axm                   toolbar         Client
             #   'usercmds'   <SCRIPT_DIR>/data/usercmds.axm                  usercmds        Client
@@ -736,12 +736,13 @@
                     'CommandBuffer', 'SetCommandBuffer', 'EditCommandBuffer', 'DumpCommandBuffer',
                     'SaveBuffer', 'LoadBuffer', 'ReplayBuffer', 'HaltReplay', 'SetAutoComplete',
                         'ToggleWindowKey', 'ToggleMainWindow', 'ToggleLabel', 'ToggleIrreversible',
-                        'TogglePopup',
+                        'TogglePopup', 'ToggleShortLink',
                     'ShowFile', 'DisableSaveLoad', 'DisableSaveWorld', 'Save', 'Load',
                         'AutoSave', 'EmergencySave',
                     'ExportFiles', 'ImportFiles', 'ExportData', 'ImportData',
                     'RetainFileCopy',
-                    'BackupData', 'RestoreData', 'AutoBackup',
+                    'ListDataDirectory', 'SetDataDirectory', 'BackupData', 'RestoreData',
+                        'AutoBackup',
                     'LoadPlugin', 'EnablePlugin', 'DisablePlugin', 'TestPlugin', 'ListPlugin',
                     'AddInitialPlugin', 'DeleteInitialPlugin', 'ListInitialPlugin',
                     'SetTelnetOption', 'SetMUDProtocol', 'SetTermType', 'ConfigureTerminal',
@@ -764,7 +765,7 @@
                         'DeleteDictionary', 'ListDictionary', 'SetLanguage', 'SwitchLanguage',
                     'AddWord', 'QuickAddWord', 'DeleteWord', 'ListWord',
                     'ModifyPrimary', 'AddSecondary', 'ModifySecondary', 'DeleteSecondary',
-                        'ListDirection',
+                        'AddRelative', 'DeleteRelative', 'ListDirection',
                     'SetAutoSecondary', 'ListAutoSecondary',
                     'AddSpeedWalk', 'DeleteSpeedWalk', 'ListSpeedWalk',
                     'AddModifierChar', 'DeleteModifierChar', 'ListModifierChar',
@@ -802,11 +803,7 @@
                     'AddTimer', 'ModifyTimer', 'DeleteTimer', 'ListTimer',
                     'AddHook', 'ModifyHook', 'DeleteHook', 'ListHook',
                 '@Keycodes',
-                    'AddKeycodeObject', 'SetKeycodeObject', 'CloneKeycodeObject',
-                        'EditKeycodeObject', 'ResetKeycodeObject', 'DeleteKeycodeObject',
-                        'ListKeycodeObject',
-                    'GetKeycode', 'SetKeycode', 'ResetKeycode', 'ListKeycode',
-                        'ListKeycodeAlternative',
+                    'ListKeycode', 'ListKeycodeAlternative',
                 '@Task package names',
                     'AddTaskPackage', 'DeleteTaskPackage', 'ResetTaskPackage', 'ListTaskPackage',
                 '@Task labels',
@@ -907,6 +904,7 @@
                 '@Locator task',
                     'MoveDirection', 'RelayDirection', 'Teleport', 'AddTeleport', 'DeleteTeleport',
                         'ListTeleport', 'InsertLook', 'InsertFailedExit', 'ResetLocatorTask',
+                        'SetFacing',
                     'AddExitPattern', 'DeleteExitPattern', 'ListExitPattern',
                     'CollectUnknownWords', 'EmptyUnknownWords', 'ListUnknownWords',
                     'CollectContentsLines', 'EmptyContentsLines', 'ListContentsLines',
@@ -922,9 +920,10 @@
                     'AddRegion', 'AddRoom', 'AddModelObject', 'SetModelParent', 'EditModelObject',
                         'EditRegionmap', 'EmptyRegion', 'DeleteRegion', 'DeleteTemporaryRegion',
                         'DeleteRoom', 'DeleteModelObject', 'ListModel', 'ListOrphan', 'DumpModel',
-                        'EditModel', 'UpdateModel', 'ModelReport', 'ListSourceCode',
+                        'EditModel', 'MergeModel', 'UpdateModel', 'ModelReport', 'ListSourceCode',
                     'AddLabelStyle', 'EditLabelStyle', 'RenameLabelStyle', 'DeleteLabelStyle',
                         'ListLabelStyle',
+                    'QuickLabelDelete',
                     'AddPlayerCharacter', 'DeletePlayerCharacter', 'ListPlayerCharacter',
                     'AddMinionString', 'DeleteMinionString', 'ListMinionString',
                     'SetLightList', 'ResetLightList', 'SetLightStatus',
@@ -935,7 +934,7 @@
                     'RoomCommand', 'IgnoreRoomCommand', 'NoticeRoomCommand', 'ListRoomCommand',
                 '@Exit model commands',
                     'AddExit', 'EditExit', 'DeleteExit', 'ListExitModel', 'DumpExitModel',
-                    'AllocateExit',
+                    'AllocateExit', 'AlternativeExit',
             ],
             # An ordered list of commands, initially set to $self->constClientCmdPrettyList, and
             #   modified when plugins are loaded, enabled or disabled in order to show (or remove)
@@ -1416,19 +1415,20 @@
             constWorldPatchHash         => {
                 'alteraeon'         => '1.1.270',
                 'avalonrpg'         => '1.1.012',
+                'discworld'         => '1.1.343',
                 'dsdev'             => '1.1.270',
                 'dslocal'           => '1.1.270',
                 'dsprime'           => '1.1.270',
-                'discworld'         => '1.1.012',
                 'luminari'          => '1.1.270',
                 'mud1'              => '1.1.270',
                 'mud2'              => '1.1.270',
                 'mudii'             => '1.1.270',
+                'nanvaent'          => '1.1.343',
                 'pict'              => '1.1.174',
                 'swmud'             => '1.1.012',
                 'threekingdoms'     => '1.1.270',
                 'threescapes'       => '1.1.270',
-                'twotowers'         => '1.1.270',
+                'twotowers'         => '1.1.343',
             },
             # Constant registry list of pre-configured world profiles; all the keys in
             #   $self->constWorldList, sorted alphabetically
@@ -2071,21 +2071,19 @@
             interfaceModelHash          => {},
 
             # Macros use keycodes - ways of naming keys on the keyboard (F1, Escape, grave etc)
-            # Keycodes may vary from system to system - there's no way to guarantee that the keycode
-            #   for the escape key will always be 'Escape'. This could cause tasks and Axbasic
-            #   scripts to break down when used on another computer
-            # Keycode objects store a list of keycodes for a particular system. Tasks and Axbasic
-            #   scripts can specify one of Axmud's standard keycodes (like 'kp_enter') and have it
-            #   translated into the keycode used on the current system, providing that the keycode
-            #   object for that system has been set up (max 16 chars, no reserved names)
+            # Axmud uses a standard set of keycodes that don't vary from system to system. For
+            #   example, on Linux the ALT-GR key produces the keycode 'ISO_Level3_Shift', but on
+            #   MS Windows, it produces the keycode 'Alt_R'. Axmud's standard keycode is 'alt_gr'
+            # Note that there are no Axmud standard keycodes for ordinary letters/numbers; Axmud
+            #   assumes that these are needed for typing, so they're not available to macros
             #
-            # Constant registry hash of Axmud standard keycode values (used to initialise
-            #   GA::Obj::Keycode->keycodeHash). Hash in the form:
-            #       $constKeycodeHash{standard_value} = real_value_string
+            # Constant registry hash of Axmud standard keycode values, and their Linux equivalents.
+            #   Hash in the form
+            #       $constKeycodeHash{standard_value} = linux_value_string
             # ...where 'standard_value' is a value used by Axmud to uniquely identify a key or
-            #   key combination, and 'real_value_string' is the corresponding keycode returned by
-            #   Linux Mint 16 running Cinnamon (when there is more than one corresponding keycode,
-            #   they are in a single string, separated by a space)
+            #   key combination, and 'linux_value_string' is the corresponding keycode returned by
+            #   Linux (when there is more than one corresponding keycode, they are in a single
+            #   string, separated by a space)
             constKeycodeHash            => {
                 shift                   => 'Shift_L Shift_R',
                 alt                     => 'Alt_L',
@@ -2096,22 +2094,22 @@
                 escape                  => 'Escape',
                 pause                   => 'Pause',
                 break                   => 'Break',
-                insert                  => 'Insert',
-                delete                  => 'Delete',
+                insert                  => 'Insert KP_Insert',
+                delete                  => 'Delete KP_Delete',
                 return                  => 'Return',
                 backspace               => 'BackSpace',
-                space                   => 'space',         # Yes, lower case
+                space                   => 'space',
                 tab                     => 'Tab',
 
-                home                    => 'Home',
-                page_up                 => 'Page_Up',
-                page_down               => 'Page_Down',
-                end                     => 'End',
+                home                    => 'Home KP_Home',
+                page_up                 => 'Page_Up KP_Page_Up',
+                page_down               => 'Page_Down KP_Page_Down',
+                end                     => 'End KP_End',
 
-                up                      => 'Up',
-                down                    => 'Down',
-                left                    => 'Left',
-                right                   => 'Right',
+                up                      => 'Up KP_Up',
+                down                    => 'Down KP_Down',
+                left                    => 'Left KP_Left',
+                right                   => 'Right KP_Right',
 
                 f1                      => 'F1',
                 f2                      => 'F2',
@@ -2177,19 +2175,27 @@
                 kp_multiply             => 'KP_Multiply',
                 kp_divide               => 'KP_Divide',
                 kp_enter                => 'KP_Enter',
-                # Keypad - NUM LOCK off
-                kp_up                   => 'KP_Up',
-                kp_down                 => 'KP_Down',
-                kp_left                 => 'KP_Left',
-                kp_right                => 'KP_Right',
-                kp_page_up              => 'KP_Page_Up',
-                kp_page_down            => 'KP_Page_Down',
-                kp_home                 => 'KP_Home',
-                kp_end                  => 'KP_End',
-                kp_insert               => 'KP_Insert',
-                kp_delete               => 'KP_Delete',
                 kp_full_stop            => 'KP_Decimal',
             },
+            # We also use a constant registry hash of Axmud standard keycode values and their
+            #   equivalents in MS Windows and in *BSD. Only keycodes which are different to those
+            #   above are listed
+            constMSWinKeycodeHash       => {
+                alt_gr                  => 'Alt_R',
+                ctrl                    => 'Control_L',
+                num_lock                => '',
+            },
+            constBSDKeycodeHash         => {
+                ctrl                    => 'Control_L',
+                num_lock                => '',
+            },
+            # Custom hash of Axmud standard keycodes and their equivalents on the current system
+            keycodeHash                 => {},              # Set by $self->setupKeycodes
+            # The reverse hash of $self->keycodeHash, which therefore contains more keys, e.g.
+            #   $keycodeHash{'up'} = 'Up KP_Up'
+            #   $revKeycodeHash{'Up'} = 'up'
+            #   $revKeycodeHash{'KP_Up'} = 'up'
+            revKeycodeHash              => {},              # Set by $self->setupKeycodes
             # Constant registry hash of alternatives to Axmud standard keycode values. Includes
             #   variants without capitals (e.g. transforms 'backspace' into 'backSpace') and
             #   American English variants (e.g. transforms 'period' into 'full_stop')
@@ -2217,11 +2223,6 @@
                 greater                 => 'greater_than',
                 questionmark            => 'question_mark',
                 underscore              => 'underline',
-
-                kp_pageup               => 'kp_page_up',
-                kp_pagedown             => 'kp_page_down',
-                kp_fullstop             => 'kp_full_stop',
-                kp_period               => 'kp_full_stop',
             },
             # Constant list of Axmud standard keycode values in a fixed order, each item a key in
             #   $self->constKeycodeHash
@@ -2240,15 +2241,8 @@
                     'less_than', 'greater_than', 'question_mark',
                 'kp_0', 'kp_1', 'kp_2', 'kp_3', 'kp_4', 'kp_5', 'kp_6', 'kp_7', 'kp_8', 'kp_9',
                 'kp_add', 'kp_subtract', 'kp_multiply', 'kp_divide', 'kp_enter',
-                'kp_up', 'kp_down', 'kp_left', 'kp_right', 'kp_page_up', 'kp_page_down', 'kp_home',
-                    'kp_end', 'kp_insert', 'kp_delete', 'kp_full_stop',
+                'kp_full_stop',
             ],
-
-            # Registry hash of keycode objects, in the form
-            #   $keycodeObjHash{unique_name} = blessed_reference_to_keycode_object
-            keycodeObjHash              => {},      # [keycodes]
-            # Blessed reference of the keycode object for this system
-            currentKeycodeObj           => undef,   # [keycodes]
             # Registry hash of keycodes that are used by any active macro interface in any session
             #   (used in addition to the session's own registries, because every time a key is
             #   pressed, we want to know - as quickly as possible - whether we should check it
@@ -3434,12 +3428,12 @@
                 'TELNET_IAC'            => 255,
                 # TELOPT_
                 'TELOPT_ECHO'           => 1,
-                'TELOPT_SGA'            => 3,       # Implemented directly by GA::Net::Telnet
+                'TELOPT_SGA'            => 3,       # Implemented directly by GA::Obj::Telnet
                 'TELOPT_TTYPE'          => 24,
                 'TELOPT_EOR'            => 25,
                 'TELOPT_NAWS'           => 31,
-                'TELOPT_NEW_ENVIRON'    => 39,      # Not implemented
-                'TELOPT_CHARSET'        => 42,      # Not implemented
+                'TELOPT_NEW_ENVIRON'    => 39,
+                'TELOPT_CHARSET'        => 42,
                 'TELOPT_MSDP'           => 69,
                 'TELOPT_MSSP'           => 70,
                 'TELOPT_MCCP1'          => 85,
@@ -3514,14 +3508,10 @@
             useNawsFlag                 => TRUE,        # [config]
             # Use NEW-ENVIRON (New Environment option - RFC 1572,
             #   http://www.ietf.org/rfc/rfc1572.txt)
-            # NOT IMPLEMENTED. Axmud refuses all NEW-ENVIRON requests, regardless of the value of
-            #   this flag
-            useNewEnvironFlag           => FALSE,       # [config]
+            useNewEnvironFlag           => TRUE,        # [config]
             # Use CHARSET (Character Set and translation - RFC 1073,
             #   http://www.ietf.org/rfc/rfc2066.txt)
-            # NOT IMPLEMENTED. Axmud refuses all CHARSET requests, regardless of the value of this
-            #   flag
-            useCharSetFlag              => FALSE,       # [config]
+            useCharSetFlag              => TRUE,        # [config]
 
             # MUD protocols
             # Use MSDP (Mud Server Data Protocol - http://tintin.sourceforge.net/msdp/)
@@ -4266,7 +4256,7 @@
                 'down'                  => chr(27) . '[B',
                 'right'                 => chr(27) . '[C',
                 'left'                  => chr(27) . '[D',
-                'num_lock'              => chr(27) . 'OP',      # PF1
+                'num_lock'              => chr(27) . 'OP',      # PF1 / not available on MSWin/*BSD
                 'kp_divide'             => chr(27) . 'OQ',      # PF2
                 'kp_multiply'           => chr(27) . 'OR',      # PF3
                 'kp_subtract'           => chr(27) . 'OS',      # PF4
@@ -4290,7 +4280,7 @@
             # Parallel debugging flag set to TRUE if a very short 'debug' message should be
             #   displayed for incoming option negotiations (ignored if ->debugTelnetFlag is TRUE)
             debugTelnetMiniFlag         => FALSE,       # [config]
-            # Debugging flag set to TRUE if GA::Net::Telnet should write its own logfile for
+            # Debugging flag set to TRUE if GA::Obj::Telnet should write its own logfile for
             #   option negotiations, telopt.log (store in Axmud's base directory)
             debugTelnetLogFlag          => FALSE,       # [config]
             # Debugging flag set to TRUE if MSDP data sent to Status/Locator tasks should be
@@ -5528,7 +5518,6 @@
 
             # Lists of short names for months and days of the week (mainly used with functions like
             #   ->localTime, ->localClock and ->localDate)
-            #
             # Registry list of short months (these values never change)
             constMonthList              => [
                 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -5644,8 +5633,13 @@
             #   from the world; as soon as text is received, the flag is set back to FALSE
             tempSoundFlag               => FALSE,
 
-            # Regex used to recognise valid web links
+            # Regexes used to recognise valid web links
             constUrlRegex               => $urlRegex,
+            constShortUrlRegex          => $shortRegex,
+            # Flag set to TRUE if GA::Session->extractClickLinks should use both
+            #   $self->constUrlRegex and ->constShortUrlRegex, set to FALSE if it should only use
+            #   ->constUrlRegex
+            shortUrlFlag                => TRUE,
             # Regex used to recognise valid email addresses
             constEmailRegex             => $emailRegex,
 
@@ -5689,6 +5683,10 @@
             #   as it tries to interpret room statements (set to FALSE if the Locator should behave
             #   normally)
             debugMaxLocatorFlag         => FALSE,       # [config]
+            # Flag set to TRUE if GA::Obj::Exit should display debug messages for an illegal
+            #   exit direction (typically one that's over 64 characters long), FALSE if no debug
+            #   message should be shown
+            debugExitFlag               => FALSE,       # [config]
             # Flag set to TRUE if the Locator task should display a summary of the contents of its
             #   ->moveList IV (which contains a list of look/glance and movement commands for which
             #   it is expecting to receive room statements) in its task window (set to FALSE if the
@@ -6231,8 +6229,8 @@
 
         # Local variables
         my (
-            $warningFlag, $tempDir, $keycodeObjName, $keycodeObj, $desktopObj, $host, $port, $world,
-            $profObj, $taskObj, $offlineFlag,
+            $warningFlag, $tempDir, $desktopObj, $host, $port, $world, $profObj, $taskObj,
+            $offlineFlag,
             @list,
         );
 
@@ -6362,27 +6360,8 @@
         $self->createStandardColourSchemes();
         # Set up supported MCP packages
         $self->createSupportedMcpPackages();
-
-        # Create a (default) current keycode object
-        $keycodeObjName = 'my_keycodes';
-        # Create the current keycode object (cheat a little by pretending this object is a
-        #   GA::Session)
-        $keycodeObj = Games::Axmud::Obj::Keycode->new($self, $keycodeObjName);
-        if (! $keycodeObj) {
-
-            return $self->writeError(
-                'Could not create keycode object',
-                $self->_objClass . '->start',
-            );
-
-        } else {
-
-            $self->ivPoke('currentKeycodeObj', $keycodeObj);
-            $self->ivAdd('keycodeObjHash', $keycodeObjName, $keycodeObj);
-
-            # The data stored in these IVs is saved in the 'keycodes' file
-            $self->setModifyFlag('keycodes', TRUE, $self->_objClass . '->start');
-        }
+        # Set up keycodes for the current system
+        $self->setupKeycodes();
 
         # Create default TTS objects
         $self->ttsCreateStandard();
@@ -6488,8 +6467,8 @@
             }
         }
 
-        # Load data for the remaining file objects ('tasks', 'scripts', 'contacts', 'keycodes',
-        #   'dicts', 'toolbar', 'usercmds', 'zonemaps', 'winmaps', 'tts')
+        # Load data for the remaining file objects ('tasks', 'scripts', 'contacts', 'dicts',
+        #   'toolbar', 'usercmds', 'zonemaps', 'winmaps', 'tts')
         if ($self->loadDataFlag && ! $self->loadOtherFiles()) {
 
             $warningFlag = TRUE;
@@ -7202,8 +7181,8 @@
 
         # The list of file object types to create
         @list = (
-            'config', 'tasks', 'scripts', 'contacts', 'keycodes', 'dicts', 'toolbar', 'usercmds',
-            'zonemaps', 'winmaps', 'tts',
+            'config', 'tasks', 'scripts', 'contacts', 'dicts', 'toolbar', 'usercmds', 'zonemaps',
+            'winmaps', 'tts',
         );
 
         # Create the FileObjs
@@ -7242,9 +7221,8 @@
         #
         # Expected arguments
         #   $objName    - The unique name of the file object, matching a key in $self->fileObjHash
-        #                   ('config', 'tasks', 'scripts', 'contacts', 'keycodes', 'dicts',
-        #                   'toolbar', 'usercmds', 'zonemaps', 'winmaps', 'tts' or the name of a
-        #                   world profile)
+        #                   ('config', 'tasks', 'scripts', 'contacts', 'dicts', 'toolbar',
+        #                   'usercmds', 'zonemaps', 'winmaps', 'tts' or the name of a world profile)
         #   $flag       - The setting for the flag (TRUE of FALSE)
         #
         # Optional arguments
@@ -7893,6 +7871,65 @@
         return 1;
     }
 
+    sub setupKeycodes {
+
+        # Called by $self->start
+        # Sets up keycodes for the current system by populating $self->keycodeHash and
+        #   $self->revKeycodeHash
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupKeycodes', @_);
+        }
+
+        $self->ivPoke('keycodeHash', $self->constKeycodeHash);
+        if ($^O eq 'MSWin32') {
+
+            foreach my $key ($self->ivKeys('constMSWinKeycodeHash')) {
+
+                $self->ivAdd('keycodeHash', $key, $self->ivShow('constMSWinKeycodeHash', $key));
+            }
+
+        } elsif ($^O =~ m/bsd/i) {
+
+            foreach my $key ($self->ivKeys('constBSDKeycodeHash')) {
+
+                $self->ivAdd('keycodeHash', $key, $self->ivShow('constBSDKeycodeHash', $key));
+            }
+        }
+
+        foreach my $standard ($self->ivKeys('keycodeHash')) {
+
+            my (
+                $string,
+                @list,
+            );
+
+            $string = $self->ivShow('keycodeHash', $standard);
+
+            # $string is a single standard keycode, e.g. 'kp_0', or a set of standard keycodes
+            #   separated by whitespace, e.g. 'up kp_up'
+            @list = split(/\s+/, $string);
+
+            foreach my $item (@list) {
+
+                $self->ivAdd('revKeycodeHash', $item, $standard);
+            }
+        }
+
+        return 1;
+    }
+
     sub copyPreConfigWorld {
 
         # Called by GA::Obj::File->setupConfigFile when a new 'config' file is created
@@ -8414,8 +8451,8 @@
     sub loadOtherFiles {
 
         # Called by $self->start
-        # Loads data from the files 'tasks', 'scripts', 'contacts', 'keycodes', 'dicts', 'toolbar',
-        #   'usercmds', 'zonemaps', 'winmaps', 'tts')
+        # Loads data from the files 'tasks', 'scripts', 'contacts', 'dicts', 'toolbar', 'usercmds',
+        #   'zonemaps', 'winmaps', 'tts')
         # Any of the files which don't yet exist are created
         #
         # Expected arguments
@@ -8438,8 +8475,8 @@
 
         # The list of file types to load
         @list = (
-            'tasks', 'scripts', 'contacts', 'keycodes', 'dicts', 'toolbar', 'usercmds', 'zonemaps',
-            'winmaps', 'tts',
+            'tasks', 'scripts', 'contacts', 'dicts', 'toolbar', 'usercmds', 'zonemaps', 'winmaps',
+            'tts',
         );
 
         # Create the FileObjs
@@ -15155,15 +15192,89 @@
         return $number;
     }
 
+    sub getKeycode {
+
+        # Called by anything
+        # Given an Axmud standard keycode, or one of the recognised alternative versions of a
+        #   standard keycode, returns the corresponding keycode string (a string containing one or
+        #   more keycodes, separated by spaces)
+        #
+        # Expected arguments
+        #   $standard   - The standard Axmud keycode type (a key in $self->constKeycodeHash) or the
+        #                   alternative version of this type (a key in $self->constAltKeycodeHash)
+        #
+        # Return values
+        #   'undef' on improper arguments or if $standard is an invalid standard/alternative keycode
+        #   1 otherwise
+
+        my ($self, $standard, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $standard  || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->getKeycode', @_);
+        }
+
+        # If $standard is an alternative keycode type, translate it into the standard keycode type
+        if ($axmud::CLIENT->ivExists('constAltKeycodeHash', $standard)) {
+
+            $standard = $axmud::CLIENT->ivShow('constAltKeycodeHash', $standard);
+
+        # Otherwise, check that $type is a valid standard keycode type
+        } elsif (! $self->ivExists('constKeycodeHash', $standard)) {
+
+            # (No error message displayed - just return 'undef')
+            return undef;
+        }
+
+        # Return the keycode string
+        return $self->ivShow('keycodeHash', $standard);
+    }
+
+    sub reverseKeycode {
+
+        # Called by anything
+        # Converts one of the current system's keycodes (e.g. 'ISO_Level3_Shift' on Linux/*BSD,
+        #   'Alt_R' on MS Windows) into an Axmud standard keycode
+        #
+        # Expected arguments
+        #   $sysKeycode - The system keycode, e.g. 'ISO_Level3_Shift', 'Alt_R'
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the Axmud standard keycode. $self->constKeycodeHash doesn't include
+        #       the keycodes for ordinary letters and numbers, so if $sysKeycode isn't in that
+        #       hash, return $sysKeycode unmodified
+
+        my ($self, $sysKeycode, $check) = @_;
+
+        # Local variables
+        my $standard;
+
+        # Check for improper arguments
+        if (! defined $sysKeycode  || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->reverseKeycode', @_);
+        }
+
+        $standard = $axmud::CLIENT->ivShow('revKeycodeHash', $sysKeycode);
+        if (! $standard) {
+            return $sysKeycode;
+        } else {
+            return $standard;
+        }
+    }
+
     sub convertKeycodeString {
 
         # Called by GA::Generic::Cmd->addInterface and ->modifyInterface while adding or modifying
         #   a macro
-        # The macro's stimulus is one of Axmud's standard keycodes (like 'F5') or a keycode string
+        # The macro's stimulus is one of Axmud's standard keycodes (like 'f5') or a keycode string
         #   (like 'shift f5').
-        # Keycodes in a keycode string must be in a given order (i.e. 'ctrl shift f5', not
-        #   'shift ctrl f5' or even 'f5 shift ctrl'). Change the order of words in the keycode
-        #   string, if necessary
+        # Standard keycodes in a keycode string must be in a given order (i.e. 'ctrl shift f5', not
+        #   'shift ctrl f5' or even 'f5 shift ctrl')
+        # This function changes the order of words in the keycode string, if necessary, and returns
+        #   the modified string
         #
         # Expected arguments
         #   $string     - A string containing one or more Axmud standard keycodes
@@ -15176,7 +15287,7 @@
 
         # Local variables
         my (
-            $numLockFlag, $ctrlFlag, $shiftFlag, $altFlag, $altGrFlag, $newString,
+            $ctrlFlag, $shiftFlag, $altFlag, $altGrFlag, $newString,
             @list, @modList,
         );
 
@@ -15189,12 +15300,11 @@
         # Split the string into a list of words
         @list = split(m/\s+/, $string);
 
-        # Go through @list, removing the NUM LOCK, CTRL, SHIFT, ALT or ALT-GR keycodes
+        # Go through @list, removing the 'ctrl', 'shift', 'alt', 'alt_gr' (which we'll put back
+        #   later), and removing all non-standard keycodes altogether
         foreach my $keycode (@list) {
 
-            if ($keycode eq 'num_lock') {
-                $numLockFlag = TRUE;
-            } elsif ($keycode eq 'ctrl') {
+            if ($keycode eq 'ctrl') {
                 $ctrlFlag = TRUE;
             } elsif ($keycode eq 'shift') {
                 $shiftFlag = TRUE;
@@ -15202,7 +15312,7 @@
                 $altFlag = TRUE;
             } elsif ($keycode eq 'alt_gr') {
                 $altGrFlag = TRUE;
-            } else {
+            } elsif ($self->ivExists('constKeycodeHash', $keycode)) {
                 push (@modList, $keycode);
             }
         }
@@ -15210,18 +15320,9 @@
         # Now compile a new keycode string
         $newString = '';
 
-        if ($numLockFlag) {
-
-            $newString .= 'num_lock';
-        }
-
         if ($ctrlFlag) {
 
-            if ($newString) {
-                $newString .= ' ctrl';
-            } else {
-                $newString .= 'ctrl';
-            }
+            $newString .= 'ctrl';
         }
 
         if ($shiftFlag) {
@@ -15253,7 +15354,7 @@
 
         foreach my $keycode (@modList) {
 
-            # Preserve the order of keycodes other than NUM LOCK, CTRL, SHIFT, ALT or ALT-GR
+            # Preserve the order of keycodes other than 'ctrl', 'shift', 'alt' or 'alt_gr'
             if ($newString) {
                 $newString .= ' ' . $keycode;
             } else {
@@ -15740,7 +15841,8 @@
         #   $data     - The string to decode
         #
         # Return values
-        #   'undef' on improper arguments or if the conversion fails
+        #   'undef' on improper arguments, if $data is an empty string (or contains just space
+        #       characters), or if the conversion fails
         #   Otherwise returns the Perl data structure
 
         my ($self, $data, $check) = @_;
@@ -15752,6 +15854,13 @@
         if (! defined $data || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->decodeJson', @_);
+        }
+
+        # (Materia magica presents an ATCP/GMCP packet which produces a $data consisting of a single
+        #   space character, so we need to check for that)
+        if ($data eq '' || $data =~ m/^\s*$/) {
+
+            return undef;
         }
 
         $obj = JSON->new();
@@ -16794,24 +16903,6 @@
         return 1;
     }
 
-    sub set_currentKeycodeObj {
-
-        my ($self, $obj, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $obj || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_currentKeycodeObj', @_);
-        }
-
-        $self->ivPoke('currentKeycodeObj', $obj);
-
-        # The data stored in this IV is saved in the 'keycodes' file
-        $self->setModifyFlag('keycodes', TRUE, $self->_objClass . '->set_currentKeycodeObj');
-
-        return 1;
-    }
-
     sub set_customAllowTTSFlag {
 
         my ($self, $flag, $check) = @_;
@@ -17402,6 +17493,7 @@
                 && $iv ne 'debugLineTagsFlag'
                 && $iv ne 'debugLocatorFlag'
                 && $iv ne 'debugMaxLocatorFlag'
+                && $iv ne 'debugExitFlag'
                 && $iv ne 'debugMoveListFlag'
                 && $iv ne 'debugParseObjFlag'
                 && $iv ne 'debugCompareObjFlag'
@@ -17455,6 +17547,7 @@
                 && $iv ne 'debugLineTagsFlag'
                 && $iv ne 'debugLocatorFlag'
                 && $iv ne 'debugMaxLocatorFlag'
+                && $iv ne 'debugExitFlag'
                 && $iv ne 'debugMoveListFlag'
                 && $iv ne 'debugParseObjFlag'
                 && $iv ne 'debugCompareObjFlag'
@@ -18221,42 +18314,6 @@
 
         # The data stored in this IV is saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_irreversibleIconFlag');
-
-        return 1;
-    }
-
-    sub add_keycodeObj {
-
-        my ($self, $obj, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $obj || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_keycodeObj', @_);
-        }
-
-        $self->ivAdd('keycodeObjHash', $obj->name, $obj);
-
-        # The data stored in this IV is saved in the 'keycodes' file
-        $self->setModifyFlag('keycodes', TRUE, $self->_objClass . '->add_keycodeObj');
-
-        return 1;
-    }
-
-    sub del_keycodeObj {
-
-        my ($self, $obj, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $obj || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->del_keycodeObj', @_);
-        }
-
-        $self->ivDelete('keycodeObjHash', $obj->name);
-
-        # The data stored in this IV is saved in the 'keycodes' file
-        $self->setModifyFlag('keycodes', TRUE, $self->_objClass . '->del_keycodeObj');
 
         return 1;
     }
@@ -19041,6 +19098,28 @@
 
         # The data stored in this IV is saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_restartShareMainWinFlag');
+
+        return 1;
+    }
+
+    sub set_shortUrlFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_shortUrlFlag', @_);
+        }
+
+        if ($flag) {
+            $self->ivPoke('shortUrlFlag', TRUE);
+        } else {
+            $self->ivPoke('shortUrlFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_shortUrlFlag');
 
         return 1;
     }
@@ -20488,15 +20567,18 @@
 
     sub constKeycodeHash
         { my $self = shift; return %{$self->{constKeycodeHash}}; }
+    sub constMSWinKeycodeHash
+        { my $self = shift; return %{$self->{constMSWinKeycodeHash}}; }
+    sub constBSDKeycodeHash
+        { my $self = shift; return %{$self->{constBSDKeycodeHash}}; }
+    sub keycodeHash
+        { my $self = shift; return %{$self->{keycodeHash}}; }
+    sub revKeycodeHash
+        { my $self = shift; return %{$self->{revKeycodeHash}}; }
     sub constAltKeycodeHash
         { my $self = shift; return %{$self->{constAltKeycodeHash}}; }
     sub constKeycodeList
         { my $self = shift; return @{$self->{constKeycodeList}}; }
-
-    sub keycodeObjHash
-        { my $self = shift; return %{$self->{keycodeObjHash}}; }
-    sub currentKeycodeObj
-        { $_[0]->{currentKeycodeObj} }
     sub activeKeycodeHash
         { my $self = shift; return %{$self->{activeKeycodeHash}}; }
     sub resetKeycodesFlag
@@ -21275,6 +21357,10 @@
 
     sub constUrlRegex
         { $_[0]->{constUrlRegex} }
+    sub constShortUrlRegex
+        { $_[0]->{constShortUrlRegex} }
+    sub shortUrlFlag
+        { $_[0]->{shortUrlFlag} }
     sub constEmailRegex
         { $_[0]->{constEmailRegex} }
 
@@ -21294,6 +21380,8 @@
         { $_[0]->{debugLineTagsFlag} }
     sub debugLocatorFlag
         { $_[0]->{debugLocatorFlag} }
+    sub debugExitFlag
+        { $_[0]->{debugExitFlag} }
     sub debugMaxLocatorFlag
         { $_[0]->{debugMaxLocatorFlag} }
     sub debugMoveListFlag

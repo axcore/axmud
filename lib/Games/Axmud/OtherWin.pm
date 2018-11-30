@@ -21,6 +21,17 @@
 # Games::Axmud::OtherWin::ClientConsole
 # The Client Console window, which can display system messages when there is no session running
 #
+# Games::Axmud::OtherWin::LabelDelete
+# The Quick Label Deletion window, which displays labels in a region (or the whole world model), and
+#   invites the user to select any that should be deleted
+#
+# Games::Axmud::OtherWin::McpSimpleEdit
+# The MCP Simple Edit window, containing a textview in which the user can type text, and some
+#   widgets that specify what should be done with the text
+#
+# Games::Axmud::OtherWin::PatternTest
+# The Pattern Test window, allowing the user to check patterns/regular expressions/regexes
+#
 # Games::Axmud::OtherWin::QuickInput
 # The Quick Input window, containing a textview in which the user can type text, and some widgets to
 #   specify what should be done with the text
@@ -1308,8 +1319,11 @@
             my ($regex, $language) = $self->showEntryComboDialogue(
                 'Search worlds',
                 'Enter a search pattern:',
-                '(And/or) search by language:',
+                'Search by language:',
                 \@comboList,
+                undef,                  # No maximum characters
+                undef,                  # Don't reverse widget order
+                TRUE,                   # Close the window early if user presses ENTER key
             );
 
             if (! defined $regex) {
@@ -4241,6 +4255,413 @@
         { $_[0]->{buffer} }
 }
 
+{ package Games::Axmud::OtherWin::LabelDelete;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::Generic::OtherWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Called by GA::Generic::Win->createFreeWin
+        # Creates a new instance of the Label Deletion window (an 'other' window). The window
+        #   contains a simple list in which the user can select labels to delete
+        #
+        # Expected arguments
+        #   $number         - Unique number for this window object
+        #   $workspaceObj   - The GA::Obj::Workspace handling the workspace in which this window
+        #                       should be created
+        #   $owner          - The owner; a 'grid' window object (but not an 'external' window) or a
+        #                       'free' window object. When this window opens/closes, the owner is
+        #                       informed via calls to its ->add_childFreeWin / ->del_childFreeWin
+        #                       functions
+        #
+        # Optional arguments
+        #   $session        - The GA::Session from which this function was called. 'undef' if the
+        #                       calling function didn't specify a session and $owner's ->session IV
+        #                       is also 'undef'
+        #   $title          - Ignored if set (all 'other' windows define their own title)
+        #   $editObj        - Ignored if set
+        #   $tempFlag       - Ignored if set
+        #   %configHash     - Hash containing any number of key-value pairs needed for this
+        #                       particular 'other' window; set to an empty hash if not required
+        #                   - This type of window object recognises these initialisation settings:
+        #
+        #                       ...
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my (
+            $class, $number, $workspaceObj, $owner, $session, $title, $editObj, $tempFlag,
+            %configHash,
+        ) = @_;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        # Setup
+        my $self = {
+            _objName                    => 'other_win_' . $number,
+            _objClass                   => $class,
+            _parentFile                 => undef,       # No parent file object
+            _parentWorld                => undef,       # No parent file object
+            _privFlag                   => TRUE,        # All IVs are private
+
+            # Standard window object IVs
+            # --------------------------
+
+            # Unique number for this window object
+            number                      => $number,
+            # The window category - 'grid' or 'free'
+            winCategory                 => 'free',
+            # The window type, any of the keys in GA::Client->constFreeWinTypeHash
+            winType                     => 'other',
+            # A name for the window (can be unique to this type of window object, or can be the
+            #   same as ->winType)
+            winName                     => 'quick_label_delete',
+            # The GA::Obj::Workspace object for the workspace in which this window is created
+            workspaceObj                => $workspaceObj,
+            # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
+            #   object. When this window opens/closes, the owner is informed via calls to its
+            #   ->add_childFreeWin / ->del_childFreeWin functions
+            owner                       => $owner,
+            # The GA::Session from which this function was called. 'undef' if the calling function
+            #   didn't specify a session and $owner's ->session IV is also 'undef'
+            session                     => $session,
+            # When GA::Session->pseudoCmd is called to execute a client command, the mode in which
+            #   it should be called (usually 'win_error' or 'win_only', which causes errors to be
+            #   displayed in a 'dialogue' window)
+            pseudoCmdMode               => 'win_error',
+
+            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk2::Window
+            # The code should use this IV when it wants to do something to the window itself
+            #   (minimise it, make it active, etc)
+            winWidget                   => undef,
+            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            #   the parent GA::Table::PseudoWin table object
+            # The code should use this IV when it wants to add, modify or remove widgets inside the
+            #   window itself
+            winBox                      => undef,
+            # The Gnome2::Wnck::Window, if known
+            wnckWin                     => undef,
+            # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
+            #   FALSE if not
+            enabledFlag                 => FALSE,
+            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
+            visibleFlag                 => TRUE,
+            # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
+            #   is the parent, a subset of GA::Obj::Desktop->freeWinHash. Hash in the form
+            #       $childFreeWinHash{unique_number} = blessed_reference_to_window_object
+            childFreeWinHash            => {},
+            # When a child 'free' window (excluding 'dialogue' windows) is destroyed, this parent
+            #   window is informed via a call to $self->del_childFreeWin
+            # When the child is destroyed, this window might want to call some of its own functions
+            #   to update various widgets and/or IVs, in which case this window adds an entry to
+            #   this hash; a hash in the form
+            #       $childDestroyHash{unique_number} = list_reference
+            # ...where 'unique_number' is the child window's ->number, and 'list_reference' is a
+            #   reference to a list in groups of 2, in the form
+            #       (sub_name, argument_list_ref, sub_name, argument_list_ref...)
+            childDestroyHash            => {},
+
+            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
+            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            #   area)
+            packingBox                  => undef,
+
+            # Standard IVs for 'free' windows
+
+            # The window's default size, in pixels
+            widthPixels                 => $axmud::CLIENT->constFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->constFreeWinHeight,
+            # Default border/item spacing sizes used in the window, in pixels
+            borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
+            spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
+
+            # A string to use as the window title
+            title                       => 'Label deletion window',
+            # Hash containing any number of key-value pairs needed for this particular 'config'
+            #   window; for example, for example, GA::PrefWin::TaskStart uses it to specify a task
+            #   name and type. Set to an empty hash if not required
+            configHash                  => {%configHash},
+
+            # IVs for this type of window
+
+            # Tooltips widget used by all buttons
+            tooltips                    => undef,       # Gtk2::Tooltips
+        };
+
+        # Bless the object into existence
+        bless $self, $class;
+
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winEnable {}        # Inherited from GA::Generic::FreeWin
+
+#   sub winDesengage {}     # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}       # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}       # Inherited from GA::Generic::Win
+
+    sub drawWidgets {
+
+        # Called by $self->winSetup
+        # Sets up the Gtk2::Window by drawing the window's widgets
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->drawWidgets', @_);
+        }
+
+        # Create a packing box
+        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        $self->winBox->add($packingBox);
+        $packingBox->set_border_width(0);
+
+        # Create a Gtk2::Tooltips object, used by various buttons
+        my $tooltips = Gtk2::Tooltips->new();
+
+        # Update IVs immediately, so various buttons can use the tooltips
+        $self->ivPoke('packingBox', $packingBox);
+        $self->ivPoke('tooltips', $tooltips);
+
+        # Create an image on the left
+        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->pack_start($hBox, TRUE, TRUE, 0);
+
+        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        $hBox->pack_start($vBox, FALSE, FALSE, 0);
+
+        my $frame = Gtk2::Frame->new(undef);
+        $vBox->pack_start($frame, FALSE, FALSE, 0);
+        $frame->set_size_request(64, 64);
+        $frame->set_shadow_type('etched-in');
+
+        my $image = Gtk2::Image->new_from_file($axmud::CLIENT->getDialogueIcon());
+        $frame->add($image);
+
+        # Add a simple list and some buttons on the right
+        my $vBox2 = Gtk2::VBox->new(FALSE, 0);
+        $hBox->pack_start($vBox2, TRUE, TRUE, $self->spacingPixels);
+
+        @columnList = (
+            'Delete', 'bool',
+            'Region', 'text',
+            '#', 'int',
+            'Label', 'text',
+        );
+
+        my $frame2 = Gtk2::Frame->new(undef);
+        $vBox2->pack_start($frame2, TRUE, TRUE, 0);
+        $frame2->set_border_width(0);
+
+        my $scroller = Gtk2::ScrolledWindow->new();
+        $frame2->add($scroller);
+        $scroller->set_shadow_type('none');
+        $scroller->set_policy('automatic', 'automatic');
+        $scroller->set_border_width(0);
+
+        my $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
+        $scroller->add($slWidget);
+
+        # Add a horizontal strip with several buttons
+        # Create an image on the left
+        my $hBox2 = Gtk2::HBox->new(FALSE, 0);
+        $vBox2->pack_start($hBox2, FALSE, FALSE, $self->spacingPixels);
+
+        my $button = Gtk2::Button->new('Select all');
+        $hBox2->pack_start($button, FALSE, FALSE, 0);
+        $button->signal_connect('clicked' => sub {
+
+            foreach my $listRef (@{$slWidget->{data}}) {
+
+                $$listRef[0] = TRUE;
+            }
+        });
+
+        my $button2 = Gtk2::Button->new('Select none');
+        $hBox2->pack_start($button2, FALSE, FALSE, $self->borderPixels);
+        $button2->signal_connect('clicked' => sub {
+
+            foreach my $listRef (@{$slWidget->{data}}) {
+
+                $$listRef[0] = FALSE;
+            }
+        });
+
+        my $button3 = Gtk2::Button->new('Close window');
+        $hBox2->pack_end($button3, FALSE, FALSE, 0);
+        $button3->signal_connect('clicked' => sub {
+
+            $self->winDestroy();
+        });
+
+        my $button4 = Gtk2::Button->new('Delete selected labels');
+        $hBox2->pack_end($button4, FALSE, FALSE, $self->borderPixels);
+        $button4->signal_connect('clicked' => sub {
+
+            my (
+                @deleteList,
+                %regionmapHash,
+            );
+
+            # Import the hash of regionmaps for quick lookup
+            %regionmapHash = $self->session->worldModelObj->regionmapHash;
+
+            # Compile a list of labels to delete
+            foreach my $listRef (@{$slWidget->{data}}) {
+
+                my ($deleteFlag, $regionName, $labelNum, $regionmapObj, $labelObj);
+
+                ($deleteFlag, $regionName, $labelNum) = @$listRef;
+                $regionmapObj = $regionmapHash{$regionName};
+
+                if ($deleteFlag && $regionmapObj) {
+
+                    $labelObj = $regionmapObj->ivShow('gridLabelHash', $labelNum);
+                    if ($labelObj) {
+
+                        push (@deleteList, $labelObj);
+                    }
+                }
+            }
+
+            # Delete the selected labels. The TRUE argument means to update automapper windows now
+            $self->session->worldModelObj->deleteLabels(TRUE, @deleteList);
+
+            # Refresh the simple list
+            $self->refreshList($slWidget);
+        });
+
+        # Popuplate the simple list
+        $self->refreshList($slWidget);
+
+        return 1;
+    }
+
+#   sub redrawWidgets {}    # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub refreshList {
+
+        # Called by $self->drawWidgets
+        # Populates the simple list widget
+        #
+        # Expected arguments
+        #   $slWidget       - The GA::Obj::Simple::List widget to populate
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $check) = @_;
+
+        # Local variables
+        my @dataList;
+
+        # Check for improper arguments
+        if (! defined $slWidget || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->refreshList', @_);
+        }
+
+        foreach my $regionmapObj (
+            sort {lc($a->name) cmp lc($b->name)}
+            ($self->session->worldModelObj->ivValues('regionmapHash'))
+        ) {
+            my (%localHash, %modHash);
+
+            # Import the hash for speed
+            %localHash = $regionmapObj->gridLabelHash;
+            # When sorting alphabetically, remove non-alphanumeric characters so that '(Shop)'
+            #   doesn't appear in the list before 'Shop'
+            foreach my $labelObj (values %localHash) {
+
+                my $modText = $labelObj->name;
+                $modText =~ s/[^[:word:]\s]//g;
+                $modHash{$labelObj->number} = lc($modText);
+            }
+
+            foreach my $labelObj (
+                sort {$modHash{$a->number} cmp $modHash{$b->number}} (values %localHash)
+            ) {
+                push (@dataList,
+                    [
+                        FALSE,
+                        $regionmapObj->name,
+                        $labelObj->number,
+                        $labelObj->name,
+                    ],
+                );
+            }
+        }
+
+        # Reset the simple list
+        if (! @dataList) {
+
+            # Replacement data list is empty
+            @{$slWidget->{data}} = ();
+
+        } else {
+
+            @{$slWidget->{data}} = @dataList;
+        }
+
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+
+    sub tooltips
+        { $_[0]->{tooltips} }
+}
+
 { package Games::Axmud::OtherWin::McpSimpleEdit;
 
     use strict;
@@ -4564,6 +4985,527 @@
 
     ##################
     # Accessors - get
+}
+
+{ package Games::Axmud::OtherWin::PatternTest;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::Generic::OtherWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Called by GA::Generic::Win->createFreeWin
+        # Creates a new instance of the Pattern Test window, which allows the user to to test
+        #   patterns (regexes) on the fly
+        #
+        # Expected arguments
+        #   $number         - Unique number for this window object
+        #   $workspaceObj   - The GA::Obj::Workspace handling the workspace in which this window
+        #                       should be created
+        #   $owner          - The owner; a 'grid' window object (but not an 'external' window) or a
+        #                       'free' window object. When this window opens/closes, the owner is
+        #                       informed via calls to its ->add_childFreeWin / ->del_childFreeWin
+        #                       functions
+        #
+        # Optional arguments
+        #   $session        - The GA::Session from which this function was called. 'undef' if the
+        #                       calling function didn't specify a session and $owner's ->session IV
+        #                       is also 'undef'
+        #   $title          - Ignored if set (all 'other' windows define their own title)
+        #   $editObj        - Ignored if set
+        #   $tempFlag       - Ignored if set
+        #   %configHash     - Hash containing any number of key-value pairs needed for this
+        #                       particular 'other' window; set to an empty hash if not required
+        #                   - This type of window object recognises these initialisation settings:
+        #
+        #                       ...
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my (
+            $class, $number, $workspaceObj, $owner, $session, $title, $editObj, $tempFlag,
+            %configHash,
+        ) = @_;
+
+        # Local variables
+        my ($widthPixels, $heightPixels);
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        # Setup
+        my $self = {
+            _objName                    => 'other_win_' . $number,
+            _objClass                   => $class,
+            _parentFile                 => undef,       # No parent file object
+            _parentWorld                => undef,       # No parent file object
+            _privFlag                   => TRUE,        # All IVs are private
+
+            # Standard window object IVs
+            # --------------------------
+
+            # Unique number for this window object
+            number                      => $number,
+            # The window category - 'grid' or 'free'
+            winCategory                 => 'free',
+            # The window type, any of the keys in GA::Client->constFreeWinTypeHash
+            winType                     => 'other',
+            # A name for the window (for some 'free' windows, the same as the window type)
+            winName                     => 'pattern_test',
+            # The GA::Obj::Workspace object for the workspace in which this window is created
+            workspaceObj                => $workspaceObj,
+            # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
+            #   object. When this window opens/closes, the owner is informed via calls to its
+            #   ->add_childFreeWin / ->del_childFreeWin functions
+            owner                       => $owner,
+            # The GA::Session from which this function was called. 'undef' if the calling function
+            #   didn't specify a session and $owner's ->session IV is also 'undef'
+            session                     => $session,
+            # When GA::Session->pseudoCmd is called to execute a client command, the mode in which
+            #   it should be called (usually 'win_error' or 'win_only', which causes errors to be
+            #   displayed in a 'dialogue' window)
+            pseudoCmdMode               => 'win_error',
+
+            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk2::Window
+            # The code should use this IV when it wants to do something to the window itself
+            #   (minimise it, make it active, etc)
+            winWidget                   => undef,
+            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            #   the parent GA::Table::PseudoWin table object
+            # The code should use this IV when it wants to add, modify or remove widgets inside the
+            #   window itself
+            winBox                      => undef,
+            # The Gnome2::Wnck::Window, if known
+            wnckWin                     => undef,
+            # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
+            #   FALSE if not
+            enabledFlag                 => FALSE,
+            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
+            visibleFlag                 => TRUE,
+            # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
+            #   is the parent, a subset of GA::Obj::Desktop->freeWinHash. Hash in the form
+            #       $childFreeWinHash{unique_number} = blessed_reference_to_window_object
+            childFreeWinHash            => {},
+
+            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
+            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            #   area)
+            packingBox                  => undef,       # Gtk2::VBox
+
+            # Standard IVs for 'free' windows
+
+            # The window's default size, in pixels
+            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
+            # Default border/item spacing sizes used in the window, in pixels
+            borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
+            spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
+
+            # A string to use as the window title. If 'undef', a generic title is used
+            title                       => 'Pattern Test',
+            # Hash containing any number of key-value pairs needed for this particular 'config'
+            #   window; for example, for example, GA::PrefWin::TaskStart uses it to specify a task
+            #   name and type. Set to an empty hash if not required
+            configHash                  => {%configHash},
+
+            # IVs for this type of window
+
+            # Tooltips widget used by all buttons
+            tooltips                    => undef,       # Gtk2::Tooltips
+
+            # Standard size of the Gtk2::Table used (a 12x12 table, with a spare cell around every
+            #   border)
+            tableWidth                  => 13,
+            tableHeight                 => 13,
+        };
+
+        # Bless the object into existence
+        bless $self, $class;
+
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winEnable {}        # Inherited from GA::Generic::FreeWin
+
+#   sub winDesengage {}     # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}     # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}       # Inherited from GA::Generic::Win
+
+    sub drawWidgets {
+
+        # Called by $self->winSetup
+        # Sets up the Pattern Test window with its standard widgets
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->drawWidgets', @_);
+        }
+
+        # Create a packing box
+        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        $self->winBox->add($packingBox);
+        $packingBox->set_border_width(0);
+
+        # Create a Gtk2::Tooltips object, used by various buttons
+        my $tooltips = Gtk2::Tooltips->new();
+
+        # Update IVs immediately, so various buttons can use the tooltips
+        $self->ivPoke('packingBox', $packingBox);
+        $self->ivPoke('tooltips', $tooltips);
+
+        # Create an image on the left
+        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->pack_start($hBox, TRUE, TRUE, 0);
+
+        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        $hBox->pack_start($vBox, FALSE, FALSE, 0);
+
+        my $frame = Gtk2::Frame->new(undef);
+        $vBox->pack_start($frame, FALSE, FALSE, 0);
+        $frame->set_size_request(64, 64);
+        $frame->set_shadow_type('etched-in');
+
+        my $image = Gtk2::Image->new_from_file($axmud::CLIENT->getDialogueIcon());
+        $frame->add($image);
+
+        # Create a table inside a scroller on the right
+        my $scroller = Gtk2::ScrolledWindow->new();
+        $hBox->pack_start($scroller, TRUE, TRUE, $self->spacingPixels);
+        $scroller->set_policy(qw/automatic automatic/);
+
+        my $table = Gtk2::Table->new($self->tableHeight, $self->tableWidth, FALSE);
+        $scroller->add_with_viewport($table);
+        $table->set_col_spacings($self->spacingPixels);
+        $table->set_row_spacings($self->spacingPixels);
+
+        # Create a button at the bottom to close the window
+        my $hBox2 = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->pack_end($hBox2, FALSE, FALSE, 0);
+
+        # The button's label includes some extra space characters to make it a little easier to
+        #   click on
+        my $okButton = Gtk2::Button->new('  OK  ');
+        $hBox2->pack_end($okButton, FALSE, FALSE, 0);
+        $okButton->signal_connect('clicked' => sub {
+
+            $self->winDestroy();
+        });
+
+        # Add some editing widgets. The ->signal_connect appear below
+        $self->addLabel($table, '<b>Pattern / regular expression / regex tester</b>',
+            1, 12, 1, 2);
+
+        $self->addLabel($table, 'Pattern',
+            1, 3, 2, 3);
+        my $entry = $self->addEntry($table, undef, undef, TRUE,
+            3, 12, 2, 3);
+        $entry->set_icon_from_stock('secondary', 'gtk-no');
+
+        $self->addLabel($table, 'Line',
+            1, 3, 3, 4);
+        my $entry2 = $self->addEntry($table, undef, undef, TRUE,
+            3, 12, 3, 4);
+
+        $self->addLabel($table, 'Substitution',
+            1, 3, 4, 5);
+        my $entry3 = $self->addEntry($table, undef, undef, TRUE,
+            3, 12, 4, 5);
+
+        my $button = $self->addButton(
+            $table,
+            undef,
+            'Test the pattern\'s validity',
+            'Test the pattern\'s validity',
+            1, 6, 5, 6);
+
+        my $button2 = $self->addButton(
+            $table,
+            undef,
+            'Match the pattern against the line',
+            'i.e. $line =~ m/$pattern/',
+            6, 12, 5, 6);
+        $button2->set_sensitive(FALSE);
+
+        my $button3 = $self->addButton(
+            $table,
+            undef,
+            'Use the pattern to apply the substitution to the line',
+            'i.e. $line =~ s/$pattern/$substitution/',
+            1, 8, 6, 7);
+        $button3->set_sensitive(FALSE);
+
+        my $button4 = $self->addButton(
+            $table,
+            undef,
+            'Clear all',
+            'Clear all the entry boxes',
+            8, 12, 6, 7);
+
+        $self->addLabel($table, 'Result',
+            1, 3, 7, 8);
+        my $entry4 = $self->addEntry($table, undef, undef, TRUE,
+            3, 12, 7, 8);
+        $entry4->set_editable(FALSE);
+
+        # Add a simple list to show group substrings
+        @columnList = (
+            'Substring #', 'int',
+            'Matching substring', 'text',
+        );
+
+        my $frame2 = Gtk2::Frame->new(undef);
+        $table->attach_defaults($frame2, 1, 12, 8, 12);
+        $frame2->set_border_width(0);
+
+        my $scroller2 = Gtk2::ScrolledWindow->new();
+        $frame2->add($scroller2);
+        $scroller2->set_shadow_type('none');
+        $scroller2->set_policy('automatic', 'automatic');
+        $scroller2->set_border_width(0);
+        $scroller2->set_size_request(-1, 180);
+
+        my $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
+        $scroller2->add($slWidget);
+
+        # ->signal_connects
+        $entry->signal_connect('changed' => sub {
+
+            my $regex = $entry->get_text();
+
+            # GA::Client->regexCheck returns 'undef' for a valid regex, or an error message for an
+            #   invalid one
+            if (
+                defined $regex
+                && $regex ne ''
+                && ! defined $axmud::CLIENT->regexCheck($regex)
+            ) {
+                $entry->set_icon_from_stock('secondary', 'gtk-yes');
+
+                if (length $entry2->get_text() > 0) {
+                    $button2->set_sensitive(TRUE);
+                } else {
+                    $button2->set_sensitive(FALSE);
+                }
+
+                if (length $entry3->get_text() > 0) {
+                    $button3->set_sensitive(TRUE);
+                } else {
+                    $button3->set_sensitive(FALSE);
+                }
+
+            } else {
+
+                $entry->set_icon_from_stock('secondary', 'gtk-no');
+                $button2->set_sensitive(FALSE);
+                $button3->set_sensitive(FALSE);
+            }
+        });
+
+        $entry2->signal_connect('changed' => sub {
+
+            my ($regex, $line, $substitution);
+
+            $regex = $entry->get_text();
+            $line = $entry2->get_text();
+            $substitution = $entry3->get_text();
+
+            if (
+                ! defined $axmud::CLIENT->regexCheck($regex)
+                && length $line > 0
+            ) {
+                $button2->set_sensitive(TRUE);
+                if (length $substitution > 0) {
+                    $button3->set_sensitive(TRUE);
+                } else {
+                    $button3->set_sensitive(FALSE);
+                }
+
+            } else {
+
+                $button2->set_sensitive(FALSE);
+                $button3->set_sensitive(FALSE);
+            }
+        });
+
+        $entry3->signal_connect('changed' => sub {
+
+            my ($regex, $line, $substitution);
+
+            $regex = $entry->get_text();
+            $line = $entry2->get_text();
+            $substitution = $entry3->get_text();
+
+            if (
+                ! defined $axmud::CLIENT->regexCheck($regex)
+                && length $line > 0
+                && length $substitution > 0
+            ) {
+                $button3->set_sensitive(TRUE);
+            } else {
+                $button3->set_sensitive(FALSE);
+            }
+        });
+
+        $button->signal_connect('clicked' => sub {
+
+            my ($regex, $result);
+
+            $regex = $entry->get_text();
+
+            if (! defined $regex || $regex eq '') {
+
+                $entry4->set_text('');
+
+            } else {
+
+                $result = $axmud::CLIENT->regexCheck($regex);
+                if (! defined $result) {
+
+                    $entry4->set_text('<Pattern is valid>');
+                    $entry4->set_icon_from_stock('secondary', 'gtk-yes');
+
+                } else {
+
+                    # Perl error message
+                    $entry4->set_text($result);
+                    $entry4->set_icon_from_stock('secondary', 'gtk-no');
+                }
+            }
+        });
+
+        $button2->signal_connect('clicked' => sub {
+
+            my (
+                $regex, $line, $count,
+                @grpStringList, @dataList,
+            );
+
+            $regex = $entry->get_text();
+            $line = $entry2->get_text();
+
+            @grpStringList = ($line =~ m/$regex/);
+            if (@grpStringList) {
+
+                if ((scalar @-) > 1) {
+
+                    $count = 0;
+                    foreach my $grpString (@grpStringList) {
+
+                        $count++;
+                        push (@dataList, [$count, $grpString]);
+                    }
+                }
+
+                $entry4->set_text('<Pattern matches the line>');
+                $entry4->set_icon_from_stock('secondary', 'gtk-yes');
+                @{$slWidget->{data}} = @dataList;
+
+            } else {
+
+                $entry4->set_text('<Pattern does NOT match the line>');
+                $entry4->set_icon_from_stock('secondary', 'gtk-no');
+                @{$slWidget->{data}} = ();
+            }
+        });
+
+        $button3->signal_connect('clicked' => sub {
+
+            my ($regex, $line, $substitution);
+
+            $regex = $entry->get_text();
+            $line = $entry2->get_text();
+            $substitution = $entry3->get_text();
+
+            if ($line =~ s/$regex/$substitution/) {
+
+                $entry4->set_text($line);
+                $entry4->set_icon_from_stock('secondary', 'gtk-yes');
+                @{$slWidget->{data}} = ();
+
+            } else {
+
+                $entry4->set_text('<Pattern does NOT match the line>');
+                $entry4->set_icon_from_stock('secondary', 'gtk-no');
+                @{$slWidget->{data}} = ();
+            }
+        });
+
+        $button4->signal_connect('clicked' => sub {
+
+            $entry->set_text('');
+            $entry->set_icon_from_stock('secondary', undef);
+
+            $entry2->set_text('');
+            $entry3->set_text('');
+
+            $entry4->set_icon_from_stock('secondary', undef);
+            $entry4->set_text('');
+
+            @{$slWidget->{data}} = ();
+        });
+
+        return 1;
+    }
+
+#   sub redrawWidgets {}    # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+
+    sub tooltips
+        { $_[0]->{tooltips} }
+
+    sub tableWidth
+        { $_[0]->{tableWidth} }
+    sub tableHeight
+        { $_[0]->{tableHeight} }
 }
 
 { package Games::Axmud::OtherWin::QuickInput;
@@ -5201,7 +6143,7 @@
 
         my $comboBox = Gtk2::ComboBox->new_text();
         $vBox2->pack_start($comboBox, FALSE, FALSE, 0);
-        $comboBox->set_active(FALSE);
+        $comboBox->set_active(0);
         # Starts desensitised
         $comboBox->set_sensitive(FALSE);
 
@@ -5213,7 +6155,7 @@
 
         my $comboBox2 = Gtk2::ComboBox->new_text();
         $vBox2->pack_start($comboBox2, FALSE, FALSE, 0);
-        $comboBox2->set_active(FALSE);
+        $comboBox2->set_active(0);
         # Starts desensitised
         $comboBox2->set_sensitive(FALSE);
 
@@ -5234,11 +6176,11 @@
 
             $comboBox3->append_text($type);
         }
-        $comboBox3->set_active(FALSE);
+        $comboBox3->set_active(0);
 
         my $comboBox4 = Gtk2::ComboBox->new_text();
         $hBox2->pack_end($comboBox4, TRUE, TRUE, 0);
-        $comboBox4->set_active(FALSE);
+        $comboBox4->set_active(0);
         $comboBox4->set_sensitive(FALSE);
 
         # And a fifth group to specify replacement strings for pseudo nouns, adjectives and objects
@@ -5350,7 +6292,7 @@
                         $comboBox4->append_text($custom);
                     }
 
-                    $comboBox4->set_active(FALSE);
+                    $comboBox4->set_active(0);
                     $comboBox4->set_sensitive(TRUE);
                     $comboBoxCount = scalar $dictObj->portableTypeList;
 
@@ -5361,7 +6303,7 @@
                         $comboBox4->append_text($custom);
                     }
 
-                    $comboBox4->set_active(FALSE);
+                    $comboBox4->set_active(0);
                     $comboBox4->set_sensitive(TRUE);
                     $comboBoxCount = scalar $dictObj->decorationTypeList;
 
@@ -5627,527 +6569,6 @@
 
     ##################
     # Accessors - get
-}
-
-{ package Games::Axmud::OtherWin::PatternTest;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::Generic::OtherWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
-        Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Called by GA::Generic::Win->createFreeWin
-        # Creates a new instance of the Pattern test window, which allows the user to to test
-        #   patterns (regexes) on the fly
-        #
-        # Expected arguments
-        #   $number         - Unique number for this window object
-        #   $workspaceObj   - The GA::Obj::Workspace handling the workspace in which this window
-        #                       should be created
-        #   $owner          - The owner; a 'grid' window object (but not an 'external' window) or a
-        #                       'free' window object. When this window opens/closes, the owner is
-        #                       informed via calls to its ->add_childFreeWin / ->del_childFreeWin
-        #                       functions
-        #
-        # Optional arguments
-        #   $session        - The GA::Session from which this function was called. 'undef' if the
-        #                       calling function didn't specify a session and $owner's ->session IV
-        #                       is also 'undef'
-        #   $title          - Ignored if set (all 'other' windows define their own title)
-        #   $editObj        - Ignored if set
-        #   $tempFlag       - Ignored if set
-        #   %configHash     - Hash containing any number of key-value pairs needed for this
-        #                       particular 'other' window; set to an empty hash if not required
-        #                   - This type of window object recognises these initialisation settings:
-        #
-        #                       ...
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   Blessed reference to the newly-created object on success
-
-        my (
-            $class, $number, $workspaceObj, $owner, $session, $title, $editObj, $tempFlag,
-            %configHash,
-        ) = @_;
-
-        # Local variables
-        my ($widthPixels, $heightPixels);
-
-        # Check for improper arguments
-        if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
-
-            return $axmud::CLIENT->writeImproper($class . '->new', @_);
-        }
-
-        # Setup
-        my $self = {
-            _objName                    => 'other_win_' . $number,
-            _objClass                   => $class,
-            _parentFile                 => undef,       # No parent file object
-            _parentWorld                => undef,       # No parent file object
-            _privFlag                   => TRUE,        # All IVs are private
-
-            # Standard window object IVs
-            # --------------------------
-
-            # Unique number for this window object
-            number                      => $number,
-            # The window category - 'grid' or 'free'
-            winCategory                 => 'free',
-            # The window type, any of the keys in GA::Client->constFreeWinTypeHash
-            winType                     => 'other',
-            # A name for the window (for some 'free' windows, the same as the window type)
-            winName                     => 'pattern_test',
-            # The GA::Obj::Workspace object for the workspace in which this window is created
-            workspaceObj                => $workspaceObj,
-            # The owner; a 'grid' window object (but not an 'external' window) or a 'free' window
-            #   object. When this window opens/closes, the owner is informed via calls to its
-            #   ->add_childFreeWin / ->del_childFreeWin functions
-            owner                       => $owner,
-            # The GA::Session from which this function was called. 'undef' if the calling function
-            #   didn't specify a session and $owner's ->session IV is also 'undef'
-            session                     => $session,
-            # When GA::Session->pseudoCmd is called to execute a client command, the mode in which
-            #   it should be called (usually 'win_error' or 'win_only', which causes errors to be
-            #   displayed in a 'dialogue' window)
-            pseudoCmdMode               => 'win_error',
-
-            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
-            #   parent 'main' window's Gtk2::Window
-            # The code should use this IV when it wants to do something to the window itself
-            #   (minimise it, make it active, etc)
-            winWidget                   => undef,
-            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
-            #   the parent GA::Table::PseudoWin table object
-            # The code should use this IV when it wants to add, modify or remove widgets inside the
-            #   window itself
-            winBox                      => undef,
-            # The Gnome2::Wnck::Window, if known
-            wnckWin                     => undef,
-            # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
-            #   FALSE if not
-            enabledFlag                 => FALSE,
-            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
-            #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
-            visibleFlag                 => TRUE,
-            # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
-            #   is the parent, a subset of GA::Obj::Desktop->freeWinHash. Hash in the form
-            #       $childFreeWinHash{unique_number} = blessed_reference_to_window_object
-            childFreeWinHash            => {},
-
-            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
-            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
-            #   area)
-            packingBox                  => undef,       # Gtk2::VBox
-
-            # Standard IVs for 'free' windows
-
-            # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
-            # Default border/item spacing sizes used in the window, in pixels
-            borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
-            spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
-
-            # A string to use as the window title. If 'undef', a generic title is used
-            title                       => 'Pattern tester',
-            # Hash containing any number of key-value pairs needed for this particular 'config'
-            #   window; for example, for example, GA::PrefWin::TaskStart uses it to specify a task
-            #   name and type. Set to an empty hash if not required
-            configHash                  => {%configHash},
-
-            # IVs for this type of window
-
-            # Tooltips widget used by all buttons
-            tooltips                    => undef,       # Gtk2::Tooltips
-
-            # Standard size of the Gtk2::Table used (a 12x12 table, with a spare cell around every
-            #   border)
-            tableWidth                  => 13,
-            tableHeight                 => 13,
-        };
-
-        # Bless the object into existence
-        bless $self, $class;
-
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winEnable {}        # Inherited from GA::Generic::FreeWin
-
-#   sub winDesengage {}     # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}     # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}       # Inherited from GA::Generic::Win
-
-    sub drawWidgets {
-
-        # Called by $self->winSetup
-        # Sets up the Pattern Test window with its standard widgets
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-             return $axmud::CLIENT->writeImproper($self->_objClass . '->drawWidgets', @_);
-        }
-
-        # Create a packing box
-        my $packingBox = Gtk2::VBox->new(FALSE, 0);
-        $self->winBox->add($packingBox);
-        $packingBox->set_border_width(0);
-
-        # Create a Gtk2::Tooltips object, used by various buttons
-        my $tooltips = Gtk2::Tooltips->new();
-
-        # Update IVs immediately, so various buttons can use the tooltips
-        $self->ivPoke('packingBox', $packingBox);
-        $self->ivPoke('tooltips', $tooltips);
-
-        # Create an image on the left
-        my $hBox = Gtk2::HBox->new(FALSE, 0);
-        $packingBox->pack_start($hBox, TRUE, TRUE, 0);
-
-        my $vBox = Gtk2::VBox->new(FALSE, 0);
-        $hBox->pack_start($vBox, FALSE, FALSE, 0);
-
-        my $frame = Gtk2::Frame->new(undef);
-        $vBox->pack_start($frame, FALSE, FALSE, 0);
-        $frame->set_size_request(64, 64);
-        $frame->set_shadow_type('etched-in');
-
-        my $image = Gtk2::Image->new_from_file($axmud::CLIENT->getDialogueIcon());
-        $frame->add($image);
-
-        # Create a table inside a scroller on the right
-        my $scroller = Gtk2::ScrolledWindow->new();
-        $hBox->pack_start($scroller, TRUE, TRUE, $self->spacingPixels);
-        $scroller->set_policy(qw/automatic automatic/);
-
-        my $table = Gtk2::Table->new($self->tableHeight, $self->tableWidth, FALSE);
-        $scroller->add_with_viewport($table);
-        $table->set_col_spacings($self->spacingPixels);
-        $table->set_row_spacings($self->spacingPixels);
-
-        # Create a button at the bottom to close the window
-        my $hBox2 = Gtk2::HBox->new(FALSE, 0);
-        $packingBox->pack_end($hBox2, FALSE, FALSE, 0);
-
-        # The button's label includes some extra space characters to make it a little easier to
-        #   click on
-        my $okButton = Gtk2::Button->new('  OK  ');
-        $hBox2->pack_end($okButton, FALSE, FALSE, 0);
-        $okButton->signal_connect('clicked' => sub {
-
-            $self->winDestroy();
-        });
-
-        # Add some editing widgets. The ->signal_connect appear below
-        $self->addLabel($table, '<b>Pattern / regular expression / regex tester</b>',
-            1, 12, 1, 2);
-
-        $self->addLabel($table, 'Pattern',
-            1, 3, 2, 3);
-        my $entry = $self->addEntry($table, undef, undef, TRUE,
-            3, 12, 2, 3);
-        $entry->set_icon_from_stock('secondary', 'gtk-no');
-
-        $self->addLabel($table, 'Line',
-            1, 3, 3, 4);
-        my $entry2 = $self->addEntry($table, undef, undef, TRUE,
-            3, 12, 3, 4);
-
-        $self->addLabel($table, 'Substitution',
-            1, 3, 4, 5);
-        my $entry3 = $self->addEntry($table, undef, undef, TRUE,
-            3, 12, 4, 5);
-
-        my $button = $self->addButton(
-            $table,
-            undef,
-            'Test the pattern\'s validity',
-            'Test the pattern\'s validity',
-            1, 6, 5, 6);
-
-        my $button2 = $self->addButton(
-            $table,
-            undef,
-            'Match the pattern against the line',
-            'i.e. $line =~ m/$pattern/',
-            6, 12, 5, 6);
-        $button2->set_sensitive(FALSE);
-
-        my $button3 = $self->addButton(
-            $table,
-            undef,
-            'Use the pattern to apply the substitution to the line',
-            'i.e. $line =~ s/$pattern/$substitution/',
-            1, 8, 6, 7);
-        $button3->set_sensitive(FALSE);
-
-        my $button4 = $self->addButton(
-            $table,
-            undef,
-            'Clear all',
-            'Clear all the entry boxes',
-            8, 12, 6, 7);
-
-        $self->addLabel($table, 'Result',
-            1, 3, 7, 8);
-        my $entry4 = $self->addEntry($table, undef, undef, TRUE,
-            3, 12, 7, 8);
-        $entry4->set_editable(FALSE);
-
-        # Add a simple list to show group substrings
-        @columnList = (
-            'Substring #', 'int',
-            'Matching substring', 'text',
-        );
-
-        my $frame2 = Gtk2::Frame->new(undef);
-        $table->attach_defaults($frame2, 1, 12, 8, 12);
-        $frame2->set_border_width(0);
-
-        my $scroller2 = Gtk2::ScrolledWindow->new();
-        $frame2->add($scroller2);
-        $scroller2->set_shadow_type('none');
-        $scroller2->set_policy('automatic', 'automatic');
-        $scroller2->set_border_width(0);
-        $scroller2->set_size_request(-1, 180);
-
-        my $slWidget = Games::Axmud::Gtk::Simple::List->new(@columnList);
-        $scroller2->add($slWidget);
-
-        # ->signal_connects
-        $entry->signal_connect('changed' => sub {
-
-            my $regex = $entry->get_text();
-
-            # GA::Client->regexCheck returns 'undef' for a valid regex, or an error message for an
-            #   invalid one
-            if (
-                defined $regex
-                && $regex ne ''
-                && ! defined $axmud::CLIENT->regexCheck($regex)
-            ) {
-                $entry->set_icon_from_stock('secondary', 'gtk-yes');
-
-                if (length $entry2->get_text() > 0) {
-                    $button2->set_sensitive(TRUE);
-                } else {
-                    $button2->set_sensitive(FALSE);
-                }
-
-                if (length $entry3->get_text() > 0) {
-                    $button3->set_sensitive(TRUE);
-                } else {
-                    $button3->set_sensitive(FALSE);
-                }
-
-            } else {
-
-                $entry->set_icon_from_stock('secondary', 'gtk-no');
-                $button2->set_sensitive(FALSE);
-                $button3->set_sensitive(FALSE);
-            }
-        });
-
-        $entry2->signal_connect('changed' => sub {
-
-            my ($regex, $line, $substitution);
-
-            $regex = $entry->get_text();
-            $line = $entry2->get_text();
-            $substitution = $entry3->get_text();
-
-            if (
-                ! defined $axmud::CLIENT->regexCheck($regex)
-                && length $line > 0
-            ) {
-                $button2->set_sensitive(TRUE);
-                if (length $substitution > 0) {
-                    $button3->set_sensitive(TRUE);
-                } else {
-                    $button3->set_sensitive(FALSE);
-                }
-
-            } else {
-
-                $button2->set_sensitive(FALSE);
-                $button3->set_sensitive(FALSE);
-            }
-        });
-
-        $entry3->signal_connect('changed' => sub {
-
-            my ($regex, $line, $substitution);
-
-            $regex = $entry->get_text();
-            $line = $entry2->get_text();
-            $substitution = $entry3->get_text();
-
-            if (
-                ! defined $axmud::CLIENT->regexCheck($regex)
-                && length $line > 0
-                && length $substitution > 0
-            ) {
-                $button3->set_sensitive(TRUE);
-            } else {
-                $button3->set_sensitive(FALSE);
-            }
-        });
-
-        $button->signal_connect('clicked' => sub {
-
-            my ($regex, $result);
-
-            $regex = $entry->get_text();
-
-            if (! defined $regex || $regex eq '') {
-
-                $entry4->set_text('');
-
-            } else {
-
-                $result = $axmud::CLIENT->regexCheck($regex);
-                if (! defined $result) {
-
-                    $entry4->set_text('<Pattern is valid>');
-                    $entry4->set_icon_from_stock('secondary', 'gtk-yes');
-
-                } else {
-
-                    # Perl error message
-                    $entry4->set_text($result);
-                    $entry4->set_icon_from_stock('secondary', 'gtk-no');
-                }
-            }
-        });
-
-        $button2->signal_connect('clicked' => sub {
-
-            my (
-                $regex, $line, $count,
-                @grpStringList, @dataList,
-            );
-
-            $regex = $entry->get_text();
-            $line = $entry2->get_text();
-
-            @grpStringList = ($line =~ m/$regex/);
-            if (@grpStringList) {
-
-                if ((scalar @-) > 1) {
-
-                    $count = 0;
-                    foreach my $grpString (@grpStringList) {
-
-                        $count++;
-                        push (@dataList, [$count, $grpString]);
-                    }
-                }
-
-                $entry4->set_text('<Pattern matches the line>');
-                $entry4->set_icon_from_stock('secondary', 'gtk-yes');
-                @{$slWidget->{data}} = @dataList;
-
-            } else {
-
-                $entry4->set_text('<Pattern does NOT match the line>');
-                $entry4->set_icon_from_stock('secondary', 'gtk-no');
-                @{$slWidget->{data}} = ();
-            }
-        });
-
-        $button3->signal_connect('clicked' => sub {
-
-            my ($regex, $line, $substitution);
-
-            $regex = $entry->get_text();
-            $line = $entry2->get_text();
-            $substitution = $entry3->get_text();
-
-            if ($line =~ s/$regex/$substitution/) {
-
-                $entry4->set_text($line);
-                $entry4->set_icon_from_stock('secondary', 'gtk-yes');
-                @{$slWidget->{data}} = ();
-
-            } else {
-
-                $entry4->set_text('<Pattern does NOT match the line>');
-                $entry4->set_icon_from_stock('secondary', 'gtk-no');
-                @{$slWidget->{data}} = ();
-            }
-        });
-
-        $button4->signal_connect('clicked' => sub {
-
-            $entry->set_text('');
-            $entry->set_icon_from_stock('secondary', undef);
-
-            $entry2->set_text('');
-            $entry3->set_text('');
-
-            $entry4->set_icon_from_stock('secondary', undef);
-            $entry4->set_text('');
-
-            @{$slWidget->{data}} = ();
-        });
-
-        return 1;
-    }
-
-#   sub redrawWidgets {}    # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-
-    sub tooltips
-        { $_[0]->{tooltips} }
-
-    sub tableWidth
-        { $_[0]->{tableWidth} }
-    sub tableHeight
-        { $_[0]->{tableHeight} }
 }
 
 { package Games::Axmud::OtherWin::SessionConsole;
@@ -7508,7 +7929,7 @@
 
             # Which layout the notebook is using:
             #   'empty'     - contains nothing
-            #   'list'      - a GA::Gtk::Simple::List on the left, and buttons on the right
+            #   'list'      - a GA::Obj::Simple::List on the left, and buttons on the right
             #   'text'      - a Gtk2::TextView
             notebookMode                => 'empty',
             # Which kind of notebook is currently being displayed - namely, which header in the
@@ -7531,7 +7952,7 @@
             #   $notebookTagHash{tab_name} = reference_to_Gtk2::Label_of_tab
             notebookTabHash             => {},
             # Hash of data lists displayed in the notebook, in the form
-            #   $notebookDataHash{tab_name} = reference_to_GA::Gtk::Simple::List
+            #   $notebookDataHash{tab_name} = reference_to_GA::Obj::Simple::List
             notebookDataHash            => {},
 
             # To access Axbasic's default data, $self->setupTreeView creates a dummy
@@ -7920,10 +8341,6 @@
         $self->ivAdd('headerHash', 'Colour schemes', 'colourSchemeHeader');
 
         $child = $model->append($pointer);
-        $model->set($child, 0 => 'Keycode objects');
-        $self->ivAdd('headerHash', 'Keycode objects', 'keycodeHeader');
-
-        $child = $model->append($pointer);
         $model->set($child, 0 => 'TTS configurations');
         $self->ivAdd('headerHash', 'TTS configurations', 'ttsHeader');
 
@@ -8107,7 +8524,7 @@
         #                       ...
         #                   ]
         #
-        #   $columnListRef  - a list of columns used in the call to GA::Gtk::Simple::List->new, in
+        #   $columnListRef  - a list of columns used in the call to GA::Obj::Simple::List->new, in
         #                       the format
         #                   [
         #                       'column_name' => 'type',
@@ -8119,7 +8536,7 @@
         #   $dataHashRef    - a reference to a hash. The keys are the same as the keys in
         #                       $tabListRef; the corresponding values contain a reference to a
         #                       two-dimensional list of data to be displayed in the
-        #                       GA::Gtk::Simple::List, in the form
+        #                       GA::Obj::Simple::List, in the form
         #                   [
         #                       [row0_cell0, row0_cell1, row0cell2...],
         #                       [row1_cell0, row1_cell1, row1cell2...],
@@ -8241,7 +8658,7 @@
             $mnemonic = shift @tabList;
 
             # Add a simple list
-            $slWidget = Games::Axmud::Gtk::Simple::List->new(@columnList);
+            $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
             # Make each row double-clickable
             $slWidget->signal_connect('row_activated' => sub {
 
@@ -8540,7 +8957,7 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   @list   - The rows in the notebook's GA::Gtk::Simple::List which should be marked as
+        #   @list   - The rows in the notebook's GA::Obj::Simple::List which should be marked as
         #               'selected' (as if the user had clicked on them). If the list is empty,
         #               no rows are marked as 'selected'
         #
@@ -8615,7 +9032,7 @@
     sub notebookGetData {
 
         # Can be called by anything
-        # Finds the data displayed in the GA::Gtk::Simple::List of the current notebook tab
+        # Finds the data displayed in the GA::Obj::Simple::List of the current notebook tab
         #   (use ->notebookGetSelectedData to get only the selected data)
         #
         # Expected arguments
@@ -8624,7 +9041,7 @@
         # Return values
         #   'undef' on improper arguments
         #   Otherwise, returns the reference to the selected data, matching
-        #       GA::Gtk::Simple::List->{data}
+        #       GA::Obj::Simple::List->{data}
 
         my ($self, $check) = @_;
 
@@ -8644,7 +9061,7 @@
     sub notebookGetSelectedData {
 
         # Can be called by anything
-        # Gets the data displayed in the selected line of the GA::Gtk::Simple::List of the current
+        # Gets the data displayed in the selected line of the GA::Obj::Simple::List of the current
         #   notebook tab
         #
         # Expected arguments
@@ -8684,7 +9101,7 @@
     sub notebookGetSelectedLines {
 
         # Can be called by anything
-        # Gets a list containing the number of each selected line in the GA::Gtk::Simple::List of
+        # Gets a list containing the number of each selected line in the GA::Obj::Simple::List of
         #   the current notebook tab
         #
         # Expected arguments
@@ -8718,11 +9135,11 @@
     sub notebookSetSelectedLines {
 
         # Can be called by anything, but usually by $self->updateNotebook
-        # Selects lines in the GA::Gtk::Simple::List of the current notebook tab, as if the user had
+        # Selects lines in the GA::Obj::Simple::List of the current notebook tab, as if the user had
         #   clicked on them
         #
         # Expected arguments
-        #   @list       - List of indices in the GA::Gtk::Simple::List to select
+        #   @list       - List of indices in the GA::Obj::Simple::List to select
         #
         # Return values
         #   1
@@ -9822,7 +10239,7 @@
             @cageList = $self->getSortedCages($tab);
 
             # @cageList contains a sorted list of cages. Convert that list into one that can be
-            #   displayed in a GA::Gtk::Simple::List, in columns
+            #   displayed in a GA::Obj::Simple::List, in columns
             foreach my $cageObj (@cageList) {
 
                 my ($flag, $listRef);
@@ -11215,87 +11632,6 @@
         return $self->refreshNotebook($tabListRef, $columnListRef, $dataHashRef, $buttonListRef);
     }
 
-    sub keycodeHeader {
-
-        # Called by ->treeViewChanged when the user clicks on the 'Keycode objects' header in the
-        #   treeview
-        #
-        # Expected arguments
-        #   $item   - The treeview item that was clicked (i.e. the text it contains)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $item, $check) = @_;
-
-        # Local variables
-        my (
-            $tabListRef, $columnListRef, $dataHashRef, $buttonListRef,
-            @list, @dataList,
-            %dataHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $item || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->keycodeHeader', @_);
-        }
-
-        # Prepare the list of tabs
-        $tabListRef = [
-            'Keycode' => '_Keycode',
-        ];
-
-        # Prepare the list of column headings
-        $columnListRef = [
-            'Current' => 'bool',
-            'Customised' => 'bool',
-            'Name' => 'text',
-        ];
-
-        # Prepare the list of buttons
-        $buttonListRef = [
-            'Add', 'Add a new keycode object', 'buttonAdd_keycode',
-            'Set current', 'Set the current keycode object', 'buttonSet_keycode',
-            'Clone', 'Clone the selected keycode object', 'buttonClone_keycode',
-            'Edit', 'Edit the selected keycode object', 'buttonEdit_keycode',
-            'Reset', 'Resets the selected keycode object', 'buttonReset_keycode',
-            'Delete', 'Delete the selected keycode object', 'buttonDelete_keycode',
-            'Dump', 'Display a list of keycode objects in the \'main\' window',
-                'buttonDump_keycode',
-        ];
-
-        # Prepare the data to be displayed (there is only one tab)
-        @list = sort {lc($a->name) cmp lc($b->name)} ($axmud::CLIENT->ivValues('keycodeObjHash'));
-        OUTER: foreach my $obj (@list) {
-
-            my ($flag, $listRef);
-
-            if ($axmud::CLIENT->currentKeycodeObj && $axmud::CLIENT->currentKeycodeObj eq $obj) {
-                $flag = TRUE;
-            } else {
-                $flag = FALSE;
-            }
-
-            $listRef = [$flag, $obj->customisedFlag, $obj->name];
-            push (@dataList, $listRef);
-        }
-
-        $dataHash{'Keycode'} = \@dataList;
-        $dataHashRef = \%dataHash;
-
-        # Which function to call if the user double-clicks on a row in the list - in this case, it's
-        #   equivalent to the edit button
-        $self->ivPoke('notebookSelectRef', sub {
-
-            $self->buttonEdit_keycode();
-        });
-
-        # Display all of this in the notebook
-        return $self->refreshNotebook($tabListRef, $columnListRef, $dataHashRef, $buttonListRef);
-    }
-
     sub ttsHeader {
 
         # Called by ->treeViewChanged when the user clicks on the 'TTS configurations' header in the
@@ -12396,7 +12732,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_prof', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -13056,7 +13392,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_template', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -13358,7 +13694,7 @@
         # Import the priority list
         @priorityList = $self->session->profPriorityList;
 
-        # Import the GA::Gtk::Simple::List and find the currently selected line and the data it
+        # Import the GA::Obj::Simple::List and find the currently selected line and the data it
         #   contains
         ($index, $priority, $category) = $self->profPriorityData();
         if (! defined $index) {
@@ -13426,7 +13762,7 @@
         # Import the priority list
         @priorityList = $self->session->profPriorityList;
 
-        # Import the GA::Gtk::Simple::List and find the currently selected line and the data it
+        # Import the GA::Obj::Simple::List and find the currently selected line and the data it
         #   contains
         ($index, $priority, $category) = $self->profPriorityData();
         if (! defined $index) {
@@ -13494,7 +13830,7 @@
         # Import the priority list
         @priorityList = $self->session->profPriorityList;
 
-        # Import the GA::Gtk::Simple::List and find the currently selected line and the data it
+        # Import the GA::Obj::Simple::List and find the currently selected line and the data it
         #   contains
         ($index, $priority, $category) = $self->profPriorityData();
         if (! defined $index) {
@@ -13558,7 +13894,7 @@
         # Import the priority list
         @priorityList = $self->session->profPriorityList;
 
-        # Import the GA::Gtk::Simple::List and find the currently selected line and the data it
+        # Import the GA::Obj::Simple::List and find the currently selected line and the data it
         #   contains
         ($index, $priority, $category) = $self->profPriorityData();
         # If the category is already marked as being in the priority list, do nothing
@@ -13622,7 +13958,7 @@
         # Import the priority list
         @priorityList = $self->session->profPriorityList;
 
-        # Import the GA::Gtk::Simple::List and find the currently selected line and the data it
+        # Import the GA::Obj::Simple::List and find the currently selected line and the data it
         #   contains
         ($index, $priority, $category) = $self->profPriorityData();
         # If the category is already marked as not being in the priority list, do nothing
@@ -13789,7 +14125,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_cage', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -13846,7 +14182,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDumpAll_cage', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -13886,7 +14222,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_dict', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -14214,7 +14550,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_dict', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -14687,7 +15023,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonSafeResume_task', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -14973,7 +15309,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonHaltAll_task', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15068,7 +15404,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonKillAll_task', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15163,7 +15499,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonPauseAll_task', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15257,7 +15593,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonResetAll_task', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15295,7 +15631,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonFreezeAll_task', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15334,7 +15670,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_task', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15455,7 +15791,7 @@
         # Import the ordered list of global initial tasks
         @taskList = $axmud::CLIENT->initTaskOrderList;
 
-        # Import the GA::Gtk::Simple::List and find the currently selected line and the data it
+        # Import the GA::Obj::Simple::List and find the currently selected line and the data it
         #   contains
         ($index, $taskName) = $self->initialTaskData();
         if (! defined $index) {
@@ -15512,7 +15848,7 @@
         # Import the ordered list of global initial tasks
         @taskList = $axmud::CLIENT->initTaskOrderList;
 
-        # Import the GA::Gtk::Simple::List and find the currently selected line and the data it
+        # Import the GA::Obj::Simple::List and find the currently selected line and the data it
         #   contains
         ($index, $taskName) = $self->initialTaskData();
         if (! defined $index) {
@@ -15622,7 +15958,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15661,7 +15997,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_initialTask', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15890,7 +16226,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15929,7 +16265,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_customTask', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -15969,7 +16305,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_taskPackage', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16226,7 +16562,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16305,7 +16641,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonHaltAll_task', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16349,7 +16685,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_taskLabel', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16463,7 +16799,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonEmpty_taskLabel', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16518,7 +16854,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonReset_taskLabel', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16572,7 +16908,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16611,7 +16947,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_taskLabel', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16729,7 +17065,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16859,7 +17195,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16930,7 +17266,7 @@
             'Custom'            => 'custom',
         );
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -16990,7 +17326,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAddRegion_model', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17050,7 +17386,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAddChar_model', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17114,7 +17450,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17243,7 +17579,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonEdit_worldModel', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17521,7 +17857,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_Model', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17557,7 +17893,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDumpChar_model', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17592,7 +17928,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_exitModel', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17771,7 +18107,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_exitModel', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17812,7 +18148,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17866,7 +18202,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -17916,7 +18252,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18122,7 +18458,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18160,7 +18496,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18199,7 +18535,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18253,7 +18589,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18303,7 +18639,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18412,7 +18748,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump20_cmdBuffer', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18466,7 +18802,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18513,7 +18849,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonStatus_cmdBuffer', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18618,7 +18954,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonSave_cmdBuffer', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18655,7 +18991,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_chatContact', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18833,7 +19169,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_chatContact', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -18870,7 +19206,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_colourScheme', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -19054,7 +19390,7 @@
             );
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -19063,397 +19399,6 @@
 
         # Display the list
         $self->session->pseudoCmd('listcolourscheme', $self->pseudoCmdMode);
-
-        return 1;
-    }
-
-    # Keycode button callbacks
-
-    sub buttonAdd_keycode {
-
-        # Callback: Add a keycode object (equivalent to ';addkeycodeobject')
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my ($tab, $slWidget, $name);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_keycode', @_);
-        }
-
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
-        $tab = $self->notebookGetTab();
-        $slWidget = $self->ivShow('notebookDataHash', $tab);
-
-        # Unselect everything in the list, because we're creating a new keycode object
-        $slWidget->get_selection->unselect_all();
-
-        # Prompt the user for the name of the keycode object
-        $name = $self->showEntryDialogue(
-            'Add keycode object',
-            "Enter a name for the object\n<i>Max 16 chars: A-Z a-z _ 0-9</i>",
-            16,     # Max chars
-            undef,
-            undef,
-            TRUE,   # Don't remove the <i>
-        );
-
-        if ($name) {
-
-            # Add the new keycode object
-            $self->session->pseudoCmd('addkeycodeobject ' . $name, $self->pseudoCmdMode);
-
-            # Update the notebook
-            $self->updateNotebook();
-        }
-
-        return 1;
-    }
-
-    sub buttonSet_keycode {
-
-        # Callback: Sets the current keycode object (equivalent to ';setkeycodeobject')
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments, if no line is selected in the notebook or if the selected
-        #       object no longer exists
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $dataRef, $name,
-            @list, @dataList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonSet_keycode', @_);
-        }
-
-        # Import the currently selected portions of the notebook list
-        @list = $self->notebookGetSelectedData();
-        if (! @list) {
-
-            # Nothing selected
-            return undef;
-        }
-
-        # @list is a list of references to anonymous lists; each of these anonymous lists contains
-        #   a single row of the list
-        $dataRef = $list[0];
-        @dataList = @$dataRef;
-        # The keycode object name is the third item of data
-        $name = $dataList[2];
-        if (! $name) {
-
-            # Can't continue
-            return undef;
-        }
-
-        # Set the current keycode object
-        $self->session->pseudoCmd('setkeycodeobject ' . $name, $self->pseudoCmdMode);
-
-        # Update the notebook
-        $self->updateNotebook();
-
-        return 1;
-    }
-
-    sub buttonClone_keycode {
-
-        # Callback: Clones the selected keycode object (equivalent to ';clonekeycodeobject')
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if no line is selected in the notebook
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $dataRef, $name, $cloneName,
-            @list, @dataList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonClone_keycode', @_);
-        }
-
-        # Import the currently selected portions of the notebook list
-        @list = $self->notebookGetSelectedData();
-        if (! @list) {
-
-            # Nothing selected
-            return undef;
-        }
-
-        # @list is a list of references to anonymous lists; each of these anonymous lists contains
-        #   a single row of the list
-        $dataRef = $list[0];
-        @dataList = @$dataRef;
-        # The keycode object name is the third item of data
-        $name = $dataList[2];
-        if (! $name) {
-
-            # Can't continue
-            return undef;
-        }
-
-        # Prompt the user for the name of the clone
-        $cloneName = $self->showEntryDialogue(
-            'Clone keycode object',
-            "Enter a name for the clone\n<i>Max 16 chars: A-Z a-z _ 0-9 </i>",
-            16,     # Max chars
-            undef,
-            undef,
-            TRUE,   # Don't remove the <i>
-        );
-
-        if ($cloneName) {
-
-            # Clone the keycode object
-            $self->session->pseudoCmd(
-                'clonekeycodeobject ' . $name . ' ' . $cloneName,
-                $self->pseudoCmdMode,
-            );
-
-            # Update the notebook
-            $self->updateNotebook();
-        }
-
-        return 1;
-    }
-
-    sub buttonEdit_keycode {
-
-        # Callback: Edits a keycode object (equivalent to ';editkeycodeobject')
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments, if no line is selected in the notebook or if the selected
-        #       object no longer exists
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $dataRef, $name, $obj,
-            @list, @dataList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonEdit_keycode', @_);
-        }
-
-        # Import the currently selected portions of the notebook list
-        @list = $self->notebookGetSelectedData();
-        if (! @list) {
-
-            # Nothing selected
-            return undef;
-        }
-
-        # @list is a list of references to anonymous lists; each of these anonymous lists contains
-        #   a single row of the list
-        $dataRef = $list[0];
-        @dataList = @$dataRef;
-        # The keycode object's name is the third item of data
-        $name = $dataList[2];
-        if (! $name) {
-
-            # Can't continue
-            return undef;
-        }
-
-        # Get the keycode object itself
-        $obj = $axmud::CLIENT->ivShow('keycodeObjHash', $name);
-        if (! $obj) {
-
-            # Can't continue
-            return undef;
-
-        } else {
-
-            # Open up an 'edit' window to edit the object
-            $self->createFreeWin(
-                'Games::Axmud::EditWin::Keycode',
-                $self,
-                $self->session,
-                'Edit keycode object \'' . $name . '\'',
-                $obj,
-                FALSE,                          # Not temporary
-            );
-
-            return 1;
-        }
-    }
-
-    sub buttonReset_keycode {
-
-        # Callback: Resets the selected keycode object (equivalent to ';resetkeycodeobject')
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if no line is selected in the notebook
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $dataRef, $name, $cloneName,
-            @list, @dataList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonReset_keycode', @_);
-        }
-
-        # Import the currently selected portions of the notebook list
-        @list = $self->notebookGetSelectedData();
-        if (! @list) {
-
-            # Nothing selected
-            return undef;
-        }
-
-        # @list is a list of references to anonymous lists; each of these anonymous lists contains
-        #   a single row of the list
-        $dataRef = $list[0];
-        @dataList = @$dataRef;
-        # The keycode object name is the third item of data
-        $name = $dataList[2];
-        if (! $name) {
-
-            # Can't continue
-            return undef;
-        }
-
-        # Reset the keycode object
-        $self->session->pseudoCmd('resetkeycodeobject ' . $name, $self->pseudoCmdMode);
-
-        # Update the notebook
-        $self->updateNotebook();
-
-        return 1;
-    }
-
-    sub buttonDelete_keycode {
-
-        # Callback: Deletes a keycode object (equivalent to ';deletekeycodeobject')
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if no line is selected in the notebook
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $dataRef, $name,
-            @list, @dataList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDelete_keycode', @_);
-        }
-
-        # Import the currently selected portions of the notebook list
-        @list = $self->notebookGetSelectedData();
-        if (! @list) {
-
-            # Nothing selected
-            return undef;
-        }
-
-        # @list is a list of references to anonymous lists; each of these anonymous lists contains
-        #   a single row of the list
-        $dataRef = $list[0];
-        @dataList = @$dataRef;
-        # The keycode object name is the third item of data
-        $name = $dataList[2];
-        if (! $name) {
-
-            # Can't continue
-            return undef;
-        }
-
-        # Delete the keycode object
-        $self->session->pseudoCmd('deletekeycodeobject ' . $name, $self->pseudoCmdMode);
-
-        # Update the notebook
-        $self->updateNotebook();
-
-        return 1;
-    }
-
-    sub buttonDump_keycode {
-
-        # Callback: Displays a list of keycode objects in the 'main' window (equivalent to
-        #   ';listkeycodeobject')
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my ($tab, $slWidget);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_keycode', @_);
-        }
-
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
-        $tab = $self->notebookGetTab();
-        $slWidget = $self->ivShow('notebookDataHash', $tab);
-
-        # Unselect everything in the list
-        $slWidget->get_selection->unselect_all();
-
-        # Display the list
-        $self->session->pseudoCmd('listkeycodeobject', $self->pseudoCmdMode);
 
         return 1;
     }
@@ -19482,7 +19427,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_tts', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -19547,7 +19492,7 @@
         #   a single row of the list
         $dataRef = $list[0];
         @dataList = @$dataRef;
-        # The keycode object name is the first item of data
+        # The TTS configuration object name is the first item of data
         $name = $dataList[0];
         if (! $name) {
 
@@ -19726,7 +19671,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_tts', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -19763,7 +19708,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_winmap', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -19829,7 +19774,7 @@
         #   a single row of the list
         $dataRef = $list[0];
         @dataList = @$dataRef;
-        # The keycode object name is the third item of data
+        # The winmap object name is the third item of data
         $name = $dataList[2];
         if (! $name) {
 
@@ -20007,7 +19952,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_winmap', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -20044,7 +19989,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_zonemap', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -20110,7 +20055,7 @@
         #   a single row of the list
         $dataRef = $list[0];
         @dataList = @$dataRef;
-        # The keycode object name is the fourth item of data
+        # The zonemap object name is the fourth item of data
         $name = $dataList[3];
         if (! $name) {
 
@@ -20288,7 +20233,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonDump_zonemap', @_);
         }
 
-        # Get the selected tab, and from there the tab's GA::Gtk::Simple::List
+        # Get the selected tab, and from there the tab's GA::Obj::Simple::List
         $tab = $self->notebookGetTab();
         $slWidget = $self->ivShow('notebookDataHash', $tab);
 
@@ -20306,7 +20251,7 @@
     sub profPriorityData {
 
         # Called by $self->buttonMoveTop_profPriority, $self->buttonMoveUp_profPriority, etc
-        # Works out which part of the currrent notebook's GA::Gtk::Simple::List is selected and
+        # Works out which part of the currrent notebook's GA::Obj::Simple::List is selected and
         #   accesses the data on the selected row
         #
         # Expected arguments
@@ -20387,7 +20332,7 @@
     sub initialTaskData {
 
         # Called by $self->buttonMoveUp_initialTask and $self->buttonMoveUp_profPriority
-        # Works out which part of the currrent notebook's GA::Gtk::Simple::List is selected and
+        # Works out which part of the currrent notebook's GA::Obj::Simple::List is selected and
         #   accesses the data on the selected row
         #
         # Expected arguments

@@ -214,12 +214,12 @@
             #   can't have two character objects whose ->name is 'Gandalf')
             knownCharHash               => {},
             # A collection of 'minion strings', where several minion strings (e.g. 'hairy orc',
-            #   'hairy orcs', 'Glob the orc') may represent the same minion model object.
+            #   'hairy orcs', 'Glob the orc') may represent the same minion model object
             # Unlike $self->minionModelHash, this hash can only contain one key-value pair for each
             #   possible minion string. Also, the value may be a model object or a non-model object;
             #   in either case, it's possible to compare the object against other model/non-model
-            #   objects, to see if they match.
-            # Minion strings are case-insensitive.
+            #   objects, to see if they match
+            # Minion strings are case-insensitive
             # Hash in the form
             #   $minionStringHash{minion_string} = blessed_reference_to_minion_model_object
             minionStringHash            => {},
@@ -247,10 +247,11 @@
 
             # Room tags
             # Rooms can be given a short name, usually displayed next to the room on the map. These
-            #   are called room tags. The maximum size is 16 characters.
+            #   are called room tags. The maximum size is 16 characters
             # Room tags are unique - a room tag called 'tower' can either belong to no room at all,
             #   or a single room. However, room tags are case-insensitive - you can refer to a
-            #   room's tag as 'tower', 'TOWER' or 'tOwEr', if you like
+            #   room's tag as 'tower', 'TOWER' or 'tOwEr', if you like. (Room tags are stored in
+            #   lower-case letters, i.e. 'tower')
             # Each room object also has its own ->roomTag IV, set to 'undef' if the room doesn't
             #   have a room tag
             # This hash stores all room tags currently in use, in the form
@@ -389,6 +390,7 @@
                                         => '#DD7422',   # Orange - selected exit's shadow exit
             defaultRandomExitColour     => '#FF0000',   # Red - random exit (type 3 only)
             defaultImpassableExitColour => '#FF00FF',   # Magenta - impassable exit
+            defaultMysteryExitColour    => '#900700',   # Dark red - mystery exit
             defaultCheckedDirColour     => '#FF96AA',   # Pink - checked direction
             defaultDragExitColour       => '#FF0000',   # Red - draggable exit
             defaultExitTagColour        => '#000000',   # Black - exit tag
@@ -424,6 +426,7 @@
             selectExitShadowColour      => undef,
             randomExitColour            => undef,
             impassableExitColour        => undef,
+            mysteryExitColour           => undef,
             checkedDirColour            => undef,
             dragExitColour              => undef,
             exitTagColour               => undef,
@@ -870,6 +873,26 @@
             #       'complex'   - all primary directions (including eastnortheast, etc)
             checkableDirMode            => 'diku',
 
+            # There are three pathfinding algorithms, enacted by calls to $self->findPath (to find
+            #   a path using rooms in a single region), $self->findUniversalPath (to find a path
+            #   using rooms in any region) and $self->findRoutePath (which doesn't consult the
+            #   world model at all, using route objects, GA::Obj::Route, instead)
+            # ->findUniversalPath uses pre-calculated routes across a region, but only uses region
+            #   exits that have been marked as super-region exits (so that we don't have to
+            #   calculate thousands of paths across each region)
+            # An alternative is to set these IVs, so that ->findPath can use rooms in adjacent
+            #   regions, as if they were in the same region
+            # Adjacent region mode - 'default' if $self->findPath should can only use rooms in a
+            #   single region, 'near' if $self->findPath can use rooms in regions adjacent to
+            #   the start room, and 'all' if $self->findPath ignores regions altogether, treating
+            #   all rooms as if they were in the same region
+            adjacentMode                => 'near',
+            # When $self->adjacentMode is 'adjacent', the number of adjacent regions to use (e.g.
+            #   1 means 'use rooms in any adjacent region', 2 means 'use rooms in any adjacent
+            #   region, and any of their adjacent regions', 0 means 'don't use adjacent regions'
+            # Must be an integer, 0 or above. Ignored if $self->adjacentRegionModeis is not
+            #   'adjacent'
+            adjacentCount               => 1,
             # Boundary updates. When an existing region exit is modified in any way, or deleted, or
             #   an exit becomes a region exit, it is added to this hash, so that the parent
             #   regionmap's list of super-region exits can be updated. Hash in the form
@@ -931,6 +954,10 @@
             # Flag set to TRUE, when only new rooms should be painted. Otherwise, set to FALSE, so
             #   that in 'update' mode, every time the current room changes, it is painted
             paintAllRoomsFlag           => FALSE,
+            # Flag relating to the automapper window's quick painting toolbar. Set to FALSE if
+            #   quick painting should apply to one room (before resetting itself), TRUE if it should
+            #   apply to multiple rooms (the user must manually reset it)
+            quickPaintMultiFlag         => FALSE,
 
             # Limits to world model searches (used by GA::PrefWin::Search). If either value is 0,
             #   then searches use $self->modelObjCount as a limit
@@ -1030,6 +1057,7 @@
         $self->{selectExitShadowColour} = $self->{defaultSelectExitShadowColour};
         $self->{randomExitColour}       = $self->{defaultRandomExitColour};
         $self->{impassableExitColour}   = $self->{defaultImpassableExitColour};
+        $self->{mysteryExitColour}      = $self->{defaultMysteryExitColour};
         $self->{checkedDirColour}       = $self->{defaultCheckedDirColour};
         $self->{dragExitColour}         = $self->{defaultDragExitColour};
         $self->{exitTagColour}          = $self->{defaultExitTagColour};
@@ -1057,7 +1085,7 @@
     ##################
     # Methods
 
-    # Methods called by GA::Session->spinMaintainLoop
+    # Methods called by GA::Session->spinMaintainLoop, etc
 
     sub updateRegionPaths {
 
@@ -1365,12 +1393,13 @@
                 # (Add to our hash of affected regionmaps)
                 $regionmapHash{$regionmapObj->number} = $regionmapObj;
 
-                CENTRE: foreach my $exitString ($regionmapObj->ivKeys('regionPathHash')) {
+                CENTRE: foreach my $pathObj ($regionmapObj->ivValues('regionPathHash')) {
 
-                    my $pathObj = $regionmapObj->ivShow('regionPathHash', $exitString);
-
-                    INNER: foreach my $exitNum ($pathObj->exitList) {
-
+                    INNER: foreach my $exitNum (
+                        $pathObj->startExit,
+                        $pathObj->exitList,
+                        $pathObj->stopExit,
+                    ) {
                         if (exists $otherHash{$exitNum}) {
 
                             # Replace the path
@@ -1381,12 +1410,13 @@
                     }
                 }
 
-                CENTRE: foreach my $exitString ($regionmapObj->ivKeys('safeRegionPathHash')) {
+                CENTRE: foreach my $pathObj ($regionmapObj->ivValues('safeRegionPathHash')) {
 
-                    my $pathObj = $regionmapObj->ivShow('safeRegionPathHash', $exitString);
-
-                    INNER: foreach my $exitNum ($pathObj->exitList) {
-
+                    INNER: foreach my $exitNum (
+                        $pathObj->startExit,
+                        $pathObj->exitList,
+                        $pathObj->stopExit,
+                    ) {
                         if (exists $otherHash{$exitNum}) {
 
                             # Replace the path
@@ -1544,6 +1574,8 @@
                 $roomObj,
                 $otherRoomObj,
                 FALSE,              # Don't avoid hazards
+                undef,
+                TRUE,               # Don't use adjacent regions
             );
 
             # If there is actually a path between the two rooms...
@@ -1571,6 +1603,8 @@
                 $otherRoomObj,
                 $roomObj,
                 FALSE,              # Don't avoid hazards
+                undef,
+                TRUE,               # Don't use adjacent regions
             );
 
             # Save it, if found
@@ -1602,6 +1636,8 @@
                 $roomObj,
                 $otherRoomObj,
                 TRUE,               # Avoid hazards
+                undef,
+                TRUE,               # Don't use adjacent regions
             );
 
             # If there is actually a safe path between the two rooms...
@@ -1634,6 +1670,8 @@
                 $otherRoomObj,
                 $roomObj,
                 TRUE,           # Avoid hazards
+                undef,
+                TRUE,               # Don't use adjacent regions
             );
 
             # If there is actually a safe path between the two rooms...
@@ -1762,7 +1800,7 @@
             }
 
             # Check that the exit is passable
-            if ($exitObj->exitOrnament eq 'impass') {
+            if ($exitObj->exitOrnament eq 'impass' || $exitObj->exitOrnament eq 'mystery') {
 
                 return undef;
             }
@@ -1816,7 +1854,9 @@
         ($pathRoomListRef, $pathExitListRef) = $self->findPath(
             $startRoomObj,
             $stopRoomObj,
-            $safeFlag,
+            $safeFlag,          # Avoid hazards, or not
+            undef,
+            TRUE,               # Don't use adjacent regions
         );
 
         # If there is actually a path between the two rooms...
@@ -1986,6 +2026,1927 @@
         $self->ivEmpty('checkLevelsHash');
 
         return 1
+    }
+
+    # Model test methods
+
+    sub testModel {
+
+        # Called by GA::Cmd::TestModel->do, GA::Cmd::MergeModel->do (or by any other function)
+        # Tests the integrity of the world model and (optionally) fixes as many errors as possible
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #
+        # Optional values
+        #   $fixFlag        - If TRUE, fixes any errors that can be fixed. If FALSE or 'undef', does
+        #                       not attempt to fix any errors
+        #   $diagnoseFlag   - If TRUE, returns a list of values. If FALSE or 'undef', returns a
+        #                       simple pass or fail value
+        #
+        # Return values
+        #   If $diagnoseFlag is TRUE:
+        #       Returns an empty list on improper arguments
+        #       Otherwise, returns a list in the form
+        #           (error_count, fix_count, message, message, message...)
+        #       ...where 'message' are any number (including zero) of error messages
+        #   If $diagnoseFlag is FALSE or 'undef':
+        #       Returns 'undef' on improper arguments or if there are any errors
+        #       Returns 1 if there are no errors
+
+        my ($self, $session, $fixFlag, $diagnoseFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $errorCount, $fixCount, $count,
+            @emptyList, @outputList, @categoryList,
+            %modelHash, %exitModelHash, %regionModelHash, %regionmapHash, %charModelHash,
+            %knownCharHash, %roomModelHash, %roomTagHash, %abandonExitHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $session || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->testModel', @_);
+
+            if ($diagnoseFlag) {
+                return @emptyList;
+            } else {
+                return undef;
+            }
+        }
+
+        # So that the calls to $self->testModelRoom and $self->testModelExit can do better improper
+        #   arguments checks, give the optional flags defined values
+        if (! $fixFlag) {
+            $fixFlag = FALSE;
+        } else {
+            $fixFlag = TRUE;
+        }
+
+        if (! $diagnoseFlag) {
+            $diagnoseFlag = FALSE;
+        } else {
+            $diagnoseFlag = TRUE;
+        }
+
+        # Initialise counts
+        $errorCount = 0;
+        $fixCount = 0;
+
+        # Check that ->modelActualCount and ->exitActualCount are correct
+        %modelHash = $self->modelHash;
+        $count = scalar (keys %modelHash);
+        if ($count != $self->modelActualCount) {
+
+            push (@outputList,
+                '   ->modelActualCount should be ' . $self->modelActualCount . ', but is '
+                . $count,
+            );
+
+            $errorCount++;
+            if ($fixFlag) {
+
+                # When -f is used, fix errors
+                $self->ivPoke('modelActualCount', scalar (keys %modelHash));
+                $fixCount++;
+            }
+        }
+
+        %exitModelHash = $self->exitModelHash;
+        $count = scalar (keys %exitModelHash);
+        if ($count != $self->exitActualCount) {
+
+            push (@outputList,
+                '   ->exitActualCount should be ' . $self->exitActualCount . ', but is '
+                . $count,
+            );
+
+            $errorCount++;
+            if ($fixFlag) {
+
+                $self->ivPoke('exitActualCount', scalar (keys %exitModelHash));
+                $fixCount++;
+            }
+        }
+
+        # Check that ->modelDeletedList and ->exitDeletedList are not still in the model
+        %modelHash = $self->modelHash;
+        foreach my $num ($self->modelDeletedList) {
+
+            if (exists $modelHash{$num}) {
+
+                push (@outputList,
+                    '   Deleted model object #' . $num . ' still exists in the model',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $self->ivDelete('modelHash', $num);
+                    $fixCount++;
+                }
+            }
+        }
+
+        %exitModelHash = $self->exitModelHash;
+        foreach my $num ($self->exitDeletedList) {
+
+            if (exists $exitModelHash{$num}) {
+
+                push (@outputList,
+                    '   Deleted exit model object #' . $num . ' still exists in the exit model',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $self->ivDelete('exitModelHash', $num);
+                    $fixCount++;
+                }
+            }
+        }
+
+        # Check that ->modelBufferList and ->exitBufferList are not still in the model
+        %modelHash = $self->modelHash;
+        foreach my $num ($self->modelBufferList) {
+
+            if (exists $modelHash{$num}) {
+
+                push (@outputList,
+                    '   Buffered model object #' . $num . ' still exists in the model',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $self->ivDelete('modelHash', $num);
+                    $fixCount++;
+                }
+            }
+        }
+
+        %exitModelHash = $self->exitModelHash;
+        foreach my $num ($self->exitBufferList) {
+
+            if (exists $exitModelHash{$num}) {
+
+                push (@outputList,
+                    '   Buffered exit model object #' . $num . ' still exists in the exit model',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $self->ivDelete('exitModelHash', $num);
+                    $fixCount++;
+                }
+            }
+        }
+
+        # Check that everything in ->regionModelHash, etc, is the right category, exists in
+        #   ->modelHash and points to the same object
+        @categoryList = (
+            'region', 'room', 'weapon', 'armour', 'garment', 'char', 'minion', 'sentient',
+            'creature', 'portable', 'decoration', 'custom',
+        );
+
+        %modelHash = $self->modelHash;
+        OUTER: foreach my $category (@categoryList) {
+
+            my (
+                $iv,
+                %thisHash,
+            );
+
+            $iv = $category . 'ModelHash';      # e.g. ->regionModelHash
+            %thisHash = $self->$iv;
+
+            INNER: foreach my $num (keys %thisHash) {
+
+                my ($obj, $realObj);
+
+                $obj = $thisHash{$num};
+
+                if (! exists $modelHash{$num}) {
+
+                    push (@outputList,
+                        '   \'' . $category . '\' object exists in ->' . $iv . ', but not in'
+                        . '->modelHash',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        $self->ivDelete($iv, $num);
+                        $fixCount++;
+                    }
+
+                    next INNER;
+                }
+
+                if ($obj->category ne $category) {
+
+                    push (@outputList,
+                        '   \'' . $category . '\' object exists in ->' . $iv . ', but is not a \''
+                        . $category . '\' object',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        $self->ivDelete($iv, $num);
+                        $fixCount++;
+                    }
+
+                    next INNER;
+                }
+
+                $realObj = $modelHash{$num};
+                if ($realObj ne $obj) {
+
+                    push (@outputList,
+                        '   \'' . $category . '\' object exists in ->' . $iv . ', but is not the'
+                        . ' same object that exists in ->modelHash',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        $self->ivDelete($iv, $num);
+                        $fixCount++;
+                    }
+
+                    next INNER;
+                }
+            }
+        }
+
+        # Check that every exit has a parent room
+        %modelHash = $self->modelHash;
+        %exitModelHash = $self->exitModelHash;
+        OUTER: foreach my $exitObj (values %exitModelHash) {
+
+            my $roomObj = $modelHash{$exitObj->parent};
+            if (! $roomObj) {
+
+                push (@outputList,
+                    '   Exit #'  . $exitObj->number . ' does not have a parent room',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    # Cannot call GA::Obj::WorldModel->deleteExit, as that function assumes the exit
+                    #   has a parent room and that the room has a parent region; instead, use a
+                    #   function written especially for ;testmodel
+                    $self->emergencyDeleteExit($exitObj);
+                    $fixCount++;
+                }
+
+            } elsif ($roomObj->category ne 'room') {
+
+                push (@outputList,
+                    '   Exit #'  . $exitObj->number . ' has a parent room #' . $roomObj->number
+                    . ' which is actually a \'' . $roomObj->category . '\' object',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $self->emergencyDeleteExit($exitObj);
+                    $fixCount++;
+                }
+            }
+        }
+
+        # Check that every exit has a defined ->mapDir (except for unallocatable exits, whose
+        #   ->drawMode is 'temp_unalloc'; in that case, ->mapDir must be 'undef')
+        %exitModelHash = $self->exitModelHash;
+        OUTER: foreach my $exitObj (values %exitModelHash) {
+
+            if ($exitObj->drawMode eq 'temp_unalloc' && defined $exitObj->mapDir) {
+
+                push (@outputList,
+                    '   Unallocatable exit #'  . $exitObj->number . ' has a defined map'
+                    . ' direction \'' . $exitObj->mapDir,
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $self->emergencyDeleteExit($exitObj);
+                    $fixCount++;
+                }
+
+            } elsif ($exitObj->drawMode ne 'temp_unalloc' && ! defined $exitObj->mapDir) {
+
+                push (@outputList,
+                    '   Exit #'  . $exitObj->number . ' has an undefined map direction (and is not'
+                    . ' unallocatable)',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $self->emergencyDeleteExit($exitObj);
+                    $fixCount++;
+                }
+            }
+        }
+
+        # Check that the regionmap list matches the region list
+        %regionModelHash = $self->regionModelHash;
+        %regionmapHash = $self->regionmapHash;
+        OUTER: foreach my $regionName (keys %regionmapHash) {
+
+            my $regionmapObj = $regionmapHash{$regionName};
+
+            if (! exists $regionModelHash{$regionmapObj->number}) {
+
+                push (@outputList,
+                    '   Regionmap \'' . $regionName . '\' does not have a corresponding region'
+                    . ' object in ->regionModelHash (not auto-fixable)',
+                );
+
+                $errorCount++;
+
+                next OUTER;
+
+            } else {
+
+                delete $regionModelHash{$regionmapObj->number};
+            }
+        }
+
+        if (%regionModelHash) {
+
+            foreach my $regionObj (values %regionModelHash) {
+
+                push (@outputList,
+                    '   Region \'' . $regionObj->name . '\' does not have a corresponding'
+                    . ' regionmap in ->regionmapHash (not auto-fixable)',
+                );
+
+                $errorCount++;
+            }
+        }
+
+        # Check that the known character hash matches ->charModelHash
+        %charModelHash = $self->charModelHash;
+        %knownCharHash = $self->knownCharHash;
+        OUTER: foreach my $charName (keys %knownCharHash) {
+
+            my $charObj = $knownCharHash{$charName};
+
+            if (! exists $charModelHash{$charObj->number}) {
+
+                push (@outputList,
+                    '   ->knownCharHash \'' . $charName . '\' does not have a corresponding model'
+                    . ' object in ->charModelHash (not auto-fixable)',
+                );
+
+                $errorCount++;
+
+                next OUTER;
+
+            } else {
+
+                delete $charModelHash{$charObj->number};
+            }
+        }
+
+        if (%charModelHash) {
+
+            foreach my $charObj (values %charModelHash) {
+
+                push (@outputList,
+                    '   Character \'' . $charObj->name . '\' does not have a corresponding'
+                    . ' entry in ->knownCharHash (not auto-fixable)',
+                );
+
+                $errorCount++;
+            }
+        }
+
+        # Check that ->roomTagHash is right
+        %roomModelHash = $self->roomModelHash;
+        %roomTagHash = $self->roomTagHash;
+        OUTER: foreach my $tag (keys %roomTagHash) {
+
+            my ($roomNum, $roomObj);
+
+            $roomNum = $roomTagHash{$tag};
+
+            if (! exists $roomModelHash{$roomNum}) {
+
+                push (@outputList,
+                    '   ->roomTagHash tag \'' . $tag . '\' points to room #' . $roomNum
+                    . ' which is not in ->roomModelHash (not auto-fixable)',
+                );
+
+                $errorCount++;
+
+                next OUTER;
+            }
+
+            $roomObj = $roomModelHash{$roomNum};
+            if (! $roomObj->roomTag) {
+
+                push (@outputList,
+                    '   ->roomTagHash tag \'' . $tag . '\' points to room #' . $roomNum
+                    . ' which does not have a room tag (not auto-fixable)',
+                    );
+
+                $errorCount++;
+
+                next OUTER;
+
+            } elsif ($roomObj->roomTag ne $tag) {
+
+                push (@outputList,
+                    '   ->roomTagHash tag \'' . $tag . '\' points to room #' . $roomNum
+                    . ' which has a different room tag, \'' . $roomObj->roomTag . '\' (not'
+                    . ' auto-fixable)',
+                );
+
+                $errorCount++;
+
+                next OUTER;
+
+            } else {
+
+                delete $roomModelHash{$roomNum};
+            }
+        }
+
+        foreach my $roomObj (values %roomModelHash) {
+
+            if ($roomObj->roomTag) {
+
+                push (@outputList,
+                    '   ->roomModelHash room \'' . $roomObj->number . '\' has a room tag \''
+                    . $roomObj->roomTag . '\' which has no corresponding entry in ->roomTagHash'
+                    . ' (not auto-fixable)',
+                );
+
+                $errorCount++;
+
+                next OUTER;
+            }
+        }
+
+        # Check that every room's exits exist in the exit model
+        %roomModelHash = $self->roomModelHash;
+        %exitModelHash = $self->exitModelHash;
+        OUTER: foreach my $roomObj (values %roomModelHash) {
+
+            my (
+                @sortedExitList,
+                %exitNumHash,
+            );
+
+            @sortedExitList = $roomObj->sortedExitList;
+            %exitNumHash = $roomObj->exitNumHash;
+
+            INNER: foreach my $exitDir (keys %exitNumHash) {
+
+                my $exitNum = $exitNumHash{$exitDir};
+
+                if (! exists $exitModelHash{$exitNum}) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' exit #' . $exitNum . ' does not exist in'
+                        . ' ->exitModelHash',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        my @newList;
+
+                        $roomObj->ivDelete('exitNumHash', $exitDir);
+                        # Remove the corresponding entry in ->sortedExitList
+                        foreach my $item (@sortedExitList) {
+
+                            if ($item ne $exitDir) {
+
+                                push (@newList, $item);
+                            }
+                        }
+
+                        $roomObj->ivPoke('sortedExitList', @newList);
+                        $fixCount++;
+                    }
+                }
+
+                next INNER;
+            }
+        }
+
+        # Check that every room's exit has corresponding entries in ->sortedExitList and
+        #   ->exitNumHash
+        %roomModelHash = $self->roomModelHash;
+        OUTER: foreach my $roomObj (values %roomModelHash) {
+
+            my (
+                @sortedExitList,
+                %exitNumHash,
+            );
+
+            @sortedExitList = $roomObj->sortedExitList;
+            %exitNumHash = $roomObj->exitNumHash;
+
+            foreach my $dir (@sortedExitList) {
+
+                if (! exists $exitNumHash{$dir}) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' exit in direction \'' . $dir . '\' does'
+                        . ' not have a corresponding entry in ->exitNumHash (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+
+                } else {
+
+                    delete $exitNumHash{$dir};
+                }
+            }
+
+            if (%exitNumHash) {
+
+                foreach my $dir (keys %exitNumHash) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' exit #' . $dir . '\' does not have a'
+                        . ' corresponding entry in ->sortedExitList (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                }
+            }
+        }
+
+        # Check that every twinned exit's twin still exists, and knows about its twin
+        %exitModelHash = $self->exitModelHash;
+        OUTER: foreach my $exitObj (values %exitModelHash) {
+
+            my $twinExitObj;
+
+            if ($exitObj->twinExit) {
+
+                if (! exists $exitModelHash{$exitObj->twinExit}) {
+
+                    push (@outputList,
+                        '   Exit #' . $exitObj->number . ' has a twin exit #' . $exitObj->twinExit
+                         . ' which no longer exists',
+                    );
+
+                    $errorCount++;
+                    # We'll get all the mismatched twin exits to abandon each other all in one go,
+                    #   in a moment
+                    $abandonExitHash{$exitObj->number} = $exitObj;
+
+                } else {
+
+                    $twinExitObj = $exitModelHash{$exitObj->twinExit};
+                    if (! $twinExitObj->twinExit) {
+
+                        push (@outputList,
+                            '   Exit #' . $exitObj->number . ' has a twin exit #'
+                            . $exitObj->twinExit . ' which is not itself twinned to anything',
+                        );
+
+                        $errorCount++;
+                        $abandonExitHash{$exitObj->number} = $exitObj;
+
+                    } elsif ($twinExitObj->twinExit != $exitObj->number) {
+
+                        push (@outputList,
+                            '   Exit #' . $exitObj->number . ' has a twin exit #'
+                            . $exitObj->twinExit . ' which is twinned to some other exit (#'
+                            . $twinExitObj->twinExit . ')',
+                        );
+
+                        $errorCount++;
+                        $abandonExitHash{$exitObj->number} = $exitObj;
+                    }
+                }
+            }
+        }
+
+        if ($fixFlag) {
+
+            # Abandon any rogue twin exits in %abandonExitHash
+            foreach my $exitObj (values %abandonExitHash) {
+
+                $self->abandonTwinExit(
+                    FALSE,          # Don't update Automapper windows yet
+                    $exitObj,
+                );
+
+                $fixCount++;
+            }
+        }
+
+        # Check that every incoming uncertain, one way and random exit still exists, and actually
+        #   points to its room
+        %exitModelHash = $self->exitModelHash;
+        %roomModelHash = $self->roomModelHash;
+        OUTER: foreach my $roomObj (values %roomModelHash) {
+
+            my (%uncertainExitHash, %oneWayExitHash, %randomExitHash);
+
+            %uncertainExitHash = $roomObj->uncertainExitHash;
+            %oneWayExitHash = $roomObj->oneWayExitHash;
+            %randomExitHash = $roomObj->randomExitHash;
+
+            INNER: foreach my $exitNum (keys %uncertainExitHash) {
+
+                my $exitObj;
+
+                if (! exists $exitModelHash{$exitNum}) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' incoming uncertain exit #' . $exitNum
+                        . ' does not exist in ->exitModelHash (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                    next INNER;
+                }
+
+                $exitObj = $exitModelHash{$exitNum};
+                if (! $exitObj->destRoom || $exitObj->destRoom != $roomObj->number) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' incoming uncertain exit #' . $exitNum
+                        . ' does not lead to the room (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                    next INNER;
+                }
+            }
+
+            INNER: foreach my $exitNum (keys %oneWayExitHash) {
+
+                my $exitObj;
+
+                if (! exists $exitModelHash{$exitNum}) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' incoming one-way exit #' . $exitNum
+                        . ' does not exist in ->exitModelHash (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                    next INNER;
+                }
+
+                $exitObj = $exitModelHash{$exitNum};
+                if (! $exitObj->destRoom || $exitObj->destRoom != $roomObj->number) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' incoming one-way exit #' . $exitNum
+                        . ' does not lead to the room (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                    next INNER;
+                }
+            }
+
+            INNER: foreach my $exitNum (keys %randomExitHash) {
+
+                my ($exitObj, $matchFlag);
+
+                if (! exists $exitModelHash{$exitNum}) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' incoming random exit #' . $exitNum
+                        . ' does not exist in ->exitModelHash (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                    next INNER;
+                }
+
+                $exitObj = $exitModelHash{$exitNum};
+                if ($exitObj->randomType eq 'none') {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' incoming random exit #' . $exitNum
+                        . ' is not marked as a random exit (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                    next INNER;
+
+                } elsif ($exitObj->randomType ne 'room_list') {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' incoming random exit #' . $exitNum
+                        . ' is marked as a random exit of the wrong type (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                    next INNER;
+                }
+
+                DEEPER: foreach my $destRoomNum ($exitObj->randomDestList) {
+
+                    if ($destRoomNum == $roomObj->number) {
+
+                        $matchFlag = TRUE;
+                        last DEEPER;
+                    }
+                }
+
+                if (! $matchFlag) {
+
+                    push (@outputList,
+                        '   Room #' . $roomObj->number . ' incoming random exit #' . $exitNum
+                        . ' does not know that it leads to the room (not auto-fixable)',
+                    );
+
+                    $errorCount++;
+                }
+            }
+        }
+
+        # Check that only one-way exits have their ->oneWayDir set
+        %exitModelHash = $self->exitModelHash;
+        OUTER: foreach my $exitObj (values %exitModelHash) {
+
+            if (! $exitObj->oneWayFlag && defined $exitObj->oneWayDir) {
+
+                push (@outputList,
+                    '   Exit #' . $exitObj->number . ' is not a one-way exit, but has a one-way'
+                    . ' direction set',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $exitObj->ivUndef('oneWayDir');
+                    $fixCount++;
+                }
+            }
+        }
+
+        # Check every random exit
+        %exitModelHash = $self->exitModelHash;
+        %roomModelHash = $self->roomModelHash;
+        OUTER: foreach my $exitObj (values %exitModelHash) {
+
+            if ($exitObj->randomType ne 'room_list' && $exitObj->randomDestList) {
+
+                push (@outputList,
+                    '   Random exit #' . $exitObj->number . ' has a list of destination rooms,'
+                    . ' but its ->randomType is not set to \'room_list\' (not auto-fixable)',
+                );
+
+                $errorCount++;
+                next OUTER;
+
+            } elsif ($exitObj->randomType eq 'room_list') {
+
+                INNER: foreach my $roomNum ($exitObj->randomDestList) {
+
+                    my $roomObj;
+
+                    if (! exists $roomModelHash{$roomNum}) {
+
+                        push (@outputList,
+                            '   Random exit #' . $exitObj->number . ' destination room #' . $roomNum
+                            . ' does not exist (not auto-fixable)',
+                        );
+
+                        $errorCount++;
+
+                    } else {
+
+                        $roomObj = $roomModelHash{$roomNum};
+                        if (! $roomObj->ivExists('randomExitHash', $exitObj->number)) {
+
+                            push (@outputList,
+                                '   Random exit #' . $exitObj->number . ' destination room #'
+                                . $roomNum . ' does not know about the incoming random exit (not'
+                                . ' auto-fixable)',
+                            );
+
+                            $errorCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        # Check every region exit
+        %modelHash = $self->modelHash;
+        %exitModelHash = $self->exitModelHash;
+        OUTER: foreach my $exitObj (values %exitModelHash) {
+
+            my ($roomObj, $destRoomObj, $regionObj);
+
+            if ($exitObj->destRoom) {
+
+                $roomObj = $modelHash{$exitObj->parent};
+                $destRoomObj = $modelHash{$exitObj->destRoom};
+                if (! $roomObj->parent || ! $destRoomObj->parent) {
+
+                    # This kind of error will have been detected (or created by) the code above
+                    next OUTER;
+
+                } elsif ($exitObj->regionFlag && $roomObj->parent == $destRoomObj->parent) {
+
+                    push (@outputList,
+                        '   Region exit #' . $exitObj->number . ' destination room #'
+                        . $roomObj->parent . ' is actually in the same region',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        # Delete the original exit, and replace it with an incomplete exit in the
+                        #   same direction
+                        $self->deleteExits(
+                            $session,
+                            FALSE,      # Don't update Automapper window
+                            $exitObj,
+                        );
+
+                        $self->addExit(
+                            $session,
+                            FALSE,      # Don't update Automapper window
+                            $roomObj,
+                            $exitObj->dir,
+                            $exitObj->mapDir,
+                        );
+
+                        $fixCount++;
+                    }
+
+                } elsif (! $exitObj->regionFlag && $roomObj->parent != $destRoomObj->parent) {
+
+                    push (@outputList,
+                        '   Non-region exit #' . $exitObj->number . ' destination room #'
+                        . $roomObj->parent . ' is not in the same region',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        # Delete the original exit, and replace it with an incomplete exit in the
+                        #   same direction
+                        $self->deleteExits(
+                            $session,
+                            FALSE,      # Don't update Automapper window
+                            $exitObj,
+                        );
+
+                        $self->addExit(
+                            $session,
+                            FALSE,      # Don't update Automapper window
+                            $roomObj,
+                            $exitObj->dir,
+                            $exitObj->mapDir,
+                        );
+
+                        $fixCount++;
+                    }
+
+                } elsif (
+                    ! $exitObj->regionFlag
+                    && ($exitObj->superFlag || $exitObj->notSuperFlag)
+                ) {
+                    push (@outputList,
+                        '   Non-region exit #' . $exitObj->number . ' is marked as a super-region'
+                        . ' exit (or as definitely not a super-region exit',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        # Just update the IVs
+                        $exitObj->ivPoke('superFlag', FALSE);
+                        $exitObj->ivPoke('notSuperFlag', FALSE);
+
+                        $regionObj = $self->ivShow('modelHash', $roomObj->parent);
+
+                        # Any region paths using the exits will have to be updated
+                        $self->ivAdd('updatePathHash', $exitObj->number, $regionObj->name);
+                        $self->ivAdd('updateBoundaryHash', $exitObj->number, $regionObj->name);
+
+                        $fixCount++;
+                    }
+                }
+            }
+        }
+
+        # Check the integrity of every regionmap
+        %modelHash = $self->modelHash;
+        %exitModelHash = $self->exitModelHash;
+        %regionmapHash = $self->regionmapHash;
+        OUTER: foreach my $regionmapObj (values %regionmapHash) {
+
+            my (
+                %gridRoomHash, %gridRoomTagHash, %gridRoomGuildHash, %gridExitHash,
+                %gridExitTagHash, %regionExitHash, %regionPathHash,
+            );
+
+            # Check ->gridRoomHash
+            %gridRoomHash = $regionmapObj->gridRoomHash;
+            INNER: foreach my $posn (keys %gridRoomHash) {
+
+                my (
+                    $roomNum, $roomObj, $eCount, $fCount,
+                    @opList,
+                );
+
+                $roomNum = $gridRoomHash{$posn};
+                $roomObj = $modelHash{$roomNum};
+                # Check the room actually exists, and so on
+                ($eCount, $fCount, @opList) = $self->testModelRoom(
+                    $session,
+                    $fixFlag,
+                    $regionmapObj,
+                    $posn,
+                    $roomNum,
+                    $roomObj,
+                    'gridRoomHash',
+                    \%modelHash,
+                );
+
+                $errorCount += $eCount;
+                $fixCount += $fCount;
+                push (@outputList, @opList);
+            }
+
+            # Check ->gridRoomTagHash
+            %gridRoomTagHash = $regionmapObj->gridRoomTagHash;
+            INNER: foreach my $posn (keys %gridRoomTagHash) {
+
+                my (
+                    $roomNum, $roomObj, $eCount, $fCount,
+                    @opList,
+                );
+
+                $roomNum = $gridRoomTagHash{$posn};
+                $roomObj = $modelHash{$roomNum};
+                # Check the room actually exists, and so on
+                ($eCount, $fCount, @opList) = $self->testModelRoom(
+                    $session,
+                    $fixFlag,
+                    $regionmapObj,
+                    $posn,
+                    $roomNum,
+                    $roomObj,
+                    'gridRoomTagHash',
+                    \%modelHash,
+                );
+
+                $errorCount += $eCount;
+                $fixCount += $fCount;
+                push (@outputList, @opList);
+
+                if (! $eCount && ! $fCount && ! $roomObj->roomTag) {
+
+                    push (@outputList,
+                        '   Regionmap \'' . $regionmapObj->name . '\' references the room #'
+                        . $roomNum . ' in ->gridRoomTagHash which doesn\'t have a room tag',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        $regionmapObj->ivDelete('gridRoomTagHash', $posn);
+                        $fixCount++;
+                    }
+                }
+            }
+
+            # Check ->gridRoomGuildHash
+            %gridRoomGuildHash = $regionmapObj->gridRoomGuildHash;
+            INNER: foreach my $posn (keys %gridRoomGuildHash) {
+
+                my (
+                    $roomNum, $roomObj, $eCount, $fCount,
+                    @opList,
+                );
+
+                $roomNum = $gridRoomGuildHash{$posn};
+                $roomObj = $modelHash{$roomNum};
+                # Check the room actually exists, and so on
+                ($eCount, $fCount, @opList) = $self->testModelRoom(
+                    $session,
+                    $fixFlag,
+                    $regionmapObj,
+                    $posn,
+                    $roomNum,
+                    $roomObj,
+                    'gridRoomGuildHash',
+                    \%modelHash,
+                );
+
+                $errorCount += $eCount;
+                $fixCount += $fCount;
+                push (@outputList, @opList);
+
+                if (! $eCount && ! $fCount && ! $roomObj->roomGuild) {
+
+                    push (@outputList,
+                        '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
+                        . $roomNum . ' in ->gridRoomGuildHash which doesn\'t have a room guild',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        $regionmapObj->ivDelete('gridRoomGuildHash', $posn);
+                        $fixCount++;
+                    }
+                }
+            }
+
+            # Check ->gridExitHash
+            %gridExitHash = $regionmapObj->gridExitHash;
+            INNER: foreach my $exitNum (keys %gridExitHash) {
+
+                my (
+                    $exitObj, $roomObj, $eCount, $fCount,
+                    @opList,
+                );
+
+                $exitObj = $exitModelHash{$exitNum};
+                # Check the exit actually exists, and so on
+                ($eCount, $fCount, @opList) = $self->testModelExit(
+                    $session,
+                    $fixFlag,
+                    $regionmapObj,
+                    $exitNum,
+                    $exitObj,
+                    'gridExitHash',
+                    \%modelHash,
+                    \%exitModelHash,
+                );
+
+                $errorCount += $eCount;
+                $fixCount += $fCount;
+                push (@outputList, @opList);
+            }
+
+            # Check ->gridExitTagHash
+            %gridExitTagHash = $regionmapObj->gridExitTagHash;
+            INNER: foreach my $exitNum (keys %gridExitTagHash) {
+
+                my (
+                    $exitObj, $roomObj, $eCount, $fCount,
+                    @opList,
+                );
+
+                $exitObj = $exitModelHash{$exitNum};
+                # Check the exit actually exists, and so on
+                ($eCount, $fCount, @opList) = $self->testModelExit(
+                    $session,
+                    $fixFlag,
+                    $regionmapObj,
+                    $exitNum,
+                    $exitObj,
+                    'gridExitTagHash',
+                    \%modelHash,
+                    \%exitModelHash,
+                );
+
+                $errorCount += $eCount;
+                $fixCount += $fCount;
+                push (@outputList, @opList);
+
+                if (! $eCount && ! $fCount && ! $exitObj->exitTag) {
+
+                    push (@outputList,
+                        '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
+                        . $exitNum . ' in ->gridExitTagHash which doesn\'t have an exit tag',
+                    );
+
+                    $errorCount++;
+                    if ($fixFlag) {
+
+                        $regionmapObj->ivDelete('gridExitTagHash', $exitNum);
+                        $fixCount++;
+                    }
+                }
+            }
+
+            # Check ->regionExitHash
+            %regionExitHash = $regionmapObj->regionExitHash;
+            INNER: foreach my $exitNum (keys %regionExitHash) {
+
+                my (
+                    $exitObj, $roomObj, $eCount, $fCount,
+                    @opList,
+                );
+
+                $exitObj = $exitModelHash{$exitNum};
+                # Check the exit actually exists, and so on
+                ($eCount, $fCount, @opList) = $self->testModelExit(
+                    $session,
+                    $fixFlag,
+                    $regionmapObj,
+                    $exitNum,
+                    $exitObj,
+                    'regionExitHash',
+                    \%modelHash,
+                    \%exitModelHash,
+                );
+
+                $errorCount += $eCount;
+                $fixCount += $fCount;
+                push (@outputList, @opList);
+
+                if (! $eCount && ! $fCount) {
+
+                    if (! $exitObj->regionFlag) {
+
+                        push (@outputList,
+                            '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
+                            . $exitNum . ' in ->regionExitHash which isn\'t a region exit',
+                        );
+
+                        $errorCount++;
+                        if ($fixFlag) {
+
+                            $regionmapObj->ivDelete('regionExitHash', $exitNum);
+                            $fixCount++;
+                        }
+
+                    } elsif (! $self->ivExists('regionModelHash', $regionExitHash{$exitNum})) {
+
+                        push (@outputList,
+                            '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
+                            . $exitNum . ' in ->regionExitHash which leads to a model object #'
+                            . $regionExitHash{$exitNum} . ' which isn\'t a region',
+                        );
+
+                        $errorCount++;
+                        if ($fixFlag) {
+
+                            $regionmapObj->ivDelete('regionExitHash', $exitNum);
+                            $fixCount++;
+                        }
+                    }
+                }
+            }
+
+            # Check ->regionPathHash
+            %regionPathHash = $regionmapObj->regionPathHash;
+            INNER: foreach my $posn (keys %regionPathHash) {
+
+                my @posnList = split('_', $posn);
+                if (
+                    scalar @posnList != 2
+                    || ! exists $exitModelHash{$posnList[0]}
+                    || ! exists $exitModelHash{$posnList[1]}
+                ) {
+                    push (@outputList,
+                        '   Regionmap \'' . $regionmapObj->name . '\' references a region path at'
+                        . ' an invalid position \'' . $posn . '\' (not auto-fixable)',
+                    );
+                }
+            }
+        }
+
+        # Operation complete. Return value(s)
+        if ($diagnoseFlag) {
+            return ($errorCount, $fixCount, @outputList);
+        } elsif ($errorCount) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub testModelRoom {
+
+        # Called by $self->testModel to check one of the hashes in a regionmap object
+        #   (GA::Obj::Regionmap)
+        # Checks that each room in the hash actually exists, and so on
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $fixFlag        - If TRUE, fixes any errors that can be fixed. If FALSE, does not
+        #                       attempt to fix any errors
+        #   $regionmapObj   - The regionmap object to check
+        #   $posn           - A key in one of the regionmap's hashes
+        #   $roomNum        - $posn's corresponding value
+        #   $roomObj        - $roomNum's corresponding room object
+        #   $iv             - The hash being checked, e.g. 'gridRoomHash'
+        #   $modelHashRef   - Reference to a hash containing the contents of ->modelHash
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns a list in the form
+        #       (error_count, fix_count, message, message, message...)
+        #   ...where 'message' are any number (including zero) of error messages
+
+        my (
+            $self, $session, $fixFlag, $regionmapObj, $posn, $roomNum, $roomObj, $iv, $modelHashRef,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            $errorCount, $fixCount,
+            @emptyList, @outputList, @posnList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $fixFlag || ! defined $regionmapObj || ! defined $posn
+            || ! defined $roomNum || ! defined $roomObj || ! defined $iv || ! defined $modelHashRef
+            || defined $check
+        ) {
+            $axmud::CLIENT->writeImproper($self->_objClass . '->testModelRoom', @_);
+            return @emptyList;
+        }
+
+        $errorCount = 0;
+        $fixCount = 0;
+
+        if (! exists $$modelHashRef{$roomNum}) {
+
+            push (@outputList,
+                '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
+                . $roomNum . ' in ->' . $iv . ' which is not in ->modelHash',
+            );
+
+            $errorCount++;
+            if ($fixFlag) {
+
+                $regionmapObj->ivDelete($iv, $posn);
+                $fixCount++;
+            }
+        }
+
+        if (! $errorCount) {
+
+            if ($roomObj->category ne 'room') {
+
+                push (@outputList,
+                    '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
+                    . $roomNum . ' in ->' . $iv . ' which is not actually a room object',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $regionmapObj->ivDelete($iv, $posn);
+                    $fixCount++;
+                }
+            }
+        }
+
+        if (! $errorCount) {
+
+            if ($roomObj->parent ne $regionmapObj->number) {
+
+                push (@outputList,
+                    '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
+                    . $roomNum . ' in ->' . $iv . ' which is actually in a different region',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $regionmapObj->ivDelete($iv, $posn);
+                    $fixCount++;
+                }
+            }
+        }
+
+        if (! $errorCount) {
+
+            @posnList = split('_', $posn);
+            if (
+                scalar @posnList != 3
+                || $posnList[0] != $roomObj->xPosBlocks
+                || $posnList[1] != $roomObj->yPosBlocks
+                || $posnList[2] != $roomObj->zPosBlocks
+            ) {
+                push (@outputList,
+                    '   Regionmap \'' . $regionmapObj->name . '\' references a room #'
+                    . $roomNum . ' in ->' . $iv . ' whose position \'' . $posn . '\' is incorrect'
+                    . ' (not auto-fixable)',
+                );
+
+                $errorCount++;
+            }
+        }
+
+        return ($errorCount, $fixCount, @outputList);
+    }
+
+    sub testModelExit {
+
+        # Called by $self->testModel to check one of the hashes in a regionmap object
+        #   (GA::Obj::Regionmap)
+        # Checks that each exit in the hash actually exists, and so on
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $fixFlag        - If TRUE, fixes any errors that can be fixed. If FALSE, does not
+        #                       attempt to fix any errors
+        #   $regionmapObj   - The regionmap object to check
+        #   $exitNum        - A key in one of the regionmap's hashes
+        #   $exitObj        - $exitNum's corresponding room object ('undef' value allowed)
+        #   $iv             - The hash being checked, e.g. 'gridRoomHash'
+        #   $modelHashRef   - Reference to a hash containing the contents of ->modelHash
+        #   $exitModelHashRef
+        #                   - Reference to a hash containing the contents of ->exitModelHash
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise returns a list in the form
+        #       (error_count, fix_count, message, message, message...)
+        #   ...where 'message' are any number (including zero) of error messages
+
+        my (
+            $self, $session, $fixFlag, $regionmapObj, $exitNum, $exitObj, $iv, $modelHashRef,
+            $exitModelHashRef, $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            $errorCount, $fixCount, $roomObj,
+            @emptyList, @outputList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $fixFlag || ! defined $regionmapObj
+            || ! defined $exitNum || ! defined $iv || ! defined $modelHashRef
+            || ! defined $exitModelHashRef || defined $check
+        ) {
+            $axmud::CLIENT->writeImproper($self->_objClass . '->testModelExit', @_);
+            return @emptyList;
+        }
+
+        $errorCount = 0;
+        $fixCount = 0;
+
+        if (! exists $$exitModelHashRef{$exitNum}) {
+
+            push (@outputList,
+                '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
+                . $exitNum . ' in ->' . $iv . ' which is not in ->exitModelHash',
+            );
+
+            $errorCount++;
+            if ($fixFlag) {
+
+                $regionmapObj->ivDelete($iv, $exitNum);
+                $fixCount++;
+            }
+        }
+
+        if (! $errorCount) {
+
+            $roomObj = $$modelHashRef{$exitObj->parent};
+            if (
+                # (Must check $roomObj exists and has a parent region, because some earlier checks
+                #   produce errors that might not be fixed)
+                $roomObj
+                && $roomObj->parent
+                && $roomObj->parent != $regionmapObj->number
+            ) {
+                push (@outputList,
+                    '   Regionmap \'' . $regionmapObj->name . '\' references an exit #'
+                    . $exitNum . ' in ->' . $iv . ' which is actually in a different region',
+                );
+
+                $errorCount++;
+                if ($fixFlag) {
+
+                    $regionmapObj->ivDelete($iv, $exitNum);
+                    $fixCount++;
+                }
+            }
+        }
+
+        return ($errorCount, $fixCount, @outputList);
+    }
+
+    sub mergeModel {
+
+        # Called by GA::Cmd::MergeModel->do (only)
+        # Merges two world models into one. The calling function has imported a world model file
+        #   (created by ;exportfiles -m <world_name>). This function merges data from that model
+        #   into this one
+        # Not everything is merged; for example, regions, rooms and exits are merged, but the
+        #   value of ->currentRoomMode is not modified at all
+        #
+        # Expected arguments
+        #   $session        - The calling GA::Session
+        #   $mergeModelObj  - The imported world model (a GA::Obj::WorldModel object, just like this
+        #                       one)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $session, $mergeModelObj, $check) = @_;
+
+        # Local variables
+        my (
+            @deleteList,
+            %convertObjHash, %convertExitHash, %convertRegionHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $mergeModelObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mergeModel', @_);
+        }
+
+        # Compile a hash converting numbers of imported model objects (regions, rooms, sentients
+        #   etc) etc to unused numbers in this model
+        # ->modelObjCount specifies how many numbers have actually been used (i.e. if 1000 objects
+        #   ever created, but 50 of them have since been deleted and not reallocated to a new
+        #   object, ->modelObjCount is still 1000)
+        for (my $count = 1; $count <= $mergeModelObj->modelObjCount; $count++) {
+
+            my ($importObj, $newNum);
+
+            $importObj = $mergeModelObj->ivShow('modelHash', $count);
+
+            # If this object hasn't been deleted...
+            if (defined $importObj) {
+
+                # ...find a new number for it
+                $newNum = $self->allocateModelNumber();
+                $convertObjHash{$importObj->number} = $newNum;
+            }
+        }
+
+        # Do the same for exits
+        for (my $count = 1; $count <= $mergeModelObj->exitObjCount; $count++) {
+
+            my ($importObj, $newNum);
+
+            $importObj = $mergeModelObj->ivShow('exitModelHash', $count);
+
+            # If this object hasn't been deleted...
+            if (defined $importObj) {
+
+                # ...find a new number for it
+                $newNum = $self->allocateExitModelNumber();
+                $convertExitHash{$importObj->number} = $newNum;
+            }
+        }
+
+        # Region names. Any imported regions whose names clash with existing regions must be
+        #   renamed
+        foreach my $importObj ($mergeModelObj->ivValues('regionmapHash')) {
+
+            my ($count, $newName, $exitFlag);
+
+            if ($self->ivExists('regionmapHash', $importObj->name)) {
+
+                # Set the new name for the imported region
+                $count = 1;
+                do {
+
+                    $count++;
+                    $newName = $importObj->name . '_' . $count;
+                    if (! $self->ivExists('regionmapHash', $newName)) {
+
+                        $exitFlag = TRUE;
+                    }
+
+                } until ($exitFlag);
+
+                $convertRegionHash{$importObj->name} = $newName;
+            }
+        }
+
+        # Start actually importing things
+
+        # Import model objects
+        foreach my $importObj ($mergeModelObj->ivValues('modelHash')) {
+
+            my (
+                $oldName,
+                %childHash,
+            );
+
+            # Update the object's IVs
+
+            # Group 1 IVs
+            if ($importObj->category eq 'region') {
+
+                $oldName = $importObj->name;
+
+                if (exists $convertRegionHash{$importObj->name}) {
+
+                    $importObj->ivPoke('name', $convertRegionHash{$importObj->name});
+                    $importObj->{_objName} = $importObj->name;
+                }
+            }
+
+            $importObj->ivPoke('number', $convertObjHash{$importObj->number});
+
+            if (defined $importObj->parent) {
+
+                $importObj->ivPoke('parent', $convertObjHash{$importObj->parent});
+            }
+
+            foreach my $key ($importObj->ivKeys('childHash')) {
+
+                $childHash{$convertObjHash{$key}} = undef;
+            }
+
+            $importObj->ivPoke('childHash', %childHash);
+
+            # ->privateHash must be emptied, because it might contain arbitrary model object numbers
+            $importObj->ivEmpty('privateHash');
+
+            # Group 2 IVs
+            if (defined $importObj->container) {
+
+                $importObj->ivPoke('container', $convertObjHash{$importObj->container});
+            }
+
+            # Group 3 IVs
+            if (defined $importObj->targetRoomNum) {
+
+                $importObj->ivPoke('targetRoomNum', $convertObjHash{$importObj->targetRoomNum});
+            }
+
+            # (No group 4 IVs to update)
+
+            # Group 5 IVs
+            if ($importObj->category eq 'region') {
+
+                $importObj->ivPoke(
+                    'regionmapObj',
+                    $mergeModelObj->ivShow('regionmapHash', $oldName),
+                );
+
+            } elsif ($importObj->category eq 'room') {
+
+                my (
+                    %uncertainExitHash, %oneWayExitHash, %randomExitHash, %exitNumHash,
+                    %hiddenObjHash,
+                );
+
+                foreach my $key ($importObj->ivKeys('uncertainExitHash')) {
+
+                    my $value = $importObj->ivShow('uncertainExitHash', $key);
+
+                    $uncertainExitHash{$convertExitHash{$key}} = $convertExitHash{$value};
+                }
+
+                $importObj->ivPoke('uncertainExitHash', %uncertainExitHash);
+
+                foreach my $key ($importObj->ivKeys('oneWayExitHash')) {
+
+                    $oneWayExitHash{$convertExitHash{$key}} = undef
+                }
+
+                $importObj->ivPoke('oneWayExitHash', %oneWayExitHash);
+
+                foreach my $key ($importObj->ivKeys('randomExitHash')) {
+
+                    $randomExitHash{$convertExitHash{$key}} = undef
+                }
+
+                $importObj->ivPoke('randomExitHash', %randomExitHash);
+
+                foreach my $key ($importObj->ivKeys('exitNumHash')) {
+
+                    my $value = $importObj->ivShow('exitNumHash', $key);
+
+                    $exitNumHash{$key} = $convertExitHash{$value};
+                }
+
+                $importObj->ivPoke('exitNumHash', %exitNumHash);
+
+                foreach my $key ($importObj->ivKeys('hiddenObjHash')) {
+
+                    my $value = $importObj->ivShow('hiddenObjHash', $key);
+
+                    $hiddenObjHash{$convertObjHash{$key}} = $value;
+                }
+
+                $importObj->ivPoke('hiddenObjHash', %hiddenObjHash);
+            }
+
+            # Add the imported object to this world model
+            $self->ivAdd('modelHash', $importObj->number, $importObj);
+            $self->ivAdd($importObj->category . 'ModelHash', $importObj->number, $importObj);
+            $self->ivIncrement('modelActualCount');
+            $self->ivPoke('mostRecentNum', $importObj->number);
+        }
+
+        # Import exits
+        foreach my $importObj ($mergeModelObj->ivValues('exitModelHash')) {
+
+            my @randomDestList;
+
+            # Update the object's IVs
+
+            $importObj->ivPoke('number', $convertExitHash{$importObj->number});
+            $importObj->ivPoke('parent', $convertObjHash{$importObj->parent});
+
+            # ->privateHash must be emptied, because it might contain arbitrary model object numbers
+            $importObj->ivEmpty('privateHash');
+
+            foreach my $num ($importObj->randomDestList) {
+
+                push (@randomDestList, $convertObjHash{$num});
+            }
+
+            $importObj->ivPoke('randomDestList', @randomDestList);
+
+            if (defined $importObj->destRoom) {
+
+                $importObj->ivPoke('destRoom', $convertObjHash{$importObj->destRoom});
+            }
+
+            if (defined $importObj->twinExit) {
+
+                $importObj->ivPoke('twinExit', $convertExitHash{$importObj->twinExit});
+            }
+
+            if (defined $importObj->shadowExit) {
+
+                $importObj->ivPoke('shadowExit', $convertExitHash{$importObj->shadowExit});
+            }
+
+            # Add the imported object to this world model
+            $self->ivAdd('exitModelHash', $importObj->number, $importObj);
+            $self->ivIncrement('exitActualCount');
+            $self->ivPoke('mostRecentExitNum', $importObj->number);
+        }
+
+        # Import regionmaps
+        foreach my $importObj ($mergeModelObj->ivValues('regionmapHash')) {
+
+            my (
+                %gridRoomHash, %gridRoomTagHash, %gridRoomGuildHash, %gridExitHash,
+                %gridExitTagHash, %regionExitHash, %regionPathHash, %safeRegionPathHash,
+            );
+
+            if (exists $convertRegionHash{$importObj->name}) {
+
+                $importObj->ivPoke('name', $convertRegionHash{$importObj->name});
+                $importObj->{_objName} = $importObj->name;
+            }
+
+            $importObj->ivPoke('number', $convertObjHash{$importObj->number});
+
+            foreach my $key ($importObj->ivKeys('gridRoomHash')) {
+
+                my $value = $importObj->ivShow('gridRoomHash', $key);
+
+                $gridRoomHash{$key} = $convertObjHash{$value};
+            }
+
+            $importObj->ivPoke('gridRoomHash', %gridRoomHash);
+
+            foreach my $key ($importObj->ivKeys('gridRoomTagHash')) {
+
+                my $value = $importObj->ivShow('gridRoomTagHash', $key);
+
+                $gridRoomTagHash{$key} = $convertObjHash{$value};
+            }
+
+            $importObj->ivPoke('gridRoomTagHash', %gridRoomTagHash);
+
+            foreach my $key ($importObj->ivKeys('gridRoomGuildHash')) {
+
+                my $value = $importObj->ivShow('gridRoomGuildHash', $key);
+
+                $gridRoomGuildHash{$key} = $convertObjHash{$value};
+            }
+
+            $importObj->ivPoke('gridRoomGuildHash', %gridRoomGuildHash);
+
+            foreach my $key ($importObj->ivKeys('gridExitHash')) {
+
+                $gridExitHash{$convertExitHash{$key}} = undef;
+            }
+
+            $importObj->ivPoke('gridExitHash', %gridExitHash);
+
+            foreach my $key ($importObj->ivKeys('gridExitTagHash')) {
+
+                $gridExitTagHash{$convertExitHash{$key}} = undef;
+            }
+
+            $importObj->ivPoke('gridExitTagHash', %gridExitTagHash);
+
+            foreach my $key ($importObj->ivKeys('regionExitHash')) {
+
+                my $value = $importObj->ivShow('regionExitHash', $key);
+
+                $regionExitHash{$convertExitHash{$key}} = $convertObjHash{$value};
+            }
+
+            $importObj->ivPoke('regionExitHash', %regionExitHash);
+
+            foreach my $labelObj ($importObj->ivValues('gridLabelHash')) {
+
+                if (exists $convertRegionHash{$importObj->name}) {
+
+                    $labelObj->ivPoke('region', $convertRegionHash{$labelObj->region});
+                }
+            }
+
+            foreach my $key ($importObj->ivKeys('regionPathHash')) {
+
+                my (
+                    $regionPathObj, $newKey,
+                    @list, @roomList, @exitList,
+                );
+
+                $regionPathObj = $importObj->ivShow('regionPathHash', $key);
+
+                # $key is in the form 'a_b', where are both are exit model numbers
+                @list = split(/\_/, $key);
+                $newKey = $convertExitHash{$list[0]} . '_' . $convertExitHash{$list[1]};
+
+                # Update the region path object (GA::Obj::RegionPath) itself
+                $regionPathObj->ivPoke('startExit', $convertExitHash{$regionPathObj->startExit});
+                $regionPathObj->ivPoke('stopExit', $convertExitHash{$regionPathObj->stopExit});
+
+                foreach my $item ($regionPathObj->roomList) {
+
+                    push (@roomList, $convertObjHash{$item});
+                }
+
+                $regionPathObj->ivPoke('roomList', @roomList);
+
+                foreach my $item ($regionPathObj->exitList) {
+
+                    push (@exitList, $convertExitHash{$item});
+                }
+
+                $regionPathObj->ivPoke('exitList', @exitList);
+
+                # Mark the region path object to be put back into the regionmap
+                $regionPathHash{$newKey} = $regionPathObj;
+                if ($importObj->ivExists('safeRegionPathHash', $key)) {
+
+                    $safeRegionPathHash{$newKey} = $regionPathObj;
+                }
+            }
+
+            $importObj->ivPoke('regionPathHash', %regionPathHash);
+            $importObj->ivPoke('safeRegionPathHash', %safeRegionPathHash);
+
+            # Add the imported object to this world model
+            $self->ivAdd('regionmapHash', $importObj->name, $importObj);
+        }
+
+        # Update $self->knownCharHash and ->minionStringHash. Duplicate character names and
+        #   duplicate minion strings are not allowed, so if there's a clash, remove the imported
+        #   model object
+        foreach my $name ($mergeModelObj->ivKeys('knownCharHash')) {
+
+            my $importObj = $mergeModelObj->ivShow('knownCharHash', $name);
+
+            if ($self->ivExists('knownCharHash', $name)) {
+
+                push (@deleteList, $importObj);
+
+            } else {
+
+                $self->ivAdd('knownCharHash', $name, $importObj);
+            }
+        }
+
+        foreach my $string ($mergeModelObj->ivKeys('minionStringHash')) {
+
+            my $importObj = $mergeModelObj->ivShow('minionStringHash', $string);
+
+            if ($self->ivExists('minionStringHash', $string)) {
+
+                # $importObj can be a model or a non-model object. If the former, it must be
+                #   deleted via a call to $self->deleteObj; if the latter, we can just ignore it
+                if ($importObj->number) {
+
+                    push (@deleteList, $importObj);
+                }
+
+            } else {
+
+                $self->ivAdd('minionStringHash', $string, $importObj);
+            }
+        }
+
+        foreach my $importObj (@deleteList) {
+
+            $self->deleteObj(
+                $session,
+                FALSE,          # Don't update automapper windows now
+                $importObj,
+            );
+        }
+
+        # Merge any new light status values into our list of light status values (but don't create
+        #   duplicates)
+        foreach my $string ($mergeModelObj->lightStatusList) {
+
+            if (! defined $self->ivFind('lightStatusList', $string)) {
+
+                $self->ivPush('lightStatusList', $string);
+            }
+        }
+
+        # Update this model's hash of room tags. If an imported room has a tag that's already in
+        #   use, remove it
+        foreach my $importObj ($mergeModelObj->ivValues('roomModelHash')) {
+
+            my ($roomTag, $regionmapObj);
+
+            $roomTag = $importObj->roomTag;
+
+            if ($roomTag) {
+
+                if ($self->ivExists('roomTagHash', $roomTag)) {
+
+                    $importObj->ivUndef('roomTag');
+                    # (Need to remove it from ->teleportHash, too)
+                    $mergeModelObj->ivDelete('teleportHash', $roomTag);
+
+                    # (And remove the entry in the regionmap)
+                    $regionmapObj = $self->findRegionmap($importObj->parent);
+                    $regionmapObj->removeRoomTag($importObj);
+
+                } else {
+
+                    $self->ivAdd('roomTagHash', $roomTag, $importObj->number);
+                }
+            }
+        }
+
+        # Update this model's hash of teleport rooms
+        foreach my $key ($mergeModelObj->ivKeys('teleportHash')) {
+
+            my $value = $mergeModelObj->ivShow('teleportHash', $key);
+
+            if (exists $convertObjHash{$key}) {
+
+                # The key is a room number
+                $self->ivAdd('teleportHash', $convertObjHash{$key}, $value);
+
+            } else {
+
+                # The key is a room tag. Any duplicate room tags have already been removed from
+                #   ->teleportHash
+                $self->ivAdd('teleportHash', $key, $value);
+            }
+        }
+
+        # Import any map label styles, but don't import any styles that have the same name as an
+        #   existing style
+        foreach my $importObj ($mergeModelObj->ivValues('mapLabelStyleHash')) {
+
+            if (! $self->ivExists('mapLabelStyleHash', $importObj->name)) {
+
+                $self->ivAdd('mapLabelStyleHash', $importObj->name, $importObj);
+            }
+        }
+
+        # Import any custom room flags, but don't import any room flags that have the same name as
+        #   an existing room flag
+        foreach my $importObj ($mergeModelObj->ivValues('roomFlagHash')) {
+
+            if ($importObj->customFlag && ! $self->ivExists('roomFlagHash', $importObj->name)) {
+
+                # Don't import the room flag object (GA::Obj::RoomFlag); just create a new one with
+                #   the same attributes
+                $self->addRoomFlag(
+                    $session,
+                    $importObj->name,
+                    $importObj->shortName,
+                    $importObj->descrip,
+                    $importObj->colour,
+                );
+            }
+        }
+
+        # Operation complete. Any automapper windows using this world model should be updated
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            $mapWin->redrawWidgets('menu_bar', 'toolbar', 'treeview');
+            $mapWin->drawRegion();
+        }
+
+        return 1;
     }
 
     # Region path methods
@@ -2530,7 +4491,7 @@
         # If $name is not specified, generate a name
         if (! defined $name || $name eq '') {
 
-            # Geerate a name in the form 'unnamed_x', or 'temporary_x' for temporary regions
+            # Generate a name in the form 'unnamed_x', or 'temporary_x' for temporary regions
             if ($tempFlag) {
                 $partName = 'temporary_';
             } else {
@@ -2594,9 +4555,7 @@
 
         # Also add the corresponding regionmap
         $self->ivAdd('regionmapHash', $name, $regionmapObj);
-        # Inform the region object and the regionmap object of each other's existence
         $regionmapObj->ivPoke('number', $regionObj->number);
-        $regionObj->ivPoke('regionmapObj', $regionmapObj);
 
         # If it's a temporary region, mark it as so
         if ($tempFlag) {
@@ -2763,7 +4722,7 @@
         # Local variables
         my (
             $taskObj, $taskRoomObj, $name, $terrain, $roomFlag,
-            @titleList, @patternList, @drawList,
+            @titleList, @drawList,
         );
 
         # Check for improper arguments
@@ -2883,6 +4842,12 @@
             #   example the entrance to a moving wagon)
             OUTER: foreach my $exitObj ($taskRoomObj->ivValues('exitNumHash')) {
 
+                my (
+                    $slot, $convertDir,
+                    @patternList,
+                );
+
+                # Deal with transient exits
                 @patternList = $session->currentWorld->transientExitPatternList;
                 if (@patternList) {
 
@@ -2900,12 +4865,25 @@
                     } until (! @patternList);
                 }
 
+                # Deal with relative directions
+                $slot = $session->currentDict->convertRelativeDir($exitObj->dir);
+                if (defined $slot) {
+
+                    # $slot is in the range 0-7. Convert it into a standard primary direction like
+                    #   'north', depending on which way the character is currently facing
+                    $convertDir = $session->currentDict->rotateRelativeDir(
+                        $slot,
+                        $session->mapObj->facingDir,
+                    );
+                }
+
                 $self->updateExit(
                     $session,
                     FALSE,       # Don't update Automapper windows now
                     $modelRoomObj,
                     $taskRoomObj,
                     $exitObj,
+                    $convertDir,
                 );
             }
 
@@ -3197,7 +5175,7 @@
 
                 # Check whether the new exit's nominal direction is a (custom) primary direction by
                 #   getting the corresponding standard primary direction
-                $standardDir = $dictObj->checkStandardDir($dir);
+                $standardDir = $dictObj->convertStandardDir($dir);
             }
 
             if ($standardDir) {
@@ -3296,14 +5274,23 @@
         #   $taskExitObj    - The non-model exit object belonging to $taskRoomObj which we need to
         #                       copy
         #
+        # Optional arguments
+        #   $convertDir     - If $taskExitObj's nominal direction is a relative direction, the
+        #                       calling function has converted it into a standard primary direction
+        #                       like 'north', depending on which direction the character is facing.
+        #                       'undef' for non-relative directions
+        #
         # Return values
         #   'undef' on improper arguments or if the function tries and fails to create a new exit
         #   Otherwise, returns the model number of the newly-added exit object
 
-        my ($self, $session, $updateFlag, $modelRoomObj, $taskRoomObj, $taskExitObj, $check) = @_;
+        my (
+            $self, $session, $updateFlag, $modelRoomObj, $taskRoomObj, $taskExitObj, $convertDir,
+            $check,
+        ) = @_;
 
         # Local variables
-        my ($modelExitNum, $modelExitObj, $standardDir, $regionObj);
+        my ($useDir, $modelExitNum, $modelExitObj, $standardDir, $regionObj);
 
         # Check for improper arguments
         if (
@@ -3313,15 +5300,24 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->updateExit', @_);
         }
 
+        # Any relative direction has been converted into a standard primary direction like 'north'
+        # During this function, if $convertDir was specified, use the corresponding custom
+        #   direction, otherwise use the exit's true nominal direction
+        if (defined $convertDir) {
+            $useDir = $session->currentDict->ivShow('primaryDirHash', $convertDir);
+        } else {
+            $useDir = $taskExitObj->dir;
+        }
+
         # Does the world model room object already have an exit in this direction?
-        if (! $modelRoomObj->ivExists('exitNumHash', $taskExitObj->dir)) {
+        if (! $modelRoomObj->ivExists('exitNumHash', $useDir)) {
 
             # It doesn't, so add a new one
             $modelExitObj = $self->addExit(
                 $session,
                 FALSE,              # Don't update Automapper windows now
                 $modelRoomObj,
-                $taskExitObj->dir,
+                $useDir,
             );
 
             if (! $modelExitObj) {
@@ -3330,10 +5326,14 @@
                 return undef;
             }
 
-
             # Decide how to draw the exit on the map. Is its direction a recognised custom primary
             #   direction?
-            $standardDir = $session->currentDict->checkStandardDir($modelExitObj->dir);
+            if (defined $convertDir) {
+                $standardDir = $convertDir;
+            } else {
+                $standardDir = $session->currentDict->convertStandardDir($modelExitObj->dir);
+            }
+
             if ($standardDir) {
 
                 # The exit's nominal direction is a custom primary direction; store the
@@ -3347,7 +5347,7 @@
         } else {
 
             # Update the existing exit
-            $modelExitNum = $modelRoomObj->ivShow('exitNumHash', $taskExitObj->dir);
+            $modelExitNum = $modelRoomObj->ivShow('exitNumHash', $useDir);
             $modelExitObj = $self->ivShow('exitModelHash', $modelExitNum);
 
             # Any region paths using the existing exit will have to be updated
@@ -4116,68 +6116,76 @@
 
             # If there are any uncertain exits which lead to this soon-to-be-deleted room, convert
             #   them to incomplete exits (and redraw them, if allowed)
-            if ($obj->uncertainExitHash) {
+            foreach my $uncertainExitNum ($obj->ivKeys('uncertainExitHash')) {
 
-                foreach my $uncertainExitNum ($obj->ivKeys('uncertainExitHash')) {
+                my $uncertainExitObj = $self->ivShow('exitModelHash', $uncertainExitNum);
 
-                    my $uncertainExitObj = $self->ivShow('exitModelHash', $uncertainExitNum);
-
-                    if (
-                        $uncertainExitObj
-                        && $uncertainExitObj->destRoom
-                        && $uncertainExitObj->destRoom == $obj->number
-                    ) {
-                        # (The call to $self->abandonUncertainExit updates $self->updateBoundaryHash
-                        #   and ->updatePathHash)
-                        $self->abandonUncertainExit(
-                            $updateFlag,
-                            $uncertainExitObj,
-                        );
-                    }
+                if (
+                    $uncertainExitObj
+                    && $uncertainExitObj->destRoom
+                    && $uncertainExitObj->destRoom == $obj->number
+                ) {
+                    # (The call to $self->abandonUncertainExit updates $self->updateBoundaryHash and
+                    #   ->updatePathHash)
+                    $self->abandonUncertainExit(
+                        $updateFlag,
+                        $uncertainExitObj,
+                    );
                 }
             }
 
             # Do the same for one-way exits which lead to this soon-to-be-deleted room
-            if ($obj->oneWayExitHash) {
+            foreach my $oneWayExitNum ($obj->ivKeys('oneWayExitHash')) {
 
-                foreach my $oneWayExitNum ($obj->ivKeys('oneWayExitHash')) {
+                my $oneWayExitObj = $self->ivShow('exitModelHash', $oneWayExitNum);
 
-                    my $oneWayExitObj = $self->ivShow('exitModelHash', $oneWayExitNum);
+                if (
+                    $oneWayExitObj
+                    && $oneWayExitObj->destRoom
+                    && $oneWayExitObj->destRoom == $obj->number
+                ) {
+                    # (The call to $self->abandonOneWayExit updates $self->updateBoundaryHash and
+                    #   ->updatePathHash)
+                    $self->abandonOneWayExit(
+                        $updateFlag,
+                        $oneWayExitObj,
+                    );
+                }
+            }
 
-                    if (
-                        $oneWayExitObj
-                        && $oneWayExitObj->destRoom
-                        && $oneWayExitObj->destRoom == $obj->number
-                    ) {
-                        # (The call to $self->abandonOneWayExit updates $self->updateBoundaryHash
-                        #   and ->updatePathHash)
-                        $self->abandonOneWayExit(
-                            $updateFlag,
-                            $oneWayExitObj,
-                        );
-                    }
+            # Do the same for involuntary/repulse exit patterns whose corresponding destination room
+            #   is this room
+            foreach my $value (
+                $obj->ivValues('involuntaryExitPatternHash'),
+                $obj->ivValues('repulseExitPatternHash'),
+            ) {
+                # $value can be a room model number or a direction
+                my $destRoomObj = $self ->ivShow('modelHash', $value);
+                if ($destRoomObj) {
+
+                    $self->updateInvoluntaryExit(
+                        $destRoomObj,
+                        $obj,
+                    );
                 }
             }
 
             # Do the same for random exits which lead to this soon-to-be-deleted room
-            if ($obj->randomExitHash) {
+            foreach my $randomExitNum ($obj->ivKeys('randomExitHash')) {
 
-                foreach my $randomExitNum ($obj->ivKeys('randomExitHash')) {
+                my $randomExitObj = $self->ivShow('exitModelHash', $randomExitNum);
 
-                    my $randomExitObj = $self->ivShow('exitModelHash', $randomExitNum);
-
-                    if (
-                        $randomExitObj
-                        && $randomExitObj->destRoom
-                        && $randomExitObj->destRoom == $obj->number
-                    ) {
-                        # (No need to update $self->updateBoundaryHash and ->updatePathHash, since a
-                        #   random exit is allowed to have an empty ->randomDestList)
-                        $self->updateRandomExit(
-                            $randomExitObj,
-                            $obj,
-                        );
-                    }
+                if (
+                    $randomExitObj
+                    && $randomExitObj->destRoom
+                    && $randomExitObj->destRoom == $obj->number
+                ) {
+                    # (No need to update $self->updateBoundaryHash and ->updatePathHash, since a
+                    #   random exit is allowed to have an empty ->randomDestList)
+                    $self->updateRandomExit(
+                        $randomExitObj,
+                        $obj,
+                    );
                 }
             }
 
@@ -4213,6 +6221,12 @@
                 ) {
                     $thisSession->mapObj->reset_tempRandom();
                 }
+            }
+
+            # If the room has a room tag, update the hash of room tags
+            if ($obj->roomTag) {
+
+                $self->ivDelete('roomTagHash', $obj->roomTag);
             }
 
         # Player character objects have additional IVs that must be updated
@@ -4523,7 +6537,7 @@
 
         foreach my $roomObj (@roomList) {
 
-            my ($regionObj, $regionmapObj);
+            my $regionmapObj;
 
             # If this room is the automapper's current room, any Automapper windows which are not
             #   in 'wait' mode should switch to 'wait' mode at the end of this function (do it even
@@ -4542,15 +6556,8 @@
             }
 
             # Update the regionmap's hashes of rooms, room tags and room guilds
-            $regionObj = $self->ivShow('modelHash', $roomObj->parent);
-            $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+            $regionmapObj = $self->findRegionmap($roomObj->parent);
             $regionmapObj->removeRoom($roomObj);
-
-            # If the room has a room tag, update the hash of room tags
-            if ($roomObj->roomTag) {
-
-                $self->ivDelete('roomTagHash', $roomObj->roomTag);
-            }
 
             # Delete the room object and its child objects and exit objects (if any)
             $self->deleteObj(
@@ -4760,7 +6767,7 @@
             if ($exitObj->twinExit) {
 
                 $twinExitObj = $self->ivShow('exitModelHash', $exitObj->twinExit);
-                $twinRoomObj =  $self->ivShow('modelHash', $twinExitObj->parent);
+                $twinRoomObj = $self->ivShow('modelHash', $twinExitObj->parent);
                 if ($updateFlag) {
 
                     $roomHash{$twinExitObj->parent} = $twinRoomObj;
@@ -5097,8 +7104,13 @@
         #                       - Describes a vector between the coordinates of the rooms/labels in
         #                           their old position, and and their coordinates in the new
         #                           position
-        #   $roomHashRef        - Reference to a hash of GA::ModelObj::Room objects to move
-        #   $labelHashRef       - Reference to a hash of GA::Obj::MapLabel objects to move
+        #   $roomHashRef        - Reference to a hash of GA::ModelObj::Room objects to move. Hash
+        #                           in the form
+        #                               $roomHash{model_number} = blessed_reference_to_room_object
+        #   $labelHashRef       - Reference to a hash of GA::Obj::MapLabel objects to move. Hash in
+        #                           either of the following forms
+        #                               $labelHash{label_id) = blessed_reference_to_map_label_object
+        #                               $labelHash{label_number) = blessed_ref_to_map_label_object
         #
         # Return values
         #   'undef' on improper arguments
@@ -5112,7 +7124,8 @@
         # Local variables
         my (
             $oldRegionObj, $newRegionObj,
-            %roomHash, %labelHash, %checkExitHash,
+            @mapWinList, @drawList,
+            %roomHash, %labelHash, %checkExitHash, %drawHash,
         );
 
         # Check for improper arguments
@@ -5137,6 +7150,73 @@
         $oldRegionObj = $self->ivShow('modelHash', $oldRegionmapObj->number);
         $newRegionObj = $self->ivShow('modelHash', $newRegionmapObj->number);
 
+        # The automapper stores canvas objects for each drawn room in a hash, using a key in the
+        #   form (x_y_z). However, after the rooms are moved to their new position, the Axmud code
+        #   will have no way of knowing what the old position was, and thus they won't be able to
+        #   find the right key
+        # Therefore, when moving rooms around in the same region, we have to delete canvas objects
+        #   in each automapper window now, even if $updateFlag is FALSE
+        # (Don't need to delete anything if the whole region is going to be redrawn anyway)
+
+        # Compile a list of automapper windows using this world model now (so we only have to do it
+        #   once)
+        @mapWinList = $self->collectMapWins();
+        # Any moved room, plus any room connected to it, must be redrawn. (Redrawing connected
+        #   rooms guarantees that exits are redrawn correctly)
+        # Compile a hash of rooms to be redrawn to eliminate duplicates
+        foreach my $roomObj (values %roomHash) {
+
+            $drawHash{$roomObj->number} = $roomObj;
+
+            foreach my $exitNum ($roomObj->ivValues('exitNumHash')) {
+
+                my ($exitObj, $otherRoomObj);
+
+                $exitObj = $self->ivShow('exitModelHash', $exitNum);
+
+                if ($exitObj->destRoom) {
+
+                    $otherRoomObj = $self->ivShow('modelHash', $exitObj->destRoom);
+                    $drawHash{$otherRoomObj->number} = $otherRoomObj;
+                }
+            }
+
+            foreach my $exitNum (
+                $roomObj->ivKeys('uncertainExitHash'),
+                $roomObj->ivKeys('oneWayExitHash'),
+            ) {
+                my ($exitObj, $otherRoomObj);
+
+                $exitObj = $self->ivShow('exitModelHash', $exitNum);
+                $otherRoomObj = $self->ivShow('modelHash', $exitObj->parent);
+                $drawHash{$otherRoomObj->number} = $otherRoomObj;
+            }
+        }
+
+        foreach my $mapWin (@mapWinList) {
+
+            if ($mapWin->currentRegionmap eq $newRegionmapObj) {
+
+                foreach my $roomObj (values %drawHash) {
+
+                    $mapWin->deleteCanvasObj('room', $roomObj);
+                    # Also destroy the canvas objects for any checked directions
+                    $mapWin->deleteCanvasObj('checked_dir', $roomObj);
+                    # Also destroy canvas objects for their exits
+                    foreach my $exitNum ($roomObj->ivValues('exitNumHash')) {
+
+                        $mapWin->deleteCanvasObj('exit', $self->ivShow('exitModelHash', $exitNum));
+                    }
+                }
+            }
+        }
+
+        # Rooms are stored in a regionmap hash, using the room's grid location as a key (in the
+        #   form x_y_z). Automapper window IVs
+        # When this function is ready to redraw the rooms,
+        # Regardless of whether $updateFlag is set, if the whole region isn't going to be redrawn,
+        #   canvas objects for each room must be deleted automapper windows must destroy canvas
+        #   objects for
         # Remove each room in turn from its old position in $oldRegionmapObj's grid
         foreach my $roomObj (values %roomHash) {
 
@@ -5544,18 +7624,43 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $mapWin (@mapWinList) {
 
-                # For this Automapper window, if either the old or new regionmaps are visible,
-                #   redraw the whole region
-                if (
-                    $mapWin->currentRegionmap
-                    && (
-                        $mapWin->currentRegionmap eq $oldRegionmapObj
-                        || $mapWin->currentRegionmap eq $newRegionmapObj
-                    )
-                ) {
-                    $mapWin->drawRegion();
+                if ($oldRegionmapObj ne $newRegionmapObj) {
+
+                    # For this Automapper window, if either the old or new regionmaps are visible,
+                    #   redraw the whole region
+                    if (
+                        $mapWin->currentRegionmap
+                        && (
+                            $mapWin->currentRegionmap eq $oldRegionmapObj
+                            || $mapWin->currentRegionmap eq $newRegionmapObj
+                        )
+                    ) {
+                        $mapWin->drawRegion();
+                    }
+
+                } elsif ($mapWin->currentRegionmap eq $newRegionmapObj) {
+
+                    # The objects haven't changed region, and are visible in this automapper
+                    #   window's current region, so draw them at their new position
+
+                    # (Don't recompile @drawList, if it was already compiled on a previous iteration
+                    #   of this loop)
+                    if (! @drawList) {
+
+                        foreach my $roomObj (values %drawHash) {
+
+                            push (@drawList, 'room', $roomObj);
+                        }
+
+                        foreach my $labelObj (values %labelHash) {
+
+                            push (@drawList, 'label', $labelObj);
+                        }
+                    }
+
+                    $mapWin->doDraw(@drawList);
                 }
             }
         }
@@ -5707,7 +7812,7 @@
 
         # Local variables
         my (
-            $regionObj, $regionmapObj, $twinRegionObj, $twinRegionmapObj, $result,
+            $regionmapObj, $twinRegionmapObj, $result,
             @otherRoomList, @labelList, @checkRoomList, @deleteList, @selectList,
             %labelHash, %mergeHash, %noMergeHash, %moveHash, %reconnectHash, %reverseHash,
         );
@@ -5729,7 +7834,7 @@
             # Convert to a hash, ready for the call to $self->moveRoomsLabels
             foreach my $labelObj (@$labelListRef) {
 
-                $labelHash{$labelObj->number} = $labelObj;
+                $labelHash{$labelObj->id} = $labelObj;
             }
         }
 
@@ -5755,20 +7860,9 @@
             }
         }
 
-        # Get the target room's region object and regionmap
-        $regionObj = $self->ivShow('modelHash', $targetRoomObj->parent);
-        if ($regionObj) {
-
-            $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
-        }
-
-        # Get the twin room's region object and regionmap
-        $twinRegionObj = $self->ivShow('modelHash', $twinRoomObj->parent);
-        if ($twinRegionObj) {
-
-            $twinRegionmapObj = $self->ivShow('regionmapHash', $twinRegionObj->name);
-        }
-
+        # Get the target room's regionmap
+        $regionmapObj = $self->findRegionmap($targetRoomObj->parent);
+        $twinRegionmapObj = $self->findRegionmap($twinRoomObj->parent);
         if (! $regionmapObj) {
 
             return undef;
@@ -6308,10 +8402,7 @@
 
             # Combine various pattern lists, but don't create duplicates
             foreach my $iv (
-                qw(
-                    unspecifiedPatternList failExitPatternList involuntaryExitPatternList
-                    repulseExitPatternList specialDepartPatternList
-                )
+                qw(unspecifiedPatternList failExitPatternList specialDepartPatternList)
             ) {
                 foreach my $string ($twinRoomObj->$iv) {
 
@@ -6320,6 +8411,20 @@
                         $targetRoomObj->ivPush($iv, $string);
                     }
                 }
+            }
+
+            foreach my $key ($twinRoomObj->ivKeys('involuntaryExitPatternHash')) {
+
+                my $value = $twinRoomObj->ivShow('involuntaryExitPatternHash', $key);
+
+                $self->addInvoluntaryExit($targetRoomObj, $key, $value);
+            }
+
+            foreach my $key ($twinRoomObj->ivKeys('repulseExitPatternHash')) {
+
+                my $value = $twinRoomObj->ivShow('repulseExitPatternHash', $key);
+
+                $self->addRepulseExit($targetRoomObj, $key, $value);
             }
         }
 
@@ -7226,7 +9331,7 @@
 
     sub connectRegionBrokenExit {
 
-        # Called by GA::Win::Map->connectExitToRoom, GA::Cmd::DeleteRoom->do,
+        # Called by GA::Win::Map->connectExitToRoom (but is available to other code, if necessary)
         # After the user chooses the 'connect to click' menu item and clicks on a room, connects the
         #   selected exit to the clicked room, marking it as a broken or region exit if necessary
         # Also prompts the user to ask if they'd like to create an exit in the reverse direction
@@ -7267,7 +9372,7 @@
             );
         }
 
-        # This function uses 'dialogue' windows. While the dialogue window is open, we don't want
+        # This function uses 'dialogue' windows. While the 'dialogue' window is open, we don't want
         #   the GA::Session->spinMaintainLoop to call $self->updateRegionPaths, so we set this
         #   flag to TRUE. At the end of the function, we set it back to FALSE, so that
         #   ->updateRegionPaths can be called as normal
@@ -7384,6 +9489,7 @@
             'no_abbrev',
             $exitObj->dir,
         );
+
         # Also get the opposite of the exit's map direction (a primary direction), but not for
         #   unallocated exits
         if (
@@ -7431,8 +9537,11 @@
 
             if ($oppExitObj) {
 
-                if ($oppExitObj->exitOrnament eq 'impass' || $oppExitObj->randomType ne 'none') {
-
+                if (
+                    $oppExitObj->exitOrnament eq 'impass'
+                    || $oppExitObj->exitOrnament eq 'mystery'
+                    || $oppExitObj->randomType ne 'none'
+                ) {
                     # The opposite exit is impassable, so it can't be made a twin (or it is a random
                     #   exit, and it should remain a random exit)
                     # Therefore, $exitObj must be made one-way
@@ -7440,11 +9549,13 @@
                 }
 
                 if (
-                    ! $oppExitObj->destRoom
+                    $session->mapWin
+                    && ! $oppExitObj->destRoom
                     && $oppExitObj->randomType eq 'none'
                     && ! $forceOneWayFlag
                 ) {
-                    # Prompt the user to modify it
+                    # Prompt the user to modify it (but only if the calling session actually has an
+                    #   automapper window open)
                     $choice = $session->mapWin->showMsgDialogue(
                         'Set up twin exit',
                         'question',
@@ -7485,7 +9596,7 @@
                     }
                 }
 
-                if (@comboList) {
+                if ($session->mapWin && @comboList) {
 
                     # Prompt the user for an exit
                     $choice = $session->mapWin->showComboDialogue(
@@ -7723,13 +9834,13 @@
                 # If this is the Automapper window which called this function...
                 if ($mapWin->session eq $session) {
 
-                    # Set the displayed region, which redraws the room containing the specified exit
-                    $mapWin->setCurrentRegion($parentRegionObj->name);
+                    # Redraw affected rooms immediately
+                    $mapWin->doDraw(@redrawList);
 
                 } else {
 
-                    # For other Automapper windows, let them worry about whether the rooms to be
-                    #   re-drawn are actually visible)
+                    # Mark the affected rooms to be redrawn at the automapper window's earliest
+                    #   convenience
                     $mapWin->markObjs(@redrawList);
                 }
             }
@@ -8047,7 +10158,7 @@
 
                 # If it's not a primary direction, then the new exit is drawn as 'unallocated' (and
                 #   this function call returns 'undef')
-                $standardDir = $session->currentDict->checkStandardDir($dir);
+                $standardDir = $session->currentDict->convertStandardDir($dir);
 
                 # Add a new incomplete exit, using what information we have
                 $exitObj = $self->addExit(
@@ -8271,7 +10382,7 @@
         # When an exit is connected to a room, it loses its impassable status (if set). Don't
         #   specify the flag for the twin exit, because if the twin exit has a different kind of
         #   exit ornament, we don't want to lose it
-        if ($departExitObj->exitOrnament eq 'impass') {
+        if ($departExitObj->exitOrnament eq 'impass' || $departExitObj->exitOrnament eq 'mystery') {
 
             $self->setExitOrnament(
                 FALSE,              # Don't update Automapper windows yet
@@ -8280,8 +10391,13 @@
         }
 
         # The twin exit object (if any) also loses its impassable status
-        if ($arriveExitObj && $arriveExitObj->exitOrnament eq 'impass') {
-
+        if (
+            $arriveExitObj
+            && (
+                $arriveExitObj->exitOrnament eq 'impass'
+                || $arriveExitObj->exitOrnament eq 'mystery'
+            )
+        ) {
             $self->setExitOrnament(
                 FALSE,              # Don't update Automapper windows yet
                 $arriveExitObj,
@@ -8378,8 +10494,7 @@
 
         # Local variables
         my (
-            $mode, $regionObj, $regionmapObj, $slideRoomObj, $xPos, $yPos, $zPos, $useXPos,
-            $useYPos,
+            $mode, $regionmapObj, $slideRoomObj, $xPos, $yPos, $zPos, $useXPos, $useYPos,
             @emptyList,
             %convertHash, %roomHash, %emptyHash,
         );
@@ -8395,8 +10510,7 @@
 
         # Import IVs (for convenience)
         $mode = $self->autoSlideMode;
-        $regionObj = $self->ivShow('modelHash', $departRoomObj->parent);
-        $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $self->findRegionmap($departRoomObj->parent);
 
         if (
             $mode eq 'default'
@@ -8854,9 +10968,9 @@
             if ($type eq 'exit_depart' || $type eq 'all_data') {
 
                 $roomObj->ivEmpty('failExitPatternList');
-                $roomObj->ivEmpty('involuntaryExitPatternList');
-                $roomObj->ivEmpty('repulseExitPatternList');
                 $roomObj->ivEmpty('specialDepartPatternList');
+                $roomObj->ivEmpty('involuntaryExitPatternHash');
+                $roomObj->ivEmpty('repulseExitPatternHash');
             }
 
             if ($type eq 'checked_dir' || $type eq 'all_data') {
@@ -8928,8 +11042,8 @@
         #
         # Expected arguments
         #   $roomObj    - The GA::ModelObj::Room to update
-        #   $type       - The type of pattern to add - 'fail', 'involuntary', 'repulse', 'special'
-        #                   or 'unspecified' (if not one of these strings, no pattern is added)
+        #   $type       - The type of pattern to add - 'fail', 'special' or 'unspecified' (if not
+        #                   one of these strings, no pattern is added)
         #   $pattern    - The pattern to add
         #
         # Return values
@@ -8946,10 +11060,6 @@
 
         if ($type eq 'fail') {
             $roomObj->ivPush('addFailExitPattern', $pattern);
-        } elsif ($type eq 'involuntary') {
-            $roomObj->ivPush('involuntaryExitPatternList', $pattern);
-        } elsif ($type eq 'repulse') {
-            $roomObj->ivPush('repulseExitPatternList', $pattern);
         } elsif ($type eq 'special') {
             $roomObj->ivPush('specialDepartPatternList', $pattern);
         } elsif ($type eq 'unspecified') {
@@ -9075,7 +11185,7 @@
 
         # Local variables
         my (
-            $oldRoomNum, $oldRoomObj, $regionObj, $regionmapObj,
+            $oldRoomNum, $oldRoomObj, $regionmapObj,
             @redrawList,
         );
 
@@ -9090,6 +11200,11 @@
 
             # Invalid tag
             return undef;
+
+        } else {
+
+            # Room tags are stored in lower-case letters
+            $tag = lc($tag);
         }
 
         # If the room already has a tag, remove it
@@ -9121,8 +11236,7 @@
         $roomObj->ivPoke('roomTag', $tag);
 
         # Find the room's regionmap and update it
-        $regionObj = $self->ivShow('modelHash', $roomObj->parent);
-        $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $self->findRegionmap($roomObj->parent);
         $regionmapObj->storeRoomTag($roomObj);
 
         # Update any GA::Win::Map objects using this world model (if allowed)
@@ -9186,8 +11300,7 @@
         $self->ivDelete('roomTagHash', $roomObj->roomTag);
 
         # Find the room's regionmap and update it
-        $regionObj = $self->ivShow('modelHash', $roomObj->parent);
-        $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $self->findRegionmap($roomObj->parent);
         $regionmapObj->removeRoomTag($roomObj);
 
         # Reset the room object's own IV
@@ -9289,14 +11402,13 @@
         # Update each room in turn
         foreach my $roomObj (@roomList) {
 
-            my ($regionObj, $regionmapObj);
+            my $regionmapObj;
 
             # Set the room's guild. $guildName might be 'undef'
             $roomObj->ivPoke('roomGuild', $guildName);
 
             # Update the regionmap
-            $regionObj = $self->ivShow('modelHash', $roomObj->parent);
-            $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+            $regionmapObj = $self->findRegionmap($roomObj->parent);
 
             if ($guildName) {
                 $regionmapObj->storeRoomGuild($roomObj);
@@ -9571,6 +11683,242 @@
                         # ...mark the room(s) to be drawn
                         $mapWin->markObjs('room', $roomObj);
                     }
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub updateInvRepExit {
+
+        # Called by $self->deleteObj
+        # Each room model object keeps track of which rooms use it as the destination room for an
+        #   involuntary exit pattern/repulse exit pattern
+        # When a room is deleted, this function is called to remove an entry in the destination
+        #   room's hash
+        #
+        # Expected arguments
+        #   $destRoomObj    - The room to update
+        #   $deleteRoomObj  - The room to be deleted
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $destRoomObj, $deleteRoomObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $destRoomObj || ! defined $deleteRoomObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateInvRepExit', @_);
+        }
+
+        # Update IVs
+        $destRoomObj->ivDelete('invRepExitHash', $deleteRoomObj->number);
+
+        return 1;
+    }
+
+    sub addInvoluntaryExit {
+
+        # Called by GA::EditWin::ModelObj::Room->saveChanges,
+        #   GA::Win::Map->addInvoluntaryExitCallback or any other function
+        # Adds an involuntary exit pattern and, optionally, a direction (or a room model number)
+        #   which identifies the destination room
+        #
+        # Expected arguments
+        #   $roomObj        - The room model object (GA::ModelObj::Room) to update
+        #   $pattern        - The involuntary exit pattern to add
+        #
+        # Optional arguments
+        #   $value          - The direction of movement, or the number of the destination room, or
+        #                       'undef'
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $roomObj, $pattern, $value, $check) = @_;
+
+        # Local variables
+        my $destRoomObj;
+
+        # Check for improper arguments
+        if (! defined $roomObj || ! defined $pattern  || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addInvoluntaryExit', @_);
+        }
+
+        # Update IVs
+        $roomObj->ivAdd('involuntaryExitPatternHash', $pattern, $value);
+        # If $value is a destination room, update that room, too
+        if (defined $value) {
+
+            $destRoomObj = $self->ivShow('modelHash', $value);
+            if ($destRoomObj) {
+
+                $destRoomObj->ivAdd('invRepExitHash', $roomObj->number);
+            }
+        }
+
+        return 1;
+    }
+
+    sub removeInvoluntaryExit {
+
+        # Called by GA::EditWin::ModelObj::Room->saveChanges or any other function
+        # Removes an involuntary exit pattern. If the pattern has a corresponding destination room,
+        #   updates the destination room's IVs too
+        #
+        # Expected arguments
+        #   $roomObj        - The room model object (GA::ModelObj::Room) to update
+        #   $pattern        - The involuntary exit pattern to remove
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $roomObj, $pattern, $check) = @_;
+
+        # Local variables
+        my ($value, $destRoomObj, $matchFlag);
+
+        # Check for improper arguments
+        if (! defined $roomObj || ! defined $pattern  || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeInvoluntaryExit', @_);
+        }
+
+        # Update IVs
+        $value = $roomObj->ivShow('involuntaryExitPatternHash', $pattern);
+        $roomObj->ivDelete('involuntaryExitPatternHash', $pattern);
+
+        if (defined $value) {
+
+            # $value can be 'undef', a direction or a destination room model object
+            $destRoomObj = $self->ivShow('modelHash', $value);
+            if (defined $destRoomObj) {
+
+                # If $roomObj has no further involuntary or repulse exit patterns whose
+                #   corresponding destination room number is $value, we can delete the entry
+                OUTER: foreach my $otherVal (
+                    $roomObj->ivValues('involuntaryExitPatternHash'),
+                    $roomObj->ivValues('repulseExitPatternHash'),
+                ) {
+                    if (defined $otherVal && $otherVal eq $value) {
+
+                        $matchFlag = TRUE;
+                        last OUTER;
+                    }
+                }
+
+                if (! $matchFlag) {
+
+                    $destRoomObj->ivDelete('invRepExitHash', $roomObj->number);
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub addRepulseExit {
+
+        # Called by GA::EditWin::ModelObj::Room->saveChanges,
+        #   GA::Win::Map->addRepulseExitCallback or any other function
+        # Adds a repulse exit pattern and, optionally, a direction (or a room model number) which
+        #   identifies the destination room
+        #
+        # Expected arguments
+        #   $roomObj        - The room model object (GA::ModelObj::Room) to update
+        #   $pattern        - The repulse exit pattern to add
+        #
+        # Optional arguments
+        #   $value          - The direction of movement, or the number of the destination room, or
+        #                       'undef'
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $roomObj, $pattern, $value, $check) = @_;
+
+        # Local variables
+        my $destRoomObj;
+
+        # Check for improper arguments
+        if (! defined $roomObj || ! defined $pattern  || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addRepulseExit', @_);
+        }
+
+        # Update IVs
+        $roomObj->ivAdd('repulseExitPatternHash', $pattern, $value);
+        # If $value is a destination room, update that room, too
+        if (defined $value) {
+
+            $destRoomObj = $self->ivShow('modelHash', $value);
+            if ($destRoomObj) {
+
+                $destRoomObj->ivAdd('invRepExitHash', $roomObj->number);
+            }
+        }
+
+        return 1;
+    }
+
+    sub removeRepulseExit {
+
+        # Called by GA::EditWin::ModelObj::Room->saveChanges or any other function
+        # Removes a repulse exit pattern. If the pattern has a corresponding destination room,
+        #   updates the destination room's IVs too
+        #
+        # Expected arguments
+        #   $roomObj        - The room model object (GA::ModelObj::Room) to update
+        #   $pattern        - The repulse exit pattern to remove
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $roomObj, $pattern, $check) = @_;
+
+        # Local variables
+        my ($value, $destRoomObj, $matchFlag);
+
+        # Check for improper arguments
+        if (! defined $roomObj || ! defined $pattern  || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->removeRepulseExit', @_);
+        }
+
+        # Update IVs
+        $value = $roomObj->ivShow('repulseExitPatternHash', $pattern);
+        $roomObj->ivDelete('repulseExitPatternHash', $pattern);
+
+        if (defined $value) {
+
+            # $value can be 'undef', a direction or a destination room model object
+            $destRoomObj = $self->ivShow('modelHash', $value);
+            if (defined $destRoomObj) {
+
+                # If $roomObj has no further involuntary or repulse exit patterns whose
+                #   corresponding destination room number is $value, we can delete the entry
+                OUTER: foreach my $otherVal (
+                    $roomObj->ivValues('involuntaryExitPatternHash'),
+                    $roomObj->ivValues('repulseExitPatternHash'),
+                ) {
+                    if (defined $otherVal && $otherVal eq $value) {
+
+                        $matchFlag = TRUE;
+                        last OUTER;
+                    }
+                }
+
+                if (! $matchFlag) {
+
+                    $destRoomObj->ivDelete('invRepExitHash', $roomObj->number);
                 }
             }
         }
@@ -10475,6 +12823,13 @@
         $roomObj = $self->ivShow('modelHash', $exitObj->parent);
         $regionObj = $self->ivShow('modelHash', $roomObj->parent);
 
+        # Any region paths using the exits will have to be updated
+        $self->ivAdd('updatePathHash', $exitObj->number, $regionObj->name);
+        if ($exitObj->regionFlag) {
+
+            $self->ivAdd('updateBoundaryHash', $exitObj->number, $regionObj->name);
+        }
+
         # Modify $exitObj
         $exitObj->ivUndef('destRoom');
         $exitObj->ivUndef('twinExit');
@@ -10484,6 +12839,8 @@
         $exitObj->ivEmpty('bendOffsetList');
 
         $exitObj->ivPoke('regionFlag', FALSE);
+        $exitObj->ivPoke('superFlag', FALSE);
+        $exitObj->ivPoke('notSuperFlag', FALSE);
         $self->cancelExitTag(
             FALSE,              # Don't update Automapper windows yet
             $exitObj,
@@ -10493,19 +12850,19 @@
         # Set ->randomType too, just to be safe
         $exitObj->ivPoke('randomType', 'none');
 
-        # Any region paths using the exits will have to be updated
-        $self->ivAdd('updatePathHash', $exitObj->number, $regionObj->name);
-        if ($exitObj->regionFlag) {
-
-            $self->ivAdd('updateBoundaryHash', $exitObj->number, $regionObj->name);
-        }
-
         # Modify the $twinExitObj, if it still exists
         if ($twinExitObj) {
 
             # Find the parent room and region
             $twinRoomObj = $self->ivShow('modelHash', $twinExitObj->parent);
             $twinRegionObj = $self->ivShow('modelHash', $twinRoomObj->parent);
+
+            # Any region paths using the exits will have to be updated
+            $self->ivAdd('updatePathHash', $twinExitObj->number, $twinRegionObj->name);
+            if ($twinExitObj->regionFlag) {
+
+                $self->ivAdd('updateBoundaryHash', $twinExitObj->number, $twinRegionObj->name);
+            }
 
             # Modify $twinExitObj
             $twinExitObj->ivUndef('destRoom');
@@ -10525,13 +12882,6 @@
 
             # Set ->randomType too, just to be safe
             $twinExitObj->ivPoke('randomType', 'none');
-
-            # Any region paths using the exits will have to be updated
-            $self->ivAdd('updatePathHash', $twinExitObj->number, $twinRegionObj->name);
-            if ($twinExitObj->regionFlag) {
-
-                $self->ivAdd('updateBoundaryHash', $twinExitObj->number, $twinRegionObj->name);
-            }
         }
 
         # Update any GA::Win::Map objects using this world model (if allowed)
@@ -10710,7 +13060,7 @@
         my ($self, $updateFlag, $exitObj, $check) = @_;
 
         # Local variables
-        my ($roomObj, $regionObj, $destRoomObj);
+        my ($roomObj, $regionmapObj, $destRoomObj);
 
         # Check for improper arguments
         if (! defined $updateFlag || ! defined $exitObj || defined $check) {
@@ -10726,7 +13076,7 @@
 
         # Find the parent room and region, and the destination room
         $roomObj = $self->ivShow('modelHash', $exitObj->parent);
-        $regionObj = $self->ivShow('modelHash', $roomObj->parent);
+        $regionmapObj = $self->findRegionmap($roomObj->parent);
         $destRoomObj = $self->ivShow('modelHash', $exitObj->destRoom);
 
         # Modify $exitObj
@@ -10740,12 +13090,24 @@
         $exitObj->ivPoke('brokenFlag', FALSE);
         $exitObj->ivPoke('bentFlag', FALSE);
         $exitObj->ivEmpty('bendOffsetList');
+#        $exitObj->ivPoke('regionFlag', FALSE);
 
-        $exitObj->ivPoke('regionFlag', FALSE);
+        # Any region paths using the exits will have to be updated, the next time
+        #   $self->updateRegionPaths is called
+        $self->ivAdd('updatePathHash', $exitObj->number, $regionmapObj->name);
+        if ($exitObj->regionFlag) {
+
+            $self->ivAdd('updateBoundaryHash', $exitObj->number, $regionmapObj->name);
+            # The regionmap's ->regionExitHash can be updated immediately, though
+            $regionmapObj->resetExit($exitObj);
+
+            $exitObj->ivPoke('regionFlag', FALSE);
+        }
+
         $self->cancelExitTag(
             FALSE,              # Don't update Automapper windows yet
             $exitObj,
-            $self->ivShow('regionmapHash', $regionObj->name),
+            $self->ivShow('regionmapHash', $regionmapObj->name),
         );
 
         # Inform the destination room that it has lost an incoming 1-way exit (if the destination
@@ -10753,13 +13115,6 @@
         if ($destRoomObj) {
 
             $destRoomObj->ivDelete('oneWayExitHash', $exitObj->number);
-        }
-
-        # Any region paths using the exits will have to be updated
-        $self->ivAdd('updatePathHash', $exitObj->number, $regionObj->name);
-        if ($exitObj->regionFlag) {
-
-            $self->ivAdd('updateBoundaryHash', $exitObj->number, $regionObj->name);
         }
 
         # Update any GA::Win::Map objects using this world model (if allowed)
@@ -11261,7 +13616,7 @@
 
         # Local variables
         my (
-            $roomObj, $regionObj, $regionmapObj, $destRegionNum,
+            $roomObj, $regionmapObj, $destRegionNum,
             @redrawList,
             %regionExitHash,
         );
@@ -11283,8 +13638,7 @@
 
         # Get the parent regionmap
         $roomObj = $self->ivShow('modelHash', $exitObj->parent);
-        $regionObj = $self->ivShow('modelHash', $roomObj->parent);
-        $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $self->findRegionmap($roomObj->parent);
 
         # Import the regionmap's hash of region exits (for quick lookup)
         %regionExitHash = $regionmapObj->regionExitHash;
@@ -11331,8 +13685,8 @@
                     }
 
                     # Any region paths using the exit will have to be updated
-                    $self->ivAdd('updatePathHash', $otherExitObj->number, $regionObj->name);
-                    $self->ivAdd('updateBoundaryHash', $otherExitObj->number, $regionObj->name);
+                    $self->ivAdd('updatePathHash', $otherExitObj->number, $regionmapObj->name);
+                    $self->ivAdd('updateBoundaryHash', $otherExitObj->number, $regionmapObj->name);
 
                     # Mark the exit's parent room to be re-drawn
                     push (@redrawList, 'room', $self->ivShow('modelHash', $otherExitObj->parent));
@@ -11406,8 +13760,7 @@
 
         # Get the parent regionmap
         $roomObj = $self->ivShow('modelHash', $exitObj->parent);
-        $regionObj = $self->ivShow('modelHash', $roomObj->parent);
-        $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $self->findRegionmap($roomObj->parent);
 
         # Convert the exit to a normal region exit
         $exitObj->ivPoke('superFlag', FALSE);
@@ -11430,8 +13783,8 @@
         }
 
         # Any region paths using the exit will have to be updated
-        $self->ivAdd('updatePathHash', $exitObj->number, $regionObj->name);
-        $self->ivAdd('updateBoundaryHash', $exitObj->number, $regionObj->name);
+        $self->ivAdd('updatePathHash', $exitObj->number, $regionmapObj->name);
+        $self->ivAdd('updateBoundaryHash', $exitObj->number, $regionmapObj->name);
 
         # Mark the exit's parent room to be re-drawn
         push (@redrawList, 'room', $self->ivShow('modelHash', $exitObj->parent));
@@ -11452,19 +13805,20 @@
     sub setImpassableExit {
 
         # Called by $self->setExitOrnament (should not be called by anything else)
-        # Converts any kind of exit into an (incomplete) impassable exit
+        # Converts any kind of exit into an (incomplete) impassable or mystery exit
         #
         # Expected arguments
         #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
         #                   be updated now, FALSE if not (in which case, they can be updated later
         #                   by the calling function, when it is ready)
         #   $exitObj    - The GA::Obj::Exit to convert
+        #   $type       - 'impass' or 'mystery'
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $updateFlag, $exitObj, $check) = @_;
+        my ($self, $updateFlag, $exitObj, $type, $check) = @_;
 
         # Local variables
         my (
@@ -11532,7 +13886,11 @@
         $exitObj->ivPoke('oneWayFlag', FALSE);
         $exitObj->ivPoke('oneWayDir', undef);
         $exitObj->ivPoke('retraceFlag', FALSE);
-        $exitObj->ivPoke('exitState', 'impass');
+        if ($type eq 'impass') {
+
+            # (There is no exit state corresponding to a mystery exit)
+            $exitObj->ivPoke('exitState', 'impass');
+        }
 
         # If there is a twin exit, the call to ->abandonTwinExit has already updated
         #   $self->updatePathHash/->updateBoundaryHash; otherwise, we need to update them now
@@ -11580,7 +13938,7 @@
         # Optional arguments
         #   $type       - The exit ornament type, one of the permitted values for
         #                   GA::Obj::Exit->exitOrnament ('none', 'break', 'pick', 'lock', 'open',
-        #                   'impass', 'ornament'). If 'undef', the value 'none' is set
+        #                   'impass', 'mystery'). If 'undef', the value 'none' is set
         #   $twinFlag   - If set to TRUE, the twin exit's ornament (if there is a twin exit) is set
         #                   to match
         #
@@ -11601,7 +13959,7 @@
             ! defined $updateFlag || ! defined $exitObj
             || (
                 defined $type && $type ne 'none' && $type ne 'break' && $type ne 'pick'
-                && $type ne 'lock' && $type ne 'open' && $type ne 'impass'
+                && $type ne 'lock' && $type ne 'open' && $type ne 'impass' && $type ne 'mystery'
             ) || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setExitOrnament', @_);
@@ -11624,13 +13982,14 @@
             $exitObj->ivPoke('exitOrnament', $type);
         }
 
-        # Update impassable exit settings
-        if ($type && $type eq 'impass') {
+        # Update impassable/mystery exit settings
+        if ($type && ($type eq 'impass' || $type eq 'mystery')) {
 
             # Convert this exit into an incomplete impassable exit
             $self->setImpassableExit(
                 FALSE,      # Don't update Automapper windows yet
                 $exitObj,
+                $type,
             );
 
         } elsif ($exitObj->exitState eq 'impass') {
@@ -11659,12 +14018,13 @@
 
             $twinExitObj->ivPoke('exitOrnament', $exitObj->exitOrnament);
 
-            if ($type && $type eq 'impass') {
+            if ($type && ($type eq 'impass' || $type eq 'mystery')) {
 
                 # Convert this exit into an incomplete impassable exit
                 $self->setImpassableExit(
                     FALSE,      # Don't update Automapper windows yet
                     $twinExitObj,
+                    $type,
                 );
 
             } elsif ($twinExitObj->exitState eq 'impass') {
@@ -11673,7 +14033,7 @@
                 $twinExitObj->ivPoke('exitState', 'normal');       # State not known
             }
 
-            if (! $type || $type ne 'impass') {
+            if (! $type || ($type ne 'impass' && $type ne 'mystery')) {
 
                 # The call to ->setImpassableExit updates ->updatePathHash and ->updateBoundaryHash.
                 #   If it was not called, those IVs must be updated now
@@ -11712,7 +14072,7 @@
         # Optional arguments
         #   $type           - The exit ornament type, one of the permitted values for
         #                       GA::Obj::Exit->exitOrnament ('none', 'break', 'pick', 'lock',
-        #                       'open', 'impass', 'ornament'). If 'undef', the value 'none' is set
+        #                       'open', 'impass', 'mystery'). If 'undef', the value 'none' is set
         #   @exitList       - A list of exit objects to modify. If the list is empty, no exits are
         #                       modified
         #
@@ -12831,8 +15191,7 @@
             if (! $regionmapObj) {
 
                 $roomObj = $self->ivShow('modelHash', $exitObj->parent);
-                $regionObj = $self->ivShow('modelHash', $roomObj->parent);
-                $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+                $regionmapObj = $self->findRegionmap($roomObj->parent);
             }
 
             # Get the destination room's parent region
@@ -12967,8 +15326,7 @@
             if (! $regionmapObj) {
 
                 $roomObj = $self->ivShow('modelHash', $exitObj->parent);
-                $regionObj = $self->ivShow('modelHash', $roomObj->parent);
-                $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+                $regionmapObj = $self->findRegionmap($roomObj->parent);
             }
 
             # Cancel the tag
@@ -13950,14 +16308,14 @@
 
             foreach my $regionNum (keys %regionHash) {
 
-                my ($regionObj, $listRef);
+                my ($regionmapObj, $listRef);
 
-                $regionObj = $self->ivShow('modelHash', $regionNum);
+                $regionmapObj = $self->findRegionmap($regionNum);
                 $listRef = $regionHash{$regionNum};
 
                 $self->recalculateSafePaths(
                     $session,
-                    $self->ivShow('regionmapHash', $regionObj->name),
+                    $regionmapObj,
                     @$listRef,
                 );
             }
@@ -14320,8 +16678,15 @@
         #   $otherRoomObj   - When comparing two rooms in the world model, the other
         #                       GA::ModelObj::Room object. If 'undef', $modelRoomObj is compared
         #                       against the Locator task's non-model room object
-        #   $darkFlag       - Set to TRUE when called by ->useExistingRoom, in which case the model
-        #                       room matches any dark or unspecified rooms
+        #   $darkFlag       - Set to TRUE when called by GA::Obj::Map->moveKnownDirSeen and
+        #                       GA::Obj::Map->useExistingRoom, in which case the model room matches
+        #                       any dark or unspecified rooms
+        #   $strictFlag     - Set to TRUE when called by GA::Cmd::LocateRoom->do, in which case this
+        #                       function is a little more strict; if $modelRoomObj has a room title
+        #                       and/or verbose description but $otherRoomObj doesn't (or
+        #                       vice-versa), they cannot be matches; titles and verbose descriptions
+        #                       are also checked regardless of the settings of $self->matchTitleFlag
+        #                       and ->matchDescripFlag. FALSE (or 'undef') otherwise
         #
         # Return values
         #   An empty list on improper arguments
@@ -14333,11 +16698,11 @@
         #           what uses the error message; any other code calling this function (for example
         #           $self->mergeMap) should ignore the error message
 
-        my ($self, $session, $modelRoomObj, $otherRoomObj, $darkFlag, $check) = @_;
+        my ($self, $session, $modelRoomObj, $otherRoomObj, $darkFlag, $strictFlag, $check) = @_;
 
         # Local variables
         my (
-            $taskObj, $matchFlag,
+            $taskObj, $taskFlag, $matchFlag,
             @emptyList, @patternList,
             %modelExitHash, %otherExitHash, %otherModHash,
         );
@@ -14361,7 +16726,7 @@
             }
 
             $otherRoomObj = $taskObj->roomObj;
-
+            $taskFlag = TRUE;
 
             # Compare world's room vnums (if allowed)
             if (
@@ -14386,10 +16751,9 @@
 
         # Compare the rooms' properties, taking into account the values of various flags
 
-        # Compare room titles (if allowed). If one or the other room doesn't have a title, we can't
-        #   tell at this stage whether they match
+        # Compare room titles (if allowed)
         if (
-            $self->matchTitleFlag
+            ($strictFlag || $self->matchTitleFlag)
             && $modelRoomObj->titleList
             && $otherRoomObj->titleList
         ) {
@@ -14412,12 +16776,16 @@
                 # The two rooms's titles don't match
                 return (undef, 'Lost because rooms\' titles don\'t match');
             }
+
+        } elsif ($strictFlag && $otherRoomObj->titleList && ! $modelRoomObj->titleList) {
+
+            # The calling ';locateroom' ignores any error message, but we'll provide one anyway
+            return (undef, 'Lost because room\'s title is unknown');
         }
 
-        # Compare (verbose) descriptions (if allowed). If one or the other doesn't have a verbose
-        #   description, we can't tell at this stage whether they match
+        # Compare (verbose) descriptions (if allowed)
         if (
-            $self->matchDescripFlag
+            ($strictFlag || $self->matchDescripFlag)
             && $modelRoomObj->descripHash
             && $otherRoomObj->descripHash
         ) {
@@ -14456,6 +16824,11 @@
                     'Lost because rooms\' verbose descriptions don\'t match (well enough)',
                 );
             }
+
+        } elsif ($strictFlag && $otherRoomObj->descripHash && ! $modelRoomObj->descripHash) {
+
+            # The calling ';locateroom' ignores any error message, but we'll provide one anyway
+            return (undef, 'Lost because room\'s verbose description is unknown');
         }
 
         # Compare exits (if allowed)
@@ -14499,9 +16872,49 @@
                 $otherModHash{$dir} = $otherExitHash{$dir};
             }
 
+            %otherExitHash = %otherModHash;
+            %otherModHash = ();
+
+            # If comparing $modelRoomObj against the Locator task's current room, convert any
+            #   relative directions in $otherModHash (e.g. if the character is facing 'west',
+            #   convert the direction 'backward' into 'east')
+            # Exception: don't convert a relative direction, like 'forward', if an exit in that
+            #   direction literally exists in the world model (by default, when an exit in a
+            #   relative direction is added to the world model, it's converted to a primary
+            #   direction)
+            if ($taskFlag) {
+
+                foreach my $dir (keys %otherExitHash) {
+
+                    my ($slot, $convertDir, $customDir);
+
+                    $slot = $session->currentDict->convertRelativeDir($dir);
+                    # $slot is in the range 0-7. Convert it into a standard primary direction
+                    #   like 'north', depending on which way the character is currently facing
+                    if (defined $slot && ! exists $modelExitHash{$dir}) {
+
+                        $convertDir = $session->currentDict->rotateRelativeDir(
+                            $slot,
+                            $session->mapObj->facingDir,
+                        );
+                    }
+
+                    if (defined $convertDir) {
+
+                        $customDir = $session->currentDict->ivShow('primaryDirHash', $convertDir);
+                        $otherModHash{$customDir} = $otherExitHash{$dir};
+
+                    } else {
+
+                        # Not a relative exit
+                        $otherModHash{$dir} = $otherExitHash{$dir};
+                    }
+                }
+            }
+
             # Compare the keys in both hashes. Delete matching exits from each hash; if there are
             #   any exits left (or missing), the rooms don't match
-            foreach my $dir (keys %modelExitHash) {
+            OUTER: foreach my $dir (keys %modelExitHash) {
 
                 my ($exitNum, $exitObj);
 
@@ -14514,29 +16927,48 @@
                     # The exit shouldn't exist here - delete it anyway, just in case
                     delete $otherModHash{$dir};
 
-                } elsif (! exists $otherModHash{$dir}) {
+                    next OUTER;
+                }
 
-                    # Missing exit in $otherRoomObj, so the rooms don't match
-                   return (
-                        undef,
-                        'Lost because of missing exit (\'' . $dir . '\') in Locator task\'s'
-                        . ' current room (automapper current room is #' . $modelRoomObj->number
-                        . ', Locator room exits: ' . join(', ', $otherRoomObj->sortedExitList)
-                        . ')',
-                    );
-
-                } else {
+                if (exists $otherModHash{$dir}) {
 
                     # Exit exists in both hashes (and isn't hidden)
                     delete $modelExitHash{$dir};
                     delete $otherModHash{$dir};
+
+                    next OUTER;
                 }
+
+                if ($exitObj->altDir) {
+
+                    foreach my $otherDir (keys %otherModHash) {
+
+                        if (index ($exitObj->altDir, $otherDir) > -1) {
+
+                            # The exit should exist here
+                            delete $modelExitHash{$dir};
+                            # The other exit's alternative nominal direction exists here
+                            delete $otherModHash{$otherDir};
+
+                            next OUTER;
+                        }
+                    }
+                }
+
+                # Missing exit in $otherRoomObj, so the rooms don't match
+                return (
+                    undef,
+                    'Lost because of missing exit (\'' . $dir . '\') in Locator task\'s'
+                    . ' current room (automapper current room is #' . $modelRoomObj->number
+                    . ', Locator room exits: ' . join(', ', $otherRoomObj->sortedExitList)
+                    . ')',
+                );
             }
 
             if (%otherModHash) {
 
                 # Missing exit in the model's room, so the rooms don't match
-               return (
+                return (
                     undef,
                     'Lost because of missing exit(s) in the automapper\'s current room: '
                     . join(', ', keys %otherModHash) . ' (room #' . $modelRoomObj->number . ')',
@@ -14712,13 +17144,13 @@
         #   'north', 'southeast', 'up', 'northnortheast' etc), and tells us how the exit is drawn on
         #   the map
         # The exit's ->dir is its nominal direction - the text that appears in a room statement
-        #   (e.g. 'Obvious exits: north, southeast, up, out')
+        #   (e.g. in 'Obvious exits: north, southeast, up, out')
         # If ->dir is a custom primary direction, the ->mapDir is set to the equivalent standard
         #   primary direction at the time the exit object is created. If ->dir is a recognised
         #   secondary direction which has been given an equivalent standard primary direction, it
         #   will have been used. Otherwise, ->mapDir will still be set to 'undef'
         # This function can be called once all of a new room's exits have been created in order to
-        #   allocated standard primary directions to all exits which don't have one yet. However,
+        #   allocate standard primary directions to all exits which don't have one yet. However,
         #   this function only allocates the sixteen standard cardinal directions - it's up to the
         #   user to manually allocate 'up' or 'down', if required
         #
@@ -14751,7 +17183,10 @@
         ) = @_;
 
         # Local variables
-        my $cardinalDir;
+        my (
+            $cardinalDir, $matchFlag, $regex,
+            @keyList, @dirList, @sortedList,
+        );
 
         # Check for improper arguments
         if (! defined $session || ! defined $roomObj || ! defined $exitObj || defined $check) {
@@ -14760,29 +17195,84 @@
         }
 
         # If the exit's nominal direction ->dir is a secondary direction that should be auto-
-        #   allocated a primary direction, allocate that primary direction
+        #   allocated a primary direction, allocate that primary direction (unless one of the other
+        #   exits in the room is already using it)
         if (
             $session->currentDict->ivExists('secondaryDirHash', $exitObj->dir)
             && defined $session->currentDict->ivShow('secondaryAutoHash', $exitObj->dir)
         ) {
             $cardinalDir = $session->currentDict->ivShow('secondaryAutoHash', $exitObj->dir);
+        }
 
-            # Update the selected exit and instruct the world model to update its Automapper windows
-            $self->setExitMapDir(
-                $session,
-                FALSE,                   # Don't update Automapper windows yet
-                $roomObj,
-                $exitObj,
-                $cardinalDir,
-            );
+        # Does the exit's nominal direction contain a custom primary direction, e.g. 'swim east'?
+        #   If so, we can auto-allocate that primary direction (unless one of the other exits in the
+        #   room is already using it)
+        # Get a list of custom primary directions, sorted by length (so that we check 'northeast'
+        #   before 'north'), but don't use up/down because, if a mistake is made, it's inconvenient
+        #   to reallocate an exit which can't be clicked directly
+        if (! $cardinalDir) {
 
-            # Allocating the primary direction destroys the checked direction, if present
-            $roomObj->ivDelete(
-                'checkedDirHash',
-                $session->currentDict->ivShow('primaryDirHash', $cardinalDir),
-            );
+            if (! $self->showAllPrimaryFlag) {
+                @keyList = $axmud::CLIENT->constShortPrimaryDirList;
+            } else {
+                @keyList = $axmud::CLIENT->constPrimaryDirList;
+            }
 
-            return $cardinalDir;
+            foreach my $key (@keyList) {
+
+                if ($key ne 'up' && $key ne 'down') {
+
+                    push (@dirList, $session->currentDict->ivShow('primaryDirHash', $key));
+                }
+            }
+
+            @sortedList = sort {length($b) <=> length($a)} (@dirList);
+
+            # Convert the list to a useful regex
+            $regex = join('|', @sortedList);
+            if ($exitObj->dir =~ m/($regex)/i) {
+
+                $cardinalDir = $session->currentDict->convertStandardDir($1);
+            }
+        }
+
+        if ($cardinalDir) {
+
+            # Check that no other exits in this room are allocated to the same map direction
+            $matchFlag = FALSE;
+            foreach my $otherExitNum ($roomObj->ivValues('exitNumHash')) {
+
+                my $otherExitObj = $self->ivShow('exitModelHash', $otherExitNum);
+
+                if (
+                    $otherExitObj ne $exitObj
+                    && $otherExitObj->mapDir
+                    && $otherExitObj->mapDir eq $cardinalDir
+                ) {
+                    $matchFlag = TRUE;
+                    last OUTER;
+                }
+            }
+
+            if (! $matchFlag) {
+
+                # Update the exit and instruct the world model to update its Automapper windows
+                $self->setExitMapDir(
+                    $session,
+                    FALSE,                   # Don't update Automapper windows yet
+                    $roomObj,
+                    $exitObj,
+                    $cardinalDir,
+                );
+
+                # Allocating the primary direction destroys the checked direction, if present
+                $roomObj->ivDelete(
+                    'checkedDirHash',
+                    $session->currentDict->ivShow('primaryDirHash', $cardinalDir),
+                );
+
+                return $cardinalDir;
+            }
         }
 
         # Otherwise, decide for ourselves which primary direction to allocate
@@ -14980,7 +17470,7 @@
         my ($self, $session, $modelRoomObj, $check) = @_;
 
         # Local variables
-        my ($regionObj, $regionmapObj, $livingCount, $nonLivingCount);
+        my ($regionmapObj, $livingCount, $nonLivingCount);
 
         # Check for improper arguments
         if (! defined $session || ! defined $modelRoomObj || defined $check) {
@@ -14996,12 +17486,7 @@
         }
 
         # Get the room's regionmap
-        $regionObj = $self->ivShow('modelHash', $modelRoomObj->parent);
-        if ($regionObj) {
-
-            $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
-        }
-
+        $regionmapObj = $self->findRegionmap($modelRoomObj->parent);
         if (! $regionmapObj) {
 
             # Again, nothing we can do
@@ -16319,13 +18804,26 @@
         #                       should avoid hazardous rooms by default, or not. It's up to the
         #                       calling function to decide whether to use it, and to set the value
         #                       of this argument accordingly
-        #   @otherHazardList
-        #                   - An optional list of room flags that should be considered hazardous,
-        #                       for the purposes of this algorithm (not an error if it contains
-        #                       duplicate room flags, or if it contains room flags already on the
-        #                       hazardous room flags list)
+        #   $otherHazardListRef
+        #                   - An optional reference to a list of room flags that should be
+        #                       considered hazardous for the purposes of this algorithm (not an
+        #                       error if it contains duplicate room flags, or if it contains room
+        #                       flags already on the hazardous room flags list). Can be 'undef' or
+        #                       a reference to an empty list
         #                   - NB Room flags in this list are considered hazardous, even if
         #                       $avoidHazardsFlag is FALSE
+        #   $avoidAdjacentFlag
+        #                   - If set to TRUE, the algorithm won't use rooms in adjacent regions,
+        #                       regardless of the value of $self->adjacentMode. If set to FALSE (or
+        #                       'undef', the value of $self->adjacentMode applies
+        #   $adjacentHashRef
+        #                   - An optional hash of adjacent regions, set (in some situations) when
+        #                       the calling function is $self->findUniversalPath. If defined, the
+        #                       keys in the hash are the model numbers of regions that are
+        #                       adjacent to $initialNode's parent region (the meaning of 'adjacent'
+        #                       depends on $self->adjacentCount). $initialNode's parent region also
+        #                       exists in the hash. If 'undef', this function fetches the list of
+        #                       adjacent regions itself, if it needs to
         #
         # Return values
         #   An empty list on improper arguments
@@ -16335,17 +18833,20 @@
         #       objects used to move along the path. The first list contains exactly one more item
         #       than the second (exception: if no path can be found, both lists are empty)
 
-        my ($self, $initialNode, $targetNode, $avoidHazardsFlag, @otherHazardList) = @_;
+        my (
+            $self, $initialNode, $targetNode, $avoidHazardsFlag, $otherHazardListRef,
+            $avoidAdjacentFlag, $adjacentHashRef, $check,
+        ) = @_;
 
         # Local variables
         my (
             $currentNode, $path, $openListObj, $nodeHashRef, $pathRoomListRef, $pathExitListRef,
             @emptyList,
-            %hazardHash,
+            %hazardHash, %adjacentHash,
         );
 
         # Check for improper arguments
-        if (! defined $initialNode || ! defined $targetNode) {
+        if (! defined $initialNode || ! defined $targetNode || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->findPath', @_);
             return @emptyList;
@@ -16353,10 +18854,32 @@
 
         # Create a combined hash of hazardous room flags (whose rooms must be avoided by the
         #   algorithm). If the function returns an empty hash, then all rooms can be used
-        %hazardHash = $self->compileRoomHazards($avoidHazardsFlag, @otherHazardList);
+        if (! defined $otherHazardListRef) {
+            %hazardHash = $self->compileRoomHazards($avoidHazardsFlag);
+        } else {
+            %hazardHash = $self->compileRoomHazards($avoidHazardsFlag, @$otherHazardListRef);
+        }
+
+        # If $self->adjacentMode is 'near', meaning that we can use adjacent regions, and if the
+        #   calling function didn't supply a hash of adjacent regions, compile our own
+        if ($avoidAdjacentFlag) {
+
+            # (The call to $self->doAStar needs a hash reference, even an empty one)
+            $adjacentHashRef = {};
+
+        } elsif (! defined $adjacentHashRef) {
+
+            if ($self->adjacentMode eq 'near') {
+
+                %adjacentHash = $self->compileAdjacentRegions($initialNode->parent);
+            }
+
+            # (The call to $self->doAStar needs a hash reference, even an empty one)
+            $adjacentHashRef = \%adjacentHash;
+        }
 
         # Create the open list, using a binomial heap
-        $openListObj = Games::Axmud::Obj::BinomialHeap->new();
+        $openListObj = Games::Axmud::Obj::Heap->new();
         # Create a reference to a hash of nodes, in the form
         #   $nodeHash{room_object} = node
         # ...where 'room_object' is a GA::ModelObj::Room, and 'node' is a GA::Node::AStar object
@@ -16375,7 +18898,7 @@
 
         # Perform the A* algorithm, starting at the room $initialNode, and aiming for the room
         #   $targetNode
-        $self->doAStar($targetNode, $openListObj, $nodeHashRef, %hazardHash);
+        $self->doAStar($targetNode, $openListObj, $nodeHashRef, \%hazardHash, $adjacentHashRef);
 
         # We can now use the nodes stored in $openListObj to find the shortest route, by tracing the
         #   path from the target room, and using the parent of each node in turn (in the standard
@@ -16444,6 +18967,101 @@
         return %hazardHash;
     }
 
+    sub compileAdjacentRegions {
+
+        # Called by $self->findPath and ->findUniversalPath when $self->adjacentMode is set to
+        #   'near' (meaning that the path can use rooms in adjacent regions)
+        # Compiles a hash of regions that are adjacent to a specified region (the meaning of
+        #   'adjacent' depends on $self->adjacentCount; 1 means regions can be connected A-B, 2
+        #   means regions can be connected A-B-C, etc. 0 means don't use adjacent regions right now)
+        # The hash includes the specified region
+        #
+        # Expected arguments
+        #   $origNum    - The number of a region, representing the parent region of the first room
+        #                   in a path yet to be calculated
+        #
+        # Return values
+        #   An empty hash on improper arguments
+        #   Otherwise returns a hash containing $origNum and all of its adjacent regions in the form
+        #       $adjacentHash{region_number} = undef
+
+        my ($self, $origNum, $check) = @_;
+
+        # Local variables
+        my (
+            @regionList,
+            %emptyHash, %checkHash, %returnHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $origNum || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->compileAdjacentRegions', @_);
+            return %emptyHash;
+        }
+
+        if ($self->adjacentCount == 0) {
+
+            # Can't use adjacent regions right now, but the hash must still contain the specified
+            #   region
+            $returnHash{$origNum} = undef;
+
+            return %returnHash;
+        }
+
+        # Compile a hash of all regions. If the value of $self->adjacentCount is high enough that
+        #   every region is adjacent to $regionNum, then we can stop searching immediately
+        foreach my $regionNum ($self->ivKeys('regionModelHash')) {
+
+            if ($regionNum != $origNum) {
+
+                $checkHash{$regionNum} = undef;
+            }
+        }
+
+        # Now check each region in turn, starting with $regionNum, then its connection regions,
+        #   then all of their connecting regions, and so on
+        push (@regionList, $origNum);
+        # (%returnHash must contain at least the specified region)
+        $returnHash{$origNum} = undef;
+
+        for (my $count = 0; $count < $self->adjacentCount; $count++) {
+
+            my @nextList;
+
+            foreach my $regionNum (@regionList) {
+
+                my $regionmapObj = $self->findRegionmap($regionNum);
+
+                foreach my $otherNum ($regionmapObj->ivValues('regionExitHash') ) {
+
+                    if ($otherNum != $origNum && ! exists $returnHash{$otherNum}) {
+
+                        # This region is adjacent...
+                        $returnHash{$otherNum} = undef;
+                        # ...so check its region exits on the next iteration of the for... loop
+                        push (@nextList, $otherNum);
+
+                        # Have we used up every region?
+                        delete $checkHash{$otherNum};
+                        if (! %checkHash) {
+
+                            # Yes, we have, so we can stop searching now
+                            return %returnHash;
+                        }
+                    }
+                }
+            }
+
+            # On the next iteration of the for... loop, check all of the adjacent regions found
+            #   during this iteration
+            @regionList = @nextList;
+        }
+
+        # Operation complete
+        return %returnHash;
+    }
+
     sub checkRoomHazards {
 
         # Called by $self->getSurrounding_aStar
@@ -16455,19 +19073,19 @@
         #   $roomObj        - The GA::ModelObj::Room object to check
         #
         # Optional arguments
-        #   %hazardHash     - A hash of room flags. The path won't use any rooms with a room flag
-        #                       stored as a key in this hash. If an empty hash, all rooms are
-        #                       considered
+        #   $hazardHashRef  - Reference to a hash of room flags. The path won't use any rooms with a
+        #                       room flag stored as a key in this hash. If an empty hash, all rooms
+        #                       are considered
         #
         # Return values
         #   'undef' on improper arguments, if the room has no room flags, or if none of the room's
         #       list of room flags are on the hazardous flags list
         #   1 if any of the room's list of room flags are on the hazardous flags list
 
-        my ($self, $roomObj, %hazardHash) = @_;
+        my ($self, $roomObj, $hazardHashRef, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $roomObj) {
+        if (! defined $roomObj || ! defined $hazardHashRef || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->checkRoomHazards', @_);
         }
@@ -16475,7 +19093,7 @@
         # Check each flag in turn
         foreach my $flag ($roomObj->ivKeys('roomFlagHash')) {
 
-            if (exists $hazardHash{$flag}) {
+            if (exists $$hazardHashRef{$flag}) {
 
                 # This room should be avoided by the pathfinding routines
                 return 1;
@@ -16491,7 +19109,7 @@
         # Called by $self->processPathCallback
         # After a path has been found (following a call to $self->findPath or
         #   $self->findUniversalPath), this function can optionally be called to remove jagged edges
-        #   from the paths typically produced by the A* and Djikstra algorithms
+        #   from the paths typically produced by the A* and Dijkstra algorithms
         #
         # Expected arguments
         #   $session        - The calling function's GA::Session
@@ -16542,11 +19160,11 @@
         #   algorithm). If the function returns an empty hash, then all rooms can be used
         %hazardHash = $self->compileRoomHazards($avoidHazardsFlag, @otherHazardList);
 
-        # The principle of A*/Djikstra post-processing is to compare two rooms, numbered n and (n+2)
-        # If there is a clear line of sight between them (if we can move using one of the ten
-        #   primary directions from (n) to (n+2)), and if there is exactly one room between them,
-        #   in the line of site, that is not room (n+1), then we can swap room (n+1) to the room
-        #   directly between rooms (n) and (n+2)
+        # The principle of A*/Dijkstra post-processing is to compare two rooms, numbered n and (n+2)
+        # If there is a clear line of sight between them (if we can move using one of ten primary
+        #   directions from (n) to (n+2)), and if there is exactly one room between them, in the
+        #   line of site, that is not room (n+1), then we can swap room (n+1) to the room directly
+        #   between rooms (n) and (n+2)
         # So, this path:    Is smoothed to this one:
         #    X                  X   n
         #     X                 X   n+1
@@ -16748,7 +19366,7 @@
                         #   as $self->getSurrounding_aStar)
                         if (
                             ! $newRoomObj->exclusiveFlag
-                            && ! $self->checkRoomHazards($newRoomObj, %hazardHash)
+                            && ! $self->checkRoomHazards($newRoomObj, \%hazardHash)
                         ) {
                             # $newRoomObj is acceptable, so use it to replace room (n+1)
                             $$roomListRef[$index + 1] = $newRoomObj;
@@ -16776,25 +19394,31 @@
         # Expected arguments
         #   $targetNode     - The target node (a GA::ModelObj::Room)
         #   $openListObj    - The A* open list, stored in a binomial heap object
-        #   $nodeHashRef    - The hash of nodes, in the form $hash{room} = node
-        #
-        # Optional arguments
-        #   %hazardHash     - A hash of room flags. The path won't use any rooms with a room flag
-        #                       stored as a key in this hash. If an empty hash, all rooms are
-        #                       considered
+        #   $nodeHashRef    - Reference to the hash of nodes, in the form $hash{room} = node
+        #   $hazardHashRef  - Reference to a hash of room flags. The path won't use any rooms with a
+        #                       room flag stored as a key in this hash. If an empty hash, all rooms
+        #                       are considered
+        #   $adjacentHashRef
+        #                   - Reference to a hash of adjacent regions. An empty hash if adjacent
+        #                       regions are not to be used
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $targetNode, $openListObj, $nodeHashRef, %hazardHash) = @_;
+        my (
+            $self, $targetNode, $openListObj, $nodeHashRef, $hazardHashRef, $adjacentHashRef,
+            $check,
+        ) = @_;
 
         # Local variables
         my ($currentNode, $gScore, $nodeListRef);
 
         # Check for improper arguments
-        if (! defined $targetNode || ! defined $openListObj || ! defined $nodeHashRef) {
-
+        if (
+            ! defined $targetNode || ! defined $openListObj || ! defined $nodeHashRef
+            || ! defined $hazardHashRef || ! defined $adjacentHashRef || defined $check
+        ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->doAStar', @_);
         }
 
@@ -16816,7 +19440,8 @@
             $nodeListRef = $self->getSurrounding_aStar(
                 $currentNode->roomObj,
                 $targetNode,
-                %hazardHash,
+                $hazardHashRef,
+                $adjacentHashRef,
             );
 
             # Process each surrounding node
@@ -16947,11 +19572,12 @@
         # Expected arguments
         #   $currentNode    - The current node (a GA::ModelObj::Room)
         #   $targetNode     - The target node (a GA::ModelObj::Room)
-        #
-        # Optional arguments
-        #   %hazardHash     - A hash of room flags. The path won't use any rooms with a room flag
-        #                       stored as a key in this hash. If an empty hash, all rooms are
-        #                       considered
+        #   $hazardHashRef  - Reference to a hash of room flags. The path won't use any rooms with a
+        #                       room flag stored as a key in this hash. If an empty hash, all rooms
+        #                       are considered
+        #   $adjacentHashRef
+        #                   - Reference to a hash of adjacent regions. An empty hash if adjacent
+        #                       regions are not to be used
         #
         # Return values
         #   'undef' on improper arguments
@@ -16963,7 +19589,7 @@
         #           surrounding_node_g_score,
         #       ]
 
-        my ($self, $currentNode, $targetNode, %hazardHash) = @_;
+        my ($self, $currentNode, $targetNode, $hazardHashRef, $adjacentHashRef, $check) = @_;
 
         # Local variables
         my (
@@ -16972,8 +19598,10 @@
         );
 
         # Check for improper arguments
-        if (! defined $currentNode || ! defined $targetNode) {
-
+        if (
+            ! defined $currentNode || ! defined $targetNode || ! defined $hazardHashRef
+            || ! defined $adjacentHashRef || defined $check
+        ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->getSurrounding_aStar', @_);
         }
 
@@ -16989,26 +19617,33 @@
                 my ($exitObj, $destRoomObj);
 
                 $exitObj = $self->ivShow('exitModelHash', $exitNum);
-                # Ignore exits in a different region - to find a path between rooms in different
-                #   regions, $self->findUniversalPath should be called, not $self->findPath
-                if ($exitObj->regionFlag) {
-
-                    next OUTER;
-
-                } elsif ($exitObj->destRoom) {
+                if ($exitObj->destRoom) {
 
                     $destRoomObj = $self->ivShow('modelHash', $exitObj->destRoom);
 
+                    # Depending on the $self->adjacentMode and $adjacentHashRef, we can either use
+                    #   region exits, or not
+                    if (
+                        $exitObj->regionFlag
+                        && (
+                            $self->adjacentMode ne 'near'
+                            || ! exists $$adjacentHashRef{$destRoomObj->parent}
+                        )
+                    ) {
+                        # Can't use this region exit or its destination room
+                        next OUTER;
+                    }
+
                     # We don't use a destination room if it has any of the room flags in
-                    #   %hazardHash
+                    #   $hazardHashRef
                     # We also don't use exits that have shadow exits (it's normally better to use
                     #   the 'north' shadow exit, rather than the 'open curtains' exit) and exits
                     #   which lead to rooms that can only be visited by certain guilds, races and
                     #   characters (etc); the latter restrictions saves us a whole lot of bother
                     if (
-                        (! $destRoomObj->exclusiveFlag)
-                        && (! $exitObj->shadowExit)
-                        && (! $self->checkRoomHazards($destRoomObj, %hazardHash))
+                        ! $destRoomObj->exclusiveFlag
+                        && ! $exitObj->shadowExit
+                        && ! $self->checkRoomHazards($destRoomObj, $hazardHashRef)
                     ) {
                         $roomHash{$exitObj->destRoom} = $exitObj;
                     }
@@ -17066,13 +19701,13 @@
         return ($xLength + $yLength + $zLength);
     }
 
-    # Djikstra algorithm (used to find a path between two rooms in different regions)
+    # Dijkstra algorithm (used to find a path between two rooms in different regions)
 
     sub findUniversalPath {
 
         # Can be called by any function
         #
-        # Djikstra algorithm to find a path between two rooms in different regions, based on
+        # Dijkstra algorithm to find a path between two rooms in different regions, based on
         #   AI::Pathfinding::AStar by Aaron Dalton
         #
         # Expected arguments
@@ -17090,7 +19725,7 @@
         #                       should avoid hazardous rooms by default, or not. It's up to the
         #                       calling function to decide whether to use it, and to set the value
         #                       of this argument accordingly
-        #   @otherHazardList
+        #   $otherHazardListRef
         #                   - An optional list of room flags that should be considered hazardous,
         #                       for the purposes of this algorithm (not an error if it contains
         #                       duplicate room flags, or if it contains room flags already on the
@@ -17099,6 +19734,12 @@
         #                       the same region
         #                   - NB Room flags in this list are considered hazardous, even if
         #                       $avoidHazardsFlag is FALSE
+        #   $avoidAdjacentFlag
+        #                   - If set to TRUE and if the initial and target rooms are in the same
+        #                       region, the algorithm won't use rooms in adjacent regions,
+        #                       regardless of the value of $self->adjacentMode. If set to FALSE (or
+        #                       'undef') and the initial/target rooms are in the same region, the
+        #                       value of $self->adjacentMode applies
         #
         # Return values
         #   An empty list on improper arguments or if no path can be found between the initial and
@@ -17110,38 +19751,62 @@
         #       one more item than the second
 
         my (
-            $self, $session, $initialRoomObj, $targetRoomObj, $avoidHazardsFlag, @otherHazardList,
+            $self, $session, $initialRoomObj, $targetRoomObj, $avoidHazardsFlag,
+            $otherHazardListRef, $avoidAdjacentFlag, $check,
         ) = @_;
 
         # Local variables
         my (
-            $roomListRef, $exitListRef, $dummyRoomObj, $dummyExitObj, $initialRegionObj,
-            $initialRegionmapObj, $index, $dummyRoomObj2, $dummyExitObj2, $targetRegionObj,
-            $targetRegionmapObj, $openListObj, $nodeHashRef, $currentNode, $pathRoomListRef,
-            $pathExitListRef,
+            $roomListRef, $exitListRef, $dummyRoomObj, $dummyExitObj, $initialRegionmapObj, $index,
+            $dummyRoomObj2, $dummyExitObj2, $targetRegionmapObj, $openListObj, $nodeHashRef,
+            $currentNode, $pathRoomListRef, $pathExitListRef,
             @emptyList, @initialExitNumList, @initialRoomList, @targetExitNumList, @targetRoomList,
             @returnRoomList, @returnExitList,
-            %universalPathHash,
+            %adjacentHash, %universalPathHash,
         );
 
         # Check for improper arguments
-        if (! defined $session || ! defined $initialRoomObj || ! defined $targetRoomObj) {
-
+        if (
+            ! defined $session || ! defined $initialRoomObj || ! defined $targetRoomObj
+            || defined $check
+        ) {
             $axmud::CLIENT->writeImproper($self->_objClass . '->findUniversalPath', @_);
             return @emptyList;
         }
 
-        # If the two rooms are in the same region, we can use $self->findPath
-        # If the call succeeds, use that path. If that fails (for example, if the only path between
-        #   two rooms in the same region goes via another region), continue with this function's
-        #   algorithm
-        if ($initialRoomObj->parent == $targetRoomObj->parent) {
+        # Depending on the situation, we might be able to use $self->findPath instead
+        if (
+            $initialRoomObj->parent == $targetRoomObj->parent
+            || $self->adjacentMode eq 'all'
+        ) {
+            ($roomListRef, $exitListRef) = $self->findPath(
+                $initialRoomObj,
+                $targetRoomObj,
+                $avoidHazardsFlag,
+                $otherHazardListRef,
+                $avoidAdjacentFlag,
+            );
+
+            if (defined $roomListRef && @$roomListRef) {
+
+                return ($roomListRef, $exitListRef);
+            }
+
+        } elsif ($self->adjacentMode eq 'near') {
+
+            # Get a hash of regions that are adjacent to the start room's region (inclusive)
+            if (! $avoidAdjacentFlag) {
+
+                %adjacentHash = $self->compileAdjacentRegions($initialRoomObj->parent);
+            }
 
             ($roomListRef, $exitListRef) = $self->findPath(
                 $initialRoomObj,
                 $targetRoomObj,
                 $avoidHazardsFlag,
-                @otherHazardList,
+                $otherHazardListRef,
+                $avoidAdjacentFlag,
+                \%adjacentHash,
             );
 
             if (defined $roomListRef && @$roomListRef) {
@@ -17149,6 +19814,9 @@
                 return ($roomListRef, $exitListRef);
             }
         }
+
+        # If a call to $self->findPath failed to find a path between the two rooms, or if
+        #   $self->findPath wasn't called at all, we can continue with this function's algorithm
 
         # If any exits in the exit model have been modified, we may need to check and re-calculate
         #   regions paths, before calculating a path between the two rooms
@@ -17159,7 +19827,7 @@
 
         # The first step is to compile a hash of region paths that traverse every region in the
         #   world model, leading from one region exit to another region exit in the same region
-        # At either end of each path is the node we'll use in our Djikstra algorithm. The nodes are
+        # At either end of each path is the node we'll use in our Dijkstra algorithm. The nodes are
         #   exits, each equivalent to a GA::Obj::Exit (which may or may not have a twin exit)
         #
         # Each regionmap stores, in its ->regionPathHash, a list of such paths. Each path is
@@ -17197,16 +19865,15 @@
         # Now, we need to create some new (temporary) paths, and to add them to %universalPathHash
 
         # The first set of paths connect $initialRoomObj to every region exit in the same region
-        # The Djikstra algorithm we'll employ uses exits as its nodes. The initial room can have
+        # The Dijkstra algorithm we'll employ uses exits as its nodes. The initial room can have
         #   several exits, any of which might be on the shortest path to the target room. So, we'll
         #   create a dummy room object - with a world model number set to -1 - with a dummy one-way
-        #   exit which leads to the initial room.
+        #   exit which leads to the initial room
         # When the algorithm is finished, we'll discard the room (and its exit)
         ($dummyRoomObj, $dummyExitObj) = $self->createDummyRoom($session, $initialRoomObj, -1);
 
         # Get the initial room's regionmap
-        $initialRegionObj = $self->ivShow('modelHash', $initialRoomObj->parent);
-        $initialRegionmapObj = $self->ivShow('regionmapHash', $initialRegionObj->name);
+        $initialRegionmapObj = $self->findRegionmap($initialRoomObj->parent);
         # Get a list of region exits in this regionmap
         @initialExitNumList = $initialRegionmapObj->ivKeys('regionExitHash');
         # From this list, get a list of rooms from which the region exits depart
@@ -17228,7 +19895,9 @@
             ($miniRoomListRef, $miniExitListRef) = $self->findPath(
                 $initialRoomObj,
                 $boundaryRoomObj,
-                $avoidHazardsFlag,
+                $avoidHazardsFlag,      # Avoid hazards, or not
+                undef,
+                TRUE,                   # Don't use adjacent regions
             );
 
             # If a path was found...
@@ -17266,8 +19935,7 @@
         ($dummyRoomObj2, $dummyExitObj2) = $self->createDummyRoom($session, $targetRoomObj, -2);
 
         # Get the target room's regionmap
-        $targetRegionObj = $self->ivShow('modelHash', $targetRoomObj->parent);
-        $targetRegionmapObj = $self->ivShow('regionmapHash', $targetRegionObj->name);
+        $targetRegionmapObj = $self->findRegionmap($targetRoomObj->parent);
         # Get a list of region exits in this regionmap
         @targetExitNumList = $targetRegionmapObj->ivKeys('regionExitHash');
         # From this list, get a list of rooms from which the region exits depart
@@ -17289,7 +19957,9 @@
             ($miniRoomListRef, $miniExitListRef) = $self->findPath(
                 $boundaryRoomObj,
                 $targetRoomObj,
-                $avoidHazardsFlag,
+                $avoidHazardsFlag,      # Avoid hazards, or not
+                undef,
+                TRUE,                   # Don't use adjacent regions
             );
 
             # If a path was found...
@@ -17321,18 +19991,18 @@
 
         # %universalPathHash now contains a collection of paths that traverse the whole world model,
         #   linking together all connected regions
-        # Now we run the Djikstra algorithm (a modified A* algorithm in which the h-score is
+        # Now we run the Dijkstra algorithm (a modified A* algorithm in which the h-score is
         #   always 0) to get the shortest path between the initial and target rooms
 
         # Create the open list, using a binomial heap
-        $openListObj = Games::Axmud::Obj::BinomialHeap->new();
+        $openListObj = Games::Axmud::Obj::Heap->new();
         # Create a reference to a hash of nodes, in the form
         #   $nodeHashRef{exit_object} = node
-        # ...where 'exit_object' is a GA::Obj::Exit, and node is a GA::Node::Djikstra object
+        # ...where 'exit_object' is a GA::Obj::Exit, and node is a GA::Node::Dijkstra object
         $nodeHashRef = {};
 
         # Create a node for the initial exit
-        $currentNode = Games::Axmud::Node::Djikstra->new(
+        $currentNode = Games::Axmud::Node::Dijkstra->new(
             0,                  # Initial G score
             $dummyExitObj,      # Dummy exit object leading to the initial room
         );
@@ -17341,9 +20011,9 @@
         $currentNode->ivPoke('inOpenFlag', TRUE);
         $openListObj->add($currentNode);
 
-        # Perform the Djikstra algorithm, starting at the exit $dummyExitObj, and aiming for the
+        # Perform the Dijkstra algorithm, starting at the exit $dummyExitObj, and aiming for the
         #   exit $dummyExitObj2
-        $self->doDjikstra($dummyExitObj2, $openListObj, $nodeHashRef, \%universalPathHash);
+        $self->doDijkstra($dummyExitObj2, $openListObj, $nodeHashRef, \%universalPathHash);
 
         # We can now use the nodes stored in $openListObj to find the shortest route, by tracing the
         #   path from the target room, and using the parent of each node in turn (in the standard
@@ -17351,7 +20021,7 @@
         # Get two list references, one containing the rooms in the shortest path between
         #   $dummyRoomObj and $dummyRoomObj2, and the other containing the exits to move along the
         #   path
-        ($pathRoomListRef, $pathExitListRef) = $self->fillPath_djikstra(
+        ($pathRoomListRef, $pathExitListRef) = $self->fillPath_dijkstra(
             $dummyExitObj2,
             $openListObj,
             $nodeHashRef,
@@ -17407,10 +20077,10 @@
         return (\@returnRoomList, \@returnExitList);
     }
 
-    sub doDjikstra {
+    sub doDijkstra {
 
         # Called by $self->findUniversalPath
-        # Performs the Djikstra algorithm on two nodes, each corresponding to an exit in two
+        # Performs the Dijkstra algorithm on two nodes, each corresponding to an exit in two
         #   different regions, in order to find the shortest path between them, and therefore the
         #   shortest path between two rooms (as described in the comments for the calling function)
         #
@@ -17418,7 +20088,7 @@
         #   $targetNode      - The target node (a dummy GA::Obj::Exit that the calling function
         #                       created, which leads away from the target room to a dummy
         #                       GA::ModelObj::Room)
-        #   $openListObj    - The Djikstra open list, stored in a binomial heap object
+        #   $openListObj    - The Dijkstra open list, stored in a binomial heap object
         #   $nodeHashRef    - The hash of nodes, in the form $hash{exit} = node
         #   $universalPathHashRef
         #                   - A hash of paths between the exits, each of which correspond to a node.
@@ -17441,7 +20111,7 @@
             ! defined $targetNode || ! defined $openListObj || ! defined $nodeHashRef
             || ! defined $universalPathHashRef || defined $check
         ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->doDjikstra', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doDijkstra', @_);
         }
 
         # Perform the algorithm until we either find the shortest path to the target node or run out
@@ -17466,7 +20136,7 @@
             #   $currentNode by a single GA::Obj::RegionPath)
             # The contained list references are in the form
             #   [GA::Obj::Exit, cost]
-            $nodeListRef = $self->getSurrounding_djikstra(
+            $nodeListRef = $self->getSurrounding_dijkstra(
                 $currentNode->exitObj,
                 $universalPathHashRef,
             );
@@ -17496,7 +20166,7 @@
                 # If the node isn't in the open list, add it to the open list
                 if (! exists $$nodeHashRef{$surroundExitObj}) {
 
-                    $surroundNode = Games::Axmud::Node::Djikstra->new(
+                    $surroundNode = Games::Axmud::Node::Dijkstra->new(
                         $currentNode->gScore + $surroundCost,   # G score
                         $surroundExitObj,                       # GA::Obj::Exit
                     );
@@ -17526,13 +20196,13 @@
             }
         }
 
-        # Djikstra algorithm complete
+        # Dijkstra algorithm complete
         return 1;
     }
 
-    sub fillPath_djikstra {
+    sub fillPath_dijkstra {
 
-        # Called by $self->findUniversalPath, after a call to $self->doDjikstra
+        # Called by $self->findUniversalPath, after a call to $self->doDijkstra
         # The initial room and the target room are now linked, along the shortest path between them,
         #   by a list of nodes, each corresponding to a GA::Obj::Exit. The path begins with a dummy
         #   room connected to the initial room, and another dummy room connected to the target room
@@ -17542,7 +20212,7 @@
         #
         # Expected arguments
         #   $targetNode     - The target node (a GA::Obj::Exit object)
-        #   $openListRef    - The Djikstra open list, stored in a binomial heap object
+        #   $openListRef    - The Dijkstra open list, stored in a binomial heap object
         #   $nodeHashRef    - The hash of nodes, in the form $hash{exit} = node
         #   $universalPathHashRef
         #                   - A hash of paths between the exits which correspond to nodes, which
@@ -17560,7 +20230,7 @@
         # Local variables
         my (
             $currentNode,
-            @emptyList, @refList, @nodeList, @roomList, @exitList,
+            @emptyList, @nodeList, @roomList, @exitList,
         );
 
         # Check for improper arguments
@@ -17568,7 +20238,7 @@
             ! defined $targetNode || ! defined $openListObj || ! defined $nodeHashRef
             || ! defined $universalPathHashRef || defined $check
         ) {
-            $axmud::CLIENT->writeImproper($self->_objClass . '->fillPath_djikstra', @_);
+            $axmud::CLIENT->writeImproper($self->_objClass . '->fillPath_dijkstra', @_);
             return @emptyList;
         }
 
@@ -17589,7 +20259,10 @@
             # Everything in @nodeList is a GA::Obj::Exit corresponding to a node along the path
             do {
 
-                my ($thisExitObj, $hashRef, $regionPathObj, $pathListRef);
+                my (
+                    $thisExitObj, $hashRef, $regionPathObj, $pathListRef,
+                    @refList,
+                );
 
                 $thisExitObj = shift @nodeList;
 
@@ -17609,6 +20282,24 @@
                     $regionPathObj = $$hashRef{$nodeList[0]->number};
                     if ($regionPathObj) {
 
+                        # In certain circumstances, the shortest region path between two region
+                        #   exits, A and B, might go via a room with its own region exit, C
+                        # Because the G score for path A-B is the same as the combined G scores for
+                        #   two region paths, A-C then C-B, we might have either situation
+                        # In the latter situation, the code below has added the Exit B to @exitList
+                        #   on the assumption that we're going through that exit; if we aren't, then
+                        #   remove it (and remove the corresponding duplicate room that would
+                        #   otherwise appear in the final @roomList)
+                        if (
+                            @roomList
+                            && $regionPathObj->roomList
+                            && $roomList[-1] == $regionPathObj->ivIndex('roomList', 0)
+                        ) {
+                            pop @roomList;
+                            pop @exitList;
+                        }
+
+                        # Add rooms and exits from this region path
                         push (@roomList, $regionPathObj->roomList);
                         push (@exitList, $regionPathObj->exitList);
                         # At region boundaries (exit nodes), we have to add the exit itself
@@ -17627,9 +20318,9 @@
         return (\@roomList, \@exitList);
     }
 
-    sub getSurrounding_djikstra {
+    sub getSurrounding_dijkstra {
 
-        # Called by $self->doDjikstra
+        # Called by $self->doDijkstra
         # Get a list of nodes surrounding the current one
         # In this function, the current node corresponds to an exit. We look up this exit in the
         #   hash of GA::Obj::RegionPath objects we created earlier to find all the connecting
@@ -17661,7 +20352,7 @@
         if (! defined $currentNode || ! defined $universalPathHashRef || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->getSurrounding_djikstra',
+                $self->_objClass . '->getSurrounding_dijkstra',
                 @_,
             );
         }
@@ -17794,7 +20485,7 @@
         $dummyExitObj->ivPoke('number', $number);
         $self->ivAdd('exitModelHash', $number, $dummyExitObj);
 
-        $dummyDir = 'djikstra_dummy_exit';
+        $dummyDir = 'dijkstra_dummy_exit';
 
         if ($number == -1) {
 
@@ -17877,7 +20568,7 @@
         if ($number == -2) {
 
             # Dummy exit leading from the target room. Update the target room
-            $dummyDir = 'djikstra_dummy_exit';
+            $dummyDir = 'dijkstra_dummy_exit';
             $dummyExitObj = $self->ivShow('exitModelHash', $number);
             $realRoomObj = $self->ivShow('modelHash', $dummyExitObj->parent);
 
@@ -17903,13 +20594,13 @@
         return 1;
     }
 
-    # Djikstra algorithm for GA::Obj::Route objects (used to find a path using pre-defined routes)
+    # Dijkstra algorithm for GA::Obj::Route objects (used to find a path using pre-defined routes)
 
     sub findRoutePath {
 
         # Can be called by any function. Called by GA::Generic::Cmd->useRoute
         #
-        # Djikstra algorithm to find a path between two rooms using interlinked pre-defined routes,
+        # Dijkstra algorithm to find a path between two rooms using interlinked pre-defined routes,
         #   each one stored in a GA::Obj::Route object (which are stored in route cages)
         # Based on AI::Pathfinding::AStar by Aaron Dalton
         #
@@ -17985,17 +20676,17 @@
         # $routePathHashRef now contains a collection of interlinked routes, which we can search to
         #   find the shortest route between the initial and target rooms (if they are linked by
         #   route objects)
-        # Now we run the Djikstra algorithm for route objects (a modified A* algorithm in which the
+        # Now we run the Dijkstra algorithm for route objects (a modified A* algorithm in which the
         #   h-score is always 0) to get the shortest path between the initial and target rooms
 
         # Create the open list, using a binomial heap
-        $openListObj = Games::Axmud::Obj::BinomialHeap->new();
+        $openListObj = Games::Axmud::Obj::Heap->new();
         # Create a reference to a hash of nodes, in the form
-        #   $hash{room_tag} = djikstra_node
+        #   $hash{room_tag} = dijkstra_node
         $nodeHashRef = {};
 
         # Create a node for the initial room
-        $currentNode = Games::Axmud::Node::Djikstra->new(
+        $currentNode = Games::Axmud::Node::Dijkstra->new(
             0,                      # Initial G score
             undef,                  # (Exit objects not used for pre-defined routes)
             $initialRoomTag,        # Room tag of the first room object
@@ -18005,16 +20696,16 @@
         $currentNode->ivPoke('inOpenFlag', TRUE);
         $openListObj->add($currentNode);
 
-        # Perform the Djikstra algorithm, starting at the room tagged $initialRoomTag, and aiming
+        # Perform the Dijkstra algorithm, starting at the room tagged $initialRoomTag, and aiming
         #   for the room tagged $targetRoomTag
-        $self->doRouteDjikstra($targetRoomTag, $openListObj, $nodeHashRef, \%routePathHash);
+        $self->doRouteDijkstra($targetRoomTag, $openListObj, $nodeHashRef, \%routePathHash);
 
         # We can now use the nodes stored in $openListObj to find the shortest route, by tracing the
         #   path from the target room, and using the parent of each node in turn (in the standard
         #   way)
         # Get a list reference, containing the list of world commands to move between the initial
         #   and target rooms
-        $cmdListRef = $self->fillPath_routeDjikstra(
+        $cmdListRef = $self->fillPath_routeDijkstra(
             $session,
             $targetRoomTag,
             $openListObj,
@@ -18025,16 +20716,16 @@
         return $cmdListRef;
     }
 
-    sub doRouteDjikstra {
+    sub doRouteDijkstra {
 
         # Called by $self->findRoutePath
-        # Performs the Djikstra algorithm on two nodes, each corresponding to a room tag, in order
+        # Performs the Dijkstra algorithm on two nodes, each corresponding to a room tag, in order
         #   to find the shortest path between them, and therefore the shortest path between two
         #   rooms (as described in the comments for the calling function)
         #
         # Expected arguments
         #   $targetNode     - The target node (a room tag)
-        #   $openListObj    - The Djikstra open list, stored in a binomial heap object
+        #   $openListObj    - The Dijkstra open list, stored in a binomial heap object
         #   $nodeHashRef    - The hash of nodes, in the form $hash{tag} = node
         #   $routePathHashRef
         #                   - A hash of paths between the tagged rooms, each of which correspond to
@@ -18057,7 +20748,7 @@
             ! defined $targetNode || ! defined $openListObj || ! defined $nodeHashRef
             || ! defined $routePathHashRef || defined $check
         ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->doRouteDjikstra', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doRouteDijkstra', @_);
         }
 
         # Perform the algorithm until we either find the shortest path to the target node or run out
@@ -18075,7 +20766,7 @@
             #   $currentNode by a single GA::Obj::Route)
             # The contained list references are in the form
             #   [room_tag, cost]
-            $nodeListRef = $self->getSurrounding_routeDjikstra(
+            $nodeListRef = $self->getSurrounding_routeDijkstra(
                 $currentNode->roomTag,
                 $routePathHashRef,
             );
@@ -18100,7 +20791,7 @@
                 # If the node isn't in the open list, add it to the open list
                 if (! exists $$nodeHashRef{$surroundRoomTag}) {
 
-                    $surroundNode = Games::Axmud::Node::Djikstra->new(
+                    $surroundNode = Games::Axmud::Node::Dijkstra->new(
                         $currentNode->gScore + $surroundCost,   # G score
                         undef,                                  # Exits not used
                         $surroundRoomTag,                       # Node
@@ -18131,13 +20822,13 @@
             }
         }
 
-        # Djikstra algorithm complete
+        # Dijkstra algorithm complete
         return 1;
     }
 
-    sub fillPath_routeDjikstra {
+    sub fillPath_routeDijkstra {
 
-        # Called by $self->findRoutePath, after a call to $self->doRouteDjikstra
+        # Called by $self->findRoutePath, after a call to $self->doRouteDijkstra
         # The initial room and the target room are now linked, along the shortest path between them,
         #   by a list of nodes, each corresponding to a room tag
         # Compile a list of world commands to travel along this path, from the initial room to the
@@ -18146,7 +20837,7 @@
         # Expected arguments
         #   $session        - The calling function's GA::Session
         #   $targetNode     - The target node (a room tag)
-        #   $openListRef    - The Djikstra open list, stored in a binomial heap object
+        #   $openListRef    - The Dijkstra open list, stored in a binomial heap object
         #   $nodeHashRef    - The hash of nodes, in the form $hash{exit} = node
         #   $routePathHashRef
         #                   - A hash of paths between the room tags which correspond to nodes, which
@@ -18174,7 +20865,7 @@
             ! defined $session || ! defined $targetNode || ! defined $openListObj
             || ! defined $nodeHashRef || ! defined $routePathHashRef || defined $check
         ) {
-            $axmud::CLIENT->writeImproper($self->_objClass . '->fillPath_routeDjikstra', @_);
+            $axmud::CLIENT->writeImproper($self->_objClass . '->fillPath_routeDijkstra', @_);
             return @emptyList;
         }
 
@@ -18234,9 +20925,9 @@
         return \@cmdSequenceList;
     }
 
-    sub getSurrounding_routeDjikstra {
+    sub getSurrounding_routeDijkstra {
 
-        # Called by $self->doRouteDjikstra
+        # Called by $self->doRouteDijkstra
         # Get a list of nodes surrounding the current one
         # In this function, the current node corresponds to a room tag. We look up this node in the
         #   hash of GA::Obj::Route objects we created earlier to find all the connecting nodes
@@ -18270,7 +20961,7 @@
         if (! defined $currentNode || ! defined $routePathHashRef || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->getSurrounding_routeDjikstra',
+                $self->_objClass . '->getSurrounding_routeDijkstra',
                 @_,
             );
         }
@@ -20219,6 +22910,41 @@
         return $number;
     }
 
+    sub findRegionmap {
+
+        # Can be called by anything
+        # Given the ->number of a region model object (GA::ModelObj::Region), returns the equivalent
+        #   regionmap object (GA::Obj::Regionmap)
+        #
+        # Expected arguments
+        #   $number     - The number of a region model object
+        #
+        # Return values
+        #   'undef' on improper arguments or if no matching regionmap is found
+        #   Otherwise returns the matching GA::Obj::Regionmap
+
+        my ($self, $number, $check) = @_;
+
+        # Local variables
+        my $regionObj;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->findRegionmap', @_);
+        }
+
+        $regionObj = $self->ivShow('regionModelHash', $number);
+        if (! $regionObj) {
+
+            return undef;
+
+        } else {
+
+            return $self->ivShow('regionmapHash', $regionObj->name);
+        }
+    }
+
     sub reversePath {
 
         # Attempts to convert a path, consisting of a list of directions, into the opposite path
@@ -20539,8 +23265,8 @@
 
         # Local variables
         my (
-            $departRoomObj, $arriveRoomObj, $regionObj, $regionmapObj, $mapDir,
-            $listRef, $xPos, $yPos, $zPos, $xVector, $yVector, $zVector, $count,
+            $departRoomObj, $arriveRoomObj, $regionmapObj, $mapDir, $listRef, $xPos, $yPos, $zPos,
+            $xVector, $yVector, $zVector, $count,
             %vectorHash,
         );
 
@@ -20571,8 +23297,7 @@
         $departRoomObj = $self->ivShow('modelHash', $exitObj->parent);
         $arriveRoomObj = $self->ivShow('modelHash', $exitObj->destRoom);
         # Get the regionmap to check
-        $regionObj = $self->ivShow('modelHash', $departRoomObj->parent);
-        $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $self->findRegionmap($departRoomObj->parent);
 
         # Import the vector hash, in the form
         #   %vectorHash         => {
@@ -20694,6 +23419,26 @@
 
     # Definitely keep
 
+    sub set_adjacentMode {
+
+        my ($self, $mode, $count, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $mode || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_adjacentMode', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('adjacentMode', $mode);
+        if (defined $count) {
+
+            $self->ivPoke('adjacentCount', $count);
+        }
+
+        return 1;
+    }
+
     sub set_autoCompareMax {
 
         my ($self, $number, $check) = @_;
@@ -20812,6 +23557,21 @@
         # (No improper arguments to check)
 
         $self->ivPoke('buttonSetList', @list);
+
+        return 1;
+    }
+
+    sub set_exitAltDir {
+
+        my ($self, $exitObj, $string, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $exitObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_exitAltDir', @_);
+        }
+
+        $exitObj->ivPoke('altDir', $string);
 
         return 1;
     }
@@ -21109,6 +23869,28 @@
             $self->ivPoke('paintAllRoomsFlag', TRUE);
         } else {
             $self->ivPoke('paintAllRoomsFlag', FALSE);
+        }
+
+        return 1;
+    }
+
+    sub set_quickPaintMultiFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_quickPaintMultiFlag',
+                @_,
+            );
+        }
+
+        if ($flag) {
+            $self->ivPoke('quickPaintMultiFlag', TRUE);
+        } else {
+            $self->ivPoke('quickPaintMultiFlag', FALSE);
         }
 
         return 1;
@@ -21413,6 +24195,8 @@
         { $_[0]->{defaultRandomExitColour} }
     sub defaultImpassableExitColour
         { $_[0]->{defaultImpassableExitColour} }
+    sub defaultMysteryExitColour
+        { $_[0]->{defaultMysteryExitColour} }
     sub defaultCheckedDirColour
         { $_[0]->{defaultCheckedDirColour} }
     sub defaultDragExitColour
@@ -21480,6 +24264,8 @@
         { $_[0]->{randomExitColour} }
     sub impassableExitColour
         { $_[0]->{impassableExitColour} }
+    sub mysteryExitColour
+        { $_[0]->{mysteryExitColour} }
     sub checkedDirColour
         { $_[0]->{checkedDirColour} }
     sub dragExitColour
@@ -21682,6 +24468,10 @@
     sub checkableDirMode
         { $_[0]->{checkableDirMode} }
 
+    sub adjacentMode
+        { $_[0]->{adjacentMode} }
+    sub adjacentCount
+        { $_[0]->{adjacentCount} }
     sub updateBoundaryHash
         { my $self = shift; return %{$self->{updateBoundaryHash}}; }
     sub deleteBoundaryHash
@@ -21704,6 +24494,8 @@
         { my $self = shift; return @{$self->{constPainterIVList}}; }
     sub paintAllRoomsFlag
         { $_[0]->{paintAllRoomsFlag} }
+    sub quickPaintMultiFlag
+        { $_[0]->{quickPaintMultiFlag} }
 
     sub searchMaxMatches
         { $_[0]->{searchMaxMatches} }

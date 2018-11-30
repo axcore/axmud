@@ -97,6 +97,8 @@
             #   (type = 'www')
             #   http://deathmud.org         - a URL opened by GA::Client->browserCmd (anything
             #                                   matching GA::Client->constUrlRegex)
+            #   deathmud.org                - a URL opened by GA::Client->browserCmd (anything
+            #                                   matching GA::Client->constShortUrlRegex)
             #
             #   (type = 'mail')
             #   mailto:god@deathmud.org     - an email sent by GA::Client->emailCmd

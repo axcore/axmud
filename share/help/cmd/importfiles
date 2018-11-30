@@ -17,6 +17,8 @@ imf / importfiles             Imports a file (or files)
          the data files already exist, they are replaced.
       The config file is never exported or imported (because it contains data
          mostly relevant only to your current computer).
+
+      See also the help for ';mergemodel'.
  
    User commands:
       imf / importfile / importfiles

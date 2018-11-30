@@ -737,8 +737,13 @@
                 # (Hook data: the current room's number)
                 'map_room'              => 1,
                 # Fired by GA::Obj::Map->setCurrentRoom when the automapper's current room is reset
+                #   (does fire when the Locator task resets)
                 # (Hook data: the previous current room's number, or 0 if not known)
                 'map_no_room'           => 1,
+                # Fired by GA::Obj::Map->setCurrentRoom when the automapper's current room is reset
+                #   (doesn't fire when the Locator task resets)
+                # (Hook data: the previous current room's number, or 0 if not known)
+                'map_lost'              => 1,
                 # Fired by GA::Obj::Map->setCurrentRoom when auto-rescue mode is activated
                 # (Hook data: the name of the temporary region created)
                 'map_rescue_on'         => 1,

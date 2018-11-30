@@ -3762,7 +3762,7 @@
             return $self->improper($session, $inputString);
         }
 
-        # For macros, the stimulus can be one of Axmud's standard keycodes (like 'F5') or a keycode
+        # For macros, the stimulus can be one of Axmud's standard keycodes (like 'f5') or a keycode
         #   string (like 'shift f5').
         # Keycodes in a keycode string must be in a given order (i.e. 'ctrl shift f5', not
         #   'shift ctrl f5' or even 'f5 shift ctrl'). Change the order of words in the keycode
@@ -4250,7 +4250,7 @@
             );
         }
 
-        # For macros, the stimulus can be one of Axmud's standard keycodes (like 'F5') or a keycode
+        # For macros, the stimulus can be one of Axmud's standard keycodes (like 'f5') or a keycode
         #   string (like 'shift f5').
         # Keycodes in a keycode string must be in a given order (i.e. 'ctrl shift f5', not
         #   'shift ctrl f5' or even 'f5 shift ctrl'). Change the order of words in the keycode
@@ -9050,7 +9050,7 @@
 
     sub addSimpleList {
 
-        # Adds a GA::Gtk::Simple::List at the specified position in the window's Gtk2::Table
+        # Adds a GA::Obj::Simple::List at the specified position in the window's Gtk2::Table
         #
         # Example calls:
         #   my $slWidget = $self->addSimpleList($table, 'some_IV', \@columnList,
@@ -9064,7 +9064,7 @@
         #   $columnListRef  - Reference to a list of column headings and types, in the form
         #                       ('heading', 'column_type', 'heading', 'column_type'...)
         #                   - 'column_type' is one of the column types specified by
-        #                       GA::Gtk::Simple::List, e.g. 'scalar', 'int'
+        #                       GA::Obj::Simple::List, e.g. 'scalar', 'int'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #                   - The position of the simple list in the table
         #
@@ -9075,7 +9075,7 @@
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise the GA::Gtk::Simple::List created
+        #   Otherwise the GA::Obj::Simple::List created
 
         my (
             $self, $table, $iv, $columnListRef, $leftAttach, $rightAttach, $topAttach,
@@ -9128,7 +9128,7 @@
         $scroller->set_border_width(0);
         $scroller->set_size_request($width, $height);
 
-        my $slWidget = Games::Axmud::Gtk::Simple::List->new(@columnList);
+        my $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
         $scroller->add($slWidget);
 
         # No interactive searches required
@@ -10170,7 +10170,7 @@
 
     sub addSimpleListButtons_listIV {
 
-        # Adds four standard buttons used with GA::Gtk::Simple::List widgets, when they're
+        # Adds four standard buttons used with GA::Obj::Simple::List widgets, when they're
         #   displaying a list IV. The buttons are 'Add', 'Delete', 'Reset' and 'Clear'
         # NB The ->signal_connect method for the 'Add' button must be specified by the calling
         #   function
@@ -10180,7 +10180,7 @@
         #
         # Expected arguments
         #   $table      - The tab's Gtk2::Table object
-        #   $slWidget   - The GA::Gtk::Simple::List object on which the buttons will act
+        #   $slWidget   - The GA::Obj::Simple::List object on which the buttons will act
         #   $iv         - The list IV in $self->editObj storing the data being edited
         #   $rowNumber  - On the current tab's table, the row on which the buttons are put
         #   $columns    - The number of columns. For a straightforward list, 1, but many IVs
@@ -10296,7 +10296,7 @@
 
     sub addSimpleListButtons_hashIV {
 
-        # Adds four standard buttons used with GA::Gtk::Simple::List widgets, when they're
+        # Adds four standard buttons used with GA::Obj::Simple::List widgets, when they're
         #   displaying a hash IV. The buttons are 'Add', 'Delete', 'Reset' and 'Clear'
         # NB The ->signal_connect method for the 'Add' button must be specified by the calling
         #   function
@@ -10306,7 +10306,7 @@
         #
         # Expected arguments
         #   $table      - The tab's Gtk2::Table object
-        #   $slWidget   - The GA::Gtk::Simple::List object on which the buttons will act
+        #   $slWidget   - The GA::Obj::Simple::List object on which the buttons will act
         #   $iv         - The hash IV in $self->editObj storing the data being edited
         #   $rowNumber  - On the current tab's table, the row on which the buttons are put
         #
@@ -10407,11 +10407,11 @@
 
     sub refreshList_listIV {
 
-        # Standard function for refreshing (or initialising) GA::Gtk::Simple::List widgets when they
+        # Standard function for refreshing (or initialising) GA::Obj::Simple::List widgets when they
         #   are displaying a list in two columns
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns. Should be 2; this argument is retained for
         #                   consistency with other functions
         #   $iv         - The IV being displayed in the simple list
@@ -10494,11 +10494,11 @@
 
     sub refreshList_hashIV {
 
-        # Standard function for refreshing (or initialising) GA::Gtk::Simple::List widgets, when
+        # Standard function for refreshing (or initialising) GA::Obj::Simple::List widgets, when
         #   they're displaying a hash in two columns
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns. Should be 2; this argument is retained for
         #                   consistency with other functions
         #   $iv         - The IV being displayed in the simple list
@@ -10640,11 +10640,11 @@
 
     sub resetListData {
 
-        # Replaces the data stored in a GA::Gtk::Simple::List with the data stored in the specified
+        # Replaces the data stored in a GA::Obj::Simple::List with the data stored in the specified
         #   list
         #
         # Expected arguments
-        #   $slWidget   - Reference to a GA::Gtk::Simple::List
+        #   $slWidget   - Reference to a GA::Obj::Simple::List
         #   $listRef    - Reference to a list which contains the replacement data
         #   $number     - The list is split into groups (e.g. the elements of
         #                   GA::Profile::World->barPatternList are split into groups of 6); $number
@@ -10694,11 +10694,11 @@
 
     sub resetSortListData {
 
-        # Replaces the data stored in a GA::Gtk::Simple::List with the data stored in the specified
+        # Replaces the data stored in a GA::Obj::Simple::List with the data stored in the specified
         #   list which we assume represents a hash in the form (key, value, key, value...)
         #
         # Expected arguments
-        #   $slWidget   - Reference to a GA::Gtk::Simple::List
+        #   $slWidget   - Reference to a GA::Obj::Simple::List
         #   $listRef    - Reference to a list which contains the replacement data
         #
         # Return values
@@ -10747,7 +10747,7 @@
         # Get items of data from specified cells in the currently selected row of a simple list
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   @columnList - A list of column numbers on the simple list, e.g. the list (0, 2, 3)
         #                   represents the first, third and fourth columns.
         #
@@ -11091,7 +11091,7 @@
 
     sub updateListDataWithKey {
 
-        # Can be called by any tab function to update the data in a GA::Gtk::Simple::List when it is
+        # Can be called by any tab function to update the data in a GA::Obj::Simple::List when it is
         #   storing data in two columns representing the contents of a hash
         # The first column is the key, the second column its corresponding value
         # If the key already exists in the list, it is replaced; otherwise a new key-value pair is
@@ -11099,7 +11099,7 @@
         # If the key is not defined or an empty string, it isn't added to the simple list
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List to modify
+        #   $slWidget   - The GA::Obj::Simple::List to modify
         #   $key        - The key to add to the list, which will eventually be stored as a hash
         #   $value      - Its corresponding value
         #
@@ -11127,7 +11127,7 @@
             return undef;
         }
 
-        # Convert the data stored in the GA::Gtk::Simple::List into a hash
+        # Convert the data stored in the GA::Obj::Simple::List into a hash
         %hash = $self->convertListDataToHash($slWidget);
 
         # Add the key-value pair
@@ -11136,7 +11136,7 @@
         # Get a list of keys in the hash, so we can sort it alphabetically
         @list = sort {lc($a) cmp lc($b)} (keys %hash);
 
-        # Reset the GA::Gtk::Simple::List
+        # Reset the GA::Obj::Simple::List
         @{$slWidget->{data}} = ();
 
         foreach my $sortedKey (@list) {
@@ -11149,13 +11149,13 @@
 
     sub findKeyInListData {
 
-        # Can be called by any tab function to check the data in a GA::Gtk::Simple::List when it is
+        # Can be called by any tab function to check the data in a GA::Obj::Simple::List when it is
         #   storing data in two columns representing the contents of a hash
         # The first column is the key, the second column its corresponding value
         # Checks whether the specified key exists in list's data
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List to modify
+        #   $slWidget   - The GA::Obj::Simple::List to modify
         #   $key        - The key to add to the list's data
         #
         # Return values
@@ -11184,7 +11184,7 @@
             return undef;
         }
 
-        # Convert the data stored in the GA::Gtk::Simple::List into a hash
+        # Convert the data stored in the GA::Obj::Simple::List into a hash
         %hash = $self->convertListDataToHash($slWidget);
 
         # See whether the key exists
@@ -11197,11 +11197,11 @@
 
     sub convertListDataToHash {
 
-        # Can be called by any tab function to convert the data in a GA::Gtk::Simple::List (in which
+        # Can be called by any tab function to convert the data in a GA::Obj::Simple::List (in which
         #   data is stored in two columns) into a hash
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List to use
+        #   $slWidget   - The GA::Obj::Simple::List to use
         #
         # Return values
         #   An empty hash on improper arguments
@@ -11233,11 +11233,11 @@
 
     sub storeListData {
 
-        # Can be called by any tab function to store the data in a GA::Gtk::Simple::List in
+        # Can be called by any tab function to store the data in a GA::Obj::Simple::List in
         #   $self->editHash
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List to use
+        #   $slWidget   - The GA::Obj::Simple::List to use
         #   $iv         - The name of the instance variable in $self->editHash where the list is
         #                   stored
         #
@@ -11270,10 +11270,10 @@
     sub storeListColumnInList {
 
         # Can be called by any tab function to store the data from a single column in a
-        #   GA::Gtk::Simple::List as a list in $self->editHash
+        #   GA::Obj::Simple::List as a list in $self->editHash
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List to use
+        #   $slWidget   - The GA::Obj::Simple::List to use
         #   $iv         - The name of the instance variable in $self->editHash in which the column's
         #                   data is stored
         #   $column     - The number of the chosen column
@@ -11310,13 +11310,13 @@
 
     sub storeListDataInHash {
 
-        # Can be called by any tab function to store the data in a GA::Gtk::Simple::List in
+        # Can be called by any tab function to store the data in a GA::Obj::Simple::List in
         #   $self->editHash
         # This is a companion function to $self->storeListData (which stores the data as a list);
         #   this function stores the data as a hash
         #
         # Expected arguments
-        #   $slWidget   - Reference to a GA::Gtk::Simple::List
+        #   $slWidget   - Reference to a GA::Obj::Simple::List
         #   $iv         - The name of the instance variable in $self->editHash where the hash is
         #                   stored
         #
@@ -11629,7 +11629,7 @@
         # Called by $self->privateDataTab to refresh the simple list
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns
         #   $hashIV         - The hash IV being edited
         #
@@ -11995,10 +11995,10 @@
 
     sub objects1Tab_refreshList {
 
-        # Called by $self->objects1Tab to reset the GA::Gtk::Simple::List
+        # Called by $self->objects1Tab to reset the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget       - The GA::Gtk::Simple::List
+        #   $slWidget       - The GA::Obj::Simple::List
         #   $columns        - The number of columns in the list
         #
         # Optional arguments
@@ -12338,10 +12338,10 @@
 
     sub objects2Tab_refreshList {
 
-        # Called by $self->objects2Tab to reset the GA::Gtk::Simple::List
+        # Called by $self->objects2Tab to reset the GA::Obj::Simple::List
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List
+        #   $slWidget   - The GA::Obj::Simple::List
         #   $columns    - The number of columns in the list
         #
         # Optional arguments
@@ -13926,7 +13926,7 @@
 
         # Create a simple list with two columns representing a hash, for which the user
         #   supplies key-value pairs
-        my $slWidget2 = Games::Axmud::Gtk::Simple::List->new(
+        my $slWidget2 = Games::Axmud::Obj::Simple::List->new(
             # Give the first column a minimum width; don't want the columns moving around too
             #   much when the user enter new key-value pairs
             'Key           ' => 'text',
@@ -14163,11 +14163,11 @@
 
         # Called by $self->promptHash when we want to edit a hash IV in $self->editObj or
         #   $self->editHash
-        # The calling function had created a GA::Gtk::Simple::List; this function's job is to fill
+        # The calling function had created a GA::Obj::Simple::List; this function's job is to fill
         #   it with data
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List where the IV's data is displayed
+        #   $slWidget   - The GA::Obj::Simple::List where the IV's data is displayed
         #   $iv         - The IV being edited
         #
         # Return values
@@ -14206,7 +14206,7 @@
             %dataHash = %$hashRef;
         }
 
-        # Update the GA::Gtk::Simple::List (which currently stores no data)
+        # Update the GA::Obj::Simple::List (which currently stores no data)
         foreach my $key (sort {lc($a) cmp lc($b)} (keys %dataHash)) {
 
             push (
@@ -14229,11 +14229,11 @@
         #               iv3     => hash_reference_to_edit,
         #       }
         #
-        # The calling function had created a GA::Gtk::Simple::List to display
+        # The calling function had created a GA::Obj::Simple::List to display
         #   hash_reference_to_edit; this function's job is to fill it with data
         #
         # Expected arguments
-        #   $slWidget   - The GA::Gtk::Simple::List where the IV's data is displayed
+        #   $slWidget   - The GA::Obj::Simple::List where the IV's data is displayed
         #   $iv         - The IV being edited ('myHash' in the example above)
         #   $key        - The IV is a hash. $key is a key in that hash; $key's corresponding value
         #                   is the reference to the hash which we display in the simple list ('iv3'
@@ -14275,7 +14275,7 @@
             %hash = %$hashRef;
         }
 
-        # Update the GA::Gtk::Simple::List (which currently stores no data)
+        # Update the GA::Obj::Simple::List (which currently stores no data)
         if (exists $hash{$key} && defined $hash{$key}) {
 
             $dataHashRef = $hash{$key};
@@ -15643,8 +15643,8 @@
 
         } elsif ($type eq 'keycode') {
 
-            # Must check it's a valid keycode
-            if (! $axmud::CLIENT->currentKeycodeObj->ivExists('keycodeHash', $value)) {
+            # Must check it's a valid standard keycode
+            if (! $axmud::CLIENT->ivExists('constKeycodeHash', $value)) {
 
                 return $session->writeWarning(
                     'Invalid attribute value for \'' . $attrib . '\' (not ' . $axmud::NAME_ARTICLE
@@ -16083,7 +16083,7 @@
                 my ($interfaceObj, $newObj);
 
                 $interfaceObj = $hash{$interfaceName};
-                $newObj = $interfaceObj->clone();
+                $newObj = $interfaceObj->clone($profName);
                 if (! $newObj) {
 
                     $session->writeWarning(
@@ -16101,7 +16101,7 @@
             if (%cloneHash) {
 
                 # Set this object's IV
-                $self->{interfaceHash} = \%cloneHash;
+                $clone->{interfaceHash} = \%cloneHash;
             }
         }
 
@@ -22873,204 +22873,6 @@
         return $response;
     }
 
-    sub showKeycodeDialogue {
-
-        # Called by GA::Cmd::GetKeycode->do
-        # Allows the user to test system keycodes, and store them in the current keycode object (if
-        #   desired)
-        #
-        # Expected arguments
-        #   $session        - The calling GA::Session
-        #
-        # Return values
-        #   'undef' on improper arguments, if the user closes the 'dialogue' window or if no changes
-        #       to the current keycode object are made
-        #   1 otherwise
-
-        my ($self, $session, $check) = @_;
-
-        # Local variables
-        my (
-            $spacing, $keycodeObj, $response, $keycode,
-            %addHash, %replaceHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $session || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->showKeycodeDialogue', @_);
-        }
-
-        # If an earlier call to $self->showBusyWin created a popup window, close it (otherwise it'll
-        #   be visible above the new dialogue window)
-        if ($axmud::CLIENT->busyWin) {
-
-            $self->closeDialogueWin($axmud::CLIENT->busyWin);
-        }
-
-        # Set the correct spacing size for 'dialogue' windows
-        $spacing = $axmud::CLIENT->constFreeSpacingPixels;
-        # Import the current keycode object (for convenience)
-        $keycodeObj = $axmud::CLIENT->currentKeycodeObj;
-
-        # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::Dialog->new(
-            'Get keycodes',
-            $self->winWidget,
-            [qw/modal destroy-with-parent/],
-            'gtk-cancel' => 'reject',
-            'gtk-ok'     => 'accept',
-        );
-
-        $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
-
-        # 'Dialogue' window signals
-        $dialogueWin->signal_connect('delete-event' => sub {
-
-            $dialogueWin->destroy();
-            $self->restoreFocus();
-
-            # Return 'undef' to show no changes were made to the current keycode object
-            return undef;
-        });
-
-        # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
-        # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
-        my $vBox2 = $self->addDialogueIcon($vBox);
-
-        my $table = Gtk2::Table->new(5, 3, FALSE);
-        $vBox2->pack_start($table, 0, 0, $spacing);
-        $table->set_row_spacings($spacing);
-
-        my $label = Gtk2::Label->new;
-        $table->attach_defaults($label, 0, 3, 0, 1);
-        $label->set_alignment(0, 0);
-        $label->set_markup("<i>Press any key to get a system keycode</i>");
-
-        my $label2 = Gtk2::Label->new;
-        $table->attach_defaults($label2, 0, 3, 1, 2);
-        $label2->set_alignment(0.5, 0);     # Centred
-
-        my $label3 = Gtk2::Label->new;
-        $table->attach_defaults($label3, 0, 3, 2, 3);
-        $label3->set_alignment(0, 0);
-        $label3->set_markup(
-            "<i>(Optional) Select the equivalent " . $axmud::SCRIPT . " keycode and click\n"
-            . "'Add' / 'Replace' to update the current keycode object</i>",
-        );
-
-        my $comboBox = Gtk2::ComboBox->new_text();
-        $table->attach_defaults($comboBox, 0, 1, 3, 4);
-        # Fill the combobox with standard keycodes
-        foreach my $item ($axmud::CLIENT->constKeycodeList) {
-
-            $comboBox->append_text($item);
-        }
-        $comboBox->set_active(FALSE);     # Make firstcode visible
-        $comboBox->set_sensitive(FALSE);  # Combo starts insensitive
-
-        my $button = Gtk2::Button->new('Add');
-        $table->attach_defaults($button, 1, 2, 3, 4);
-        $button->set_sensitive(FALSE);    # Button starts insensitive
-
-        my $button2 = Gtk2::Button->new('Replace');
-        $table->attach_defaults($button2, 2, 3, 3, 4);
-        $button2->set_sensitive(FALSE);   # Button starts insensitive
-
-        my $label4 = Gtk2::Label->new;
-        $table->attach_defaults($label4, 0, 3, 4, 5);
-        $label4->set_alignment(0, 0);
-        $label4->set_markup("<i>(No changes made yet)</i>");
-
-        # Signal connects
-        $dialogueWin->signal_connect('key-press-event' => sub {
-
-            my ($widget, $event) = @_;
-
-            $keycode = Gtk2::Gdk->keyval_name($event->keyval);
-            $label2->set_markup("<b>$keycode</b>");
-
-            # Make the combobox and the 'Add'/'Replace' buttons clickable
-            $comboBox->set_sensitive(TRUE);
-            $button->set_sensitive(TRUE);
-            $button2->set_sensitive(TRUE);
-        });
-
-        $button->signal_connect('clicked' => sub {
-
-            # 'Add' button
-            my $standard = $comboBox->get_active_text();
-
-            $addHash{$standard} = $keycode;
-
-            # Add text to the bottom label
-            $label4->set_markup("<i>Click 'Cancel' to discard changes, or 'OK' to keep them</i>");
-        });
-
-        $button2->signal_connect('clicked' => sub {
-
-            # 'Replace' button
-            my $standard = $comboBox->get_active_text();
-
-            $replaceHash{$standard} = $keycode;
-
-            # Add text to the bottom label
-            $label4->set_markup("<i>Click 'Cancel' to discard changes, or 'OK' to keep them</i>");
-        });
-
-        # Display the dialogue
-        $vBox->show_all();
-
-        # If the user clicked 'cancel', $response will be 'reject'
-        # Otherwise, user clicked 'ok', and we might have to modify the current keycode object
-        $response = $dialogueWin->run();
-        if ($response eq 'accept' && (%addHash || %replaceHash)) {
-
-            # Apply changes from the 'Replace' button
-            foreach my $standard (keys %replaceHash) {
-
-                my $keycode = $replaceHash{$standard};
-
-                # Replace the existing system keycode
-                $keycodeObj->setValue($session, $standard, $keycode);
-                # We ignore the same keycode modified with the 'Add' button
-                if (exists $addHash{$standard}) {
-
-                    delete $addHash{$standard};
-                }
-            }
-
-            # Apply changes from the 'Add' button
-            foreach my $standard (keys %addHash) {
-
-                my ($keycode, $already);
-
-                $keycode = $addHash{$standard};
-
-                # Add another system keycode to those already stored
-                $already = $keycodeObj->getKeycode($standard);
-                $keycodeObj->setValue($session, $standard, $already . ' ' . $keycode);
-            }
-
-            $dialogueWin->destroy();
-            $self->restoreFocus();
-
-            # Return 1 to show changes were made to the current keycode object
-            return 1;
-
-        } else {
-
-            $dialogueWin->destroy();
-            $self->restoreFocus();
-
-            # Return 'undef' to show no changes were made to the current keycode object
-            return undef;
-        }
-    }
-
     sub showFileChooser {
 
         # Can be called by any function
@@ -24013,7 +23815,7 @@
 
             $comboBox->append_text($line);
         }
-        $comboBox->set_active(FALSE);
+        $comboBox->set_active(0);
 
         # Display the 'dialogue' window. Without this combination of Gtk calls, the window is not
         #   consistently active (don't know why this works; it just does)
@@ -24289,7 +24091,7 @@
                 $combo->append_text($line);
             }
 
-            $combo->set_active(FALSE);
+            $combo->set_active(0);
         }
 
         # Second label (optional) and combo (not optional)
@@ -24314,7 +24116,7 @@
                 $combo2->append_text($line);
             }
 
-            $combo2->set_active(FALSE);
+            $combo2->set_active(0);
         }
 
         # Display the 'dialogue' window
@@ -24370,6 +24172,9 @@
         #                       maximum)
         #   $reverseFlag    - If set to TRUE, shows a combo above an entry box; if set to FALSE (or
         #                       'undef'), shows an entry above a combo box
+        #   $quickFlag      - If set to TRUE, pressing the ENTER key while the cursor is in the
+        #                       entry box closes the window; FALSE or 'undef' if the user must
+        #                       actually click the 'OK' or 'Cancel' buttons
         #
         # Return values
         #   An empty list on improper arguments or if the user doesn't enter some text in the entry
@@ -24377,7 +24182,10 @@
         #   Otherwise a list of two elements, containing the contents of the entry box and the
         #       active contents of the combo box
 
-        my ($self, $title, $labelText, $labelText2, $listRef, $maxChars, $reverseFlag, $check) = @_;
+        my (
+            $self, $title, $labelText, $labelText2, $listRef, $maxChars, $reverseFlag, $quickFlag,
+            $check,
+        ) = @_;
 
         # Local variables
         my (
@@ -24482,7 +24290,7 @@
                 $combo->append_text($line);
             }
 
-            $combo->set_active(FALSE);
+            $combo->set_active(0);
         }
 
         # Arrange the entry and combo in the specified order
@@ -24519,6 +24327,18 @@
             $vBox2->pack_start($entry, FALSE, FALSE, $spacing);
         }
 
+        if ($quickFlag) {
+
+            $entry->signal_connect('activate' => sub {
+
+                $responseText = $entry->get_text();
+                $responseText2 = $combo->get_active_text();
+
+                # Destroy the window
+                $dialogueWin->destroy();
+            });
+        }
+
         # Display the 'dialogue' window. Without this combination of Gtk calls, the window is not
         #   consistently active (don't know why this works; it just does)
         $dialogueWin->show_all();
@@ -24528,7 +24348,18 @@
         # Get the response. If the user clicked 'cancel', $response will be 'reject'
         # Otherwise, user clicked 'ok', and we need to get the contents of the two boxes
         $response = $dialogueWin->run();
-        if ($response eq 'accept') {
+        if (defined $responseText) {
+
+            # (User pressed their ENTER key when $quickFlag is TRUE)
+
+            # Destroy the window
+            $dialogueWin->destroy();
+            $self->restoreFocus();
+
+            # Return the response
+            return ($responseText, $responseText2);
+
+        } elsif ($response eq 'accept' || defined $responseText) {
 
             $responseText = $entry->get_text();
             $responseText2 = $combo->get_active_text();

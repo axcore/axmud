@@ -36,7 +36,7 @@ either replace it with the 32-bit edition, or use the installer described above
 
 First, open a command prompt and get some modules from CPAN:
 
-    cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Regexp::IPv6
+    cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
 
 Then get the following module:
 
@@ -74,7 +74,7 @@ Axmud is known to work with both 32-bit and 64-bit editions of ActivePerl.
 First, open a command prompt and get some modules from CPAN:
 
     ppm install dmake
-    ppm install Archive::Extract File::ShareDir::Install IO::Socket::INET6 IPC::Run Net::OpenSSH Regexp::IPv6
+    ppm install Archive::Extract File::ShareDir::Install IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6 
 
 Now we need some modules from the Sisyphusion repo.
 
@@ -196,7 +196,7 @@ Make sure you have the right dependencies:
     sudo pacman -S gtk2 libgnomecanvas libwnck
     sudo pacman -S perl-cpanplus-dist-arch
     setupdistarch
-    sudo cpanp i Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Regexp::IPv6
+    sudo cpanp i Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -233,11 +233,11 @@ Make sure you have the right dependencies:
 
     sudo apt-get update
     sudo apt-get install build-essential libcanberra-gtk-module libgnomecanvas2-dev libwnck-dev
-    sudo cpan install Archive::Extract File::HomeDir File::ShareDir File::ShareDir::Install Gnome2::Canvas Gnome2::Wnck JSON Net::OpenSSH
+    sudo cpan install Archive::Extract File::HomeDir File::ShareDir File::ShareDir::Install Gnome2::Canvas Gnome2::Wnck JSON Net::OpenSSH Path::Tiny
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
-    sudo apt-get install libsox-fmt-mp3 timidity
+    sudo apt-get install libsox-fmt-all timidity
 
 Then install Axmud itself:
 
@@ -275,7 +275,7 @@ Make sure you have the right dependencies:
     sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
     sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
     sudo dnf install cpan
-    sudo dnf install 'perl(Archive::Extract)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk2)' 'perl(Gnome2::Canvas)' 'perl(Gnome2::Wnck)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
+    sudo dnf install 'perl(Archive::Extract)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk2)' 'perl(Gnome2::Canvas)' 'perl(Gnome2::Wnck)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -319,7 +319,7 @@ for example:
 Make sure you have the right dependencies:
 
     sudo pacman -S base-devel gtk2 libgnomecanvas libwnck cpanminus
-    sudo cpanm Archive::Extract File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Regexp::IPv6
+    sudo cpanm Archive::Extract File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
     sudo cpanm Archive::Zip --force
 
 If you want to use sound effects and/or text-to-speech, you should also type:
@@ -361,7 +361,7 @@ Make sure you have the right dependencies:
 
     sudo zypper install --type pattern devel_basis
     sudo zypper install perl-Glib perl-Gtk2 perl-Gnome2-Canvas perl-Gnome2-Wnck
-    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Regexp::IPv6
+    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -408,7 +408,7 @@ Now make sure you have the right dependencies:
 
     sudo yum groupinstall 'Development Tools'
     sudo yum install epel-release lignomecanvas libwnck
-    sudo yum install 'perl(Archive::Extract)' 'perl(Archive::Tar)' 'perl(Archive::Zip)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk2)' 'perl(Gnome2::Canvas)' 'perl(Gnome2::Wnck)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
+    sudo yum install 'perl(Archive::Extract)' 'perl(Archive::Tar)' 'perl(Archive::Zip)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk2)' 'perl(Gnome2::Canvas)' 'perl(Gnome2::Wnck)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -448,7 +448,7 @@ Decompress the .tar.gz file:
 Make sure you have the right dependencies:
 
     sudo pkg install libgnomecanvas libwnck
-    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Regexp::IPv6
+    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 

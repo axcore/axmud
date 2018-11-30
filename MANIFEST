@@ -1,6 +1,7 @@
 CHANGES
 COPYING
 COPYING.LESSER
+datadir.cfg
 INSTALL
 lib/Games/Axmud.pm
 lib/Games/Axmud/Buffer.pm
@@ -10,18 +11,15 @@ lib/Games/Axmud/Cmd.pm
 lib/Games/Axmud/EditWin.pm
 lib/Games/Axmud/FixedWin.pm
 lib/Games/Axmud/Generic.pm
-lib/Games/Axmud/Gtk.pm
 lib/Games/Axmud/Interface.pm
 lib/Games/Axmud/InterfaceModel.pm
 lib/Games/Axmud/Mcp.pm
 lib/Games/Axmud/ModelObj.pm
 lib/Games/Axmud/Mxp.pm
-lib/Games/Axmud/Net.pm
 lib/Games/Axmud/Node.pm
 lib/Games/Axmud/Obj/Area.pm
 lib/Games/Axmud/Obj/Atcp.pm
 lib/Games/Axmud/Obj/BasicWorld.pm
-lib/Games/Axmud/Obj/BinomialHeap.pm
 lib/Games/Axmud/Obj/Blinker.pm
 lib/Games/Axmud/Obj/ChatContact.pm
 lib/Games/Axmud/Obj/ColourScheme.pm
@@ -36,7 +34,7 @@ lib/Games/Axmud/Obj/Gauge.pm
 lib/Games/Axmud/Obj/GaugeLevel.pm
 lib/Games/Axmud/Obj/Gmcp.pm
 lib/Games/Axmud/Obj/GridColour.pm
-lib/Games/Axmud/Obj/Keycode.pm
+lib/Games/Axmud/Obj/Heap.pm
 lib/Games/Axmud/Obj/Link.pm
 lib/Games/Axmud/Obj/Loop.pm
 lib/Games/Axmud/Obj/Map.pm
@@ -53,10 +51,12 @@ lib/Games/Axmud/Obj/RegionPath.pm
 lib/Games/Axmud/Obj/Repeat.pm
 lib/Games/Axmud/Obj/RoomFlag.pm
 lib/Games/Axmud/Obj/Route.pm
+lib/Games/Axmud/Obj/Simple.pm
 lib/Games/Axmud/Obj/SkillHistory.pm
 lib/Games/Axmud/Obj/Sound.pm
 lib/Games/Axmud/Obj/Tab.pm
 lib/Games/Axmud/Obj/Tablezone.pm
+lib/Games/Axmud/Obj/Telnet.pm
 lib/Games/Axmud/Obj/TextView.pm
 lib/Games/Axmud/Obj/Toolbar.pm
 lib/Games/Axmud/Obj/Tts.pm
@@ -170,6 +170,7 @@ share/docs/guide/img/ch04/viewer_tooltip.png
 share/docs/guide/img/ch07/edit_triggers.png
 share/docs/guide/img/ch07/status_interfaces.png
 share/docs/guide/img/ch07/trigger_attributes.png
+share/docs/guide/img/ch07/trigger_styles.png
 share/docs/guide/img/ch11/channels_task.png
 share/docs/guide/img/ch11/channels_task_2.png
 share/docs/guide/img/ch11/chat_task.png
@@ -212,12 +213,14 @@ share/docs/guide/img/ch15/locked_ornament.png
 share/docs/guide/img/ch15/map_modes.png
 share/docs/guide/img/ch15/match_many_rooms.png
 share/docs/guide/img/ch15/match_one_room.png
+share/docs/guide/img/ch15/mystery_ornament.png
 share/docs/guide/img/ch15/one_way_exit.png
 share/docs/guide/img/ch15/paint_toolbar.png
 share/docs/guide/img/ch15/path_problem1.png
 share/docs/guide/img/ch15/path_problem2.png
 share/docs/guide/img/ch15/pathfinding.png
 share/docs/guide/img/ch15/previous_room.png
+share/docs/guide/img/ch15/quick_toolbar.png
 share/docs/guide/img/ch15/region_exit_1.png
 share/docs/guide/img/ch15/region_exit_2.png
 share/docs/guide/img/ch15/region_list_1.png
@@ -553,7 +556,6 @@ share/help/cmd/addinitialplugin
 share/help/cmd/addinitialscript
 share/help/cmd/addinitialtask
 share/help/cmd/addinitialworkspace
-share/help/cmd/addkeycodeobject
 share/help/cmd/addlabelstyle
 share/help/cmd/addlistproperty
 share/help/cmd/addmacro
@@ -565,6 +567,7 @@ share/help/cmd/addplayercharacter
 share/help/cmd/addquest
 share/help/cmd/addrace
 share/help/cmd/addregion
+share/help/cmd/addrelative
 share/help/cmd/addroom
 share/help/cmd/addroute
 share/help/cmd/addscalarproperty
@@ -589,6 +592,7 @@ share/help/cmd/addzonemodel
 share/help/cmd/advance
 share/help/cmd/alert
 share/help/cmd/allocateexit
+share/help/cmd/alternativeexit
 share/help/cmd/applycolourscheme
 share/help/cmd/applywindowstorage
 share/help/cmd/asciibell
@@ -639,7 +643,6 @@ share/help/cmd/cloneconfig
 share/help/cmd/clonecustomprofile
 share/help/cmd/clonedictionary
 share/help/cmd/cloneguild
-share/help/cmd/clonekeycodeobject
 share/help/cmd/clonemission
 share/help/cmd/clonequest
 share/help/cmd/clonerace
@@ -685,7 +688,6 @@ share/help/cmd/deleteinitialplugin
 share/help/cmd/deleteinitialscript
 share/help/cmd/deleteinitialtask
 share/help/cmd/deleteinitialworkspace
-share/help/cmd/deletekeycodeobject
 share/help/cmd/deletelabelstyle
 share/help/cmd/deletemacro
 share/help/cmd/deleteminionstring
@@ -698,6 +700,7 @@ share/help/cmd/deletequest
 share/help/cmd/deleterace
 share/help/cmd/deleterecording
 share/help/cmd/deleteregion
+share/help/cmd/deleterelative
 share/help/cmd/deleteroom
 share/help/cmd/deleteroute
 share/help/cmd/deletesecondary
@@ -757,7 +760,6 @@ share/help/cmd/editguild
 share/help/cmd/editinitialtask
 share/help/cmd/editinstructionbuffer
 share/help/cmd/editinterfacemodel
-share/help/cmd/editkeycodeobject
 share/help/cmd/editlabelstyle
 share/help/cmd/editmission
 share/help/cmd/editmodel
@@ -804,7 +806,6 @@ share/help/cmd/fixwindow
 share/help/cmd/flashwindow
 share/help/cmd/freezetask
 share/help/cmd/getip
-share/help/cmd/getkeycode
 share/help/cmd/gmcp
 share/help/cmd/go
 share/help/cmd/grabwindow
@@ -851,6 +852,7 @@ share/help/cmd/listcontact
 share/help/cmd/listcontentslines
 share/help/cmd/listcustomprofile
 share/help/cmd/listcustomtask
+share/help/cmd/listdatadirectory
 share/help/cmd/listdictionary
 share/help/cmd/listdirection
 share/help/cmd/listdirectory
@@ -869,7 +871,6 @@ share/help/cmd/listinitialworkspace
 share/help/cmd/listinterfacemodel
 share/help/cmd/listkeycode
 share/help/cmd/listkeycodealternative
-share/help/cmd/listkeycodeobject
 share/help/cmd/listlabelstyle
 share/help/cmd/listmacro
 share/help/cmd/listminionstring
@@ -931,6 +932,7 @@ share/help/cmd/log
 share/help/cmd/login
 share/help/cmd/maxsession
 share/help/cmd/mcp
+share/help/cmd/mergemodel
 share/help/cmd/mission
 share/help/cmd/modelreport
 share/help/cmd/modifyalias
@@ -981,6 +983,7 @@ share/help/cmd/quick
 share/help/cmd/quickaddword
 share/help/cmd/quickhelp
 share/help/cmd/quickinput
+share/help/cmd/quicklabeldelete
 share/help/cmd/quicksoundeffect
 share/help/cmd/quit
 share/help/cmd/quitall
@@ -999,8 +1002,6 @@ share/help/cmd/resetapplication
 share/help/cmd/resetcounter
 share/help/cmd/resetgrid
 share/help/cmd/resetguildskills
-share/help/cmd/resetkeycode
-share/help/cmd/resetkeycodeobject
 share/help/cmd/resetlightlist
 share/help/cmd/resetlocatortask
 share/help/cmd/resetroom
@@ -1044,15 +1045,15 @@ share/help/cmd/setcommifymode
 share/help/cmd/setcustomday
 share/help/cmd/setcustommonth
 share/help/cmd/setcustomprofile
+share/help/cmd/setdatadirectory
 share/help/cmd/setdefaultwinmap
 share/help/cmd/setdictionary
 share/help/cmd/setdisplaybuffer
+share/help/cmd/setfacing
 share/help/cmd/setfavouriteworld
 share/help/cmd/setgrid
 share/help/cmd/setguild
 share/help/cmd/setinstructionbuffer
-share/help/cmd/setkeycode
-share/help/cmd/setkeycodeobject
 share/help/cmd/setlanguage
 share/help/cmd/setlayer
 share/help/cmd/setlife
@@ -1131,6 +1132,7 @@ share/help/cmd/togglemainwindow
 share/help/cmd/togglepalette
 share/help/cmd/togglepopup
 share/help/cmd/toggleshare
+share/help/cmd/toggleshortlink
 share/help/cmd/togglesigil
 share/help/cmd/togglewindowkey
 share/help/cmd/togglewindowstorage
@@ -2336,6 +2338,8 @@ share/icons/main/wizard.png
 share/icons/main/world_edit.png
 share/icons/map/icon_add.png
 share/icons/map/icon_add_large.png
+share/icons/map/icon_add_quick_flag.png
+share/icons/map/icon_add_quick_flag_large.png
 share/icons/map/icon_add_room_flag.png
 share/icons/map/icon_add_room_flag_large.png
 share/icons/map/icon_add_word.png
@@ -2456,6 +2460,8 @@ share/icons/map/icon_move_down.png
 share/icons/map/icon_move_down_large.png
 share/icons/map/icon_move_up.png
 share/icons/map/icon_move_up_large.png
+share/icons/map/icon_mystery_exit.png
+share/icons/map/icon_mystery_exit_large.png
 share/icons/map/icon_navigation.png
 share/icons/map/icon_navigation_large.png
 share/icons/map/icon_no_counts.png
@@ -2480,8 +2486,14 @@ share/icons/map/icon_pickable_exit.png
 share/icons/map/icon_pickable_exit_large.png
 share/icons/map/icon_quests.png
 share/icons/map/icon_quests_large.png
+share/icons/map/icon_quick_multi.png
+share/icons/map/icon_quick_multi_large.png
+share/icons/map/icon_quick_single.png
+share/icons/map/icon_quick_single_large.png
 share/icons/map/icon_remove.png
 share/icons/map/icon_remove_large.png
+share/icons/map/icon_remove_quick_flag.png
+share/icons/map/icon_remove_quick_flag_large.png
 share/icons/map/icon_remove_room_flag.png
 share/icons/map/icon_remove_room_flag_large.png
 share/icons/map/icon_reset_locator.png
@@ -2490,8 +2502,6 @@ share/icons/map/icon_reset_visits.png
 share/icons/map/icon_reset_visits_large.png
 share/icons/map/icon_search_model.png
 share/icons/map/icon_search_model_large.png
-share/icons/map/icon_select_all.png
-share/icons/map/icon_select_all_large.png
 share/icons/map/icon_set.png
 share/icons/map/icon_set_large.png
 share/icons/map/icon_set_visits.png
@@ -3070,6 +3080,7 @@ share/plugins/_wilderness_cmds.pm
 share/plugins/convertlpc.pm
 share/plugins/help/cmd/convertlpc
 share/plugins/help/cmd/wildempire
+share/plugins/help/task/README
 share/plugins/mcptest.pm
 share/plugins/mxpfilter.pm
 share/plugins/wilderness.pm

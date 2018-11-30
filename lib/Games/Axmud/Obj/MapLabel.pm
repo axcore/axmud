@@ -84,10 +84,15 @@
             #   are acceptable for multi-line labels; but the name must contain at least one non-
             #   space character
             name                        => $name,
-            # The label's number in the regionmap (set later)
+            # The label's number in the regionmap (set later by GA::Obj::Regionmap->storeLabel)
             number                      => undef,
             # The name of the regionmap to which this label belongs
             region                      => $region,
+            # An ID for the label, so the automapper window can tell apart labels from different
+            #   regions. The ID combines ->region and ->number, e.g. 'town_42' (set later by
+            #   GA::Obj::Regionmap->storeLabel)
+            id                          => undef,
+
             # The pixel at which the top-left corner of the label is drawn
             xPosPixels                  => $xPosPixels,
             yPosPixels                  => $yPosPixels,
@@ -185,6 +190,9 @@
         { $_[0]->{number} }
     sub region
         { $_[0]->{region} }
+    sub id
+        { $_[0]->{id} }
+
     sub xPosPixels
         { $_[0]->{xPosPixels} }
     sub yPosPixels

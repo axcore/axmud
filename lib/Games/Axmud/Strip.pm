@@ -708,13 +708,6 @@
             });
             $subMenu_loadFile->append($menuItem_loadFile_contacts);
 
-            my $menuItem_loadFile_keyCodes = Gtk2::MenuItem->new('_Keycodes file');
-            $menuItem_loadFile_keyCodes->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('load -k', $mode);
-            });
-            $subMenu_loadFile->append($menuItem_loadFile_keyCodes);
-
             my $menuItem_loadFile_dicts = Gtk2::MenuItem->new('_Dictionaries file');
             $menuItem_loadFile_dicts->signal_connect('activate' => sub {
 
@@ -875,13 +868,6 @@
             });
             $subMenu_saveFile->append($menuItem_saveFile_contacts);
 
-            my $menuItem_saveFile_keyCodes = Gtk2::MenuItem->new('_Keycodes file');
-            $menuItem_saveFile_keyCodes->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('save -k' . $forceSwitch, $mode);
-            });
-            $subMenu_saveFile->append($menuItem_saveFile_keyCodes);
-
             my $menuItem_saveFile_dicts = Gtk2::MenuItem->new('_Dictionaries file');
             $menuItem_saveFile_dicts->signal_connect('activate' => sub {
 
@@ -1032,14 +1018,14 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'import_files', $menuItem_importFile);
 
-        my $menuItem_exportAllFile = Gtk2::MenuItem->new('_Export all files...');
-        $menuItem_exportAllFile->signal_connect('activate' => sub {
-
-            $self->winObj->visibleSession->pseudoCmd('exportfiles', $mode);
-        });
-        $menuColumn_file->append($menuItem_exportAllFile);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'export_all_files', $menuItem_exportAllFile);
+#        my $menuItem_exportAllFile = Gtk2::MenuItem->new('_Export all files...');
+#        $menuItem_exportAllFile->signal_connect('activate' => sub {
+#
+#            $self->winObj->visibleSession->pseudoCmd('exportfiles', $mode);
+#        });
+#        $menuColumn_file->append($menuItem_exportAllFile);
+#        # (Requires a visible session whose status is 'connected' or 'offline')
+#        $self->ivAdd('menuItemHash', 'export_all_files', $menuItem_exportAllFile);
 
             # 'Export files' submenu
             my $subMenu_exportFile = Gtk2::Menu->new();
@@ -1132,13 +1118,6 @@
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -n', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_contacts);
-
-            my $menuItem_exportFile_keyCodes = Gtk2::MenuItem->new('_Keycodes file');
-            $menuItem_exportFile_keyCodes->signal_connect('activate' => sub {
-
-                $self->winObj->visibleSession->pseudoCmd('exportfiles -k', $mode);
-            });
-            $subMenu_exportFile->append($menuItem_exportFile_keyCodes);
 
             my $menuItem_exportFile_dicts = Gtk2::MenuItem->new('_Dictionaries file');
             $menuItem_exportFile_dicts->signal_connect('activate' => sub {
@@ -1391,36 +1370,6 @@
 
             $subMenu_exportData->append(Gtk2::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_exportData_keyCode = Gtk2::MenuItem->new('_Keycode object...');
-            $menuItem_exportData_keyCode->signal_connect('activate' => sub {
-
-                # Display a 'dialogue' window, so the user can choose a keycode object
-                my (
-                    $choice,
-                    @objList,
-                );
-
-                # Get an ordered list of all keycode objects
-                @objList = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('keycodeObjHash'));
-                if (@objList) {
-
-                    # Display the dialogue
-                    $choice = $self->winObj->showComboDialogue(
-                        'Export data',
-                        'Select a keycode object to export',
-                        FALSE,
-                        \@objList,
-                    );
-
-                    if ($choice) {
-
-                        # Export the data
-                        $self->winObj->visibleSession->pseudoCmd('exportdata -k ' . $choice, $mode);
-                    }
-                }
-            });
-            $subMenu_exportData->append($menuItem_exportData_keyCode);
-
             my $menuItem_exportData_dict = Gtk2::MenuItem->new('_Dictionary...');
             $menuItem_exportData_dict->signal_connect('activate' => sub {
 
@@ -1576,6 +1525,31 @@
         $menuColumn_file->append($menuItem_exportData);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'export_data', $menuItem_exportData);
+
+        $menuColumn_file->append(Gtk2::SeparatorMenuItem->new());   # Separator
+
+            # 'Backup data' submenu
+            my $subMenu_backupRestore = Gtk2::Menu->new();
+
+            my $menuItem_backupData = Gtk2::MenuItem->new('_Backup all data files');
+            $menuItem_backupData->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd('backupdata', $mode);
+            });
+            $subMenu_backupRestore->append($menuItem_backupData);
+
+            my $menuItem_restoreData = Gtk2::MenuItem->new('_Restore from backup...');
+            $menuItem_restoreData->signal_connect('activate' => sub {
+
+                $self->winObj->visibleSession->pseudoCmd('restoredata', $mode);
+            });
+            $subMenu_backupRestore->append($menuItem_restoreData);
+
+        my $menuItem_backupRestore = Gtk2::MenuItem->new('_Backup data');
+        $menuItem_backupRestore->set_submenu($subMenu_backupRestore);
+        $menuColumn_file->append($menuItem_backupRestore);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'backup_restore_data', $menuItem_backupRestore);
 
         $menuColumn_file->append(Gtk2::SeparatorMenuItem->new());   # Separator
 
@@ -3713,7 +3687,8 @@
             $self->winObj->visibleSession->pseudoCmd('record', $mode);
         });
         $menuColumn_recordings->append($menuItem_startStop);
-        # (Requires a visible session whose status is 'connected' or 'offline')
+        # (Requires a visible session whose status is 'connected' or 'offline', and
+        #   GA::Session->recordingPausedFlag set to FALSE)
         $self->ivAdd('menuItemHash', 'start_stop_recording', $menuItem_startStop);
 
         my $menuItem_pauseResume = Gtk2::ImageMenuItem->new('_Pause/resume recording');
@@ -3724,7 +3699,8 @@
             $self->winObj->visibleSession->pseudoCmd('pauserecording', $mode);
         });
         $menuColumn_recordings->append($menuItem_pauseResume);
-        # (Requires a visible session whose status is 'connected' or 'offline')
+        # (Requires a visible session whose status is 'connected' or 'offline', and
+        #   GA::Session->recordingFlag set to TRUE)
         $self->ivAdd('menuItemHash', 'pause_recording', $menuItem_pauseResume);
 
         $menuColumn_recordings->append(Gtk2::SeparatorMenuItem->new()); # Separator
@@ -7166,7 +7142,7 @@
         # Can be called by anything
         # Adds a new text gauge to the 'main' window's gauge box, visible only when the calling
         #   GA::Session is the current session. (Graphical gauges are added with a call to
-        #   $self->addTextGauge)
+        #   $self->addGauge)
         # If the gauge box itself is not yet visible, draws it
         #
         # Expected arguments
@@ -7871,15 +7847,15 @@
                     $lText .= $gaugeObj->value;
                 }
 
-                if ($gaugeObj->addFlag) {
-                    $lText .= '-';
-                } else {
-                    $lText .= '/';
-                }
+                # (Don't show a maximum value if the world isn't supplying one)
+                if (defined $gaugeObj->maxValue) {
 
-                if (! defined $gaugeObj->maxValue) {
-                    $lText .= '?';
-                } else {
+                    if ($gaugeObj->addFlag) {
+                        $lText .= '-';
+                    } else {
+                        $lText .= '/';
+                    }
+
                     $lText .= $gaugeObj->maxValue;
                 }
 
@@ -8187,9 +8163,14 @@
             # Hash in the form
             #   $captureHash{session_number} = undef
             captureHash                 => {},
-            # The current state of the console button, set to 'empty', 'system', 'debug' or 'error'
-            #   (or 'undef' if the button isn't visible)
+            # The current state of the console button, representing the icon to use when the button
+            #   isn't flashing. Set to 'empty', 'system', 'debug' or 'error' (or 'undef' if the
+            #   button isn't visible)
             consoleIconType             => undef,
+            # The temporary state of the console button, representing the icon to use when the
+            #   button is flashing. Set to 'system', 'debug' or 'error' (or 'undef' if the button
+            #   isn't visible)
+            consoleIconTempType         => undef,
             # When a system message is waiting to be displayed in a Session Console window, the
             #   button may be made to flash by periodic calls to $self->set_consoleIconFlash. When
             #   not flashing, this value is set to TRUE; when flashing, it is alternately set to
@@ -8300,6 +8281,7 @@
             $consoleButton->set_sensitive(FALSE);
 
             $self->ivPoke('consoleIconType', 'empty');
+            $self->ivPoke('consoleIconTempType', 'empty');
         }
 
         # Draw a 'toggle expand' icon as a toolbutton (optional)
@@ -8644,6 +8626,15 @@
                     $self->obscureEntry(TRUE);
                 } else {
                     $self->obscureEntry(FALSE);
+                }
+
+                # Set (or reset) icons showing recordings in progress
+                if ($self->winObj->visibleSession->recordingPausedFlag) {
+                    $self->entry->set_icon_from_stock('secondary', 'gtk-media-pause');
+                } elsif ($self->winObj->visibleSession->recordingFlag) {
+                    $self->entry->set_icon_from_stock('secondary', 'gtk-media-record');
+                } else {
+                    $self->entry->set_icon_from_stock('secondary', undef);
                 }
             }
         }
@@ -9481,18 +9472,23 @@
     sub updateConsoleButton {
 
         # Called by GA::Session->add_systemMsg and ->reset_systemMsg
-        # The argument corresponds to the icon to draw on the console button. However, don't redraw
-        #   the icon if the correct icon is already visible
+        # The argument corresponds to the icon to draw on the console button
         #
         # Expected arguments
-        #   $type   - 'empty', 'system', 'debug' or 'error', corresponding to one of the icons in
-        #               ../share/icons/button
+        #   $type       - One of the strings 'empty', 'system', 'debug' or 'error', corresponding to
+        #                   one of the icons in ../share/icons/button that's used to draw the
+        #                   button when it's not flashing
+        #
+        # Optional arguments
+        #   $tempType   - One of the strings 'system', 'debug' or 'error', corresponding to the icon
+        #                   that's used to draw the button when it's flashing ('undef' when $type is
+        #                   'empty')
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $type, $check) = @_;
+        my ($self, $type, $tempType, $check) = @_;
 
         # Local variables
         my $iv;
@@ -9501,33 +9497,34 @@
         if (
             ! defined $type
             || ($type ne 'empty' && $type ne 'system' && $type ne 'debug' && $type ne 'error')
+            || (
+                defined $tempType && $tempType ne 'system' && $tempType ne 'debug'
+                && $tempType ne 'error'
+            )
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->updateConsoleButton', @_);
         }
 
-        if (
-            $self->consoleButton
-            && (
-                # The 'empty' icon is visible
-                ! $self->consoleIconType
-                # A change of visible icon
-                || $self->consoleIconType ne $type
-                # The icon is in flashing mode, so any of two icons might be visible
-                || ! $self->consoleIconFlashFlag
-            )
-        ) {
-            # e.g. 'constEmptyIconPath'
-            $iv = 'const' . ucfirst($type) . 'IconPath';
+        if ($self->consoleButton) {
+
+            if (! $self->consoleIconFlashFlag) {
+                $iv = 'constEmptyIconPath';
+            } elsif ($tempType) {
+                $iv = 'const' . ucfirst($tempType) . 'IconPath';
+            } else {
+                $iv = 'const' . ucfirst($type) . 'IconPath';
+            }
 
             $self->consoleButton->set_icon_widget(
                 Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
             );
 
             $self->ivPoke('consoleIconType', $type);
+            $self->ivPoke('consoleIconTempType', $tempType);
             $self->ivPoke('consoleIconFlashFlag', TRUE);
 
-            $self->winObj->winShowAll($self->_objClass . '->updateScrollButton');
+            $self->winObj->winShowAll($self->_objClass . '->updateConsoleButton');
         }
 
         return 1;
@@ -9590,7 +9587,7 @@
 
             } else {
 
-                $iv = 'const' . ucfirst($self->consoleIconType) . 'IconPath';
+                $iv = 'const' . ucfirst($self->consoleIconTempType) . 'IconPath';
 
                 $self->consoleButton->set_icon_widget(
                     Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
@@ -9630,6 +9627,7 @@
 
             $self->consoleButton->show_all();
 
+            $self->ivPoke('consoleIconTempType', 'empty');
             $self->ivPoke('consoleIconFlashFlag', TRUE);
         }
 
@@ -9649,6 +9647,39 @@
         }
 
         $self->ivPoke('originalEntryText', $text);
+
+        return 1;
+    }
+
+    sub set_recordIcon {
+
+        # Called by Games::Axmud::Cmd::Record->do, etc
+        # Updates the entry icon showing the session's recording status (but only if it's the
+        #   visible session)
+
+        my ($self, $session, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_recordIcon', @_);
+        }
+
+        if (
+            $self->entry
+            && $self->winObj->visibleSession
+            && $self->winObj->visibleSession eq $session
+        ) {
+            if ($session->recordingPausedFlag) {
+                $self->entry->set_icon_from_stock('secondary', 'gtk-media-pause');
+            } elsif ($session->recordingFlag) {
+                $self->entry->set_icon_from_stock('secondary', 'gtk-media-record');
+            } else {
+                $self->entry->set_icon_from_stock('secondary', undef);
+            }
+        }
+
+        # (No IVs to update)
 
         return 1;
     }
@@ -9745,6 +9776,8 @@
         { my $self = shift; return %{$self->{captureHash}}; }
     sub consoleIconType
         { $_[0]->{consoleIconType} }
+    sub consoleIconTempType
+        { $_[0]->{consoleIconTempType} }
     sub consoleIconFlashFlag
         { $_[0]->{consoleIconFlashFlag} }
 

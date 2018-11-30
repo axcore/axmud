@@ -25,7 +25,7 @@ ama / addmacro                Adds a macro
                           'ctrl alt insert'). When the keys matching the keycode 
                           string are pressed (and assuming that the 'main' 
                           window is the one in focus), the macro fires. (See the 
-                          help for ';setkeycode' for more information about 
+                          help for ';listkeycode' for more information about 
                           Axmud standard keycodes.)
          'response'  - The instruction to execute when the macro fires. Includes
                           world commands, forced world commands (starting with

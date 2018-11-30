@@ -4888,7 +4888,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::SimpleList, which contains a simple GA::Gtk::Simple::List
+        # Creates the GA::Table::SimpleList, which contains a simple GA::Obj::Simple::List
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -4928,12 +4928,12 @@
         #                   'column_ref' - Reference to a list of column headings and types, in the
         #                       form ('heading', 'column_type', 'heading', 'column_type'...), where
         #                       'column_type' is one of the column types recognised by
-        #                       GA::Gtk::Simple::List, i.e. 'text', 'markup', 'int', 'double',
+        #                       GA::Obj::Simple::List, i.e. 'text', 'markup', 'int', 'double',
         #                       'bool', 'scalar' or 'pixbuf'. If 'undef' or an empty list, a single
         #                       column of type 'text' is created. If the list contains an odd
         #                       number of items, the final one is discarded
         #                   'data_ref' - Reference to a list used to populate the
-        #                       GA::Gtk::Simple::List. If there are 2 columns, a list in the form
+        #                       GA::Obj::Simple::List. If there are 2 columns, a list in the form
         #                       (a, b, a, b...) is expected. If there are 3 columns, a list in the
         #                       form (a, b, c, a, b, c) is expected. If 'undef' or an empty list,
         #                       nothing is added to the simple list
@@ -5053,7 +5053,7 @@
             # ---------
 
             # Widgets
-            slWidget                    => undef,       # GA::Gtk::Simple::List
+            slWidget                    => undef,       # GA::Obj::Simple::List
 
             # The number of columns in the simple list (minimum 1)
             numColumns                  => undef,
@@ -5129,8 +5129,8 @@
         my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::ScrolledWindow->new());
         $packingBox2->set_policy('automatic', 'automatic');
 
-        # Create the GA::Gtk::Simple::List
-        my $slWidget = Games::Axmud::Gtk::Simple::List->new(@columnList);
+        # Create the GA::Obj::Simple::List
+        my $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
         $packingBox2->add_with_viewport($slWidget);
 
         # Make all columns of type 'bool' (which are composed of checkbuttons) non-activatable, so

@@ -2,6 +2,7 @@ rlc / resetlocatortask        Resets the Locator task
  
    Format:
       ;rlc                    Resets the Locator task
+      ;rlc <dir>              Resest the task and sets the facing direction
  
    Notes:
       Some world commands should cause the world to send a room statement in 
@@ -19,6 +20,18 @@ rlc / resetlocatortask        Resets the Locator task
          reset it. The task searches back through the text received from the 
          world, finds the most recent room statement, and uses it as the new 
          current room.
+
+      A small number of worlds use relative directions like 'forward' and
+         'left'. At these worlds, exits in a room can change depending on the
+         way the character is facing (usually the direction in which the
+         character entered the current room). 
+      If you specify <dir>, the automapper assumes the character is facing that
+         direction, and interprets the exits in a room accordingly. (Use the
+         ';setfacing' command to set the direction without resetting the task.)
+      <dir> can be any of the following primary directions (standard or custom,
+         abbreviated or not):
+
+         north south east west northeast southeast northwest southwest
  
    User commands:
       rlc / resetloc / resetlocator / resetlocatortask

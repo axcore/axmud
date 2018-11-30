@@ -190,9 +190,10 @@
             #   region exit at the start of the path, and 'b' is the exit model number of the exit
             #   at the end of the path
             regionPathHash              => {},
-            # A copy of ->regionPathHash, but using only paths that avoid rooms with hazardous room
-            #   flags. When there is no safe path between two boundary exits, there will be an entry
-            #   in ->regionPathHash but not a corresponding one in ->safeRegionPathHash
+            # Hash of paths between all the exits in ->regionExitHash, but avoiding rooms with
+            #   hazardous room flags. The actual paths are not necessarily the same as those in
+            #   ->regionPathHash. When there is no safe path between two boundary exits, there will
+            #   be an entry in ->regionPathHash but not a corresponding one in ->safeRegionPathHash
             safeRegionPathHash          => {},
 
             # When the Locator task has a current room, it copies the room's contents into
@@ -839,6 +840,8 @@
         # Allocate the label a unique number
         $self->ivIncrement('labelCount');
         $labelObj->ivPoke('number', $self->labelCount);
+        # (->id is in the form 'region-name_label_number', e.g. 'town_42')
+        $labelObj->ivPoke('id', $labelObj->region . '_' . $self->labelCount);
 
         # Store the drawn exit
         $self->ivAdd('gridLabelHash', $labelObj->number, $labelObj);
@@ -1220,7 +1223,8 @@
                     # Occupy the same 2-dimensional space
                     ($x1 >= $obj->x1 && $x1 <= $obj->x2)
                     || ($x2 >= $obj->x1 && $x2 <= $obj->x2)
-                    || ($y1 >= $obj->y1 && $y1 <= $obj->y2)
+                ) && (
+                    ($y1 >= $obj->y1 && $y1 <= $obj->y2)
                     || ($y2 >= $obj->y1 && $y2 <= $obj->y2)
                 ) && (
                     # Occupy the same level

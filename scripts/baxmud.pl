@@ -37,13 +37,13 @@ use vars qw(
     $AUTHORS $COPYRIGHT $URL $DESCRIP $NAME_FILE @COMPAT_FILE_LIST @COMPAT_DIR_LIST @COMPAT_EXT_LIST
     $BLIND_MODE_FLAG $SAFE_MODE_FLAG $TEST_MODE_FLAG @TEST_MODE_LOGIN_LIST $TEST_MODE_CMD_FLAG
     $TEST_TERM_MODE_FLAG $TEST_GLOB_MODE_FLAG $TEST_REGEX_FLAG $TEST_REGEX_ERROR
-    $TEST_PRE_CONFIG_FLAG $TEST_CTRL_SEQ_FLAG @LICENSE_LIST @CREDIT_LIST $TOP_DIR $SHARE_DIR
-    $DATA_DIR $CLIENT
+    $TEST_PRE_CONFIG_FLAG $TEST_CTRL_SEQ_FLAG $TEST_MODEL_FLAG $TEST_MODEL_TIME @LICENSE_LIST
+    @CREDIT_LIST $TOP_DIR $SHARE_DIR $DEFAULT_DATA_DIR $DATA_DIR $CLIENT
 );
 
 $SCRIPT = 'Axmud';              # Name used in system messages
-$VERSION = '1.1.270';           # Version number for this client
-$DATE = '31 Oct 2018';
+$VERSION = '1.1.343';           # Version number for this client
+$DATE = '30 Nov 2018';
 $NAME_SHORT = 'axmud';          # Lower-case version of $SCRIPT; same as the package name above
 $NAME_ARTICLE = 'an Axmud';     # Name with an article
 $BASIC_NAME = 'Axbasic';        # Name of Axmud's built-in scripting library
@@ -102,6 +102,11 @@ $TEST_PRE_CONFIG_FLAG = FALSE;
 # Simple telnet mode: If $TEST_CTRL_SEQ_FLAG is TRUE, VT100 control sequences (except colour/style
 #   sequences) are ignored (equivalent to GA::Client->useCtrlSeqFlag being FALSE)
 $TEST_CTRL_SEQ_FLAG = FALSE;
+# Automatic world model test mode: If $TEST_MODEL_FLAG is true, various parts of the code run a
+#   silent world model test from time to time, displaying output only if the test fails
+$TEST_MODEL_FLAG = FALSE;
+# The time of the last world model test (matches GA::Session->sessionTime)
+$TEST_MODEL_TIME = 0;
 
 @LICENSE_LIST = (
     'This program is free software; you can redistribute it and/or modify it under',
@@ -194,15 +199,39 @@ use Language::Axbasic::Statement;   #   source code files here
 use Language::Axbasic::Subroutine;
 use Language::Axbasic::Variable;
 
+# Axmud's source file directory (folder)
+$TOP_DIR = File::Basename::dirname(__FILE__);
 # All files required after the Axmud script has been compiled are stored in /share
 $SHARE_DIR = File::ShareDir::dist_dir('Games-Axmud');
 # Axmud's data directory. Axmud creates any data files from scratch if they don't already exist
 # (Use literal backwards slashes on MS Windows so that commands like ';listdirectory' show what the
 #   use is expecting to see)
 if ($^O eq 'MSWin32') {
-    $DATA_DIR = File::HomeDir->my_home . '\\' . $NAME_SHORT . '-data';
+    $DEFAULT_DATA_DIR = File::HomeDir->my_home . '\\' . $NAME_SHORT . '-data';
 } else {
-    $DATA_DIR = File::HomeDir->my_home . '/' . $NAME_SHORT . '-data';
+    $DEFAULT_DATA_DIR = File::HomeDir->my_home . '/' . $NAME_SHORT . '-data';
+}
+# If a file 'datadir.cfg' exists and contains (in its first line) a directory that exits, and if
+#   that directory already exists, use it as the data directory instead
+$DATA_DIR = $DEFAULT_DATA_DIR;
+if (-e $TOP_DIR . '/datadir.cfg') {
+
+    my ($fileHandle, $firstLine);
+
+    if (open $fileHandle, '<', $TOP_DIR . '/datadir.cfg') {
+
+        $firstLine = <$fileHandle>;
+        close $fileHandle;
+    }
+
+    if (defined $firstLine) {
+
+        chomp $firstLine;
+        if (-e $firstLine) {
+
+            $DATA_DIR = $firstLine;
+        }
+    }
 }
 
 # Put paths to plugins (all of them Perl modules) into @INC
@@ -261,6 +290,7 @@ $SIG{__WARN__} = sub {
         && ! ($_[0] =~ m/GdkPixbuf-LOG \*\*\:/)
         && ! ($_[0] =~ m/Failed to parse menu bar accelerator/)
         && ! ($_[0] =~ m/Argument.*isn\'t numeric in numeric ge.*Archive\/Extract\.pm line/)
+        && ! ($_[0] =~ m/g_object_u?n?ref\: assertion \'G_IS_OBJECT/)
     ) {
         if ($CLIENT && ! $SAFE_MODE_FLAG) {
             $CLIENT->writePerlWarning(@_);
@@ -290,77 +320,6 @@ END {
         $CLIENT->stop();
     }
 }
-
-=pod
-
-=head1 NAME
-
-Games::Axmud - Axmud, a modern Multi-User Dungeon (MUD) client written in Perl5
-/ GTK2
-
-=head1 SYNOPSIS
-
-Axmud is known to work on MS Windows, Linux and *BSD. It might be possible to
-install it on other systems such as MacOS, but the authors have not been able to
-confirm this yet.
-
-After installation (see the INSTALL file), visually-impaired users can run this
-script
-
-    baxmud.pl
-
-Other users can run this script
-
-    axmud.pl
-
-Using either script, you can specify a world to which Axmud connects immediately
-
-    axmud.pl empiremud.net 4000
-
-If you omit the port number, Axmud connects using the generic port 23
-
-    axmud.pl elephant.org
-
-If a world profile already exists, you can specify its name instead
-
-    axmud.pl cryosphere
-
-Note that window tiling and multiple desktop support has not been implemented on
-MS Windows yet.
-
-=head1 DESCRIPTION
-
-Axmud is a modern Multi-User Dungeon (MUD) client written in Perl 5 / GTK 2.
-Its features include:
-
-Telnet, SSH and SLL connections - ANSI/xterm/OSC/RGB colour - Full support for
-all major MUD protocols, including MXP and GMCP (with partial Pueblo support) -
-Class-based triggers, aliases, macros, timers and hooks - Graphical automapper
-- 100 pre-configured worlds - Multiple approaches to scripting - Fully
-customisable from top to bottom, using the command line or the extensive GUI
-interface - Native support for visually-impaired users
-
-=head1 AUTHOR
-
-A S Lewis <aslewis@cpan.org>
-
-=head1 COPYRIGHT
-
-Copyright (C) 2011-2018 A S Lewis
-
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation, either version 3 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with
-this program. If not, see <http://www.gnu.org/licenses/>.
-
-=cut
 
 # Package must return a true value
 1;

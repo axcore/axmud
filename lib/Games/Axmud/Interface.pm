@@ -483,6 +483,63 @@
         return $self;
     }
 
+    sub clone {
+
+        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        #
+        # Expected arguments
+        #   $profName       - The parent profile's name (e.g. matches the object's ->name)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $profName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $profName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # Setup
+        my $clone = {
+            _objName                    => $self->_objName,
+            _objClass                   => $self->_objClass,
+            _parentFile                 => 'otherprof',
+            _parentWorld                => $profName,
+            _privFlag                   => TRUE,            # All IVs are private
+
+            # Interface category
+            # ------------------
+
+            category                    => $self->category,
+
+            # Standard interface attributes
+            # -----------------------------
+
+            name                        => $self->name,
+            stimulus                    => $self->stimulus,
+            response                    => $self->response,
+            enabledFlag                 => $self->enabledFlag,
+
+            # Trigger attributes
+            # ------------------
+
+            attribHash                  => {$self->attribHash},
+
+            # Ordering
+            # --------
+
+            beforeHash                  => {$self->beforeHash},
+            afterHash                   => {$self->afterHash},
+        };
+
+        # Bless the cloned object into existence
+        bless $clone, $self->_objClass;
+        return $clone;
+    }
+
     ##################
     # Methods
 
@@ -630,6 +687,63 @@
         return $self;
     }
 
+    sub clone {
+
+        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        #
+        # Expected arguments
+        #   $profName       - The parent profile's name (e.g. matches the object's ->name)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $profName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $profName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # Setup
+        my $clone = {
+            _objName                    => $self->_objName,
+            _objClass                   => $self->_objClass,
+            _parentFile                 => 'otherprof',
+            _parentWorld                => $profName,
+            _privFlag                   => TRUE,            # All IVs are private
+
+            # Interface category
+            # ------------------
+
+            category                    => $self->category,
+
+            # Standard interface attributes
+            # -----------------------------
+
+            name                        => $self->name,
+            stimulus                    => $self->stimulus,
+            response                    => $self->response,
+            enabledFlag                 => $self->enabledFlag,
+
+            # Alias attributes
+            # ----------------
+
+            attribHash                  => {$self->attribHash},
+
+            # Ordering
+            # --------
+
+            beforeHash                  => {$self->beforeHash},
+            afterHash                   => {$self->afterHash},
+        };
+
+        # Bless the cloned object into existence
+        bless $clone, $self->_objClass;
+        return $clone;
+    }
+
     ##################
     # Methods
 
@@ -743,7 +857,7 @@
             # -----------------------------
 
             name                        => $name,       # Max 32 chars
-            stimulus                    => $stimulus,   # A keycode
+            stimulus                    => $stimulus,   # An Axmud standard keycode
             response                    => $response,   # An instruction
             enabledFlag                 => $flag,
 
@@ -773,6 +887,63 @@
         # Bless the object into existence
         bless $self, $class;
         return $self;
+    }
+
+    sub clone {
+
+        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        #
+        # Expected arguments
+        #   $profName       - The parent profile's name (e.g. matches the object's ->name)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $profName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $profName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # Setup
+        my $clone = {
+            _objName                    => $self->_objName,
+            _objClass                   => $self->_objClass,
+            _parentFile                 => 'otherprof',
+            _parentWorld                => $profName,
+            _privFlag                   => TRUE,            # All IVs are private
+
+            # Interface category
+            # ------------------
+
+            category                    => $self->category,
+
+            # Standard interface attributes
+            # -----------------------------
+
+            name                        => $self->name,
+            stimulus                    => $self->stimulus,
+            response                    => $self->response,
+            enabledFlag                 => $self->enabledFlag,
+
+            # Macro attributes
+            # ----------------
+
+            attribHash                  => {$self->attribHash},
+
+            # Ordering
+            # --------
+
+            beforeHash                  => {$self->beforeHash},
+            afterHash                   => {$self->afterHash},
+        };
+
+        # Bless the cloned object into existence
+        bless $clone, $self->_objClass;
+        return $clone;
     }
 
     ##################
@@ -924,6 +1095,63 @@
         return $self;
     }
 
+    sub clone {
+
+        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        #
+        # Expected arguments
+        #   $profName       - The parent profile's name (e.g. matches the object's ->name)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $profName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $profName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # Setup
+        my $clone = {
+            _objName                    => $self->_objName,
+            _objClass                   => $self->_objClass,
+            _parentFile                 => 'otherprof',
+            _parentWorld                => $profName,
+            _privFlag                   => TRUE,            # All IVs are private
+
+            # Interface category
+            # ------------------
+
+            category                    => $self->category,
+
+            # Standard interface attributes
+            # -----------------------------
+
+            name                        => $self->name,
+            stimulus                    => $self->stimulus,
+            response                    => $self->response,
+            enabledFlag                 => $self->enabledFlag,
+
+            # Timer attributes
+            # ----------------
+
+            attribHash                  => {$self->attribHash},
+
+            # Ordering
+            # --------
+
+            beforeHash                  => {$self->beforeHash},
+            afterHash                   => {$self->afterHash},
+        };
+
+        # Bless the cloned object into existence
+        bless $clone, $self->_objClass;
+        return $clone;
+    }
+
     ##################
     # Methods
 
@@ -1067,6 +1295,63 @@
         # Bless the object into existence
         bless $self, $class;
         return $self;
+    }
+
+    sub clone {
+
+        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        #
+        # Expected arguments
+        #   $profName       - The parent profile's name (e.g. matches the object's ->name)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $profName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $profName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # Setup
+        my $clone = {
+            _objName                    => $self->_objName,
+            _objClass                   => $self->_objClass,
+            _parentFile                 => 'otherprof',
+            _parentWorld                => $profName,
+            _privFlag                   => TRUE,            # All IVs are private
+
+            # Interface category
+            # ------------------
+
+            category                    => $self->category,
+
+            # Standard interface attributes
+            # -----------------------------
+
+            name                        => $self->name,
+            stimulus                    => $self->stimulus,
+            response                    => $self->response,
+            enabledFlag                 => $self->enabledFlag,
+
+            # Hook attributes
+            # ---------------
+
+            attribHash                  => {$self->attribHash},
+
+            # Ordering
+            # --------
+
+            beforeHash                  => {$self->beforeHash},
+            afterHash                   => {$self->afterHash},
+        };
+
+        # Bless the cloned object into existence
+        bless $clone, $self->_objClass;
+        return $clone;
     }
 
     ##################

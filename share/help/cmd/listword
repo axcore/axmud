@@ -51,7 +51,8 @@ lwd / listword                Lists words and terms from the current dictionary
          words (use the ';listunknownwords' command for that).
 
       The dictionary's stored directions can be viewed and modified with
-         commands like ';modifyprimary', ';addsecondary' and ';listdirection'.
+         commands like ';modifyprimary', ';addsecondary', ';addrelative' and
+         ';listdirection'.
           
    User commands:
       lwd / lword / listword

@@ -125,7 +125,7 @@
         { $_[0]->{heap} }
 }
 
-{ package Games::Axmud::Node::Djikstra;
+{ package Games::Axmud::Node::Dijkstra;
 
     use strict;
     use warnings;
@@ -141,13 +141,13 @@
     sub new {
 
         # Called by GA::Obj::WorldModel->findUniversalPath
-        # Create a new instance of the Djikstra algorithm node. When looking for the shortest path
+        # Create a new instance of the Dijkstra algorithm node. When looking for the shortest path
         #   between two rooms in different regions, one node object is created for every region
         #   exit. A further node is created for a dummy exit leading to the initial room, and
         #   another for a (temporary) exit leading to the target room
         #
         # Also called by GA::Obj::WorldModel->findRoutePath
-        # Create a new instance of the Djikstra algorithm node. When looking for the shortest path
+        # Create a new instance of the Dijkstra algorithm node. When looking for the shortest path
         #   between two rooms using only pre-defined routes (stored in GA::Obj::Route objects),
         #   one node object is created for every tagged room at the beginning or end of a single
         #   route
@@ -172,9 +172,9 @@
         # (No checking for improper arguments - we want maximum speed)
 
         if ($exitObj) {
-            $name = 'djikstra_node_' . $exitObj->number;
+            $name = 'dijkstra_node_' . $exitObj->number;
         } else {
-            $name = 'djikstra_node_' . $roomTag;
+            $name = 'dijkstra_node_' . $roomTag;
         }
 
         # Setup
@@ -194,7 +194,7 @@
             roomTag                     => $roomTag,        # Matches GA::ModelObj::Room->roomTag
 
             gScore                      => $gScore,
-            hScore                      => 0,               # H-score always 0 in Djikstra algorithm
+            hScore                      => 0,               # H-score always 0 in Dijkstra algorithm
             fScore                      => $gScore,         # ...so F-score is the same as G-score
             parent                      => undef,           # GA::Obj::Exit
             cost                        => 0,               # Estimated cost of moving to the target
@@ -216,7 +216,7 @@
         # Compares this node against another node, and returns the one with the lower F score
         #
         # Expected arguments
-        #   $otherNode  - The GA::Node::Djikstra to compare with this one
+        #   $otherNode  - The GA::Node::Dijkstra to compare with this one
         #
         # Return values
         #   Returns the blessed reference of either this node, or $otherNode, depending on which has

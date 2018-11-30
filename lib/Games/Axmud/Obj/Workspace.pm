@@ -1567,9 +1567,8 @@
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->moveResizeWin');
 
             # Move the window, if that was specified
-            # v1.1.264 - for unknown reasons, $winObj->winWidget is occasionally set to 'undef'
-            #   just before this line. Temporary fix until we find the cause
-#            if (defined $xPosPixels) {
+            # $winObj->winWidget is occasionally set to 'undef' just before this line. It's a very
+            #   difficult error to reproduce, so I'm not sure what the cause is
             if ($winObj->winWidget && defined $xPosPixels) {
 
                 $winObj->winWidget->move($xPosPixels, $yPosPixels);

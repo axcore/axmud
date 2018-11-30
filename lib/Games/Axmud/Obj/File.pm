@@ -45,7 +45,6 @@
         #       tasks       <DATA_DIR>/data/tasks.axm
         #       scripts     <DATA_DIR>/data/scripts.axm
         #       contacts    <DATA_DIR>/data/contacts.axm
-        #       keycodes    <DATA_DIR>/data/keycodes.axm
         #       dicts       <DATA_DIR>/data/dicts.axm
         #       toolbar     <DATA_DIR>/data/toolbar.axm
         #       usercmds    <DATA_DIR>/data/usercmds.axm
@@ -144,12 +143,6 @@
 
             $standardFileName = 'contacts.axm';
             $standardPath = '/data/contacts.axm';
-            $standardDir = '/data';
-
-        } elsif ($fileType eq 'keycodes') {
-
-            $standardFileName = 'keycodes.axm';
-            $standardPath = '/data/keycodes.axm';
             $standardDir = '/data';
 
         } elsif ($fileType eq 'dicts') {
@@ -1061,7 +1054,7 @@
                 $client->debugTelnetFlag,
             '# Show option negotiation short debug messages',
                 $client->debugTelnetMiniFlag,
-            '# Ask GA::Net::Telnet to write negotiation logfile',
+            '# Ask GA::Obj::Telnet to write negotiation logfile',
                 $client->debugTelnetLogFlag,
             '# Show MSDP debug messages for Status/Locator',
                 $client->debugMsdpFlag,
@@ -1095,6 +1088,8 @@
                 $client->customDayList,
             '# Number commification mode',
                 $client->commifyMode,
+            '# Detect short weblinks',
+                $self->convert($client->shortUrlFlag),
             '# Prompt wait time (seconds)',
                 $client->promptWaitTime,
             '# Login warning time (seconds)',
@@ -1107,6 +1102,8 @@
                 $self->convert($client->debugLocatorFlag),
             '# Show extensive Locator task debug messages',
                 $self->convert($client->debugMaxLocatorFlag),
+            '# Show illegal exit direction debug messages',
+                $self->convert($client->debugExitFlag),
             '# Show Locator task expected room statements',
                 $self->convert($client->debugMoveListFlag),
             '# Show object parsing debug messages',
@@ -1819,6 +1816,10 @@
 
             $failFlag = $self->readValue($failFlag, \%dataHash, 'commify_mode');
         }
+        if ($self->scriptConvertVersion >= 1_001_284) {
+
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'short_url_flag');
+        }
         if ($self->scriptConvertVersion <= 1_000_922) {
 
             $failFlag = $self->readValue($failFlag, \%dataHash, 'discard_me');
@@ -1841,6 +1842,10 @@
         if ($self->scriptConvertVersion >= 1_000_482) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_max_locator_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_001_282) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_exit_flag');
         }
         $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_move_list_flag');
         $failFlag = $self->readFlag($failFlag, \%dataHash, 'debug_parse_obj_flag');
@@ -2395,7 +2400,11 @@
         $client->ivPoke('customDayList', @{$dataHash{'custom_day_list'}});
         if ($self->scriptConvertVersion >= 1_001_262) {
 
-            $client->ivPoke('debugMcpFlag', $dataHash{'commify_mode'});
+            $client->ivPoke('commifyMode', $dataHash{'commify_mode'});
+        }
+        if ($self->scriptConvertVersion >= 1_001_284) {
+
+            $client->ivPoke('shortUrlFlag', $dataHash{'short_url_flag'});
         }
         $client->ivPoke('promptWaitTime', $dataHash{'prompt_wait_time'});
         $client->ivPoke('loginWarningTime', $dataHash{'login_warning_time'});
@@ -2416,6 +2425,10 @@
         if ($self->scriptConvertVersion >= 1_000_482) {
 
             $client->ivPoke('debugMaxLocatorFlag', $dataHash{'debug_max_locator_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_001_282) {
+
+            $client->ivPoke('debugExitFlag', $dataHash{'debug_exit_flag'});
         }
         $client->ivPoke('debugMoveListFlag', $dataHash{'debug_move_list_flag'});
         $client->ivPoke('debugParseObjFlag', $dataHash{'debug_parse_obj_flag'});
@@ -2516,8 +2529,8 @@
     sub setupDataFile {
 
         # Called by GA::Client->loadOtherFiles for the file types:
-        #   'tasks', 'scripts', 'contacts', 'keycodes', 'dicts', 'toolbar', 'usercmds', 'zonemaps',
-        #   'winmaps', 'tts'
+        #   'tasks', 'scripts', 'contacts', 'dicts', 'toolbar', 'usercmds', 'zonemaps', 'winmaps',
+        #   'tts'
         # Loads a data file. If the file doesn't exist, creates it
         #
         # Expected arguments
@@ -2542,10 +2555,10 @@
         # Check it's the right file type for this function
         if (
             $self->fileType ne 'tasks' && $self->fileType ne 'scripts'
-            && $self->fileType ne 'contacts' && $self->fileType ne 'keycodes'
-            && $self->fileType ne 'dicts' && $self->fileType ne 'toolbar'
-            && $self->fileType ne 'usercmds' && $self->fileType ne 'zonemaps'
-            && $self->fileType ne 'winmaps' && $self->fileType ne 'tts'
+            && $self->fileType ne 'contacts' && $self->fileType ne 'dicts'
+            && $self->fileType ne 'toolbar' && $self->fileType ne 'usercmds'
+            && $self->fileType ne 'zonemaps' && $self->fileType ne 'winmaps'
+            && $self->fileType ne 'tts'
         ) {
             return $self->writeError(
                 'Wrong file type \'' . $self->fileType . '\'',
@@ -2611,8 +2624,8 @@
     sub saveDataFile {
 
         # Called by $self->setupDataFile (or by any other function) for the file types:
-        #   'tasks', 'scripts', 'contacts', 'keycodes', 'dicts', 'toolbar', 'usercmds', 'zonemaps',
-        #   'winmaps', 'tts'
+        #   'tasks', 'scripts', 'contacts', 'dicts', 'toolbar', 'usercmds', 'zonemaps', 'winmaps',
+        #   'tts'
         # Called by any function for the file types:
         #   'worldprof', 'otherprof', 'worldmodel'
         #
@@ -2775,11 +2788,6 @@
             $saveHash{'chat_contact_hash'} = {$axmud::CLIENT->chatContactHash};
             $saveHash{'chat_icon'} = $axmud::CLIENT->chatIcon;
             $saveHash{'chat_smiley_hash'} = {$axmud::CLIENT->chatSmileyHash};
-
-        } elsif ($self->fileType eq 'keycodes') {
-
-            $saveHash{'keycode_obj_hash'} = {$axmud::CLIENT->keycodeObjHash};
-            $saveHash{'current_keycode_obj'} = $axmud::CLIENT->currentKeycodeObj;
 
         } elsif ($self->fileType eq 'dicts') {
 
@@ -2960,8 +2968,8 @@
     sub loadDataFile {
 
         # Called by $self->setupDataFile (or by any other function) for the file types:
-        #   'tasks', 'scripts', 'contacts', 'keycodes', 'dicts', 'toolbar', 'usercmds', 'zonemaps',
-        #   'winmaps', 'tts'
+        #   'tasks', 'scripts', 'contacts', 'dicts', 'toolbar', 'usercmds', 'zonemaps', 'winmaps',
+        #   'tts'
         # Called by any function for the file types:
         #   'worldprof'
         # Called by any function for the file types:
@@ -3357,22 +3365,6 @@
             $saveHash{'init_script_hash'} = {};
             $saveHash{'init_script_order_list'} = [];
 
-        } elsif ($switch eq '-k') {
-
-            # ;exd -k <obj>
-            #   Exports the keycode object named <obj>
-
-            my %keycodeHash;
-
-            # Prepare the data for a partial 'keycodes' file
-            $keycodeHash{$name} = $axmud::CLIENT->ivShow('keycodeObjHash', $name);
-
-            # Transfer everything into %saveHash
-            $saveHash{'file_type'} = 'keycodes';
-            $saveHash{'assoc_world_prof'} = undef;
-            $saveHash{'keycode_obj_hash'} = \%keycodeHash;
-            $saveHash{'current_keycode_obj'} = undef;
-
         } elsif ($switch eq '-y') {
 
             # ;exd -y <dict>
@@ -3612,6 +3604,11 @@
             ) {
                 # Data file not created by a current or previous version of Axmud
                 return undef;
+
+            } elsif ($fileType eq 'keycodes') {
+
+                # This type of data file was removed in v1.1.286
+                return undef;
             }
 
             # Extract the rest of the data from %loadHash, incorporating data from the loaded file
@@ -3709,7 +3706,7 @@
         #       'worldmodel'
         #           The entire world model in memory is replaced by the loaded one, regardless of
         #               the flag
-        #       'tasks', 'scripts', 'contacts', 'keycodes', 'tts'
+        #       'tasks', 'scripts', 'contacts', 'tts'
         #           Behaviour as described above
         #       'dicts'
         #           (T) Any current dictionaries in use by a session are retained, if a dictionary
@@ -4059,39 +4056,6 @@
                 # (Should not be able to import a partial 'contacts' file, since
                 #   $self->exportDataFile doesn't create one)
                 return undef;
-            }
-
-        } elsif ($self->fileType eq 'keycodes') {
-
-            # 'keycodes'
-            #   (T) All existing data in memory replaced by loaded data
-            #   (F) Loaded data incorporated into memory
-
-            if ($overWriteFlag) {
-
-                # Replace the data in memory
-                $client->ivPoke('keycodeObjHash', %{$loadHash{'keycode_obj_hash'}});
-                $client->ivPoke('currentKeycodeObj', $loadHash{'current_keycode_obj'});
-
-                # The data in memory matches saved data files
-                $self->set_modifyFlag(FALSE, $self->_objClass . '->extractData');
-
-            } else {
-
-                # We are loading one or more global keycodes objects that have been exported and
-                #   must be re-incorporated into memory
-
-                # Incorporate keycode objects
-                %hash = %{$loadHash{'keycode_obj_hash'}};
-                if (%hash) {
-
-                    foreach my $keycodeObj (values %hash) {
-
-                        $client->add_keycodeObj($keycodeObj);
-                    }
-                }
-
-                # (Calls to accessors will have set the right ->modifyFlag values)
             }
 
         } elsif ($self->fileType eq 'dicts') {
@@ -4544,8 +4508,10 @@
 
                             $compObj->{useTextColour} = undef;
                             $compObj->ivUndef('useTextColour');
-                            $compObj->{ignoreChars} = undef;
-                            $compObj->ivPoke('ignoreChars', 0);
+                            # (This IV subsequently renamed and/or removed)
+#                            $compObj->{ignoreChars} = undef;
+#                            $compObj->ivPoke('ignoreChars', 0);
+                            $compObj->{ignoreChars} = 0;
                         }
                     }
                 }
@@ -4638,8 +4604,10 @@
 
                         $compObj->{useFirstChars} = undef;
                         $compObj->ivPoke('useFirstChars', 0);
+                        # (This IV subsequently renamed and/or removed)
+#                        $compObj->{usePatternBackRefs} = undef;
+#                        $compObj->ivUndef('usePatternBackRefs');
                         $compObj->{usePatternBackRefs} = undef;
-                        $compObj->ivUndef('usePatternBackRefs');
                     }
                 }
             }
@@ -4882,8 +4850,10 @@
 
                     if (! exists $profObj->{exitStateIgnoreList}) {
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $profObj->{exitStateIgnoreList} = [];
+#                        $profObj->ivEmpty('exitStateIgnoreList');
                         $profObj->{exitStateIgnoreList} = [];
-                        $profObj->ivEmpty('exitStateIgnoreList');
                     }
                 }
             }
@@ -5020,8 +4990,10 @@
 
                     if (! exists $profObj->{customStatusVarHash}) {
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $profObj->{customStatusVarHash} = {};
+#                        $profObj->ivEmpty('customStatusVarHash');
                         $profObj->{customStatusVarHash} = {};
-                        $profObj->ivEmpty('customStatusVarHash');
                     }
                 }
             }
@@ -5095,8 +5067,10 @@
 
                     if (! exists $profObj->{strictPromptsMode}) {
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $profObj->{strictPromptsMode} = undef;
+#                        $profObj->ivPoke('strictPromptsMode', FALSE);
                         $profObj->{strictPromptsMode} = undef;
-                        $profObj->ivPoke('strictPromptsMode', FALSE);
                     }
                 }
             }
@@ -5123,10 +5097,14 @@
 
                     if (! exists $profObj->{exitStateDarkList}) {
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $profObj->{exitStateDarkList} = [];
+#                        $profObj->ivEmpty('exitStateDarkList');
                         $profObj->{exitStateDarkList} = [];
-                        $profObj->ivEmpty('exitStateDarkList');
+                        # (This IV subsequently renamed and/or removed)
+#                        $profObj->{exitStateDangerList} = [];
+#                        $profObj->ivEmpty('exitStateDangerList');
                         $profObj->{exitStateDangerList} = [];
-                        $profObj->ivEmpty('exitStateDangerList');
                     }
                 }
             }
@@ -5177,8 +5155,10 @@
 
                             $compObj->{startTagMode} = undef;
                             $compObj->ivPoke('startTagMode', 0);
-                            $compObj->{stopTagMode} = undef;
-                            $compObj->ivPoke('stopTagMode', 0);
+                            # (This IV subsequently renamed and/or removed)
+#                            $compObj->{stopTagMode} = undef;
+#                            $compObj->ivPoke('stopTagMode', 0);
+                            $compObj->{stopTagMode} = 0;
                             $compObj->{skipTagMode} = undef;
                             $compObj->ivPoke('skipTagMode', 0);
                             $compObj->{stopBeforeNoTagMode} = undef;
@@ -5307,8 +5287,10 @@
 
                         if (! exists $compObj->{useAppliedTagsFlag}) {
 
-                            $compObj->{useAppliedTagsFlag} = undef;
-                            $compObj->ivPoke('useAppliedTagsFlag', FALSE);
+                            # (This IV subsequently renamed and/or removed)
+#                            $compObj->{useAppliedTagsFlag} = undef;
+#                            $compObj->ivPoke('useAppliedTagsFlag', FALSE);
+                            $compObj->{useAppliedTagsFlag} = FALSE;
                         }
                     }
                 }
@@ -5481,7 +5463,6 @@
                 }
             }
 
-
             if ($version < 1_000_512) {
 
                 # Update room statement components with a new IV
@@ -5518,8 +5499,10 @@
 
                     if (! exists $profObj->{basicMappingMode}) {
 
-                        $profObj->{basicMappingMode} = undef;
-                        $profObj->ivPoke('basicMappingMode', 0);
+                        # (This IV subsequently renamed and/or removed)
+#                        $profObj->{basicMappingMode} = undef;
+#                        $profObj->ivPoke('basicMappingMode', 0);
+                        $profObj->{basicMappingMode} = 0;
                     }
                 }
             }
@@ -5609,8 +5592,10 @@
 
                     if (! exists $profObj->{worldWarning}) {
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $profObj->{worldWarning} = undef;
+#                        $profObj->ivUndef('worldWarning');
                         $profObj->{worldWarning} = undef;
-                        $profObj->ivUndef('worldWarning');
                     }
                 }
             }
@@ -5707,12 +5692,12 @@
                         }
                     }
 
-                    foreach my $templateObj ($self->session->ivValues('templateHash')) {
+                    foreach my $templObj ($self->session->ivValues('templateHash')) {
 
-                        if (! $templateObj->ivExists('_standardHash', 'notepadList')) {
+                        if (! $templObj->ivExists('_standardHash', 'notepadList')) {
 
                             # (Because this IV starts with an underline, have to set it directly)
-                            $templateObj->{'_standardHash'}{'notepadList'} = undef;
+                            $templObj->{'_standardHash'}{'notepadList'} = undef;
                         }
                     }
                 }
@@ -6033,10 +6018,13 @@
                             $profObj->ivPoke('inventoryMode', 'start_empty');
                         }
 
+                        # (This IV subsequently renamed and/or removed)
                         if (! $profObj->basicMappingMode) {
-                            $profObj->ivPoke('basicMappingMode', FALSE);
+#                            $profObj->ivPoke('basicMappingMode', FALSE);
+                            $profObj->{'basicMappingMode'} = FALSE;
                         } else {
-                            $profObj->ivPoke('basicMappingMode', TRUE);
+#                            $profObj->ivPoke('basicMappingMode', TRUE);
+                            $profObj->{'basicMappingMode'} = TRUE;
                         }
 
                         foreach my $componentObj ($profObj->ivValues('componentHash')) {
@@ -6503,35 +6491,108 @@
 
                     if ($profObj->{category} eq 'char' && ! exists $profObj->{healthPoints}) {
 
-                        $profObj->{healthPoints} = undef;
-                        $profObj->ivPoke('healthPoints', 0);
-                        $profObj->{healthPointsMax} = undef;
-                        $profObj->ivPoke('healthPointsMax', 0);
+                        # (This IV subsequently renamed and/or removed)
+#                        $profObj->{healthPoints} = undef;
+#                        $profObj->ivPoke('healthPoints', 0);
+                        $profObj->{healthPoints} = 0;
+#                        $profObj->{healthPointsMax} = undef;
+#                        $profObj->ivPoke('healthPointsMax', 0);
+                        $profObj->{healthPointsMax} = 0;
 
-                        $profObj->{magicPoints} = undef;
-                        $profObj->ivPoke('magicPoints', 0);
-                        $profObj->{magicPointsMax} = undef;
-                        $profObj->ivPoke('magicPointsMax', 0);
+#                        $profObj->{magicPoints} = undef;
+#                        $profObj->ivPoke('magicPoints', 0);
+                        $profObj->{magicPoints} = 0;
+#                        $profObj->{magicPointsMax} = undef;
+#                        $profObj->ivPoke('magicPointsMax', 0);
+                        $profObj->{magicPointsMax} = 0;
 
-                        $profObj->{energyPoints} = undef;
-                        $profObj->ivPoke('energyPoints', 0);
-                        $profObj->{energyPointsMax} = undef;
-                        $profObj->ivPoke('energyPointsMax', 0);
+#                        $profObj->{energyPoints} = undef;
+#                        $profObj->ivPoke('energyPoints', 0);
+                        $profObj->{energyPoints} = 0;
+#                        $profObj->{energyPointsMax} = undef;
+#                        $profObj->ivPoke('energyPointsMax', 0);
+                        $profObj->{energyPointsMax} = 0;
 
-                        $profObj->{guildPoints} = undef;
-                        $profObj->ivPoke('guildPoints', 0);
-                        $profObj->{guildPointsMax} = undef;
-                        $profObj->ivPoke('guildPointsMax', 0);
+#                        $profObj->{guildPoints} = undef;
+#                        $profObj->ivPoke('guildPoints', 0);
+                        $profObj->{guildPoints} = 0;
+#                        $profObj->{guildPointsMax} = undef;
+#                        $profObj->ivPoke('guildPointsMax', 0);
+                        $profObj->{guildPointsMax} = 0;
 
-                        $profObj->{socialPoints} = undef;
-                        $profObj->ivPoke('socialPoints', 0);
-                        $profObj->{socialPointsMax} = undef;
-                        $profObj->ivPoke('socialPointsMax', 0);
+#                        $profObj->{socialPoints} = undef;
+#                        $profObj->ivPoke('socialPoints', 0);
+                        $profObj->{socialPoints} = 0;
+#                        $profObj->{socialPointsMax} = undef;
+#                        $profObj->ivPoke('socialPointsMax', 0);
+                        $profObj->{socialPointsMax} = 0;
 
                         $profObj->{remoteWimpyMax} = undef;
                         $profObj->ivPoke('remoteWimpyMax', 100);
                         $profObj->{constLocalWimpyMax} = 199;
                     }
+                }
+            }
+
+            if ($version < 1_001_286 && $self->session) {
+
+                my %hash = (
+                    'kp_up'         => 'up',
+                    'kp_down'       => 'down',
+                    'kp_left'       => 'left',
+                    'kp_right'      => 'right',
+                    'kp_page_up'    => 'page_up',
+                    'kp_page_down'  => 'page_down',
+                    'kp_home'       => 'home',
+                    'kp_end'        => 'end',
+                    'kp_insert'     => 'insert',
+                    'kp_delete'     => 'delete',
+                );
+
+                # This version removes some Axmud standard keycodes
+                # Check macros in each macro cage, and convert any removed keycodes to their
+                #   replacements
+                foreach my $cage ($self->session->ivValues('cageHash')) {
+
+                    if ($cage->{cageType} eq 'macro') {
+
+                        foreach my $macroObj ($cage->ivValues('interfaceHash')) {
+
+                            # The macro stimulus is a keycode/keycode string
+                            my $stimulus = $macroObj->stimulus;
+
+                            foreach my $regex (keys %hash) {
+
+                                my $subst = $hash{$regex};
+
+                                $stimulus =~ s/$regex/$subst/;
+                            }
+
+                            $macroObj->ivPoke('stimulus', $stimulus);
+                        }
+                    }
+                }
+            }
+
+            if ($version < 1_001_298) {
+
+                # Update world profiles with a new IV
+                foreach my $profObj ($axmud::CLIENT->ivValues('worldProfHash')) {
+
+                    if (! exists $profObj->{mxpStatusVarHash}) {
+
+                        $profObj->{mxpStatusVarHash} = {};
+                        $profObj->ivEmpty('mxpStatusVarHash');
+                    }
+                }
+            }
+
+            if ($version < 1_001_308) {
+
+                # Update world profiles by deleting an IV
+                foreach my $profObj ($axmud::CLIENT->ivValues('worldProfHash')) {
+
+                    delete $profObj->{'strictPromptsMode'};
                 }
             }
 
@@ -6542,10 +6603,11 @@
             # (Import the world model, for convenience)
             $wmObj = $self->session->worldModelObj;
 
+            # (Changes that must be made before any other changes)
+
             if ($version < 1_000_871) {
 
-                # This version renames a number of IVs. This section comes first so that functions
-                #   like $wmObj->updateRegionPaths can be called by this function
+                # This version renames a number of IVs
                 if (! exists $wmObj->{modelHash}) {
 
                     $wmObj->{modelHash} = $wmObj->{model};
@@ -6579,6 +6641,20 @@
                     delete $wmObj->{exitModel};
                 }
             }
+
+            if ($version < 1_001_289) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{adjacentMode}) {
+
+                    $wmObj->{adjacentMode} = undef;
+                    $wmObj->ivPoke('adjacentMode', 'near');
+                    $wmObj->{adjacentCount} = undef;
+                    $wmObj->ivPoke('adjacentCount', 1);
+                }
+            }
+
+            # (All remaining changes, in order)
 
             if ($version < 1_000_006) {
 
@@ -6927,8 +7003,10 @@
 
                     if (! exists $exitObj->{info}) {
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $exitObj->{info} = undef;
+#                        $exitObj->ivPoke('info', undef);
                         $exitObj->{info} = undef;
-                        $exitObj->ivPoke('info', undef);
                     }
                 }
             }
@@ -7062,7 +7140,9 @@
 
                     if ($exitObj->{state} == 4) {
 
-                        $exitObj->ivPoke('state', 6);
+                        # (This IV subsequently renamed and/or removed)
+#                        $exitObj->ivPoke('state', 6);
+                        $exitObj->{state} = 6;
                     }
                 }
             }
@@ -7154,8 +7234,10 @@
                 # This version adds a new IV to the world model
                 if (! exists $wmObj->{updateOrnamentsFlag}) {
 
-                    $wmObj->{updateOrnamentsFlag} = undef;
-                    $wmObj->ivPoke('updateOrnamentsFlag', FALSE);
+                    # (This IV subsequently renamed and/or removed)
+#                    $wmObj->{updateOrnamentsFlag} = undef;
+#                    $wmObj->ivPoke('updateOrnamentsFlag', FALSE);
+                    $wmObj->{updateOrnamentsFlag} = FALSE;
                 }
             }
 
@@ -7574,7 +7656,7 @@
 
             if ($version < 1_000_913) {
 
-                # This version removes two IVs which have been moved to GA::Client
+                # This version removes three IVs which have been moved to GA::Client
                 if (exists $wmObj->{roomFilterStartList}) {
 
                     delete $wmObj->{roomFilterStartList};
@@ -8205,6 +8287,302 @@
                     $wmObj->ivPoke('autoRescueForceFlag', FALSE);
                 }
             }
+
+#            if ($version < 1_001_289) {
+#
+#                # This version adds new IVs to the world model
+#                if (! exists $wmObj->{adjacentMode}) {
+#
+#                    $wmObj->{adjacentMode} = undef;
+#                    $wmObj->ivPoke('adjacentMode', 'near');
+#                    $wmObj->{adjacentCount} = undef;
+#                    $wmObj->ivPoke('adjacentCount', 1);
+#                }
+#            }
+
+            if ($version < 1_001_290) {
+
+                # This version adds a new IV to exit objects in the world model
+                foreach my $exitObj ($wmObj->ivValues('exitModelHash')) {
+
+                    if (! exists $exitObj->{altDir}) {
+
+                        $exitObj->{altDir} = undef;
+                        $exitObj->ivUndef('altDir');
+                    }
+                }
+            }
+
+            if ($version < 1_001_295) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{defaultMysteryExitColour}) {
+
+                    $wmObj->{defaultMysteryExitColour} = undef;
+                    $wmObj->ivPoke('defaultMysteryExitColour', '#900700');
+                    $wmObj->{mysteryExitColour} = undef;
+                    $wmObj->ivPoke('mysteryExitColour', '#900700');
+                }
+            }
+
+            if ($version < 1_001_295) {
+
+                # This version adds a new IV to the world model
+                if (! exists $wmObj->{quickPaintMultiFlag}) {
+
+                    $wmObj->{quickPaintMultiFlag} = undef;
+                    $wmObj->ivPoke('quickPaintMultiFlag', FALSE);
+                }
+            }
+
+            if ($version < 1_001_306) {
+
+                # This version fixes a flaw in the world model, in which room tags aren't deleted
+                #   when a whole region is deleted
+                foreach my $tag ($wmObj->ivKeys('roomTagHash')) {
+
+                    my ($roomNum, $roomObj);
+
+                    $roomNum = $wmObj->ivShow('roomTagHash', $tag);
+                    $roomObj = $wmObj->ivShow('roomModelHash', $roomNum);
+
+                    if (! $roomObj || ! defined $roomObj->roomTag || $roomObj->roomTag ne $tag) {
+
+                        $wmObj->ivDelete('roomTagHash', $tag);
+                    }
+                }
+            }
+
+            if ($version < 1_001_314) {
+
+                # This version adds a new IV to all map label objects
+                foreach my $regionmapObj ($wmObj->ivValues('regionmapHash')) {
+
+                    foreach my $mapLabelObj ($regionmapObj->ivValues('gridLabelHash')) {
+
+                        # e.g. 'town_42'
+                        $mapLabelObj->{id} = $mapLabelObj->{region} . '_' . $mapLabelObj->{number};
+                    }
+                }
+            }
+
+            if ($version < 1_001_318) {
+
+                # Custom room flags did not have their ->customFlag IV set correctly. Fix it
+                foreach my $roomFlagObj ($wmObj->ivValues('roomFlagHash')) {
+
+                    if ($roomFlagObj->filter eq 'custom') {
+
+                        $roomFlagObj->ivPoke('customFlag', TRUE);
+                    }
+                }
+            }
+
+            if ($version < 1_001_320) {
+
+                # This version removes an IV from region model objects
+                foreach my $regionObj ($wmObj->ivValues('regionModelHash')) {
+
+                    delete $regionObj->{regionmapObj};
+                }
+            }
+
+            if ($version < 1_001_325) {
+
+                # This version adds new IVs room model objects
+                foreach my $roomObj ($wmObj->ivValues('roomModelHash')) {
+
+                    my $listRef;
+
+                    if (! exists $roomObj->{invRepExitHash}) {
+
+                        $roomObj->{involuntaryExitHash} = {};
+                        $roomObj->ivEmpty('involuntaryExitHash');
+                        $roomObj->{involuntaryExitPatternHash} = {};
+                        $roomObj->ivEmpty('involuntaryExitPatternHash');
+
+                        # Convert ->involuntaryExitPatternList to the new IV
+                        $listRef = $roomObj->{involuntaryExitPatternList};
+                        foreach my $pattern (@$listRef) {
+
+                            $roomObj->ivAdd('involuntaryExitPatternHash', $pattern, undef);
+                        }
+
+                        delete $roomObj->{involuntaryExitPatternList};
+                    }
+                }
+            }
+
+            if ($version < 1_001_327) {
+
+                my %newHash;
+
+                # Room tags are supposed to be stored in lower-case letters. This version makes sure
+                #   that is so
+                foreach my $tag ($wmObj->ivKeys('roomTagHash')) {
+
+                    $newHash{lc($tag)} = $wmObj->ivShow('roomTagHash', $tag);
+                }
+
+                $wmObj->ivPoke('roomTagHash', %newHash);
+
+                foreach my $roomObj ($wmObj->ivValues('roomModelHash')) {
+
+                    my $listRef;
+
+                    if (defined $roomObj->roomTag) {
+
+                        $roomObj->ivPoke('roomTag', lc($roomObj->roomTag));
+                    }
+
+                    # This version also adds a new IV to room model objects, and renames an existing
+                    #   one
+                    if (! exists $roomObj->{repulseExitPatternHash}) {
+
+                        $roomObj->{repulseExitPatternHash} = {};
+                        $roomObj->ivEmpty('repulseExitPatternHash');
+
+                        # Convert ->repulseExitPatternList to the new IV
+                        $listRef = $roomObj->{repulseExitPatternList};
+                        foreach my $pattern (@$listRef) {
+
+                            $roomObj->ivAdd('repulseExitPatternHash', $pattern, undef);
+                        }
+
+                        delete $roomObj->{repulseExitPatternList};
+
+                        # Update the IV name
+                        $roomObj->{invRepExitHash} = $roomObj->{involuntaryExitHash};
+                        delete $roomObj->{involuntaryExitHash};
+                    }
+                }
+            }
+
+            if ($version < 1_001_328) {
+
+                my %regionHash;
+
+                # This version repairs some errors in exit model objects introduced in certain
+                #   situations
+                foreach my $exitObj ($wmObj->ivValues('exitModelHash')) {
+
+                    my ($roomObj, $regionObj);
+
+                    # At some point in the past, two-way exits had their ->oneWayDir IV wrongly set.
+                    #   This problem does not apply to more recent Axmud versions. Just update all
+                    #   exits
+                    if (! $exitObj->oneWayFlag && defined $exitObj->oneWayDir) {
+
+                        $exitObj->ivUndef('oneWayDir');
+                    }
+
+                    # This error is fixed in this version
+                    if (! $exitObj->regionFlag && ($exitObj->superFlag || $exitObj->notSuperFlag)) {
+
+                        $exitObj->ivPoke('superFlag', FALSE);
+                        $exitObj->ivPoke('notSuperFlag', FALSE);
+
+                        $roomObj = $wmObj->ivShow('modelHash', $exitObj->parent);
+                        $regionObj = $wmObj->ivShow('modelHash', $roomObj->parent);
+
+                        # Any region paths using the exits will have to be updated
+                        $wmObj->ivAdd('updatePathHash', $exitObj->number, $regionObj->name);
+                        $wmObj->ivAdd('updateBoundaryHash', $exitObj->number, $regionObj->name);
+                    }
+                }
+            }
+
+            if ($version < 1_001_329) {
+
+                my %checkHash;
+
+                $self->writeText('Applying essential world model update. Please be patient...');
+                $axmud::CLIENT->desktopObj->updateWidgets(
+                    $self->_objClass . '->updateExtractedData',
+                );
+
+                # When pathfinding routines were updated to allow paths through adjacent regions,
+                #   region paths may have been affected. In addition, there were some problems with
+                #   'safe' region paths which are supposed to avoid rooms with hazardous room flags,
+                #   but which didn't (in certain situations)
+                # Check all region paths and replace any whose rooms are not in the same region
+                OUTER: foreach my $regionmapObj ($wmObj->ivValues('regionmapHash')) {
+
+                    INNER: foreach my $regionPathObj ($regionmapObj->ivValues('regionPathHash')) {
+
+                        if (! exists $checkHash{$regionPathObj->startExit}) {
+
+                            foreach my $roomNum ($regionPathObj->roomList) {
+
+                                my ($roomObj, $firstExitObj);
+
+                                # (For speed, don't use ->ivShow)
+                                $roomObj = $wmObj->{modelHash}{$roomNum};
+                                $firstExitObj = $wmObj->{exitModelHash}{$regionPathObj->startExit};
+
+                                if (
+                                    $roomObj
+                                    && $firstExitObj
+                                    && $roomObj->parent ne $regionmapObj->number
+                                ) {
+                                    # Any region paths using the first exit will have to be updated
+                                    $wmObj->ivAdd(
+                                        'updatePathHash',
+                                        $firstExitObj->number,
+                                        $regionmapObj->name,
+                                    );
+
+                                    # (Only need to add each exit once)
+                                    $checkHash{$regionPathObj->startExit} = undef;
+
+                                    # (Don't need to check the rest of the rooms in this path)
+                                    next INNER;
+                                }
+                            }
+                        }
+                    }
+
+                    # Update those region paths now
+                    if ($wmObj->updatePathHash) {
+
+                        $wmObj->updateRegionPaths($self->session);
+                    }
+
+                    # Now check for 'safe' region paths which should not have room with hazardous
+                    #   room flags, but do
+                    INNER: foreach my $regionPathObj (
+                        $regionmapObj->ivValues('safeRegionPathHash')
+                    ) {
+                        if (! exists $checkHash{$regionPathObj->startExit}) {
+
+                            foreach my $roomNum ($regionPathObj->roomList) {
+
+                                my ($roomObj, $firstExitObj);
+
+                                # (For speed, don't use ->ivShow)
+                                $roomObj = $wmObj->{modelHash}{$roomNum};
+                                $firstExitObj = $wmObj->{exitModelHash}{$regionPathObj->startExit};
+
+                                foreach my $roomFlag ($roomObj->ivKeys('roomFlagHash')) {
+
+                                    if (
+                                        $axmud::CLIENT->ivExists('constRoomHazardHash', $roomFlag)
+                                    ) {
+                                        $regionmapObj->removePaths(
+                                            $regionPathObj->startExit . '_'
+                                            . $regionPathObj->stopExit,
+                                            'safeRegionPathHash',
+                                        );
+
+                                        # (Don't need to check the rest of the rooms in this path)
+                                        next INNER;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         ### new built-in tasks (new IVs for existing tasks are below) #############################
@@ -8462,16 +8840,20 @@
 
             if ($version < 1_000_198 && $self->session) {
 
-                # This version updated the Status task with a new IV. Update all initial/custom
+                # This version updated the Status task with new IVs. Update all initial/custom
                 #   tasks
                 foreach my $taskObj ($self->compileTasks('status_task')) {
 
                     if (! exists $taskObj->{xpNextLevel}) {
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $taskObj->{xpNextLevel} = undef;
+#                        $taskObj->ivUndef('xpNextLevel');
                         $taskObj->{xpNextLevel} = undef;
-                        $taskObj->ivUndef('xpNextLevel');
+                        # (This IV subsequently renamed and/or removed)
+#                        $taskObj->{alignment} = undef;
+#                        $taskObj->ivUndef('alignment');
                         $taskObj->{alignment} = undef;
-                        $taskObj->ivUndef('alignment');
                         $taskObj->{affectHash} = {};
                         $taskObj->ivEmpty('affectHash');
 
@@ -8497,10 +8879,13 @@
 
                     if (! exists $taskObj->{msdpRoomHash}) {
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $taskObj->{msdpRoomHash} = {};
+#                        $taskObj->ivEmpty('msdpRoomHash');
                         $taskObj->{msdpRoomHash} = {};
-                        $taskObj->ivEmpty('msdpRoomHash');
+#                        $taskObj->{msdpExitHash} = {};
+#                        $taskObj->ivEmpty('msdpExitHash');
                         $taskObj->{msdpExitHash} = {};
-                        $taskObj->ivEmpty('msdpExitHash');
                     }
                 }
             }
@@ -8554,6 +8939,9 @@
                 #   to 'text'. Update all initial/custom tasks
                 foreach my $taskObj ($self->compileTasks('debugger_task')) {
 
+                    # (This IV subsequently renamed and/or removed)
+#                    $taskObj->{winType} = undef;
+#                    $taskObj->ivPoke('winType', 'text');
                     $taskObj->{winType} = 'text';
                 }
             }
@@ -8563,10 +8951,13 @@
                 # This version changes character life status. Update all initial/custom tasks
                 foreach my $taskObj ($self->compileTasks('status_task')) {
 
+                    # (This IV subsequently renamed and/or removed)
                     if ($taskObj->{lifeStatus} eq 'asleep') {
-                        $taskObj->ivPoke('lifeStatus', 'sleep');
+#                        $taskObj->ivPoke('lifeStatus', 'sleep');
+                        $taskObj->{lifeStatus} = 'sleep';
                     } elsif ($taskObj->{lifeStatus} eq 'passed_out') {
-                        $taskObj->ivPoke('lifeStatus', 'passout');
+#                        $taskObj->ivPoke('lifeStatus', 'passout');
+                        $taskObj->{lifeStatus} = 'passout';
                     }
                 }
             }
@@ -8609,8 +9000,10 @@
 
                         $taskObj->{lastLine} = undef;
                         $taskObj->ivPoke('lastLine', 0);
-                        $taskObj->{gagFlag} = undef;
-                        $taskObj->ivPoke('gagFlag', TRUE);
+                        # (This IV subsequently renamed and/or removed)
+#                        $taskObj->{gagFlag} = undef;
+#                        $taskObj->ivPoke('gagFlag', TRUE);
+                        $taskObj->{gagFlag} = TRUE;
                     }
                 }
             }
@@ -8667,8 +9060,10 @@
                         $taskObj->{enabledFlag} = undef;
                         $taskObj->ivPoke('enabledFlag', FALSE);
 
+                        # (This IV subsequently renamed and/or removed)
+#                        $taskObj->{radioButton2} = undef;
+#                        $taskObj->ivUndef('radioButton2');
                         $taskObj->{radioButton2} = undef;
-                        $taskObj->ivUndef('radioButton2');
                     }
                 }
             }
@@ -8956,16 +9351,20 @@
 
                     if (! exists $taskObj->{singleBackRefVarHash}) {
 
-                        $taskObj->{singleBackRefVarHash} = {};
-                        $taskObj->ivPoke('singleBackRefVarHash', %varHash);
+                        # (This IV subsequently renamed and/or removed)
+#                        $taskObj->{singleBackRefVarHash} = {};
+#                        $taskObj->ivPoke('singleBackRefVarHash', %varHash);
+                        $taskObj->{singleBackRefVarHash} = {%varHash};
 
                         $taskObj->{gaugeFlag} = undef;
                         $taskObj->ivPoke('gaugeFlag', FALSE);
                         $taskObj->{gaugeValueFlag} = undef;
                         $taskObj->ivPoke('gaugeValueFlag', TRUE);
 
-                        $taskObj->{defaultGaugeFormatList} = [];
-                        $taskObj->ivPoke('defaultGaugeFormatList', @varList);
+                        # (This IV subsequently renamed and/or removed)
+#                        $taskObj->{defaultGaugeFormatList} = [];
+#                        $taskObj->ivPoke('defaultGaugeFormatList', @varList);
+                        $taskObj->{defaultGaugeFormatList} = [@varList];
                         $taskObj->{gaugeObjList} = [];
                         $taskObj->ivEmpty('gaugeObjList');
                     }
@@ -8986,51 +9385,52 @@
                 }
             }
 
-            if ($version < 1_000_691 && $self->session) {
-
-                # This version switched the order of some IVs in the Status task. Update all
-                #   initial/custom tasks
-                foreach my $taskObj ($self->compileTasks('status_task')) {
-
-                    my $string;
-
-                    $string = $taskObj->ivIndex('defaultFormatList', 1);
-
-                    # (No reason why any of these conditions should fail; these IVs aren't
-                    #   supposed to be altered)
-                    if ($string =~ m/^HP\: \@health_points\@.*\(\@social_points_max\@\)$/) {
-
-                        $taskObj->ivReplace(
-                            'defaultFormatList',
-                            1,
-                            'HP: @health_points@ (@health_points_max@) MP: @magic_points@'
-                            . ' (@magic_points_max@) EP: @energy_points@ (@energy_points_max@)'
-                            . ' GP: @guild_points@ (@guild_points_max@) SP: @social_points@'
-                            . ' (@social_points_max@)',
-                        );
-                    }
-
-                    if (
-                        $taskObj->ivIndex('displayVarList', 4) eq 'health_points'
-                        && $taskObj->ivIndex('displayVarList', 6) eq 'energy_points'
-                    ) {
-                        $taskObj->ivReplace('displayVarList', 6, 'magic_points');
-                        $taskObj->ivReplace('displayVarList', 7, 'magic_points_max');
-                        $taskObj->ivReplace('displayVarList', 8, 'energy_points');
-                        $taskObj->ivReplace('displayVarList', 9, 'energy_points_max');
-                    }
-
-                    if (
-                        $taskObj->ivIndex('singleBackRefVarList', 2) eq 'energy_points'
-                        && $taskObj->ivIndex('singleBackRefVarList', 4) eq 'magic_points'
-                    ) {
-                        $taskObj->ivReplace('singleBackRefVarList', 2, 'magic_points');
-                        $taskObj->ivReplace('singleBackRefVarList', 3, 'magic_points_max');
-                        $taskObj->ivReplace('singleBackRefVarList', 4, 'energy_points');
-                        $taskObj->ivReplace('singleBackRefVarList', 5, 'energy_points_max');
-                    }
-                }
-            }
+            # (These IVs subsequently renamed and/or removed)
+#            if ($version < 1_000_691 && $self->session) {
+#
+#                # This version switched the order of some IVs in the Status task. Update all
+#                #   initial/custom tasks
+#                foreach my $taskObj ($self->compileTasks('status_task')) {
+#
+#                    my $string;
+#
+#                    $string = $taskObj->ivIndex('defaultFormatList', 1);
+#
+#                    # (No reason why any of these conditions should fail; these IVs aren't
+#                    #   supposed to be altered)
+#                    if ($string =~ m/^HP\: \@health_points\@.*\(\@social_points_max\@\)$/) {
+#
+#                        $taskObj->ivReplace(
+#                            'defaultFormatList',
+#                            1,
+#                            'HP: @health_points@ (@health_points_max@) MP: @magic_points@'
+#                            . ' (@magic_points_max@) EP: @energy_points@ (@energy_points_max@)'
+#                            . ' GP: @guild_points@ (@guild_points_max@) SP: @social_points@'
+#                            . ' (@social_points_max@)',
+#                        );
+#                    }
+#
+#                    if (
+#                        $taskObj->ivIndex('displayVarList', 4) eq 'health_points'
+#                        && $taskObj->ivIndex('displayVarList', 6) eq 'energy_points'
+#                    ) {
+#                        $taskObj->ivReplace('displayVarList', 6, 'magic_points');
+#                        $taskObj->ivReplace('displayVarList', 7, 'magic_points_max');
+#                        $taskObj->ivReplace('displayVarList', 8, 'energy_points');
+#                        $taskObj->ivReplace('displayVarList', 9, 'energy_points_max');
+#                    }
+#
+#                    if (
+#                        $taskObj->ivIndex('singleBackRefVarList', 2) eq 'energy_points'
+#                        && $taskObj->ivIndex('singleBackRefVarList', 4) eq 'magic_points'
+#                    ) {
+#                        $taskObj->ivReplace('singleBackRefVarList', 2, 'magic_points');
+#                        $taskObj->ivReplace('singleBackRefVarList', 3, 'magic_points_max');
+#                        $taskObj->ivReplace('singleBackRefVarList', 4, 'energy_points');
+#                        $taskObj->ivReplace('singleBackRefVarList', 5, 'energy_points_max');
+#                    }
+#                }
+#            }
 
             if ($version < 1_000_692 && $self->session) {
 
@@ -9798,39 +10198,6 @@
                 }
             }
 
-        ### keycodes #############################################################################
-
-        } elsif ($self->fileType eq 'keycodes') {
-
-            if ($version < 1_000_337) {
-
-                # This version adds an Axmud keycode for the tab key
-                foreach my $keycodeObj ($axmud::CLIENT->ivValues('keycodeObjHash')) {
-
-                    if (! $axmud::CLIENT->ivExists('constKeycodeHash', 'tab')) {
-
-                        $keycodeObj->ivAdd('keycodeHash', 'tab', 'Tab');
-                        $keycodeObj->setReverseHash();
-                    }
-                }
-            }
-
-            if ($version < 1_000_815) {
-
-                # This version removes several IVs (moved to GA::Client)
-                foreach my $keycodeObj ($axmud::CLIENT->ivValues('keycodeObjHash')) {
-
-                    if (exists $keycodeObj->{constKeycodeHash}) {
-
-                        delete $keycodeObj->{constKeycodeHash};
-                        delete $keycodeObj->{altKeycodeHash};
-                        delete $keycodeObj->{keycodeList};
-
-                        # (This line makes sure the correct file object's ->modifyFlag is set)
-                        $keycodeObj->ivPoke('name', $keycodeObj->name);
-                    }
-                }
-            }
         ### dicts #################################################################################
 
         } elsif ($self->fileType eq 'dicts') {
@@ -9958,11 +10325,15 @@
                     if (! $dictObj->ivExists('primaryDirHash', 'northnortheast')) {
 
                         # Update this dictionary's IVs
-                        $dictObj->ivPoke('primaryDirList', @primaryDirList);
-                        $dictObj->{shortPrimaryDirList} = [];
-                        $dictObj->ivPoke('shortPrimaryDirList', @shortPrimaryDirList);
-                        $dictObj->{shortPrimaryDirHash} = {};
-                        $dictObj->ivPoke('shortPrimaryDirHash', %shortPrimaryDirHash);
+                        # (This IV subsequently renamed and/or removed)
+#                        $dictObj->ivPoke('primaryDirList', @primaryDirList);
+                        $dictObj->{primaryDirList} = [@primaryDirList];
+#                        $dictObj->{shortPrimaryDirList} = [];
+#                        $dictObj->ivPoke('shortPrimaryDirList', @shortPrimaryDirList);
+                        $dictObj->{shortPrimaryDirList} = [@shortPrimaryDirList];
+#                        $dictObj->{shortPrimaryDirHash} = {};
+#                        $dictObj->ivPoke('shortPrimaryDirHash', %shortPrimaryDirHash);
+                        $dictObj->{shortPrimaryDirHash} = {%shortPrimaryDirHash};
 
                         foreach my $dir (@primaryDirList) {
 
@@ -10157,6 +10528,22 @@
                                 'P' => 'pick',
                                 'B' => 'break',
                         );
+                    }
+                }
+            }
+
+            if ($version < 1_001_299) {
+
+                # This version adds a new IV
+                foreach my $dictObj ($axmud::CLIENT->ivValues('dictHash')) {
+
+
+                    if (! exists $dictObj->{relativeDirHash}) {
+
+                        $dictObj->{relativeDirHash} = {};
+                        $dictObj->ivEmpty('relativeDirHash');
+                        $dictObj->{relativeAbbrevHash} = {};
+                        $dictObj->ivEmpty('relativeAbbrevHash');
                     }
                 }
             }
@@ -10562,7 +10949,7 @@
         #
         # Expected arguments
         #   $world          - The name of the world profile
-        #   $worldVersion   - The Axmud version used to save the file that the calling function has
+        #   $fileVersion   - The Axmud version used to save the file that the calling function has
         #                       just loaded
         #
         # Return values
@@ -10570,13 +10957,13 @@
         #       user declines to apply a patch
         #   1 if the world profile is patched
 
-        my ($self, $world, $worldVersion, $check) = @_;
+        my ($self, $world, $fileVersion, $check) = @_;
 
         # Local variables
         my ($worldObj, $patchVersion, $choice);
 
         # Check for improper arguments
-        if (! defined $world || ! defined $worldVersion || defined $check) {
+        if (! defined $world || ! defined $fileVersion || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->patchWorldProf', @_);
         }
@@ -10586,12 +10973,12 @@
 
         # Convert versions, e.g. '1.1.0' to '1_001_000' (the calling function has already checked
         #   that $world exists in GA::Client->constWorldPatchHash
-        $worldVersion = $axmud::CLIENT->convertVersion($worldVersion);
+        $fileVersion = $axmud::CLIENT->convertVersion($fileVersion);
         $patchVersion = $axmud::CLIENT->convertVersion(
             $axmud::CLIENT->ivShow('constWorldPatchHash', $world),
         );
 
-        if ($worldVersion > $patchVersion) {
+        if ($fileVersion > $patchVersion) {
 
             # No patch required
             return undef;
@@ -10620,7 +11007,7 @@
             }
         }
 
-        if ($world eq 'alteraeon' && $worldVersion <= 1_001_270) {
+        if ($world eq 'alteraeon' && $fileVersion < 1_001_270) {
 
             # Patch to fix bad regex in the 'verb_exit' component
             my $compObj = $worldObj->ivShow('componentHash', 'verb_exit');
@@ -10630,7 +11017,7 @@
             }
         }
 
-        if ($world eq 'avalonrpg' && $worldVersion <= 1_001_012) {
+        if ($world eq 'avalonrpg' && $fileVersion < 1_001_012) {
 
             my ($compObj, $missionObj);
 
@@ -10683,7 +11070,7 @@
 
         if (
             ($world eq 'dsdev' || $world eq 'dslocal' || $world eq 'dsprime')
-            && $worldVersion <= 1_001_270
+            && $fileVersion < 1_001_270
         ) {
             my $compObj;
 
@@ -10703,11 +11090,52 @@
             }
         }
 
-        if ($world eq 'discworld' && $worldVersion <= 1_001_012) {
+        if ($world eq 'discworld' && $fileVersion < 1_001_343) {
 
             my $compObj;
 
-            # Patch to fix handling of room statements, which doesn't work when MXP is turned on
+            # Patch to fix various issues over several versions of Axmud
+            $worldObj->ivPush(
+                'lockedPatternList',
+                    '^The .* swings shut in your face',
+            );
+
+            $worldObj->ivPush(
+                'failExitPatternList',
+                    '^You just crawled\.  Give your arms a break',
+                    '^You are too tall to go that way',
+                    '^You struggle to leave (.*), but you can\'t make any headway',
+            );
+
+            # (Replace existing regex)
+            $worldObj->ivPoke(
+                'darkRoomPatternList',
+                    'It\'s dark here, isn\'t it',
+            );
+
+            $worldObj->ivPoke(
+                'transientExitPatternList',
+                    'enter (.*) carriage',
+                        undef,
+                    'enter door',
+                        undef,
+            );
+
+            # (MXP supplies gauge data, so the Status task doesn't need to create its own gauge
+            #   level)
+            $worldObj->ivEmpty('gaugeFormatList');
+            # (Translate gauge entities into Status task variables)
+            $worldObj->ivPoke(
+                'mxpStatusVarHash',
+                    'hp'        => 'health_points',
+                    'maxhp'     => 'health_points_max',
+                    'gp'        => 'guild_points',
+                    'maxgp'     => 'guild_points_max',
+                    'sp'        => 'social_points',
+                    'maxsp'     => 'social_points_max',
+                    'xp'        => 'xp_current',
+            );
+
             $worldObj->ivPoke(
                 'verboseAnchorPatternList',
                     '^.*There are (.*) obvious exits\: (.*)',
@@ -10722,11 +11150,17 @@
                     '^.*There are no obvious exits\.',
             );
 
+            $worldObj->ivPoke(
+                'briefAnchorPatternList',
+                '\ \[(.*)\]\.\s*$',
+            );
+
             $worldObj->ivDelete('componentHash', 'verb_descrip');
             $worldObj->ivDelete('componentHash', 'verb_descrip_1');
             $worldObj->ivDelete('componentHash', 'verb_descrip_2');
             $worldObj->ivDelete('componentHash', 'ignore_line');
             $worldObj->ivDelete('componentHash', 'verb_exit');
+            $worldObj->ivDelete('componentHash', 'brief_title_exit');
 
             $worldObj->ivPoke(
                 'verboseComponentList',
@@ -10870,36 +11304,49 @@
 
             if ($compObj) {
 
-                $compObj->{size} = 0;
-                $compObj->{minSize} = 1;
-                $compObj->{maxSize} = 16;
+                $compObj->{size} = 1;
                 $compObj->{analyseMode} = 'check_line';
                 $compObj->{boldSensitiveFlag} = FALSE;
                 $compObj->{useInitialTagsFlag} = FALSE;
                 $compObj->{combineLinesFlag} = TRUE;
 
-                $compObj->{startPatternList} = [];
-                $compObj->{startTagList} = [
-                    'green',                # no mxp and xterm256
-                    '#008000',              # mxp
+                $compObj->{startPatternList} = [
+                    '^.*There are (.*) obvious exits\: (.*)',
+                    '^.*There is one obvious exit\: (.*)',
+                    '^.*There are no obvious exits\.',
                 ];
+                $compObj->{startTagList} = [];
                 $compObj->{startAllFlag} = FALSE;
                 $compObj->{startTagMode} = 'default';
 
                 $compObj->{stopBeforeNoPatternList} = [];
-                $compObj->{stopBeforeNoTagList} = [
-                    'green',
-                    '#008000',
-                ];
+                $compObj->{stopBeforeNoTagList} = [];
                 $compObj->{stopBeforeNoAllFlag} = FALSE;
                 $compObj->{stopBeforeNoTagMode} = 'default';
 
                 $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
             }
+
+            $compObj = Games::Axmud::Obj::Component->new(
+                $axmud::CLIENT,
+                $worldObj,
+                'brief_title_exit',
+                'brief_title_exit',
+            );
+
+            if ($compObj) {
+
+                $compObj->{size} = 1;
+                $compObj->{analyseMode} = 'check_line';
+                $compObj->{boldSensitiveFlag} = FALSE;
+                $compObj->{useInitialTagsFlag} = FALSE;
+                $compObj->{combineLinesFlag} = FALSE;
+
+                $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
+            }
         }
 
-
-        if ($world eq 'luminari' && $worldVersion <= 1_001_270) {
+        if ($world eq 'luminari' && $fileVersion < 1_001_270) {
 
             # Patch to fix bad regex in the ->channelList
             $worldObj->ivPoke(
@@ -10913,7 +11360,7 @@
             );
         }
 
-        if ($world eq 'mud1' && $worldVersion <= 1_001_270) {
+        if ($world eq 'mud1' && $fileVersion < 1_001_270) {
 
             my $compObj;
 
@@ -10939,7 +11386,7 @@
             }
         }
 
-        if ($world eq 'mudii' && $worldVersion <= 1_001_270) {
+        if ($world eq 'mudii' && $fileVersion < 1_001_270) {
 
             my ($missionObj, $compObj, $compObj2);
 
@@ -11013,7 +11460,7 @@
             }
         }
 
-        if ($world eq 'mud2' && $worldVersion <= 1_001_270) {
+        if ($world eq 'mud2' && $fileVersion < 1_001_270) {
 
             my ($missionObj, $compObj, $compObj2);
 
@@ -11087,14 +11534,21 @@
             }
         }
 
-        if ($world eq 'pict' && $worldVersion <= 1_001_174) {
+        if ($world eq 'nanvaent' && $fileVersion < 1_001_343) {
+
+            # Remove follow patterns, which conflict with some room descriptions, causing automapper
+            #   to get lost
+            $worldObj->ivEmpty('followPatternList');
+        }
+
+        if ($world eq 'pict' && $fileVersion < 1_001_174) {
 
             # Change of DNS/IP address, replacing pict.genesismuds.com 4200
             $worldObj->ivPoke('dns', undef);
             $worldObj->ivPoke('ipv4', '136.62.89.155');
         }
 
-        if ($world eq 'swmud' && $worldVersion <= 1_001_012) {
+        if ($world eq 'swmud' && $fileVersion < 1_001_012) {
 
             my $compObj;
 
@@ -11240,7 +11694,7 @@
             }
         }
 
-        if ($world eq 'threekingdoms' && $worldVersion <= 1_001_270) {
+        if ($world eq 'threekingdoms' && $fileVersion < 1_001_270) {
 
             my $compObj;
 
@@ -11252,7 +11706,7 @@
             }
         }
 
-        if ($world eq 'threescapes' && $worldVersion <= 1_001_270) {
+        if ($world eq 'threescapes' && $fileVersion < 1_001_270) {
 
             my $compObj;
 
@@ -11264,12 +11718,25 @@
             }
         }
 
-        if ($world eq 'twotowers' && $worldVersion <= 1_001_270) {
+        if ($world eq 'twotowers' && $fileVersion < 1_001_343) {
+
+            my @newList;
+
+            # Fix wrong channels regex
+            foreach my $item ($worldObj->channelList) {
+
+                if ($item eq '^You tell \w\: ') {
+                    push (@newList, '^You tell \w+\: ');
+                } else {
+                    push (@newList, $item);
+                }
+            }
 
             # Patch to fix handling of brief room statements
             $worldObj->ivPoke(
                 'briefAnchorPatternList',
-                    '^\w[\w\s\!\?\-\,\.]+\((.*)\)',
+                    '[^\s]\(([^\(\)]+\)\s\[[^\[\]]+)\]\s*$',        # Rooms with swimming
+                    '[^\s]\(([^\(\)]+)\)\s*$',                      # Rooms without swimming
             );
         }
 
@@ -12632,30 +13099,6 @@
             # no update required for 'chat_icon'
             # no update required for 'chat_smiley_hash'
 
-        } elsif ($self->fileType eq 'keycodes') {
-
-            if (exists $loadHash{'keycode_obj_hash'}) {
-
-                $hashRef = $loadHash{'keycode_obj_hash'};
-                foreach my $key (keys %$hashRef) {
-
-                    $$hashRef{$key} = $self->update_obj_keycode($$hashRef{$key});
-                }
-
-                $loadHash{'keycode_obj_hash'} = $hashRef;
-            }
-
-            if (exists $loadHash{'current_keycode_obj'}) {
-
-                # If the keycode is missing from GA::Client->keycodeObjHash (for some reason), don't
-                #   let it be added to GA::Client->currentKeycodeObj
-                $obj = $loadHash{'current_keycode_obj'};
-                if (! exists $$hashRef{$obj->name}) {
-
-                    delete $loadHash{'current_keycode_obj'};
-                }
-            }
-
         } elsif ($self->fileType eq 'dicts') {
 
             if (exists $loadHash{'dict_hash'}) {
@@ -13106,40 +13549,6 @@
             delete $obj->{_name};
 
             # (->_parentFile is 'undef' or 'worldmodel')
-
-            # (No IVs to update)
-
-            # Update @ISA
-            @obj::ISA = qw(Games::Axmud);
-        }
-
-        return $obj;
-    }
-
-    sub update_obj_keycode {
-
-        # Called by $self->updateDataAfterRename
-        # Converts AMud::Obj::Keycode > Games::Axmud::Obj::Keycode
-
-        my ($self, $obj) = @_;
-
-        # Local variables
-        my $class;
-
-        # (no improper arguments to check)
-
-        # Update class
-        $class = ref $obj;
-        if ($class =~ m/^AMud\:\:Obj\:\:Keycode/) {
-
-            $class =~ s/^AMud/Games::Axmud/;
-            bless $obj, $class;
-            $obj->{_objClass} = $class;
-
-            $obj->{_objName} = $obj->{_name};
-            delete $obj->{_name};
-
-            # (->_parentFile is 'keycodes')
 
             # (No IVs to update)
 

@@ -26,7 +26,6 @@ exd / exportdata              Exports an object (or objects)
                        tasks belonging to a profile can't be exported - you must
                        export the whole profile.)
          -c <task>  Exports the custom task named <task>
-         -k <obj>   Exports the keycode object named <obj>
          -y <dict>  Exports the dictionary named <dict>
          -z <map>   Exports the zonemap named <map>, including all of its zone
                        models

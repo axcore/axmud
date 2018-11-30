@@ -96,6 +96,19 @@
             # ->ghostRoom is set to 'undef' whenever ->currentRoom is set to 'undef'
             ghostRoom                   => undef,
 
+            # An IV used for handling relative directions (for the handful of worlds that use them)
+            # The last known direction of travel in a cardinal or intercardinal direction, converted
+            #   into a standard primary direction (i.e. if defined, the value is 'north', 'south',
+            #   'east', 'west', 'northeast', 'northwest', 'southeast' or 'southwest'
+            # Whenever $self->moveKnownDirSeen is called, that function tries to translate the
+            #   direction of movement into one of the above. If it succeeds, this IV is set; if it
+            #   fails, this IV is not set or reset (in other words, moving up or down doesn't change
+            #   the value of the IV, but using assisted moves to go through an 'enter portal' exit
+            #   object whose ->mapDir has been allocated as 'north' DOES change the value of the iV
+            # This value is independent of $self->currentRoom; for example, when the character is
+            #   marked as lost, this value is not reset as well
+            facingDir                   => undef,
+
             # When the Automapper window isn't open, this object can track the character's position
             #   - but only when this flag is set to TRUE
             # Initially set to FALSE by default. Set to FALSE when the Automapper window opens or to
@@ -335,7 +348,8 @@
         #   $lostFunc   - If defined, this automapper object is now 'lost' and $self->lastKnownRoom
         #                   needs to be set. $lostFunc is a string describing the calling function
         #                   (which is therefore available for debugging purposes, if necessary).
-        #                   Otherwise set to 'undef'
+        #                   Otherwise set to 'undef'; for example, when the Locator task is reset,
+        #                   this and subsequent arguments should all be 'undef'
         #   $rescueFlag - If TRUE, allow auto-rescue mode to activate, when applicable. FALSE (or
         #                   'undef') otherwise
         #   $newFlag    - If TRUE, called by $self->createNewRoom (or by this function calling
@@ -619,12 +633,12 @@
                 # The automapper object is lost
                 $self->ivPoke('lastKnownRoom', $oldRoomObj);
 
-                # Display a warning in the 'main' window...
+                # Display a message in the 'main' window...
                 $moveCount = $taskObj->ivNumber('moveList');
-                $text = 'MAP: Automapper has lost track of the current location';
+                $text = 'MAP: The automapper has lost track of the current location';
                 if ($taskObj && $moveCount) {
 
-                    $text .= ' (Locator task still expecting ';
+                    $text .= ' (Locator task was still expecting ';
 
                     if ($moveCount == 1) {
                         $text .= '1 more room statement)';
@@ -643,27 +657,34 @@
                 #   is expecting
                 $taskObj->resetMoveList();
 
-                # If the Automapper window is open...
-                if ($self->mapWin) {
-
-                    # If the Automapper window is not in 'wait' mode, the mode must be changed to
-                    #   'wait' mode ('update' mode would allow invalid changes to be written to the
-                    #   map, and 'follow' mode is confusing for the user if it's allowed to remain
-                    #   in place after getting lost)
-                    if ($self->mapWin->mode ne 'wait') {
-
-                        $self->mapWin->setMode('wait');
-                    }
-
-                    # Reset the window's title bar (in case it's showing the number of rooms the
-                    #   Locator was expecting)
-                    $self->mapWin->setWinTitle();
-                }
-
             } else {
 
                 # The last known location must be explicitly reset
                 $self->ivUndef('lastKnownRoom');
+
+                # Display a message in the 'main' window (if there was a current room when this
+                #   function was called), but no sound effects this time
+                if ($currentRoomFlag) {
+
+                    $self->session->writeText('MAP: The automapper\'s current room has been reset');
+                }
+            }
+
+            # If the Automapper window is open...
+            if ($self->mapWin) {
+
+                # If the Automapper window is not in 'wait' mode, the mode must be changed to 'wait'
+                #   mode ('update' mode would allow invalid changes to be written to the map, and
+                #   'follow' mode is confusing for the user if it's allowed to remain in place after
+                #   getting lost)
+                if ($self->mapWin->mode ne 'wait') {
+
+                    $self->mapWin->setMode('wait');
+                }
+
+                # Reset the window's title bar (in case it's showing the number of rooms the
+                #   Locator was expecting)
+                $self->mapWin->setWinTitle();
             }
         }
 
@@ -772,11 +793,25 @@
 
         # Fire any hooks that are using the 'map_room' or 'map_lost' hook events
         if ($newRoomObj) {
+
             $self->session->checkHooks('map_room', $self->currentRoom->number);
-        } elsif ($self->lastKnownRoom) {
-            $self->session->checkHooks('map_no_room', $self->lastKnownRoom->number);
+
         } else {
-            $self->session->checkHooks('map_no_room', 0);
+
+            if ($self->lastKnownRoom) {
+                $self->session->checkHooks('map_no_room', $self->lastKnownRoom->number);
+            } else {
+                $self->session->checkHooks('map_no_room', 0);
+            }
+
+            if ($lostFunc) {
+
+                if ($currentRoomFlag) {
+                    $self->session->checkHooks('map_lost', $oldRoomObj->number);
+                } else {
+                    $self->session->checkHooks('map_lost', 0);
+                }
+            }
         }
 
         return 1;
@@ -829,17 +864,22 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $newRoomObj - The new ghost room (a GA::ModelObj::Room object). If 'undef', there is
-        #                   no ghost room
+        #   $newRoomObj     - The new ghost room (a GA::ModelObj::Room object). If 'undef', there is
+        #                       no ghost room
+        #   $otherRoomObj   - If specified, this represents an earlier ghost room which has not been
+        #                       redrawn yet, and is redrawn by this function
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $newRoomObj, $check) = @_;
+        my ($self, $newRoomObj, $otherRoomObj, $check) = @_;
 
         # Local variables
-        my $oldRoomObj;
+        my (
+            $oldRoomObj,
+            @drawList,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -870,8 +910,15 @@
         #   ghost room (if there is one), both at the same time if possible
         # If either room isn't in the current regionmap, on the current level, then we don't need to
         #   redraw it
-        if ($self->mapWin && $self->mapWin->currentRegionmap) {
-
+        # If GA::Session->worldCmd was called, it has set GA::Session->worldCmdGhostRoom. The
+        #   function might be processing multiple world commands, and we definitely don't want to
+        #   redraw the ghost room dozens (or hundreds) of times. When GA::Session->worldCmdGhostRoom
+        #   is set, don't redraw anything yet
+        if (
+            $self->mapWin
+            && $self->mapWin->currentRegionmap
+            && ! $self->session->worldCmdGhostRoom
+        ) {
             if ($oldRoomObj) {
 
                 if (
@@ -894,7 +941,7 @@
 
             # Final check that neither room has been deleted in the last few microseconds (we think
             #   this code can make a deleted room re-appear on the map, but we're not sure)
-            if ($oldRoomObj && ! $self->worldModelObj->ivExists('modelHash', $oldRoomObj->number)) {
+            if ($oldRoomObj && $self->worldModelObj->ivExists('modelHash', $oldRoomObj->number)) {
 
                 $oldRoomObj = undef;
             }
@@ -904,23 +951,27 @@
                 $newRoomObj = undef;
             }
 
-            if ($oldRoomObj && $newRoomObj) {
+            if ($oldRoomObj) {
 
-                # Draw both rooms together
-                $self->mapWin->doDraw(
-                    'room', $oldRoomObj,
-                    'room', $newRoomObj,
-                );
+                push (@drawList, 'room', $oldRoomObj);
+            }
 
-            } elsif ($oldRoomObj) {
+            if ($newRoomObj) {
 
-                # Redraw the old room
-                $self->mapWin->doDraw('room', $oldRoomObj);
+                push (@drawList, 'room', $newRoomObj);
+            }
 
-            } elsif ($newRoomObj) {
+            if (
+                $otherRoomObj
+                && (! $oldRoomObj || $oldRoomObj ne $otherRoomObj)
+                && (! $newRoomObj || $newRoomObj ne $otherRoomObj)
+            ) {
+                push (@drawList, 'room', $otherRoomObj);
+            }
 
-                # Redraw the new room
-                $self->mapWin->doDraw('room', $newRoomObj);
+            if (@drawList) {
+
+                $self->mapWin->doDraw(@drawList);
             }
         }
 
@@ -1009,10 +1060,10 @@
 
         # Local variables
         my (
-            $dictObj, $parentRegion, $regionmapObj, $dir, $exitObj, $standardDir, $mapDir,
-            $customDir, $dirType, $primaryFlag, $exitNum, $transientFlag, $destRoomObj, $vectorRef,
-            $exitLength, $xPosBlocks, $yPosBlocks, $zPosBlocks, $number, $existRoomObj, $oppExitObj,
-            $destWildMode,
+            $dictObj, $testDir, $slot, $convertDir, $regionmapObj, $dir, $exitObj, $standardDir,
+            $mapDir, $customDir, $dirType, $primaryFlag, $exitNum, $altExitObj, $altIndex,
+            $transientFlag, $craftyExitObj, $destRoomObj, $vectorRef, $exitLength, $xPosBlocks,
+            $yPosBlocks, $zPosBlocks, $number, $existRoomObj, $oppExitObj, $destWildMode,
             @patternList,
         );
 
@@ -1025,7 +1076,45 @@
         # Import the current dictionary (for convenience)
         $dictObj = $self->session->currentDict;
 
-        # PART 1    - basic checks
+        # PART 1    - set the direction the character is facing, if possible
+        #
+        # If $cmdObjs represent movement in the direction north/northeast/east/southeast/south/
+        #   southwest/west/northwest, we can set the direction the character is facing now; the
+        #   setting can be refined later in this function, once an exit object has been identified
+        # Otherwise, if the user has literally typed a relative direction like 'forward', then we
+        #   can set up the equivalent primary direction ready for PART 5
+        $testDir = $dictObj->convertStandardDir($cmdObj->cmd);
+        if (
+            defined $testDir
+            && $axmud::CLIENT->ivExists('constShortPrimaryDirHash', $testDir)
+            && $testDir ne 'up'
+            && $testDir ne 'down'
+        ) {
+            $self->ivPoke('facingDir', $testDir);
+
+        } else {
+
+            # Is $cmdObj->cmd a relative direction like 'forward'?
+            $slot = $dictObj->convertRelativeDir($cmdObj->cmd);
+            if (defined $slot) {
+
+                # $slot is in the range 0-7. Convert it into a standard primary direction like
+                #   'north', depending on which way the character is currently facing
+                $convertDir = $dictObj->rotateRelativeDir(
+                    $slot,
+                    $self->facingDir,
+                );
+
+                if (defined $convertDir) {
+
+                    # Translate the standard primary direction into the equivalent custom primary
+                    #   direction, ready for PART 5
+                    $convertDir = $dictObj->ivShow('primaryDirHash', $convertDir);
+                }
+            }
+        }
+
+        # PART 2    - basic checks
         #
         # Do nothing if:
         #   1. The Automapper window is open and is in 'wait' mode
@@ -1039,7 +1128,7 @@
             return undef;
         }
 
-        # PART 2    - return from temporary regions
+        # PART 3    - return from temporary regions
         #
         # If the character moved through a 'temp_region' random exit, check the Locator task's
         #   current room. If it matches the random exit's parent room, then there's no need to worry
@@ -1050,15 +1139,10 @@
             return 1;
         }
 
-        # PART 3    - get current room's region
+        # PART 4    - get current room's region
         #
         # Get the current room's parent region and, from there, the regionmap
-        $parentRegion = $self->worldModelObj->ivShow('modelHash', $self->currentRoom->parent);
-        if ($parentRegion) {
-
-            $regionmapObj = $self->worldModelObj->ivShow('regionmapHash', $parentRegion->name);
-        }
-
+        $regionmapObj = $self->worldModelObj->findRegionmap($self->currentRoom->parent);
         if (! $regionmapObj) {
 
             # The current room doesn't appear to be in a region - so nothing we can do
@@ -1077,12 +1161,18 @@
             );
         }
 
-        # PART 4    - get direction of movement
+        # PART 5    - get direction of movement
         #
         # Set $dir, the direction of movement, so that we can work out which exit object is being
-        #   used. For assisted moves, we already know the exit object used (which will save us some
-        #   time)
-        if ($cmdObj->assistedFlag) {
+        #   used
+        # Relative directions like 'forward' have already been translated into a custom primary
+        #   direction
+        if ($convertDir) {
+
+            $dir = $convertDir;
+
+        # For assisted moves, we already know the exit object used (which will save us some time)
+        } elsif ($cmdObj->assistedFlag) {
 
             $dir = $cmdObj->cmd;
             $exitObj = $cmdObj->assistedExitObj;
@@ -1100,7 +1190,7 @@
             $dir = $cmdObj->moveDir;
         }
 
-        # PART 5    - identify an exit object (GA::Obj::Exit) matching the direction
+        # PART 6    - identify an exit object (GA::Obj::Exit) matching the direction
         #
         #   $dir can be any of the following:
         #   (i) The original command used in an assisted move
@@ -1128,6 +1218,8 @@
         #
         #   (iv) A direction not stored in the dictionary, such as 'enter well'
         #           - Neither $standardDir nor $customDir are set
+        #           - For relative directions, $dir has already been set to the corresponding
+        #               custom primary direction
 
         if ($cmdObj->assistedFlag) {
 
@@ -1175,16 +1267,20 @@
                 $exitNum = $self->currentRoom->ivShow('exitNumHash', $dir);
                 $exitObj = $self->worldModelObj->ivShow('exitModelHash', $exitNum);
 
-            # Otherwise, if $dir is a primary direction, see if an existing exit from the current
-            #   room has the same drawn map direction
-            } elsif ($standardDir && $customDir) {
+            } else {
 
                 OUTER: foreach my $number ($self->currentRoom->ivValues('exitNumHash')) {
 
-                    my $otherExitObj = $self->worldModelObj->ivShow('exitModelHash', $number);
+                    my ($otherExitObj, $index);
 
+                    $otherExitObj = $self->worldModelObj->ivShow('exitModelHash', $number);
+
+                    # If $dir is a primary direction, see if an existing exit from the current room
+                    #   has the same drawn map direction
                     if (
-                        $otherExitObj->mapDir
+                        $standardDir
+                        && $customDir
+                        && $otherExitObj->mapDir
                         && $otherExitObj->mapDir eq $customDir
                         # (Don't leave using an exit attached to a shadow exit; leave via the shadow
                         #   exit instead)
@@ -1193,11 +1289,33 @@
                         $exitObj = $otherExitObj;
                         last OUTER;
                     }
+
+                    # Otherwise, check against each exit's alternative nominal directions
+                    if (defined $otherExitObj->altDir) {
+
+                        $index = index ($otherExitObj->altDir, $dir);
+                        # Don't use the alternative direction unless we have to. If several exits
+                        #   have matching alternative nominal directions, use the one in which the
+                        #   matching portion occurs earliest in the string
+                        if (
+                            $index > -1
+                            && (! $altExitObj || $altIndex > $index)
+                        ) {
+                            $altExitObj = $otherExitObj;
+                            $altIndex = $index;
+                        }
+                    }
+                }
+
+                # Use the exit with the alternative nominal direction, if necessary
+                if (! $exitObj && $altExitObj) {
+
+                    $exitObj = $altExitObj;
                 }
             }
         }
 
-        # PART 6   - If an exit matching the direction $dir doesn't exit, test $dir against
+        # PART 7   - If an exit matching the direction $dir doesn't exit, test $dir against
         #               transient exit patterns
         @patternList = $self->session->currentWorld->transientExitPatternList;
         if (! $exitObj && @patternList) {
@@ -1226,8 +1344,8 @@
                             ($result) = $self->session->worldModelObj->compareRooms(
                                 $self->session,
                                 $roomObj,
-                                undef,
-                                TRUE,               # Match dark rooms
+                                undef,          # Compare against the Locator task's current room
+                                TRUE,           # Match dark rooms
                             );
 
                             if ($result) {
@@ -1269,7 +1387,7 @@
             }
         }
 
-        # PART 7   - In crafty moves mode, if an exit matching the direction $dir doesn't exist,
+        # PART 8   - In crafty moves mode, if an exit matching the direction $dir doesn't exist,
         #               create a hidden exit right now (even if the world itself doesn't include the
         #               exit in its exit lists - I'm looking at you, Discworld!)
         if (
@@ -1296,20 +1414,51 @@
                     $exitObj,
                     TRUE,               # Hidden exit
                 );
+
+                # (Might want to create an exit from the opposite direction in the destination room,
+                #   too)
+                $craftyExitObj = $exitObj;
             }
         }
 
-        # PART 8    - deal with impassable, random, unallocated and unallocated exits
+        # PART 9    - set the direction the character is facing, if possible
+        #
+        # If an exit object has been identified, we can set the direction the character is facing
+        #   to the exit's ->mapDir (so, if an exit like 'enter portal' is being drawn as a 'west'
+        #   exit, the character is now facing west)
+        # If an exit object has been identified, we can update $self->facingDir
+        if (
+            $exitObj
+            && $exitObj->mapDir
+            && $axmud::CLIENT->ivExists('constShortPrimaryDirHash', $exitObj->mapDir)
+            && $exitObj->mapDir ne 'up'
+            && $exitObj->mapDir ne 'down'
+        ) {
+            $self->ivPoke('facingDir', $exitObj->mapDir);
+        }
+
+        # PART 10   - deal with impassable, mystery, random, unallocated and unallocated exits
         #
         # If the character is using an exit marked as impassable, then we're now lost
-        if ($exitObj && $exitObj->exitOrnament eq 'impass') {
-
+        if (
+            $exitObj
+            && ($exitObj->exitOrnament eq 'impass' || $exitObj->exitOrnament eq 'mystery')
+        ) {
             # Show an explanation, if allowed
             if ($self->worldModelObj->explainGetLostFlag) {
 
-                $self->session->writeText(
-                    'MAP: Lost because the character used an exit marked as \'impassable\'',
-                );
+                if ($exitObj->exitOrnament eq 'impass') {
+
+                    $self->session->writeText(
+                        'MAP: Lost because the character used an exit marked as \'mystery\'',
+                    );
+
+                } else {
+
+                    $self->session->writeText(
+                        'MAP: Lost because the character used an exit marked as \'impassable\'',
+                    );
+                }
             }
 
             # The presence of a second argument means 'the character is lost'
@@ -1365,7 +1514,7 @@
             );
         }
 
-        # PART 9    - deal with ordinary exits whose destination room is already set
+        # PART 11   - deal with ordinary exits whose destination room is already set
         #
         # If an exit matching $dir exists, and it leads to a known room, we can use the room
         if ($exitObj && $exitObj->destRoom) {
@@ -1384,7 +1533,7 @@
             }
         }
 
-        # PART 10   - check the location where we would expect a destination room to be placed for
+        # PART 12   - check the location where we would expect a destination room to be placed for
         #               movement in the direction $dir, and see if a room exists there
         #
         # For primary directions, check the gridblock to which the exit is supposed to lead and see
@@ -1449,7 +1598,7 @@
             }
         }
 
-        # PART 11   - deal with movement between rooms, when one (or both) rooms is in wilderness
+        # PART 13   - deal with movement between rooms, when one (or both) rooms is in wilderness
         #               mode
         if ($existRoomObj) {
 
@@ -1755,7 +1904,7 @@
             }
         }
 
-        # PART 12   - in basic mapping mode and when the character is following someone/something,
+        # PART 14   - in basic mapping mode and when the character is following someone/something,
         #               we can create an exit right now, if one doesn't already exist (assuming
         #               that the automapper window is open and in 'update' mode)
         #
@@ -1864,7 +2013,7 @@
             }
         }
 
-        # PART 13   - if we identified a possible destination room in PART 10, we can use it
+        # PART 15   - if we identified a possible destination room in PART 12, we can use it
         if ($existRoomObj) {
 
             # Use it
@@ -1875,10 +2024,11 @@
                 $dir,
                 $customDir,
                 $exitObj,
+                $craftyExitObj,
             );
         }
 
-        # PART 14   - no possible destination room exists; either create a new room, or mark the
+        # PART 16   - no possible destination room exists; either create a new room, or mark the
         #               character as being lost
         if (! $self->mapWin) {
 
@@ -2022,7 +2172,7 @@
 
         return $self->setCurrentRoom(
             undef,
-            $self->_objClass . '->moveUnknownDirSeen',    # Character now lost
+            $self->_objClass . '->moveUnknownDirSeen',  # Character now lost
             TRUE,                                       # Use auto-rescue mode, if possible
         );
 
@@ -2172,7 +2322,7 @@
 
         # Local variables
         my (
-            $worldObj, $dictObj, $primSecFlag, $standard,
+            $worldObj, $dictObj, $dirType, $recogniseFlag, $standard,
             @redrawList,
         );
 
@@ -2201,10 +2351,10 @@
         $worldObj = $self->session->currentWorld;
         $dictObj = $self->session->currentDict;
 
-        # If $dir is a primary/secondary direction, but abbreviated, unabbreviate it
-        if ($dictObj->checkPrimaryDir($dir) || $dictObj->checkSecondaryDir($dir)) {
+        # If $dir is a primary/secondary/relative direction, but abbreviated, unabbreviate it
+        if ($dictObj->ivExists('combDirHash', $dir)) {
 
-            $primSecFlag = TRUE;
+            $recogniseFlag = TRUE;
             $dir = $dictObj->unabbrevDir($dir);
         }
 
@@ -2284,7 +2434,7 @@
         # No exit object exists in the direction $dir
         # For primary/secondary directions, make a record of the failed exit, if allowed to do so
         #   (in Axmud terminology this is called a checked direction)
-        if ($primSecFlag && $self->worldModelObj->collectCheckedDirsFlag) {
+        if ($recogniseFlag && $self->worldModelObj->collectCheckedDirsFlag) {
 
             if ($self->currentRoom->ivExists('checkedDirHash', $dir)) {
                 $self->currentRoom->ivIncHash('checkedDirHash', $dir);
@@ -2368,7 +2518,10 @@
         my ($self, $cmdObj, $check) = @_;
 
         # Local variables
-        my ($dictObj, $exitObj, $dir, $dirType, $standardDir, $customDir, $exitNum);
+        my (
+            $dictObj, $slot, $convertDir, $exitObj, $dir, $dirType, $standardDir, $customDir,
+            $exitNum,
+        );
 
         # Check for improper arguments
         if (! defined $cmdObj || defined $check) {
@@ -2379,12 +2532,39 @@
         # Import the current dictionary (for convenience)
         $dictObj = $self->session->currentDict;
 
-        # PART 1    - get direction of movement
+        # PART 1    - identify relative directions
+
+        # Is $cmdObj->cmd a relative direction like 'forward'?
+        $slot = $dictObj->convertRelativeDir($cmdObj->cmd);
+        if (defined $slot) {
+
+            # $slot is in the range 0-7. Convert it into a standard primary direction like
+            #   'north', depending on which way the character is currently facing
+            $convertDir = $dictObj->rotateRelativeDir(
+                $slot,
+                $self->facingDir,
+            );
+
+            if (defined $convertDir) {
+
+                # Translate the standard primary direction into the equivalent custom primary
+                #   direction, ready for PART 5
+                $convertDir = $dictObj->ivShow('primaryDirHash', $convertDir);
+            }
+        }
+
+        # PART 2    - get direction of movement
         #
         # Set $dir, the direction of movement, so that we can work out which exit object is being
-        #   used. For assisted moves, we already know the exit object used (which will save us some
-        #   time)
-        if ($cmdObj->assistedFlag) {
+        #   used
+        # Relative directions like 'forward' have already been translated into a custom primary
+        #   direction
+        if ($convertDir) {
+
+            $dir = $convertDir;
+
+        # For assisted moves, we already know the exit object used (which will save us some time)
+        } elsif ($cmdObj->assistedFlag) {
 
             $exitObj = $cmdObj->assistedExitObj;
             if ($exitObj->destRoom) {
@@ -2409,7 +2589,7 @@
             $dir = $cmdObj->moveDir;
         }
 
-        # PART 2    - identify an exit object (GA::Obj::Exit) matching the direction
+        # PART 3    - identify an exit object (GA::Obj::Exit) matching the direction
         #
         #   $dir can be any of the following:
         #   (i) The original command used in an assisted move
@@ -2436,6 +2616,8 @@
         #
         #   (iv) A direction not stored in the dictionary, such as 'enter well'
         #           - Neither $standardDir nor $customDir are set
+        #           - For relative directions, $dir has already been set to the corresponding
+        #               custom primary direction
 
         # If $dir is a custom primary or secondary direction...
         if ($dictObj->ivExists('combDirHash', $dir)) {
@@ -2488,7 +2670,7 @@
             }
         }
 
-        # PART 3    - Return the result
+        # PART 4    - Return the result
         if ($exitObj && $exitObj->destRoom) {
 
             return $self->worldModelObj->ivShow('modelHash', $exitObj->destRoom);
@@ -3154,19 +3336,23 @@
         #                       'undef', the exit can't be drawn on the map
         #   $exitObj        - An existing GA::Obj::Exit to use, if known. If none is specified,
         #                       the destination room's ->exitNumHash is consulted to provide it
+        #   $craftyExitObj  - Set when called from $self->moveKnownDirSeen, after a hidden exit in
+        #                       the departure room has been created in crafty moves mode (this
+        #                       function might want to create a twin exit for it)
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
         my (
-            $self, $departRoomObj, $arriveRoomObj, $fixedFlag, $dir, $customDir, $exitObj, $check,
+            $self, $departRoomObj, $arriveRoomObj, $fixedFlag, $dir, $customDir, $exitObj,
+            $craftyExitObj, $check,
         ) = @_;
 
         # Local variables
         my (
-            $standardDir, $result, $msg, $parentRegion, $regionmapObj, $vectorRef, $movedRoomObj,
-            $xPosBlocks, $yPosBlocks, $zPosBlocks,
+            $standardDir, $result, $msg, $regionmapObj, $oppDir, $oppExitObj, $vectorRef,
+            $movedRoomObj, $xPosBlocks, $yPosBlocks, $zPosBlocks,
         );
 
         # Check for improper arguments
@@ -3191,13 +3377,17 @@
             $self->session,
             $arriveRoomObj,
             undef,              # Compare against the Locator task's current room
-            TRUE,
+            TRUE,               # Match dark rooms
         );
 
         if (! $result) {
 
             # (Convert $customDir back into a standard direction, if possible)
-            $standardDir = $self->session->currentDict->checkStandardDir($customDir);
+            if ($customDir) {
+
+                $standardDir = $self->session->currentDict->convertStandardDir($customDir);
+            }
+
             if (! $standardDir && $exitObj && $exitObj->mapDir) {
 
                 # (If non-primary directorions have been allocated a map direction, use that
@@ -3278,12 +3468,7 @@
 
 
             # Set some variables, ready for the call to $self->autoProcessNewRoom
-            $parentRegion = $self->worldModelObj->ivShow('modelHash', $departRoomObj->parent);
-            if ($parentRegion) {
-
-                $regionmapObj
-                    = $self->worldModelObj->ivShow('regionmapHash', $parentRegion->name);
-            }
+            $regionmapObj = $self->worldModelObj->findRegionmap($departRoomObj->parent);
 
             # Check that we can create a new room and, if so, create it
             if (
@@ -3319,6 +3504,41 @@
             # The Locator task's room matches $arriveRoomObj. If the Automapper window is open and
             #   and in 'update' mode, update the map
             if ($self->mapWin && $self->mapWin->mode eq 'update') {
+
+                if (
+                    $craftyExitObj
+                    && $standardDir
+                    && $self->worldModelObj->autocompleteExitsFlag
+                    && $arriveRoomObj->wildMode eq 'normal'
+                ) {
+                    # In crafty moves mode a hidden exit was created from $departRoomObj. Because
+                    #   ->autocompleteExitsFlag is set, create a twin exit for it (if an exit in
+                    #   the right direction doesn't already exist)
+                    $oppDir = $self->session->currentDict->ivShow(
+                        'combOppDirHash',
+                        $craftyExitObj->dir,
+                    );
+
+                    if ($oppDir && ! $arriveRoomObj->ivExists('exitNumHash', $oppDir)) {
+
+                        $oppExitObj = $self->worldModelObj->addExit(
+                            $self->session,
+                            FALSE,              # Don't update Automapper window yet
+                            $arriveRoomObj,
+                            $oppDir,
+                            $axmud::CLIENT->ivShow('constOppDirHash', $standardDir),
+                        );
+
+                        if ($oppExitObj) {
+
+                            $self->worldModelObj->setHiddenExit(
+                                FALSE,              # Don't update Automapper window yet
+                                $oppExitObj,
+                                TRUE,               # Hidden exit
+                            );
+                        }
+                    }
+                }
 
                 # Connect the two rooms if they're not already connected (and if they are, make
                 #   the exit between them two-way exits)
@@ -3414,7 +3634,7 @@
 
         # Local variables
         my (
-            $regionObj, $regionmapObj, $lostMsg, $originRoomObj, $originMode,
+            $regionmapObj, $lostMsg, $regionObj, $originRoomObj, $originMode, $tempObj,
             @locateList, @foundList, @selectList,
         );
 
@@ -3425,8 +3645,7 @@
         }
 
         # Get the current room's parent region and regionmap
-        $regionObj = $self->worldModelObj->ivShow('modelHash', $self->currentRoom->parent);
-        $regionmapObj = $self->worldModelObj->ivShow('regionmapHash', $regionObj->name);
+        $regionmapObj = $self->worldModelObj->findRegionmap($self->currentRoom->parent);
 
         # Random exit type 'same_region' - exit leads to a random location in the same region
         if ($exitObj->randomType eq 'same_region') {
@@ -3515,11 +3734,11 @@
                     }
 
                     # Create a new room in the temporary region
-                    $regionmapObj = $self->worldModelObj->ivShow('regionmapHash', $regionObj->name);
+                    $tempObj = $self->worldModelObj->ivShow('regionmapHash', $regionObj->name);
                     if (
                         ! $self->createNewRoom(
-                            $regionmapObj,
-                            $regionmapObj->getGridCentre(),     # Put new room at centre of region
+                            $tempObj,
+                            $tempObj->getGridCentre(),          # Put new room at centre of region
                             'update',                           # Switch to 'update' mode
                             TRUE,                               # New room is current room
                             TRUE,                               # Room takes properties from Locator
@@ -3926,6 +4145,7 @@
         my (
             $worldObj, $wmObj, $string, $anchorOffset, $anchorNum, $bufferAnchorNum,
             @componentList, @lineList,
+            %checkHash,
         );
 
         # Check for improper arguments
@@ -3987,6 +4207,19 @@
             # $component can be any custom-named key in GA::Profile::World->componentHash; get the
             #   corresponding GA::Obj::Component object
             $componentObj = $worldObj->ivShow('componentHash', $component);
+
+            # Some worlds might use multiple components of the same type (for example, two
+            #   'verb_descrip' components)
+            # Here, we only care about the first occurence of each component type. If $component is
+            #   'anchor', then there will be no $componentObj, so we first have to check for that
+            if ($componentObj) {
+
+                if (exists $checkHash{$componentObj->type}) {
+                    next OUTER;
+                } else {
+                    $checkHash{$componentObj->type} = undef;
+                }
+            }
 
             if ($component eq 'anchor') {
 
@@ -4163,7 +4396,7 @@
         if (@lineList) {
 
             # Insert an empty line, so that there's a gap between room statements
-            $self->session->processIncomingData(" \n");
+            $self->session->processIncomingData("\n");
 
             # Display the pseudo-room statement in the 'main' window
             for (my $count = 0; $count < scalar @lineList; $count++) {
@@ -4400,10 +4633,12 @@
             # Failsafe - do nothing if no exit found
             return undef;
 
-        # In 'connect offline' mode, movements through exits which are marked impassable, which are
-        #   random exits or which have no destination room mean that the character is now 'lost'
+        # In 'connect offline' mode, movements through exits which are marked impassable/mystery,
+        #   which are random exits or which have no destination room mean that the character is now
+        #   'lost'
         } elsif (
             $exitObj->exitOrnament eq 'impass'
+            || $exitObj->exitOrnament eq 'mystery'
             || $exitObj->randomType ne 'none'
             || ! $exitObj->destRoom
         ) {
@@ -4413,6 +4648,10 @@
                 if ($exitObj->exitOrnament eq 'impass') {
 
                     $msg = 'MAP: Lost because the character used an exit marked as \'impassable\'';
+
+                } elsif ($exitObj->exitOrnament eq 'mystery') {
+
+                    $msg = 'MAP: Lost because the character used an exit marked as \'mystery\'';
 
                 } elsif ($exitObj->randomType ne 'none') {
 
@@ -4455,6 +4694,34 @@
 
     ##################
     # Accessors - set
+
+    sub set_facingDir {
+
+        my ($self, $dir, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_facingDir', @_);
+        }
+
+        # If $dir is specified, check it's one of the permitted standard primary directiosn
+        if (
+            defined $dir
+            && (
+                ! $axmud::CLIENT->ivExists('constShortPrimaryDirHash', $dir)
+                || $dir eq 'up'
+                || $dir eq 'down'
+            )
+        ) {
+            return undef;
+        }
+
+        # Update IVs
+        $self->ivPoke('facingDir', $dir);       # Can be 'undef', but otherw
+
+        return 1;
+    }
 
     sub set_mapWin {
 
@@ -4674,6 +4941,9 @@
         { $_[0]->{lastKnownRoom} }
     sub ghostRoom
         { $_[0]->{ghostRoom} }
+
+    sub facingDir
+        { $_[0]->{facingDir} }
 
     sub trackAloneFlag
         { $_[0]->{trackAloneFlag} }

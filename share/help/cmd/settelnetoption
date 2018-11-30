@@ -10,21 +10,21 @@ sto / settelnetoption         Enables/disables telnet negotiation options
       ;sto -r                 Enables/disables EOR (negotiate End Of Record)
       ;sto -n                 Enables/disables NAWS (Negotatiate About Window
                                  Size)
+      ;sto -v                 Enables/disables NEW-ENVIRON (New Environment
+                                 option)
+      ;sto -c                 Enables/disables CHARSET (Character Set and
+                                 translation)
  
    Notes:
       Most worlds exchange (negotiate) information with the client that isn't 
-         usually visible to the user. Some common telnet options include ECHO,
-         SGA, TTYPE, EOR and NAWS. In Axmud, all telnet options are enabled by
-         default.
+         usually visible to the user. In Axmud, all telnet options are enabled
+         by default.
       You can use this command to enable and disable telnet options. The action 
          applies to every existing connection (and future ones). 
       Since Axmud negotiates telnet options passively, if you re-enable a telnet
          option after disabling it, the option will still be disabled in 
          existing connections; the change will be applied to all future 
          connections.
-         
-      Axmud's code uses variables for NEW-ENVIRON and CHARSET, but these telnet
-         options haven't been implemented yet.
       See also the help for ';setmudprotocol'.
 
    User commands:

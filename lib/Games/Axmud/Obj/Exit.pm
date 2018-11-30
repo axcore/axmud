@@ -73,7 +73,7 @@
                 # Don't display an error message
                 return undef;
 
-            } else {
+            } elsif ($axmud::CLIENT->debugExitFlag) {
 
                 # Reduce $dir to a manageably short string, so that the error message doesn't
                 #   take up several lines
@@ -89,10 +89,14 @@
                     $string = '';
                 }
 
-                return $axmud::CLIENT->writeError(
-                    'Illegal direction \'' . $dir . '...\' (max 32 chars)' . $string,
-                    $class . '->new',
+                return $session->mainWin->writeDebug(
+                    'Illegal direction \'' . $dir . '...\' (max 64 chars)' . $string,
                 );
+
+            } else {
+
+                # No debug message to display
+                return undef;
             }
         }
 
@@ -128,14 +132,24 @@
 
             # IVs unique to exit model objects
             # What type of exit this is - 'primaryDir', 'primaryAbbrev', 'secondaryDir',
-            #   'secondaryAbbrev' ('undef' for other kinds of exit, or if type unknown. Matches a
-            #   value in the dictionary object's ->combDirHash)
+            #   'secondaryAbbrev', 'relativeDir', 'relativeAbbrev'
+            # 'undef' for other kinds of exit, or if type unknown. Matches a value in the
+            #   dictionary object's ->combDirHash)
             exitType                    => undef,
 
             # The exit's nominal direction - the one that would be expected to appear in the parent
             #   room's list of exits, e.g. 'north', 'portal' (absolute max length 32 chars; can
             #   include spaces and non-alphanumeric characters)
             dir                         => $dir,
+            # A string if alternative nominal directions (for worlds like Discworld, in which the
+            #   same exit might be called 'forwards' or 'backwards', depending on which direction
+            #   the character arrived from)
+            # The nominal direction (->dir) of exits in the Locator task's current room is
+            #   compared against model exits' ->altDir in a Perl index operation. If ->dir is found
+            #   somewhere in ->altDir, the exits are a match (e.g. ->dir 'right', ->altDir
+            #   'left right' produces a match)
+            # Set to 'undef' for all exits that don't have alternative nominal directions
+            altDir                      => undef,
             # For primary directions, the standard primary direction that corresponds to $self->dir
             #   (which is a custom primary direction)
             # For other directions, one of eighteen standard primary directions (north, northeast,
@@ -226,7 +240,7 @@
             # Flag set to TRUE if this is a known uni-directional exit (e.g. you can go north from A
             #   to B, but you can't go south from B to A), FALSE if not
             oneWayFlag                  => FALSE,
-            # For one-way exits, the primary direction in which the far end of a one-way exit as
+            # For one-way exits, the primary direction in which the far end of a one-way exit is
             #   drawn (i.e. where it touches the destination room). By default, the opposite of this
             #   exit's ->mapDir (so if the exit leads east, it touches the destination room at the
             #   point, where a hypothetical west exit would be drawn)
@@ -252,6 +266,7 @@
             #   'lock' - exit is some kind of lockable door
             #   'open' - exit is some kind of openable door
             #   'impass' - exit is completely impassable
+            #   'mystery' - the method of going through the exit is currently unknown
             exitOrnament                => 'none',
             # The exit's current state, if known. Possible values are 'normal' (exit is passable or
             #   state not known), 'open' (exit is an open door), 'closed' (exit is a closed door),
@@ -470,6 +485,8 @@
             }
         }
 
+        # (Obviously, there's no standard command for 'mystery' exits)
+
         # 3. ->dir
         # --------
 
@@ -494,12 +511,19 @@
             @cmdList = (@openList, @closeList, $self->dir, @lockList);
         }
 
-        # Combine the commands (and sequences of commands) into a single string, with each
-        #   individual world command separated from the next one by Axmud's command separator
-        $cmdString = join($axmud::CLIENT->cmdSep, @cmdList);
+        if (! @cmdList) {
 
-        # Return the string
-        return $cmdString;
+            return undef;
+
+        } else {
+
+            # Combine the commands (and sequences of commands) into a single string, with each
+            #   individual world command separated from the next one by Axmud's command separator
+            $cmdString = join($axmud::CLIENT->cmdSep, @cmdList);
+
+            # Return the string
+            return $cmdString;
+        }
     }
 
     ##################
@@ -527,6 +551,8 @@
 
     sub dir
         { $_[0]->{dir} }
+    sub altDir
+        { $_[0]->{altDir} }
     sub mapDir
         { $_[0]->{mapDir} }
     sub drawMode
