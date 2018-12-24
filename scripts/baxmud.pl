@@ -37,13 +37,13 @@ use vars qw(
     $AUTHORS $COPYRIGHT $URL $DESCRIP $NAME_FILE @COMPAT_FILE_LIST @COMPAT_DIR_LIST @COMPAT_EXT_LIST
     $BLIND_MODE_FLAG $SAFE_MODE_FLAG $TEST_MODE_FLAG @TEST_MODE_LOGIN_LIST $TEST_MODE_CMD_FLAG
     $TEST_TERM_MODE_FLAG $TEST_GLOB_MODE_FLAG $TEST_REGEX_FLAG $TEST_REGEX_ERROR
-    $TEST_PRE_CONFIG_FLAG $TEST_CTRL_SEQ_FLAG $TEST_MODEL_FLAG $TEST_MODEL_TIME @LICENSE_LIST
-    @CREDIT_LIST $TOP_DIR $SHARE_DIR $DEFAULT_DATA_DIR $DATA_DIR $CLIENT
+    $TEST_PRE_CONFIG_FLAG $TEST_CTRL_SEQ_FLAG @LICENSE_LIST @CREDIT_LIST $TOP_DIR $SHARE_DIR
+    $DEFAULT_DATA_DIR $DATA_DIR $CLIENT
 );
 
 $SCRIPT = 'Axmud';              # Name used in system messages
-$VERSION = '1.1.343';           # Version number for this client
-$DATE = '30 Nov 2018';
+$VERSION = '1.1.405';           # Version number for this client
+$DATE = '24 Dec 2018';
 $NAME_SHORT = 'axmud';          # Lower-case version of $SCRIPT; same as the package name above
 $NAME_ARTICLE = 'an Axmud';     # Name with an article
 $BASIC_NAME = 'Axbasic';        # Name of Axmud's built-in scripting library
@@ -102,11 +102,6 @@ $TEST_PRE_CONFIG_FLAG = FALSE;
 # Simple telnet mode: If $TEST_CTRL_SEQ_FLAG is TRUE, VT100 control sequences (except colour/style
 #   sequences) are ignored (equivalent to GA::Client->useCtrlSeqFlag being FALSE)
 $TEST_CTRL_SEQ_FLAG = FALSE;
-# Automatic world model test mode: If $TEST_MODEL_FLAG is true, various parts of the code run a
-#   silent world model test from time to time, displaying output only if the test fails
-$TEST_MODEL_FLAG = FALSE;
-# The time of the last world model test (matches GA::Session->sessionTime)
-$TEST_MODEL_TIME = 0;
 
 @LICENSE_LIST = (
     'This program is free software; you can redistribute it and/or modify it under',
@@ -211,8 +206,8 @@ if ($^O eq 'MSWin32') {
 } else {
     $DEFAULT_DATA_DIR = File::HomeDir->my_home . '/' . $NAME_SHORT . '-data';
 }
-# If a file 'datadir.cfg' exists and contains (in its first line) a directory that exits, and if
-#   that directory already exists, use it as the data directory instead
+# If a file 'datadir.cfg' exists and contains (in its first line) a directory, use that as the
+#   data directory instead of using the default location
 $DATA_DIR = $DEFAULT_DATA_DIR;
 if (-e $TOP_DIR . '/datadir.cfg') {
 
@@ -227,10 +222,7 @@ if (-e $TOP_DIR . '/datadir.cfg') {
     if (defined $firstLine) {
 
         chomp $firstLine;
-        if (-e $firstLine) {
-
-            $DATA_DIR = $firstLine;
-        }
+        $DATA_DIR = $firstLine;
     }
 }
 

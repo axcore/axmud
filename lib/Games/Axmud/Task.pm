@@ -14229,6 +14229,1617 @@
         { $_[0]->{nextObjTime} }
 }
 
+{ package Games::Axmud::Task::Connections;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Task Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Creates a new instance of the Connections task
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #
+        # Optional arguments
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world), 'custom' (tasks with
+        #                   customised initial parameters, which are run when the user demands). If
+        #                   set to 'undef', this is a temporary task, created in order to access the
+        #                   default values stored in IVs, that will not be added to any tasklist
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
+        #                   profile from whose initial tasklist this task was created ('undef' if
+        #                   none)
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
+        #                   task will be. If 'undef', the global initial tasklist is used
+        #               - ($taskType = 'custom') 'undef'
+        #   $profCategory
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
+        #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
+        #               - ($taskType = 'custom') 'undef'
+        #   $customName
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
+        #                   GA::Session->customTaskHash
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be added to the specified tasklist
+        #   Blessed reference to the newly-created object on success
+
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        if ($taskType) {
+
+            # For initial tasks, check that $profName exists
+            if (
+                $taskType eq 'initial'
+                && defined $profName
+                && ! $session->ivExists('profHash', $profName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $profName . '\' profile doesn\'t exist',
+                    $class . '->new',
+                );
+
+            # For custom tasks, check that $customName doesn't already exist
+            } elsif (
+                $taskType eq 'custom'
+                && $axmud::CLIENT->ivExists('customTaskHash', $customName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new custom task because \'' . $customName . '\' is already being'
+                    . ' used',
+                    $class . '->new',
+                );
+
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
+
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
+                    $class . '->new',
+                );
+            }
+        }
+
+        # Task settings
+        my $self = Games::Axmud::Generic::Task->new(
+            $session,
+            $taskType,
+            $profName,
+            $profCategory,
+            $customName,
+        );
+
+        $self->{_objName}               = 'connections_task';
+        $self->{_objClass}              = $class;
+        $self->{_parentFile}            = undef;            # Set below
+        $self->{_parentWorld}           = undef;            # Set below
+        $self->{_privFlag}              = TRUE,             # All IVs are private
+
+        $self->{name}                   = 'connections_task';
+        $self->{prettyName}             = 'Connections';
+        $self->{shortName}              = 'Co';
+        $self->{shortCutIV}             = 'connectionsTask'; # Axmud built-in jealous task
+
+        $self->{category}               = 'process';
+        $self->{descrip}                = 'Display a constantly-updated list of connections';
+        $self->{jealousyFlag}           = TRUE;
+        $self->{requireLocatorFlag}     = FALSE;
+        $self->{profSensitivityFlag}    = FALSE;
+        $self->{storableFlag}           = TRUE;
+        $self->{delayTime}              = 0.2;
+        $self->{allowWinFlag}           = TRUE;
+        $self->{requireWinFlag}         = FALSE;
+        $self->{startWithWinFlag}       = TRUE;
+        $self->{winPreferList}          = ['pane', 'grid'];
+        $self->{winmap}                 = 'basic_fill';
+        $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
+        $self->{monochromeFlag}         = FALSE;
+        $self->{noScrollFlag}           = TRUE;
+        $self->{ttsFlag}                = FALSE;
+        $self->{ttsConfig}              = undef;
+        $self->{ttsAttribHash}          = {};
+        $self->{ttsFlagAttribHash}      = {};
+        $self->{ttsAlertAttribHash}     = {};
+        $self->{status}                 = 'wait_init';
+#       $self->{activeFlag}             = TRUE;             # Task can't be activated/disactivated
+
+        # Task parameters
+        # Flag set to TRUE if the connection/idle times for each session should be shown, FALSE if
+        #   not
+        $self->{showInfoFlag}           = FALSE;
+        # This task creates macros to intercept CTRL+1, CTRL+2 ... CTRL+9 (or an equivalent set of
+        #   keypresses). If this flag is TRUE, the macros are created enabled; if FALSE, they are
+        #   created disabled
+        $self->{useMacrosFlag}          = TRUE;
+        # Which set of keypresses to use:
+        #   'default'   - CTRL+1, CTRL+2 ... CTRL+9
+        #   'simple'    - F1, F2 ... F9
+        $self->{macroMode}              = 'default';
+        # A list of macros created
+        $self->{macroList}              = [];
+
+        # Bless task
+        bless $self, $class;
+
+        # For all tasks that aren't temporary...
+        if ($taskType) {
+
+            # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+            #   added to any current, initial or custom tasklist)
+            if (! $self->checkPlugins()) {
+
+                return undef;
+            }
+
+            # Set the parent file object
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
+
+            # Create entries in tasklists, if possible
+            if (! $self->updateTaskLists($session)) {
+
+                return undef;
+            }
+        }
+
+        # Task creation complete
+        return $self;
+    }
+
+    sub clone {
+
+        # Create a clone of an existing task
+        # Usually used upon connection to a world, when every task in the initial tasklists must
+        #   be cloned into a new object, representing a task in the current tasklist
+        # (Also used when cloning a profile object, since all the tasks in its initial tasklist must
+        #   also be cloned)
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world). Custom tasks aren't
+        #                   cloned (at the moment)
+        #
+        # Optional arguments
+        #   $profName   - ($taskType = 'initial') name of the profile in whose initial tasklist the
+        #                   existing task is stored
+        #   $profCategory
+        #               - ($taskType = 'initial') which category the profile falls under (i.e.
+        #                   'world', 'race', 'char', etc)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be cloned
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $session, $taskType, $profName, $profCategory, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $taskType || defined $check
+            || ($taskType ne 'current' && $taskType ne 'initial')
+            || ($taskType eq 'initial' && (! defined $profName || ! defined $profCategory))
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->clone', @_);
+        }
+
+        # For initial tasks, check that $profName exists
+        if (
+            $taskType eq 'initial'
+            && defined $profName
+            && ! $session->ivExists('profHash', $profName)
+        ) {
+            return $axmud::CLIENT->writeError(
+                'Can\'t create cloned task because \'' . $profName . '\' profile doesn\'t exist',
+                $self->_objClass . '->clone',
+            );
+        }
+
+        # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+        #   cloned)
+        if (! $self->checkPlugins()) {
+
+            return undef;
+        }
+
+        # Create the new task, using default settings and parameters
+        my $clone = $self->_objClass->new($session, $taskType, $profName, $profCategory);
+
+        # Most of the cloned task's settings have default values, but a few are copied from the
+        #   original
+        $self->cloneTaskSettings($clone);
+
+        # Give the new (cloned) task the same initial parameters as the original one
+        $clone->{showInfoFlag}          = $self->showInfoFlag;
+        $clone->{useMacrosFlag}         = {$self->useMacrosFlag};
+        $clone->{macroMode}             = {$self->macroMode};
+
+        # Cloning complete
+        return $clone;
+    }
+
+    sub preserve {
+
+        # Called by $self->main whenever this task is reset, in order to preserve some if its task
+        #   parameters (but not necessarily all of them)
+        #
+        # Expected arguments
+        #   $newTask    - The new task which has been created, to which some of this task's instance
+        #                   variables might have to be transferred
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $newTask isn't in the GA::Session's current
+        #       tasklist
+        #   1 on success
+
+        my ($self, $newTask, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $newTask || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->preserve', @_);
+        }
+
+        # Check the task is in the current tasklist
+        if (! $self->session->ivExists('currentTaskHash', $newTask->uniqueName)) {
+
+            return $self->writeWarning(
+                '\'' . $self->uniqueName . '\' task missing from the current tasklist',
+                $self->_objClass . '->preserve',
+            );
+        }
+
+        # Preserve some task parameters (the others are left with their default settings, some of
+        #   which will be re-initialised in stage 2)
+
+        # Preserve the command lists
+        $newTask->ivPoke('showInfoFlag', $self->showInfoFlag);
+        $newTask->ivPoke('useMacrosFlag', $self->useMacrosFlag);
+        $newTask->ivPoke('macroMode', $self->macroMode);
+
+        return 1;
+    }
+
+#   sub setParentFileObj {}     # Inherited from generic task
+
+#   sub updateTaskLists {}      # Inherited from generic task
+
+#   sub ttsReadAttrib {}        # Inherited from generic task
+
+#   sub ttsSwitchFlagAttrib {}  # Inherited from generic task
+
+#   sub ttsSetAlertAttrib {}    # Inherited from generic task
+
+    ##################
+    # Task windows
+
+#   sub toggleWin {}            # Inherited from generic task
+
+#   sub openWin {}              # Inherited from generic task
+
+#   sub closeWin {}             # Inherited from generic task
+
+    ##################
+    # Methods
+
+#   sub main {}                 # Inherited from generic task
+
+#   sub doShutdown {}           # Inherited from generic task
+
+#   sub doReset {}              # Inherited from generic task
+
+#   sub doFirstStage {}         # Inherited from generic task
+
+    sub doStage {
+
+        # Called by $self->main to process all stages (except stage 1)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if this function sets that task's ->status IV to
+        #       'finished' or sets its ->shutdownFlag to TRUE
+        #   Otherwise, we normally return the new value of $self->stage
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doStage', @_);
+        }
+
+        if ($self->stage == 2) {
+
+            # Create macros to intercept CTRL+1, CTRL+2 ... CTRL+9
+            if (! $self->resetMacros()) {
+
+                $self->writeError(
+                    'Could not create macros for the ' . $self->prettyName . ' task, so halting',
+                    $self->_objClass . '->doStage',
+                );
+
+                # Mark the task to be shutdown
+                $self->ivPoke('shutdownFlag', TRUE);
+                return undef;
+
+            } else {
+
+                return $self->ivPoke('stage', 3);
+            }
+
+        } elsif ($self->stage == 3) {
+
+            my ($string, $count);
+
+            # On every spin of the task loop, update the task window (if it is open)
+            if ($self->taskWinFlag) {
+
+                # Add the header
+                if ($axmud::CLIENT->shareMainWinFlag) {
+                    $string = ') (* current, > visible)';
+                } else {
+                    $string = ') (* current)';
+                }
+
+                $self->insertText(
+                    'CONNECTIONS (Time ' . int($self->session->sessionTime) . $string,
+                    'empty',
+                );
+
+                if (! $self->showInfoFlag) {
+
+                    $self->insertText('   #  World            Character        Status');
+
+                } else {
+
+                    $self->insertText(
+                        '   #  World            Character        Status       Info',
+                    );
+                }
+
+                # Add the remaining lines, one for each session
+                $count = 0;
+                foreach my $otherSession (
+                    sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivValues('sessionHash'))
+                ) {
+                    my ($column, $colour, $char);
+
+                    $count++;
+
+
+                    if ($otherSession eq $self->session) {
+                        $column = '*';
+                    } else {
+                        $column = ' ';
+                    }
+
+                    if (
+                        $axmud::CLIENT->shareMainWinFlag
+                        && $otherSession->mainWin->visibleSession eq $otherSession
+                    ) {
+                        $column .= '> ';
+                    } else {
+                        $column .= '  ';
+                    }
+
+                    $self->insertText($column . sprintf('%-2.2s ', $count));
+
+                    # Use the same colour as the 'main' window tab
+                    if ($otherSession->status eq 'offline') {
+                        $colour = 'magenta';
+                    } elsif ($otherSession->status eq 'disconnected') {
+                        $colour = 'blue';
+                    } elsif ($otherSession->showNewTextFlag) {
+                        $colour = 'red';
+                    } else {
+                        $colour = $self->defaultTabObj->textViewObj->textColour;
+                    }
+
+                    $self->insertText(
+                        sprintf('%-16.16s ', $otherSession->currentWorld->name),
+                        'echo',
+                        $colour,
+                    );
+
+                    if ($otherSession->currentChar) {
+                        $char = $otherSession->currentChar->name;
+                    } else {
+                        $char = '<none>';
+                    }
+
+                    $self->insertText(
+                        sprintf(
+                            '%-16.16s %-12.12s',
+                            $char,
+                            $otherSession->status,
+                        ),
+                        'echo',
+                    );
+
+                    if ($self->showInfoFlag) {
+
+
+                        $self->insertText(
+                            ' ' . $otherSession->getTimeLabelText(),
+                            'echo',
+                        );
+                    }
+                }
+            }
+
+            # Repeat this stage indefinitely
+            return $self->ivPoke('stage', 3);
+
+        } else {
+
+            # The task stage has somehow been set to an invalid value
+            return $self->invalidStage();
+        }
+    }
+
+    sub resetMacros {
+
+        # Called by $self->doStage at stage 2 to set up macros to intercept CTRL+1, CTRL+2 ...
+        #   CTRL+9 (or equivalents)
+        #
+        # Expected arguments
+        #   (none)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @macroList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetMacros', @_);
+        }
+
+        # Create one macro (initially disabled) for each keycode string between 1-9
+        for (my $count = 1; $count <= 9; $count++) {
+
+            my ($interfaceObj, $keycodeString);
+
+            if ($self->macroMode eq 'simple') {
+                $keycodeString = 'f' . $count;      # e.g. 'f1'
+            } else {
+                $keycodeString = 'ctrl ' . $count;  # e.g. 'ctrl 1';
+            }
+
+            # Create the dependent macro interface
+            $interfaceObj = $self->session->createInterface(
+                'macro',
+                $keycodeString,
+                $self,
+                'macroSeen',
+                'enabled',
+                $self->useMacrosFlag,
+            );
+
+            if (! $interfaceObj) {
+
+                # If there's an error creating any macros, remove any macros already created
+                $self->session->tidyInterfaces($self);
+                return undef;
+
+            } else {
+
+                push (@macroList, $interfaceObj);
+
+                # Give the trigger some properties that will give $self->macroSeen a number between
+                #   1-9 (quicker than processing the interface object's IVs)
+                $interfaceObj->ivAdd('propertyHash', 'number', $count);
+            }
+        }
+
+        # Update IVs
+        $self->ivPoke('macroList', @macroList);
+
+        return 1;
+    }
+
+    ##################
+    # Response methods
+
+    sub macroSeen {
+
+        # Called by GA::Session->checkMacros
+        #
+        # This task's ->resetMacros function creates some macros to capture CTRL+1, CTRL+2 ...
+        #   CTRL+9 (or equivalents)
+        #
+        # If the number corresponds to a session, that session is made the visible one
+        #
+        # The trigger interfaces have the following properties in ->propertyHash:
+        #   number          - A number between 1 and 9
+        #
+        # Expected arguments (standard args from GA::Session->checkTriggers)
+        #   $session        - The calling function's GA::Session
+        #   $interfaceNum   - The number of the active trigger interface that fired
+        #   $keycodeString  - The keycode string, e.g. 'ctrl 1'
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $session is the wrong session or if the interface
+        #       object can't be found
+        #   1 otherwise
+
+        my ($self, $session, $interfaceNum, $keycodeString, $check) = @_;
+
+        # Local variables
+        my (
+            $obj, $number, $newSession,
+            @list,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $interfaceNum || ! defined $keycodeString
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->macroSeen', @_);
+        }
+
+        # Basic check - the trigger should belong to the right session
+        if ($session ne $self->session) {
+
+            return undef;
+        }
+
+        # Get the interface object itself
+        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
+        if (! $obj) {
+
+            return undef;
+        }
+
+        # Respond to the fired macro
+
+        $number = $obj->ivShow('propertyHash', 'number');
+        # Find the equivalent GA::Session. $number is a value between 1-9, representing the first
+        #   nine sessions which are still running, in the order they were created
+        @list = sort {$a->number <=> $b->number} ($axmud::CLIENT->ivValues('sessionHash'));
+        # If there aren't enough session, $newSession will remain as 'undef'
+        $newSession = $list[$number - 1];
+        if (defined $newSession) {
+
+            $newSession->defaultTabObj->paneObj->setVisibleTab($newSession->defaultTabObj);
+            $newSession->mainWin->restoreFocus();
+        }
+
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - task settings - get
+
+    # The accessors for task settings are inherited from the generic task
+
+    ##################
+    # Accessors - task parameters - get
+
+    sub showInfoFlag
+        { $_[0]->{showInfoFlag} }
+    sub useMacrosFlag
+        { $_[0]->{useMacrosFlag} }
+    sub macroMode
+        { $_[0]->{macroMode} }
+    sub macroList
+        { my $self = shift; return @{$self->{macroList}}; }
+}
+
+{ package Games::Axmud::Task::Countdown;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Task Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Creates a new instance of the Countdown task
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #
+        # Optional arguments
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world), 'custom' (tasks with
+        #                   customised initial parameters, which are run when the user demands). If
+        #                   set to 'undef', this is a temporary task, created in order to access the
+        #                   default values stored in IVs, that will not be added to any tasklist
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
+        #                   profile from whose initial tasklist this task was created ('undef' if
+        #                   none)
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
+        #                   task will be. If 'undef', the global initial tasklist is used
+        #               - ($taskType = 'custom') 'undef'
+        #   $profCategory
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
+        #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
+        #               - ($taskType = 'custom') 'undef'
+        #   $customName
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
+        #                   GA::Session->customTaskHash
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be added to the specified tasklist
+        #   Blessed reference to the newly-created object on success
+
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        if ($taskType) {
+
+            # For initial tasks, check that $profName exists
+            if (
+                $taskType eq 'initial'
+                && defined $profName
+                && ! $session->ivExists('profHash', $profName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $profName . '\' profile doesn\'t exist',
+                    $class . '->new',
+                );
+
+            # For custom tasks, check that $customName doesn't already exist
+            } elsif (
+                $taskType eq 'custom'
+                && $axmud::CLIENT->ivExists('customTaskHash', $customName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new custom task because \'' . $customName . '\' is already being'
+                    . ' used',
+                    $class . '->new',
+                );
+
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
+
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
+                    $class . '->new',
+                );
+            }
+        }
+
+        # Task settings
+        my $self = Games::Axmud::Generic::Task->new(
+            $session,
+            $taskType,
+            $profName,
+            $profCategory,
+            $customName,
+        );
+
+        $self->{_objName}               = 'countdown_task';
+        $self->{_objClass}              = $class;
+        $self->{_parentFile}            = undef;            # Set below
+        $self->{_parentWorld}           = undef;            # Set below
+        $self->{_privFlag}              = TRUE,             # All IVs are private
+
+        $self->{name}                   = 'countdown_task';
+        $self->{prettyName}             = 'Countdown';
+        $self->{shortName}              = 'Cd';
+        $self->{shortCutIV}             = undef;            # Built-in task, but not jealous
+
+        $self->{category}               = 'process';
+        $self->{descrip}                = 'Creates a task window to show a countdown clock';
+        $self->{jealousyFlag}           = FALSE;
+        $self->{requireLocatorFlag}     = FALSE;
+        $self->{profSensitivityFlag}    = FALSE;
+        $self->{storableFlag}           = TRUE;
+        $self->{delayTime}              = 0;
+        $self->{allowWinFlag}           = TRUE;
+        $self->{requireWinFlag}         = TRUE;
+        $self->{startWithWinFlag}       = TRUE;
+        $self->{winPreferList}          = ['pseudo', 'grid'];
+        $self->{winmap}                 = 'basic_empty';
+        $self->{winUpdateFunc}          = 'createWidgets';
+        $self->{tabMode}                = undef;
+        $self->{monochromeFlag}         = FALSE;
+        $self->{noScrollFlag}           = FALSE;
+        $self->{ttsFlag}                = FALSE;
+        $self->{ttsConfig}              = undef;
+        $self->{ttsAttribHash}          = {};
+        $self->{ttsFlagAttribHash}      = {};
+        $self->{ttsAlertAttribHash}     = {};
+        $self->{status}                 = 'wait_init';
+#       $self->{activeFlag}             = TRUE;             # Task can't be activated/disactivated
+
+        # Task parameters
+
+        # Table objects created for various Gtk2 widgets, stored here because various functions
+        #   need them
+        $self->{labelTableObj}          = undef;        # GA::Table::Label
+        $self->{entryTableObj}          = undef;        # GA::Table::Entry
+        $self->{comboTableObj}          = undef;        # GA::Table::Combo
+        $self->{comboTableObj2}         = undef;        # GA::Table::Combo
+        $self->{buttonTableObj}         = undef;        # GA::Table::Button
+        $self->{buttonTableObj2}        = undef;        # GA::Table::Button
+        $self->{buttonTableObj3}        = undef;        # GA::Table::Button
+
+        # Two IVs set by GA::Cmd::SetCountdown->do and GA::Cmd::SetCountup->do, so that a newly-
+        #   opened task can start counting down/up as soon as it opens
+        # IV with the values 'up' or 'down'
+        $self->{initMode}               = undef;
+        # The time, in seconds, to count
+        $self->{initTime}               = undef;
+
+        # The font and the text/underlay colours used to show the time; must be pango-recognisable
+        #   colours
+        $self->{textLen}                = 9;                # Label has 9 characters, by default
+        $self->{textFont}               = 'monospace';      # Should be a monospace font
+        $self->{textSize}               = '5';              # Relative size; value in range 1-10
+        $self->{textColour}             = 'white';
+        $self->{underlayColour}         = 'black';
+        $self->{textWarning}            = 'white';
+        $self->{underlayWarning}        = 'red';
+
+        # The operating mode - 'default' when no time is visible, 'up' when counting up, 'down'
+        #   when counting down
+        $self->{countMode}              = 'default';
+        # Flag set to TRUE when the 'Pause' button has been pressed
+        $self->{pausedFlag}             = FALSE;
+        # The time (matches GA::Session->sessionTime) at which the clock started
+        $self->{clockStart}             = undef;
+        # The time (matches GA::Session->sessionTime) at which the clock should stop
+        $self->{clockStop}              = undef;
+        # The time (matches GA::Session->sessionTime) at which the clock was paused; set back to
+        #   'undef' when the clock resumes ticking
+        $self->{clockFreeze}            = undef;
+        # How long the clock runs. ->clockTarget is the time in seconds; ->clockShow is the number
+        #   of seconds left
+        $self->{clockTarget}            = undef;
+        $self->{clockLeft}              = undef;
+        # What time (matches ->clockLeft) at which to show a warning
+        $self->{clockWarning}           = undef;
+
+        # Sound effects. If 'undef', an empty string or an unrecognised sound effect, or if sound is
+        #   turned off, nothing is played
+        $self->{stopEffect}             = 'alert';
+        $self->{warningEffect}          = 'bell';
+
+        # Bless task
+        bless $self, $class;
+
+        # For all tasks that aren't temporary...
+        if ($taskType) {
+
+            # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+            #   added to any current, initial or custom tasklist)
+            if (! $self->checkPlugins()) {
+
+                return undef;
+            }
+
+            # Set the parent file object
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
+
+            # Create entries in tasklists, if possible
+            if (! $self->updateTaskLists($session)) {
+
+                return undef;
+            }
+        }
+
+        # Task creation complete
+        return $self;
+    }
+
+#   sub clone {}                # Inherited from generic task
+
+#   sub preserve {}             # Inherited from generic task
+
+#   sub setParentFileObj {}     # Inherited from generic task
+
+#   sub updateTaskLists {}      # Inherited from generic task
+
+#   sub ttsReadAttrib {}        # Inherited from generic task
+
+#   sub ttsSwitchFlagAttrib {}  # Inherited from generic task
+
+#   sub ttsSetAlertAttrib {}    # Inherited from generic task
+
+    ##################
+    # Task windows
+
+#   sub toggleWin {}            # Inherited from generic task
+
+#   sub openWin {}              # Inherited from generic task
+
+#   sub closeWin {}             # Inherited from generic task
+
+    ##################
+    # Methods
+
+#   sub main {}                 # Inherited from generic task
+
+#   sub doShutdown {}           # Inherited from generic task
+
+#   sub doReset {}              # Inherited from generic task
+
+#   sub doFirstStage {}         # Inherited from generic task
+
+    sub doStage {
+
+        # Called by $self->main to process all stages (except stage 1)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if this function sets that task's ->status IV to
+        #       'finished' or sets its ->shutdownFlag to TRUE
+        #   Otherwise, we normally return the new value of $self->stage
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doStage', @_);
+        }
+
+        if ($self->stage == 2) {
+
+            # Draw widgets for the task window
+            $self->createWidgets();
+
+            # If initialisation IVs were set, we can start the clock immediately
+            if (defined $self->initMode) {
+
+                $self->startClock($self->initMode, $self->initTime);
+            }
+
+            return $self->ivPoke('stage', 3);
+
+        } elsif ($self->stage == 3) {
+
+            my ($time, $oldTime);
+
+            if ($self->countMode ne 'default' && ! $self->pausedFlag) {
+
+                # Clock is running
+                $time = $self->clockStop - $self->session->sessionTime;
+                if ($time <= 0) {
+
+                    # Stop the clock!
+                    $self->ivUndef('clockWarning');         # Don't draw in red
+                    if ($self->countMode eq 'down') {
+                        $self->drawTime(0);
+                    } else {
+                        $self->drawTime($self->clockTarget);
+                    }
+
+                    # Update IVs
+                    $self->ivPoke('countMode', 'default');
+                    $self->ivPoke('pausedFlag', FALSE);
+                    $self->ivUndef('clockStart');
+                    $self->ivUndef('clockStop');
+                    $self->ivUndef('clockFreeze');
+                    $self->ivUndef('clockTarget');
+                    $self->ivUndef('clockLeft');
+
+                    # Update widgets
+                    $self->buttonTableObj->set_normal(TRUE);
+                    $self->buttonTableObj2->set_normal(FALSE);
+                    $self->buttonTableObj3->set_normal(FALSE);
+
+                    # Play sound effects
+                    if (defined $self->stopEffect && $self->stopEffect ne '') {
+
+                        $axmud::CLIENT->playSound($self->stopEffect);
+                    }
+
+                } elsif (int($time) < ($self->clockLeft - 1)) {
+
+                    # Update the clock time
+                    $oldTime = $self->clockLeft;
+                    $self->ivPoke('clockLeft', int($time) + 1);
+
+                    if ($self->countMode eq 'down') {
+                        $self->drawTime($self->clockLeft);
+                    } else {
+                        $self->drawTime(int($self->clockStop - $self->clockStart - $time));
+                    }
+
+                    # Play sound effects
+                    if (
+                        defined $self->clockWarning
+                        && $self->clockWarning >= $self->clockLeft
+                        && $self->clockWarning < $oldTime
+                        && defined $self->warningEffect
+                        && $self->warningEffect ne ''
+                    ) {
+                        $axmud::CLIENT->playSound($self->warningEffect);
+                    }
+                }
+            }
+
+            # Repeat this stage indefinitely
+            return $self->ivPoke('stage', 3);
+
+        } else {
+
+            # The task stage has somehow been set to an invalid value
+            return $self->invalidStage();
+        }
+    }
+
+    sub createWidgets {
+
+        # Set up the widgets used in the task window
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task window isn't open
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (@comboList, @comboList2);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->createWidgets', @_);
+        }
+
+        # If the task window (a 'grid' window or a pseudo-window inside the session's 'main' window)
+        #   isn't open, don't need to create widgets
+        if (! $self->winObj) {
+
+            return undef;
+        }
+
+        my $labelTableObj = $self->winObj->tableStripObj->addTableObj(
+            'Games::Axmud::Table::Label',
+            0, 59, 0, 39,
+            undef,
+            # Init settings
+            'justify'       => 'centre',
+            'align_x'       => 0.5,
+            'align_y'       => 0.5,
+        );
+
+        my $entryTableObj = $self->winObj->tableStripObj->addTableObj(
+            'Games::Axmud::Table::Entry',
+            0, 19, 40, 49,
+            undef,
+            # Init settings
+            'width_chars'   => 8,
+            'max_chars'     => 8,
+        );
+
+        @comboList = (
+            'seconds',
+            'minutes',
+            'hours',
+        );
+        my $comboTableObj = $self->winObj->tableStripObj->addTableObj(
+            'Games::Axmud::Table::ComboBox',
+            20, 39, 40, 49,
+            undef,
+            # Init settings
+            'list_ref'      => \@comboList,
+        );
+
+        @comboList2 = (
+            'count down',
+            'count up',
+        );
+        my $comboTableObj2 = $self->winObj->tableStripObj->addTableObj(
+            'Games::Axmud::Table::ComboBox',
+            40, 59, 40, 49,
+            undef,
+            # Init settings
+            'list_ref'      => \@comboList2,
+        );
+
+        my $buttonTableObj = $self->winObj->tableStripObj->addTableObj(
+            'Games::Axmud::Table::Button',
+            0, 19, 50, 59,
+            undef,
+            # Init settings
+            'func'          => $self->getMethodRef('startCallback'),
+            'id'            => 'start',
+            'text'          => 'Start',
+            'expand_flag'   => TRUE,
+            'tooltips'      => 'Start the clock',
+        );
+
+        my $buttonTableObj2 = $self->winObj->tableStripObj->addTableObj(
+            'Games::Axmud::Table::Button',
+            20, 39, 50, 59,
+            undef,
+            # Init settings
+            'func'          => $self->getMethodRef('pauseCallback'),
+            'id'            => 'pause',
+            'text'          => 'Pause',
+            'tooltips'      => 'Pause the clock',
+            'normal_flag'   => FALSE,
+            'expand_flag'   => TRUE,
+        );
+
+        my $buttonTableObj3 = $self->winObj->tableStripObj->addTableObj(
+            'Games::Axmud::Table::Button',
+            40, 59, 50, 59,
+            undef,
+            # Init settings
+            'func'          => $self->getMethodRef('stopCallback'),
+            'id'            => 'stop',
+            'text'          => 'Stop',
+            'tooltips'      => 'Stop the clock',
+            'normal_flag'   => FALSE,
+            'expand_flag'   => TRUE,
+        );
+
+        # Store the table objects for the benefit of various functions
+        $self->ivPoke('labelTableObj', $labelTableObj);
+        $self->ivPoke('entryTableObj', $entryTableObj);
+        $self->ivPoke('comboTableObj', $comboTableObj);
+        $self->ivPoke('comboTableObj2', $comboTableObj2);
+        $self->ivPoke('buttonTableObj', $buttonTableObj);
+        $self->ivPoke('buttonTableObj2', $buttonTableObj2);
+        $self->ivPoke('buttonTableObj3', $buttonTableObj3);
+
+        # Display all the widgets, including a blank label
+        $self->drawTime();
+        $self->winObj->winShowAll($self->_objClass . '->createWidgets');
+
+        return 1;
+    }
+
+    sub initClock {
+
+        # Called by GA::Cmd::SetCountdown->do and GA::Cmd::SetCountup->do
+        # Sets the task's initialisation IVs, so that the clock starts counting as soon as stage 3
+        #   is reached for the first time
+        #
+        # Expected arguments
+        #   $mode   - 'up' to count up, 'down' to count down
+        #   $secs   - The time to count, in seconds
+        #
+        # Return values
+        #   'undef' on improper arguments, if $self->stage is already at 3 or if $secs is invalid
+        #   1 otherwise
+
+        my ($self, $mode, $secs, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $mode
+            || ($mode ne 'down' && $mode ne 'up')
+            || ! defined $secs || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->initClock', @_);
+        }
+
+        # This function can't be called if the task is already running
+        if ($self->stage >= 3) {
+
+            return undef;
+
+        # Check $secs is valid
+        } elsif (! $axmud::CLIENT->floatCheck($secs, 0) || $secs == 0) {
+
+            return undef;
+        }
+
+        # Update IVs
+        $self->ivPoke('initMode', $mode);
+        $self->ivPoke('initTime', $secs);
+
+        return 1;
+    }
+
+    sub startClock {
+
+        # Called by $self->doStage (at stage 2) and $self->startCallback
+        # Also called by GA::Cmd::Countdown->do and Countup->do
+        # Starts the clock, counting down towards zero or up from zero
+        #
+        # Expected arguments
+        #   $mode   - 'up' to count up, 'down' to count down
+        #   $secs   - The time to count, in seconds
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $mode, $secs, $check) = @_;
+
+        # Local variables
+        my $maxSecs;
+
+        # Check for improper arguments
+        if (
+            ! defined $mode
+            || ($mode ne 'down' && $mode ne 'up')
+            || ! defined $secs || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->startClock', @_);
+        }
+
+        # The maximum time is 99, 59 minutes and 59 seconds. If $secs exceeds that, revert to the
+        #   maximum
+        $maxSecs = 100 * 60 * 60;
+        if ($secs >= $maxSecs) {
+
+            $secs = $maxSecs - 1;
+        }
+
+        # Update IVs
+        $self->ivPoke('countMode', $mode);
+        $self->ivPoke('pausedFlag', FALSE);
+        $self->ivPoke('clockStart', $self->session->sessionTime);
+        $self->ivPoke('clockStop', ($self->session->sessionTime + $secs));
+        $self->ivUndef('clockFreeze');
+        $self->ivPoke('clockTarget', $secs);
+        $self->ivPoke('clockLeft', $secs);
+
+        # The time at which a warning is shown depends on how long the clock is going to run.
+        if ($secs <= 10) {
+
+            # If it's less than 10 seconds, don't show a warning at all
+            $self->ivPoke('clockWarning', undef);
+
+        } elsif ($secs <= 60) {
+
+            # Less than a minute
+            $self->ivPoke('clockWarning', 5);
+
+        } elsif ($secs <= 120) {
+
+            # Less than two minutes
+            $self->ivPoke('clockWarning', 10);
+
+        } elsif ($secs <= 300) {
+
+            # Less than five minutes
+            $self->ivPoke('clockWarning', 30);
+
+        } elsif ($secs <= 600) {
+
+            # Less than ten minutes
+            $self->ivPoke('clockWarning', 60);
+
+        } elsif ($secs <= 1200) {
+
+            # Less than twenty minutes
+            $self->ivPoke('clockWarning', 120);
+
+        } else {
+
+            # Default - 5-minute warning
+            $self->ivPoke('clockWarning', 300);
+        }
+
+        # Update table widgets
+        $self->buttonTableObj->set_normal(FALSE);
+        $self->buttonTableObj2->set_normal(TRUE);
+        $self->buttonTableObj3->set_normal(TRUE);
+
+        # Show the first clock time
+        if ($self->countMode eq 'up') {
+            $self->drawTime(0);
+        } else {
+            $self->drawTime($self->clockLeft);
+        }
+
+        return 1;
+    }
+
+    sub drawTime {
+
+        # Called by various functions to set (or reset) the clock time displayed as a Gtk2::Label
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional values
+        #   $secs   - The time to show, in seconds
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $secs, $check) = @_;
+
+        # Local variables
+        my (
+            $origSecs, $string, $hours, $mins, $fontSize, $textColour, $underlayColour, $setLength,
+            $modString, $column1, $column2,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawTime', @_);
+        }
+
+        # Convert $secs, an integer, into a string like '49:12'
+        $origSecs = $secs;
+        if (! defined $secs) {
+
+            # No time shown
+            $string = '';
+
+        } else {
+
+            $hours = int($secs / 3600);
+            $secs -= ($hours * 3600);
+
+            $mins = int($secs / 60);
+            $secs -= ($mins * 60);
+
+            if ($hours) {
+                $string = sprintf('%02d:%02d:%02d', $hours, $mins, $secs);
+            } elsif ($mins) {
+                $string = sprintf('%02d:%02d', $mins, $secs);
+            } else {
+                $string = sprintf('0:%02d', $secs);
+            }
+        }
+
+        # Set the pango font size, making sure it's a reasonable value
+        $fontSize = int($self->textSize * 10000);
+        if ($fontSize < 10000) {
+            $fontSize = 10000;
+        } elsif ($fontSize > 100000) {
+            $fontSize = 100000;
+        }
+
+        # Set the colours to use
+        if (
+            ! defined $self->clockWarning
+            || ! $self->clockLeft
+            || ! $origSecs
+            || $self->clockWarning < $self->clockLeft
+        ) {
+            $textColour = $self->textColour;
+            $underlayColour = $self->underlayColour;
+
+        } else {
+
+            $textColour = $self->textWarning;
+            $underlayColour = $self->underlayWarning;
+        }
+
+        # So that the visible label remains a constant size...
+        $setLength = $self->textLen;
+        if (length ($string) > ($setLength - 2)) {
+
+            $setLength = length ($string) + 2;
+        }
+
+        # ...surround it with empty text
+        $column1 = ($setLength - length ($string)) / 2;
+        if (int($column1) != $column1) {
+
+            $column1 = int($column1);
+            $column2 = $column1 + 1;
+
+        } else {
+
+            $column2 = $column1;
+        }
+
+        $modString .= " " x $column1;
+        $modString .= $string;
+        $modString .= " " x $column2;
+
+        $self->labelTableObj->label->set_markup(
+            '<span font_family =\'' . $self->textFont . '\' foreground=\'' . $textColour
+            . '\' background=\'' . $underlayColour . '\' size=\'' . $fontSize . '\'>' . $modString
+            . '</span>',
+        );
+
+        if ($string eq '') {
+            $self->setTaskWinTitle();
+        } else {
+            $self->setTaskWinTitle('(' . $string . ')', TRUE);
+        }
+
+        return 1;
+    }
+
+    ##################
+    # Response methods
+
+    sub startCallback {
+
+        # Called by a ->signal_connect in a GA::Table::Button object when the user clicks on the
+        #   'Start' button
+        #
+        # Expected arguments
+        #   $tableObj   - The GA::Table::Button object for the button
+        #   $button     - The actual Gtk2::Button clicked
+        #   $id         - The callback ID; in this case, 'start'
+        #
+        # Return values
+        #   'undef' on improper arguments, if the user hasn't entered a valid time value (or if
+        #       they've entered no value at all) or if $self->countMode is not 'default'
+        #   1 otherwise
+
+        my ($self, $tableObj, $button, $id, $check) = @_;
+
+        # Local variables
+        my ($time, $unit, $method);
+
+        # Check for improper arguments
+        if (! defined $tableObj || ! defined $button || ! defined $id || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->startCallback', @_);
+        }
+
+        if ($self->countMode ne 'default') {
+
+            # This shouldn't be possible
+            return undef;
+        }
+
+        # Get the time value, and check it's valid
+        $time = $self->entryTableObj->get_text();
+        if ($time eq '') {
+
+            # User hasn't entered a value
+            return undef;
+
+        } elsif (! $axmud::CLIENT->floatCheck($time, 0) || $time == 0) {
+
+            # Non-numeric value, or less than 0
+            return $self->winObj->showMsgDialogue(
+                'Start clock',
+                'Invalid number \'' . $time . '\'',
+                'ok',
+            );
+        }
+
+        # Convert the time to seconds
+        $unit = $self->comboTableObj->get_text();
+        if ($unit eq 'minutes') {
+            $time *= 60;
+        } elsif ($unit eq 'hours') {
+            $time *= 3600;
+        }
+
+        $time = int($time);
+
+        # Start the clock
+        $method = $self->comboTableObj2->get_text();
+        if ($method eq 'count up') {
+            $self->startClock('up', $time);
+        } else {
+            $self->startClock('down', $time);
+        }
+
+        return 1;
+    }
+
+    sub pauseCallback {
+
+        # Called by a ->signal_connect in a GA::Table::Button object when the user clicks on the
+        #   'Pause' button
+        #
+        # Expected arguments
+        #   $tableObj   - The GA::Table::Button object for the button
+        #   $button     - The actual Gtk2::Button clicked
+        #   $id         - The callback ID; in this case, 'pause'
+        #
+        # Return values
+        #   'undef' on improper arguments or if $self->countMode is 'default'
+        #   1 otherwise
+
+        my ($self, $tableObj, $button, $id, $check) = @_;
+
+        # Local variables
+        my ($time, $unit, $method);
+
+        # Check for improper arguments
+        if (! defined $tableObj || ! defined $button || ! defined $id || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->pauseCallback', @_);
+        }
+
+        if ($self->countMode eq 'default') {
+
+            # This shouldn't be possible
+            return undef;
+        }
+
+        if (! $self->pausedFlag) {
+
+            $self->ivPoke('pausedFlag', TRUE);
+            $self->ivPoke('clockFreeze', $self->session->sessionTime);
+
+            # Update widgets
+            $self->buttonTableObj->set_normal(FALSE);
+            $self->buttonTableObj2->set_normal(TRUE);
+            $self->buttonTableObj3->set_normal(FALSE);
+
+        } else {
+
+            $self->ivPoke('pausedFlag', FALSE);
+            $self->ivPoke(
+                'clockStop',
+                $self->clockStop + $self->session->sessionTime - $self->clockFreeze,
+            );
+
+            $self->ivUndef('clockFreeze');
+
+            # Update widgets
+            $self->buttonTableObj->set_normal(FALSE);
+            $self->buttonTableObj2->set_normal(TRUE);
+            $self->buttonTableObj3->set_normal(FALSE);
+        }
+
+        return 1;
+    }
+
+    sub stopCallback {
+
+        # Called by a ->signal_connect in a GA::Table::Button object when the user clicks on the
+        #   'Stop' button
+        #
+        # Expected arguments
+        #   $tableObj   - The GA::Table::Button object for the button
+        #   $button     - The actual Gtk2::Button clicked
+        #   $id         - The callback ID; in this case, 'stop'
+        #
+        # Return values
+        #   'undef' on improper arguments, if the user hasn't entered a valid time value (or if
+        #       they've entered no value at all) or if $self->countMode is still 'default'
+        #   1 otherwise
+
+        my ($self, $tableObj, $button, $id, $check) = @_;
+
+        # Local variables
+        my ($time, $unit, $method);
+
+        # Check for improper arguments
+        if (! defined $tableObj || ! defined $button || ! defined $id || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->stopCallback', @_);
+        }
+
+        if ($self->countMode eq 'default') {
+
+            # This shouldn't happen
+            return undef;
+        }
+
+        # Reset the clock
+        $self->drawTime();
+
+        # Update IVs
+        $self->ivPoke('countMode', 'default');
+        $self->ivPoke('pausedFlag', FALSE);
+        $self->ivUndef('clockStart');
+        $self->ivUndef('clockStop');
+        $self->ivUndef('clockFreeze');
+        $self->ivUndef('clockTarget');
+        $self->ivUndef('clockLeft');
+        $self->ivUndef('clockWarning');
+
+        # Update widgets
+        $self->buttonTableObj->set_normal(TRUE);
+        $self->buttonTableObj2->set_normal(FALSE);
+        $self->buttonTableObj3->set_normal(FALSE);
+
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - task settings - get
+
+    # The accessors for task settings are inherited from the generic task
+
+    ##################
+    # Accessors - task parameters - get
+
+    sub labelTableObj
+        { $_[0]->{labelTableObj} }
+    sub entryTableObj
+        { $_[0]->{entryTableObj} }
+    sub comboTableObj
+        { $_[0]->{comboTableObj} }
+    sub comboTableObj2
+        { $_[0]->{comboTableObj2} }
+    sub buttonTableObj
+        { $_[0]->{buttonTableObj} }
+    sub buttonTableObj2
+        { $_[0]->{buttonTableObj2} }
+    sub buttonTableObj3
+        { $_[0]->{buttonTableObj3} }
+
+    sub initMode
+        { $_[0]->{initMode} }
+    sub initTime
+        { $_[0]->{initTime} }
+
+    sub textLen
+        { $_[0]->{textLen} }
+    sub textFont
+        { $_[0]->{textFont} }
+    sub textSize
+        { $_[0]->{textSize} }
+    sub textColour
+        { $_[0]->{textColour} }
+    sub underlayColour
+        { $_[0]->{underlayColour} }
+    sub textWarning
+        { $_[0]->{textWarning} }
+    sub underlayWarning
+        { $_[0]->{underlayWarning} }
+
+    sub countMode
+        { $_[0]->{countMode} }
+    sub pausedFlag
+        { $_[0]->{pausedFlag} }
+    sub clockStart
+        { $_[0]->{clockStart} }
+    sub clockStop
+        { $_[0]->{clockStop} }
+    sub clockFreeze
+        { $_[0]->{clockFreeze} }
+    sub clockTarget
+        { $_[0]->{clockTarget} }
+    sub clockLeft
+        { $_[0]->{clockLeft} }
+    sub clockWarning
+        { $_[0]->{clockWarning} }
+
+    sub stopEffect
+        { $_[0]->{stopEffect} }
+    sub warningEffect
+        { $_[0]->{warningEffect} }
+}
+
 { package Games::Axmud::Task::Divert;
 
     use strict;
@@ -19549,7 +21160,8 @@
         # If the automapper is running, it must be informed when the Locator task shuts down
         if ($self->session->mapWin) {
 
-            $self->session->mapWin->setCurrentRegion();
+            $self->session->mapWin->setMode('wait');
+            $self->session->mapObj->setCurrentRoom();
         }
 
         return 1;
@@ -22300,8 +23912,9 @@
         do {
 
             my (
-                $component, $componentObj, $newLineNum, $type, $lineString, $result,
-                @lineNumList, @lineTextList,
+                $component, $componentObj, $newLineNum, $type, $result,
+                @lineNumList, @bufferObjList, @lineTextList, @lineOffsetList,
+                %emptyHash,
             );
 
             # Next component to extract
@@ -22473,25 +24086,41 @@
                         @lineNumList = reverse (@lineNumList);
                     }
 
-                    # Convert the list of display buffer line numbers into a list of strings
+                    # Convert the list of display buffer line numbers into a list of display buffer
+                    #   objects (@bufferObjList, a list of Axmud colour/style tags and the offsets
+                    #   at which they occur (@lineOffsetList), and a list of display buffer objects
+                    #   (@bufferObjList);
                     foreach my $lineNum (@lineNumList) {
 
-                        my ($bufferObj, $result);
+                        my (
+                            $bufferObj, $modText,
+                            %modOffsetHash, %offsetHash,
+                        );
 
                         $bufferObj = $self->session->ivShow('displayBufferHash', $lineNum);
                         if ($bufferObj) {
 
                             if ($componentObj->useTextColour) {
 
-                                $result = $self->trimColouredText($bufferObj, $componentObj);
-                                if (defined $result) {
+                                ($modText, %modOffsetHash)
+                                    = $self->trimColouredText($bufferObj, $componentObj);
 
-                                    push (@lineTextList, $result);
+                                if (defined $modText) {
+
+                                    push (@bufferObjList, $bufferObj);
+                                    push (@lineTextList, $modText);
+                                    push (@lineOffsetList, \%modOffsetHash);
                                 }
 
                             } else {
 
+                                push (@bufferObjList, $bufferObj);
                                 push (@lineTextList, $bufferObj->modLine);
+
+                                # (Don't want anything to modify the buffer object's offset hash, so
+                                #   dereference then reference the hash)
+                                %offsetHash = $bufferObj->offsetHash;
+                                push (@lineOffsetList, \%offsetHash);
                             }
                         }
                     }
@@ -22500,28 +24129,28 @@
                     #   treat the component as if it contained no text
                     if (! @lineTextList) {
 
+                        push (@bufferObjList, undef);
                         push (@lineTextList, '');
-                    }
+                        push (@lineOffsetList, \%emptyHash);
 
                     # Treat the lines as a single line, if the component's flag is set
-                    if (@lineTextList > 1 && $componentObj->combineLinesFlag) {
+                    } elsif (@lineTextList > 1 && $componentObj->combineLinesFlag) {
 
-                        $lineString = join(' ', @lineTextList);
-                        @lineTextList = ($lineString);
+                        $self->combineLines(\@lineTextList, \@lineOffsetList);
+                        # The buffer object is required for its ->previousTagList IV, so we can
+                        #   simply return the first buffer object
+                        @bufferObjList = ($bufferObjList[0]);
                     }
 
                     # Ignore the first n characters of the line, if the component's IV is set (but
                     #   not if ->useTextColour is set)
                     if (! $componentObj->useTextColour && $componentObj->ignoreFirstChars) {
 
-                        foreach my $text (@lineTextList) {
-
-                            if (length ($text) >= $componentObj->ignoreFirstChars) {
-                                $text = substr($text, $componentObj->ignoreFirstChars);
-                            } else {
-                                $text = '';
-                            }
-                        }
+                        $self->reduceLineFromStart(
+                            \@lineTextList,
+                            \@lineOffsetList,
+                            $componentObj->ignoreFirstChars,
+                        );
                     }
 
                     # Use only the first n characters of the line, if the component's IV is set (but
@@ -22531,13 +24160,11 @@
                         && ! $componentObj->ignoreFirstChars
                         && $componentObj->useFirstChars
                     ) {
-                        foreach my $text (@lineTextList) {
-
-                            if (length ($text) >= $componentObj->useFirstChars) {
-
-                                $text = substr($text, 0, $componentObj->useFirstChars);
-                            }
-                        }
+                        $self->reduceLineFromEnd(
+                            \@lineTextList,
+                            \@lineOffsetList,
+                            $componentObj->useFirstChars,
+                        );
                     }
 
                     # Use only the group substrings from a matching pattern, if the component's IV
@@ -22549,28 +24176,11 @@
                         && ! $componentObj->useFirstChars
                         && $componentObj->usePatternGroups
                     ) {
-                        foreach my $text (@lineTextList) {
-
-                            my (
-                                $regex, $result, $original,
-                                @grpStringList,
-                            );
-
-                            $regex = $componentObj->usePatternGroups;
-                            $original = $text;
-
-                            $result = @grpStringList = ($text =~ m/$regex/);
-                            if ($result) {
-
-                                $text = join('', @grpStringList);
-                                # In case the combined group substrings contain no text, restore the
-                                #   original line
-                                if (! $text) {
-
-                                    $text = $original;
-                                }
-                            }
-                        }
+                        $self->reduceLineUsingRegex(
+                            \@lineTextList,
+                            \@lineOffsetList,
+                            $componentObj->usePatternGroups,
+                        );
                     }
 
                     # Process the lines. The functions which process exit lines will return 'undef'
@@ -22578,23 +24188,64 @@
                     #   on improper arguments
                     $type = $componentObj->type;
                     if ($type eq 'verb_title' || $type eq 'brief_title') {
+
                         $result = $self->setRoomTitle($roomObj, @lineTextList);
+
                     } elsif ($type eq 'verb_descrip') {
+
                         $result = $self->setRoomDescrip($roomObj, @lineTextList);
+
                     } elsif ($type eq 'verb_exit') {
-                        $result = $self->setRoomVerbExit($worldObj, $roomObj, @lineTextList);
+
+                        $result = $self->setRoomExit(
+                            $worldObj,
+                            $roomObj,
+                            'verbose',
+                            \@bufferObjList,
+                            \@lineTextList,
+                            \@lineOffsetList,
+                        );
+
                     } elsif ($type eq 'verb_content' || $type eq 'brief_content') {
+
                         $result = $self->setRoomContent($roomObj, @lineTextList);
+
                     } elsif ($type eq 'verb_special') {
+
                         $result = $self->setRoomVerbSpecial($worldObj, $roomObj, @lineTextList);
+
                     } elsif ($type eq 'brief_exit') {
-                        $result = $self->setRoomBriefExit($worldObj, $roomObj, @lineTextList);
+
+                        $result = $self->setRoomExit(
+                            $worldObj,
+                            $roomObj,
+                            'brief',
+                            \@bufferObjList,
+                            \@lineTextList,
+                            \@lineOffsetList,
+                        );
+
                     } elsif ($type eq 'brief_title_exit') {
-                        $result = $self->setRoomTitleExit($worldObj, $roomObj, TRUE, @lineTextList);
+
+                        $result = $self->setRoomTitleExit(
+                            $worldObj,
+                            $roomObj,
+                            TRUE,
+                            \@bufferObjList,
+                            \@lineTextList,
+                            \@lineOffsetList,
+                        );
+
                     } elsif ($type eq 'brief_exit_title') {
 
-                        $result
-                            = $self->setRoomTitleExit($worldObj, $roomObj, FALSE, @lineTextList);
+                        $result = $self->setRoomTitleExit(
+                            $worldObj,
+                            $roomObj,
+                            FALSE,
+                            \@bufferObjList,
+                            \@lineTextList,
+                            \@lineOffsetList,
+                        );
 
                     } elsif ($type eq 'room_cmd') {
 
@@ -23960,12 +25611,180 @@
         return undef;
     }
 
+    sub getColoursAtStart {
+
+        # Called by $self->setRoomExit
+        # Gets the text and underlay colours that apply at the start of a line
+        #
+        # Expected arguments
+        #   $bufferObj      - The display buffer object which stores the line
+        #
+        # Expected arguments
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise, returns a list in the form (text_colour_tag, underlay_colour_tag)
+
+        my ($self, $bufferObj, $check) = @_;
+
+        # Local variables
+        my (
+            $text, $underlay,
+            @emptyList,
+        );
+
+        # Check for improper arguments
+        if (! defined $bufferObj || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->getColoursAtStart', @_);
+            return @emptyList;
+        }
+
+        # Get the colours that apply at the start of the line
+        OUTER: foreach my $startTag ($bufferObj->previousTagList) {
+
+            if ($axmud::CLIENT->checkTextTags($startTag)) {
+                $text = $startTag;
+            } elsif ($axmud::CLIENT->checkUnderlayTags($startTag)) {
+                $underlay = $startTag;
+            }
+
+            if ($text && $underlay) {
+
+                # Only one of each can exist in ->previousTagList, so we can stop searching now
+                last OUTER;
+            }
+        }
+
+        if (! defined $text) {
+
+            # No colour tags were applied at the end of the last line, so the colours actually
+            #   displayed are the 'main' window's default colours (usually white)
+            $text = $self->session->currentTabObj->textViewObj->textColour;
+        }
+
+        if (! defined $underlay) {
+
+            $underlay = $self->session->currentTabObj->textViewObj->underlayColour;
+        }
+
+        return ($text, $underlay);
+    }
+
+    sub getColoursAtPosn {
+
+        # Called by $self->setRoomExit
+        # The calling function is analysing a line of received text, but that line might have been
+        #   modified
+        # For any modifications made, the hash of Axmud colour/style tags at each offset has also
+        #   been updated
+        # This function works out the text and underlay tags that apply to a specified offset, and
+        #   returns them
+        #
+        # Expected arguments
+        #   $currentText    - The Axmud text colour tag which applies either at the beginning of
+        #                       the line, or before the first offset remaining in %offsetHash
+        #   $currentUnderlay
+        #                   - The Axmud underlay colour tag which applies either at the beginning of
+        #                       the line, or before the first offset remaining in %offsetHash
+        #   $currentBoldFlag
+        #                   - Set to TRUE and FALSE by the presence/absence of 'bold' tags (default
+        #                       value is FALSE)
+        #   $offset         - Update the text and underlay colours using those that apply at this
+        #                       offset
+        #   %offsetHash     - Hash of Axmud colour/style tags, equivalent to $bufferObj->offsetHash,
+        #                       but whose offsets have been updated as the line has been modified by
+        #                       the calling function
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise, returns a list in the form
+        #       (
+        #           modified_text_colour_tag, modified_underlay_colour_tag, modified_bold_flag,
+        #           modified_offset_hash,
+        #       )
+
+        my ($self, $currentText, $currentUnderlay, $currentBoldFlag, $offset, %offsetHash) = @_;
+
+        # Local variables
+        my @emptyList;
+
+        # Check for improper arguments
+        if (
+            ! defined $currentText && ! defined $currentUnderlay && ! defined $currentBoldFlag
+            && ! defined $offset
+        ) {
+            $axmud::CLIENT->writeImproper($self->_objClass . '->getColoursAtPosn', @_);
+            return @emptyList;
+        }
+
+        # Go through each offset in %offsetHash until we reach the specified one, updating
+        #   $currentText and $currentUnderlay as we go
+        foreach my $thisOffset (sort {$a <=> $b} (keys %offsetHash)) {
+
+            my $listRef;
+
+            if ($thisOffset > $offset) {
+
+                # We already have the colours that apply at the specified offset
+                return ($currentText, $currentUnderlay, $currentBoldFlag, %offsetHash);
+            }
+
+            $listRef = $offsetHash{$thisOffset};
+            foreach my $otherTag (@$listRef) {
+
+                my ($otherType, $underlayFlag);
+
+                if ($otherTag eq 'bold') {
+
+                    # Convert 'blue' to 'BLUE', etc. Don't worry whether it's an xterm or RGB colour
+                    #   tag, as they are both case-insensitive
+                    # 'bold' tags don't apply to underlay colours, of course
+                    $currentText = uc($currentText);
+                    $currentBoldFlag = TRUE;
+
+                } elsif ($otherTag eq 'bold_off' || $otherTag eq 'attribs_off') {
+
+                    $currentText = lc($currentText);
+                    $currentBoldFlag = FALSE;
+
+                } else {
+
+                    ($otherType, $underlayFlag) = $axmud::CLIENT->checkColourTags($otherTag);
+                    if ($otherType) {
+
+                        if (! $underlayFlag) {
+
+                            $currentText = $otherTag;
+                            if ($currentBoldFlag && $otherType eq 'standard' && ! $underlayFlag) {
+
+                                $currentText = uc($currentText);
+                            }
+
+                        } else {
+
+                            $currentUnderlay = $otherTag;
+                        }
+                    }
+                }
+            }
+
+            # Once we've got the colour tags for this offset, we don't need to check it again
+            delete $offsetHash{$thisOffset};
+        }
+
+        # Operation complete
+        return ($currentText, $currentUnderlay, $currentBoldFlag, %offsetHash);
+    }
+
     sub trimColouredText {
 
         # Called by $self->extractComponents when processing a component which has its
         #   ->useTextColour IV set to any Axmud colour or underlay tag
         # Checks the text of a single display buffer line, and removes any text whose colour doesn't
-        #   match the colour specified by ->useTextColour
+        #   match the colour specified by ->useTextColour. Updates the buffer object's hash of
+        #   offsets where Axmud colour/style tags are found to match the modified text
+        #
         # NB If the component's ->boldSensitiveFlag is not set, normal and bold colours are treated
         #   the same way
         #
@@ -23977,24 +25796,26 @@
         #   $componentObj   - The GA::Obj::Component object for this line
         #
         # Return values
-        #   'undef' on improper arguments or if there is no text on the line that uses the
+        #   An empty list on improper arguments or if there is no text on the line that uses the
         #       component's specified colour tag
-        #   Otherwise returns the trimmed line of text
+        #   Otherwise, returns a list in the form
+        #       (modified_text, modified_offset_hash)
 
         my ($self, $bufferObj, $componentObj, $check) = @_;
 
         # Local variables
         my (
             $tag, $boldFlag, $currentText, $currentUnderlay, $usingTextFlag, $usingUnderlayFlag,
-            $newText,
-            @useOffsetList,
-            %offsetHash,
+            $modText,
+            @emptyList, @useOffsetList, @disposeOffsetList,
+            %offsetHash, %modOffsetHash,
         );
 
         # Check for improper arguments
         if (! defined $bufferObj || ! defined $componentObj || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->trimColouredText', @_);
+            $axmud::CLIENT->writeImproper($self->_objClass . '->trimColouredText', @_);
+            return @emptyList;
         }
 
         # We only want to keep text using this Axmud colour tag
@@ -24023,7 +25844,7 @@
         if (! defined $currentText) {
 
             # No text colour tags were applied at the end of the last line, so the colours actually
-            #   displayed are the 'main' window's default colours (usually white)
+            #   displayed are the textview object's default colours (usually white)
             $currentText = $self->session->currentTabObj->textViewObj->textColour;
         }
 
@@ -24046,7 +25867,8 @@
         }
 
         # Now, go through the offsets at which tags occur, looking for occurences of $tag
-        foreach my $offset (sort {$a <=> $b} (keys %offsetHash)) {
+        @disposeOffsetList = sort {$a <=> $b} (keys %offsetHash);
+        foreach my $offset (@disposeOffsetList) {
 
             my ($tagListRef, $otherType, $underlayFlag);
 
@@ -24146,11 +25968,12 @@
         if (! @useOffsetList) {
 
             # Line contained no text of the right colour
-            return undef;
+            return @emptyList;
         }
 
-        # Compile a string consisting of all the line portions in the right colour
-        $newText = '';
+        # Compile a string consisting of all the line portions in the right colour. Also update
+        #   %offsetHash so that it matches the modified string
+        $modText = '';
         do {
 
             my ($start, $stop);
@@ -24158,19 +25981,392 @@
             $start = shift @useOffsetList;
             $stop = shift @useOffsetList;
 
+            OUTER: foreach my $offset (@disposeOffsetList) {
+
+                if ($offset < $start) {
+
+                    # This offset occurs before $start, so ignore it
+                    shift @disposeOffsetList;
+                    next OUTER;
+
+                } elsif ($offset <= $stop) {
+
+                    # This offset occurs within the text of the right colour, so preserve its
+                    #   Axmud colour/style tags at their new position
+                    shift @disposeOffsetList;
+                    $modOffsetHash{$offset - length($modText)} = $offsetHash{$offset};
+
+                } else {
+
+                    # This offset occurs after $stop; process it on the next do... loop
+                    last OUTER;
+                }
+            }
+
             if (! defined $stop) {
-
-                $newText .= substr($bufferObj->modLine, $start);
-                return $newText;
-
+                $modText .= substr($bufferObj->modLine, $start);
             } elsif ($stop > $start) {
-
-                $newText .= substr($bufferObj->modLine, $start, ($stop - $start));
+                $modText .= substr($bufferObj->modLine, $start, ($stop - $start));
             }
 
         } until (! @useOffsetList);
 
-        return $newText;
+        return ($modText, %modOffsetHash);
+    }
+
+    sub combineLines {
+
+        # Called by $self->extractComponents when processing a component which has its
+        #   ->combineLinesFlag IV set
+        # Combines the text of the lines into a single string. Also combines the hashes of offsets
+        #   where Axmud colour/style tags occur into a single hash matching the single string
+        #
+        # Expected arguments
+        #   $lineTextListRef    - Reference to a list of strings, each representing text on a single
+        #                           line
+        #   $lineOffsetListRef  - Reference to a corresponding list of hash references, containing
+        #                           offsets on each line where Axmud colour/style tags occur. Those
+        #                           hashes are in the form
+        #                           $hash{offset} = reference_to_list_of_Axmud_colour_&_style_tags
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise (for which the contents of the two list references have been modifed)
+
+        my ($self, $lineTextListRef, $lineOffsetListRef, $check) = @_;
+
+        # Local variables
+        my (
+            $modText,
+            %modOffsetHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $lineTextListRef || ! defined $lineOffsetListRef || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->combineLines', @_);
+        }
+
+        if (@$lineTextListRef) {
+
+            $modText = '';
+
+            do {
+
+                my ($text, $hashRef);
+
+                $text = shift @$lineTextListRef;
+                $hashRef = shift @$lineOffsetListRef;
+
+                foreach my $offset (keys %$hashRef) {
+
+                    $modOffsetHash{$offset + length($modText)} = $$hashRef{$offset};
+                }
+
+                if ($modText eq '') {
+                    $modText = $text;
+                } else {
+                    $modText .= ' ' . $text;
+                }
+
+            } until (! @$lineTextListRef);
+        }
+
+        # Update the list references supplied as arguments, so we don't need to return them as
+        #   values
+        @$lineTextListRef = ($modText);
+        @$lineOffsetListRef = (\%modOffsetHash);
+
+        return 1;
+    }
+
+    sub reduceLineFromStart {
+
+        # Called by $self->extractComponents when processing a component which has its
+        #   ->ignoreFirstChars IV set
+        # Removes the first n characters from each line (leaving an empty string, if necessary).
+        #   Also updates the hashes of offsets where Axmud colour/style tags occur to match the
+        #   modified strings
+        #
+        # Expected arguments
+        #   $lineTextListRef    - Reference to a list of strings, each representing text on a single
+        #                           line
+        #   $lineOffsetListRef  - Reference to a corresponding list of hash references, containing
+        #                           offsets on each line where Axmud colour/style tags occur. Those
+        #                           hashes are in the form
+        #                           $hash{offset} = reference_to_list_of_Axmud_colour_&_style_tags
+        #   $number             - The number of characters to remove from the beginning of each
+        #                           line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise (for which the contents of the two list references have been modifed)
+
+        my ($self, $lineTextListRef, $lineOffsetListRef, $number, $check) = @_;
+
+        # Local variables
+        my (@modLineTextList, @modLineOffsetList);
+
+        # Check for improper arguments
+        if (
+            ! defined $lineTextListRef || ! defined $lineOffsetListRef || ! defined $number
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->reduceLineFromStart', @_);
+        }
+
+        if (@$lineTextListRef) {
+
+            do {
+
+                my (
+                    $text, $hashRef,
+                    %modHash,
+                );
+
+                $text = shift @$lineTextListRef;
+                $hashRef = shift @$lineOffsetListRef;
+
+                if (length ($text) >= $number) {
+                    $text = substr($text, $number);
+                } else {
+                    $text = '';
+                }
+
+                foreach my $offset (keys %$hashRef) {
+
+                    if ($offset >= $number) {
+
+                        $modHash{$offset - $number} = $$hashRef{$offset};
+                    }
+                }
+
+                push (@modLineTextList, $text);
+                push (@modLineOffsetList, \%modHash);
+
+            } until (! @$lineTextListRef);
+        }
+
+        # Update the list references supplied as arguments, so we don't need to return them as
+        #   values
+        @$lineTextListRef = @modLineTextList;
+        @$lineOffsetListRef = @modLineOffsetList;
+
+        return 1;
+    }
+
+    sub reduceLineFromEnd {
+
+        # Called by $self->extractComponents when processing a component which has its
+        #   ->useFirstChars IV set
+        # Removes everything after the first n characters from each line. Also updates the hashes of
+        #   offsets where Axmud colour/style tags occur to match the modified strings
+        #
+        # Expected arguments
+        #   $lineTextListRef    - Reference to a list of strings, each representing text on a single
+        #                           line
+        #   $lineOffsetListRef  - Reference to a corresponding list of hash references, containing
+        #                           offsets on each line where Axmud colour/style tags occur. Those
+        #                           hashes are in the form
+        #                           $hash{offset} = reference_to_list_of_Axmud_colour_&_style_tags
+        #   $number             - The number of characters to preserve at the beginning of each line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise (for which the contents of the two list references have been modifed)
+
+        my ($self, $lineTextListRef, $lineOffsetListRef, $number, $check) = @_;
+
+        # Local variables
+        my (@modLineTextList, @modLineOffsetList);
+
+        # Check for improper arguments
+        if (
+            ! defined $lineTextListRef || ! defined $lineOffsetListRef || ! defined $number
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->reduceLineFromEnd', @_);
+        }
+
+        if (@$lineTextListRef) {
+
+            do {
+
+                my (
+                    $text, $hashRef,
+                    %modHash,
+                );
+
+                $text = shift @$lineTextListRef;
+                $hashRef = shift @$lineOffsetListRef;
+
+                if (length ($text) >= $number) {
+
+                    $text = substr($text, 0, $number);
+                }
+
+                foreach my $offset (keys %$hashRef) {
+
+                    if ($offset < $number) {
+
+                        $modHash{$offset} = $$hashRef{$offset};
+                    }
+                }
+
+                push (@modLineTextList, $text);
+                push (@modLineOffsetList, \%modHash);
+
+            } until (! @$lineTextListRef);
+        }
+
+        # Update the list references supplied as arguments, so we don't need to return them as
+        #   values
+        @$lineTextListRef = @modLineTextList;
+        @$lineOffsetListRef = @modLineOffsetList;
+
+        return 1;
+    }
+
+    sub reduceLineUsingRegex {
+
+        # Called by $self->extractComponents when processing a component which has its
+        #   ->usePatternGroups IV set
+        # Tests a regex against each line. If the lines matches, this function removes everything
+        #   except the group substrings. Also updates the hashes of offsets where Axmud colour/style
+        #   tags occur to match the modified strings
+        #
+        # Expected arguments
+        #   $lineTextListRef    - Reference to a list of strings, each representing text on a single
+        #                           line
+        #   $lineOffsetListRef  - Reference to a corresponding list of hash references, containing
+        #                           offsets on each line where Axmud colour/style tags occur. Those
+        #                           hashes are in the form
+        #                           $hash{offset} = reference_to_list_of_Axmud_colour_&_style_tags
+        #   $regex              - The regex to use (which is assumed to contain at least one
+        #                           substring)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise (for which the contents of the two list references have been modifed)
+
+        my ($self, $lineTextListRef, $lineOffsetListRef, $regex, $check) = @_;
+
+        # Local variables
+        my (@modLineTextList, @modLineOffsetList);
+
+        # Check for improper arguments
+        if (
+            ! defined $lineTextListRef || ! defined $lineOffsetListRef || ! defined $regex
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->reduceLineUsingRegex', @_);
+        }
+
+        if (@$lineTextListRef) {
+
+            do {
+
+                my (
+                    $text, $modText, $hashRef,
+                    @grpStringList, @matchMinusList, @matchPlusList, @discardList,
+                    %modOffsetHash,
+                );
+
+                $text = shift @$lineTextListRef;
+                $hashRef = shift @$lineOffsetListRef;
+
+                @grpStringList = ($text =~ m/$regex/);
+                if (@grpStringList) {
+
+                    @matchMinusList = @-;
+                    @matchPlusList = @+;
+
+                    $modText = join('', @grpStringList);
+                    # In case the combined group substrings contain no text, restore the
+                    #   original line
+                    if ($modText eq '') {
+
+                        push (@modLineTextList, $text);
+                        push (@modLineOffsetList, $hashRef);
+
+                    } else {
+
+                        # Now update the hashes that contain the offsets on each line where Axmud
+                        #   colour/style tags occur
+                        # @matchMinusList contains the offsets where each group substring in
+                        #   @grpStringList occurs, and @matchPlusList contains the offsets
+                        #   immediately after the group substring
+                        # e.g. You are in a twisty maze of passages
+                        #                   ^^^^^^^^^^^
+                        #      0123456789012345678901234567890123456789
+                        #      Group substring 'twisty maze', offsets are 13 and 24
+
+                        # The first element in each list are the offets of the whole matching
+                        #   portion of $text, so we can discard them immediately
+                        shift @matchMinusList;
+                        shift @matchPlusList;
+                        # The offsets at which Axmud colour/style tags occur can be discarded from
+                        #   this list as they're processed
+                        @discardList = sort {$a <=> $b} (keys %$hashRef);
+                        $modText = '';
+
+                        do {
+
+                            my ($start, $stop, $string);
+
+                            $start = shift @matchMinusList;
+                            $stop = shift @matchPlusList;
+                            $string = shift @grpStringList;
+
+                            OUTER: foreach my $offset (@discardList) {
+
+                                if ($offset < $start) {
+
+                                    # This offset occurs before $start, so ignore it
+                                    shift @discardList;
+                                    next OUTER;
+
+                                } elsif ($offset <= $stop) {
+
+                                    # This offset occurs within group substring, so preserve its
+                                    #   Axmud colour/style tags at their new position
+                                    shift @discardList;
+                                    $modOffsetHash{$offset - length($modText)} = $$hashRef{$offset};
+
+                                } else {
+
+                                    # This offset occurs after $stop; process it on the next do...
+                                    #   loop
+                                    last OUTER;
+                                }
+                            }
+
+                            # Combined the group substrings into a single string as we go, so we
+                            #   know how to adjust the offsets in %hashRef
+                            $modText .= $string;
+
+                        } until (! @matchMinusList);
+
+                        push (@modLineTextList, $modText);
+                        push (@modLineOffsetList, \%modOffsetHash);
+                    }
+
+                } else {
+
+                    # Line doesn't match, so preserve the whole line
+                    push (@modLineTextList, $text);
+                    push (@modLineOffsetList, $hashRef);
+                }
+
+            } until (! @$lineTextListRef);
+        }
+
+        # Update the list references supplied as arguments, so we don't need to return them as
+        #   values
+        @$lineTextListRef = @modLineTextList;
+        @$lineOffsetListRef = @modLineOffsetList;
+
+        return 1;
     }
 
     sub checkLineValid {
@@ -24510,41 +26706,147 @@
         return 1;
     }
 
-    sub setRoomVerbExit {
+    sub setRoomExit {
 
-        # Called by $self->extractComponents (at stage 3)
-        # Adds a list of verbose exits to the non-model room
+        # Called by $self->extractComponents (at stage 3); also called by $self->setRoomTitleExit
+        # Adds a list of verbose or brief exits to the non-model room
         #
         # Expected arguments
-        #   $worldObj   - The current world profile
-        #   $roomObj    - A GA::ModelObj::Room object
-        #   @lineList   - A list of lines comprising the room statement component 'verb_exit'
+        #   $worldObj           - The current world profile
+        #   $roomObj            - A GA::ModelObj::Room object
+        #   $mode               - 'verbose' or 'brief'
+        #   $bufferObjListRef   - Reference to a list of display buffer objects, one for each line
+        #                           in the extracted component
+        #   $lineTextListRef    - Reference to a corresponding list of strings, each representing
+        #                           text on a single line
+        #   $lineOffsetListRef  - Reference to a corresponding list of hash references, containing
+        #                           offsets on each line where Axmud colour/style tags occur. Those
+        #                           hashes are in the form
+        #                           $hash{offset} = reference_to_list_of_Axmud_colour_&_style_tags
         #
         # Return values
-        #   'undef' on improper arguments or if any line in @lineList is invalid
+        #   'undef' on improper arguments, if any line in $lineTextListRef is invalid or if
+        #       $lineTextListRef is empty
         #   1 otherwise
 
-        my ($self, $worldObj, $roomObj, @lineList) = @_;
+        my (
+            $self, $worldObj, $roomObj, $mode, $bufferObjListRef, $lineTextListRef,
+            $lineOffsetListRef, $check,
+        ) = @_;
 
         # Local variables
         my (
-            @markerList, @exitList, @modList, @finalList,
-            %exitHash,
+            $delimIV, $nonDelimIV, $leftMarkerIV, $rightMarkerIV, $splitCharIV,
+            @bufferObjList, @lineTextList, @lineOffsetList, @markerList, @exitList, @finalList,
+            %checkHash,
         );
 
         # Check for improper arguments
-        if (! defined $worldObj || ! defined $roomObj || ! @lineList) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setRoomVerbExit', @_);
+        if (
+            ! defined $worldObj || ! defined $roomObj || ! defined $mode
+            || ! defined $bufferObjListRef || ! defined $lineTextListRef
+            || ! defined $lineOffsetListRef || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setRoomExit', @_);
         }
 
-        # Preserve the original @lineList (required for TTS);
-        $self->ivAdd('ttsToReadHash', 'exit', join(' ', @lineList));
+        # Set which IVs to use, depending on $mode
+        if ($mode eq 'verbose') {
+
+            $delimIV = 'verboseExitDelimiterList';
+            $nonDelimIV = 'verboseExitNonDelimiterList';
+            $leftMarkerIV = 'verboseExitLeftMarkerList';
+            $rightMarkerIV = 'verboseExitRightMarkerList';
+            $splitCharIV = 'verboseExitSplitCharFlag';
+
+        } else {
+
+            $delimIV = 'briefExitDelimiterList';
+            $nonDelimIV = 'briefExitNonDelimiterList';
+            $leftMarkerIV = 'briefExitLeftMarkerList';
+            $rightMarkerIV = 'briefExitRightMarkerList';
+            $splitCharIV = 'briefExitSplitCharFlag';
+        }
+
+        # For convenience, dereference the arguments
+        @bufferObjList = @$bufferObjListRef;
+        @lineTextList = @$lineTextListRef;
+        @lineOffsetList = @$lineOffsetListRef;
+        if (! @lineTextList) {
+
+            # Nothing to process
+            return undef;
+        }
+
+        # Preserve the original @lineTextList (required for TTS);
+        $self->ivAdd('ttsToReadHash', 'exit', join(' ', @lineTextList));
+
+        # Remove left/right markers, if any, from each line in @lineTextList. (It's up to the user
+        #   to create left-marker regexes that start with '^' and right-marker regexes that end with
+        #   '$')
+        @markerList = (
+            $worldObj->$leftMarkerIV,
+            $worldObj->$rightMarkerIV,
+        );
+
+        if (@markerList) {
+
+            for (my $count = 0; $count < (scalar @lineTextList); $count++) {
+
+                my (
+                    $text, $modText, $hashRef, $modFlag,
+                    %modHash,
+                );
+
+                $modText = $text = $lineTextList[$count];
+                $hashRef = $lineOffsetList[$count];
+                %modHash = %$hashRef;
+
+                foreach my $marker (@markerList) {
+
+                    my (
+                        $newText, $start, $stop, $len,
+                        %newHash,
+                    );
+
+                    $newText = $modText;
+
+                    if ($newText =~ s/$marker//) {
+
+                        $start = $-[0];
+                        $stop = $+[0];
+                        $len = $stop - $start;
+
+                        # Update the hash of offsets where Axmud colour/style tags occur to match
+                        #   the modified text
+                        foreach my $offset (keys %modHash) {
+
+                            if ($offset < $start) {
+                                $newHash{$offset} = $modHash{$offset};
+                            } elsif ($offset >= $stop) {
+                                $newHash{$offset - $len} = $modHash{$offset};
+                            }
+                        }
+
+                        $modText = $newText;
+                        %modHash = %newHash;
+                        $modFlag = TRUE;
+                    }
+                }
+
+                if ($modFlag) {
+
+                    # At least one substitution was made
+                    $lineTextList[$count] = $modText;
+                    $lineOffsetList[$count] = \%modHash;
+                }
+            }
+        }
 
         # Check that no lines contain any non-delimiters (forbidden substrings)
-        foreach my $line (@lineList) {
+        foreach my $line (@lineTextList) {
 
-            foreach my $delim ($worldObj->verboseExitNonDelimiterList) {
+            foreach my $delim ($worldObj->$nonDelimIV) {
 
                 if (index ($line, $delim) > -1) {
 
@@ -24554,137 +26856,289 @@
             }
         }
 
-        # Remove left/right markers, if any, from each line in @lineList. (It's up to the user to
-        #   create left-marker regexes that start with '^' and right-marker regexes that end with
-        #   '$')
-        @markerList = (
-            $worldObj->verboseExitLeftMarkerList,
-            $worldObj->verboseExitRightMarkerList,
-        );
-
-        foreach my $line (@lineList) {
-
-            foreach my $marker (@markerList) {
-
-                $line =~ s/$marker//;
-            }
-        }
-
         # Replace any exit aliases with their substitutions (e.g. substitute 'compass' for
         #   'n s e w nw ne sw se'
         if ($worldObj->exitAliasHash) {
 
-            foreach my $pattern ($worldObj->ivKeys('exitAliasHash')) {
+            for (my $count = 0; $count < (scalar @lineTextList); $count++) {
 
-                foreach my $line (@lineList) {
+                my (
+                    $text, $modText, $hashRef, $modFlag,
+                    %modHash,
+                );
 
-                    my $substitution = $worldObj->ivShow('exitAliasHash', $pattern);
+                $modText = $text = $lineTextList[$count];
+                $hashRef = $lineOffsetList[$count];
+                %modHash = %$hashRef;
 
-                    $line =~ s/$pattern/$substitution/;
+                foreach my $pattern ($worldObj->ivKeys('exitAliasHash')) {
+
+                    my (
+                        $substitution, $newText, $start, $stop, $diff,
+                        %newHash,
+                    );
+
+                    $substitution = $worldObj->ivShow('exitAliasHash', $pattern);
+                    $newText = $modText;
+
+                    if ($newText =~ s/$pattern/$substitution/i) {
+
+                        $start = $-[0];
+                        $stop = $+[0];
+                        $diff = length($newText) - length($modText);
+
+                        # Update the hash of offsets where Axmud colour/style tags occur to match
+                        #   the modified text. Any colour/style tags which occured inside the
+                        #   substituted text are lost
+                        foreach my $offset (keys %modHash) {
+
+                            if ($offset < $start) {
+                                $newHash{$offset} = $modHash{$offset};
+                            } elsif ($offset >= $stop) {
+                                $newHash{$offset + $diff} = $modHash{$offset};
+                            }
+                        }
+
+                        $modText = $newText;
+                        %modHash = %newHash;
+                        $modFlag = TRUE;
+                    }
+                }
+
+                if ($modFlag) {
+
+                    # At least one substitution was made
+                    $lineTextList[$count] = $modText;
+                    $lineOffsetList[$count] = \%modHash;
+                }
+            }
+        }
+
+        # In case the delimiter interferes with exit state strings, remove anything matching the
+        #   pattern(s), and treat that portion as an exit
+        # Compose a list, @exitList, in groups of 3, in the form
+        #   (exit_string, text_colour, underlay_colour...)
+        if ($worldObj->exitStatePatternList) {
+
+            for (my $count = 0; $count < (scalar @lineTextList); $count++) {
+
+                my (
+                    $bufferObj, $text, $modText, $hashRef, $modFlag,
+                    %modHash,
+                );
+
+                $bufferObj = $bufferObjList[$count];
+                $modText = $text = $lineTextList[$count];
+                $hashRef = $lineOffsetList[$count];
+                %modHash = %$hashRef;
+
+                foreach my $pattern ($worldObj->exitStatePatternList) {
+
+                    my (
+                        $substitution, $newText, $exitFlag,
+                        %newHash,
+                    );
+
+                    $substitution = $worldObj->ivShow('exitAliasHash', $pattern);
+                    $newText = $modText;
+
+                    # Use a do... loop, as we might need to remove several exits from the same line
+                    do {
+
+                        my ($start, $stop, $len);
+
+                        $exitFlag = FALSE;
+
+                        if ($newText =~ s/($pattern)//) {
+
+                            $start = $-[0];
+                            $stop = $+[0];
+                            $len = $stop - $start;
+
+                            # Get the text/underlay colours which apply to the offset $start, so we
+                            #   can add them to @exitList alongside $1, the exit itself
+                            push (@exitList,
+                                $1,
+                                $self->getColoursAtPosn(
+                                    $self->getColoursAtStart($bufferObj),
+                                    FALSE,              # No 'bold' tag detected yet
+                                    $start,
+                                    %modHash,
+                                ),
+                            );
+
+                            # Update the hash of offsets where Axmud colour/style tags occur to
+                            #   match the modified text. Any colour/style tags which occured inside
+                            #   the substituted text are lost
+                            foreach my $offset (keys %modHash) {
+
+                                if ($offset < $start) {
+                                    $newHash{$offset} = $modHash{$offset};
+                                } elsif ($offset >= $stop) {
+                                    $newHash{$offset - $len} = $modHash{$offset};
+                                }
+                            }
+
+                            $modText = $newText;
+                            %modHash = %newHash;
+                            $modFlag = TRUE;
+                        }
+
+                    } until (! $exitFlag);
+                }
+
+                if ($modFlag) {
+
+                    # At least one substitution was made
+                    $lineTextList[$count] = $modText;
+                    $lineOffsetList[$count] = \%modHash;
                 }
             }
         }
 
         # Now extract exits from every line in turn
-        foreach my $line (@lineList) {
+        OUTER: for (my $count = 0; $count < (scalar @lineTextList); $count++) {
 
-            my @thisList = ($line);
+            my (
+                $bufferObj, $text, $hashRef, $offset, $textColour, $underlayColour, $boldFlag,
+                $stopFlag,
+                %newHash,
+            );
 
-            # In case the delimiter interferes with exit state strings, remove anything matching
-            #   the pattern(s), and treat that portion as an exit
-            foreach my $pattern ($worldObj->exitStatePatternList) {
+            $bufferObj = $bufferObjList[$count];
+            $text = $lineTextList[$count];
+            $hashRef = $lineOffsetList[$count];
+            $offset = 0;
 
-                my @tempList = @thisList;
-                @thisList = ();
+            ($textColour, $underlayColour) = $self->getColoursAtStart($bufferObj);
+            $boldFlag = FALSE;
 
-                foreach my $item (@tempList) {
+            # $text should now be in the general form
+            #   <exit><delimiter><exit><delimiter><exit>...
+            do {
 
-                    my $exitFlag;
+                my ($posn, $delim, $exitString);
 
-                    do {
+                # Find the position of the first delimiter at $offset or after
+                foreach my $thisDelim ($worldObj->$delimIV) {
 
-                        $exitFlag = FALSE;
+                    my $thisPosn = index(substr($text, $offset), $thisDelim);
+                    if ($thisPosn >= 0) {
 
-                        if ($item =~ s/($pattern)//) {
+                        if (! defined $posn || $posn > $thisPosn) {
 
-                            push (@exitList, $1);
-                            $exitFlag = TRUE;
+                            $posn = $thisPosn;
+                            $delim = $thisDelim;
                         }
+                    }
+                }
 
-                    } until (! $exitFlag);
+                if (! defined $posn) {
 
-                    # Anything remaining after matching portions extracted
-                    push (@thisList, $item);
-                 }
-            }
+                    # $text, from $offset onwards, contains no delimiters
+                    push (@exitList, substr($text, $offset));
 
-            # Now split the line using exit delimiters
-            foreach my $delim ($worldObj->verboseExitDelimiterList) {
+                    ($textColour, $underlayColour, $boldFlag, %newHash) = $self->getColoursAtPosn(
+                        $textColour,
+                        $underlayColour,
+                        $boldFlag,
+                        $offset,
+                        %$hashRef,
+                    ),
 
-                my @tempList = @thisList;
-                @thisList = ();
+                    push (@exitList, $textColour, $underlayColour);
+                    %$hashRef = %newHash;
+                    $stopFlag = TRUE;
 
-                foreach my $item (@tempList) {
+                } else {
 
-                    my $offset;
+                    # $text contains an offset an exit between $offset and ($offset + $posn)
+                    push (@exitList, substr($text, $offset, $posn));
 
-                    # Can't use Perl split(), because $delim is not a regex
-                    do {
+                    ($textColour, $underlayColour, $boldFlag, %newHash) = $self->getColoursAtPosn(
+                        $textColour,
+                        $underlayColour,
+                        $boldFlag,
+                        $offset,
+                        %$hashRef,
+                    ),
 
-                        $offset = index($item, $delim);
-                        if ($offset >= 0) {
+                    push (@exitList, $textColour, $underlayColour);
+                    %$hashRef = %newHash;
 
-                            push (@thisList, substr($item, 0, $offset));
-                            $item = substr($item, ($offset + length($delim)));
+                    # On the next iteration of this loop, check from the start of the next exit
+                    #   string
+                    $offset += $posn + length($delim);
+                }
+
+            } until ($stopFlag);
+        }
+
+        # Improve the exits in @exitList
+        if (@exitList) {
+
+            do {
+
+                my ($exitString, $currentText, $currentUnderlay, $modString, $replace);
+
+                $exitString = shift @exitList;
+                $currentText = shift @exitList;
+                $currentUnderlay = shift @exitList;
+
+                # Remove any leading/trailing whitespace from strings in @exitList, convert
+                #   multiple-character whitespace into single-character whitespace
+                $modString = $axmud::CLIENT->trimWhitespace($exitString, TRUE);
+
+                # Ignore any strings that are now empty strings
+                if (defined $modString && $modString ne '') {
+
+                    # Deal with duplicate exits. In some situations, we can replace it with
+                    #   something else
+                    if (
+                        exists $checkHash{$modString}
+                        && defined $worldObj->duplicateReplaceString
+                    ) {
+                        # For worlds like Two Towers, a duplicate 'east' exit is normally one which
+                        #   can be substituted for something like 'swim east', in which case
+                        #   $replace will be something like 'swim @@@'
+                        $replace = $worldObj->duplicateReplaceString;
+                        $replace =~ s/@@@/$modString/g;
+                        $modString = $replace;
+                    }
+
+                    # If $modString is still a duplicate, just ignore it
+                    if (! exists $checkHash{$modString}) {
+
+                        # Split the exit into single letters, if required
+                        if ($worldObj->$splitCharIV) {
+
+                            foreach my $char (split('', $modString)) {
+
+                                # Still eliminate duplicate exits
+                                if (! exists $checkHash{$char}) {
+
+                                    # The code assumes that any colour tag applying to the beginning
+                                    #   of the exit applies to all of it; in this case, it applies
+                                    #   to every character in the split string
+                                    push (@finalList, $char, $currentText, $currentUnderlay);
+                                }
+                            }
 
                         } else {
 
-                            push (@thisList, $item);
+                            push (@finalList, $modString, $currentText, $currentUnderlay);
                         }
 
-                    } until ($offset < 0);
+                        $checkHash{$modString} = undef;
+                    }
                 }
-            }
 
-            push (@exitList, @thisList);
+            } until (! @exitList);
         }
 
-        # Remove any leading/trailing whitespace from strings in @exitList, convert multiple-
-        #   character whitespace into single-character whitespace, convert capitals to lower case,
-        #   and remove empty strings
-        foreach my $exit (@exitList) {
-
-            $exit = $axmud::CLIENT->trimWhitespace($exit, TRUE);
-            if ($exit) {
-
-                push (@modList, lc($exit));
-            }
-        }
-
-        # Split the exit(s) into single letters, if required
-        if ($worldObj->verboseExitSplitCharFlag) {
-
-            @exitList = @modList;
-            @modList = ();
-            foreach my $exit (@exitList) {
-
-                push (@modList, split('', $exit));
-            }
-        }
-
-        # Go through @modList, eliminating duplicates
-        foreach my $exit (@modList) {
-
-            if (! exists $exitHash{$exit}) {
-
-                $exitHash{$exit} = undef;
-                push (@finalList, $exit);
-            }
-        }
-
-        # Now, for each exit in @finalList, create a non-exit model object, and add it to the
-        #   room model object. The TRUE argument states that these are verbose exits
-        return $self->processExits($worldObj, $roomObj, TRUE, @finalList);
+        # Now, for each exit in @finalList, create a non-exit model object, and add it to the room
+        #   model object
+        return $self->processExits($worldObj, $roomObj, @finalList);
     }
 
     sub setRoomContent {
@@ -24820,214 +27274,55 @@
         }
     }
 
-    sub setRoomBriefExit {
-
-        # Called by $self->extractComponents (at stage 3)
-        # Adds a list of brief exits to the non-model room
-        #
-        # Expected arguments
-        #   $worldObj   - The current world profile
-        #   $roomObj    - A GA::ModelObj::Room object
-        #   @lineList   - A list of lines comprising the room statement component 'brief_exit'
-        #
-        # Return values
-        #   'undef' on improper arguments or if any line in @lineList is invalid
-        #   1 otherwise
-
-        my ($self, $worldObj, $roomObj, @lineList) = @_;
-
-        # Local variables
-        my (
-            @markerList, @exitList, @modList, @finalList,
-            %exitHash,
-        );
-
-        # Check for improper arguments
-        if (! defined $worldObj || ! defined $roomObj || ! @lineList) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setRoomBriefExit', @_);
-        }
-
-        # Remove left/right markers, if any, from each line in @lineList. (It's up to the user to
-        #   create left-marker regexes that start with '^' and right-marker regexes that end with
-        #   '$')
-        @markerList = (
-            $worldObj->briefExitLeftMarkerList,
-            $worldObj->briefExitRightMarkerList,
-        );
-
-        foreach my $line (@lineList) {
-
-            foreach my $marker (@markerList) {
-
-                $line =~ s/$marker//;
-            }
-        }
-
-        # Check that no lines contain any non-delimiters (forbidden substrings)
-        foreach my $line (@lineList) {
-
-            foreach my $delim ($worldObj->briefExitNonDelimiterList) {
-
-                if (index ($line, $delim) > -1) {
-
-                    # Invalid line; don't process any exits
-                    return undef;
-                }
-            }
-        }
-
-        # Replace any exit aliases with their substitutions (e.g. substite 'compass' for
-        #   'n s e w nw ne sw se'
-        if ($worldObj->exitAliasHash) {
-
-            foreach my $pattern ($worldObj->ivKeys('exitAliasHash')) {
-
-                foreach my $line (@lineList) {
-
-                    my $substitution = $worldObj->ivShow('exitAliasHash', $pattern);
-
-                    $line =~ s/$pattern/$substitution/;
-                }
-            }
-        }
-
-        # Now extract exits from every line in turn
-        foreach my $line (@lineList) {
-
-            my @thisList = ($line);
-
-            # In case the delimiter interferes with exit state strings, remove anything matching
-            #   the pattern(s), and treat that portion as an exit
-            foreach my $pattern ($worldObj->exitStatePatternList) {
-
-                my @tempList = @thisList;
-                @thisList = ();
-
-                foreach my $item (@tempList) {
-
-                    my $exitFlag;
-
-                    do {
-
-                        $exitFlag = FALSE;
-
-                        if ($item =~ s/($pattern)//) {
-
-                            push (@exitList, $1);
-                            $exitFlag = TRUE;
-                        }
-
-                    } until (! $exitFlag);
-
-                    # Anything remaining after matching portions extracted
-                    push (@thisList, $item);
-                 }
-            }
-
-            # Now split the line using exit delimiters
-            foreach my $delim ($worldObj->briefExitDelimiterList) {
-
-                my @tempList = @thisList;
-                @thisList = ();
-
-                foreach my $item (@tempList) {
-
-                    my $offset;
-
-                    # Can't use Perl split(), because $delim is not a regex
-                    do {
-
-                        $offset = index($item, $delim);
-                        if ($offset >= 0) {
-
-                            push (@thisList, substr($item, 0, $offset));
-                            $item = substr($item, ($offset + length($delim)));
-
-                        } else {
-
-                            push (@thisList, $item);
-                        }
-
-                    } until ($offset < 0);
-                }
-            }
-
-            push (@exitList, @thisList);
-        }
-
-        # Remove any leading/trailing whitespace from strings in @exitList, convert capitals to
-        #   lower case, and remove empty strings
-        foreach my $exit (@exitList) {
-
-            $exit = $axmud::CLIENT->trimWhitespace($exit);
-            if ($exit) {
-
-                push (@modList, lc($exit));
-            }
-        }
-
-        # Split the exit(s) into single letters, if required
-        if ($worldObj->briefExitSplitCharFlag) {
-
-            @exitList = @modList;
-            @modList = ();
-            foreach my $exit (@exitList) {
-
-                push (@modList, split('', $exit));
-            }
-        }
-
-        # Go through @modList, eliminating duplicates
-        foreach my $exit (@modList) {
-
-            if (! exists $exitHash{$exit}) {
-
-                $exitHash{$exit} = undef;
-                push (@finalList, $exit);
-            }
-        }
-
-        # Preserve the list of exits (required for TTS);
-        $self->ivAdd('ttsToReadHash', 'exit', join(' ', @exitList));
-
-        # Now, for each exit in @finalList, create a non-exit model object, and add it to the
-        #   room model object. The FALSE argument states that these are brief exits
-        return $self->processExits($worldObj, $roomObj, FALSE, @finalList);
-    }
-
     sub setRoomTitleExit {
 
         # Called by $self->extractComponents (at stage 3)
         # Processes a line that contains both a room's title and brief list of exits
         #
         # Expected arguments
-        #   $worldObj   - The current world profile
-        #   $roomObj    - A GA::ModelObj::Room object
-        #   $flag       - If set to TRUE, the line should contain the room title, followed by the
-        #                   list of brief exits (as the title of this function suggests). If set to
-        #                   FALSE, the list of brief exits comes before the title
-        #   @lineList   - A list of lines comprising the room statement components
-        #                   'brief_title_exit' and 'brief_exit_title'. Only the first line is used;
-        #                   everything else is ignored
+        #   $worldObj           - The current world profile
+        #   $roomObj            - A GA::ModelObj::Room object
+        #   $flag               - If set to TRUE, the line should contain the room title, followed
+        #                           by the list of brief exits (as the title of this function
+        #                           suggests). If set to FALSE, the list of brief exits comes before
+        #                           the title
+        #   $bufferObjListRef   - Reference to a list of display buffer objects, one for each line
+        #                           in the extracted component
+        #   $lineTextListRef    - Reference to a corresponding list of strings, each representing
+        #                           text on a single line
+        #   $lineOffsetListRef  - Reference to a corresponding list of hash references, containing
+        #                           offsets on each line where Axmud colour/style tags occur. Those
+        #                           hashes are in the form
+        #                           $hash{offset} = reference_to_list_of_Axmud_colour_&_style_tags
         #
         # Return values
         #   'undef' on improper arguments or if any line in @lineList is invalid
         #   1 otherwise
 
-        my ($self, $worldObj, $roomObj, $flag, @lineList) = @_;
+        my (
+            $self, $worldObj, $roomObj, $flag, $bufferObjListRef, $lineTextListRef,
+            $lineOffsetListRef, $check,
+        ) = @_;
 
         # Local variables
-        my ($line, $title, $exitString);
+        my (
+            $bufferObj, $text, $hashRef, $title, $exitString,
+            @bufferObjList, @lineTextList, @lineOffsetList,
+        );
 
         # Check for improper arguments
-        if (! defined $worldObj || ! defined $roomObj || ! defined $flag || ! @lineList) {
-
+        if (
+            ! defined $worldObj || ! defined $roomObj || ! defined $flag
+            || ! defined $bufferObjListRef || ! defined $lineTextListRef
+            || ! defined $lineOffsetListRef || defined $check
+        ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setRoomTitleExit', @_);
         }
 
-        # Ignore everything except the first line in @lineList
-        $line = $lineList[0];
+        # Ignore everything except the first line
+        $bufferObj = $$bufferObjListRef[0];
+        $text = $$lineTextListRef[0];
+        $hashRef = $$lineOffsetListRef[0];
 
         if ($flag) {
 
@@ -25036,10 +27331,24 @@
             #   room title
             OUTER: foreach my $marker ($worldObj->briefExitLeftMarkerList) {
 
-                if ($line =~ m/$marker/) {
+                my %newHash;
+
+                if ($text =~ m/$marker/) {
 
                     $title = $`;
-                    $exitString = substr($line, length($title));
+                    $exitString = substr($text, length($title));
+
+                    # Update offsets in the hash of Axmud colour/style tags
+                    foreach my $offset (keys %$hashRef) {
+
+                        if ($offset >= length ($title)) {
+
+                            $newHash{$offset - length($title)} = $$hashRef{$offset};
+                        }
+                    }
+
+                    $hashRef = \%newHash;
+
                     last OUTER;
                 }
             }
@@ -25051,10 +27360,24 @@
             #   room title
             OUTER: foreach my $marker ($worldObj->briefExitRightMarkerList) {
 
-                if ($line =~ m/$marker/) {
+                my %newHash;
+
+                if ($text =~ m/$marker/) {
 
                     $title = $';
                     $exitString = $` . $&;
+
+                    # Update offsets in the hash of Axmud colour/style tags
+                    foreach my $offset (keys %$hashRef) {
+
+                        if ($offset < length ($exitString)) {
+
+                            $newHash{$offset} = $$hashRef{$offset};
+                        }
+                    }
+
+                    $hashRef = \%newHash;
+
                     last OUTER;
                 }
             }
@@ -25063,7 +27386,7 @@
         if (! $title && ! $exitString) {
 
             # The exit string is more important, so use the whole line as the exit string
-            $exitString = $line;
+            $exitString = $text;
         }
 
         # Process the title (if found)
@@ -25077,8 +27400,21 @@
 
         if ($exitString) {
 
-            if (! $self->setRoomBriefExit($worldObj, $roomObj, $exitString)) {
+            # (Again, only the first line is used)
+            @bufferObjList = ($bufferObj);
+            @lineTextList = ($exitString);
+            @lineOffsetList = ($hashRef);
 
+            if (
+                ! $self->setRoomExit(
+                    $worldObj,
+                    $roomObj,
+                    'brief',
+                    \@bufferObjList,
+                    \@lineTextList,
+                    \@lineOffsetList,
+                )
+            ) {
                 # The line is invalid (contains non-delimiters)
                 return undef;
             }
@@ -25386,15 +27722,10 @@
             foreach my $exit (@exitList) {
 
                 $exit = $axmud::CLIENT->trimWhitespace($exit);
-
-                # For convenience, parse the exit list in the normal way. Try to extract verbose
-                #   exits and, only if that fails, try brief exits. If both fail, then no exit
-                #   objects are created for this room statement
-                if (! $self->setRoomVerbExit($worldObj, $roomObj, $exit)) {
-
-                    $self->setRoomBriefExit($worldObj, $roomObj, $exit);
-                }
             }
+
+            # Create exit objects for each exit
+            $self->processExits($worldObj, $roomObj, @exitList);
         }
 
         $num = $mxpPropHash{'RoomNum'};
@@ -25411,20 +27742,21 @@
 
     sub processExits {
 
-        # Called by $self->setRoomVerbExit and ->setRoomBriefExit
+        # Called by $self->setRoomExit
         # Given a non-model room object and a list of exits, sorts the exits into the standard order
         #   and creates exit objects for each exit
-        # Removes any exit state strings or substrings matching exit remove patterns
+        # Processes any exit states and removes any substrings matching exit remove patterns
         #
         # Expected arguments
         #   $worldObj       - The current world profile
         #   $roomObj        - A GA::ModelObj::Room object
-        #   $verboseFlag    - Flag set to TRUE for verbose exits, FALSE for brief exits
         #
         # Optional arguments
-        #   @exitList       - A list of exit directions, e.g. ('north', 'east', 'enter cave'). Might
-        #                       be an empty list, if the room statement contained a line like
-        #                       'Obvious exits: none', an if 'none' is one the world profile's
+        #   @exitList       - A list of exits and the Axmud colour tags applied to the first
+        #                       characters. List in groups of 3, in the form
+        #                           (exit_string, text_colour, underlay_colour)
+        #                   - Might be an empty list, if the room statement contained a line like
+        #                       'Obvious exits: none', or if 'none' is one the world profile's
         #                       non-delimiter strings (stored in ->verboseExitNonDelimiterList or
         #                       ->briefExitNonDelimiterList)
         #
@@ -25432,7 +27764,7 @@
         #   'undef' on improper arguments or if @exitList contains an invalid exit
         #   1 otherwise
 
-        my ($self, $worldObj, $roomObj, $verboseFlag, @exitList) = @_;
+        my ($self, $worldObj, $roomObj, @exitList) = @_;
 
         # Local variables
         my (
@@ -25441,7 +27773,7 @@
         );
 
         # Check for improper arguments
-        if (! defined $worldObj || ! defined $roomObj || ! defined $verboseFlag) {
+        if (! defined $worldObj || ! defined $roomObj) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->processExits', @_);
         }
@@ -25457,61 +27789,113 @@
         $wmObj = $self->session->worldModelObj;
 
         # For each exit, create a non-exit model object
-        OUTER: foreach my $exit (@exitList) {
+        do {
 
-            my ($info, $state, $modExit, $exitObj);
+            my (
+                $exitString, $textColour, $underlayColour, $info, $state, $modString, $assisted,
+                $exitObj,
+            );
+
+            $exitString = shift @exitList;
+            $textColour = shift @exitList;
+            $underlayColour = shift @exitList;
 
             # If any parts of the exit match a pattern in $worldObj->exitInfoPatternList, remove
             #   them (but keep the first group substring, if any)
             INNER: foreach my $pattern ($worldObj->exitInfoPatternList) {
 
-                if ($exit =~ m/$pattern/) {
+                if ($exitString =~ m/$pattern/) {
 
                     $info = $1;
-                    $exit =~ s/$pattern//;
+                    $exitString =~ s/$pattern//;
                     last INNER;
                 }
             }
 
             # If any parts of the exit match a pattern in $worldObj->exitRemovePatternList, remove
             #   them
-            INNER: foreach my $pattern ($worldObj->exitRemovePatternList) {
+            foreach my $pattern ($worldObj->exitRemovePatternList) {
 
-                $exit =~ s/$pattern//gi;
-                if (! $exit) {
+                $exitString =~ s/$pattern//gi;
+            }
 
-                    next OUTER;     # All text has been removed, so ignore this exit
+            # Ignore the exit if all characters have been removed
+            if ($exitString ne '') {
+
+                # Remove any exit state strings from exits (verbose and brief)
+                ($state, $modString) = $wmObj->checkExitState($worldObj, $exitString);
+
+                # GA::Profile::World->exitStateTagHash uses the value 'ignore' for any exit state
+                #   strings which should be ignored (and for which GA::Obj::Exit->exitState should
+                #   keep its default value of 'normal'
+                if ($state eq 'ignore') {
+
+                    $state = 'normal';
+                }
+
+                # An exit state can also be indicated by an Axmud colour tag (don't apply this test
+                #   if an exit state has already been detected)
+                if ($state eq 'normal') {
+
+                    INNER: foreach my $tag ($worldObj->ivKeys('exitStateTagHash')) {
+
+                        if ($tag eq $textColour || $tag eq $underlayColour) {
+
+                            $state = $worldObj->ivShow('exitStateTagHash', $tag);
+                            last INNER;
+                        }
+                    }
+                }
+
+                # Deal with custom strings
+                if (! $axmud::CLIENT->ivExists('constExitStateHash', $state)) {
+
+                    # $state is a custom string which should be used as the exit's assisted move,
+                    #   once it is has been created
+                    $assisted = $state;
+                    $state = 'normal';
+
+                    # If this custom string contains the @@@ sequence, substitute that sequence for
+                    #   the exit direction (i.e. convert 'swim @@@' into 'swim east')
+                    $assisted =~ s/@@@/$modString/g;
+                }
+
+                # Unabbreviate custom primary/recognised secondary abbreviated directions
+                $modString = $dictObj->unabbrevDir($modString);
+
+                # Create an exit object for this exit
+                $exitObj = Games::Axmud::Obj::Exit->new(
+                    $self->session,
+                    $modString,             # Nominal direction with state symbols (if any) removed
+                    FALSE,                  # Non-exit model object
+                );
+
+                if (! $exitObj) {
+
+                    # Line was probably mis-identified as containing exits
+                    return undef;
+
+                } else {
+
+                    push (@objList, $exitObj);
+
+                    # Set the exit type, info and state
+                    $exitObj->ivPoke('exitType', $dictObj->ivShow('combDirHash', $modString));
+                    $exitObj->ivPoke('exitInfo', $info);        # May be 'undef'
+                    $exitObj->ivPoke('exitState', $state);      # May be 'normal'
+
+                    if (defined $assisted) {
+
+                        $exitObj->ivAdd(
+                            'assistedHash',
+                            $self->session->currentWorld->name,
+                            $assisted,
+                        );
+                    }
                 }
             }
 
-            # Remove any exit state strings from exits (verbose and brief)
-            ($state, $modExit) = $wmObj->checkExitState($worldObj, $exit);
-
-            # Unabbreviate custom primary/recognised secondary abbreviated directions
-            $modExit = $dictObj->unabbrevDir($modExit);
-
-            # Create an exit object for this exit
-            $exitObj = Games::Axmud::Obj::Exit->new(
-                $self->session,
-                $modExit,               # Nominal direction with state symbols (if any) removed
-                FALSE,                  # Non-exit model object
-            );
-
-            if (! $exitObj) {
-
-                # Line was probably mis-identified as containing exits
-                return undef;
-
-            } else {
-
-                push (@objList, $exitObj);
-
-                # Set the exit type, info and state
-                $exitObj->ivPoke('exitType', $dictObj->ivShow('combDirHash', $exit));
-                $exitObj->ivPoke('exitInfo', $info);        # May be 'undef'
-                $exitObj->ivPoke('exitState', $state);      # May be 'normal'
-            }
-        }
+        } until (! @exitList);
 
         # Sort @objList into the standard order (i.e. north before south, etc)
         @sortedList = $dictObj->sortExitObjs(@objList);
@@ -25907,9 +28291,16 @@
                         $modExit .= '[D]';     # Dest room is dark
                     } elsif ($exitObj->exitState eq 'danger') {
                         $modExit .= '[!]';     # Dest room is dangerous
+                    } elsif ($exitObj->exitState eq 'emphasis') {
+                        $modExit .= '+';     # Dest room is emphasised
                     } elsif ($exitObj->exitState eq 'other') {
                         $modExit .= '[-]';     # Other
                     }
+                }
+
+                if ($exitObj && $exitObj->assistedHash) {
+
+                    $modExit .= '@';
                 }
 
                 if (! $exitString) {
@@ -27168,6 +29559,341 @@
         { $_[0]->{combineCorpseFlag} }
     sub combineBodyPartFlag
         { $_[0]->{combineBodyPartFlag} }
+}
+
+{ package Games::Axmud::Task::MapCheck;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Task Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Creates a new instance of the MapCheck task
+        #
+        # Expected arguments
+        #   $session    - The parent GA::Session (not stored as an IV)
+        #
+        # Optional arguments
+        #   $taskType   - Which tasklist this task is being created into - 'current' for the current
+        #                   tasklist (tasks which are actually running now), 'initial' (tasks which
+        #                   should be run when the user connects to the world), 'custom' (tasks with
+        #                   customised initial parameters, which are run when the user demands). If
+        #                   set to 'undef', this is a temporary task, created in order to access the
+        #                   default values stored in IVs, that will not be added to any tasklist
+        #   $profName   - ($taskType = 'current', when called by $self->clone) Name of the
+        #                   profile from whose initial tasklist this task was created ('undef' if
+        #                   none)
+        #               - ($taskType = 'initial') name of the profile in whose initial tasklist this
+        #                   task will be. If 'undef', the global initial tasklist is used
+        #               - ($taskType = 'custom') 'undef'
+        #   $profCategory
+        #               - ($taskType = 'current', 'initial') which category the profile falls undef
+        #                   (i.e. 'world', 'race', 'char', etc, or 'undef' if no profile)
+        #               - ($taskType = 'custom') 'undef'
+        #   $customName
+        #               - ($taskType = 'current', 'initial') 'undef'
+        #               - ($taskType = 'custom') the custom task name, matching a key in
+        #                   GA::Session->customTaskHash
+        #
+        # Return values
+        #   'undef' on improper arguments or if the task can't be added to the specified tasklist
+        #   Blessed reference to the newly-created object on success
+
+        my ($class, $session, $taskType, $profName, $profCategory, $customName, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $session || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        if ($taskType) {
+
+            # For initial tasks, check that $profName exists
+            if (
+                $taskType eq 'initial'
+                && defined $profName
+                && ! $session->ivExists('profHash', $profName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $profName . '\' profile doesn\'t exist',
+                    $class . '->new',
+                );
+
+            # For custom tasks, check that $customName doesn't already exist
+            } elsif (
+                $taskType eq 'custom'
+                && $axmud::CLIENT->ivExists('customTaskHash', $customName)
+            ) {
+                return $session->writeError(
+                    'Can\'t create new custom task because \'' . $customName . '\' is already being'
+                    . ' used',
+                    $class . '->new',
+                );
+
+            } elsif ($taskType ne 'current' && $taskType ne 'initial' && $taskType ne 'custom') {
+
+                return $session->writeError(
+                    'Can\'t create new task because \'' . $taskType . '\' is an invalid tasklist',
+                    $class . '->new',
+                );
+            }
+        }
+
+        # Task settings
+        my $self = Games::Axmud::Generic::Task->new(
+            $session,
+            $taskType,
+            $profName,
+            $profCategory,
+            $customName,
+        );
+
+        $self->{_objName}               = 'map_check_task';
+        $self->{_objClass}              = $class;
+        $self->{_parentFile}            = undef;            # Set below
+        $self->{_parentWorld}           = undef;            # Set below
+        $self->{_privFlag}              = TRUE,             # All IVs are private
+
+        $self->{name}                   = 'map_check_task';
+        $self->{prettyName}             = 'MapCheck';
+        $self->{shortName}              = 'MC';
+        $self->{shortCutIV}             = undef;
+
+        $self->{category}               = 'process';
+        $self->{descrip}                = 'Display summary of automapper window drawing activities';
+        $self->{jealousyFlag}           = TRUE;
+        $self->{requireLocatorFlag}     = FALSE;
+        $self->{profSensitivityFlag}    = FALSE;
+        $self->{storableFlag}           = TRUE;
+        $self->{delayTime}              = 0;
+        $self->{allowWinFlag}           = TRUE;
+        $self->{requireWinFlag}         = TRUE;
+        $self->{startWithWinFlag}       = TRUE;
+        $self->{winPreferList}          = ['pane', 'grid'];
+        $self->{winmap}                 = 'basic_fill';
+        $self->{winUpdateFunc}          = undef;
+        $self->{tabMode}                = 'simple';
+        $self->{monochromeFlag}         = FALSE;
+        $self->{noScrollFlag}           = TRUE;
+        $self->{ttsFlag}                = FALSE;
+        $self->{ttsConfig}              = undef;
+        $self->{ttsAttribHash}          = {};
+        $self->{ttsFlagAttribHash}      = {};
+        $self->{ttsAlertAttribHash}     = {};
+        $self->{status}                 = 'wait_init';
+#       $self->{activeFlag}             = TRUE;             # Task can't be activated/disactivated
+
+        # Task parameters
+        #   (none for this task)
+
+        # Bless task
+        bless $self, $class;
+
+        # For all tasks that aren't temporary...
+        if ($taskType) {
+
+            # Check that the task doesn't belong to a disabled plugin (in which case, it can't be
+            #   added to any current, initial or custom tasklist)
+            if (! $self->checkPlugins()) {
+
+                return undef;
+            }
+
+            # Set the parent file object
+            $self->setParentFileObj($session, $taskType, $profName, $profCategory);
+
+            # Create entries in tasklists, if possible
+            if (! $self->updateTaskLists($session)) {
+
+                return undef;
+            }
+        }
+
+        # Task creation complete
+        return $self;
+    }
+
+#   sub clone {}                # Inherited from generic task
+
+#   sub preserve {}             # Inherited from generic task
+
+#   sub setParentFileObj {}     # Inherited from generic task
+
+#   sub updateTaskLists {}      # Inherited from generic task
+
+#   sub ttsReadAttrib {}        # Inherited from generic task
+
+#   sub ttsSwitchFlagAttrib {}  # Inherited from generic task
+
+#   sub ttsSetAlertAttrib {}    # Inherited from generic task
+
+    ##################
+    # Task windows
+
+#   sub toggleWin {}            # Inherited from generic task
+
+#   sub openWin {}              # Inherited from generic task
+
+#   sub closeWin {}             # Inherited from generic task
+
+    ##################
+    # Methods
+
+#   sub main {}                 # Inherited from generic task
+
+#   sub doShutdown {}           # Inherited from generic task
+
+#   sub doReset {}              # Inherited from generic task
+
+#   sub doFirstStage {}         # Inherited from generic task
+
+    sub doStage {
+
+        # Called by $self->main to process all stages (except stage 1)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if this function sets that task's ->status IV to
+        #       'finished' or sets its ->shutdownFlag to TRUE
+        #   Otherwise, we normally return the new value of $self->stage
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doStage', @_);
+        }
+
+        if ($self->stage == 2) {
+
+            if (! $self->session->mapWin) {
+
+                # Continue waiting
+                return $self->ivPoke('stage', 2);
+
+            } else {
+
+                return $self->ivPoke('stage', 3);
+            }
+
+        } elsif ($self->stage == 3) {
+
+            my (
+                $mapWin, $string,
+                @lineList,
+            );
+
+            # Import the automapper window (for convenience)
+            $mapWin = $self->session->mapWin;
+
+            # On every spin of the task loop, update the task window (if it is still open)
+            if (! $mapWin) {
+
+                # Clear the task window, and wait for the automapper window to re-open
+                $self->insertQuick();
+
+                return $self->ivPoke('stage', 2);
+
+            } elsif ($self->taskWinFlag) {
+
+                # Add the header
+                push (@lineList,
+                    'MAPCHECK (Time ' . sprintf("%.3f", $self->session->sessionTime) . ')',
+                );
+
+                $string = '   Current region: ';
+
+                if (! defined $mapWin->currentRegionmap) {
+                    $string .= 'not set';
+                } else {
+                    $string .= $mapWin->currentRegionmap->name;
+                }
+
+                push (@lineList, $string);
+
+                $string = '   Recent regions: ';
+                if (! $mapWin->recentRegionList) {
+                    $string .= 'not set';
+                } else {
+                    $string .= join('/', $mapWin->recentRegionList);
+                }
+
+                push (@lineList, $string);
+
+                if (! $mapWin->parchmentHash) {
+
+                    push (@lineList, 'Regions drawn: (none)');
+
+                } else {
+
+                    push (
+                        @lineList,
+                        'Parchment objects: ' . (scalar $mapWin->ivKeys('parchmentHash')),
+                    );
+
+                    foreach my $name (sort {lc($a) cmp lc($b)} ($mapWin->ivKeys('parchmentHash'))) {
+
+                        if (! $mapWin->ivExists('parchmentReadyHash', $name)) {
+                            push (@lineList, '   ' . $name);
+                        } else {
+                            push (@lineList, ' * ' . $name);
+                        }
+                    }
+                }
+
+                push (@lineList, 'Region queue: ' . (scalar $mapWin->parchmentQueueList));
+                foreach my $obj ($mapWin->parchmentQueueList) {
+
+                    my $count = $obj->ivPairs('queueRoomHash') + $obj->ivPairs('queueRoomTagHash')
+                        + $obj->ivPairs('queueRoomGuildHash') + $obj->ivPairs('queueExitHash')
+                        + $obj->ivPairs('queueExitTagHash') + $obj->ivPairs('queueLabelHash');
+
+                    push (@lineList, '   ' . $obj->name . ' : ' . $count);
+                }
+
+                push (@lineList, 'Destroy queue: ' . (scalar $mapWin->destroyQueueList));
+
+                # Display the list in the task window
+                $self->insertQuick(join("\n", @lineList));
+            }
+
+            # Repeat this stage indefinitely
+            return $self->ivPoke('stage', 3);
+
+        } else {
+
+            # The task stage has somehow been set to an invalid value
+            return $self->invalidStage();
+        }
+    }
+
+    ##################
+    # Response methods
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - task settings - get
+
+    # The accessors for task settings are inherited from the generic task
+
+    ##################
+    # Accessors - task parameters - get
+
+    # No task parameters
 }
 
 { package Games::Axmud::Task::Notepad;
@@ -32307,6 +35033,19 @@
 
             # Set the background colour
             $self->defaultTabObj->paneObj->applyMonochrome($self->defaultTabObj, $colour);
+
+            # Update the title bar
+            if ($charObj->lifeStatus eq 'sleep') {
+                $self->setTaskWinTitle('(SLEEP)', TRUE);
+            } elsif ($charObj->lifeStatus eq 'passout') {
+                $self->setTaskWinTitle('(PASSED OUT)', TRUE);
+            } elsif ($charObj->lifeStatus eq 'dead') {
+                $self->setTaskWinTitle('(DEAD)', TRUE);
+            } else {
+                $self->setTaskWinTitle();
+            }
+
+            # Update IVs
             $self->ivPoke('lifeStatusChangeFlag', FALSE);
             $self->ivPoke('healthChangeFlag', FALSE);
         }
@@ -34073,7 +36812,6 @@
             && $self->session->currentWorld->lifeStatusOverrideFlag
         ) {
             $charObj->ivPoke('lifeStatus', 'alive');
-            $self->setTaskWinTitle();
 
             # The task window's background colour should be changed
             return $self->ivPoke('healthChangeFlag', TRUE);
@@ -35061,9 +37799,6 @@
 
             $charObj->ivPoke('lifeStatus', 'sleep');
 
-            # Change the task window's title bar (if it is open)
-            $self->setTaskWinTitle('(SLEEP)', TRUE);
-
             # The next time the task window is updated, its background colour will change
             $self->ivPoke('lifeStatusChangeFlag', TRUE);
 
@@ -35201,9 +37936,6 @@
 
             $charObj->ivPoke('lifeStatus', 'alive');
 
-            # Change the task window's title bar (if it is open)
-            $self->setTaskWinTitle();
-
             # The next time the task window is updated, its background colour will change
             $self->ivPoke('lifeStatusChangeFlag', TRUE);
         }
@@ -35282,9 +38014,6 @@
         if ($charObj && $charObj->lifeStatus ne 'passout') {
 
             $charObj->ivPoke('lifeStatus', 'passout');
-
-            # Change the task window's title bar (if it is open)
-            $self->setTaskWinTitle('(PASSED OUT)', TRUE);
 
             # The next time the task window is updated, its background colour will change
             $self->ivPoke('lifeStatusChangeFlag', TRUE);
@@ -35423,9 +38152,6 @@
 
             $charObj->ivPoke('lifeStatus', 'alive');
 
-            # Change the task window's title bar (if it is open)
-            $self->setTaskWinTitle();
-
             # The next time the task window is updated, its background colour will change
             $self->ivPoke('lifeStatusChangeFlag', TRUE);
         }
@@ -35504,9 +38230,6 @@
         if ($charObj->lifeStatus ne 'dead') {
 
             $charObj->ivPoke('lifeStatus', 'dead');
-
-            # Change the task window's title bar (if it is open)
-            $self->setTaskWinTitle('(DEAD)', TRUE);
 
             # The next time the task window is updated, its background colour will change
             $self->ivPoke('lifeStatusChangeFlag', TRUE);
@@ -35644,9 +38367,6 @@
         if ($charObj && $charObj->lifeStatus ne 'alive') {
 
             $charObj->ivPoke('lifeStatus', 'alive');
-
-            # Change the task window's title bar (if it is open)
-            $self->setTaskWinTitle();
 
             # The next time the task window is updated, its background colour will change
             $self->ivPoke('lifeStatusChangeFlag', TRUE);
@@ -37457,7 +40177,7 @@
 
         } elsif ($self->stage == 3) {
 
-            my (@lineList, @taskList);
+            my @lineList;
 
             # On every spin of the task loop, update the task window (if it is still open)
             if ($self->taskWinFlag) {
@@ -37470,9 +40190,9 @@
                 push (@lineList, '   Task (unique) name       Stage  Status');
 
                 # Add the remaining lines, one for each task
-                @taskList = sort {lc($a) cmp lc($b)} ($self->session->ivKeys('currentTaskHash'));
-                foreach my $taskName (@taskList) {
-
+                foreach my $taskName (
+                    sort {lc($a) cmp lc($b)} ($self->session->ivKeys('currentTaskHash'))
+                ) {
                     my ($taskObj, $stage, $column);
 
                     # Blessed ref of the task

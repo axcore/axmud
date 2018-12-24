@@ -437,6 +437,7 @@
 
             # Current values for each trigger attribute (initially set to defaults)
             attribHash                  => {
+                'ignore_response'       => FALSE,
                 'splitter'              => FALSE,
                 'split_after'           => FALSE,
                 'keep_splitting'        => FALSE,
@@ -1011,7 +1012,7 @@
         #   $name           - A name for the timer which is unique within its cage, but which could
         #                       be the same as the name of other timers in other cages (e.g.
         #                       'mytimer') (max 32 chars)
-        #   $stimulus       - The stimulus (an interval, for timers)
+        #   $stimulus       - The stimulus (an interval or 24-hour clock time, for timers)
         #   $response       - The response (an action, for timers)
         #
         # Optional arguments
@@ -1059,7 +1060,7 @@
             # -----------------------------
 
             name                        => $name,       # Max 32 chars
-            stimulus                    => $stimulus,   # An interval
+            stimulus                    => $stimulus,   # An interval or 24-hour clock time
             response                    => $response,   # An instruction
             enabledFlag                 => $flag,
 

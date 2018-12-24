@@ -20,6 +20,9 @@
     use diagnostics;
     use warnings;
 
+    # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
+    use Gtk2;
+
     # Use this sub-class, rather than Gtk2::TextView, to create a textview with the system's
     #   preferred colours and fonts
     # (In an ideal world, we'd call it GA::Gtk2::TextView, but GA::Obj::Desktop->setTextViewStyle

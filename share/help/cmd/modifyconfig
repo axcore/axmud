@@ -53,32 +53,21 @@ mcf / modifyconfig            Modifies text-to-speech configurations
 
          speed <num>          Sets the word speed to <num> (eSpeak and espeak-ng
                                  on all systems, and Swift on MS Windows only).
-                                 Must be in the range 10 - 200
-         speed                Resets the word speed (a default value is used,
-                                 150 words per minute for eSpeak and espeak-ng,
-                                 170 for Swift)
+                                 Must be in the range 0-100
+         speed                Resets the word speed (a default value is used)
 
          rate <num>           Sets the word rate to <num> (Festival and Swift on
-                                 Linux only). Must be in the range 0.5 - 2
-         rate                 Resets the word rate (a default value of 1 is
-                                 used)
+                                 Linux only). Must be in the range 0-100
+         rate                 Resets the word rate (a default value of is used)
 
          pitch <num>          Sets the word pitch to <num> (eSpeak, espeak-ng
-                                 and Swift only). For eSpeak, must be in the
-                                 range 0 - 99. For Swift, must be in the range
-                                 0.1 - 5
-         pitch                Resets the pitch (a default value is used, 50 for
-                                 eSpeak, 1 for Swift)
+                                 and Swift only). Must be in the range 0-100
+         pitch                Resets the pitch (a default value is used)
 
          volume <num>         Sets the volume to <num> (espeak-ng and Swift on
-                                 all systems, Festival on Linux only). For
-                                 espeak-ng, must be in the range 0-200. For
-                                 Swift and Festival on Linux, must be in the
-                                 range 0.33 - 6. For Swift on MS Windows, must
-                                 be in the range 0-100.
-         volume               Resets the volume (a default value is used, 100
-                                 for espeak-ng, 1  for Festival, 1 for Swift on
-                                 Linux, 100 for Swift on MS Windows)
+                                 all systems, Festival on Linux only). Must be
+                                 in the range 0-100
+         volume               Resets the volume (a default value is used)
 
          use <pattern>        Adds an exclusive pattern. If one or more
                                  exclusive patterns have been added, only lines

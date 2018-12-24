@@ -42,6 +42,7 @@ lib/Games/Axmud/Obj/MapLabel.pm
 lib/Games/Axmud/Obj/MiniWorld.pm
 lib/Games/Axmud/Obj/Mission.pm
 lib/Games/Axmud/Obj/Monitor.pm
+lib/Games/Axmud/Obj/Parchment.pm
 lib/Games/Axmud/Obj/Phrasebook.pm
 lib/Games/Axmud/Obj/Plugin.pm
 lib/Games/Axmud/Obj/Protect.pm
@@ -155,13 +156,16 @@ share/docs/guide/img/ch03/setup_wizard.png
 share/docs/guide/img/ch04/dict_tab.png
 share/docs/guide/img/ch04/edit_win_buttons.png
 share/docs/guide/img/ch04/edit_win_tabs.png
+share/docs/guide/img/ch04/icon_add.png
 share/docs/guide/img/ch04/icon_application.png
 share/docs/guide/img/ch04/icon_broom.png
 share/docs/guide/img/ch04/icon_compass.png
 share/docs/guide/img/ch04/icon_console.png
 share/docs/guide/img/ch04/icon_help.png
+share/docs/guide/img/ch04/icon_input.png
 share/docs/guide/img/ch04/icon_lock.png
 share/docs/guide/img/ch04/icon_phone_vintage.png
+share/docs/guide/img/ch04/icon_search.png
 share/docs/guide/img/ch04/icon_watermark_table.png
 share/docs/guide/img/ch04/main_window.png
 share/docs/guide/img/ch04/object_viewer.png
@@ -801,6 +805,8 @@ share/help/cmd/exit
 share/help/cmd/exitall
 share/help/cmd/exportdata
 share/help/cmd/exportfiles
+share/help/cmd/findreset
+share/help/cmd/findtext
 share/help/cmd/finishquest
 share/help/cmd/fixwindow
 share/help/cmd/flashwindow
@@ -841,6 +847,7 @@ share/help/cmd/listadvancehistory
 share/help/cmd/listalias
 share/help/cmd/listattribute
 share/help/cmd/listautosecondary
+share/help/cmd/listautoworld
 share/help/cmd/listbasicworld
 share/help/cmd/listcage
 share/help/cmd/listchannelpattern
@@ -1036,15 +1043,18 @@ share/help/cmd/setapplication
 share/help/cmd/setassistedmoves
 share/help/cmd/setautocomplete
 share/help/cmd/setautosecondary
+share/help/cmd/setautoworld
 share/help/cmd/setcagemask
 share/help/cmd/setchar
 share/help/cmd/setcharset
 share/help/cmd/setcolour
 share/help/cmd/setcommandbuffer
 share/help/cmd/setcommifymode
-share/help/cmd/setcustomday
+share/help/cmd/setcountdown
+share/help/cmd/setcountup
 share/help/cmd/setcustommonth
 share/help/cmd/setcustomprofile
+share/help/cmd/setcustomweek
 share/help/cmd/setdatadirectory
 share/help/cmd/setdefaultwinmap
 share/help/cmd/setdictionary
@@ -1162,11 +1172,14 @@ share/help/task/channels
 share/help/task/chat
 share/help/task/compass
 share/help/task/condition
+share/help/task/connections
+share/help/task/countdown
 share/help/task/divert
 share/help/task/frame
 share/help/task/inventory
 share/help/task/launch
 share/help/task/locator
+share/help/task/mapcheck
 share/help/task/notepad
 share/help/task/rawtext
 share/help/task/rawtoken
@@ -1185,7 +1198,9 @@ share/icons/button/console_system.png
 share/icons/button/lock.png
 share/icons/button/lock_open.png
 share/icons/button/prohibition_button.png
+share/icons/button/search.png
 share/icons/button/switch_windows.png
+share/icons/button/textfield_add.png
 share/icons/button/toggle_expand.png
 share/icons/button/wall.png
 share/icons/chat/3d_glasses.bmp
@@ -2534,6 +2549,12 @@ share/icons/map/icon_use_region.png
 share/icons/map/icon_use_region_large.png
 share/icons/map/icon_wait.png
 share/icons/map/icon_wait_large.png
+share/icons/search/application_tile_vertical.png
+share/icons/search/arrow_down.png
+share/icons/search/arrow_up.png
+share/icons/search/broom.png
+share/icons/search/capitalization.png
+share/icons/search/token_shortland_character.png
 share/icons/setup/attack_task.png
 share/icons/setup/basic_zonemap.png
 share/icons/setup/bypass_sigil.png
@@ -3085,6 +3106,7 @@ share/plugins/mcptest.pm
 share/plugins/mxpfilter.pm
 share/plugins/wilderness.pm
 share/plugins/zmptest.pm
+share/standalone/mapextract.pl
 t/00-compile.t
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

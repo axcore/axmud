@@ -44,21 +44,19 @@
         #                   Swift only; ignored when the engine is Festival command line). If an
         #                   empty string or 'undef', the engine's default voice is used
         #   $speed      - Word speed used with the TTS engine (eSpeak and espeak-ng only; ignored
-        #                   for other engines). For eSpeak/espeak-ng, in words per minute in the
-        #                   range 10-200. If an invalid value or 'undef', the engine's default speed
-        #                   is used
+        #                   for other engines). A value in the range 0-100. If an invalid value or
+        #                   'undef', the engine's default speed is used
         #   $rate       - Word rate used with the TTS engine (Festival server and Swift only;
-        #                   ignored for other engines, including Festival command line). For
-        #                   Festival/Swift, in the range 0.50 - 2.00. If an invalid value or
-        #                   'undef', the engine's default rate is used
+        #                   ignored for other engines, including Festival command line). A value in
+        #                   the range 0-100. If an invalid value or 'undef', the engine's default
+        #                   rate is used
         #   $pitch      - Word pitch used with the TTS engine (eSpeak and Swift only; ignored for
-        #                   other engines). For eSpeak, in the range 0-99. For Swift, in the range
-        #                   0.1 (10% of normal) to 5 (500% of normal). If an invalid value or
+        #                   other engines). A value in the range 0-100. If an invalid value or
         #                   'undef', the engine's default pitch is used
         #   $volume     - Volume used with the TTS engine (Festival server and Swift only; ignored
-        #                   for other engines, including Festival command line). For Festival/Swift,
-        #                   in the range 0.33 - 6.00. If an invalid value or 'undef', the engine's
-        #                   default pitch is used
+        #                   for other engines, including Festival command line). A value in the
+        #                   range 0-100. If an invalid value or 'undef', the engine's default pitch
+        #                   is used
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -158,22 +156,21 @@
             #   when the engine is Festival command line). If an empty string or 'undef', the
             #   engine's default voice is used
             voice                       => $voice,
-            # Word speed used with the TTS engine(eSpeak only; ignored for other engines). For
-            #   eSpeak, in words per minute in the range 10-200. If an invalid value or 'undef', the
-            #   engine's default speed is used.
+            # Word speed used with the TTS engine(eSpeak only; ignored for other engines). A value
+            #   in the range 0-100. If an invalid value or 'undef', the engine's default speed is
+            #   used
             speed                       => $speed,
             # Word rate used with the TTS engine (Festival server and Swift only; ignored for other
-            #   engines, including Festival command line). For Festival/Swift, in the range 0.50 -
-            #   2.00. If an invalid value or 'undef', the engine's default rate is used.
+            #   engines, including Festival command line). A value in the range 0-100. If an invalid
+            #   value or 'undef', the engine's default rate is used
             rate                        => $rate,
             # Word pitch used with the TTS engine (eSpeak and Swift only; ignored for other
-            #   engines). For eSpeak, in the range 0-99. For Swift, in the range 0.1 (10% of normal)
-            #   to 5 (500% of normal). If an invalid value or 'undef', the engine's default pitch is
-            #   used.
+            #   engines). A value in the range 0-100. If an invalid value or 'undef', the engine's
+            #   default pitch is used
             pitch                       => $pitch,
             # Volume used with the TTS engine (Festival server and Swift only; ignored for other
-            #   engines, including Festival command line). For Festival/Swift, in the range 0.33 -
-            #   6.00. If an invalid value or 'undef', the engine's default pitch is used.
+            #   engines, including Festival command line). A value in the range 0-100. If an invalid
+            #   value or 'undef', the engine's default pitch is used
             volume                      => $volume,
 
             # List of exclusive patterns. If set, only received lines matching these patterns will

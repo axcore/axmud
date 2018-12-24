@@ -626,6 +626,9 @@
             #   terminating the script. If it's set to TRUE, GA::Client->stop() has already been
             #   called, and we don't need to call it again
             shutdownFlag                => FALSE,
+            # Flag set to TRUE when $self->stop is first called, to prevent multiple concurrent
+            #   calls to that function
+            terminatingFlag             => FALSE,
             # Flag that determines how a session deals with a disconnection from a world (i.e. when
             #   its ->status is 'connected'). FALSE if it should switch to 'disconnected' mode, TRUE
             #   if it should switch to 'offline' mode (as if the user had clicked the 'Connect
@@ -720,9 +723,9 @@
                     'Login',
                     'Quit', 'Qquit', 'QuitAll', 'Exit', 'Xxit', 'ExitAll',
                         'AbortSelfDestruct', 'StopSession', 'StopClient', 'Panic',
-                    'AwayFromKeys', 'SetReminder',
+                    'AwayFromKeys', 'SetReminder', 'SetCountdown', 'SetCountup',
                     'SetCharSet',
-                    'SetCustomMonth', 'SetCustomDay', 'SetCommifyMode',
+                    'SetCustomMonth', 'SetCustomWeek', 'SetCommifyMode',
                     'SetApplication', 'ResetApplication', 'SetPromptDelay',
                     'Repeat', 'IntervalRepeat', 'StopCommand',
                     'RedirectMode', 'SetRedirectMode',
@@ -777,8 +780,8 @@
                         'DeleteProperty', 'ListProperty',
                 '@Profiles - world profiles',
                     'AddWorld', 'SetWorld', 'CloneWorld', 'EditWorld', 'DeleteWorld', 'ListWorld',
-                        'SetFavouriteWorld', 'ListFavouriteWorld', 'RestoreWorld',
-                        'ListRestoreWorld', 'UpdateWorld', 'ListBasicWorld',
+                        'SetFavouriteWorld', 'ListFavouriteWorld', 'SetAutoWorld', 'ListAutoWorld',
+                        'RestoreWorld', 'ListRestoreWorld', 'UpdateWorld', 'ListBasicWorld',
                     'ToggleHistory', 'ClearHistory', 'ShowHistory',
                 '@Profiles - other profiles',
                     'AddGuild', 'SetGuild', 'UnsetGuild', 'CloneGuild', 'EditGuild', 'DeleteGuild',
@@ -856,7 +859,7 @@
                     'EditFreeWindow', 'CloseFreeWindow', 'ListFreeWindow',
                 '@Textviews',
                     'ScrollLock', 'SplitScreen', 'ClearTextView', 'SetTextView', 'ListTextView',
-                        'ConvertText',
+                        'FindText', 'FindReset', 'ConvertText',
                     'SetColour', 'ListColour',
                     'SetSystemColour', 'ListSystemColour',
                     'SetXTerm', 'TogglePalette',
@@ -1423,12 +1426,12 @@
                 'mud1'              => '1.1.270',
                 'mud2'              => '1.1.270',
                 'mudii'             => '1.1.270',
-                'nanvaent'          => '1.1.343',
+                'nanvaent'          => '1.1.405',
                 'pict'              => '1.1.174',
                 'swmud'             => '1.1.012',
                 'threekingdoms'     => '1.1.270',
                 'threescapes'       => '1.1.270',
-                'twotowers'         => '1.1.343',
+                'twotowers'         => '1.1.405',
             },
             # Constant registry list of pre-configured world profiles; all the keys in
             #   $self->constWorldList, sorted alphabetically
@@ -1442,6 +1445,25 @@
             # List of the user's 'favourite' worlds, which appear at the top of the Connections
             #   window's list (in the same order they appear here)
             favouriteWorldList          => [],      # [config]
+            # List of worlds to which Axmud should auto-connect when it starts (unless @ARGV is set,
+            #   meaning the user started Axmud by typing something like 'axmud.pl deathmud 5555'
+            # Each item in the list should be a string containing one or more words, separated by
+            #   any amount of whitespace. The first (compulsory) word is the world profile name;
+            #   any subsequent words are character profile names. If multiple character profiles are
+            #   specified, Axmud opens a session for all of them. If none are specified, Axmud opens
+            #   a connection without setting a current character
+            # The list is processed in order. A world can appear multiple times in the list. When
+            #   Axmud starts, if the world profile or a character profile doesn't exist, no
+            #   attemption is connected. Axmud will connect to the same world several times, where
+            #   no character profile exists, but it won't try to connect using the same profile
+            #   twice
+            # Note that, in Axmud blind mode ($BLIND_MODE_FLAG = TRUE), only one session can be
+            #   opened. Any further items in this list after the first connection are ignored
+            # Examples items in the list:
+            #       'deathmud'
+            #       'deathmud gandalf'
+            #       'deathmud    gandalf    bilbo'
+            autoConnectList             => [],      # [config]
             # As well as the pre-configured worlds, Axmud uses a much larger list of worlds from
             #   which the user can choose in the Connections window. Basic details for each world
             #   are stored in a GA::Obj::BasicWorld object
@@ -2274,11 +2296,14 @@
                 'chat_task'             => 'Games::Axmud::Task::Chat',
                 'compass_task'          => 'Games::Axmud::Task::Compass',
                 'condition_task'        => 'Games::Axmud::Task::Condition',
+                'connections_task'      => 'Games::Axmud::Task::Connections',
+                'countdown_task'        => 'Games::Axmud::Task::Countdown',
                 'divert_task'           => 'Games::Axmud::Task::Divert',
                 'frame_task'            => 'Games::Axmud::Task::Frame',
                 'inventory_task'        => 'Games::Axmud::Task::Inventory',
                 'launch_task'           => 'Games::Axmud::Task::Launch',
                 'locator_task'          => 'Games::Axmud::Task::Locator',
+                'map_check_task'        => 'Games::Axmud::Task::MapCheck',
                 'notepad_task'          => 'Games::Axmud::Task::Notepad',
                 'raw_text_task'         => 'Games::Axmud::Task::RawText',
                 'raw_token_task'        => 'Games::Axmud::Task::RawToken',
@@ -2313,6 +2338,12 @@
                 'compass'               => 'compass_task',
                 'cond'                  => 'condition_task',
                 'condition'             => 'condition_task',
+                'conn'                  => 'connections_task',
+                'connect'               => 'connections_task',
+                'connections'           => 'connections_task',
+                'cd'                    => 'countdown_task',
+                'count'                 => 'countdown_task',
+                'countdown'             => 'countdown_task',
                 'div'                   => 'divert_task',
                 'divert'                => 'divert_task',
                 'frame'                 => 'frame_task',
@@ -2323,6 +2354,9 @@
                 'launcher'              => 'launch_task',
                 'loc'                   => 'locator_task',
                 'locator'               => 'locator_task',
+                'mc'                    => 'map_check_task',
+                'map'                   => 'map_check_task',
+                'mapcheck'              => 'map_check_task',
                 'note'                  => 'notepad_task',
                 'notes'                 => 'notepad_task',
                 'notepad'               => 'notepad_task',
@@ -2474,7 +2508,7 @@
             # World model
             # -----------
 
-            # Constant registry hash of valid model object types (all of which inherit from
+            # Constant hash of valid model object types (all of which inherit from
             #   GA::Generic::ModelObj; the type matches the object's ->category IV). Hash in the
             #   form
             #   $constModelTypeHash{type} = undef;
@@ -2492,7 +2526,7 @@
                 'decoration'            => undef,
                 'custom'                => undef,
             },
-            # Constant registry list of standard primary directions, in a fixed order
+            # Constant list of standard primary directions, in a fixed order
             constPrimaryDirList         => [
                 'north',
                 'northnortheast',
@@ -2513,8 +2547,8 @@
                 'up',
                 'down',
             ],
-            # Constant registry list of standard primary directions, but with the secondary-
-            #   intercardinal directions removed
+            # Constant list of standard primary directions, but with the secondary-intercardinal
+            #   directions removed
             constShortPrimaryDirList    => [
                 'north',
                 'northeast',
@@ -2527,8 +2561,8 @@
                 'up',
                 'down',
             ],
-            # Constant registry hash of standard primary directions, but with the secondary-
-            #   intercardinal directions removed
+            # Constant hash of standard primary directions, but with the secondary-intercardinal
+            #   directions removed
             constShortPrimaryDirHash    => {
                 'north'                 => undef,
                 'northeast'             => undef,
@@ -2541,8 +2575,8 @@
                 'up'                    => undef,
                 'down'                  => undef,
             },
-            # Constant registry hash of standard primary directions and their opposites (used mostly
-            #   by the automapper functions). Hash in the form
+            # Constant hash of standard primary directions and their opposites (used mostly by the
+            #   automapper functions). Hash in the form
             #   $constOppDirHash{standard_direction} = opposite_standard_direction
             constOppDirHash             => {
                 'north'                 => 'south',
@@ -2577,6 +2611,26 @@
                 'ignore_line',
                 'custom',
             ],
+            # Constant hash of exit states (acceptable values for GA::Obj::Exit->exitState)
+            # NB This hash doesn't include 'ignore', or any custom strings specified by
+            #   GA::Profile::World->exitStateTagHash
+            # NB For an explanation of what each value means, see the comments in GA::Obj::Exit->new
+            constExitStateHash          => {
+                'normal'                => undef,
+                'open'                  => undef,
+                'closed'                => undef,
+                'locked'                => undef,
+                'secret'                => undef,
+                'secret_open'           => undef,
+                'secret_closed'         => undef,
+                'secret_locked'         => undef,
+                'impass'                => undef,
+                'dark'                  => undef,
+                'danger'                => undef,
+                'emphasis'              => undef,
+                'other'                 => undef,
+#               'ignore'                => undef,
+            },
             # Object parsing sanity check (in case someone creates a room containing a billion
             #   hobbits) - maximum number of world model objects created in response by
             #   GA::Obj::WorldModel->parseObj()
@@ -2750,6 +2804,11 @@
             #   not
             logImageFlag                => FALSE,       # [config]
             #
+            # String to add a the beginning of every logfile (for example, to add a copyright
+            #   message, or to identify the user). Can contain one or more strings, as well as empty
+            #   strings (for spacing). If an empty list, a preamble isn't used
+            logPreambleList             => [],          # [config]
+
             # The 'sleep', 'passout' and 'dead' logfiles are written by the Status task, which
             #   attempts to write lines of text received from the world before and after the event.
             #   If the value is 0, no lines are written before/after the event. Otherwise, write
@@ -4355,9 +4414,10 @@
             shareMainWinFlag            => TRUE,            # [config]
             # When the user wants to change the setting of ->shareMainWinFlag, the change can't be
             #   applied immediately.
-            # Instead, this IV is set to TRUE or FALSE. When Axmud next starts, if this IV is
-            #   defined, its value is transferred to ->shareMainWinFlag and reset back to 'undef'
-            restartShareMainWinFlag     => undef,           # [config]
+            # Instead, this IV is set to 'on' or 'off'. When Axmud next starts, if this IV is not
+            #   set to 'default', ->shareMainWinFlag is set to TRUE (for 'on') or FALSE (for 'off');
+            #   ->restartShareMainWinMode is then set back to 'default'
+            restartShareMainWinMode     => 'default',       # [config]
             # Workspace grids can be available, or not. GA::Obj::Desktop->gridPermitFlag is set to
             #   FALSE if workspace grids are not available at all (because the desktop is too small,
             #   because Axmud is running on MS Windows or running in blind mode, etc)
@@ -4832,15 +4892,30 @@
             constCmdCursor              => Gtk2::Gdk::Cursor->new('mouse'),
             constMailCursor             => Gtk2::Gdk::Cursor->new('pencil'),
             constTelnetCursor           => Gtk2::Gdk::Cursor->new('trek'),
+            # Another set of Gtk2::Gdk::Cursors for the automapper window's free click mode
+            constMapCursor              => Gtk2::Gdk::Cursor->new('arrow'),
+            constMapAddCursor           => Gtk2::Gdk::Cursor->new('plus'),
+            constMapConnectCursor       => Gtk2::Gdk::Cursor->new('crosshair'),
+            constMapMergeCursor         => Gtk2::Gdk::Cursor->new('target'),
 
-            # Icon file paths (relative to the main directory) 'internal' window's strip object,
-            #   GA::Strip::Entry
+            # Icon file paths (relative to the main directory) for the 'internal' window strip
+            #   object, GA::Strip::SearchBox
+            constUpIconPath             => '/icons/search/arrow_up.png',
+            constDownIconPath           => '/icons/search/arrow_down.png',
+            constResetIconPath          => '/icons/search/broom.png',
+            constCaseIconPath           => '/icons/search/capitalization.png',
+            constRegexIconPath          => '/icons/search/token_shortland_character.png',
+            constDivideIconPath         => '/icons/search/application_tile_vertical.png',
+            # Icon file paths (relative to the main directory) for the 'internal' window strip
+            #   object, GA::Strip::Entry
             constWipeIconPath           => '/icons/button/broom.png',
+            constAddIconPath            => '/icons/button/textfield_add.png',
             constEmptyIconPath          => '/icons/button/console.png',
             constSystemIconPath         => '/icons/button/console_system.png',
             constDebugIconPath          => '/icons/button/console_debug.png',
             constErrorIconPath          => '/icons/button/console_error.png',
             constMultiIconPath          => '/icons/button/toggle_expand.png',
+            constSearchIconPath         => '/icons/button/search.png',
             constCancelIconPath         => '/icons/button/wall.png',
             constSwitchIconPath         => '/icons/button/switch_windows.png',
             constSplitIconPath          => '/icons/button/application_tile_vertical.png',
@@ -4881,6 +4956,8 @@
                                         => $axmud::SCRIPT . ' table',
                 'Games::Axmud::Strip::GaugeBox'
                                         => $axmud::SCRIPT . ' gauge box',
+                'Games::Axmud::Strip::SearchBox'
+                                        => $axmud::SCRIPT . ' search box',
                 'Games::Axmud::Strip::Entry'
                                         => $axmud::SCRIPT . ' command entry box',
                 'Games::Axmud::Strip::ConnectInfo'
@@ -5260,16 +5337,16 @@
             constTtsDefaultList         => [
                 'espeak',
                     'english_rp',       # Male voice
-                    150,
+                    80,
                     undef,
                     50,
                     undef,
                 'esng',
                     'en',               # Male voice
-                    150,
+                    80,
                     undef,
                     50,
-                    undef,
+                    80,
                 'flite',
                     'slt',              # Female voice
                     undef,
@@ -5279,15 +5356,15 @@
                 'festival',             # Male voice
                     'voice_kal_diphone',
                     undef,
-                    1,
+                    33,
                     undef,
-                    1,
+                    20,
                 'swift',
                     'David',
-                    undef,
-                    undef,
-                    undef,
-                    undef,
+                    30,                 # Used on MSWin
+                    50,                 # Used on Linux/*BSD
+                    50,
+                    80,
                 'none',                 # Doesn't actually read anything
                     undef,
                     undef,
@@ -6383,10 +6460,17 @@
 
         # Any changes to IV values which could not be applied immediately, the last time Axmud was
         #   running, should be applied now
-        if ($self->restartShareMainWinFlag) {
+        # (->restartShareMainWinMode is 'default' if no change is required, or 'off' / 'on' if a
+        #   change is required)
+        if ($self->restartShareMainWinMode ne 'default') {
 
-            $self->ivPoke('shareMainWinFlag', $self->restartShareMainWinFlag);
-            $self->ivUndef('restartShareMainWinFlag');
+            if ($self->restartShareMainWinMode eq 'off') {
+                $self->ivPoke('shareMainWinFlag', FALSE);
+            } else {
+                $self->ivPoke('shareMainWinFlag', TRUE);
+            }
+
+            $self->ivPoke('restartShareMainWinMode', 'default');
         }
 
         # Initialise the default set of toolbar button objects
@@ -6540,72 +6624,7 @@
             );
         }
 
-        if (@ARGV) {
-
-            # The user started Axmud with arguments, e.g. from a Linux terminal:
-            #   ./axmud.pl deathmud.com 5000
-            # If the port is not specified, the generic port is used:
-            #   ./axmud.pl deathmud.com          (use port 23)
-            # The user can also specify a world profile name:
-            #   ./axmud:pl deathmud
-            $host = shift @ARGV;
-            $port = shift @ARGV;
-            if (@ARGV) {
-
-                # (Allow writing to something other than GA::Session - there are no sessions yet)
-                return $self->writeError(
-                    'Invalid command line arguments (try \'<host> <port>\', \'<host>\' or'
-                    . ' \'<world_name>\')',
-                    $self->_objClass . '->start',
-                );
-            }
-
-            if (! $port && $self->ivExists('worldProfHash', $host)) {
-
-                # $host is a world profile name
-                $world = $host;
-                $profObj = $self->ivShow('worldProfHash', $world);
-                ($host, $port) = $profObj->getConnectDetails();
-
-                if (! $self->startSession($world, $host, $port)) {
-
-                    # (Allow writing to something other than GA::Session - there are no sessions
-                    #   yet)
-                    return $self->writeError(
-                        'Could not open a session connecting to \'' . $host . '\'',
-                        $self->_objClass . '->start',
-                    );
-                }
-
-            } else {
-
-                # $host is a host address. Get a temporary world name
-                $world = $self->getTempProfName();
-                if (
-                    ! $world
-                    || ! $self->startSession(
-                        $world,
-                        $host,
-                        $port,
-                        undef,      # No character
-                        undef,      # No password
-                        undef,      # No account
-                        undef,      # Default protocol
-                        undef,      # No login mode
-                        FALSE,      # Not offline mode
-                        TRUE,       # Temporary world profile
-                    )
-                ) {
-                    # (Allow writing to something other than GA::Session - there are no sessions
-                    #   yet)
-                    return $self->writeError(
-                        'Could not open a session connecting to \'' . $host . '\'',
-                        $self->_objClass . '->start',
-                    );
-                }
-            }
-        }
-
+        # Prepare to initialise connections
         if ($self->showSetupWizWinFlag) {
 
             # When Axmud runs for the first time (specifically, when there is no Axmud config file)
@@ -6672,7 +6691,72 @@
             }
         }
 
-        if ($axmud::BLIND_MODE_FLAG) {
+        if (@ARGV) {
+
+            # The user started Axmud with arguments, e.g. from a Linux terminal:
+            #   ./axmud.pl deathmud.com 5000
+            # If the port is not specified, the generic port is used:
+            #   ./axmud.pl deathmud.com          (use port 23)
+            # The user can also specify a world profile name:
+            #   ./axmud:pl deathmud
+            $host = shift @ARGV;
+            $port = shift @ARGV;
+            if (@ARGV) {
+
+                # (Allow writing to something other than GA::Session - there are no sessions yet)
+                return $self->writeError(
+                    'Invalid command line arguments (try \'<host> <port>\', \'<host>\' or'
+                    . ' \'<world_name>\')',
+                    $self->_objClass . '->start',
+                );
+            }
+
+            if (! $port && $self->ivExists('worldProfHash', $host)) {
+
+                # $host is a world profile name
+                $world = $host;
+                $profObj = $self->ivShow('worldProfHash', $world);
+                ($host, $port) = $profObj->getConnectDetails();
+
+                if (! $self->startSession($world, $host, $port)) {
+
+                    # (Allow writing to something other than GA::Session - there are no sessions
+                    #   yet)
+                    return $self->writeError(
+                        'Could not open a session connecting to \'' . $host . '\'',
+                        $self->_objClass . '->start',
+                    );
+                }
+
+            } else {
+
+                # $host is a host address. Get a temporary world name
+                $world = $self->getTempProfName();
+                if (
+                    ! $world
+                    || ! $self->startSession(
+                        $world,
+                        $host,
+                        $port,
+                        undef,      # No character
+                        undef,      # No password
+                        undef,      # No account
+                        undef,      # Default protocol
+                        undef,      # No login mode
+                        FALSE,      # Not offline mode
+                        TRUE,       # Temporary world profile
+                    )
+                ) {
+                    # (Allow writing to something other than GA::Session - there are no sessions
+                    #   yet)
+                    return $self->writeError(
+                        'Could not open a session connecting to \'' . $host . '\'',
+                        $self->_objClass . '->start',
+                    );
+                }
+            }
+
+        } elsif ($axmud::BLIND_MODE_FLAG && ! $self->autoConnectList) {
 
             # In Axmud blind mode, open a series of standard 'dialogue' windows, allowing the
             #   visually-impaired user to select/create a world and/or character
@@ -6702,6 +6786,99 @@
                 )
             ) {
                 return undef;
+            }
+
+        } elsif ($self->autoConnectList) {
+
+            # Connect to all the worlds specified by the auto-connection list
+            OUTER: foreach my $line ($self->autoConnectList) {
+
+                my (
+                    $worldName, $worldObj, $host, $port, $char, $password, $account,
+                    @list,
+                );
+
+                # Each line is in the form <world> <optional_char> <optional_char>...
+                @list = split(/\s+/, $line);
+                $worldName = shift @list;
+
+                # Check the world exists and, if not, ignore this line
+                $worldObj = $self->ivShow('worldProfHash', $worldName);
+                if (! $worldObj) {
+
+                    next OUTER;
+                }
+
+                if (! @list) {
+
+                    # Get connection details for this world
+                    ($host, $port) = $worldObj->getConnectDetails();
+
+                    # Connect without a character
+                    if (
+                        $self->startSession($worldName, $host, $port)
+                        && $axmud::BLIND_MODE_FLAG
+                    ) {
+                        # In blind mode, stop after the first successful connection
+                        last OUTER;
+                    }
+
+                } else {
+
+                    INNER: foreach my $thisChar (@list) {
+
+                        # Check that the character profile exists
+                        my $profType = $worldObj->ivShow('profHash', $thisChar);
+                        if (! defined $profType || $profType ne 'char') {
+
+                            next INNER;
+                        }
+
+                        # Check that a connection has already been initiated for this world/
+                        #   character combination
+                        foreach my $session ($self->ivValues('sessionHash')) {
+
+                            if (
+                                $session->initWorld eq $worldName
+                                && $session->initChar
+                                && $session->initChar eq $thisChar
+                            ) {
+                                next INNER;
+                            }
+                        }
+
+                        # Get connection details for this world
+                        ($host, $port, $char, $password, $account)
+                            = $worldObj->getConnectDetails($thisChar);
+
+                        # Connect with a character
+                        if (
+                            $self->startSession(
+                                $worldName,
+                                $host,
+                                $port,
+                                $char,
+                                $password,
+                                $account
+                            )
+                            && $axmud::BLIND_MODE_FLAG
+                        ) {
+                            # In blind mode, stop after the first successful connection
+                            last OUTER;
+                        }
+                    }
+                }
+            }
+
+            # During this process, if no connections were actually initialised, open the Connections
+            #   window as normal (except in Axmud blind mode)
+            if (! $self->sessionHash) {
+
+                if ($axmud::BLIND_MODE_FLAG) {
+                    $self->connectBlind();
+                } else {
+                    $self->mainWin->quickFreeWin('Games::Axmud::OtherWin::Connect');
+                }
             }
 
         } else {
@@ -6745,6 +6922,17 @@
         # (The TRUE value also gives GA::Obj::WorkspaceGrid->stop to destroy a shared 'main'
         #   window, rather than just disengaging it)
         $self->ivPoke('shutdownFlag', TRUE);
+
+        # This flag prevents multiple concurrent calls to this function if, for example, the user
+        #   is repeatedly clicking the 'main' window's close button
+        if ($self->terminatingFlag) {
+
+            return undef;
+
+        } else {
+
+            $self->ivPoke('terminatingFlag', TRUE);
+        }
 
         # Perform an auto-backup of Axmud's data directory, if required
         if (
@@ -12523,7 +12711,7 @@
         my ($self, $session, $standardflag, $text, $beforeFlag, $afterFlag, @fileTypeList) = @_;
 
         # Local variables
-        my $prefix;
+        my ($prefix, $preamble);
 
         # Check for improper arguments
         if (
@@ -12565,6 +12753,13 @@
             } else {
                 $prefix = '[' . $session->number . ']';
             }
+        }
+
+        # Create the logfile preamble as a single string, if one is set
+        if (! $self->logPreambleList) {
+            $preamble = '';
+        } else {
+            $preamble = join("\n", $self->logPreambleList) . "\n";
         }
 
         OUTER: foreach my $type (@fileTypeList) {
@@ -12689,7 +12884,7 @@
                 print
                     $fileHandle
                     $axmud::SCRIPT . ' v' . $axmud::VERSION . ' logfile \'' . $type
-                    . '\' started at ' . $self->localTime() . "\n";
+                    . '\' started at ' . $self->localTime() . "\n$preamble";
             }
 
             # Write the line and close the file
@@ -13275,7 +13470,8 @@
         #   $engine, $voice, $speed, $rate, $pitch, $volume
         #           - Set when called by GA::Cmd::Speak->do, in order to override the engine,
         #               voice, speed and/or pitch of the specified $configuration (any that are set
-        #               to 'undef' are ignored)
+        #               to 'undef' are ignored). For $speed, $rate, $pitch and $volume, the values
+        #               (if defined) are in the range 0-100
         #   $exclFlag
         #           - Set to TRUE when called by GA::Cmd::Speak->do (or by anything else), meaning
         #               that the TTS configuration's exclusive/excluded patterns should not be
@@ -13481,12 +13677,21 @@
                     push (@msWinList, '-v', $voice);
                 }
 
-                if ($self->floatCheck($speed, 10, 200)) {
+                # Speed in the range 10-200
+                if ($self->floatCheck($speed, 0, 100)) {
+
+                    $speed = int($speed * 1.9) + 10;
 
                     push (@msWinList, '-s', $speed);
                 }
 
-                if ($self->floatCheck($pitch, 0, 99)) {
+                # Pitch in the range 0-99
+                if ($self->floatCheck($pitch, 0, 100)) {
+
+                    if ($pitch > 99) {
+
+                        $pitch = 99;
+                    }
 
                     push (@msWinList, '-p', $pitch);
                 }
@@ -13504,17 +13709,29 @@
                     push (@msWinList, '-v', $voice);
                 }
 
-                if ($self->floatCheck($speed, 10, 200)) {
+                # Speed in the range 10-200
+                if ($self->floatCheck($speed, 0, 100)) {
+
+                    $speed = int($speed * 1.9) + 10;
 
                     push (@msWinList, '-s', $speed);
                 }
 
-                if ($self->floatCheck($pitch, 0, 99)) {
+                # Pitch in the range 0-99
+                if ($self->floatCheck($pitch, 0, 100)) {
+
+                    if ($pitch > 99) {
+
+                        $pitch = 99;
+                    }
 
                     push (@msWinList, '-p', $pitch);
                 }
 
-                if ($self->floatCheck($volume, 0, 200)) {
+                # Volume in the range 0-200
+                if ($self->floatCheck($volume, 0, 100)) {
+
+                    $volume *= 2;
 
                     push (@msWinList, '-a', $volume);
                 }
@@ -13536,12 +13753,22 @@
                     push (@msWinList, '-n', $voice);
                 }
 
-                if ($self->floatCheck($speed, 100, 400)) {
+                # Speed in the range 100-400
+                if ($self->floatCheck($speed, 0, 100)) {
+
+                    $speed = ($speed * 3) + 100;
 
                     $param = 'speech/rate=' . $speed
                 }
 
-                if ($self->floatCheck($pitch, 0.1, 5)) {
+                # Pitch in the range 0.1-5
+                if ($self->floatCheck($pitch, 0, 100)) {
+
+                    $pitch = int($pitch/20);
+                    if ($pitch < 0.1) {
+
+                        $pitch = 0.1;
+                    }
 
                     if (! $param) {
                         $param = 'speech/pitch/shift=' . $pitch;
@@ -13550,6 +13777,7 @@
                     }
                 }
 
+                # Volume in the range 0-100
                 if ($self->floatCheck($volume, 0, 100)) {
 
                     if (! $param) {
@@ -13599,12 +13827,21 @@
                     $cmd .= ' -v ' . $voice;
                 }
 
-                if ($self->floatCheck($speed, 10, 200)) {
+                # Speed in the range 10-200
+                if ($self->floatCheck($speed, 0, 100)) {
+
+                    $speed = int($speed * 1.9) + 10;
 
                     $cmd .= ' -s ' . $speed;
                 }
 
-                if ($self->floatCheck($pitch, 0, 99)) {
+                # Pitch in the range 0-99
+                if ($self->floatCheck($pitch, 0, 100)) {
+
+                    if ($pitch > 99) {
+
+                        $pitch = 99;
+                    }
 
                     $cmd .= ' -p ' . $pitch;
                 }
@@ -13619,17 +13856,29 @@
                     $cmd .= ' -v ' . $voice;
                 }
 
-                if ($self->floatCheck($speed, 10, 200)) {
+                # Speed in the range 10-200
+                if ($self->floatCheck($speed, 0, 100)) {
+
+                    $speed = int($speed * 1.9) + 10;
 
                     $cmd .= ' -s ' . $speed;
                 }
 
-                if ($self->floatCheck($pitch, 0, 99)) {
+                # Pitch in the range 0-99
+                if ($self->floatCheck($pitch, 0, 100)) {
+
+                    if ($pitch > 99) {
+
+                        $pitch = 99;
+                    }
 
                     $cmd .= ' -p ' . $pitch;
                 }
 
-                if ($self->floatCheck($volume, 0, 200)) {
+                # Volume in the range 0-200
+                if ($self->floatCheck($volume, 0, 100)) {
+
+                    $volume *= 2;
 
                     $cmd .= ' -a ' . $volume;
                 }
@@ -13678,12 +13927,18 @@
 
                         $cmd .= " (begin ($voice)";
 
-                        if ($self->floatCheck($rate, 0.5, 2)) {
+                        # Rate in the range 0.5-2
+                        if ($self->floatCheck($rate, 0, 100)) {
+
+                            $rate = ($rate * 0.015) + 0.5;
 
                             $cmd .= " (Parameter.set 'Duration_Stretch $rate)";
                         }
 
-                        if ($self->floatCheck($volume, 0.33, 6)) {
+                        # Volume in the range 0.33-6
+                        if ($self->floatCheck($volume, 0, 100)) {
+
+                            $volume = ($volume * 0.0567) + 0.33;
 
                             $cmd .= " (utt.synth utt) (utt.wave.resample utt 8000)"
                                         . " (utt.wave.rescale utt $volume) (utt.play utt)";
@@ -13714,19 +13969,31 @@
 
                 # (rate, pitch and volume all share an element; only create the element if at least
                 #   one valid value is being used)
-                if ($self->floatCheck($rate, 0.5, 2)) {
+
+                # Rate in the range 0.5-2
+                if ($self->floatCheck($rate, 0, 100)) {
 
                     $rateFlag = TRUE;
+                    $rate = ($rate * 0.015) + 0.5;
                 }
 
-                if ($self->floatCheck($pitch, 0.1, 5)) {
+                # Pitch in the range 0.1-5
+                if ($self->floatCheck($pitch, 0, 100)) {
+
+                    $pitch = $pitch / 20;
+                    if ($pitch < 0.1) {
+
+                        $pitch = 0.1;
+                    }
 
                     $pitchFlag = TRUE;
                 }
 
-                if ($self->floatCheck($volume, 0.33, 6)) {
+                # Volume in the range 0.33-6
+                if ($self->floatCheck($volume, 0, 100)) {
 
                     $volumeFlag = TRUE;
+                    $volume = ($volume * 0.0567) + 0.33;
                 }
 
                 if ($rateFlag || $pitchFlag || $volumeFlag) {
@@ -15270,7 +15537,7 @@
         # Called by GA::Generic::Cmd->addInterface and ->modifyInterface while adding or modifying
         #   a macro
         # The macro's stimulus is one of Axmud's standard keycodes (like 'f5') or a keycode string
-        #   (like 'shift f5').
+        #   (like 'shift f5' or 'ctrl a')
         # Standard keycodes in a keycode string must be in a given order (i.e. 'ctrl shift f5', not
         #   'shift ctrl f5' or even 'f5 shift ctrl')
         # This function changes the order of words in the keycode string, if necessary, and returns
@@ -15301,7 +15568,7 @@
         @list = split(m/\s+/, $string);
 
         # Go through @list, removing the 'ctrl', 'shift', 'alt', 'alt_gr' (which we'll put back
-        #   later), and removing all non-standard keycodes altogether
+        #   later)
         foreach my $keycode (@list) {
 
             if ($keycode eq 'ctrl') {
@@ -15312,7 +15579,7 @@
                 $altFlag = TRUE;
             } elsif ($keycode eq 'alt_gr') {
                 $altGrFlag = TRUE;
-            } elsif ($self->ivExists('constKeycodeHash', $keycode)) {
+            } else {
                 push (@modList, $keycode);
             }
         }
@@ -16313,6 +16580,20 @@
 
         # The data stored in this IV is saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_autoCompleteType');
+
+        return 1;
+    }
+
+    sub set_autoConnectList {
+
+        my ($self, @args) = @_;
+
+        # (No improper arguments to check; @args can be an empty list)
+
+        $self->ivPoke('autoConnectList', @args);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_autoConnectList');
 
         return 1;
     }
@@ -18471,6 +18752,20 @@
         return 1;
     }
 
+    sub set_logPreamble {
+
+        my ($self, @list) = @_;
+
+        # (No improper arguments to check)
+
+        $self->ivPoke('logPreambleList', @list);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_logPreamble');
+
+        return 1;
+    }
+
     sub set_logPref {
 
         my ($self, $logFile, $flag, $check) = @_;
@@ -18837,7 +19132,7 @@
         return 1;
     }
 
-    sub set_restartShareMainWinFlag {
+    sub set_restartShareMainWinMode {
 
         my ($self, $flag, $check) = @_;
 
@@ -18845,19 +19140,19 @@
         if (! defined $flag || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->set_restartShareMainWinFlag',
+                $self->_objClass . '->set_restartShareMainWinMode',
                 @_,
             );
         }
 
         if ($flag) {
-            $self->ivPoke('restartShareMainWinFlag', TRUE);
+            $self->ivPoke('restartShareMainWinMode', 'on');
         } else {
-            $self->ivPoke('restartShareMainWinFlag', FALSE);
+            $self->ivPoke('restartShareMainWinMode', 'off');
         }
 
         # The data stored in this IV is saved in the 'config' file
-        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_restartShareMainWinFlag');
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_restartShareMainWinMode');
 
         return 1;
     }
@@ -19080,7 +19375,7 @@
     sub set_shareMainWinFlag {
 
         # Should only be called by GA::WizWin::Setup->saveChanges. Everything else should call
-        #   $self->set_restartShareMainWinFlag
+        #   $self->set_restartShareMainWinMode
 
         my ($self, $flag, $check) = @_;
 
@@ -19097,7 +19392,7 @@
         }
 
         # The data stored in this IV is saved in the 'config' file
-        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_restartShareMainWinFlag');
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_shareMainWinFlag');
 
         return 1;
     }
@@ -20377,6 +20672,8 @@
         { $_[0]->{currentSession} }
     sub shutdownFlag
         { $_[0]->{shutdownFlag} }
+    sub terminatingFlag
+        { $_[0]->{terminatingFlag} }
 
     sub sessionTabMode
         { $_[0]->{sessionTabMode} }
@@ -20542,6 +20839,8 @@
         { $_[0]->{prevClientVersion} }
     sub favouriteWorldList
         { my $self = shift; return @{$self->{favouriteWorldList}}; }
+    sub autoConnectList
+        { my $self = shift; return @{$self->{autoConnectList}}; }
     sub constBasicWorldHash
         { my $self = shift; return %{$self->{constBasicWorldHash}}; }
 
@@ -20639,6 +20938,8 @@
         { my $self = shift; return %{$self->{constOppDirHash}}; }
     sub constComponentTypeList
         { my $self = shift; return @{$self->{constComponentTypeList}}; }
+    sub constExitStateHash
+        { my $self = shift; return %{$self->{constExitStateHash}}; }
     sub constParseObjMax
         { $_[0]->{constParseObjMax} }
 
@@ -20674,6 +20975,8 @@
         { $_[0]->{logPrefixTimeFlag} }
     sub logImageFlag
         { $_[0]->{logImageFlag} }
+    sub logPreambleList
+        { my $self = shift; return @{$self->{logPreambleList}}; }
 
     sub statusEventBeforeCount
         { $_[0]->{statusEventBeforeCount} }
@@ -20942,8 +21245,8 @@
 
     sub shareMainWinFlag
         { $_[0]->{shareMainWinFlag} }
-    sub restartShareMainWinFlag
-        { $_[0]->{restartShareMainWinFlag} }
+    sub restartShareMainWinMode
+        { $_[0]->{restartShareMainWinMode} }
     sub activateGridFlag
         { $_[0]->{activateGridFlag} }
     sub storeGridPosnFlag
@@ -21153,9 +21456,31 @@
         { $_[0]->{constMailCursor} }
     sub constTelnetCursor
         { $_[0]->{constTelnetCursor} }
+    sub constMapCursor
+        { $_[0]->{constMapCursor} }
+    sub constMapAddCursor
+        { $_[0]->{constMapAddCursor} }
+    sub constMapConnectCursor
+        { $_[0]->{constMapConnectCursor} }
+    sub constMapMergeCursor
+        { $_[0]->{constMapMergeCursor} }
 
+    sub constUpIconPath
+        { $_[0]->{constUpIconPath} }
+    sub constDownIconPath
+        { $_[0]->{constDownIconPath} }
+    sub constResetIconPath
+        { $_[0]->{constResetIconPath} }
+    sub constCaseIconPath
+        { $_[0]->{constCaseIconPath} }
+    sub constRegexIconPath
+        { $_[0]->{constRegexIconPath} }
+    sub constDivideIconPath
+        { $_[0]->{constDivideIconPath} }
     sub constWipeIconPath
         { $_[0]->{constWipeIconPath} }
+    sub constAddIconPath
+        { $_[0]->{constAddIconPath} }
     sub constEmptyIconPath
         { $_[0]->{constEmptyIconPath} }
     sub constSystemIconPath
@@ -21166,6 +21491,8 @@
         { $_[0]->{constErrorIconPath} }
     sub constMultiIconPath
         { $_[0]->{constMultiIconPath} }
+    sub constSearchIconPath
+        { $_[0]->{constSearchIconPath} }
     sub constCancelIconPath
         { $_[0]->{constCancelIconPath} }
     sub constSwitchIconPath

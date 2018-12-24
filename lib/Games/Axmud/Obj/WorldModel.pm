@@ -207,6 +207,29 @@
             #   the list
             firstRegion                 => undef,
 
+            # IVs which set how the automapper window handles pre-drawing of regions
+            # When the automapper opens, check all regions; any that have this many rooms in them
+            #   are added to the queue to be drawn by background processes (i.e. regular calls to
+            #   GA::Win::Map->winUpdate)
+            # Must be an integer, 0 or above. If 0, all regions are added to the queue
+            # If $self->firstRegion is set and it contains the minimum number of rooms, it's added
+            #   to the queue first
+            preDrawMinRooms             => 500,
+            # When a new current region is set, the old current region's canvas widget and canvas
+            #   objects are retained in memory, so they don't have to be redrawn again, if they
+            #   contain at least this many rooms
+            # Must be an integer, 0 or above. If 0, all regions are retained in memory
+            # Otherwise, the canvas objects are destroyed and the canvas widgets are recycled for
+            #   the next region which doesn't have at least this many rooms
+            retainDrawMinRooms          => 500,
+            # When drawing queued rooms/exits/labels by background processes, the number of objects
+            #   to draw per second during successive calls to GA::Win::Map->winUpdate (an
+            #   approximate number, since drawing a room also draws its room tags, exits etc)
+            # For example, if 500 and the GA::Session's maintain loop spins ten times a second,
+            #   then 50 objects are marked to be drawn on every call to ->winUpdate
+            # Must be an integer, 0 or above. If 0, no drawing by background processes takes place
+            queueDrawMaxObjs            => 500,
+
             # An additional hash for character model objects. Contains exactly the same number
             #   of entries as $self->charModelHash, but this hash is in the form
             #   $knownCharHash{name} = blessed_reference_to_character_model_object
@@ -911,9 +934,9 @@
             #   closed, this IV is set back to FALSE
             updateDelayFlag             => FALSE,
             # IVs checked when $self->updateRegionLevels is called, once per timer loop
-            # When rooms are added to or deleted from a regionmap, we need to re-calculate the
-            #   regionmap's highest and lowest occupied levels. This hash contains all the
-            #   regionmaps that need to be checked. Hash in the form
+            # When room model objects and/or map labels are added to or deleted from a regionmap, we
+            #   need to re-calculate the regionmap's highest and lowest occupied levels. This hash
+            #   contains all the regionmaps that need to be checked. Hash in the form
             #   $checkLevelsHash{regionmap_name} = undef
             checkLevelsHash             => {},
 
@@ -1011,6 +1034,13 @@
             exitTagRatio                => 0.7,
             labelRatio                  => 0.8,
             roomTextRatio               => 0.7,
+            # Room tags, room guilds, exit tags and/or labels (but not room text) can retain their
+            #   size as a map zooms in and out. This is turned off by default (FALSE), but can be
+            #   turned on at any time (TRUE)
+            fixedRoomTagFlag            => FALSE,
+            fixedRoomGuildFlag          => FALSE,
+            fixedExitTagFlag            => FALSE,
+            fixedLabelFlag              => FALSE,
         };
 
         # Bless the object into existence
@@ -1952,8 +1982,8 @@
     sub updateRegionLevels {
 
         # Called by GA::Session->spinMaintainLoop
-        # When a model room is added, moved or deleted, the parent regionmap's name is temporarily
-        #   stored in $self->checkLevelsHash
+        # When a room model object or map label is added, moved or deleted, the parent regionmap's
+        #   name is temporarily stored in $self->checkLevelsHash
         # Ask each regionmap to re-calculate its highest and lowest occupied levels
         #
         # Expected arguments
@@ -1965,11 +1995,18 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my @mapWinList;
+
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->updateRegionLevels', @_);
         }
+
+        # Collect a list of automapper windows used by this world model now (so we only have to do
+        #   it once)
+        @mapWinList = $self->collectMapWins();
 
         OUTER: foreach my $regionName ($self->ivKeys('checkLevelsHash')) {
 
@@ -2000,14 +2037,76 @@
                 }
             }
 
-            # If there are no rooms in the regionmap, $high and $low will be 'undef' which is, in
-            #   that situation, also the correct value for the IVs
+            # Likewise check every label
+            foreach my $labelObj ($regionmapObj->ivValues('gridLabelHash')) {
+
+                if (! defined $high || $high < $labelObj->level) {
+
+                    $high = $labelObj->level;
+                }
+
+                if (! $low || $low > $labelObj->level) {
+
+                    $low = $labelObj->level;
+                }
+            }
+
+            # If there are no rooms/labels in the regionmap, $high and $low will be 'undef' which
+            #   is, in that situation, also the correct value for the IVs
             $regionmapObj->ivPoke('highestLevel', $high);
             $regionmapObj->ivPoke('lowestLevel', $low);
+
+            # All parchment objects can now be updated to remove canvas widgets for the unoccupied
+            #   levels (in this case, treat the window's visible level as the highest or lowest
+            #   level)
+            foreach my $mapWin (@mapWinList) {
+
+                my ($thisHigh, $thisLow, $parchmentObj);
+
+                if (! defined $regionmapObj->highestLevel) {
+
+                    $thisHigh = 0;
+                    $thisLow = 0;
+
+                } else {
+
+                    $thisHigh = $regionmapObj->highestLevel;
+                    $thisLow = $regionmapObj->lowestLevel;
+                }
+
+                if ($mapWin->currentRegionmap) {
+
+                    if ($mapWin->currentRegionmap->currentLevel > $thisHigh) {
+                        $thisHigh = $mapWin->currentRegionmap->currentLevel;
+                    } elsif ($mapWin->currentRegionmap->currentLevel < $thisLow) {
+                        $thisLow = $mapWin->currentRegionmap->currentLevel;
+                    }
+                }
+
+                # Furthermore, increase the highest/lowest occupied level by 1 so that room
+                #   echos can be drawn
+                $thisHigh++;
+                $thisLow--;
+
+                # Remove any redundant canvas widgets
+                $parchmentObj = $mapWin->ivShow('parchmentHash', $regionmapObj->name);
+                if ($parchmentObj) {
+
+                    foreach my $level ($parchmentObj->ivKeys('canvasWidgetHash')) {
+
+                        if ($level > $thisHigh || $level < $thisLow) {
+
+                            $parchmentObj->ivDelete('canvasWidgetHash', $level);
+                            $parchmentObj->ivDelete('bgCanvasObjHash', $level);
+                            $parchmentObj->ivDelete('levelHash', $level);
+                        }
+                    }
+                }
+            }
         }
 
         # Update any GA::Win::Map objects using this world model
-        foreach my $mapWin ($self->collectMapWins()) {
+        foreach my $mapWin (@mapWinList) {
 
             # If the automapper is showing the same region...
             if (
@@ -4663,15 +4762,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap eq $regionmapObj
-                    && $mapWin->currentRegionmap->currentLevel == $zPosBlocks
-                ) {
-                    # ...mark the room to be drawn
-                    $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
 
                 # The regionmap's highest/lowest occupied levels need to be recalculated
                 $self->ivAdd('checkLevelsHash', $regionmapObj->name, undef);
@@ -4984,9 +5077,7 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            # Compile a list of rooms to be marked for drawing (if $connectRoomObj is not on the
-            #   visible region level, it won't get drawn, so there's no danger in marking it to be
-            #   drawn here)
+            # Compile a list of rooms to be marked for drawing
             @drawList = ('room', $modelRoomObj);
             if ($connectRoomObj) {
 
@@ -4995,15 +5086,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $modelRoomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $modelRoomObj->zPosBlocks
-                ) {
-                    # ...mark the room(s) to be drawn
-                    $mapWin->markObjs(@drawList);
-                }
+                # Redraw the rooms
+                $mapWin->markObjs(@drawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -5070,15 +5155,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $roomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the room to be drawn
-                    $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -5240,15 +5319,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap eq $roomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the exit to be drawn
-                    $mapWin->markObjs('exit', $exitObj);
-                }
+                # Redraw the exit
+                $mapWin->markObjs('exit', $exitObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -5394,6 +5467,15 @@
             }
         }
 
+        # GA::Profile::World->exitStateTagHash can specify custom strings instead of exit states,
+        #   which are added to the non-model object as assisted moves, so use them
+        foreach my $key ($taskExitObj->assistedHash) {
+
+            my $value = $taskExitObj->ivShow('assistedHash', $key);
+
+            $modelExitObj->ivAdd('assistedHash', $key, $value);
+        }
+
         # Also set the exit info, if it was collected
         if ($taskExitObj->exitInfo) {
 
@@ -5405,15 +5487,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap eq $modelRoomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $modelRoomObj->zPosBlocks
-                ) {
-                    # ...mark the exit to be drawn
-                    $mapWin->markObjs('exit', $modelExitObj);
-                }
+                # Redraw the exit
+                $mapWin->markObjs('exit', $modelExitObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -5517,15 +5593,15 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap eq $regionmapObj
-                    && $mapWin->currentRegionmap->currentLevel == $level
-                ) {
-                    # ...mark the room to be drawn
-                    $mapWin->markObjs('label', $labelObj);
-                }
+                # Redraw the label
+                $mapWin->markObjs('label', $labelObj);
+                $mapWin->doDraw();
+
+                # The regionmap's highest/lowest occupied levels need to be recalculated
+                $self->ivAdd('checkLevelsHash', $regionmapObj->name, undef);
+                # Sensitise/desensitise menu bar/toolbar items, depending on current conditions (as
+                #   a response to this calculation)
+                $mapWin->restrictWidgets();
             }
         }
 
@@ -5606,15 +5682,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $parentObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $parentObj->zPosBlocks
-                ) {
-                    # ...mark the (parent)room to be drawn
-                    $mapWin->markObjs('room', $parentObj);
-                }
+                # Redraw the (parent) room
+                $mapWin->markObjs('room', $parentObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -5700,15 +5770,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $parentObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $parentObj->zPosBlocks
-                ) {
-                    # ...mark the (parent)room to be drawn
-                    $mapWin->markObjs('room', $parentObj);
-                }
+                # Redraw the (parent) room
+                $mapWin->markObjs('room', $parentObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -5783,15 +5847,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $parentObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $parentObj->zPosBlocks
-                ) {
-                    # ...mark the (parent)room to be drawn
-                    $mapWin->markObjs('room', $parentObj);
-                }
+                # Redraw the (parent) room
+                $mapWin->markObjs('room', $parentObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -6283,7 +6341,8 @@
         # Called by GA::Win::Map->deleteRegionCallback and $self->deleteTempRegions
         # Deletes one of more GA::ModelObj::Region objects, together with any child objects
         #   (mostly the rooms it contains).
-        # Also deletes the corresponding GA::Obj::Regionmap
+        # Also deletes the corresponding regionmap (GA::Obj::Regionmap) and parchment objects
+        #   (GA::Obj::Parchment)
         #
         # Expected arguments
         #   $session        - The calling function's GA::Session
@@ -6314,6 +6373,12 @@
         if (! @regionList) {
 
             return undef;
+        }
+
+        # Before any deletion operation, all selected canvas objects must be un-selected
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            $mapWin->setSelectedObj();
         }
 
         foreach my $regionObj (@regionList) {
@@ -6375,34 +6440,30 @@
         }
 
         # Regardless of whether $updateFlag is set, or not, the automapper windows' list of
-        #   recent regions must be updated
+        #   recent regions must be updated, and the deleted rooms should no longer be graffitied
         foreach my $mapWin ($self->collectMapWins()) {
 
             $mapWin->reset_recentRegion(@regionList);
+            $mapWin->del_graffiti(@graffitiList);
         }
 
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            OUTER: foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $mapWin ($self->collectMapWins()) {
 
-                # Any deleted rooms should no longer be graffitied
-                $mapWin->del_graffiti(@graffitiList);
-
-                INNER: foreach my $regionObj (@regionList) {
+                foreach my $regionObj (@regionList) {
 
                     if (
                         $mapWin->currentRegionmap
                         && $mapWin->currentRegionmap->number eq $regionObj->number
                     ) {
-                        # Show no current region, which deletes all canvas objects
+                        # Show the empty map
                         $mapWin->setCurrentRegion();
-                        last INNER;
                     }
-                }
 
-                # After any deletion operation, all selected canvas objects must be un-selected
-                $mapWin->setSelectedObj();
+                    $mapWin->del_parchment($regionObj->name);
+                }
 
                 # Update the window's treeview (containing the list of regions)
                 $mapWin->resetTreeView();
@@ -6472,9 +6533,9 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            OUTER: foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $mapWin ($self->collectMapWins()) {
 
-                INNER: foreach my $regionObj (@regionList) {
+                foreach my $regionObj (@regionList) {
 
                     if (
                         $mapWin->currentRegionmap
@@ -6482,8 +6543,9 @@
                     ) {
                         # Show no current region, which deletes all canvas objects
                         $mapWin->setCurrentRegion();
-                        last INNER;
                     }
+
+                    $mapWin->del_parchment($regionObj->name);
                 }
 
                 # After any deletion operation, all selected canvas objects must be un-selected
@@ -6521,7 +6583,10 @@
         my ($self, $session, $updateFlag, @roomList) = @_;
 
         # Local variables
-        my @mapWinList;
+        my (
+            @mapWinList,
+            %regionHash,
+        );
 
         # Check for improper arguments
         if (! defined $session || ! defined $updateFlag) {
@@ -6533,6 +6598,12 @@
         if (! @roomList) {
 
             return undef;
+        }
+
+        # Before any deletion operation, all selected canvas objects must be un-selected
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            $mapWin->setSelectedObj();
         }
 
         foreach my $roomObj (@roomList) {
@@ -6558,6 +6629,9 @@
             # Update the regionmap's hashes of rooms, room tags and room guilds
             $regionmapObj = $self->findRegionmap($roomObj->parent);
             $regionmapObj->removeRoom($roomObj);
+            # (We can save a bit of time in the code below by storing each room's regionmap
+            #   temporarily)
+            $regionHash{$roomObj} = $regionmapObj;
 
             # Delete the room object and its child objects and exit objects (if any)
             $self->deleteObj(
@@ -6584,49 +6658,49 @@
 
                 foreach my $roomObj (@roomList) {
 
-                    # Delete the label's canvas object (if it exists)
-                    $mapWin->deleteCanvasObj('room', $roomObj, TRUE);
+                    my ($regionmapObj, $parchmentObj);
 
-                    # If the room is on the automapper's region and level, delete the canvas objects
-                    #   for the room's room tag and room guild (if any). Its exits will have been
-                    #   deleted in the call to ->deleteObj just above
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number eq $roomObj->parent
-                        && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                    ) {
-                        if ($roomObj->roomTag) {
+                    $regionmapObj = $regionHash{$roomObj};
+                    $parchmentObj = $mapWin->ivShow('parchmentHash', $regionmapObj->name);
 
-                            $mapWin->deleteCanvasObj('room_tag', $roomObj, TRUE);
-                        }
+                    # Delete the room's canvas objects (if they exist; its exits will have been
+                    #   deleted in the call to ->deleteObj just above)
+                    $mapWin->deleteCanvasObj('room', $roomObj, $regionmapObj, $parchmentObj, TRUE);
+                    if ($roomObj->roomTag) {
 
-                        if ($roomObj->roomGuild) {
+                        $mapWin->deleteCanvasObj(
+                            'room_tag',
+                            $roomObj,
+                            $regionmapObj,
+                            $parchmentObj,
+                            TRUE,
+                        );
+                    }
 
-                            $mapWin->deleteCanvasObj('room_guild', $roomObj, TRUE);
-                        }
+                    if ($roomObj->roomGuild) {
+
+                        $mapWin->deleteCanvasObj(
+                            'room_guild',
+                            $roomObj,
+                            $regionmapObj,
+                            $parchmentObj,
+                            TRUE,
+                        );
                     }
 
                     # Some other function may have placed the room on the automapper's list of
                     #   objects to draw; if so, remove it
-                    if ($mapWin->ivExists('markedRoomHash', $roomObj->number)) {
+                    if ($parchmentObj) {
 
-                        $mapWin->del_drawObj('markedRoomHash', $roomObj->number);
-                    }
+                        $parchmentObj->ivDelete('markedRoomHash', $roomObj->number);
+                        $parchmentObj->ivDelete('markedRoomTagHash', $roomObj->number);
+                        $parchmentObj->ivDelete('markedRoomGuildHash', $roomObj->number);
 
-                    # The same applies to room tags and room guilds belonging to this room
-                    if ($mapWin->ivExists('markedRoomTagHash', $roomObj->number)) {
-
-                        $mapWin->del_drawObj('markedRoomTagHash', $roomObj->number);
-                    }
-
-                    if ($mapWin->ivExists('markedRoomGuildHash', $roomObj->number)) {
-
-                        $mapWin->del_drawObj('markedRoomGuildHash', $roomObj->number);
+                        $parchmentObj->ivDelete('queueRoomHash', $roomObj->number);
+                        $parchmentObj->ivDelete('queueRoomTagHash', $roomObj->number);
+                        $parchmentObj->ivDelete('queueRoomGuildHash', $roomObj->number);
                     }
                 }
-
-                # After any deletion operation, all selected canvas objects must be un-selected
-                $mapWin->setSelectedObj();
             }
         }
 
@@ -6652,15 +6726,6 @@
                         next OUTER;
                     }
                 }
-            }
-        }
-
-        # Make sure the deleted rooms are not marked to be re-drawn
-        foreach my $mapWin ($self->collectMapWins()) {
-
-            foreach my $roomObj (@roomList) {
-
-                $mapWin->del_markedRoom($roomObj->number);
             }
         }
 
@@ -6691,8 +6756,8 @@
 
         # Local variables
         my (
-            %roomHash,
             @redrawList, @mapWinList,
+            %roomHash, %regionHash,
         );
 
         # Check for improper arguments
@@ -6705,6 +6770,12 @@
         if (! @exitList) {
 
             return undef;
+        }
+
+        # Before any deletion operation, all selected canvas objects must be un-selected
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            $mapWin->setSelectedObj();
         }
 
         foreach my $exitObj (@exitList) {
@@ -6885,12 +6956,18 @@
                 # Update the parent room's regionmap
                 $regionmapObj = $self->ivShow('regionmapHash', $regionObj->name);
                 $regionmapObj->removeExit($exitObj);
+                # (We can save a bit of time in the code below by storing each exit's regionmap
+                #   temporarily)
+                $regionHash{$exitObj} = $regionmapObj;
+
                 # Also update the twin exit's regionmap (if there is one)
                 if ($twinRoomObj && $twinExitObj) {
 
                     $twinRegionObj = $self->ivShow('modelHash', $twinRoomObj->parent);
                     $twinRegionmapObj = $self->ivShow('regionmapHash', $twinRegionObj->name);
                     $twinRegionmapObj->resetExit($twinExitObj);
+
+                    $regionHash{$twinExitObj} = $twinRegionmapObj;
                 }
             }
         }
@@ -6907,40 +6984,38 @@
 
                 foreach my $exitObj (@exitList) {
 
+                    my ($regionmapObj, $parchmentObj);
+
+                    $regionmapObj = $regionHash{$exitObj};
+                    $parchmentObj = $mapWin->ivShow('parchmentHash', $regionmapObj->name);
+
                     # Delete the exit's canvas object (if it exists)
-                    $mapWin->deleteCanvasObj('exit', $exitObj, TRUE);
+                    $mapWin->deleteCanvasObj('exit', $exitObj, $regionmapObj, $parchmentObj, TRUE);
                     # Delete the exit tag's canvas object (which might exist, even if the exit's
                     #   canvas object does not)
-                    $mapWin->deleteCanvasObj('exit_tag', $exitObj, TRUE);
+                    $mapWin->deleteCanvasObj(
+                        'exit_tag',
+                        $exitObj,
+                        $regionmapObj,
+                        $parchmentObj,
+                        TRUE,
+                    );
 
-                    # (Code reinstated at v1.0.106)
                     # Some other function may have placed the exit and the exit tag (if any) on the
                     #   automapper's list of objects to draw; if so, remove them
-                    if ($mapWin->ivExists('markedExitHash', $exitObj->number)) {
+                    if ($parchmentObj) {
 
-                        $mapWin->del_drawObj('markedExitHash', $exitObj->number);
-                    }
+                        $parchmentObj->ivDelete('markedExitHash', $exitObj->number);
+                        $parchmentObj->ivDelete('markedExitTagHash', $exitObj->number);
 
-                    if ($mapWin->ivExists('markedExitTagHash', $exitObj->number)) {
-
-                        $mapWin->del_drawObj('markedExitTagHash', $exitObj->number);
+                        $parchmentObj->ivDelete('queueExitHash', $exitObj->number);
+                        $parchmentObj->ivDelete('queueExitTagHash', $exitObj->number);
                     }
                 }
 
-                # After any deletion operation, all selected canvas objects must be un-selected
-                $mapWin->setSelectedObj();
-
-                # Redraw all rooms marked to be redrawn
+                # Redraw all those rooms
                 $mapWin->markObjs(@redrawList);
-            }
-        }
-
-        # Make sure the deleted exits are not marked to be re-drawn
-        foreach my $mapWin ($self->collectMapWins()) {
-
-            foreach my $exitObj (@exitList) {
-
-                $mapWin->del_markedExit($exitObj->number);
+                $mapWin->doDraw();
             }
         }
 
@@ -7010,7 +7085,16 @@
         # Make sure the deleted exit is not marked to be re-drawn
         foreach my $mapWin ($self->collectMapWins()) {
 
-            $mapWin->del_markedExit($exitObj->number);
+            # Unfortunately this means checking every parchment. We don't know the parent region of
+            #   an orphaned exit
+            foreach my $parchmentObj ($mapWin->ivValues('parchmentHash')) {
+
+                $parchmentObj->ivDelete('markedExitHash', $exitObj->number);
+                $parchmentObj->ivDelete('markedExitTagHash', $exitObj->number);
+
+                $parchmentObj->ivDelete('queueExitHash', $exitObj->number);
+                $parchmentObj->ivDelete('queueExitTagHash', $exitObj->number);
+            }
         }
 
         return 1;
@@ -7048,6 +7132,12 @@
             return undef;
         }
 
+        # Before any deletion operation, all selected canvas objects must be un-selected
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            $mapWin->setSelectedObj();
+        }
+
         foreach my $labelObj (@labelList) {
 
             # Get the label's parent regionmap
@@ -7056,26 +7146,33 @@
             # Remove the label from the regionmap
             $regionmapObj->removeLabel($labelObj);
 
+            # The regionmap's highest/lowest occupied levels need to be recalculated
+            $self->ivAdd('checkLevelsHash', $regionmapObj->name, undef);
+
             # Update any GA::Win::Map objects using this world model (if allowed)
             if ($updateFlag) {
 
                 foreach my $mapWin ($self->collectMapWins()) {
 
+                    my $parchmentObj = $mapWin->ivShow('parchmentHash', $regionmapObj->name);
+
                     # Delete the label's canvas object (if it exists)
-                    $mapWin->deleteCanvasObj('label', $labelObj, TRUE);
+                    $mapWin->deleteCanvasObj(
+                        'label',
+                        $labelObj,
+                        $regionmapObj,
+                        $parchmentObj,
+                        TRUE,
+                    );
 
-                    # After any deletion operation, all selected canvas objects must be un-selected
-                    $mapWin->setSelectedObj();
+                    # Some other function may have placed the label on the automapper's list of
+                    #   objects to draw; if so, remove them
+                    if ($parchmentObj) {
+
+                        $parchmentObj->ivDelete('markedLabelHash', $labelObj->number);
+                        $parchmentObj->ivDelete('queueLabelHash', $labelObj->number);
+                    }
                 }
-            }
-        }
-
-        # Make sure the deleted labels are not marked to be re-drawn
-        foreach my $mapWin ($self->collectMapWins()) {
-
-            foreach my $labelObj (@labelList) {
-
-                $mapWin->del_markedLabel($labelObj->number);
             }
         }
 
@@ -7195,28 +7292,28 @@
 
         foreach my $mapWin (@mapWinList) {
 
-            if ($mapWin->currentRegionmap eq $newRegionmapObj) {
+            my $parchmentObj = $mapWin->ivShow('parchmentHash', $oldRegionmapObj->name);
 
-                foreach my $roomObj (values %drawHash) {
+            foreach my $roomObj (values %drawHash) {
 
-                    $mapWin->deleteCanvasObj('room', $roomObj);
-                    # Also destroy the canvas objects for any checked directions
-                    $mapWin->deleteCanvasObj('checked_dir', $roomObj);
-                    # Also destroy canvas objects for their exits
-                    foreach my $exitNum ($roomObj->ivValues('exitNumHash')) {
+                $mapWin->deleteCanvasObj('room', $roomObj, $oldRegionmapObj, $parchmentObj);
+                # Also destroy the canvas objects for any checked directions
+                $mapWin->deleteCanvasObj('checked_dir', $roomObj, $oldRegionmapObj, $parchmentObj);
+                # Also destroy canvas objects for their exits
+                foreach my $exitNum ($roomObj->ivValues('exitNumHash')) {
 
-                        $mapWin->deleteCanvasObj('exit', $self->ivShow('exitModelHash', $exitNum));
-                    }
+                    $mapWin->deleteCanvasObj(
+                        'exit',
+                        $self->ivShow('exitModelHash', $exitNum),
+                        $oldRegionmapObj,
+                        $parchmentObj,
+                    );
                 }
             }
         }
 
-        # Rooms are stored in a regionmap hash, using the room's grid location as a key (in the
-        #   form x_y_z). Automapper window IVs
-        # When this function is ready to redraw the rooms,
         # Regardless of whether $updateFlag is set, if the whole region isn't going to be redrawn,
-        #   canvas objects for each room must be deleted automapper windows must destroy canvas
-        #   objects for
+        #   canvas objects for each room must be deleted
         # Remove each room in turn from its old position in $oldRegionmapObj's grid
         foreach my $roomObj (values %roomHash) {
 
@@ -7624,44 +7721,20 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
+            # Compile a list of rooms, including all the rooms in %drawHash, and any rooms that are
+            #   connected to those rooms
+            push (@drawList, $self->compileRedrawRooms(values %drawHash));
+            # Add any labels to that list
+            foreach my $labelObj (values %labelHash) {
+
+                push (@drawList, 'label', $labelObj);
+            }
+
+            # Redraw all of the affected rooms/labels
             foreach my $mapWin (@mapWinList) {
 
-                if ($oldRegionmapObj ne $newRegionmapObj) {
-
-                    # For this Automapper window, if either the old or new regionmaps are visible,
-                    #   redraw the whole region
-                    if (
-                        $mapWin->currentRegionmap
-                        && (
-                            $mapWin->currentRegionmap eq $oldRegionmapObj
-                            || $mapWin->currentRegionmap eq $newRegionmapObj
-                        )
-                    ) {
-                        $mapWin->drawRegion();
-                    }
-
-                } elsif ($mapWin->currentRegionmap eq $newRegionmapObj) {
-
-                    # The objects haven't changed region, and are visible in this automapper
-                    #   window's current region, so draw them at their new position
-
-                    # (Don't recompile @drawList, if it was already compiled on a previous iteration
-                    #   of this loop)
-                    if (! @drawList) {
-
-                        foreach my $roomObj (values %drawHash) {
-
-                            push (@drawList, 'room', $roomObj);
-                        }
-
-                        foreach my $labelObj (values %labelHash) {
-
-                            push (@drawList, 'label', $labelObj);
-                        }
-                    }
-
-                    $mapWin->doDraw(@drawList);
-                }
+                $mapWin->markObjs(@drawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -7746,9 +7819,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Redraw the dragged object (let the Automapper window check whether it's on the
-                #   currently visible region and level)
+                # Redraw the dragged object
                 $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -7815,6 +7888,7 @@
             $regionmapObj, $twinRegionmapObj, $result,
             @otherRoomList, @labelList, @checkRoomList, @deleteList, @selectList,
             %labelHash, %mergeHash, %noMergeHash, %moveHash, %reconnectHash, %reverseHash,
+            %disconnectHash,
         );
 
         # Check for improper arguments
@@ -8083,7 +8157,13 @@
                 # Compare this room with $otherRoomObj. If they match, those two rooms can also be
                 #   merged. If they don't match, $otherRoomObj is not moved or merged
                 ($result) = $self->compareRooms($session, $targetRoomObj, $otherRoomObj);
-                if ($result) {
+                if (! $result) {
+
+                    # Any rooms to be moved (not merged) which have exits leading to or from this
+                    #   room must be disconnected from them, before redrawing the map
+                    $disconnectHash{$otherRoomObj->number} = $otherRoomObj;
+
+                } else {
 
                     $mergeHash{$otherRoomObj->number} = $existRoomNum;
                 }
@@ -8238,7 +8318,7 @@
                 }
             }
 
-            # After mergin the pairs of rooms, delete the one we don't need any more
+            # After merging the pairs of rooms, delete the one we don't need any more
             $self->deleteRooms(
                 $session,
                 FALSE,          # Don't update automapper windows yet
@@ -8263,7 +8343,7 @@
             );
 
             # Reconnect exits between surviving rooms in %mergeHash and the moved rooms in
-            #   %mergeHash
+            #   %moveHash
             foreach my $exitNum (keys %reconnectHash) {
 
                 my ($exitObj, $destRoomObj);
@@ -8283,19 +8363,52 @@
             }
         }
 
+        # Any rooms that are left behind - not merged and not moved - must be disconnected from any
+        #   rooms that were moved (not merged)
+        if (%disconnectHash) {
+
+            foreach my $otherRoomObj (values %disconnectHash) {
+
+                foreach my $exitNum ($otherRoomObj->ivValues('exitNumHash')) {
+
+                    my $exitObj = $self->ivShow('exitModelHash', $exitNum);
+
+                    if ($exitObj->destRoom && exists $moveHash{$exitObj->destRoom}) {
+
+                        $self->disconnectExit(
+                            FALSE,              # Don't update automapper windows yet
+                            $exitObj,
+                        );
+                    }
+                }
+            }
+
+            foreach my $moveRoomObj (values %moveHash) {
+
+                foreach my $exitNum ($moveRoomObj->ivValues('exitNumHash')) {
+
+                    my $exitObj = $self->ivShow('exitModelHash', $exitNum);
+
+                    if ($exitObj->destRoom && exists $disconnectHash{$exitObj->destRoom}) {
+
+                        $self->disconnectExit(
+                            FALSE,              # Don't update automapper windows yet
+                            $exitObj,
+                        );
+                    }
+                }
+            }
+        }
+
         # Update any GA::Win::Map objects using this world model (if allowed)
         foreach my $mapWin ($self->collectMapWins()) {
 
-            # For this Automapper window, if either the old or new regionmaps are visible,
-            #   redraw the whole region
-            if (
-                $mapWin->currentRegionmap
-                && (
-                    $mapWin->currentRegionmap eq $regionmapObj
-                    || $mapWin->currentRegionmap eq $twinRegionmapObj
-                )
-            ) {
-                $mapWin->drawRegion();
+            # Mark the two affected regions to be redrawn. The TRUE argument means that only the
+            #   specified region needs to be redrawn
+            $mapWin->redrawRegions($regionmapObj, TRUE);
+            if ($twinRegionmapObj ne $regionmapObj) {
+
+                $mapWin->redrawRegions($twinRegionmapObj, TRUE);
             }
 
             # For visual clarity, select any rooms that were moved or merged
@@ -8645,17 +8758,13 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            # We only need to redraw rooms on the currently visible regionmap and level
             foreach my $mapWin ($self->collectMapWins()) {
 
-                if (
-                    $obj->category eq 'room'
-                    && $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $obj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $obj->zPosBlocks
-                ) {
-                    # Mark the room to be drawn
+                if ($obj->category eq 'room') {
+
+                    # Redraw the room
                     $mapWin->markObjs('room', $obj);
+                    $mapWin->doDraw();
                 }
             }
         }
@@ -8739,17 +8848,13 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            # We only need to redraw rooms on the currently visible regionmap and level
             foreach my $mapWin ($self->collectMapWins()) {
 
-                if (
-                    $obj->category eq 'room'
-                    && $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $obj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $obj->zPosBlocks
-                ) {
-                    # Mark the room to be drawn
+                if ($obj->category eq 'room') {
+
+                    # Redraw the room
                     $mapWin->markObjs('room', $obj);
+                    $mapWin->doDraw();
                 }
             }
         }
@@ -8847,14 +8952,11 @@
             # We only need to redraw rooms on the currently visible regionmap and level
             foreach my $mapWin ($self->collectMapWins()) {
 
-                if (
-                    $obj->category eq 'room'
-                    && $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $obj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $obj->zPosBlocks
-                ) {
-                    # Mark the room to be drawn
+                if ($obj->category eq 'room') {
+
+                    # Redraw the room
                     $mapWin->markObjs('room', $obj);
+                    $mapWin->doDraw();
                 }
             }
         }
@@ -9061,15 +9163,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $parentObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $parentObj->zPosBlocks
-                ) {
-                    # ...mark the (parent) room to be drawn
-                    $mapWin->markObjs('room', $parentObj);
-                }
+                # Redraw the (parent) room
+                $mapWin->markObjs('room', $parentObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -9184,7 +9280,19 @@
         # Update each Automapper window
         foreach my $mapWin ($self->collectMapWins()) {
 
-            my @redrawList;
+            my (
+                $parchmentObj,
+                @redrawList,
+            );
+
+            # Update the parchment object for this region, if it exists
+            $parchmentObj = $mapWin->ivShow('parchmentHash', $oldName);
+            if ($parchmentObj) {
+
+                $mapWin->del_parchment($oldName);
+                $parchmentObj->ivPoke('name', $newName);
+                $mapWin->add_parchment($parchmentObj);
+            }
 
             # Redraw the list of regions in the treeview
             $mapWin->resetTreeView();
@@ -9201,6 +9309,7 @@
                 }
 
                 $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
 
             # The automapper windows' list of recent regions must be updated
@@ -9238,8 +9347,8 @@
 
             if ($mapWin->currentRegionmap eq $regionmapObj) {
 
-                # Redraw the region to remove the displayed counts
-                $mapWin->drawRegion();
+                # Redraw (all) regions to remove the displayed counts
+                $mapWin->redrawRegions();
             }
         }
 
@@ -9320,8 +9429,9 @@
                     $mapWin->currentRegionmap
                     && $mapWin->currentRegionmap eq $regionmapObj
                 ) {
-                    # Redraw the regionmap, which empties the drawn map
-                    $mapWin->drawRegion();
+                    # Redraw (all) regions. This region will be empty, and any connecting regions
+                    #   will have their region exits drawn correctly
+                    $mapWin->redrawRegions();
                 }
             }
         }
@@ -9398,7 +9508,7 @@
         # If the exit currently has a destination room, that room should be redrawn
         if ($exitObj->destRoom) {
 
-            push (@redrawList, $self->ivShow('modelHash', $exitObj->destRoom));
+            push (@redrawList, 'room', $self->ivShow('modelHash', $exitObj->destRoom));
         }
 
         # Connect the exit to the specified room
@@ -9831,18 +9941,9 @@
                     $mapWin->set_pairedTwinExit($pairedTwinExit);
                 }
 
-                # If this is the Automapper window which called this function...
-                if ($mapWin->session eq $session) {
-
-                    # Redraw affected rooms immediately
-                    $mapWin->doDraw(@redrawList);
-
-                } else {
-
-                    # Mark the affected rooms to be redrawn at the automapper window's earliest
-                    #   convenience
-                    $mapWin->markObjs(@redrawList);
-                }
+                # Redraw affected rooms immediately
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -9856,16 +9957,17 @@
 
     sub updateRegion {
 
-        # Can be called by anything to force any Automapper windows to redraw their current region
+        # Can be called by anything to force any Automapper windows to redraw regions (though at the
+        #   moment, only code in 'edit' windows calls this function)
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Optional arguments
-        #   $region     - The name of a regionmap. If specified, only this region is redrawn; any
-        #                   Automapper windows showing a different region are ignored. If set to
-        #                   'undef', all Automapper windows using this world model have their
-        #                   region redrawn
+        #   $region     - The name of a regionmap. If specified, only this region is redrawn in
+        #                   every Automapper window (but if it's not already drawn, even partially,
+        #                   it's not redrawn). If not specified, all drawn regions in each
+        #                   Automapper window are redrawn
         #
         # Return values
         #   'undef' on improper arguments or if the specified region doesn't exist
@@ -9896,10 +9998,16 @@
         # Update each Automapper window in turn
         foreach my $mapWin ($self->collectMapWins()) {
 
-            if (! $regionmapObj || $mapWin->currentRegionmap eq $regionmapObj) {
+            if (! $regionmapObj) {
 
-                # Redraw the window's current region
-                $mapWin->drawRegion();
+                # Redraw all drawn regions
+                $mapWin->redrawRegions();
+
+            } else {
+
+                # Redraw the specified region (if it's drawn in this automapper window). The TRUE
+                #   argument means 'don't redraw other regions'
+                $mapWin->redrawRegions($regionmapObj, TRUE);
             }
         }
 
@@ -9915,8 +10023,14 @@
         #   to be updated
         #
         # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
         #   @list       - A list to send to each Automapper window's ->markObjs, in the form
         #                   (type, object, type, object...)
+        #               - If it's an empty list, nothing is marked to be drawn; GA::Win::Map->doDraw
+        #                   is still called in each automapper window, in the expectation that
+        #                   something has already been marked to be drawn
         #
         # Return values
         #   'undef' on improper arguments
@@ -9924,16 +10038,16 @@
 
         my ($self, @list) = @_;
 
-        # Check for improper arguments
-        if (! @list) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateMaps', @_);
-        }
+        # (No improper arguments to check)
 
         foreach my $mapWin ($self->collectMapWins()) {
 
-            # Mark the objects to be drawn
-            $mapWin->markObjs(@list);
+            if (@list) {
+
+                $mapWin->markObjs(@list);
+            }
+
+            $mapWin->doDraw();
         }
 
         return 1;
@@ -10011,8 +10125,9 @@
 
         foreach my $mapWin ($self->collectMapWins()) {
 
-            # Mark the objects to be drawn
+            # Redraw the objects
             $mapWin->markObjs(@list);
+            $mapWin->doDraw();
         }
 
         return 1;
@@ -10051,8 +10166,9 @@
                     push (@list, 'label', $labelObj);
                 }
 
-                # Mark the objects to be drawn
+                # Redraw the objects
                 $mapWin->markObjs(@list);
+                $mapWin->doDraw();
             }
         }
 
@@ -10102,8 +10218,8 @@
         # Local variables
         my (
             $number, $departExitObj, $standardDir, $departRegionFlag, $arriveExitObj,
-            $arriveRegionFlag, $departRegionObj, $arriveRegionObj,
-            @list,
+            $arriveRegionFlag, $departRegionObj, $arriveRegionObj, $twinExitObj,
+            @redrawList,
         );
 
         # Check for improper arguments
@@ -10202,6 +10318,17 @@
         # If the departure and arrival rooms are the same, it's a retracing exit
         if ($departRoomObj eq $arriveRoomObj) {
 
+            # The parent room of the twin exit, if any, must be added to the redraw list now
+            if ($departExitObj->twinExit) {
+
+                $twinExitObj = $self->ivShow('exitModelHash', $departExitObj->twinExit);
+                if ($twinExitObj && $twinExitObj->parent) {
+
+                    push (@redrawList, 'room', $self->ivShow('modelHash', $twinExitObj->parent));
+                }
+            }
+
+            # Now we can convert the exit (and its twin, if any)
             $self->setRetracingExit(
                 FALSE,          # Don't update Automapper windows now
                 $departExitObj,
@@ -10220,11 +10347,16 @@
                 $arriveExitObj = $self->checkOppPrimary($departExitObj);
             }
 
-            if ($arriveExitObj) {
-
+            # Obviously, we don't use an unallocated exit
+            if (
+                $arriveExitObj
+                && (
+                    $arriveExitObj->drawMode eq 'primary'
+                    || $arriveExitObj->drawMode eq 'perm_alloc'
+                )
+            ) {
                 # An opposite exit exists
                 $arriveRegionFlag = $arriveExitObj->regionFlag;
-
                 if (
                     (
                         ($self->autocompleteExitsFlag || $forceFlag)
@@ -10358,6 +10490,16 @@
                 # If $departExitObj used to be an uncertain exit, tell the arrival room that it no
                 #   longer needs to keep track of it
                 $arriveRoomObj->ivDelete('uncertainExitHash', $departExitObj->number);
+
+                # If $arriveExitObj, an exit was found in the opposite direction to $departExitObj,
+                #   but it's unallocated. Reallocate its temporary map direction so that
+                #   $departExitObj isn't drawn over the top of $arriveExitObj
+                # NB $arriveExitObj->drawMode could also be 'temp_unalloc', in which case it's not
+                #   drawn in a way that could be underneath $departExitObj
+                if ($arriveExitObj && $arriveExitObj->drawMode eq 'temp_alloc') {
+
+                    $self->allocateCardinalDir($session, $arriveRoomObj, $arriveExitObj);
+                }
             }
         }
 
@@ -10439,23 +10581,17 @@
             # Compile a list of rooms to be marked for drawing (if $departRoomObj is not on the
             #   visible region level, it won't get drawn, so there's no danger in marking it to be
             #   drawn here)
-            @list = ('room', $arriveRoomObj);
-            if ($departRoomObj) {
+            push (@redrawList, 'room', $arriveRoomObj);
+            if ($departRoomObj && $departRoomObj ne $arriveRoomObj) {
 
-                push (@list, 'room', $departRoomObj);
+                push (@redrawList, 'room', $departRoomObj);
             }
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $arriveRoomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $arriveRoomObj->zPosBlocks
-                ) {
-                    # ...mark the room(s) to be drawn
-                    $mapWin->markObjs(@list);
-                }
+                # Redraw the rooms
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -10805,15 +10941,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap eq $roomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the room to be drawn
-                   $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -10877,13 +11007,9 @@
 
             OUTER: foreach my $mapWin ($self->collectMapWins()) {
 
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $roomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel eq $roomObj->zPosBlocks
-                ) {
-                    $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -11028,7 +11154,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
+                # Redraw the rooms
                 $mapWin->markObjs(@markList);
+                $mapWin->doDraw();
             }
         }
 
@@ -11247,15 +11375,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap eq $regionmapObj
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the room(s) to be drawn
-                    $mapWin->markObjs(@redrawList);
-                }
+                # Redraw the rooms
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -11311,15 +11433,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap eq $regionmapObj
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the room to be drawn
-                    $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -11387,6 +11503,9 @@
 
         my ($self, $updateFlag, $guildName, @roomList) = @_;
 
+        # Local variables
+        my @redrawList;
+
         # Check for improper arguments
         if (! defined $updateFlag) {
 
@@ -11420,20 +11539,16 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            OUTER: foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $roomObj (@roomList) {
 
-                INNER: foreach my $roomObj (@roomList) {
+                push (@redrawList, 'room', $roomObj);
+            }
 
-                    # If the automapper is showing the same region and level...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number == $roomObj->parent
-                        && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                    ) {
-                        # ...mark the room(s) to be drawn
-                       $mapWin->markObjs('room', $roomObj);
-                    }
-                }
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                # Redraw the rooms
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -11462,6 +11577,9 @@
         #   1 otherwise
 
         my ($self, $updateFlag, $mode, @roomList) = @_;
+
+        # Local variables
+        my @redrawList;
 
         # Check for improper arguments
         if (! defined $updateFlag || ! defined $mode) {
@@ -11494,20 +11612,16 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            OUTER: foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $roomObj (@roomList) {
 
-                INNER: foreach my $roomObj (@roomList) {
+                push (@redrawList, 'room', $roomObj);
+            }
 
-                    # If the automapper is showing the same region and level...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number == $roomObj->parent
-                        && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                    ) {
-                        # ...mark the room(s) to be drawn
-                        $mapWin->markObjs('room', $roomObj);
-                    }
-                }
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                # Redraw the rooms
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -11534,6 +11648,9 @@
 
         my ($self, $updateFlag, @roomList) = @_;
 
+        # Local variables
+        my @redrawList;
+
         # Check for improper arguments
         if (! defined $updateFlag) {
 
@@ -11559,20 +11676,16 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            OUTER: foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $roomObj (@roomList) {
 
-                INNER: foreach my $roomObj (@roomList) {
+                push (@redrawList, 'room', $roomObj);
+            }
 
-                    # If the automapper is showing the same region and level...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number == $roomObj->parent
-                        && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                    ) {
-                        # ...mark the room(s) to be drawn
-                        $mapWin->markObjs('room', $roomObj);
-                    }
-                }
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                # Redraw the rooms
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -11614,15 +11727,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number == $roomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the room to be drawn
-                    $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -11649,6 +11756,9 @@
 
         my ($self, $updateFlag, @roomList) = @_;
 
+        # Local variables
+        my @redrawList;
+
         # Check for improper arguments
         if (! defined $updateFlag) {
 
@@ -11670,20 +11780,16 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            OUTER: foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $roomObj (@roomList) {
 
-                INNER: foreach my $roomObj (@roomList) {
+                push (@redrawList, 'room', $roomObj);
+            }
 
-                    # If the automapper is showing the same region and level...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number == $roomObj->parent
-                        && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                    ) {
-                        # ...mark the room(s) to be drawn
-                        $mapWin->markObjs('room', $roomObj);
-                    }
-                }
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                # Redraw the rooms
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -12153,7 +12259,8 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                $mapWin->doDraw(@drawList);
+                $mapWin->markObjs(@drawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -12161,6 +12268,74 @@
     }
 
     # Modify model objects - exits
+
+    sub disconnectExit {
+
+        # Can be called by anything
+        # Disconnects the specified exit object from its destination room. If the exit has a twin
+        #   exit, that exit is disconnected, too
+        # This function is a quick way to call the right code (e.g. $self->abandonTwinExit,
+        #   ->abandonUncertainExit etc)
+        #
+        # Expected arguments
+        #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
+        #                   be updated now, FALSE if not (in which case, they can be updated later
+        #                   by the calling function, when it is ready)
+        #   $exitObj    - The GA::Obj::Exit to disconnect
+        #
+        # Return values
+        #   'undef' on improper arguments or if the exit isn't connected to a room
+        #   Otherwise returns the result of the call to $self->abandonTwinExit, etc)
+
+        my ($self, $updateFlag, $exitObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $updateFlag || ! defined $exitObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->disconnectExit', @_);
+        }
+
+        if ($exitObj->destRoom) {
+
+            if ($exitObj->twinExit) {
+
+                # Two-way exit
+                return $self->abandonTwinExit($updateFlag, $exitObj);
+
+            } elsif ($exitObj->retraceFlag) {
+
+                # Retracing exit
+                return $self->restoreRetracingExit($updateFlag, $exitObj);
+
+            } elsif ($exitObj->oneWayFlag) {
+
+                # One-way exit
+                return $self->abandonOneWayExit($updateFlag, $exitObj);
+
+            } elsif ($exitObj->randomType ne 'none') {
+
+                # Random exit
+                return $self->restoreRandomExit($updateFlag, $exitObj);
+
+            } else {
+
+                # Uncertain exit
+                return $self->abandonUncertainExit($updateFlag, $exitObj);
+            }
+
+        } elsif ($exitObj->randomType ne 'none') {
+
+            # Random exit
+            return $self->restoreRandomExit($updateFlag, $exitObj);
+
+        } else {
+
+            # Exit not connected
+            return undef;
+        }
+
+        return 1;
+    }
 
     sub setRegionExit {
 
@@ -12303,7 +12478,8 @@
     sub setBrokenExit {
 
         # Can be called by anything
-        # Converts an exit into a broken exit (cancelling its status as a region exit, if need be)
+        # Converts an exit into a broken exit. Region exits can't be converted into broken exits, so
+        #   the operation will fail if a calling function tries that
         #
         # Expected arguments
         #   $updateFlag - Flag set to TRUE if all Automapper windows using this world model should
@@ -12316,7 +12492,7 @@
         #                   immediately available)
         #
         # Return values
-        #   'undef' on improper arguments
+        #   'undef' on improper arguments or if $exitObj is a region exit
         #   1 otherwise
 
         my ($self, $updateFlag, $exitObj, $regionNum, $check) = @_;
@@ -12328,6 +12504,12 @@
         if (! defined $updateFlag || ! defined $exitObj || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setBrokenExit', @_);
+        }
+
+        # Region exits can't be converted into broken exits
+        if ($exitObj->regionFlag) {
+
+            return undef;
         }
 
         # Find the parent region and destination room (if any)
@@ -12348,22 +12530,10 @@
 
         # Any region paths using the exit will have to be updated
         $self->ivAdd('updatePathHash', $exitObj->number, $regionObj->name);
-        if ($exitObj->regionFlag) {
 
-            $self->ivAdd('updateBoundaryHash', $exitObj->number, $regionObj->name);
-        }
-
-        # Mark the exit as broken...
+        # Mark the exit as broken
         $exitObj->ivPoke('brokenFlag', TRUE);
         $self->checkBentExit($exitObj, $roomObj, $destRoomObj);
-
-        # ...and definitely not a region exit
-        $exitObj->ivPoke('regionFlag', FALSE);
-        $self->cancelExitTag(
-            FALSE,              # Don't update Automapper windows yet
-            $exitObj,
-            $self->ivShow('regionmapHash', $regionObj->name),
-        );
 
         if ($updateFlag) {
 
@@ -12599,11 +12769,13 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark both the exit and its destination room to be redrawn
+                # Redraw both the exit and its destination room
                 $mapWin->markObjs(
                     'exit', $exitObj,
                     'room', $roomObj,
                 );
+
+                $mapWin->doDraw();
             }
         }
 
@@ -12653,7 +12825,7 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            # Mark both rooms to be redrawn
+            # Redraw both rooms
             @redrawList = (
                 'room', $roomObj,
                 'room', $self->ivShow('modelHash', $incomingExitObj->parent),
@@ -12662,6 +12834,7 @@
             foreach my $mapWin ($self->collectMapWins()) {
 
                 $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -12759,7 +12932,7 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            # Mark both rooms to be redrawn
+            # Redraw both rooms
             @redrawList = (
                 'room', $destRoomObj,
                 'room', $self->ivShow('modelHash', $exitObj->parent),
@@ -12767,7 +12940,8 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-              $mapWin->markObjs(@redrawList);
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -12896,8 +13070,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark the objects to be drawn
+                # Redraw the exit(s)
                 $mapWin->markObjs(@list);
+                $mapWin->doDraw();
             }
         }
 
@@ -13030,8 +13205,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark the object to be drawn
+                # Redraw the exit
                 $mapWin->markObjs('exit', $exitObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -13122,8 +13298,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark the object to be drawn
+                # Redraw the exit
                 $mapWin->markObjs('exit', $exitObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -13235,11 +13412,13 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark the object to be drawn
+                # Redraw the rooms
                 $mapWin->markObjs(
                     'room', $roomObj1,
                     'room', $roomObj2,
                 );
+
+                $mapWin->doDraw();
             }
         }
 
@@ -13355,8 +13534,9 @@
                     }
                 }
 
-                # Mark the objects to be drawn
-               $mapWin->markObjs(@list);
+                # Redraw the objects
+                $mapWin->markObjs(@list);
+                $mapWin->doDraw();
             }
         }
 
@@ -13400,7 +13580,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-               $mapWin->markObjs('room', $roomObj);
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -13527,8 +13709,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark the objects to be drawn
-               $mapWin->markObjs(@redrawList);
+                # Redraw the objects
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -13584,7 +13767,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
+                # Redraw the room
                 $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -13715,8 +13900,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark the objects to be drawn
-               $mapWin->markObjs(@redrawList);
+                # Redraw the objects
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -13794,8 +13980,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark the objects to be drawn
-               $mapWin->markObjs(@redrawList);
+                # Redraw the objects
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -13915,8 +14102,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # Mark the objects to be drawn
+                # Redraw the objects
                 $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -14083,7 +14271,10 @@
         my ($self, $updateFlag, $type, @exitList) = @_;
 
         # Local variables
-        my %roomHash;
+        my (
+            @redrawList,
+            %roomHash,
+        );
 
         # Check for improper arguments
         if (! defined $updateFlag) {
@@ -14129,20 +14320,16 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            OUTER: foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $roomObj (values %roomHash) {
 
-                INNER: foreach my $roomObj (values %roomHash) {
+                push (@redrawList, 'room', $roomObj);
+            }
 
-                    # If the automapper is showing the same region and level...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number eq $roomObj->parent
-                        && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                    ) {
-                        # ...mark the room to be drawn
-                       $mapWin->markObjs('room', $roomObj);
-                    }
-                }
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                # Redraw the rooms
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -14533,6 +14720,12 @@
             if ($exitObj->twinExit) {
 
                 $twinExitObj = $self->ivShow('exitModelHash', $exitObj->twinExit);
+                # Mark the twin exit's parent room to be redrawn
+                push (
+                    @redrawList,
+                    'room',
+                    $self->ivShow('modelHash', $twinExitObj->parent),
+                );
             }
 
             if (! $self->checkRoomAlignment($session, $exitObj)) {
@@ -14563,8 +14756,7 @@
             }
         }
 
-        # Redraw the room (and its exits), as well as any connecting rooms (and their converted
-        #   exits), if allowed
+        # Redraw the room(s) (and their exits), if allowed
         if ($updateFlag) {
 
             $self->updateMaps(@redrawList);
@@ -14714,7 +14906,7 @@
         }
 
         # Mark $roomObj to be redrawn (if allowed)
-        push (@redrawList, $roomObj);
+        push (@redrawList, 'room', $roomObj);
 
         # Now, if there are any incoming 1-way exits whose ->mapDir is now the opposite of
         #   the exit we've just allocated, the incoming exit should be marked as an uncertain exit
@@ -14752,20 +14944,11 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            OUTER: foreach my $mapWin ($self->collectMapWins()) {
+            foreach my $mapWin ($self->collectMapWins()) {
 
-                INNER: foreach my $otherRoomObj (@redrawList) {
-
-                    # If the automapper is showing the same region and level...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number eq $otherRoomObj->parent
-                        && $mapWin->currentRegionmap->currentLevel == $otherRoomObj->zPosBlocks
-                    ) {
-                        # ...mark the room to be drawn
-                        $mapWin->markObjs('room', $otherRoomObj);
-                    }
-                }
+                # Redraw the rooms
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
 
                 # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
                 $mapWin->restrictWidgets();
@@ -14827,15 +15010,9 @@
 
             OUTER: foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $roomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the room to be drawn
-                   $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
 
                 # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
                 $mapWin->restrictWidgets();
@@ -14985,7 +15162,9 @@
 
             OUTER: foreach my $mapWin ($self->collectMapWins()) {
 
+                # Redraw the rooms
                 $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
 
                 # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
                 $mapWin->restrictWidgets();
@@ -15133,7 +15312,8 @@
                 $mapWin->setSelectedObj();
 
                 # Redraw the rooms, which redraws the broken exits
-               $mapWin->markObjs(@redrawList);
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
 
                 # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
                 $mapWin->restrictWidgets();
@@ -15213,15 +15393,9 @@
 
                 foreach my $mapWin ($self->collectMapWins()) {
 
-                    # If the automapper is showing the same region...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number eq $regionmapObj->number
-                        && $mapWin->currentRegionmap->currentLevel == $regionmapObj->currentLevel
-                    ) {
-                        # ...mark the exit to be drawn
-                        $mapWin->markObjs('exit', $exitObj);
-                    }
+                    # Redraw the exit
+                    $mapWin->markObjs('exit', $exitObj);
+                    $mapWin->doDraw();
                 }
             }
         }
@@ -15342,15 +15516,9 @@
 
                 foreach my $mapWin ($self->collectMapWins()) {
 
-                    # If the automapper is showing the same region...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number eq $regionmapObj->number
-                        && $mapWin->currentRegionmap->currentLevel == $regionmapObj->currentLevel
-                    ) {
-                        # ...mark the exit to be drawn
-                       $mapWin->markObjs('exit', $exitObj);
-                    }
+                    # Redraw the exit
+                    $mapWin->markObjs('exit', $exitObj);
+                    $mapWin->doDraw();
                 }
             }
         }
@@ -15398,15 +15566,9 @@
 
                 foreach my $mapWin ($self->collectMapWins()) {
 
-                    # If the automapper is showing the same region...
-                    if (
-                        $mapWin->currentRegionmap
-                        && $mapWin->currentRegionmap->number eq $roomObj->parent
-                        && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                    ) {
-                        # ...mark the exit to be drawn
-                       $mapWin->markObjs('exit', $exitObj);
-                    }
+                    # Redraw the exit
+                    $mapWin->markObjs('exit', $exitObj);
+                    $mapWin->doDraw();
                 }
             }
         }
@@ -15458,7 +15620,17 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addExitBend', @_);
         }
 
-        # If the exit has no bends, then our job is fairly easy
+        # If the exit isn't already a bent broken exit, convert it to one ($self->setBrokenExit
+        #   calls ->checkBentExit to set the exit object's ->bentFlag IV)
+        if (! $exitObj->brokenFlag) {
+
+            $self->setBrokenExit(
+                FALSE,                   # Don't update Automapper windows yet
+                $exitObj,
+            );
+        }
+
+        # If the exit currently has no bends, then our job is fairly easy
         if (! $exitObj->bendOffsetList) {
 
             $exitObj->ivPush('bendOffsetList', $clickXPos, $clickYPos);
@@ -15527,15 +15699,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $roomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the room to be drawn
-                    $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -15620,6 +15786,7 @@
         #   required to remove the corresponding bend from the twin exit, if any)
         #
         # Expected arguments
+        #   $session        - The calling function's GA::Session
         #   $updateFlag     - Flag set to TRUE if all Automapper windows using this world model
         #                       should be updated now, FALSE if not (in which case, they can be
         #                       updated later by the calling function, when it is ready)
@@ -15631,14 +15798,16 @@
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $updateFlag, $exitObj, $index, $check) = @_;
+        my ($self, $session, $updateFlag, $exitObj, $index, $check) = @_;
 
         # Local variables
         my $roomObj;
 
         # Check for improper arguments
-        if (! defined $updateFlag || ! defined $exitObj || ! defined $index || defined $check) {
-
+        if (
+            ! defined $session || ! defined $updateFlag || ! defined $exitObj || ! defined $index
+            || defined $check
+        ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->removeExitBend', @_);
         }
 
@@ -15646,6 +15815,18 @@
         #   (x, y) coordinates; e.g. if $index = 2, remove the 5th and 6th coordinates
         $index *= 2;
         $exitObj->ivSplice('bendOffsetList', $index, 2);
+
+        # Check whether the exit's destination and departure rooms are aligned. If so, we can
+        #   restore the exit to a non-broken status
+        if (! $exitObj->bendOffsetList && $self->checkRoomAlignment($session, $exitObj)) {
+
+            $self->restoreBrokenExit(
+                $session,
+                FALSE,              # Don't update automapper windows now
+                $exitObj,
+                TRUE,               # We've already called $self->checkRoomAlignment
+            );
+        }
 
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
@@ -15655,15 +15836,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->number eq $roomObj->parent
-                    && $mapWin->currentRegionmap->currentLevel == $roomObj->zPosBlocks
-                ) {
-                    # ...mark the room to be drawn
-                    $mapWin->markObjs('room', $roomObj);
-                }
+                # Redraw the room
+                $mapWin->markObjs('room', $roomObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -15785,15 +15960,9 @@
 
             foreach my $mapWin ($self->collectMapWins()) {
 
-                # If the automapper is showing the same region and level...
-                if (
-                    $mapWin->currentRegionmap
-                    && $mapWin->currentRegionmap->name eq $labelObj->region
-                    && $mapWin->currentRegionmap->currentLevel == $labelObj->level
-                ) {
-                    # ...mark the label to be drawn
-                    $mapWin->markObjs('label', $labelObj);
-                }
+                # Redraw the label
+                $mapWin->markObjs('label', $labelObj);
+                $mapWin->doDraw();
             }
         }
 
@@ -16245,6 +16414,7 @@
         # Local variables
         my (
             $hazardFlag,
+            @redrawList,
             %regionHash,
         );
 
@@ -16264,6 +16434,9 @@
         foreach my $roomObj (@roomList) {
 
             my $listRef;
+
+            # (All affected rooms may be redrawn shortly)
+            push (@redrawList, 'room', $roomObj);
 
             if ($roomObj->ivExists('roomFlagHash', $roomFlag)) {
 
@@ -16324,26 +16497,11 @@
         # Update any GA::Win::Map objects using this world model (if allowed)
         if ($updateFlag) {
 
-            # Update each Automapper window which is showing a region which contains any of the
-            #   rooms in @roomList
             foreach my $mapWin ($self->collectMapWins()) {
 
-                my (
-                    $roomListRef,
-                    @redrawList,
-                );
-
-                if (exists $regionHash{$mapWin->currentRegionmap->number}) {
-
-                    $roomListRef = $regionHash{$mapWin->currentRegionmap->number};
-                    foreach my $roomObj (@$roomListRef) {
-
-                        push (@redrawList, 'room', $roomObj);
-                    }
-
-                    # Redraw affected rooms in this region
-                    $mapWin->markObjs(@redrawList);
-                }
+                # Redraw affected rooms in this region
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -16568,7 +16726,7 @@
     sub removeRoomFlagInRegion {
 
         # Called by GA::Win::Map->removeRoomFlagsCallback
-        # Removes a room flag from every room in an existing region, and redraws the region
+        # Removes a room flag from every room in an existing region, and redraws the affected rooms
         #
         # Expected arguments
         #   $regionmapObj   - The GA::Obj::Regionmap whose counts should be reset
@@ -16581,7 +16739,10 @@
         my ($self, $regionmapObj, $roomFlag, $check) = @_;
 
         # Local variables
-        my $count;
+        my (
+            $count,
+            @redrawList,
+        );
 
         # Check for improper arguments
         if (! defined $regionmapObj || ! defined $roomFlag || defined $check) {
@@ -16590,8 +16751,6 @@
         }
 
         # Remove the room flag from any room in the specified region which uses it
-        $count = 0;
-
         foreach my $roomNum ($regionmapObj->ivValues('gridRoomHash')) {
 
             my $roomObj = $self->ivShow('modelHash', $roomNum);
@@ -16599,17 +16758,19 @@
             if ($roomObj->ivExists('roomFlagHash', $roomFlag)) {
 
                 $roomObj->ivDelete('roomFlagHash', $roomFlag);
+                push (@redrawList, 'room', $roomObj);
+
                 $count++;
             }
         }
 
-        # Update each Automapper window
-        foreach my $mapWin ($self->collectMapWins()) {
+        if ($count) {
 
-            if ($mapWin->currentRegionmap eq $regionmapObj) {
+            # Update each Automapper window (if any flags were actually removed)
+            foreach my $mapWin ($self->collectMapWins()) {
 
-                # Redraw the region to update the modified rooms
-                $mapWin->drawRegion();
+                $mapWin->markObjs(@redrawList);
+                $mapWin->doDraw();
             }
         }
 
@@ -17752,10 +17913,10 @@
         # Update every Automapper window using this world model
         foreach my $mapWin ($self->collectMapWins()) {
 
-            if ($drawFlag && $mapWin->currentRegionmap) {
+            if ($drawFlag) {
 
-                # Redraw the current region
-                $mapWin->drawRegion();
+                # Redraw all drawn regions
+                $mapWin->redrawRegions();
             }
 
             $mapWin->set_ignoreMenuUpdateFlag(TRUE);
@@ -17816,8 +17977,8 @@
 
             if ($drawFlag && $mapWin->currentRegionmap) {
 
-                # Redraw the current region
-                $mapWin->drawRegion();
+                # Redraw all drawn regions
+                $mapWin->redrawRegions();
 
             } elsif ($iv eq 'currentRoomMode') {
 
@@ -17836,6 +17997,8 @@
 
                     $mapWin->markObjs('room', $mapWin->mapObj->ghostRoom);
                 }
+
+                $mapWin->doDraw();
             }
 
             $mapWin->set_ignoreMenuUpdateFlag(TRUE);
@@ -18077,11 +18240,8 @@
         # Update every Automapper window using this world model
         foreach my $mapWin ($self->collectMapWins()) {
 
-            if ($mapWin->currentRegionmap) {
-
-                # Redraw the current region
-                $mapWin->drawRegion();
-            }
+            # Redraw all drawn regions
+            $mapWin->redrawRegions();
 
             $mapWin->set_ignoreMenuUpdateFlag(TRUE);
 
@@ -18122,11 +18282,8 @@
         # Update every Automapper window using this world model
         foreach my $mapWin ($self->collectMapWins()) {
 
-            if ($mapWin->currentRegionmap) {
-
-                # Redraw the current region
-                $mapWin->drawRegion();
-            }
+            # Redraw all drawn regions
+            $mapWin->redrawRegions();
 
             $mapWin->set_ignoreMenuUpdateFlag(TRUE);
 
@@ -18173,11 +18330,8 @@
 
             my ($menuName, $menuItem);
 
-            if ($mapWin->currentRegionmap && $mapWin->currentRegionmap eq $regionmapObj) {
-
-                # Redraw the current region
-                $mapWin->drawRegion();
-            }
+            # Redraw the specified regionmap (the TRUE argument means don't redraw other regionmaps)
+            $mapWin->redrawRegions($regionmapObj, TRUE);
 
             $mapWin->set_ignoreMenuUpdateFlag(TRUE);
 
@@ -18218,8 +18372,9 @@
 
         # Local variables
         my (
-            $regionmapObj, $oldOffsetXPos, $oldOffsetYPos, $offsetXPos, $offsetYPos, $startXPos,
-            $startYPos, $width, $height, $adjustFlag,
+            $regionmapObj, $oldOffsetXPos, $oldOffsetYPos, $oldStartXPos, $oldStartYPos,
+            $offsetXPos, $offsetYPos, $startXPos, $startYPos, $width, $height, $adjustXFlag,
+            $adjustYFlag,
         );
 
         # Check for improper arguments
@@ -18239,7 +18394,7 @@
 
         # Get the visible map's size and position. The six return values are all numbers in the
         #   range 0-1
-        ($oldOffsetXPos, $oldOffsetYPos) = $mapWin->getMapPosn();
+        ($oldOffsetXPos, $oldOffsetYPos, $oldStartXPos, $oldStartYPos) = $mapWin->getMapPosn();
 
         # Update every Automapper window using this world model
         foreach my $otherMapWin ($self->collectMapWins()) {
@@ -18257,42 +18412,65 @@
 
         # The horizontal and vertical scrollbars can reach max zoom out at different times, so deal
         #   with them separately
-        if ($width == 1 && ! $regionmapObj->maxZoomOutXFlag) {
-
+        if (
+            ! $regionmapObj->maxZoomOutXFlag
+            && (
+                ($oldOffsetXPos != 0 && $offsetXPos == 0)
+                || ($oldOffsetXPos != 1 && $offsetXPos == 1)
+            )
+        ) {
             # We have fully zoomed out, and we weren't already fully zoomed out. Inform the
             #   regionmap
             $regionmapObj->ivPoke('maxZoomOutXFlag', TRUE);
             # Remember the position of the scrollbars before the zoom
             $regionmapObj->ivPoke('scrollXPos', $oldOffsetXPos);
 
-        } elsif ($width != 1 && $regionmapObj->maxZoomOutXFlag) {
-
+        } elsif (
+            $regionmapObj->maxZoomOutXFlag
+            && (
+                ($oldOffsetXPos == 0 && $offsetXPos != 0)
+                || ($oldOffsetXPos == 1 && $offsetXPos != 1)
+            )
+        ) {
             # We have just zoomed in from a maximum zoom out. Reset the flags in the regionmap
             $regionmapObj->ivPoke('maxZoomOutXFlag', FALSE);
-            $adjustFlag = TRUE;
+            $adjustXFlag = TRUE;
         }
 
-        if ($height == 1 && ! $regionmapObj->maxZoomOutYFlag) {
-
+        if (
+            ! $regionmapObj->maxZoomOutYFlag
+            && (
+                ($oldOffsetYPos != 0 && $offsetYPos == 0)
+                || ($oldOffsetYPos != 1 && $offsetYPos == 1)
+            )
+        ) {
             $regionmapObj->ivPoke('maxZoomOutYFlag', TRUE);
             $regionmapObj->ivPoke('scrollYPos', $oldOffsetYPos);
 
-        } elsif ($height != 1 && $regionmapObj->maxZoomOutYFlag) {
-
+        } elsif (
+            $regionmapObj->maxZoomOutYFlag
+            && (
+                ($oldOffsetYPos == 0 && $offsetYPos != 0)
+                || ($oldOffsetYPos == 1 && $offsetYPos != 1)
+            )
+        ) {
             $regionmapObj->ivPoke('maxZoomOutYFlag', FALSE);
-            $adjustFlag = TRUE;
+            $adjustYFlag = TRUE;
         }
 
-        if ($adjustFlag) {
+        # In every affected Automapper window, re-centre the map at the correct position
+        foreach my $otherMapWin ($self->collectMapWins()) {
 
-            # In every affected Automapper window, re-centre the map at the correct position
-            foreach my $otherMapWin ($self->collectMapWins()) {
-
-                if (
-                    $otherMapWin->currentRegionmap
-                    && $otherMapWin->currentRegionmap eq $regionmapObj
-                ) {
+            if (
+                $otherMapWin->currentRegionmap
+                && $otherMapWin->currentRegionmap eq $regionmapObj
+            ) {
+                if ($adjustXFlag && $adjustYFlag) {
                     $otherMapWin->setMapPosn($regionmapObj->scrollXPos, $regionmapObj->scrollYPos);
+                } elsif ($adjustXFlag) {
+                    $otherMapWin->setMapPosn($regionmapObj->scrollXPos, $offsetYPos);
+                } elsif ($adjustYFlag) {
+                    $otherMapWin->setMapPosn($offsetXPos, $regionmapObj->scrollYPos);
                 }
             }
         }
@@ -18455,7 +18633,8 @@
             #   room, redraw the current room to show the counts
             if ($self->roomInteriorMode eq 'compare_count' && $mapWin->mapObj->currentRoom) {
 
-                $mapWin->doDraw('room', $mapWin->mapObj->currentRoom);
+                $mapWin->markObjs('room', $mapWin->mapObj->currentRoom);
+                $mapWin->doDraw();
             }
         }
 
@@ -18708,11 +18887,11 @@
 
             $mapWin->set_ignoreMenuUpdateFlag(FALSE);
 
-            # If interior counts are currently showing checked/checkable directions, redraw the
-            #   region to update those counts
+            # If interior counts are currently showing checked/checkable directions, redraw all
+            #   drawn regions to update those counts
             if ($self->roomInteriorMode eq 'checked_count') {
 
-                $mapWin->drawRegion();
+                $mapWin->redrawRegions();
             }
         }
 
@@ -22824,6 +23003,88 @@
         }
     }
 
+    sub compileRedrawRooms {
+
+        # Called by several functions (e.g. called by ->moveRoomsLabels)
+        # Given a list of rooms which must be redrawn, expand that list to include any connecting
+        #   rooms (which guarantees that the exits between them are redrawn correctly)
+        # Returns a list in the form that GA::Win::Map->markObjs expects
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   @roomList       - A list of room model objects (can be an empty list)
+        #
+        # Return values
+        #   An empty list on improper arguments or if @roomList is empty
+        #   Otherwise, returns the expanded list of rooms, in the form
+        #       (string, room_object, string, room_object...)
+        #   ...where 'string' is the literal string 'room', and 'room_object' is an affected room
+        #       object (GA::ModelObj::Room)
+
+        my ($self, @roomList) = @_;
+
+        # Local variables
+        my (
+            @returnList,
+            %checkHash,
+        );
+
+        # (No improper arguments to check)
+
+        # Compile a hash of specified rooms (to eliminate duplicates)
+        foreach my $roomObj (@roomList) {
+
+            $checkHash{$roomObj->number} = $roomObj;
+        }
+
+        # Add any connected rooms to that hash
+        foreach my $roomObj (@roomList) {
+
+            foreach my $exitNum (
+                # Add rooms connected by outgoing exits
+                $roomObj->ivValues('exitNumHash'),
+                # Add rooms connected by incoming one-way, uncertain (etc) exits
+                $roomObj->ivKeys('uncertainExitHash'),
+                $roomObj->ivKeys('oneWayExitHash'),
+                $roomObj->ivKeys('randomExitHash'),
+            ) {
+                my ($exitObj, $roomObj);
+
+                $exitObj = $self->ivShow('exitModelHash', $exitNum);
+                if ($exitObj) {
+
+                    $roomObj = $self->ivShow('modelHash', $exitObj->parent);
+                    if ($roomObj) {
+
+                        $checkHash{$roomObj->number} = $roomObj;
+                    }
+                }
+            }
+
+            # Also add destination rooms for any involuntary/repulse exit patterns which specify a
+            #   destination
+            foreach my $roomNum ($roomObj->ivKeys('invRepExitHash')) {
+
+                my $roomObj = $self->ivShow('modelHash', $roomNum);
+                if ($roomObj) {
+
+                    $checkHash{$roomObj->number} = $roomObj;
+                }
+            }
+        }
+
+        # Compose a list in the form (string, object, string, object...)
+        foreach my $roomObj (values %checkHash) {
+
+            push (@returnList, 'room', $roomObj);
+        }
+
+        # Operation complete
+        return @returnList;
+    }
+
     sub findObjNumber {
 
         # In a room filled with 'three hairy orcs, two ugly orcs and a dwarf', with corresponding
@@ -23874,6 +24135,38 @@
         return 1;
     }
 
+    sub set_preDrawMinRooms {
+
+        my ($self, $number, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_preDrawMinRooms', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('preDrawMinRooms', $number);
+
+        return 1;
+    }
+
+    sub set_queueDrawMaxObjs {
+
+        my ($self, $number, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_queueDrawMaxObjs', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('queueDrawMaxObjs', $number);
+
+        return 1;
+    }
+
     sub set_quickPaintMultiFlag {
 
         my ($self, $flag, $check) = @_;
@@ -23892,6 +24185,22 @@
         } else {
             $self->ivPoke('quickPaintMultiFlag', FALSE);
         }
+
+        return 1;
+    }
+
+    sub set_retainDrawMinRooms {
+
+        my ($self, $number, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_retainDrawMinRooms', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('retainDrawMinRooms', $number);
 
         return 1;
     }
@@ -24072,6 +24381,13 @@
         { $_[0]->{reverseRegionListFlag} }
     sub firstRegion
         { $_[0]->{firstRegion} }
+
+    sub preDrawMinRooms
+        { $_[0]->{preDrawMinRooms} }
+    sub retainDrawMinRooms
+        { $_[0]->{retainDrawMinRooms} }
+    sub queueDrawMaxObjs
+        { $_[0]->{queueDrawMaxObjs} }
 
     sub knownCharHash
         { my $self = shift; return %{$self->{knownCharHash}}; }
@@ -24530,6 +24846,14 @@
         { $_[0]->{labelRatio} }
     sub roomTextRatio
         { $_[0]->{roomTextRatio} }
+    sub fixedRoomTagFlag
+        { $_[0]->{fixedRoomTagFlag} }
+    sub fixedRoomGuildFlag
+        { $_[0]->{fixedRoomGuildFlag} }
+    sub fixedExitTagFlag
+        { $_[0]->{fixedExitTagFlag} }
+    sub fixedLabelFlag
+        { $_[0]->{fixedLabelFlag} }
 }
 
 # Package must return a true value

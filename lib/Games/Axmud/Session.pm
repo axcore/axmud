@@ -510,12 +510,23 @@
             #   ->macroHash, but in order of creation, e.g. (2, 3, 5, 10, 19)
             # This makes sure that macros fire in a predictable order
             macroOrderList              => [],
-            # Registry hash of active timer interface objects, in the form
-            #   $timerHash{number} = next_fire_time
+            # Registry hash of active timer interface objects which have a numeric stimulus, e.g.
+            #   60 for a timer that fires every 60 seconds
+            # Hash in the form
+            #   $timerNumHash{number} = next_fire_time
             # ...where next_fire_time matches $self->sessionTime
-            timerHash                   => {},
+            timerNumHash                => {},
+            # Registry hash of active timer interface objects which have a clock time stimulus in
+            #   the form HH::MM (timers that fire once a day) or 99:MM (timers that fire at the same
+            #   time every hour)
+            # Hash in the form
+            #   $timerClockHash{number} = clock_time
+            timerClockHash              => {},
+            # Timers with clock time stimuluses are checked once a minute. This IV records the time
+            #   of the last check (and is set to a value in the form HH:MM)
+            timerLastClock              => undef,
             # Registry list of active timer interface numbers. Contains all the keys in
-            #   ->timerHash, but in order of creation, e.g. (2, 3, 5, 10, 19)
+            #   ->timerNumHash and ->timerClockHash, but in order of creation, e.g. (2, 3, 10, 19)
             # This makes sure that timers fire in a predictable order
             timerOrderList              => [],
             # Registry hash of active hook interface objects, in the form
@@ -633,6 +644,7 @@
             chatTask                    => undef,   # Only stored the 'lead' Chat task
             compassTask                 => undef,
             conditionTask               => undef,
+            connectionsTask             => undef,
             divertTask                  => undef,
             inventoryTask               => undef,
             launchTask                  => undef,
@@ -3903,6 +3915,16 @@
                         } elsif (defined $axmud::CLIENT->ivFind('charSetList', 'utf8')) {
                             $worldObj->ivPoke('worldCharSet', 'utf8');
                         }
+
+                    # Do the equivalent for Chinese-language worlds
+                    } elsif (lc($basicObj->language) eq 'chinese') {
+
+                        # Use 'euc-cn', if available, otherwise use 'MacChineseSimp', if available
+                        if (defined $axmud::CLIENT->ivFind('charSetList', 'euc-cn')) {
+                            $worldObj->ivPoke('worldCharSet', 'euc-cn');
+                        } elsif (defined $axmud::CLIENT->ivFind('charSetList', 'MacChineseSimp')) {
+                            $worldObj->ivPoke('worldCharSet', 'MacChineseSimp');
+                        }
                     }
                 }
             }
@@ -5425,49 +5447,62 @@
 
         } elsif ($interfaceObj->category eq 'timer') {
 
-            # Get the timer's initial delay, in seconds (might be 0)
-            $initialDelay = $interfaceObj->ivShow('attribHash', 'initial_delay');
+            if (index($interfaceObj->stimulus, ':') == -1) {
 
-            # $interfaceObj->stimulus is a time interval, in seconds. The timer loop only fires once
-            #   every tenth of a second, so if the interval isn't a multiple of a tenth of a second
-            #   ('1' or '5' or '0.2'), it is automatically rounded
-            if (! defined $self->sessionTime) {
+                # Timer whose stimulus is numeric
 
-                # The timer loop hasn't spun yet. The timer will start counting after the timer loop
-                #   starts, at which time $self->sessionTime will be set to 0
-                $delay = $initialDelay;
+                # Get the timer's initial delay, in seconds (might be 0)
+                $initialDelay = $interfaceObj->ivShow('attribHash', 'initial_delay');
 
-            } elsif ($initialDelay) {
+                # $interfaceObj->stimulus is a time interval, in seconds. The timer loop only fires
+                #   once every tenth of a second, so if the interval isn't a multiple of a tenth of
+                #   a second ('1' or '5' or '0.2'), it is automatically rounded
+                if (! defined $self->sessionTime) {
 
-                # The timer fires for the first time after its initial delay, and thereafter after
-                #   the delay stored in the 'stimulus' attribute
-                $delay = $initialDelay + $self->sessionTime;
+                    # The timer loop hasn't spun yet. The timer will start counting after the timer
+                    #   loop starts, at which time $self->sessionTime will be set to 0
+                    $delay = $initialDelay;
 
-            } elsif ($interfaceObj->ivShow('attribHash', 'random_delay')) {
+                } elsif ($initialDelay) {
 
-                # The timer fires for the first time after a random delay between 0 (or the value
-                #   set by the 'random_min' attribute), and $interfaceObj->stimulus
-                $minDelay = $interfaceObj->ivShow('attribHash', 'random_min');
-                # Check: if the minimum random delay is greater than $interfaceObj->stimulus,
-                #   ignore it
-                if ($minDelay >= $interfaceObj->stimulus) {
+                    # The timer fires for the first time after its initial delay, and thereafter
+                    #   after the delay stored in the 'stimulus' attribute
+                    $delay = $initialDelay + $self->sessionTime;
 
-                    $minDelay = 0;
+                } elsif ($interfaceObj->ivShow('attribHash', 'random_delay')) {
+
+                    # The timer fires for the first time after a random delay between 0 (or the
+                    #   value set by the 'random_min' attribute), and $interfaceObj->stimulus
+                    $minDelay = $interfaceObj->ivShow('attribHash', 'random_min');
+                    # Check: if the minimum random delay is greater than $interfaceObj->stimulus,
+                    #   ignore it
+                    if ($minDelay >= $interfaceObj->stimulus) {
+
+                        $minDelay = 0;
+                    }
+
+                    $randDelay = rand($interfaceObj->stimulus - $minDelay) + $minDelay;
+                    $delay = $self->sessionTime + $randDelay;
+
+                } else {
+
+                    # The timer fires for the first time after the delay stored in the 'stimulus'
+                    #   attribute ((even if the 'random_delay' attribute is set)
+                    $delay = $self->sessionTime + $interfaceObj->stimulus;
                 }
 
-                $randDelay = rand($interfaceObj->stimulus - $minDelay) + $minDelay;
-                $delay = $self->sessionTime + $randDelay;
+                # Set the time at which the timer will fire for the first time by adding an entry to
+                #   the active timer registry
+                $self->ivAdd('timerNumHash', $interfaceObj->number, $delay);
 
             } else {
 
-                # The timer fires for the first time after the delay stored in the 'stimulus'
-                #   attribute ((even if the 'random_delay' attribute is set)
-                $delay = $self->sessionTime + $interfaceObj->stimulus;
-            }
+                # Timer whose stimulus is a clock time in the form HH::MM or 99::MM
 
-            # Set the time at which the timer will fire for the first time by adding an entry to the
-            #   active timer registry
-            $self->ivAdd('timerHash', $interfaceObj->number, $delay);
+                # Any of the timer's delay attributes, if specified, are ignored; so we can just
+                #   update IVs
+                $self->ivAdd('timerClockHash', $interfaceObj->number, $interfaceObj->stimulus);
+            }
 
             # The parallel registry, $self->timerOrderList, contains all the keys of
             #   $self->timerHash but in ascending order (so that timers always fire in a predictable
@@ -5565,8 +5600,10 @@
 
         } elsif ($interfaceObj->category eq 'timer') {
 
-            # Remove the entry in the main active timer registry
-            $self->ivDelete('timerHash', $interfaceObj->number);
+            # Remove the entry in the main active timer registry (the timer will exist in one or the
+            #   other)
+            $self->ivDelete('timerNumHash', $interfaceObj->number);
+            $self->ivDelete('timerClockHash', $interfaceObj->number);
             # Remove the corresponding entry in the ordered registry
             $index = $self->ivFind('timerOrderList', $interfaceObj->number);
             $self->ivSplice('timerOrderList', $index, 1);
@@ -6234,16 +6271,17 @@
         OUTER: foreach my $number ($self->triggerOrderList) {
 
             my (
-                $obj, $regex, $paneName, $substitution, $result, $compareString, $ignoreFlag,
-                $globalFlag, $loopCount, $thisObj, $startOffset, $stopOffset, $lengthChange,
-                $grpStringListRef, $matchMinusListRef, $matchPlusListRef, $instruction,
-                $modInstruct, $perlFlag, $class, $method, $mode, $start, $stop,
+                $obj, $regex, $noResponseFlag, $paneName, $substitution, $result, $compareString,
+                $ignoreFlag, $globalFlag, $loopCount, $thisObj, $startOffset, $stopOffset,
+                $lengthChange, $grpStringListRef, $matchMinusListRef, $matchPlusListRef,
+                $instruction, $modInstruct, $perlFlag, $class, $method, $mode, $start, $stop,
                 @matchMinusList, @matchPlusList,
                 %oldTagHash,
             );
 
             $obj = $self->ivShow('interfaceNumHash', $number);
             $regex = $obj->stimulus;
+            $noResponseFlag = $obj->ivShow('attribHash', 'ignore_response');
 
             # If the trigger is disabled, don't fire it
             # If the trigger is in the middle of its cooldown period, don't fire it
@@ -6288,7 +6326,9 @@
                 #   in a substitution to modify the received line of text. Checking against other
                 #   triggers continues (if allowed, in which case any of them that are rewriter
                 #   triggers can also modify the line of text)
-                if ($obj->ivShow('attribHash', 'rewriter')) {
+                # (If the 'ignore_response' attribute is set, we ignore the 'rewriter' attribute;
+                #   a trigger can't be both)
+                if ($obj->ivShow('attribHash', 'rewriter') && ! $noResponseFlag) {
 
                     # An indendent rewriter trigger
                     $substitution = $obj->response;
@@ -6360,13 +6400,17 @@
                             $substitution = "\"$substitution\"";
 
                             if ($ignoreFlag) {
-                                $result =~ s/$regex/$substitution/iee;
-                            } else {
-                                $result =~ s/$regex/$substitution/ee;
-                            }
 
-                            @matchMinusList = @-;
-                            @matchPlusList = @+;
+                                $result =~ s/$regex/$substitution/iee;
+                                @matchMinusList = @-;
+                                @matchPlusList = @+;
+
+                            } else {
+
+                                $result =~ s/$regex/$substitution/ee;
+                                @matchMinusList = @-;
+                                @matchPlusList = @+;
+                            }
 
                             # We need to modify the hash of Axmud colour/style tags, %tagHash
                             #
@@ -6434,28 +6478,6 @@
                     # An independent trigger (not a rewriter). Perform the pattern match
                     if ($obj->ivShow('attribHash', 'ignore_case')) {
 
-#                        @grpStringList = ($modText =~ m/$regex/i);
-#                        if (@grpStringList) {
-#
-#                            $result = TRUE;
-#
-#                            # Group substring data is local to this code block, so store it now
-#                            @matchMinusList = @-;
-#                            @matchPlusList = @+;
-#
-#                            # If the regex contained groups, @grpStringList contains the matching
-#                            #   substrings. If it didn't, @grpStringList contains a single value, 1
-#                            if ((scalar @matchMinusList) == 1) {
-#
-#                                # Remove the single value
-#                                @grpStringList = ();
-#                            }
-#
-#                            # (Index 0 should contain the whole matched string, index 1 should be
-#                            #   the first matched substring, corresponding to $1, etc)
-#                            unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
-#                        }
-
                         # Test the regex against the whole line, including any previously-displayed
                         #   portion, but ignore a match if it applies only to the previously-
                         #   displayed portion
@@ -6478,28 +6500,6 @@
 
                     } else {
 
-#                        @grpStringList = ($modText =~ m/$regex/);
-#                        if (@grpStringList) {
-#
-#                            $result = TRUE;
-#
-#                            # Group substring data is local to this code block, so store it now
-#                            @matchMinusList = @-;
-#                            @matchPlusList = @+;
-#
-#                            # If the regex contained groups, @grpStringList contains the matching
-#                            #   substrings. If it didn't, @grpStringList contains a single value, 1
-#                            if ((scalar @matchMinusList) == 1) {
-#
-#                                # Remove the single value
-#                                @grpStringList = ();
-#                            }
-#
-#                            # (Index 0 should contain the whole matched string, index 1 should be
-#                            #   the first matched substring, corresponding to $1, etc)
-#                            unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
-#                        }
-
                         # The FALSE argument means to do a case-insensitive match
                         (
                             $result, $ignoreFlag, $grpStringListRef, $matchMinusListRef,
@@ -6518,7 +6518,7 @@
                         }
                     }
 
-                    if ($result) {
+                    if ($result && ! $noResponseFlag) {
 
                         # The trigger has (potentially) fired
                         $instruction = $obj->response;
@@ -6597,6 +6597,27 @@
                                 );
                             }
                         }
+
+                    } elsif ($result && $noResponseFlag) {
+
+                        # The trigger has fired, but we ignore the trigger response. Just set
+                        #   $thisObj so that any trigger style can be applied
+                        $thisObj = $obj;
+
+                        if ($thisObj->ivShow('attribHash', 'temporary')) {
+
+                            # A temporary trigger, which must be deleted when it first fires
+                            push (@deleteList, $thisObj);
+
+                        } elsif ($thisObj->ivShow('attribHash', 'cooldown')) {
+
+                            # Apply the cooldown period
+                            $self->ivAdd(
+                                'triggerCooldownHash',
+                                $thisObj->number,
+                                $self->sessionTime + $thisObj->ivShow('attribHash', 'cooldown'),
+                            );
+                        }
                     }
                 }
 
@@ -6607,28 +6628,6 @@
                 #   0, ignore the attribute (dependent triggers can't be used with styles)
                 # Perform the pattern match
                 if ($obj->ivShow('attribHash', 'ignore_case')) {
-
-#                    @grpStringList = ($modText =~ m/$regex/i);
-#                    if (@grpStringList) {
-#
-#                        $result = TRUE;
-#
-#                        # Group substring data is local to this code block, so store it now
-#                        @matchMinusList = @-;
-#                        @matchPlusList = @+;
-#
-#                        # If the regex contained groups, @grpStringList contains the matching
-#                        #   substrings. If it didn't, @grpStringList contains a single value, 1
-#                        if ((scalar @matchMinusList) == 1) {
-#
-#                            # Remove the single value
-#                            @grpStringList = ();
-#                        }
-#
-#                        # (Index 0 should contain the whole matched string, index 1 should be the
-#                        #   first matched substring, corresponding to $1, etc)
-#                        unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
-#                    }
 
                     # The TRUE argument means to do a case-insensitive match
                     ($result, $ignoreFlag, $grpStringListRef, $matchMinusListRef, $matchPlusListRef)
@@ -6646,28 +6645,6 @@
                     }
 
                 } else {
-
-#                    @grpStringList = ($modText =~ m/$regex/);
-#                    if (@grpStringList) {
-#
-#                        $result = TRUE;
-#
-#                        # Group substring data is local to this code block, so store it now
-#                        @matchMinusList = @-;
-#                        @matchPlusList = @+;
-#
-#                        # If the regex contained groups, @grpStringList contains the matching
-#                        #   substrings. If it didn't, @grpStringList contains a single value, 1
-#                        if ((scalar @matchMinusList) == 1) {
-#
-#                            # Remove the single value
-#                            @grpStringList = ();
-#                        }
-#
-#                        # (Index 0 should contain the whole matched string, index 1 should be the
-#                        #   first matched substring, corresponding to $1, etc)
-#                        unshift (@grpStringList, substr($modText, $-[0], $+[0] - $-[0]));
-#                    }
 
                     # The FALSE argument means to do a case-insensitive match
                     ($result, $ignoreFlag, $grpStringListRef, $matchMinusListRef, $matchPlusListRef)
@@ -6701,27 +6678,30 @@
                         );
                     }
 
-                    $class = $obj->callClass;
-                    $method = $obj->callMethod;
+                    if (! $noResponseFlag) {
 
-                    # As soon as the received line of text has been displayed,
-                    #   $self->processLineSegment can call $class->$method. Store the arguments to
-                    #   be used in the call until then
-                    push (
-                        @dependentCallList,
-                        [
-                            $class,
-                            $method,
-                            $self,
-                            $number,
-                            $text,
-                            $stripText,
-                            $modText,
-                            $grpStringListRef,
-                            $matchMinusListRef,
-                            $matchPlusListRef,
-                        ],
-                    );
+                        $class = $obj->callClass;
+                        $method = $obj->callMethod;
+
+                        # As soon as the received line of text has been displayed,
+                        #   $self->processLineSegment can call $class->$method. Store the arguments
+                        #   to be used in the call until then
+                        push (
+                            @dependentCallList,
+                            [
+                                $class,
+                                $method,
+                                $self,
+                                $number,
+                                $text,
+                                $stripText,
+                                $modText,
+                                $grpStringListRef,
+                                $matchMinusListRef,
+                                $matchPlusListRef,
+                            ],
+                        );
+                    }
                  }
             }
 
@@ -7486,7 +7466,7 @@
         #   a keypress
         #
         # Expected arguments
-        #   $keycode    - The standard keycode, e.g. 'F5' (or keycode string, e.g. 'ctrl shift F5')
+        #   $keycode    - The standard keycode, e.g. 'f5' (or keycode string, e.g. 'ctrl shift f5')
         #                   representing the keypress
         #
         # Return values
@@ -7609,8 +7589,8 @@
 
         # Local variables
         my (
-            $time, $fireFlag,
-            %hash,
+            $sessionTime, $clock, $clockMins, $clockFlag, $fireFlag,
+            %numHash, %clockHash,
         );
 
         # Check for improper arguments
@@ -7620,16 +7600,34 @@
         }
 
         # Import IVs for quick lookup
-        $time = $self->sessionTime;
-        %hash = $self->timerHash;
+        $sessionTime = $self->sessionTime;
+        %numHash = $self->timerNumHash;
+        %clockHash = $self->timerClockHash;
+
+        # Get the current clock time
+        $clock = substr($axmud::CLIENT->localClock(), 0, 5);        # Clock time in form HH:MM
+        $clockMins = '99:' . substr($clock, 3);                     # Hourly time in form 99:MM
+        # Timers who stimulus is a clock time are checked once a minute. If it's time to check them
+        #   again, set a flag
+        if (! defined $self->timerLastClock || $self->timerLastClock ne $clock) {
+
+            $clockFlag = TRUE;
+            # The next check happens a minute from now (give or take)
+            $self->ivPoke('timerLastClock', $clock);
+        }
 
         # Check every active timer interface, in the correct order, to see if it is due to fire
         $fireFlag = FALSE;
         OUTER: foreach my $number ($self->timerOrderList) {
 
-            my ($obj, $class, $method, $count, $minDelay, $randDelay);
+            my ($thisTime, $thisClock, $obj, $class, $method, $count, $minDelay, $randDelay);
 
-            if ($hash{$number} < $time) {
+            $thisTime = $numHash{$number};
+            $thisClock = $clockHash{$number};
+
+            if (defined $thisTime && $thisTime < $sessionTime) {
+
+                # Timer whose stimulus is numeric
 
                 # The timer is due to fire. Check the number is valid
                 if (! $self->ivExists('interfaceNumHash', $number)) {
@@ -7652,7 +7650,7 @@
                 if ($obj->ivShow('attribHash', 'wait_login') && ! $self->loginFlag) {
 
                     # Don't check again for at least another second
-                    $self->ivAdd('timerHash', $number, $self->sessionTime + 1);
+                    $self->ivAdd('timerNumHash', $number, $self->sessionTime + 1);
 
                     next OUTER;
                 }
@@ -7663,8 +7661,8 @@
 
                     # Store the times so they're available to a timer response that starts with '/'
                     #   (meaning it's a Perl mini-programme)
-                    $self->ivAdd('perlCmdDataHash', '_timerExpect', $time);
-                    $self->ivAdd('perlCmdDataHash', '_timerTime', $self->sessionTime);
+                    $self->ivAdd('perlCmdDataHash', '_timerExpect', $thisTime);
+                    $self->ivAdd('perlCmdDataHash', '_timerTime', $sessionTime);
                     # (Also store the interface which fired)
                     $self->ivAdd('perlCmdDataHash', '_interface', $number);
 
@@ -7679,7 +7677,7 @@
                         $class = $obj->callClass;
                         $method = $obj->callMethod;
 
-                        $class->$method($self, $obj->number, $time, $self->sessionTime);
+                        $class->$method($self, $obj->number, $thisTime, $sessionTime);
                     }
 
                     # Set the timer's repeat count
@@ -7703,7 +7701,11 @@
 
                             # Set the time at which the timer will fire again (if it is not now
                             #   disabled) by replacing the entry in the active timer registry
-                            $self->ivAdd('timerHash', $obj->number, ($time + $obj->stimulus));
+                            $self->ivAdd(
+                                'timerNumHash',
+                                $obj->number,
+                                ($sessionTime + $obj->stimulus),
+                            );
                         }
 
                     } else {
@@ -7733,12 +7735,89 @@
                             }
 
                             $randDelay = rand($obj->stimulus - $minDelay) + $minDelay;
-                            $self->ivAdd('timerHash', $obj->number, ($time + int($randDelay)));
+                            $self->ivAdd(
+                                'timerNumHash',
+                                $obj->number,
+                                ($sessionTime + int($randDelay)),
+                            );
 
                         } else {
 
-                            $self->ivAdd('timerHash', $obj->number, ($time + $obj->stimulus));
+                            $self->ivAdd(
+                                'timerNumHash',
+                                $obj->number,
+                                ($sessionTime + $obj->stimulus),
+                            );
                         }
+                    }
+
+                    # The times are no longer needed
+                    $self->ivAdd('perlCmdDataHash', '_timerExpect', undef);
+                    $self->ivAdd('perlCmdDataHash', '_timerTime', undef);
+                    $self->ivAdd('perlCmdDataHash', '_interface', undef);
+                }
+
+            } elsif (
+                $clockFlag
+                && defined $thisClock && ($thisClock eq $clock || $thisClock eq $clockMins)
+            ) {
+                # Timer whose stimulus is a clock time in the form HH::MM or 99::MM
+
+                # The timer is due to fire. Check the number is valid
+                if (! $self->ivExists('interfaceNumHash', $number)) {
+
+                    $self->writeError(
+                        'Invalid active timer interface #' . $number,
+                        $self->_objClass . '->checkTimers',
+                    );
+
+                    # Avoid multiple error messages by stopping checking timers now
+                    last OUTER;
+
+                } else {
+
+                    $obj = $self->ivShow('interfaceNumHash', $number);
+                }
+
+                # If the timer is disabled, or if the timer is waiting for the character to log in,
+                #   do nothing
+                if ($obj->ivShow('attribHash', 'wait_login') && ! $self->loginFlag) {
+
+                    # Don't check again for at least another second
+                    $self->ivAdd('timerNumHash', $number, $self->sessionTime + 1);
+
+                    next OUTER;
+                }
+
+                if ($obj->enabledFlag) {
+
+                    $fireFlag = TRUE;
+
+                    # Store the times so they're available to a timer response that starts with '/'
+                    #   (meaning it's a Perl mini-programme)
+                    $self->ivAdd('perlCmdDataHash', '_timerExpect', $thisClock);
+                    $self->ivAdd('perlCmdDataHash', '_timerTime', $sessionTime);
+                    # (Also store the interface which fired)
+                    $self->ivAdd('perlCmdDataHash', '_interface', $number);
+
+                    # For an independent timer, perform the instruction in ->response
+                    if ($obj->indepFlag) {
+
+                        $self->doInstruct($obj->response);
+
+                    # For a dependent timer, make a function call
+                    } else {
+
+                        $class = $obj->callClass;
+                        $method = $obj->callMethod;
+
+                        $class->$method($self, $obj->number, $thisClock, $sessionTime);
+                    }
+
+                    # If the 'temporary' attribute is TRUE, delete the timer
+                    if ($obj->ivShow('attribHash', 'temporary')) {
+
+                        $self->removeInterface($obj);
                     }
 
                     # The times are no longer needed
@@ -7748,7 +7827,6 @@
                 }
             }
         }
-
 
         return $fireFlag;
     }
@@ -9489,8 +9567,9 @@
             $self->worldModelObj->updateModelBuffers();
         }
 
-        # If model room objects have been added, moved or deleted since the last spin of the timer
-        #   loop, check the regionmap IVs which recorded the highest and lowest occupied levels
+        # If room model objects and/or map labels have been added, moved or deleted since the last
+        #   spin of the timer loop, check the regionmap IVs which recorded the highest and lowest
+        #   occupied levels
         if ($self->worldModelObj->checkLevelsHash) {
 
             $self->worldModelObj->updateRegionLevels();
@@ -11933,7 +12012,9 @@
                     $self->ivEmpty('aliasOrderList');
                     $self->ivEmpty('macroHash');
                     $self->ivEmpty('macroOrderList');
-                    $self->ivEmpty('timerHash');
+                    $self->ivEmpty('timerNumHash');
+                    $self->ivEmpty('timerClockHash');
+                    $self->ivUndef('timerLastClock');
                     $self->ivEmpty('timerOrderList');
                     $self->ivEmpty('hookHash');
                     $self->ivEmpty('hookOrderList');
@@ -12194,7 +12275,9 @@
             $self->ivEmpty('aliasOrderList');
             $self->ivEmpty('macroHash');
             $self->ivEmpty('macroOrderList');
-            $self->ivEmpty('timerHash');
+            $self->ivEmpty('timerNumHash');
+            $self->ivEmpty('timerClockHash');
+            $self->ivUndef('timerLastClock');
             $self->ivEmpty('timerOrderList');
             $self->ivEmpty('hookHash');
             $self->ivEmpty('hookOrderList');
@@ -16292,7 +16375,7 @@
             # xterm titlebar escape sequences in the form 'ESC]0;xxxBEL'
 
             # Update IVs
-            $self->ivPoke('xTermTitleFlag', $data);
+            $self->ivPoke('xTermTitle', $data);
 
             if ($axmud::CLIENT->xTermTitleFlag) {
 
@@ -18639,31 +18722,23 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->extractClickLinks', @_);
         }
 
-        # (Don't bother checking for URLs, if there is no command set to open an external web
-        #   browser)
-        if ($axmud::CLIENT->browserCmd) {
+        # (Check email first, otherwise gmail.com is detected and fred@gmail.com isn't)
+        # (Don't bother checking for email addresses, if there is no command set to open an external
+        #   email application)
+        if ($axmud::CLIENT->emailCmd) {
 
-            # Import the regexes for recognising URLs
-            if ($axmud::CLIENT->shortUrlFlag) {
+            # Import the regexes for recognising email addresses
+            $emailRegex = $axmud::CLIENT->constEmailRegex;
 
-                $regex = '(' . $axmud::CLIENT->constUrlRegex . '|'
-                            . $axmud::CLIENT->constShortUrlRegex . ')';
+            while ($stripText =~ m/($emailRegex)/gi) {
 
-            } else {
-
-                $regex = $axmud::CLIENT->constUrlRegex;
-            }
-
-            while (
-                $stripText =~ m/($regex)/gi
-            ) {
                 my ($match, $start, $stop, $listRef);
 
                 $match = $1;
                 $start = length ($`);
                 $stop = $start + length($&);
 
-                # Ignore URLS which already occur between two 'link' tags
+                # Ignore email addresses which already occurs between two 'link' tags
                 if ($self->checkLinkTags($tagHashRef, $start, $stop)) {
 
                     if (exists $$tagHashRef{$start}) {
@@ -18689,22 +18764,31 @@
             }
         }
 
-        # (Don't bother checking for email addresses, if there is no command set to open an external
-        #   email application)
-        if ($axmud::CLIENT->emailCmd) {
+        # (Don't bother checking for URLs, if there is no command set to open an external web
+        #   browser)
+        if ($axmud::CLIENT->browserCmd) {
 
-            # Import the regexes for recognising email addresses
-            $emailRegex = $axmud::CLIENT->constEmailRegex;
+            # Import the regexes for recognising URLs
+            if ($axmud::CLIENT->shortUrlFlag) {
 
-            while ($stripText =~ m/($emailRegex)/gi) {
+                $regex = '(' . $axmud::CLIENT->constUrlRegex . '|'
+                            . $axmud::CLIENT->constShortUrlRegex . ')';
 
+            } else {
+
+                $regex = $axmud::CLIENT->constUrlRegex;
+            }
+
+            while (
+                $stripText =~ m/($regex)/gi
+            ) {
                 my ($match, $start, $stop, $listRef);
 
                 $match = $1;
                 $start = length ($`);
                 $stop = $start + length($&);
 
-                # Ignore email addresses which already occurs between two 'link' tags
+                # Ignore URLS which already occur between two 'link' tags
                 if ($self->checkLinkTags($tagHashRef, $start, $stop)) {
 
                     if (exists $$tagHashRef{$start}) {
@@ -18778,12 +18862,12 @@
 
             my $listRef = $$tagHashRef{$offset};
 
-            if (grep m/link/, @$listRef) {
+            if (grep m/^link$/, @$listRef) {
 
                 push (@onOffsetList, $offset);
             }
 
-            if (grep m/link_off/, @$listRef) {
+            if (grep m/^link_off$/, @$listRef) {
 
                 push (@offOffsetList, $offset);
             }
@@ -18847,7 +18931,7 @@
                         # Wait for the corresponding 'link_off'. If the previously found tag was
                         #   also 'link', ignore the new tag (two consecutive 'link' tags shouldn't
                         #   happen, but just in case, that's what we'll do)
-                        if (! defined $prevFlag) {
+                        if (! $prevFlag) {
 
                             $thisStart = $thisOffset;
                             $thisStop = undef;
@@ -18999,6 +19083,16 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->processPrompt', @_);
         }
 
+        # Special check for IRE worlds, which send an EOR sequence before any text, which is picked
+        #   up by $self->optCallback, which then calls this function
+        # Because no text has been received, $self->displayBufferHash is empty, and there's nothing
+        #   for this function to do
+        if (! defined $self->displayBufferLast) {
+
+            return 1;
+        }
+
+        # Otherwise, process the prompt
         $self->ivIncrement('promptCount');
         # We'll need the current line of text, after any non-text tokens have been stripped from it,
         #    so get the display buffer object that stores it
@@ -21942,6 +22036,11 @@
                 $self->mxpDebug($origToken, 'Internal error while processing link', 2913);
 
                 return @emptyList;
+
+            } else {
+
+                # Take account of any lines removed from the textview's Gtk2::TextBuffer
+                $line += $textViewObj->nextDeleteLine;
             }
 
             # The position of the link will be the textview's current insert position, plus the
@@ -22178,6 +22277,11 @@
                 $self->mxpDebug($origToken, 'Internal error while processing send', 3012);
 
                 return @emptyList;
+
+            } else {
+
+                # Take account of any lines removed from the textview's Gtk2::TextBuffer
+                $line += $textViewObj->nextDeleteLine;
             }
 
             # The position of the link will be the textview's current insert position, plus the
@@ -34549,6 +34653,14 @@
         #                       which case a $string beginning with '/' should be treated as a world
         #                       command, not another Perl programme (recursive calling of
         #                       ->doInstruct is not allowed)
+        #   $preText        - Set when called by GA::Strip::Entry->setEntrySignals, and when the
+        #                       user has specified some text that should be added to the beginning
+        #                       of a world command; 'undef' otherwise. Ignored it $string is not a
+        #                       world command, or if it is an empty string
+        #   $postText       - Set when called by GA::Strip::Entry->setEntrySignals, and when the
+        #                       user has specified some text that should be added to the beginning
+        #                       of a world command; 'undef' otherwise. Ignored if $string is not a
+        #                       world command, or if it is an empty string
         #
         # Return values
         #   An empty list on improper arguments, if removing the instruction sigil at the start of
@@ -34562,7 +34674,7 @@
         #       'world' (for both world commands and forced world commands), 'echo', 'perl',
         #       'script', 'multi', 'speed' or 'bypass'
 
-        my ($self, $string, $noPerlFlag, $check) = @_;
+        my ($self, $string, $noPerlFlag, $preText, $postText, $check) = @_;
 
         # Local variables
         my (
@@ -34801,7 +34913,7 @@
         } else {
 
             # Process the world command
-            return ($self->worldCmd($string), 'world');
+            return ($self->worldCmd($string, undef, undef, undef, $preText, $postText), 'world');
         }
     }
 
@@ -36012,13 +36124,24 @@
         #   $bypassFlag     - Flag set to TRUE if the instruction was a forced bypass command (i.e.
         #                       begin with the '>' sigil, before the sigil was stripped; bypass
         #                       commands are always processed whole)
+        #   $preText        - Set when called by GA::Strip::Entry->setEntrySignals, and when the
+        #                       user has specified some text that should be added to the beginning
+        #                       of a world command; 'undef' otherwise. Ignored if $inputString is an
+        #                       empty string
+        #   $postText       - Set when called by GA::Strip::Entry->setEntrySignals, and when the
+        #                       user has specified some text that should be added to the beginning
+        #                       of a world command; 'undef' otherwise. Ignored if $inputString is an
+        #                       empty string
         #
         # Return values
         #   'undef' on improper arguments, if $inputString is an empty string or if an earlier call
         #       to this function has still not been processed
         #   1 otherwise
 
-        my ($self, $inputString, $obscureString, $forcedFlag, $bypassFlag, $check) = @_;
+        my (
+            $self, $inputString, $obscureString, $forcedFlag, $bypassFlag, $preText, $postText,
+            $check,
+        ) = @_;
 
         # Local variables
         my (
@@ -36030,6 +36153,20 @@
         if (! defined $inputString || defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->worldCmd', @_);
+        }
+
+        # Add text to the beginning and end of a world command, if required (but don't add anything
+        #   to an empty world command)
+        if (defined $preText && $inputString ne '') {
+
+            $preText =~ s/\s*$//;
+            $inputString = $preText . ' ' . $inputString;
+        }
+
+        if (defined $postText && $inputString ne '') {
+
+            $postText =~ s/^\s*//;
+            $inputString .= ' ' . $postText;
         }
 
         # This section of code prevents a second call to this function before an earlier call has
@@ -44951,8 +45088,12 @@
         { my $self = shift; return %{$self->{macroCooldownHash}}; }
     sub macroOrderList
         { my $self = shift; return @{$self->{macroOrderList}}; }
-    sub timerHash
-        { my $self = shift; return %{$self->{timerHash}}; }
+    sub timerNumHash
+        { my $self = shift; return %{$self->{timerNumHash}}; }
+    sub timerClockHash
+        { my $self = shift; return %{$self->{timerClockHash}}; }
+    sub timerLastClock
+        { $_[0]->{timerLastClock} }
     sub timerOrderList
         { my $self = shift; return @{$self->{timerOrderList}}; }
     sub hookHash
@@ -44988,6 +45129,8 @@
         { $_[0]->{compassTask} }
     sub conditionTask
         { $_[0]->{conditionTask} }
+    sub connectionsTask
+        { $_[0]->{connectionsTask} }
     sub divertTask
         { $_[0]->{divertTask} }
     sub inventoryTask

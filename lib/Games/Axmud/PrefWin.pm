@@ -1543,26 +1543,51 @@
             $checkButton5->set_active($axmud::CLIENT->simpleTabFlag);
         });
 
-        $self->addLabel($table, 'Confirm before click-closing \'main\' window',
+        $self->addLabel($table, 'Sessions share a single \'main\' window',
             7, 11, 5, 6);
-        my $checkButton6 = $self->addCheckButton($table, undef, TRUE,
+        my $checkButton6 = $self->addCheckButton($table, undef, FALSE,
             11, 12, 5, 6);
-        $checkButton6->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
-        $checkButton6->signal_connect('toggled' => sub {
+
+        my $button2 = $self->addButton(
+            $table,
+            'Toggle setting for restart',
+            'Changes to this setting are applied when ' . $axmud::SCRIPT . ' restarts',
+            undef,
+            7, 10, 6, 7);
+        # ->signal connect appears below
+
+        my $entry3 = $self->addEntry($table, undef, FALSE,
+            10, 12, 6, 7,
+            8, 8);
+        $entry3->set_text($axmud::CLIENT->restartShareMainWinMode);
+
+        # ->signal_connect from above
+        $button2->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd('toggleshare', $self->pseudoCmdMode);
+            $entry3->set_text($axmud::CLIENT->restartShareMainWinMode);
+        });
+
+        $self->addLabel($table, 'Confirm before click-closing \'main\' window',
+            7, 11, 7, 8);
+        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
+            11, 12, 7, 8);
+        $checkButton7->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
+        $checkButton7->signal_connect('toggled' => sub {
 
             $self->session->pseudoCmd('setsession -m', $self->pseudoCmdMode);
-            $checkButton6->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
+            $checkButton7->set_active($axmud::CLIENT->confirmCloseMainWinFlag);
         });
 
         $self->addLabel($table, 'Confirm before click-closing tab',
-            7, 11, 6, 7);
-        my $checkButton7 = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 6, 7);
-        $checkButton7->set_active($axmud::CLIENT->confirmCloseTabFlag);
-        $checkButton7->signal_connect('toggled' => sub {
+            7, 11, 8, 9);
+        my $checkButton8 = $self->addCheckButton($table, undef, TRUE,
+            11, 12, 8, 9);
+        $checkButton8->set_active($axmud::CLIENT->confirmCloseTabFlag);
+        $checkButton8->signal_connect('toggled' => sub {
 
             $self->session->pseudoCmd('setsession -t', $self->pseudoCmdMode);
-            $checkButton7->set_active($axmud::CLIENT->confirmCloseTabFlag);
+            $checkButton8->set_active($axmud::CLIENT->confirmCloseTabFlag);
         });
 
         # Tab complete
@@ -1601,15 +1626,15 @@
             1, 12, 1, 2);
 
         my $textView = $self->addTextView($table, undef, TRUE,
-            1, 12, 2, 10,
+            1, 12, 2, 5,
             undef, undef, undef, undef,
-            -1, 270);
+            -1, 90);
         my $buffer = $textView->get_buffer();
         $buffer->set_text(join("\n", $axmud::CLIENT->favouriteWorldList));
 
         my $button = $self->addButton(
             $table, 'Set list', 'Set the list of favourite worlds', undef,
-            1, 4, 10, 11);
+            1, 4, 5, 6);
         $button->signal_connect('clicked' => sub {
 
             my (
@@ -1618,16 +1643,23 @@
             );
 
             $text = $axmud::CLIENT->desktopObj->bufferGetText($buffer);
+            if ($text =~ m/\S/) {
 
-            # Split the contents of the textview into a list
-            @list = split("\n", $text);
+                # Split the contents of the textview into a list
+                @list = split("\n", $text);
 
-            # Set the favourite world list. By using a join so soon after a split, we safely
-            #   eliminate newline chars
-            $self->session->pseudoCmd(
-                'setfavouriteworld ' . join(' ', @list),
-                $self->pseudoCmdMode,
-            );
+                # Set the favourite world list. By using a join so soon after a split, we safely
+                #   eliminate newline chars
+                $self->session->pseudoCmd(
+                    'setfavouriteworld ' . join(' ', @list),
+                    $self->pseudoCmdMode,
+                );
+
+            } else {
+
+                # Reset the favourite world list
+                $self->session->pseudoCmd('setfavouriteworld', $self->pseudoCmdMode);
+            }
 
             # Update the textview
             $buffer->set_text(join("\n", $axmud::CLIENT->favouriteWorldList));
@@ -1635,11 +1667,62 @@
 
         my $button2 = $self->addButton(
             $table, 'Update list', 'Updates the list of favourite worlds', undef,
-            9, 12, 10, 11);
+            9, 12, 5, 6);
         $button2->signal_connect('clicked' => sub {
 
             # Update the textview
             $buffer->set_text(join("\n", $axmud::CLIENT->favouriteWorldList));
+        });
+
+        # Auto-connect world list
+        $self->addLabel($table, '<b>Auto-connect world list</b>',
+            0, 12, 6, 7);
+        $self->addLabel(
+            $table, "<i>Worlds to which " . $axmud::SCRIPT . " auto-connects when it starts. Each"
+            . " world profile name can be\nfollowed by one or more character profile names, e.g."
+            . " <b>deathmud bilbo gandalf</b></i>",
+            1, 12, 7, 8);
+        my $textView2 = $self->addTextView($table, undef, TRUE,
+            1, 12, 8, 11,
+            undef, undef, undef, undef,
+            -1, 90);
+        my $buffer2 = $textView2->get_buffer();
+        $buffer2->set_text(join("\n", $axmud::CLIENT->autoConnectList));
+
+        my $button3 = $self->addButton(
+            $table, 'Set list', 'Set the list of auto-connecting worlds', undef,
+            1, 4, 11, 12);
+        $button3->signal_connect('clicked' => sub {
+
+            my $text = $axmud::CLIENT->desktopObj->bufferGetText($buffer2);
+            if ($text =~ m/\S/) {
+
+                foreach my $item (split("\n", $text)) {
+
+                    # (Ignore empty lines)
+                    if ($item =~ m/\S/) {
+
+                        $self->session->pseudoCmd('setautoworld ' . $item, $self->pseudoCmdMode);
+                    }
+                }
+
+            } else {
+
+                # Reset the list
+                $self->session->pseudoCmd('setautoworld', $self->pseudoCmdMode);
+            }
+
+            # Update the textview
+            $buffer2->set_text(join("\n", $axmud::CLIENT->autoConnectList));
+        });
+
+        my $button4 = $self->addButton(
+            $table, 'Update list', 'Updates the list of auto-connecting worlds', undef,
+            9, 12, 11, 12);
+        $button4->signal_connect('clicked' => sub {
+
+            # Update the textview
+            $buffer2->set_text(join("\n", $axmud::CLIENT->autoConnectList));
         });
 
         # Tab complete
@@ -1689,7 +1772,7 @@
             $table,
             "If you want to restore one of the pre-configured worlds - replacing any existing"
             . " world with the same name - you\ncan use the <i>\';restoreworld\'</i> command. Read"
-            . " the help for <i>\';restoreworld\'</i> <b>carefully</b> before you attempt this"
+            . " the help for <i>\';restoreworld\'</i> <b>carefully</b> before you attempt that"
             . " operation.",
             1, 12, 10, 12);
 
@@ -6368,6 +6451,7 @@
         $self->logs1Tab($innerNotebook);
         $self->logs2Tab($innerNotebook);
         $self->logs3Tab($innerNotebook);
+        $self->logs4Tab($innerNotebook);
 
         return 1;
     }
@@ -6523,6 +6607,75 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
 
+        # Logfile preamble
+        $self->addLabel($table, '<b>Logfile preamble</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table, '<i>Text to add to the beginning of every logfile</i>',
+            1, 12, 1, 2);
+
+        my $textView = $self->addTextView($table, undef, TRUE,
+            1, 12, 2, 10,
+            undef, undef, undef, undef,
+            -1, 270);
+        my $buffer = $textView->get_buffer();
+        $buffer->set_text(join("\n", $axmud::CLIENT->logPreambleList));
+
+        my $button = $self->addButton(
+            $table, 'Set list', 'Set the logfile preamble', undef,
+            1, 4, 10, 11);
+        $button->signal_connect('clicked' => sub {
+
+            my (
+                $text,
+                @list,
+            );
+
+            $text = $axmud::CLIENT->desktopObj->bufferGetText($buffer);
+
+            # Split the contents of the textview into a list, and set the IV
+            $axmud::CLIENT->set_logPreamble(split("\n", $text));
+
+            # Update the textview
+            $buffer->set_text(join("\n", $axmud::CLIENT->logPreambleList));
+        });
+
+        my $button2 = $self->addButton(
+            $table, 'Reset list', 'Resets the logfile preamble', undef,
+            9, 12, 10, 11);
+        $button2->signal_connect('clicked' => sub {
+
+            # Update the textview
+            $buffer->set_text(join("\n", $axmud::CLIENT->logPreambleList));
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub logs3Tab {
+
+        # Logs3 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->logs3Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
+
         # Status task events
         $self->addLabel($table, '<b>Status task events</b>',
             0, 12, 0, 1);
@@ -6584,9 +6737,9 @@
         return 1;
     }
 
-    sub logs3Tab {
+    sub logs4Tab {
 
-        # Logs3 tab
+        # Logs4 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -6603,11 +6756,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->logs3Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->logs4Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
 
          # Client logging settings
         $self->addLabel($table, '<b>Client logging settings</b>',
@@ -6628,7 +6781,7 @@
             -1, 270);      # Fixed height
 
         # Initialise the list
-        $self->logs3Tab_refreshList($slWidget, (scalar @columnList / 2));
+        $self->logs4Tab_refreshList($slWidget, (scalar @columnList / 2));
 
         # Add a two combos and a button
         @comboList = $axmud::CLIENT->constLogOrderList;
@@ -6647,7 +6800,7 @@
             $self->session->pseudoCmd('log ' . $logfile, $self->pseudoCmdMode);
 
             # Refresh the simple list
-            $self->logs3Tab_refreshList($slWidget, (scalar @columnList / 2));
+            $self->logs4Tab_refreshList($slWidget, (scalar @columnList / 2));
         });
 
         # Tab complete
@@ -6656,9 +6809,9 @@
         return 1;
     }
 
-    sub logs3Tab_refreshList {
+    sub logs4Tab_refreshList {
 
-        # Resets the simple list displayed by $self->logs3Tab
+        # Resets the simple list displayed by $self->logs4Tab
         #
         # Expected arguments
         #   $slWidget   - The GA::Obj::Simple::List
@@ -6680,7 +6833,7 @@
         # Check for improper arguments
         if (! defined $slWidget || ! defined $columns || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->logs3Tab_refreshList', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->logs4Tab_refreshList', @_);
         }
 
         # Compile the simple list data
@@ -16567,7 +16720,7 @@
             1, 2, 3, 4);
         $checkButton->set_active($axmud::CLIENT->convertInvisibleFlag);
         $checkButton->set_label(
-            'Convert inivisble text (i.e. text that\'s the same colour as the background)',
+            'Convert invisble text (i.e. text that\'s the same colour as the background)',
         );
 
         $checkButton->signal_connect('toggled' => sub {

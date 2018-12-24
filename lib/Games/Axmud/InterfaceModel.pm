@@ -72,6 +72,7 @@
 
             # Default values for each trigger attribute
             optionalAttribHash          => {
+                'ignore_response'       => FALSE,
                 'splitter'              => FALSE,
                 'split_after'           => FALSE,
                 'keep_splitting'        => FALSE,
@@ -110,6 +111,7 @@
                 'response'              => 'instruction',   # Or a substitution
                 'enabled'               => 'boolean',
                 # Trigger
+                'ignore_response'       => 'boolean',
                 'splitter'              => 'boolean',
                 'split_after'           => 'boolean',
                 'keep_splitting'        => 'boolean',
@@ -145,6 +147,7 @@
             optionalSwitchHash          => {
                 'name'                  => 'n',
                 'enabled'               => 'e',
+                'ignore_response'       => 'ir',
                 'splitter'              => 'sp',    # Don't like two letters, but run out of letters
                 'split_after'           => 'sa',
                 'keep_splitting'        => 'ks',
@@ -464,7 +467,7 @@
             attribTypeHash              => {
                 # Standard
                 'name'                  => 'string',
-                'stimulus'              => 'interval',          # Interval
+                'stimulus'              => 'interval',          # Interval or 24-hour clock time
                 'response'              => 'instruction',       # Instruction
                 'enabled'               => 'boolean',
                 # Timer

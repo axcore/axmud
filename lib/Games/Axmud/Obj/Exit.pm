@@ -268,18 +268,23 @@
             #   'impass' - exit is completely impassable
             #   'mystery' - the method of going through the exit is currently unknown
             exitOrnament                => 'none',
-            # The exit's current state, if known. Possible values are 'normal' (exit is passable or
-            #   state not known), 'open' (exit is an open door), 'closed' (exit is a closed door),
-            #   'locked' (exit is a locked door), 'secret' (exit is secret, not normally visible),
-            #   'secret_open' (exit is a secret open door), 'secret_closed' (exit is a secret
-            #   closed door'), 'secret_locked' (exit is a secret locked door), 'impass' (exit is
-            #   impassable), 'dark' (exit's destination room is dark), 'danger' (exit's destination
-            #   room is dangerous), 'other' (some other situation, known only to the user, when the
-            #   exit is surrounded by exit state strings defined in
+            # The exit's current state, if known. Possible values are those specified by
+            #   GA::Client->constExitStateHash: 'normal' (exit is passable or state not known),
+            #   'open' (exit is an open door), 'closed' (exit is a closed door), 'locked' (exit is a
+            #   locked door), 'secret' (exit is secret, not normally visible), 'secret_open' (exit
+            #   is a secret open door), 'secret_closed' (exit is a secret closed door'),
+            #   'secret_locked' (exit is a secret locked door), 'impass' (exit is impassable),
+            #   'dark' (exit's destination room is dark), 'danger' (exit's destination room is
+            #   dangerous), 'emphasis' (world emphasises the exit in some way, for example to show
+            #   an important route),  'other' (some other situation, known only to the user, when
+            #   the exit is surrounded by exit state strings defined in
             #   GA::Profile::World->exitStateOtherList)
-            # NB ->exitState is never set to 'ignore'. When the exit is surrounded by exit state
-            #   strings defined in GA::Profile::World->exitStateIgnoreList, this IV is not modified
-            #   (but the state strings are still removed)
+            # NB ->exitState is never set to 'ignore'. That value is used by
+            #   GA::Profile::World->exitStateStringList for any symbols that look like an exit
+            #   state (e.g. the bracktes in '[east]'), but which should be ignored
+            # NB ->exitState is never set to one of the custom strings allowed by
+            #   GA::Profile::World->exitStateStringList. If a custom string is specified there, this
+            #   IV is set to the default value of 'normal'
             exitState                   => 'normal',
             # Any information about the exit (usually a string describing the destination, or
             #   occasionally the destination type). Set only if one of the patterns in

@@ -3,23 +3,23 @@ install it on other systems such as MacOS, but the authors have not been able to
 confirm this yet.
 
 After installation (see the INSTALL file), visually-impaired users can run this
-script
+script:
 
     baxmud.pl
 
-Other users can run this script
+Other users can run this script:
 
     axmud.pl
 
-Using either script, you can specify a world to which Axmud connects immediately
+Using either script, you can specify a world to which Axmud connects immediately:
 
     axmud.pl empiremud.net 4000
 
-If you omit the port number, Axmud connects using the generic port 23
+If you omit the port number, Axmud connects using the generic port 23:
 
     axmud.pl elephant.org
 
-If a world profile already exists, you can specify its name instead
+If a world profile already exists, you can specify its name instead:
 
     axmud.pl cryosphere
 

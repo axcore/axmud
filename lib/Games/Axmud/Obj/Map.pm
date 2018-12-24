@@ -372,7 +372,6 @@
         my (
             $taskObj, $dictObj, $oldRoomObj, $currentRoomFlag, $anchorLine, $oldRegionObj,
             $tempRegionObj, $tempRegionmapObj, $regionObj, $regionmapObj, $moveCount, $text,
-            $switchFlag,
         );
 
         # (No improper arguments to check)
@@ -462,6 +461,14 @@
                 && ($self->mapWin || $self->trackAloneFlag)
             ) {
                 $self->setGhostRoom($newRoomObj);
+            }
+
+            # Tell the automapper window to graffiti the room (when graffiti mode is on)
+            if (
+                $self->mapWin
+                && ($self->mapWin->mode eq 'follow' || $self->mapWin->mode eq 'update')
+            ) {
+                $self->mapWin->add_graffiti($newRoomObj);
             }
 
             # If auto-rescue mode has been activated and the new current room isn't in the
@@ -704,8 +711,6 @@
                     TRUE,               # Set the correct current level at the same time
                 );
 
-                $switchFlag = TRUE;
-
             } elsif ($self->mapWin->currentRegionmap->currentLevel ne $newRoomObj->zPosBlocks) {
 
                 # Switch level
@@ -735,9 +740,7 @@
 
         # If the Automapper window is open, redraw the previous current location (if there was one)
         #   and the new current location (if there is one), both at the same time if possible
-        #   - unless the current region/level has changed, in which case they've already been
-        #   re-drawn
-        if (! $switchFlag && $self->mapWin) {
+        if ($self->mapWin) {
 
             # Final check that neither room has been deleted in the last few microseconds (we think
             #   this code can make a deleted room re-appear on the map, but we're not sure)
@@ -754,7 +757,7 @@
             if ($oldRoomObj && $newRoomObj) {
 
                 # Draw both rooms together
-                $self->mapWin->doDraw(
+                $self->mapWin->markObjs(
                     'room', $oldRoomObj,
                     'room', $newRoomObj,
                 );
@@ -762,12 +765,17 @@
             } elsif ($oldRoomObj) {
 
                 # Redraw the old room
-                $self->mapWin->doDraw('room', $oldRoomObj);
+                $self->mapWin->markObjs('room', $oldRoomObj);
 
             } elsif ($newRoomObj) {
 
                 # Redraw the new room
-                $self->mapWin->doDraw('room', $newRoomObj);
+                $self->mapWin->markObjs('room', $newRoomObj);
+            }
+
+            if ($oldRoomObj || $newRoomObj) {
+
+                $self->mapWin->doDraw();
             }
         }
 
@@ -941,7 +949,7 @@
 
             # Final check that neither room has been deleted in the last few microseconds (we think
             #   this code can make a deleted room re-appear on the map, but we're not sure)
-            if ($oldRoomObj && $self->worldModelObj->ivExists('modelHash', $oldRoomObj->number)) {
+            if ($oldRoomObj && ! $self->worldModelObj->ivExists('modelHash', $oldRoomObj->number)) {
 
                 $oldRoomObj = undef;
             }
@@ -971,7 +979,8 @@
 
             if (@drawList) {
 
-                $self->mapWin->doDraw(@drawList);
+                $self->mapWin->markObjs(@drawList);
+                $self->mapWin->doDraw();
             }
         }
 
@@ -2532,7 +2541,15 @@
         # Import the current dictionary (for convenience)
         $dictObj = $self->session->currentDict;
 
-        # PART 1    - identify relative directions
+        # PART 1    - look/glance commands
+
+        # If it's a look/glance command, then there's no change of room
+        if ($cmdObj->lookFlag || $cmdObj->glanceFlag) {
+
+            return $self->currentRoom;
+        }
+
+        # PART 2    - identify relative directions
 
         # Is $cmdObj->cmd a relative direction like 'forward'?
         $slot = $dictObj->convertRelativeDir($cmdObj->cmd);
@@ -2548,12 +2565,12 @@
             if (defined $convertDir) {
 
                 # Translate the standard primary direction into the equivalent custom primary
-                #   direction, ready for PART 5
+                #   direction, ready for PART 3
                 $convertDir = $dictObj->ivShow('primaryDirHash', $convertDir);
             }
         }
 
-        # PART 2    - get direction of movement
+        # PART 3    - get direction of movement
         #
         # Set $dir, the direction of movement, so that we can work out which exit object is being
         #   used
@@ -2589,7 +2606,7 @@
             $dir = $cmdObj->moveDir;
         }
 
-        # PART 3    - identify an exit object (GA::Obj::Exit) matching the direction
+        # PART 4    - identify an exit object (GA::Obj::Exit) matching the direction
         #
         #   $dir can be any of the following:
         #   (i) The original command used in an assisted move
@@ -2670,7 +2687,7 @@
             }
         }
 
-        # PART 4    - Return the result
+        # PART 5    - Return the result
         if ($exitObj && $exitObj->destRoom) {
 
             return $self->worldModelObj->ivShow('modelHash', $exitObj->destRoom);
@@ -2807,10 +2824,6 @@
                                 FALSE,
                                 $oppRoomObj->number,
                             );
-
-                            # Tell the automapper window to graffiti the room (when graffiti mode is
-                            #   on)
-                            $self->mapWin->add_graffiti($oppRoomObj);
 
                             # Update the existing room to give it the same properties as the
                             #   Locator's non-model room (where appropriate)
@@ -3184,12 +3197,6 @@
                 FALSE,
                 $newRoomObj->number,
             );
-
-            # Mark this room with graffiti (when graffiti mode is on)
-            if ($self->mapWin) {
-
-                $self->mapWin->add_graffiti($newRoomObj);
-            }
 
             # Paint the room, if required to do so
             if ($self->mapWin && $self->mapWin->painterFlag) {
@@ -3567,14 +3574,6 @@
                 FALSE,
                 $arriveRoomObj->number,
             );
-
-            # Tell the automapper window to graffiti the room (when graffiti mode is on)
-            if (
-                $self->mapWin
-                && ($self->mapWin->mode eq 'follow' || $self->mapWin->mode eq 'update')
-            ) {
-                $self->mapWin->add_graffiti($arriveRoomObj);
-            }
 
             # Update the arrival room to give it the same properties as the Locator's non-model
             #   room (where appropriate)

@@ -2327,9 +2327,9 @@
         }
 
         if (! $flag) {
-            $self->button->set_state('insensitive');
+            $self->button->set_sensitive(FALSE);
         } else {
-            $self->button->set_state('normal');
+            $self->button->set_sensitive(TRUE);
         }
 
         return 1;
@@ -2418,7 +2418,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->get_normal', @_);
         }
 
-        if ($self->button->get_state eq 'normal') {
+        if ($self->button->get_sensitive()) {
             return TRUE;
         } else {
             return FALSE;

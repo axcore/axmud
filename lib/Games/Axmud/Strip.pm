@@ -3156,6 +3156,33 @@
             # 'Other tasks' submenu
             my $subMenu_otherTask = Gtk2::Menu->new();
 
+            my $menuItem_advanceTask_editTask = Gtk2::ImageMenuItem->new(
+                'Edit current Ad_vance task...',
+            );
+            my $menuImg_advanceTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            $menuItem_advanceTask_editTask->set_image($menuImg_advanceTask_editTask);
+            $menuItem_advanceTask_editTask->signal_connect('activate' => sub {
+
+                my $session = $self->winObj->visibleSession;
+
+                # Open up a task 'edit' window to edit the task, with the 'main' window as the
+                #   parent
+                $self->winObj->createFreeWin(
+                    'Games::Axmud::EditWin::Task',
+                    $self->winObj,
+                    $session,
+                    'Edit ' . $session->advanceTask->prettyName . ' task',
+                    $session->advanceTask,
+                    FALSE,                          # Not temporary
+                    # Config
+                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
+                );
+            });
+            $subMenu_otherTask->append($menuItem_advanceTask_editTask);
+            # (Requires a visible session whose status is 'connected' or 'offline' and is running an
+            #   Advance task)
+            $self->ivAdd('menuItemHash', 'edit_advance_task', $menuItem_advanceTask_editTask);
+
             my $menuItem_attackTask_editTask = Gtk2::ImageMenuItem->new(
                 'Edit current _Attack task...',
             );
@@ -3183,12 +3210,12 @@
             #   Attack task)
             $self->ivAdd('menuItemHash', 'edit_attack_task', $menuItem_attackTask_editTask);
 
-            my $menuItem_advanceTask_editTask = Gtk2::ImageMenuItem->new(
-                'Edit current Ad_vance task...',
+            my $menuItem_connectTask_editTask = Gtk2::ImageMenuItem->new(
+                'Edit current _Connections task...',
             );
-            my $menuImg_advanceTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
-            $menuItem_advanceTask_editTask->set_image($menuImg_advanceTask_editTask);
-            $menuItem_advanceTask_editTask->signal_connect('activate' => sub {
+            my $menuImg_connectTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            $menuItem_connectTask_editTask->set_image($menuImg_connectTask_editTask);
+            $menuItem_connectTask_editTask->signal_connect('activate' => sub {
 
                 my $session = $self->winObj->visibleSession;
 
@@ -3198,17 +3225,17 @@
                     'Games::Axmud::EditWin::Task',
                     $self->winObj,
                     $session,
-                    'Edit ' . $session->advanceTask->prettyName . ' task',
-                    $session->advanceTask,
+                    'Edit ' . $session->connectionsTask->prettyName . ' task',
+                    $session->connectionsTask,
                     FALSE,                          # Not temporary
                     # Config
                     'edit_flag' => FALSE,           # Some IVs for current tasks not editable
                 );
             });
-            $subMenu_otherTask->append($menuItem_advanceTask_editTask);
-            # (Requires a visible session whose status is 'connected' or 'offline' and is running an
-            #   Advance task)
-            $self->ivAdd('menuItemHash', 'edit_advance_task', $menuItem_advanceTask_editTask);
+            $subMenu_otherTask->append($menuItem_connectTask_editTask);
+            # (Requires a visible session whose status is 'connected' or 'offline' and is running a
+            #   Connections task)
+            $self->ivAdd('menuItemHash', 'edit_connections_task', $menuItem_connectTask_editTask);
 
             my $menuItem_rawTokenTask_editTask = Gtk2::ImageMenuItem->new(
                 'Edit current Raw _Token task...',
@@ -3263,33 +3290,6 @@
             # (Requires a visible session whose status is 'connected' or 'offline' and is running a
             #   System task)
             $self->ivAdd('menuItemHash', 'edit_system_task', $menuItem_systemTask_editTask);
-
-            my $menuItem_taskListTask_editTask = Gtk2::ImageMenuItem->new(
-                'Edit current _TaskList task...',
-            );
-            my $menuImg_taskListTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
-            $menuItem_taskListTask_editTask->set_image($menuImg_taskListTask_editTask);
-            $menuItem_taskListTask_editTask->signal_connect('activate' => sub {
-
-                my $session = $self->winObj->visibleSession;
-
-                # Open up a task 'edit' window to edit the task, with the 'main' window as the
-                #   parent
-                $self->winObj->createFreeWin(
-                    'Games::Axmud::EditWin::Task',
-                    $self->winObj,
-                    $session,
-                    'Edit ' . $session->taskListTask->prettyName . ' task',
-                    $session->taskListTask,
-                    FALSE,                          # Not temporary
-                    # Config
-                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
-                );
-            });
-            $subMenu_otherTask->append($menuItem_taskListTask_editTask);
-            # (Requires a visible session whose status is 'connected' or 'offline' and is running a
-            #   TaskList task)
-            $self->ivAdd('menuItemHash', 'edit_task_list_task', $menuItem_taskListTask_editTask);
 
         my $menuItem_otherTask = Gtk2::MenuItem->new('_Other built-in tasks');
         $menuItem_otherTask->set_submenu($subMenu_otherTask);
@@ -3720,7 +3720,10 @@
                 if ($text) {
 
                     # Add the world command
-                    $self->winObj->visibleSession->pseudoCmd('worldcommand' . $text, $mode);
+                    $self->winObj->visibleSession->pseudoCmd(
+                        'worldcommand <' . $text . '>',
+                        $mode,
+                    );
                 }
             });
             $subMenu_addLine->append($menuItem_addWorldCmd);
@@ -3737,7 +3740,10 @@
                 if ($text) {
 
                     # Add the client command
-                    $self->winObj->visibleSession->pseudoCmd('clientcommand' . $text, $mode);
+                    $self->winObj->visibleSession->pseudoCmd(
+                        'clientcommand <' . $text . '>',
+                        $mode,
+                    );
                 }
             });
             $subMenu_addLine->append($menuItem_addClientCmd);
@@ -3754,7 +3760,10 @@
                 if ($text) {
 
                     # Add the comment
-                    $self->winObj->visibleSession->pseudoCmd('comment' . $text, $mode);
+                    $self->winObj->visibleSession->pseudoCmd(
+                        'comment <' . $text . '>',
+                        $mode,
+                    );
                 }
             });
             $subMenu_addLine->append($menuItem_addComment);
@@ -3922,7 +3931,7 @@
         });
         $menuColumn_recordings->append($menuItem_showRecording);
         # (Requires a visible session whose status is 'connected' or 'offline' and a visible session
-        #   whose ->recordingFlag set to TRUE)
+        #   whose ->recordingFlag set to TRUE or whose ->recordingList is not empty)
         $self->ivAdd('menuItemHash', 'show_recording', $menuItem_showRecording);
 
         my $menuItem_copyRecording = Gtk2::MenuItem->new('Copy _recording');
@@ -3932,7 +3941,7 @@
         });
         $menuColumn_recordings->append($menuItem_copyRecording);
         # (Requires a visible session whose status is 'connected' or 'offline' and a visible session
-        #   whose ->recordingFlag set to TRUE)
+        #   whose ->recordingFlag set to TRUE or whose ->recordingList is not empty)
         $self->ivAdd('menuItemHash', 'copy_recording', $menuItem_copyRecording);
 
         # Setup complete
@@ -7938,6 +7947,678 @@
         { $_[0]->{gaugeNoDrawFlag} }
 }
 
+{ package Games::Axmud::Strip::SearchBox;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Strip Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Called by GA::Win::Internal->drawWidgets or ->addStripObj
+        # Creates the GA::Strip::SearchBox - a non-compulsory strip object optionally containing
+        #   widgets for searching text in the window's current pane
+        #
+        # Expected arguments
+        #   $number     - The strip object's number within the parent window (matches
+        #                   GA::Win::Internal->stripCount, or -1 for a temporary strip object
+        #                   created to access its default IVs)
+        #   $winObj     - The parent window object (GA::Win::Internal). 'temp' for temporary strip
+        #                   objects
+        #
+        # Optional arguments
+        #   %initHash   - A hash containing arbitrary data to use as the strip object's
+        #                   initialisation settings. The strip object should use default
+        #                   initialisation settings unless it can succesfully interpret one or more
+        #                   of the key-value pairs in the hash, if there are any
+        #               - (This type of strip object requires no initialisation settings)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Blessed reference to the newly-created object on success
+
+        my ($class, $number, $winObj, %initHash) = @_;
+
+        # Local variables
+        my %modHash;
+
+        # Check for improper arguments
+        if (! defined $class || ! defined $number || ! defined $winObj) {
+
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        # Setup
+        my $self = {
+            _objName                    => 'strip_' . $number,
+            _objClass                   => $class,
+            _parentFile                 => undef,       # No parent file object
+            _parentWorld                => undef,       # No parent file object
+            _privFlag                   => TRUE,        # All IVs are private
+
+            # Standard strip object IVs
+            # -------------------------
+
+            # The strip object's number within the parent window (matches
+            #   GA::Win::Internal->stripCount, or -1 for a temporary strip object created to access
+            #   its default IVs)
+            number                      => $number,
+            # The type of strip object (custom strip objects should use a ->type starting with
+            #   'custom_' to avoid clashing with future built-in strip objects)
+            type                        => 'search_box',
+            # The parent window object (GA::Win::Internal). 'temp' for temporary strip objects
+            winObj                      => $winObj,
+
+            # Flag set to TRUE if the strip object is visible (has actually drawn widgets in the
+            #   window), set to FALSE if it is not visible (has drawn no widgets in the window, but
+            #   still exists in GA::Win::Internal->stripHash, etc)
+            # The flag might be set to FALSE in strip objects like GA::Strip::GaugeBox, which might
+            #   have gauges to draw, or not, depending on current conditions. (Most strip objects
+            #   have this flag set to TRUE all the time)
+            # If FALSE, GA::Win::Internal->drawWidgets and ->addStripObj don't draw any widgets when
+            #   called by this object's functions
+            # NB Strip objects are created with this flag set to TRUE or FALSE, but once created,
+            #   the flag's value shouldn't be modified by anything other than
+            #   GA::Win::Internal->hideStripObj and ->revealStripObj (which in turn call
+            #   $self->set_visibleFlag)
+            visibleFlag                 => FALSE,      # Wait until the search box needs to be drawn
+            # Flag set to TRUE is the strip object should be given its share of any extra space
+            #   within the packing box (the extra space is divided equally between all children of
+            #   the box whose ->expandFlag is TRUE)
+            expandFlag                  => FALSE,
+            # Flag set to TRUE if any space given to the strip object by the 'expand' option is
+            #   actually allocated within the strip object, FALSE if it is used as padding outside
+            #   it (on both sides)
+            fillFlag                    => TRUE,       # Force canvas to use available width
+            # Flag set to TRUE if the strip object should be packed into its window with a small
+            #   gap between strip objects to either side; FALSE if not (can be set to FALSE if the
+            #   the strip object's widgets are drawn in a way, such that a gap is not necessary,
+            #   for example in the toolbar strip object)
+            spacingFlag                 => TRUE,
+            # Flag set to TRUE if only one instance of this strip object should be added to the
+            #   parent window, set to FALSE if any number of instances can be added
+            jealousyFlag                => TRUE,
+            # Flag set to TRUE if this strip object can be added when $axmud::BLIND_MODE_FLAG is
+            #   TRUE, FALSE if it can't be added (because it's not useful for visually-impaired
+            #   users)
+            blindFlag                   => FALSE,
+            # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
+            #   allowed to accept the focus, FALSE if not. The restriction is applied during the
+            #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
+            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   GA::Strip::MenuBar)
+            allowFocusFlag              => FALSE,
+
+            # Initialisation settings stored as a hash (see the comments above)
+            initHash                    => \%modHash,
+            # Reference to a function to call when some widget is used. This IV is set only when
+            #   required by this type of strip object. It can be set by a call to
+            #   $self->set_func() or by some setting in $self->initHash, which is applied in the
+            #   call to $self->objEnable(). To obtain a reference to an OOP method, you can use the
+            #   generic object function Games::Axmud->getMethodRef()
+            funcRef                     => undef,
+            # A value passed to ->funcRef when it is called which identifies this strip object and
+            #   its widget(s). Can be any value, including 'undef'. It can be set by a call to
+            #   $self->set_id() or by some setting in $self->initHash, which is applied in the call
+            #   to $self->objEnable()
+            funcID                      => undef,
+
+            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
+            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
+            packingBox                  => undef,       # Gtk2::VBox
+
+            # Other IVs
+            # ---------
+
+            # Widgets
+            findEntry                   => undef,       # Gtk2::Entry
+            prevButton                  => undef,       # Gtk2::Button
+            nextButton                  => undef,       # Gtk2::Button
+            resetButton                 => undef,       # Gtk2::Button
+            caseButton                  => undef,       # Gtk2::ToggleButton
+            regexButton                 => undef,       # Gtk2::ToggleButton
+            splitButton                 => undef,       # Gtk2::ToggleButton
+
+            # Flags set to TRUE when the 'Case senstive', 'Use regex' and 'Split screen' buttons are
+            #   selected, FALSE when they are not selected
+            caseFlag                    => FALSE,
+            regexFlag                   => FALSE,
+            splitFlag                   => FALSE,
+
+            # The number of the textview object (GA::Obj::TextView) that was last search; required
+            #   in case the window's current pane is changed (when the user clicks a button in the
+            #   entry strip object)
+            textViewNum                 => undef,
+        };
+
+        # Bless the object into existence
+        bless $self, $class;
+
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    # Standard strip object functions
+
+    sub objEnable {
+
+        # Called by GA::Win::Internal->drawWidgets or ->addStripObj
+        # Sets up the strip object's widgets
+        #
+        # Expected arguments
+        #   $winmapObj  - The winmap object (GA::Obj::Winmap) that specifies the layout of the
+        #                   parent window
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 on success
+
+        my ($self, $winmapObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $winmapObj || defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->objEnable', @_);
+        }
+
+        # (IVs normally updated here are updated by $self->drawSearchBox, when it is called)
+
+        return 1;
+    }
+
+#   sub objDestroy {}                       # Inherited from GA::Generic::Strip
+
+#   sub setWidgetsIfSession {}              # Inherited from GA::Generic::Strip
+
+#   sub setWidgetsChangeSession {}          # Inherited from GA::Generic::Strip
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub drawSearchBox {
+
+        # Called by $self->toggleBox
+        # Draws a Gtk2::HBox to contain various widgets
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->drawSearchBox', @_);
+        }
+
+        # Create a packing box
+        my $packingBox = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->set_border_width(0);
+
+        # Add some widgets for performing searches
+        my $findLabel = Gtk2::Label->new();
+        $packingBox->pack_start($findLabel, FALSE, FALSE, 5);
+        $findLabel->set_markup('Find:');
+
+        my $findEntry = Gtk2::Entry->new();
+        $packingBox->pack_start($findEntry, TRUE, TRUE, 5);
+        # ->signal_connects appear below
+
+        my $prevButton = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file(
+                $axmud::SHARE_DIR . $axmud::CLIENT->constUpIconPath,
+            ),
+            'Previous match',
+        );
+        $packingBox->pack_start($prevButton, FALSE, FALSE, 0);
+        $prevButton->set_tooltip_text('Previous match');
+        $prevButton->set_sensitive(FALSE);
+        $prevButton->signal_connect('clicked' => sub {
+
+            $self->doSearch(FALSE);
+        });
+
+        my $nextButton = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file(
+                $axmud::SHARE_DIR . $axmud::CLIENT->constDownIconPath,
+            ),
+            'Next match',
+        );
+        $packingBox->pack_start($nextButton, FALSE, FALSE, 0);
+        $nextButton->set_tooltip_text('Next match');
+        $nextButton->set_sensitive(FALSE);
+        $nextButton->signal_connect('clicked' => sub {
+
+            $self->doSearch(TRUE);
+        });
+
+        my $separator = Gtk2::SeparatorToolItem->new();
+        $packingBox->pack_start($separator, FALSE, FALSE, 0);
+
+        my $resetButton = Gtk2::ToolButton->new(
+            Gtk2::Image->new_from_file(
+                $axmud::SHARE_DIR . $axmud::CLIENT->constResetIconPath,
+            ),
+            'Reset search box',
+        );
+        $packingBox->pack_start($resetButton, FALSE, FALSE, 0);
+        $resetButton->set_tooltip_text('Reset search box');
+        $resetButton->set_sensitive(FALSE);
+        $resetButton->signal_connect('clicked' => sub {
+
+            $self->doReset();
+        });
+
+        my $separator2 = Gtk2::SeparatorToolItem->new();
+        $packingBox->pack_start($separator2, FALSE, FALSE, 0);
+
+        my $caseButton = Gtk2::ToggleButton->new();
+        $packingBox->pack_start($caseButton, FALSE, FALSE, 0);
+        $caseButton->set_image(
+            Gtk2::Image->new_from_file(
+                $axmud::SHARE_DIR . $axmud::CLIENT->constCaseIconPath,
+            )
+        );
+        $caseButton->set_tooltip_text('Case-sensitive searches');
+        if ($self->caseFlag) {
+
+            $caseButton->set_active(TRUE);
+        }
+        $caseButton->signal_connect('toggled' => sub {
+
+            if (! $caseButton->get_active()) {
+                $self->ivPoke('caseFlag', FALSE);
+            } else {
+                $self->ivPoke('caseFlag', TRUE);
+            }
+        });
+
+        my $regexButton = Gtk2::ToggleButton->new();
+        $packingBox->pack_start($regexButton, FALSE, FALSE, 0);
+        $regexButton->set_image(
+            Gtk2::Image->new_from_file(
+                $axmud::SHARE_DIR . $axmud::CLIENT->constRegexIconPath,
+            )
+        );
+        $regexButton->set_tooltip_text('Use patterns/regular expressions');
+        if ($self->regexFlag) {
+
+            $regexButton->set_active(TRUE);
+        }
+        $regexButton->signal_connect('toggled' => sub {
+
+            if (! $regexButton->get_active()) {
+                $self->ivPoke('regexFlag', FALSE);
+            } else {
+                $self->ivPoke('regexFlag', TRUE);
+            }
+        });
+
+        my $splitButton = Gtk2::ToggleButton->new();
+        $packingBox->pack_start($splitButton, FALSE, FALSE, 0);
+        $splitButton->set_image(
+            Gtk2::Image->new_from_file(
+                $axmud::SHARE_DIR . $axmud::CLIENT->constDivideIconPath,
+            )
+        );
+        $splitButton->set_tooltip_text('Split screen after a search');
+        if ($self->splitFlag) {
+
+            $splitButton->set_active(TRUE);
+        }
+        $splitButton->signal_connect('toggled' => sub {
+
+            $self->toggleSplit($splitButton->get_active());
+        });
+
+        # ->signal_connects from above
+        $findEntry->signal_connect('activate' => sub {
+
+            # (Same as clicking the 'Previous' button)
+            $findEntry->grab_focus();
+            $self->doSearch(FALSE);
+        });
+        $findEntry->signal_connect('changed' => sub {
+
+            my $text = $findEntry->get_text();
+
+            if ($text eq '') {
+
+                $prevButton->set_sensitive(FALSE);
+                $nextButton->set_sensitive(FALSE);
+                $resetButton->set_sensitive(FALSE);
+
+            } else {
+
+                $prevButton->set_sensitive(TRUE);
+                $nextButton->set_sensitive(TRUE);
+                $resetButton->set_sensitive(TRUE);
+            }
+        });
+
+        # Update IVs
+        $self->ivPoke('packingBox', $packingBox);
+        $self->ivPoke('findEntry', $findEntry);
+        $self->ivPoke('prevButton', $prevButton);
+        $self->ivPoke('nextButton', $nextButton);
+        $self->ivPoke('resetButton', $resetButton);
+        $self->ivPoke('caseButton', $caseButton);
+        $self->ivPoke('regexButton', $regexButton);
+        $self->ivPoke('splitButton', $splitButton);
+        # Previous searches are not relevant
+        $self->ivUndef('textViewNum');
+
+        # Setup complete
+        return 1;
+    }
+
+    sub doSearch {
+
+        # Called by various ->signal_connects in $self->drawSearchBox
+        # Checks that the entry box contains some text and, if so, performs a search
+        #
+        # Expected arguments
+        #   $nextFlag   - FALSE to search backwards in a textview object; TRUE to search forwards
+        #                   in a textview
+        #
+        # Return values
+        #   'undef' on improper arguments or if the user hasn't entered any text in the entry box
+        #   1 otherwise
+
+        my ($self, $nextFlag, $check) = @_;
+
+        # Local variables
+        my ($text, $entryStripObj, $paneObj, $tabObj, $textViewObj, $matchLine);
+
+        # Check for improper arguments
+        if (! defined $nextFlag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doSearch', @_);
+        }
+
+        # Get the text to search
+        if ($self->findEntry) {
+
+            $text = $self->findEntry->get_text();
+        }
+
+        if (! defined $text || $text eq '') {
+
+            return undef;
+        }
+
+        # Get the current pane, i.e. the first pane object in this window's
+        #   GA::Strip::Entry->paneObjList
+        $entryStripObj = $self->winObj->getStrip('entry');
+        if ($entryStripObj) {
+
+            $paneObj = $entryStripObj->ivIndex('paneObjList', 0);
+        }
+
+        if (! $paneObj) {
+
+            # There are no window panes, therefore there is no text to search
+            return undef;
+        }
+
+        # Get the textview object in the pane object's visible tab
+        $tabObj = $paneObj->getVisibleTab();
+        if ($tabObj) {
+
+            $textViewObj = $tabObj->textViewObj;
+        }
+
+        if (! $textViewObj) {
+
+            # No textview object found, therefore there is no text to search
+            return undef;
+        }
+
+        # If the previous search was conducted on a different textview (or if this is the first
+        #   search), start searching from the bottom (or top)
+        if (! defined $self->textViewNum || $self->textViewNum != $textViewObj->number) {
+
+            $self->ivPoke('textViewNum', $textViewObj->number);
+
+            # Create a search mark at the end of the buffer, which moves up and down the buffer
+            #   every time the use clicks the 'Previous' or 'Next' buttons
+            $textViewObj->setSearchMark();
+        }
+
+        # Split the screen, if required
+        if ($self->splitFlag && $textViewObj->splitScreenMode ne 'split') {
+
+            $paneObj->toggleSplitScreen()
+        }
+
+        # Convert a simple string to a regex, if required (otherwise, assume that $text is already
+        #   a regex)
+        if (! $self->regexFlag) {
+
+            $text = quotemeta($text);
+        }
+
+        # Perform the search. The TRUE argument means to select and scroll to the matching text
+        ($matchLine) = $textViewObj->searchBuffer($text, $nextFlag, TRUE, $self->caseFlag);
+        if (! defined $matchLine) {
+            $self->findEntry->set_icon_from_stock('secondary', 'gtk-no');
+        } else {
+            $self->findEntry->set_icon_from_stock('secondary', 'gtk-yes');
+        }
+
+        return 1;
+    }
+
+    sub doReset {
+
+        # Called by a ->signal_connect in $self->drawSearchBox, and by $self->doReset
+        # Resets the search box and the textview object's search position. Unselects any selected
+        #   text
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($entryStripObj, $paneObj, $tabObj, $textViewObj);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doReset', @_);
+        }
+
+        # Update widgets
+        $self->findEntry->set_text('');
+        $self->findEntry->set_icon_from_stock('secondary', undef);
+
+        # Get the current pane, i.e. the first pane object in this window's
+        #   GA::Strip::Entry->paneObjList
+        $entryStripObj = $self->winObj->getStrip('entry');
+        if ($entryStripObj) {
+
+            $paneObj = $entryStripObj->ivIndex('paneObjList', 0);
+        }
+
+        if (! $paneObj) {
+
+            # There are no window panes, therefore there is no search position to reset
+            return 1;
+        }
+
+        # Get the textview object in the pane object's visible tab
+        $tabObj = $paneObj->getVisibleTab();
+        if ($tabObj) {
+
+            $textViewObj = $tabObj->textViewObj;
+        }
+
+        if (! $textViewObj) {
+
+            # No textview object found, therefore there is no search position to reset
+            return 1;
+        }
+
+        # Reset the textview's search position, so that the next search starts from the bottom (or
+        #   top)
+        $textViewObj->setSearchMark();
+        # Un-select any selected text
+        $textViewObj->unselectText();
+
+        # If split-screen mode is enabled, disable it
+        if ($textViewObj->splitScreenMode eq 'split') {
+
+            $paneObj->toggleSplitScreen();
+        }
+
+        return 1;
+    }
+
+    sub toggleSplit {
+
+        # Called by a ->signal_connect in $self->drawSearchBox after the 'Split screen' is clicked
+        # Updates the value of the IV. If the current textview's split screen mode is on, turn it
+        #   off
+        #
+        # Expected arguments
+        #   $flag       - TRUE if the button has been selected, FALSE if it has been deselected
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $flag, $check) = @_;
+
+        # Local variables
+        my ($entryStripObj, $paneObj, $tabObj, $textViewObj);
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggleSplit', @_);
+        }
+
+        if (! $flag) {
+
+            $self->ivPoke('splitFlag', FALSE);
+
+            # Get the current pane, i.e. the first pane object in this window's
+            #   GA::Strip::Entry->paneObjList
+            $entryStripObj = $self->winObj->getStrip('entry');
+            if ($entryStripObj) {
+
+                $paneObj = $entryStripObj->ivIndex('paneObjList', 0);
+                if ($paneObj) {
+
+                    # Get the textview object in the pane object's visible tab
+                    $tabObj = $paneObj->getVisibleTab();
+                    if ($tabObj) {
+
+                        $textViewObj = $tabObj->textViewObj;
+                    }
+                }
+            }
+
+            if ($textViewObj && $textViewObj->splitScreenMode eq 'split') {
+
+                $paneObj->toggleSplitScreen();
+            }
+
+        } else {
+
+            $self->ivPoke('splitFlag', TRUE);
+        }
+
+        return 1;
+    }
+
+    sub toggleBox {
+
+        # Called by GA::Strip::Entry->setInputSignals
+        # If the strip object is visible, hide it (and vice-versa)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggleBox', @_);
+        }
+
+        if (! $self->visibleFlag) {
+
+            # Reveal the search box
+            $self->drawSearchBox();
+            $self->winObj->revealStripObj($self);
+
+        } else {
+
+            # Hide the search box
+            $self->doReset();
+            $self->winObj->hideStripObj($self);
+        }
+
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+
+    sub findEntry
+        { $_[0]->{findEntry} }
+    sub prevButton
+        { $_[0]->{prevButton} }
+    sub nextButton
+        { $_[0]->{nextButton} }
+    sub resetButton
+        { $_[0]->{resetButton} }
+    sub caseButton
+        { $_[0]->{caseButton} }
+    sub regexButton
+        { $_[0]->{regexButton} }
+    sub splitButton
+        { $_[0]->{splitButton} }
+
+    sub caseFlag
+        { $_[0]->{caseFlag} }
+    sub regexFlag
+        { $_[0]->{regexFlag} }
+    sub splitFlag
+        { $_[0]->{splitFlag} }
+
+    sub textViewNum
+        { $_[0]->{textViewNum} }
+}
+
 { package Games::Axmud::Strip::Entry;
 
     use strict;
@@ -7983,11 +8664,16 @@
         #                       corresponding 'id' values
         #                   'wipe_flag' - TRUE if a 'wipe entry' button should be drawn to the left
         #                       of the entry box, FALSE if not (default is FALSE)
+        #                   'add_flag' - TRUE if an 'add entry' button should be drawn to the left
+        #                       of the entry box, FALSE if not (default is FALSE)
         #                   'console_flag' - TRUE if a 'toggle console' button should be drawn to
         #                       the right of the entry box, FALSE if not (default is FALSE)
         #                   'input_flag' - TRUE if a 'toggle expand' button (for opening the quick
         #                       input window) should be drawn to the right of the entry box, FALSE
         #                       if not (default is FALSE)
+        #                   'search_flag' - TRUE if a 'search' button (for opening the search box
+        #                       strip object) shown be drawn to the right of the entry box, FALSE if
+        #                       not (default is FALSE)
         #                   'cancel_flag' - TRUE if a 'cancel repeating/excess commands' button
         #                       should be drawn to the right of the entry box, FALSE if not (default
         #                       is FALSE)
@@ -8018,8 +8704,10 @@
             'func'                      => undef,
             'id'                        => '',
             'wipe_flag'                 => FALSE,
+            'add_flag'                  => FALSE,
             'console_flag'              => FALSE,
             'input_flag'                => FALSE,
+            'search_flag'               => FALSE,
             'cancel_flag'               => FALSE,
             'switch_flag'               => FALSE,
             'scroll_flag'               => FALSE,
@@ -8131,9 +8819,13 @@
 
             # Widgets
             entry                       => undef,       # Gtk2::Entry
+            preEntry                    => undef,       # Gtk2::Entry
+            postEntry                   => undef,       # Gtk2::Entry
             wipeButton                  => undef,       # Gtk2::ToolButton
+            addButton                   => undef,       # Gtk2::ToolButton
             consoleButton               => undef,       # Gtk2::ToolButton
             inputButton                 => undef,       # Gtk2::ToolButton
+            searchButton                => undef,       # Gtk2::ToolButton
             cancelButton                => undef,       # Gtk2::ToolButton
             switchButton                => undef,       # Gtk2::ToolButton
             scrollButton                => undef,       # Gtk2::ToolButton
@@ -8148,12 +8840,22 @@
             #   in the list
             paneObjList                 => [],
 
+            # The strip can contain one, two or three entry boxes; a main one (stored in
+            #   $self->entry), a small box whose contents is prepended to every world commmand
+            #   ($self->preEntry), and a small box whose contents is appended to every world
+            #   command ($self->postEntry). Click $self->addButton cycles through different
+            #   combinations of these boxes; this IV stores the state we're in at the moment:
+            #       'default'   - show only the main entry box
+            #       'pre'       - show the prepending and main entry boxes
+            #       'post'      - show the main and appending entry boxes
+            #       'both'      - show all three boxes
+            entryBoxMode                => 'default',
             # For 'main' windows, when GA::Client->autoCompleteMode = 'auto', the first time the
             #   user presses the 'up' or 'down' arrow key, this IV is set to the contents of the
             #   entry box (even if it's an empty string). The IV is set back to 'undef' as soon as
             #   the user presses the ENTER key
             originalEntryText           => undef,
-            # Any code can temporarily desensitise the entry box, when required, by calling
+            # Any code can temporarily desensitise the entry box(es), when required, by calling
             #   $self->captureEntry, which adds an entry to this hash IV
             # The entry box remains potentially desensitised until the next call to
             #   $self->captureEntry removes the entry in the hash IV
@@ -8191,6 +8893,26 @@
             #   command is stored here, so it can be passed to the GA::Session
             # At all other times, this IV is set to an empty string
             specialWorldCmd             => '',
+
+            # The primary Gtk stock icon currently used in the (main) entry box (e.g. 'gtk-yes',
+            #   'gtk-media-pause'). 'undef' if no icon used
+            # The seceondary icon is reset whenever the visible session changes anyway, so is not
+            #   stored as an IV
+            primaryIcon                 => undef,
+
+            # When a 'main' window switches between visible sessions, we need to preserve the
+            #   current values of those IVs
+            # Hash in the form
+            #   $sessionHash{session_number} = list_reference
+            # ...where 'list_reference' is a list in the form
+            #   (special_echo_flag, special_preserve_flag, special_world_cmd, primary_icon)
+            sessionHash                 => {},
+            # IV set whenever $self->setWidgetsChangeSession is called, recording the visible
+            #   session's unique number (if there is one), or set to 'undef' (if there is no visible
+            #   session)
+            # The next call to ->setWidgetsChangeSession can then update the hash just above, using
+            #   the previous visible session's settings
+            prevVisibleSession          => undef,
         };
 
         # Bless the object into existence
@@ -8219,15 +8941,45 @@
 
         my ($self, $winmapObj, $check) = @_;
 
+        # Local variables
+        my ($mainText, $preText, $postText);
+
         # Check for improper arguments
         if (! defined $winmapObj || defined $check) {
 
              return $axmud::CLIENT->writeImproper($self->_objClass . '->objEnable', @_);
         }
 
-        # Create a packing box
-        my $hBox = Gtk2::HBox->new(FALSE, 0);
-        $hBox->set_border_width(0);
+        # Create a packing box, if one doesn't exist already
+        my $packingBox;
+        if (! $self->packingBox) {
+
+            # This function is being called for the first time
+            $packingBox = Gtk2::HBox->new(FALSE, 0);
+            $packingBox->set_border_width(0);
+
+        } else {
+
+            # This function is being called for a subsequent time. Temporarily store the contents
+            #   of the entry box(es), so they can be replaced
+            $mainText = $self->entry->get_text();
+            if ($self->preEntry) {
+
+                $preText = $self->preEntry->get_text();
+            }
+
+            if ($self->postEntry) {
+
+                $postText = $self->postEntry->get_text();
+            }
+
+            # Remove the packing box's current contents, so new widgets can be created
+            $packingBox = $self->packingBox;
+            foreach my $child ($self->packingBox->get_children()) {
+
+                $axmud::CLIENT->desktopObj->removeWidget($self->packingBox, $child);
+            }
+        }
 
         # Draw a Gtk2::Entry box (compulsory) and any buttons specified by $self->initHash
         #   (->signal_connects for each appear later in the function)
@@ -8240,30 +8992,77 @@
                 Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constWipeIconPath),
                 'Clear command entry box',
             );
-            $hBox->pack_start($wipeButton, FALSE, FALSE, 0);
+            $packingBox->pack_start($wipeButton, FALSE, FALSE, 0);
             $wipeButton->set_tooltip_text('Clear command entry box');
         }
 
-        # Draw a Gtk2::Entry box
-        my $entry = Gtk2::Entry->new();
+        # Draw an 'add entries' icon as a toolbutton (optional)
+        my $addButton;
+        if ($self->ivShow('initHash', 'add_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-        # ('spare' 'main' windows look nicer if there's no padding around the entry box)
-        if ($winmapObj->name eq 'main_wait') {
-            $hBox->pack_start($entry, TRUE, TRUE, 0);
-        } else {
-            $hBox->pack_start($entry, TRUE, TRUE, 5);
+            $addButton = Gtk2::ToolButton->new(
+                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constAddIconPath),
+                'Use additional entry boxes',
+            );
+            $packingBox->pack_start($addButton, FALSE, FALSE, 0);
+            $addButton->set_tooltip_text('Use additional entry boxes');
         }
 
-        # The entry is the only 'internal' window widget which can accept focus
+        # Draw one or more entry boxes, depending on the value of $self->entryBoxMode
+        my ($entry, $preEntry, $postEntry);
+
+        # Draw the prepending entry box, if allowed
+        if ($self->entryBoxMode eq 'pre' || $self->entryBoxMode eq 'both') {
+
+            $preEntry = Gtk2::Entry->new();
+            $packingBox->pack_start($preEntry, FALSE, FALSE, 0);
+            $preEntry->set_tooltip_text('Add to beginning of world commands');
+            if (defined $preText && $preText ne '') {
+
+                $preEntry->set_text($preText);
+            }
+        }
+
+        # Draw the main entry box
+        $entry = Gtk2::Entry->new();
+        $packingBox->pack_start($entry, TRUE, TRUE, 0);
+        $entry->set_tooltip_text('Command entry box');
+        if (defined $mainText && $mainText ne '') {
+
+            $entry->set_text($mainText);
+        }
+
+        # Draw the appending entry box, if allowed
+        if ($self->entryBoxMode eq 'post' || $self->entryBoxMode eq 'both') {
+
+            $postEntry = Gtk2::Entry->new();
+            $packingBox->pack_start($postEntry, FALSE, FALSE, 0);
+            $postEntry->set_tooltip_text('Add to end of world commands');
+            if (defined $postText && $postText ne '') {
+
+                $postEntry->set_text($postText);
+            }
+        }
+
+        # The main entry is the only 'internal' window widget which can accept focus
         $entry->can_focus(TRUE);
-        # For 'main' windows, the entry starts desensitised. Afterwards, it is sensitised or
+        # For 'main' windows, the entries start desensitised. Afterwards, they are sensitised or
         #   desensitised (as appropriate) by $self->setWidgetsIfSession. For other kinds of
-        #   'internal' window, the entry starts sensitised
-        # Any other parts of the code which need to desensitise the entry temporarily should call
+        #   'internal' window, the entries start sensitised
+        # Any other parts of the code which need to desensitise the entries temporarily should call
         #   $self->captureEntry
         if ($self->winObj->winType eq 'main') {
 
             $entry->set_sensitive(FALSE);
+            if ($preEntry) {
+
+                $preEntry->set_sensitive(FALSE);
+            }
+
+            if ($postEntry) {
+
+                $postEntry->set_sensitive(FALSE);
+            }
         }
 
         # Draw a 'toggle console' icon as a toolbutton (optional)
@@ -8276,7 +9075,7 @@
                 ),
                 'Open Session Console window',
             );
-            $hBox->pack_start($consoleButton, FALSE, FALSE, 0);
+            $packingBox->pack_start($consoleButton, FALSE, FALSE, 0);
             $consoleButton->set_tooltip_text('Open Session Console window');
             $consoleButton->set_sensitive(FALSE);
 
@@ -8292,9 +9091,22 @@
                 Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constMultiIconPath),
                 'Open Quick Input window',
             );
-            $hBox->pack_start($inputButton, FALSE, FALSE, 0);
+            $packingBox->pack_start($inputButton, FALSE, FALSE, 0);
             $inputButton->set_tooltip_text('Open Quick Input window');
             $inputButton->set_sensitive(FALSE);
+        }
+
+        # Draw a 'toggle search' icon as a toolbutton (optional)
+        my $searchButton;
+        if ($self->ivShow('initHash', 'search_flag') && ! $axmud::BLIND_MODE_FLAG) {
+
+            $searchButton = Gtk2::ToolButton->new(
+                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constSearchIconPath),
+                'Open search box',
+            );
+            $packingBox->pack_start($searchButton, FALSE, FALSE, 0);
+            $searchButton->set_tooltip_text('Open search box');
+            $searchButton->set_sensitive(FALSE);
         }
 
         # Draw a 'cancel repeating/excess commands' icon as a toolbutton (optional)
@@ -8305,7 +9117,7 @@
                 Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constCancelIconPath),
                 'Cancel repeating/excess commands',
             );
-            $hBox->pack_start($cancelButton, FALSE, FALSE, 0);
+            $packingBox->pack_start($cancelButton, FALSE, FALSE, 0);
             $cancelButton->set_tooltip_text('Cancel repeating/excess commands');
             $cancelButton->set_sensitive(FALSE);
         }
@@ -8318,7 +9130,7 @@
                 Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constSwitchIconPath),
                 'Switch active pane',
             );
-            $hBox->pack_start($switchButton, FALSE, FALSE, 0);
+            $packingBox->pack_start($switchButton, FALSE, FALSE, 0);
             $switchButton->set_tooltip_text('Switch active pane');
             $switchButton->set_sensitive(FALSE);
         }
@@ -8331,7 +9143,7 @@
                 Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constLockIconPath),
                 'Apply/release scroll lock',
             );
-            $hBox->pack_start($scrollButton, FALSE, FALSE, 0);
+            $packingBox->pack_start($scrollButton, FALSE, FALSE, 0);
             $scrollButton->set_tooltip_text('Apply/release scroll lock');
             $scrollButton->set_sensitive(FALSE);
         }
@@ -8346,7 +9158,7 @@
                 ),
                 'Split/restore screen',
             );
-            $hBox->pack_start($splitButton, FALSE, FALSE, 0);
+            $packingBox->pack_start($splitButton, FALSE, FALSE, 0);
             $splitButton->set_tooltip_text('Split/restore screen');
             $splitButton->set_sensitive(FALSE);
         }
@@ -8354,11 +9166,15 @@
         # Update IVs
         $self->ivPoke('funcRef', $self->ivShow('initHash', 'func'));
         $self->ivPoke('funcID', $self->ivShow('initHash', 'id'));
-        $self->ivPoke('packingBox', $hBox);
+        $self->ivPoke('packingBox', $packingBox);
         $self->ivPoke('entry', $entry);
+        $self->ivPoke('preEntry', $preEntry);
+        $self->ivPoke('postEntry', $postEntry);
         $self->ivPoke('wipeButton', $wipeButton);
+        $self->ivPoke('addButton', $addButton);
         $self->ivPoke('consoleButton', $consoleButton);
         $self->ivPoke('inputButton', $inputButton);
+        $self->ivPoke('searchButton', $searchButton);
         $self->ivPoke('cancelButton', $cancelButton);
         $self->ivPoke('switchButton', $switchButton);
         $self->ivPoke('scrollButton', $scrollButton);
@@ -8385,8 +9201,10 @@
         #   in the future too, so we'll wait until now to do ->signal_connects)
         $self->setEntrySignals();           # 'activate'
         $self->setWipeSignals();            # 'clicked'
+        $self->setAddSignals();             # 'clicked'
         $self->setConsoleSignals();         # 'clicked'
         $self->setInputSignals();           # 'clicked'
+        $self->setSearchSignals();          # 'clicked'
         $self->setCancelSignals();          # 'clicked'
         $self->setSwitchSignals();          # 'clicked'
         $self->setScrollSignals();          # 'clicked'
@@ -8424,7 +9242,7 @@
 
     sub setWidgetsIfSession {
 
-        # Called by GA::Win::Internal->setWidgetsIfSession
+        # Called by GA::Win::Internal->setWidgetsIfSession. (Also called by $self->setAddSignals)
         # Allows this strip object to sensitise or desensitise its widgets, depending on whether
         #   the parent window has a ->visibleSession at the moment
         # (NB Only 'main' windows have a ->visibleSession; for other 'grid' windows, the flag
@@ -8445,7 +9263,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setWidgetsIfSession', @_);
         }
 
-        # Sensitise/desensitise entry box
+        # Sensitise/desensitise entry box(es)
         if ($self->entry) {
 
             if ($flag) {
@@ -8453,16 +9271,44 @@
                 if ($self->ivExists('captureHash', $self->winObj->visibleSession->number)) {
 
                     $self->entry->set_sensitive(FALSE);
+                    if ($self->preEntry) {
+
+                        $self->preEntry->set_sensitive(FALSE);
+                    }
+
+                    if ($self->postEntry) {
+
+                        $self->postEntry->set_sensitive(FALSE);
+                    }
 
                 } else {
 
                     $self->entry->set_sensitive(TRUE);
                     $self->entry->grab_focus();
+
+                    if ($self->preEntry) {
+
+                        $self->preEntry->set_sensitive(TRUE);
+                    }
+
+                    if ($self->postEntry) {
+
+                        $self->postEntry->set_sensitive(TRUE);
+                    }
                 }
 
             } else {
 
                 $self->entry->set_sensitive(FALSE);
+                if ($self->preEntry) {
+
+                    $self->preEntry->set_sensitive(FALSE);
+                }
+
+                if ($self->postEntry) {
+
+                    $self->postEntry->set_sensitive(FALSE);
+                }
             }
         }
 
@@ -8475,6 +9321,11 @@
         if ($self->inputButton) {
 
             $self->inputButton->set_sensitive($flag);
+        }
+
+        if ($self->searchButton) {
+
+            $self->searchButton->set_sensitive($flag);
         }
 
         if ($self->consoleButton) {
@@ -8531,7 +9382,10 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($textViewObj, $iv);
+        my (
+            $listRef, $specialEchoFlag, $specialPreserveFlag, $specialWorldCmd, $primaryIcon,
+            $textViewObj, $iv,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -8542,13 +9396,58 @@
             );
         }
 
+        # Update IVs that store settings for the previous visible session (if any)
+        if (defined $self->prevVisibleSession) {
+
+            $self->ivAdd(
+                'sessionHash',
+                $self->prevVisibleSession,
+                [
+                    $self->specialEchoFlag,
+                    $self->specialPreserveFlag,
+                    $self->specialWorldCmd,
+                    $self->primaryIcon,
+                ],
+            );
+
+            $self->ivUndef('prevVisibleSession');
+        }
+
         # Update button icons to match the visible session
         if ($self->winObj->visibleSession) {
+
+            # Retrieve settings used the last time this was the visible session
+            $listRef = $self->ivShow('sessionHash', $self->winObj->visibleSession->number);
+            if (! defined $listRef) {
+
+                # Use default settings for the new visible session. ->primaryIcon has a default
+                #   value of 'undef' anyway
+                $specialEchoFlag = FALSE;
+                $specialPreserveFlag = FALSE;
+                $specialWorldCmd = '';
+
+            } else {
+
+                # Use the previous settings
+                ($specialEchoFlag, $specialPreserveFlag, $specialWorldCmd, $primaryIcon)
+                    = @$listRef;
+            }
+
+            $self->ivPoke('specialEchoFlag', $specialEchoFlag);
+            $self->ivPoke('specialPreserveFlag', $specialPreserveFlag);
+            $self->ivPoke('specialWorldCmd', $specialWorldCmd);
+            $self->ivPoke('primaryIcon', $primaryIcon);
+            $self->ivPoke('prevVisibleSession', $self->winObj->visibleSession->number);
 
             # (->defaultTabObj won't be set yet, if GA::Session->start is still executing)
             if ($self->winObj->visibleSession->defaultTabObj) {
 
                 $textViewObj = $self->winObj->visibleSession->defaultTabObj->textViewObj;
+            }
+
+            if ($self->addButton) {
+
+                $self->addButton->set_sensitive(! $self->specialEchoFlag);
             }
 
             if ($self->consoleButton) {
@@ -8603,19 +9502,11 @@
                     );
                 }
             }
-        }
 
-        if ($self->entry) {
-
-            if (! $axmud::CLIENT->sessionHash) {
-
-                # If there are no sessions at all, the entry box must be empty
-                $self->entry->set_text('');
-
-            } else {
+            if ($self->entry) {
 
                 # If the current current session's server has suggested that the client stop
-                #   ECHOing, and the client has agreed, text in the entry box must be obscured
+                #   ECHOing, and the client has agreed, text in the entry box(es) must be obscured
                 # If not, or if special echo mode is on, it must be un-obscured (in case it was
                 #   obscured by the previous session)
                 # In either case, text in the entry box is removed when switching sessions
@@ -8628,13 +9519,54 @@
                     $self->obscureEntry(FALSE);
                 }
 
-                # Set (or reset) icons showing recordings in progress
+                # Set (or reset) entry box icons. Those associated with recordings may have changed
+                #   since the last time the session was the visible session
+                $self->entry->set_icon_from_stock('primary', $self->primaryIcon);
+
                 if ($self->winObj->visibleSession->recordingPausedFlag) {
                     $self->entry->set_icon_from_stock('secondary', 'gtk-media-pause');
                 } elsif ($self->winObj->visibleSession->recordingFlag) {
                     $self->entry->set_icon_from_stock('secondary', 'gtk-media-record');
                 } else {
                     $self->entry->set_icon_from_stock('secondary', undef);
+                }
+            }
+
+        } else {
+
+            # No visible session; use the default settings
+            $self->ivPoke('specialEchoFlag', FALSE);
+            $self->ivPoke('specialPreserveFlag', FALSE);
+            $self->ivPoke('specialWorldCmd', '');
+            $self->ivPoke('primaryIcon', undef);
+            $self->ivPoke('prevVisibleSession', undef);
+
+            if ($self->entry) {
+
+                if (! $axmud::CLIENT->sessionHash) {
+
+                    # If there are no sessions at all, the main entry box must be empty, and the
+                    #   minor entry boxes must be removed entirely
+                    $self->entry->set_text('');
+                    if ($self->preEntry) {
+
+                        $axmud::CLIENT->desktopObj->removeWidget(
+                            $self->packingBox,
+                            $self->preEntry,
+                        );
+
+                        $self->ivUndef('preEntry');
+                    }
+
+                    if ($self->postEntry) {
+
+                        $axmud::CLIENT->desktopObj->removeWidget(
+                            $self->packingBox,
+                            $self->postEntry,
+                        );
+
+                        $self->ivUndef('postEntry');
+                    }
                 }
             }
         }
@@ -8670,7 +9602,7 @@
         # Deal with user pressing their ENTER key
         $self->entry->signal_connect('activate' => sub {
 
-            my ($instruct, $thisFuncRef, $successFlag, $type);
+            my ($instruct, $thisFuncRef, $preText, $postText, $successFlag, $type);
 
             $instruct = $self->entry->get_text();
             $thisFuncRef = $self->funcRef;
@@ -8696,8 +9628,32 @@
 
                 } elsif ($self->winObj->visibleSession) {
 
-                    # Pass the typed instruction to the visible session
-                    ($successFlag, $type) = $self->winObj->visibleSession->doInstruct($instruct);
+                    # Pass the typed instruction to the visible session, along with any pre- or
+                    #   post-world command strings that exist
+                    if ($self->preEntry) {
+
+                        $preText = $self->preEntry->get_text();
+                        if ($preText eq '') {
+
+                            $preText = undef;
+                        }
+                    }
+
+                    if ($self->postEntry) {
+
+                        $postText = $self->postEntry->get_text();
+                        if ($postText eq '') {
+
+                            $postText = undef;
+                        }
+                    }
+
+                    ($successFlag, $type) = $self->winObj->visibleSession->doInstruct(
+                        $instruct,
+                        undef,
+                        $preText,
+                        $postText,
+                    );
 
                     if (
                         defined $type
@@ -8749,6 +9705,7 @@
 
             # Update IVs
             $self->entry->set_icon_from_stock('primary', undef);
+            $self->ivUndef('primaryIcon');
             $self->ivPoke('specialPreserveFlag', FALSE);
             $self->ivPoke('specialWorldCmd', '');
 
@@ -8808,6 +9765,7 @@
                         # Decide what to do once the the user has typed another character
                         # Meanwhile, set the entry icon for non-world commands
                         $self->entry->set_icon_from_stock('primary', 'gtk-disconnect');
+                        $self->ivPoke('primaryIcon', 'gtk-disconnect');
                         # Don't let GA::Win::Internal->setKeyPressEvent intercept the escape, tab,
                         #   backspace and delete keys, which should instead apply to our entry box
                         $self->ivPoke('specialPreserveFlag', TRUE);
@@ -8838,6 +9796,7 @@
                         # $instruct begins with an instruction sigil that's enabled. Set the entry
                         #   icon for non-world commands
                         $self->entry->set_icon_from_stock('primary', 'gtk-disconnect');
+                        $self->ivPoke('primaryIcon', 'gtk-disconnect');
                         # Don't let GA::Win::Internal->setKeyPressEvent intercept the escape, tab,
                         #   backspace and delete keys, which should instead apply to our entry box
                         $self->ivPoke('specialPreserveFlag', TRUE);
@@ -8854,6 +9813,7 @@
                 # Reset the entry box, and set the icon for world commands
                 $self->entry->set_text('');
                 $self->entry->set_icon_from_stock('primary', 'gtk-connect');
+                $self->ivPoke('primaryIcon', 'gtk-connect');
                 # Update IVs
                 $self->ivPoke('specialPreserveFlag', FALSE);
                 $self->ivPoke('specialWorldCmd', $self->specialWorldCmd . $instruct);
@@ -8898,6 +9858,59 @@
                 $self->ivPoke('specialWorldCmd', '');
                 # Remove the icon, too
                 $self->entry->set_icon_from_stock('primary', undef);
+                $self->ivUndef('primaryIcon');
+            });
+        }
+
+        return 1;
+    }
+
+    sub setAddSignals {
+
+        # Called by $self->objEnable
+        # Set up a ->signal_connect to watch out for the button being clicked
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setAddSignals', @_);
+        }
+
+        if ($self->addButton) {
+
+            $self->addButton->signal_connect('clicked' => sub {
+
+                # Update IVs, cycling through various modes, in which one or more entry boxes are
+                #   drawn
+                if ($self->entryBoxMode eq 'default') {
+                    $self->ivPoke('entryBoxMode', 'pre');
+                } elsif ($self->entryBoxMode eq 'pre') {
+                    $self->ivPoke('entryBoxMode', 'both');
+                } elsif ($self->entryBoxMode eq 'both') {
+                    $self->ivPoke('entryBoxMode', 'post');
+                } elsif ($self->entryBoxMode eq 'post') {
+                    $self->ivPoke('entryBoxMode', 'default');
+                }
+
+                # Redraw the whole strip, which draws the right number of entries
+                $self->objEnable($axmud::CLIENT->ivShow('winmapHash', $self->winObj->winmap));
+                if ($self->winObj->winType ne 'main') {
+                    $self->setWidgetsIfSession(FALSE);
+                } else {
+                    $self->setWidgetsIfSession(TRUE);
+                }
+
+                $self->winObj->replaceStripObj($self);
+                $self->entry->grab_focus();
             });
         }
 
@@ -8979,6 +9992,43 @@
                 if ($self->winObj->visibleSession) {
 
                     $self->winObj->visibleSession->pseudoCmd('quickinput');
+                }
+            });
+        }
+
+        return 1;
+    }
+
+    sub setSearchSignals {
+
+        # Called by $self->objEnable
+        # Set up a ->signal_connect to watch out for the button being clicked
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setSearchSignals', @_);
+        }
+
+        if ($self->searchButton) {
+
+            $self->searchButton->signal_connect('clicked' => sub {
+
+                my $searchStripObj = $self->winObj->getStrip('search');
+
+                if ($searchStripObj) {
+
+                    $searchStripObj->toggleBox();
+                    $searchStripObj->findEntry->grab_focus();
                 }
             });
         }
@@ -9220,6 +10270,30 @@
             } else {
                 $self->entry->set_visibility(TRUE);
             }
+        }
+
+        if ($self->preEntry) {
+
+            $self->preEntry->set_text('');
+            if ($flag) {
+                $self->preEntry->set_visibility(FALSE);
+            } else {
+                $self->preEntry->set_visibility(TRUE);
+            }
+        }
+
+        if ($self->postEntry) {
+
+            $self->postEntry->set_text('');
+            if ($flag) {
+                $self->postEntry->set_visibility(FALSE);
+            } else {
+                $self->postEntry->set_visibility(TRUE);
+            }
+        }
+
+        # (If $self->entry doesn't exist, the other two entry boxes don't exist either)
+        if ($self->entry) {
 
             $self->winObj->winShowAll($self->_objClass . '->obscureEntry');
         }
@@ -9738,10 +10812,16 @@
             $self->ivPoke('specialEchoFlag', TRUE);
         }
 
+        if ($self->addButton) {
+
+            $self->addButton->set_sensitive(! $self->specialEchoFlag);
+        }
+
         if ($self->entry) {
 
             $self->entry->set_text('');
             $self->entry->set_icon_from_stock('primary', undef);
+            $self->ivUndef('primaryIcon');
         }
 
         return 1;
@@ -9752,12 +10832,20 @@
 
     sub entry
         { $_[0]->{entry} }
+    sub preEntry
+        { $_[0]->{preEntry} }
+    sub postEntry
+        { $_[0]->{postEntry} }
     sub wipeButton
         { $_[0]->{wipeButton} }
+    sub addButton
+        { $_[0]->{addButton} }
     sub consoleButton
         { $_[0]->{consoleButton} }
     sub inputButton
         { $_[0]->{inputButton} }
+    sub searchButton
+        { $_[0]->{searchButton} }
     sub cancelButton
         { $_[0]->{cancelButton} }
     sub switchButton
@@ -9770,6 +10858,8 @@
     sub paneObjList
         { my $self = shift; return @{$self->{paneObjList}}; }
 
+    sub entryBoxMode
+        { $_[0]->{entryBoxMode} }
     sub originalEntryText
         { $_[0]->{originalEntryText} }
     sub captureHash
@@ -9787,6 +10877,14 @@
         { $_[0]->{specialPreserveFlag} }
     sub specialWorldCmd
         { $_[0]->{specialWorldCmd} }
+
+    sub primaryIcon
+        { $_[0]->{primaryIcon} }
+
+    sub sessionHash
+        { my $self = shift; return %{$self->{sessionHash}}; }
+    sub prevVisibleSession
+        { $_[0]->{prevVisibleSession} }
 }
 
 { package Games::Axmud::Strip::ConnectInfo;

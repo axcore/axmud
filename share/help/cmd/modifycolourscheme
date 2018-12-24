@@ -39,7 +39,19 @@ mcs / modifycolourscheme      Modifies a colour scheme
                                colour tag <old> displayed in the usual colour
                                instead
          -d <old>         - Deletes a colour override
-                              
+
+         -n               - Turns off text wrapping
+         -c               - Ignores words when wrapping text
+         -w               - Preserves words when wrapping text
+         -e               - Preserves words when wrapping text (if possible;
+                               this is the default setting)
+
+      If you specify more than one of the text wrapping switches, only the first
+          one is used; the rest are ignored. Note that, in most cases, the world
+          knows how big Axmud's 'main' window is, and formats text before
+          sending it, so changing the setting for the 'main' colour scheme may
+          not have any effect.
+
       Windows using the modified colour scheme are not updated automatically.
          You can use the ';updatecolourscheme' command to update window panes in
          'internal' windows, but in all other situations the modified colour

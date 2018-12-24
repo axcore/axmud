@@ -49,6 +49,8 @@ mtr / modifytrigger           Modifies a trigger
                                    triggers)
       Group 3 switch options: 
          -e <boolean>         - Modifies the 'enabled' attribute (1 or 0)
+         -ir <boolean>        - Modifies the 'ignore_response' attribute (1 or
+                                   0)
          -sp <boolean>        - Modifies the 'splitter' attribute (1 or 0)
          -sa <boolean>        - Modifies the 'splitter' attribute (1 or 0)
          -ks <boolean>        - Modifies the 'keep_splitting' attribute (1 or 0)

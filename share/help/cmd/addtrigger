@@ -45,6 +45,13 @@ atr / addtrigger              Adds an independent trigger
                           trigger is enabled (does something). When set to 0, it 
                           is disabled (temporarily does nothing)    
       Triggers also have the following non-standard attributes:
+         'ignore_response'
+                     - A flag set to 1 or 0 (default). If set to 1, when the
+                          trigger fires because of a stimulus, the response is
+                          ignored. This is useful if you just want to apply a
+                          trigger style to some text, without modifying it and
+                          without executing a command. If set to 0, the trigger
+                          response is used
          'splitter'  - A flag set to 1 or 0 (default). If set to 1, the trigger
                           is a 'splitter' trigger. If the 'stimulus' matches the
                           line, the line is split into two lines just before the
@@ -191,6 +198,8 @@ atr / addtrigger              Adds an independent trigger
                                    specified, a name is generated for you
          -e <boolean>         - Sets the 'enabled' attribute (1 or 0; default is
                                    1)
+         -ir <boolean>        - Sets the 'ignore_response' attribute (1 or 0;
+                                   default is 0)
          -sp <boolean>        - Sets the 'splitter' attribute (1 or 0; default 
                                    is 0)
          -sa <boolean>        - Sets the 'split_after' attribute (1 or 0; 

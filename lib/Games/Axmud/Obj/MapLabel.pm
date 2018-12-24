@@ -15,7 +15,7 @@
 # Games::Axmud::Obj::MapLabel
 # The object that handles a label on the Automapper window's map
 #
-# Games::Axmud::obj::MapLabelSet
+# Games::Axmud::Obj::MapLabelSet
 # The object that stores a set of text attributes, such as colour, size and style, which apply to
 #   multiple labels
 

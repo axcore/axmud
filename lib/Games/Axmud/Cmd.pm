@@ -7429,6 +7429,310 @@
     }
 }
 
+{ package Games::Axmud::Cmd::OLDSetCountdown;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setcountdown', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['scd', 'countdown', 'setcountdown'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sets off the Countdown task';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # Local variables
+        my ($flagCount, $switch, $secsFlag, $minsFlag, $hoursFlag, $number, $string, $taskObj);
+
+        # Extract switches
+        $flagCount = 0;
+
+        ($switch, @args) = $self->extract('-s', 0, @args);
+        if (defined $switch) {
+
+            $secsFlag = TRUE;
+            $flagCount++;
+        }
+
+        ($switch, @args) = $self->extract('-m', 0, @args);
+        if (defined $switch) {
+
+            $minsFlag = TRUE;
+            $flagCount++;
+        }
+
+        ($switch, @args) = $self->extract('-h', 0, @args);
+        if (defined $switch) {
+
+            $hoursFlag = TRUE;
+            $flagCount++;
+        }
+
+        # Extract remaining arguments (if any)
+        $number = shift @args;
+
+        # There should be nothing left in @args
+        if (@args) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Switches can't be combined
+        if ($flagCount > 1) {
+
+            return $self->error(
+                $session, $inputString,
+                'The switches \'-s\', \'-m\' and \'-h\' can\'t be combined',
+            );
+        }
+
+        # If $number was specified, check it's valid
+        if (defined $number) {
+
+            if (! $axmud::CLIENT->floatCheck($number, 0) || $number == 0) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Invalid time \'' . $number . '\' (must be a positive number)',
+                );
+            }
+
+            # Convert it to seconds, and create a partial confirmation message in advance
+            if ($hoursFlag) {
+
+                if ($number == 1) {
+                    $string = '1 hour';
+                } else {
+                    $string = $number . ' hours';
+                }
+
+                $number *= 3600;
+
+            } elsif ($minsFlag) {
+
+                if ($number == 1) {
+                    $string = '1 minute';
+                } else {
+                    $string = $number . ' minutes';
+                }
+
+                $number *= 60;
+
+            } else {
+
+                if ($number == 1) {
+                    $string = '1 second';
+                } else {
+                    $string = $number . ' seconds';
+                }
+            }
+        }
+
+        # There can be multiple Countdown tasks running; find the most recent one
+        $taskObj = $session->ivShow('currentTaskNameHash', 'countdown_task');
+        if ($taskObj) {
+
+            # Countdown task running. If it's already counting down, we need to start a new task
+            #   (or use one of the others)
+            if ($taskObj->countMode ne 'default') {
+
+                OUTER: foreach my $otherTaskObj ($session->ivValues('currentTaskHash')) {
+
+                    if (
+                        $otherTaskObj->name eq 'countdown_task'
+                        && $otherTaskObj->countMode eq 'default'
+                    ) {
+                        $taskObj = $otherTaskObj;
+                        last OUTER;
+                    }
+                }
+            }
+        }
+
+        if (! $taskObj) {
+
+            # No countdown task running (or all existing tasks busy), so start a new one
+            $taskObj = Games::Axmud::Task::Countdown->new($session, 'current');
+            if (! $taskObj) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'General error creating a new Countdown task',
+                );
+
+            } elsif ($number) {
+
+                # Give the task its initial settings
+                $taskObj->initClock('down', $number);
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Countdown task initialised; counting down from '. $string,
+                );
+
+            } else {
+
+                return $self->complete($session, $standardCmd, 'Countdown task started');
+            }
+
+        } else {
+
+            # Countdown task running and is available to start counting down
+            $taskObj->startClock('down', $number);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Countdown task updated; counting down from '. $string,
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::SetCountdown;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setcountdown', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['scd', 'countdown', 'setcountdown'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sets a countdown';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # Start a task, or instruct an existing one
+        return $self->countDownUp($session, $inputString, $standardCmd, 'down', @args);
+    }
+}
+
+{ package Games::Axmud::Cmd::SetCountup;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setcountup', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['scu', 'countup', 'setcountup'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sets a countdown, counting up from zero';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # Start a task, or instruct an existing one
+        return $self->countDownUp($session, $inputString, $standardCmd, 'up', @args);
+    }
+}
+
 { package Games::Axmud::Cmd::SetCharSet;
 
     use strict;
@@ -7766,7 +8070,7 @@
     }
 }
 
-{ package Games::Axmud::Cmd::SetCustomDay;
+{ package Games::Axmud::Cmd::SetCustomWeek;
 
     use strict;
     use warnings;
@@ -7793,10 +8097,10 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('setcustomday', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('setcustomweek', TRUE, FALSE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['scd', 'setday', 'setcustomday'];
+        $self->{defaultUserCmdList} = ['scw', 'setday', 'setweek', 'setcustomweek'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
         $self->{descrip} = 'Sets customised days of the week';
 
@@ -7820,7 +8124,7 @@
 
         # (No improper arguments to check)
 
-        # ;smo
+        # ;scw
         if (! @dayList) {
 
             # Display list
@@ -7833,7 +8137,7 @@
             # Display footer
             return $self->complete($session, $standardCmd, 'End of lists');
 
-        # ;smo -r
+        # ;scw -r
         } elsif ($dayList[0] eq '-r') {
 
             # In case the user tries to use -r followed by a list of custom days, complain
@@ -7850,11 +8154,11 @@
 
                 return $self->complete(
                     $session, $standardCmd,
-                    $axmud::SCRIPT . '\' custom list of days has been reset',
+                    $axmud::SCRIPT . '\' custom list of days of the week has been reset',
                 );
             }
 
-        # ;smo <jan> <feb> <mar...>
+        # ;scw <mon> <tue> <wed...>
         } else {
 
             if ((scalar @dayList) < 7) {
@@ -7895,7 +8199,7 @@
 
             return $self->complete(
                 $session, $standardCmd,
-                $axmud::SCRIPT . '\' custom list of days set to: '
+                $axmud::SCRIPT . '\' custom list of days of the week set to: '
                 . join(' ', @dayList),
             );
         }
@@ -26069,7 +26373,7 @@
             $var2 = lc($args[1]);
         }
 
-        # ;pro
+        # ;mcf
         if (! $configuration) {
 
             return $self->complete(
@@ -26078,7 +26382,7 @@
                    . join ('  ', sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('ttsObjHash'))),
             );
 
-        # ;pro <config>
+        # ;mcf <config>
         } elsif (! @args) {
 
             # Display header
@@ -26170,8 +26474,8 @@
             );
         }
 
-        # ;pro <config> engine <string>
-        # ;pro <config> -e <string>
+        # ;mcf <config> engine <string>
+        # ;mcf <config> -e <string>
         if ($var eq 'engine' || $var eq '-e') {
 
             if (! $var2 || ! defined $axmud::CLIENT->ivFind('constTTSList', $var2)) {
@@ -26209,8 +26513,8 @@
                 . '\'',
             );
 
-        # ;pro <config> voice <string>
-        # ;pro <config> -v <string>
+        # ;mcf <config> voice <string>
+        # ;mcf <config> -v <string>
         } elsif ($var eq 'voice' || $var eq '-v') {
 
             if (! $var2) {
@@ -26233,8 +26537,8 @@
                 );
             }
 
-        # ;pro <config> speed <num>
-        # ;pro <config> -s <num>
+        # ;mcf <config> speed <num>
+        # ;mcf <config> -s <num>
         } elsif ($var eq 'speed' || $var eq '-s') {
 
             if (! $var2) {
@@ -26255,12 +26559,12 @@
             }
 
             # Check <num> is a valid value
-            if (! $axmud::CLIENT->intCheck($var2, 10, 200)) {
+            if (! $axmud::CLIENT->intCheck($var2, 0, 100)) {
 
                 return $self->error(
                     $session, $inputString,
                     'Invalid text-to-speech word speed \'' . $var2 . '\' (must be in the range'
-                    . ' 10 - 200)'
+                    . ' 0-100)'
                 );
 
             } else {
@@ -26275,8 +26579,8 @@
                 );
             }
 
-        # ;pro <config> rate <num>
-        # ;pro <config> -r <num>
+        # ;mcf <config> rate <num>
+        # ;mcf <config> -r <num>
         } elsif ($var eq 'rate' || $var eq '-r') {
 
             if (! $var2) {
@@ -26298,12 +26602,12 @@
             }
 
             # Check <num> is a valid value
-            if (! $axmud::CLIENT->floatCheck($var2, 0.5, 2)) {
+            if (! $axmud::CLIENT->intCheck($var2, 0, 100)) {
 
                 return $self->error(
                     $session, $inputString,
                     'Invalid text-to-speech word rate \'' . $var2 . '\' (must be in the range'
-                    . ' 0.5 - 2)'
+                    . ' 0-100)'
                 );
 
             } else {
@@ -26318,8 +26622,8 @@
                 );
             }
 
-        # ;pro <config> pitch <num>
-        # ;pro <config> -p <num>
+        # ;mcf <config> pitch <num>
+        # ;mcf <config> -p <num>
         } elsif ($var eq 'pitch' || $var eq '-p') {
 
             if (! $var2) {
@@ -26341,15 +26645,12 @@
             }
 
             # Check <num> is a valid value
-            if (
-                ! $axmud::CLIENT->floatCheck($var2)
-                || ($ttsObj->engine eq 'espeak' && ($var2 < 0 || $var2 > 99))
-                || ($ttsObj->engine eq 'swift' && ($var2 < 0.1 || $var2 > 5))
-            ) {
+            if (! $axmud::CLIENT->intCheck($var2, 0, 100)) {
+
                 return $self->error(
                     $session, $inputString,
-                    'Invalid text-to-speech word pitch \'' . $var2 . '\' (for eSpeak, must be in'
-                    . ' the range 0 - 99; for Swift, must be in the range 0.1 to 5)',
+                    'Invalid text-to-speech word pitch \'' . $var2 . '\' (must be in the range'
+                    . ' 0-100)'
                 );
 
             } else {
@@ -26364,8 +26665,8 @@
                 );
             }
 
-        # ;pro <config> volume <num>
-        # ;pro <config> -l <num>
+        # ;mcf <config> volume <num>
+        # ;mcf <config> -l <num>
         } elsif ($var eq 'volume' || $var eq '-l') {
 
             if (! $var2) {
@@ -26387,12 +26688,12 @@
             }
 
             # Check <num> is a valid value
-            if (! $axmud::CLIENT->floatCheck($var2, 0.33, 6)) {
+            if (! $axmud::CLIENT->intCheck($var2, 0-100)) {
 
                 return $self->error(
                     $session, $inputString,
                     'Invalid text-to-speech volume \'' . $var2 . '\' (must be in the range'
-                    . ' 0.33 - 6)'
+                    . ' 0-100)'
                 );
 
             } else {
@@ -26407,20 +26708,20 @@
                 );
             }
 
-        # ;pro <config> use <pattern>
-        # ;pro <config> use
-        # ;pro <config> -u <pattern>
-        # ;pro <config> -u
-        # ;pro <config> exclude <pattern>
-        # ;pro <config> exclude
-        # ;pro <config> -x <pattern>
-        # ;pro <config> -x
+        # ;mcf <config> use <pattern>
+        # ;mcf <config> use
+        # ;mcf <config> -u <pattern>
+        # ;mcf <config> -u
+        # ;mcf <config> exclude <pattern>
+        # ;mcf <config> exclude
+        # ;mcf <config> -x <pattern>
+        # ;mcf <config> -x
         } elsif ($var eq 'use' || $var eq '-u' || $var eq 'exclude' || $var eq '-x') {
 
-            # ;pro <config> use
-            # ;pro <config> -u
-            # ;pro <config> exclude
-            # ;pro <config> -x
+            # ;mcf <config> use
+            # ;mcf <config> -u
+            # ;mcf <config> exclude
+            # ;mcf <config> -x
             if (! defined $var2) {
 
                 # Pretty drastic, so get a confirmation first (if there are patterns to remove)
@@ -26470,8 +26771,8 @@
                     );
                 }
 
-            # ;pro <config> use <pattern>
-            # ;pro <config> -u <pattern>
+            # ;mcf <config> use <pattern>
+            # ;mcf <config> -u <pattern>
             } elsif ($var eq 'use' || $var eq '-u') {
 
                 if ($axmud::CLIENT->regexCheck($args[1])) {
@@ -26490,8 +26791,8 @@
                     . ' added',
                 );
 
-            # ;pro <config> exclude <pattern>
-            # ;pro <config> -x <pattern>
+            # ;mcf <config> exclude <pattern>
+            # ;mcf <config> -x <pattern>
             } else {
 
                 if ($axmud::CLIENT->regexCheck($args[1])) {
@@ -35446,10 +35747,7 @@
             # Reset the favourite world list
             $axmud::CLIENT->set_favouriteWorldList();
 
-            return $self->complete(
-                $session, $standardCmd,
-                'Favourite world list reset',
-            );
+            return $self->complete($session, $standardCmd, 'Favourite world list reset');
 
         # ;sfw <list>
         } else {
@@ -35608,6 +35906,170 @@
             return $self->complete(
                 $session, $standardCmd,
                 'End of list (' . $count . ' worlds found)',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::SetAutoWorld;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setautoworld', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['saw', 'setautoworld'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sets the list of auto-connecting worlds';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @list,
+        ) = @_;
+
+        # (No improper arguments to check)
+
+        # ;saw
+        if (! @list) {
+
+            # Reset the auto-connecting world list
+            $axmud::CLIENT->set_autoConnectList();
+
+            return $self->complete($session, $standardCmd, 'Auto-connecting world list reset');
+
+        # ;saw <list>
+        } else {
+
+            $axmud::CLIENT->set_autoConnectList(
+                $axmud::CLIENT->autoConnectList,
+                join (' ', @list),
+            );
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Auto-connecting world list updated with the line \''
+                . $axmud::CLIENT->ivIndex(
+                    'autoConnectList',
+                    $axmud::CLIENT->ivLast('autoConnectList'),
+                ) . '\'',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::ListAutoWorld;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('listautoworld', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['law', 'listautoworld'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Shows the list of auto-connecting worlds';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            $count,
+            %hash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Display header
+        $session->writeText('List of auto-connecting worlds (plus optional characters)');
+
+        # Display list
+        foreach my $line ($axmud::CLIENT->autoConnectList) {
+
+            $session->writeText('   ' . $line);
+        }
+
+        # Display footer
+        if ((scalar $axmud::CLIENT->autoConnectList) == 1) {
+
+            return $self->complete($session, $standardCmd, 'End of list (1 world found)');
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'End of list (' . (scalar $axmud::CLIENT->autoConnectList) . ' worlds found)',
             );
         }
     }
@@ -44527,8 +44989,8 @@
             #   tell the automapper to show no region)
             if ($taskObj->name eq 'locator_task' && $session->mapWin) {
 
+                $session->mapWin->setMode('wait');
                 $session->mapObj->setCurrentRoom();
-                $session->mapWin->setCurrentRegion();
             }
         }
 
@@ -56202,15 +56664,19 @@
             return $self->improper($session, $inputString);
         }
 
-        if (! defined $axmud::CLIENT->restartShareMainWinFlag) {
+        if ($axmud::CLIENT->restartShareMainWinMode eq 'default') {
 
-            $axmud::CLIENT->ivPoke('restartShareMainWinFlag', $axmud::CLIENT->shareMainWinFlag);
+            if (! $axmud::CLIENT->shareMainWinFlag) {
+                $axmud::CLIENT->ivPoke('restartShareMainWinMode', 'off');
+            } else {
+                $axmud::CLIENT->ivPoke('restartShareMainWinMode', 'on');
+            }
         }
 
         # Toggle the flag
-        if (! $axmud::CLIENT->restartShareMainWinFlag) {
+        if ($axmud::CLIENT->restartShareMainWinMode eq 'off') {
 
-            $axmud::CLIENT->set_restartShareMainWinFlag(TRUE);
+            $axmud::CLIENT->set_restartShareMainWinMode(TRUE);
 
             return $self->complete(
                 $session, $standardCmd,
@@ -56220,7 +56686,7 @@
 
         } else {
 
-            $axmud::CLIENT->set_restartShareMainWinFlag(FALSE);
+            $axmud::CLIENT->set_restartShareMainWinMode(FALSE);
 
             return $self->complete(
                 $session, $standardCmd,
@@ -59931,6 +60397,250 @@
     }
 }
 
+{ package Games::Axmud::Cmd::FindText;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('findtext', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['find', 'findtext'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Finds matching text in a textview';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # Local variables
+        my (
+            $switch, $tvObjNum, $tvObjFlag, $prevFlag, $nextFlag, $caseFlag, $splitFlag, $regex,
+            $tvObj, $line, $offset, $length,
+        );
+
+        # Extract switches
+        ($switch, $tvObjNum, @args) = $self->extract('-t', 1, @args);
+        if ($switch) {
+
+            $tvObjFlag = TRUE;
+        }
+
+        ($switch, @args) = $self->extract('-p', 0, @args);
+        if ($switch) {
+
+            $prevFlag = TRUE;
+        }
+
+        ($switch, @args) = $self->extract('-n', 0, @args);
+        if ($switch) {
+
+            $nextFlag = TRUE;
+        }
+
+        ($switch, @args) = $self->extract('-c', 0, @args);
+        if ($switch) {
+
+            $caseFlag = TRUE;
+        }
+
+        ($switch, @args) = $self->extract('-s', 0, @args);
+        if ($switch) {
+
+            $splitFlag = TRUE;
+        }
+
+        # @args should now containg a single argument
+        $regex = shift @args;
+        if (! defined $regex || @args) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Some switches can't be combined
+        if ($prevFlag && $nextFlag) {
+
+            return $self->error(
+                $session, $inputString,
+                'The switches \'-p\' and \'-n\' can\'t be combined',
+            );
+        }
+
+        # Get the textview object whose buffer should be searched. If none was specified, use the
+        #   session's default tab
+        if ($tvObjFlag) {
+
+            $tvObj = $axmud::CLIENT->desktopObj->ivShow('textViewHash', $tvObjNum);
+            if (! $tvObj) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'There is no textview object numbered \'' . $tvObjNum . '\'',
+                );
+            }
+
+        } else {
+
+            $tvObj = $session->defaultTabObj->textViewObj;
+        }
+
+        # Perform the search
+        ($line, $offset, $length) = $tvObj->searchBuffer($regex, $nextFlag, TRUE, $caseFlag);
+        if (! defined $line) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'No matching text found in textview #' . $tvObj->number,
+            );
+
+        } elsif ($tvObj ne $session->defaultTabObj->textViewObj) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Match found at line ' . $line . ', offset ' . $offset . ', length: ' . $length,
+            );
+
+        } else {
+
+            # Don't show a confirmation if a match is found in the session's default textview (as it
+            #   makes the textview scroll)
+            return 1;
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::FindReset;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('findreset', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['frt', 'findreset'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Resets the last find operation';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $tvObjNum,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $tvObj;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Get the textview object whose search mark should be reset. If none was specified, use the
+        #   session's default tab
+        if (defined $tvObjNum) {
+
+            $tvObj = $axmud::CLIENT->desktopObj->ivShow('textViewHash', $tvObjNum);
+            if (! $tvObj) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'There is no textview object numbered \'' . $tvObjNum . '\'',
+                );
+            }
+
+        } else {
+
+            $tvObj = $session->defaultTabObj->textViewObj;
+        }
+
+        # Reset the textview's search mark
+        $tvObj->setSearchMark();
+        # Un-select any selected text
+        $tvObj->unselectText();
+
+        if ($tvObj ne $session->defaultTabObj->textViewObj) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'The search position in textview #' . $tvObj->number . ' has been reset',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'The search position in the session\'s default textview has been reset',
+            );
+        }
+    }
+}
+
 { package Games::Axmud::Cmd::ConvertText;
 
     use strict;
@@ -60927,8 +61637,8 @@
 
         # Local variables
         my (
-            $switch, $text, $underlay, $background, $font, $fontSize, $string, $schemeObj,
-            $type, $underlayFlag,
+            $switch, $text, $string, $underlay, $background, $font, $fontSize, $wrapMode,
+            $schemeObj, $type, $underlayFlag,
         );
 
         # Extract switches
@@ -60962,12 +61672,29 @@
             $string = 'font size';
         }
 
-        if ($string) {
+        # (Take the first wrap mode switch specified, and ignore any subsequent ones)
+        ($switch, @args) = $self->extract('-n', 0, @args);
+        if ($switch && ! $wrapMode) {
 
-            return $self->error(
-                $session, $inputString,
-                'Add colour scheme with which ' . $string . '?',
-            );
+            $wrapMode = 'no_wrap';
+        }
+
+        ($switch, @args) = $self->extract('-c', 0, @args);
+        if ($switch && ! $wrapMode) {
+
+            $wrapMode = 'wrap_char';
+        }
+
+        ($switch, @args) = $self->extract('-w', 0, @args);
+        if ($switch && ! $wrapMode) {
+
+            $wrapMode = 'wrap_word';
+        }
+
+        ($switch, @args) = $self->extract('-e', 0, @args);
+        if ($switch && ! $wrapMode) {
+
+            $wrapMode = 'wrap_word_char';
         }
 
         # @args should now be empty
@@ -60988,6 +61715,14 @@
         } elsif (! $axmud::CLIENT->nameCheck($name, 16)) {
 
             return $self->error($session, $inputString, 'Illegal name \'' . $name . '\'');
+
+        # Check for invalid switch patterns
+        } elsif ($string) {
+
+            return $self->error(
+                $session, $inputString,
+                'Add colour scheme with which ' . $string . '?',
+            );
         }
 
         # Create the colour scheme object
@@ -61089,6 +61824,11 @@
 
                 $schemeObj->ivPoke('fontSize', $fontSize);
             }
+        }
+
+        if (defined $wrapMode) {
+
+            $schemeObj->ivPoke('wrapMode', $wrapMode);
         }
 
         # Update IVs
@@ -61246,7 +61986,7 @@
         my (
             $switch, $text, $textFlag, $flagCount, $underlay, $underlayFlag, $background,
             $backgroundFlag, $font, $fontFlag, $fontSize, $fontSizeFlag, $monoFlag, $oldTag,
-            $newTag, $addFlag, $deleteFlag, $schemeObj, $type, $tagUnderlayFlag, $msg,
+            $newTag, $addFlag, $deleteFlag, $schemeObj, $type, $tagUnderlayFlag, $msg, $wrapMode,
         );
 
         # Extract switches
@@ -61305,6 +62045,35 @@
         if ($switch) {
 
             $deleteFlag = TRUE;
+            $flagCount++;
+        }
+
+        # (Take the first wrap mode switch specified, and ignore any subsequent ones)
+        ($switch, @args) = $self->extract('-n', 0, @args);
+        if ($switch && ! $wrapMode) {
+
+            $wrapMode = 'no_wrap';
+            $flagCount++;
+        }
+
+        ($switch, @args) = $self->extract('-c', 0, @args);
+        if ($switch && ! $wrapMode) {
+
+            $wrapMode = 'wrap_char';
+            $flagCount++;
+        }
+
+        ($switch, @args) = $self->extract('-w', 0, @args);
+        if ($switch && ! $wrapMode) {
+
+            $wrapMode = 'wrap_word';
+            $flagCount++;
+        }
+
+        ($switch, @args) = $self->extract('-e', 0, @args);
+        if ($switch && ! $wrapMode) {
+
+            $wrapMode = 'wrap_word_char';
             $flagCount++;
         }
 
@@ -61495,6 +62264,11 @@
         if ($deleteFlag) {
 
             $schemeObj->ivDelete('overrideHash', $oldTag);
+        }
+
+        if ($wrapMode) {
+
+            $schemeObj->ivPoke('wrapMode', $wrapMode);
         }
 
         # Resolve any problems now, before they have a chance to create a Perl error
@@ -61990,6 +62764,8 @@
 
                 $session->writeText('      Override: ' . $key . ' > ' . $value);
             }
+
+            $session->writeText('      Wrap: ' . $schemeObj->wrapMode);
         }
 
         # Display footer
@@ -67684,7 +68460,7 @@
             # Use the universal version of the A* algorithm to find a path between the current and
             #   selected rooms (if they're in the same region, the call is automatically redirected
             #   to ->findPath)
-            ($roomListRef, $exitListRef) = $self->worldModelObj->findUniversalPath(
+            ($roomListRef, $exitListRef) = $session->worldModelObj->findUniversalPath(
                 $session,
                 $session->mapObj->currentRoom,
                 $roomObj,

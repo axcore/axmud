@@ -2177,6 +2177,180 @@
         return @returnList;
     }
 
+    sub countDownUp {
+
+        # Called by GA::Cmd::Countdown->do and Countup->do
+        # Creates a Countdown task, or uses an existing one. Then sets the task's clock running
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $inputString    - The command actually typed, e.g. 'scd 5'
+        #   $standardCmd    - Standard version of the client command, e.g. 'setcountdown'
+        #   $type           - 'down' or 'up'
+        #
+        # Optional arguments
+        #   @args           - Optional list of arguments supplied to the client command
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 on success
+
+        my ($self, $session, $inputString, $standardCmd, $type, @args) = @_;
+
+        # Local variables
+        my ($flagCount, $switch, $secsFlag, $minsFlag, $hoursFlag, $number, $string, $taskObj);
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $inputString || ! defined $standardCmd
+            || ! defined $type
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->countDownUp', @_);
+        }
+
+        # Extract switches
+        $flagCount = 0;
+
+        ($switch, @args) = $self->extract('-s', 0, @args);
+        if (defined $switch) {
+
+            $secsFlag = TRUE;
+            $flagCount++;
+        }
+
+        ($switch, @args) = $self->extract('-m', 0, @args);
+        if (defined $switch) {
+
+            $minsFlag = TRUE;
+            $flagCount++;
+        }
+
+        ($switch, @args) = $self->extract('-h', 0, @args);
+        if (defined $switch) {
+
+            $hoursFlag = TRUE;
+            $flagCount++;
+        }
+
+        # Extract remaining arguments (if any)
+        $number = shift @args;
+
+        # There should be nothing left in @args
+        if (@args) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Switches can't be combined
+        if ($flagCount > 1) {
+
+            return $self->error(
+                $session, $inputString,
+                'The switches \'-s\', \'-m\' and \'-h\' can\'t be combined',
+            );
+        }
+
+        # If $number was specified, check it's valid
+        if (defined $number) {
+
+            if (! $axmud::CLIENT->floatCheck($number, 0) || $number == 0) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Invalid time \'' . $number . '\' (must be a positive number)',
+                );
+            }
+
+            # Convert it to seconds, and create a partial confirmation message in advance
+            if ($hoursFlag) {
+
+                if ($number == 1) {
+                    $string = '1 hour';
+                } else {
+                    $string = $number . ' hours';
+                }
+
+                $number *= 3600;
+
+            } elsif ($minsFlag) {
+
+                if ($number == 1) {
+                    $string = '1 minute';
+                } else {
+                    $string = $number . ' minutes';
+                }
+
+                $number *= 60;
+
+            } else {
+
+                if ($number == 1) {
+                    $string = '1 second';
+                } else {
+                    $string = $number . ' seconds';
+                }
+            }
+        }
+
+        # There can be multiple Countdown tasks running; find the most recent one
+        $taskObj = $session->ivShow('currentTaskNameHash', 'countdown_task');
+        if ($taskObj) {
+
+            # Countdown task running. If it's already counting down/up, we need to start a new task
+            #   (or use one of the others)
+            if ($taskObj->countMode ne 'default') {
+
+                OUTER: foreach my $otherTaskObj ($session->ivValues('currentTaskHash')) {
+
+                    if (
+                        $otherTaskObj->name eq 'countdown_task'
+                        && $otherTaskObj->countMode eq 'default'
+                    ) {
+                        $taskObj = $otherTaskObj;
+                        last OUTER;
+                    }
+                }
+            }
+        }
+
+        if (! $taskObj) {
+
+            # No countdown task running (or all existing tasks busy), so start a new one
+            $taskObj = Games::Axmud::Task::Countdown->new($session, 'current');
+            if (! $taskObj) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'General error creating a new Countdown task',
+                );
+
+            } elsif ($number) {
+
+                # Give the task its initial settings
+                $taskObj->initClock($type, $number);
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Countdown task initialised; counting ' . $type . ' from '. $string,
+                );
+
+            } else {
+
+                return $self->complete($session, $standardCmd, 'Countdown task started');
+            }
+
+        } else {
+
+            # Countdown task running and is available to start counting down/up
+            $taskObj->startClock($type, $number);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Countdown task updated; counting ' . $type . ' from '. $string,
+            );
+        }
+    }
+
     sub findTask {
 
         # Called by GA::Cmd::HaltTask->do, KillTask->do, PauseTask->do, ResumeTask->do,
@@ -3805,11 +3979,12 @@
             # The solution is to change the pattern a little, before using it as the name. If it
             #   contains any alphanumeric characters, remove them; otherwise introduce an
             #   underline at the beginning of the stimulus to distinguish it from its name
-            $proposedName
-                = $newObjName
-                = $attribHash{'stimulus'};
+            $proposedName = $newObjName = $attribHash{'stimulus'};
 
             # Remove non-alphanumeric characters (first transforming whitespaces to underlines)
+            # For the benefit of timers whose stimulus is a clock time in the form HH:MM, change the
+            #   colon to an underline
+            $newObjName =~ s/\:/_/g;
             $newObjName =~ s/\s/_/g;
             $newObjName =~ s/\W//g;
             # Remove any initial underline characters, and replace duplicate underline characters
@@ -3821,6 +3996,12 @@
                 # The proposed name didn't include any non-alphanumeric characters, so give it a
                 #   generic name
                 $newObjName = $category . '_' . $proposedName;
+
+            } elsif ($category eq 'timer') {
+
+                # The timer stimulus will have only numbers (and possibly underlines) in its name,
+                #   so for aesthetics, convert something like '25' to 'timer_25'
+                $newObjName = $category . '_' . $newObjName;
             }
 
             # Don't allow the creation of automatic names which are very long
@@ -7457,12 +7638,13 @@
 
         # Create the OK button
         my $okButton = Gtk2::Button->new('OK');
+        $hBox->pack_end($okButton, 0, 0, $self->borderPixels);
+        $okButton->get_child->set_width_chars(10);
         $okButton->signal_connect('clicked' => sub {
 
             $self->buttonOK();
         });
         $tooltips->set_tip($okButton, 'Close window');
-        $hBox->pack_end($okButton, 0, 0, $self->borderPixels);
 
         # This object doesn't edit anything, so we don't need Cancel/Reset/Edit buttons
         return ($okButton);
@@ -12515,38 +12697,48 @@
             0, 12, 0, 1);
 
         # Left column
-        $self->addLabel($table, 'Splitter trigger',
+        $self->addLabel($table, 'Ignore the trigger response (e.g. just apply a style)',
             1, 5, 1, 2);
-        $self->useCheckButton($table, 'splitter', TRUE,
+        $self->useCheckButton($table, 'ignore_response', TRUE,
             5, 6, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Split after matching pattern, not before',
-            1, 5, 2, 3);
-        $self->useCheckButton($table, 'split_after', TRUE,
-            5, 6, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Split line multiple times, if multiple matches',
-            1, 5, 3, 4);
-        $self->useCheckButton($table, 'keep_splitting', TRUE,
-            5, 6, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Rewriter trigger',
-            1, 5, 4, 5);
-        $self->useCheckButton($table, 'rewriter', TRUE,
-            5, 6, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Rewrite every matching part of line',
-            1, 5, 5, 6);
-        $self->useCheckButton($table, 'rewrite_global', TRUE,
-            5, 6, 5, 6, 1, 0.5);
         $self->addLabel($table, 'Ignore case',
-            1, 5, 6, 7);
+            1, 5, 2, 3);
         $self->useCheckButton($table, 'ignore_case', TRUE,
+            5, 6, 2, 3, 1, 0.5);
+        $self->addLabel($table, 'Keep checking triggers after a match',
+            1, 5, 3, 4);
+        $self->useCheckButton($table, 'keep_checking', TRUE,
+            5, 6, 3, 4, 1, 0.5);
+        $self->addLabel($table, 'Splitter trigger',
+            1, 5, 4, 5);
+        $self->useCheckButton($table, 'splitter', TRUE,
+            5, 6, 4, 5, 1, 0.5);
+        $self->addLabel($table, 'Split after matching pattern, not before',
+            1, 5, 5, 6);
+        $self->useCheckButton($table, 'split_after', TRUE,
+            5, 6, 5, 6, 1, 0.5);
+        $self->addLabel($table, 'Split line multiple times, if multiple matches',
+            1, 5, 6, 7);
+        $self->useCheckButton($table, 'keep_splitting', TRUE,
             5, 6, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Only fire in session\'s default pane',
+        $self->addLabel($table, 'Rewriter trigger',
             1, 5, 7, 8);
-        my $checkButton = $self->useCheckButton($table, 'default_pane', TRUE,
+        $self->useCheckButton($table, 'rewriter', TRUE,
             5, 6, 7, 8, 1, 0.5);
+        $self->addLabel($table, 'Rewrite every matching part of line',
+            1, 5, 8, 9);
+        $self->useCheckButton($table, 'rewrite_global', TRUE,
+            5, 6, 8, 9, 1, 0.5);
+
+        # Right column
+        $self->addLabel($table, 'Only fire in session\'s default pane',
+            7, 11, 1, 2);
+        my $checkButton = $self->useCheckButton($table, 'default_pane', TRUE,
+            11, 12, 1, 2, 1, 0.5);
         $self->addLabel($table, 'Fire in named pane',
-            1, 3, 8, 9);
+            7, 9, 2, 3);
         my $entry = $self->addEntry($table, undef, TRUE,
-            3, 6, 8, 9,
+            9, 12, 2, 3,
             8, 8);
         $entry->set_text($self->editObj->ivShow('attribHash', 'pane_name'));
         if ($entry->get_text()) {
@@ -12573,35 +12765,30 @@
             }
         });
 
-        # Right column
         $self->addLabel($table, 'Require a prompt to fire',
-            7, 11, 1, 2);
-        $self->useCheckButton($table, 'need_prompt', TRUE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Require a login to fire',
-            7, 11, 2, 3);
-        $self->useCheckButton($table, 'need_login', TRUE,
-            11, 12, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Omit (gag) from output',
             7, 11, 3, 4);
-        $self->useCheckButton($table, 'gag', TRUE,
+        $self->useCheckButton($table, 'need_prompt', TRUE,
             11, 12, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Omit (gag) from logfile',
+        $self->addLabel($table, 'Require a login to fire',
             7, 11, 4, 5);
-        $self->useCheckButton($table, 'gag_log', TRUE,
+        $self->useCheckButton($table, 'need_login', TRUE,
             11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Keep checking triggers after a match',
+        $self->addLabel($table, 'Omit (gag) from output',
             7, 11, 5, 6);
-        $self->useCheckButton($table, 'keep_checking', TRUE,
+        $self->useCheckButton($table, 'gag', TRUE,
             11, 12, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Temporary trigger',
+        $self->addLabel($table, 'Omit (gag) from logfile',
             7, 11, 6, 7);
-        $self->useCheckButton($table, 'temporary', TRUE,
+        $self->useCheckButton($table, 'gag_log', TRUE,
             11, 12, 6, 7, 1, 0.5);
+        $self->addLabel($table, 'Temporary trigger',
+            7, 11, 7, 8);
+        $self->useCheckButton($table, 'temporary', TRUE,
+            11, 12, 7, 8, 1, 0.5);
         $self->addLabel($table, 'Cooldown (in seconds)',
-            7, 9, 7, 8);
+            7, 9, 8, 9);
         $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
-            9, 12, 7, 8,
+            9, 12, 8, 9,
             8, 8);
 
         # Tab complete
@@ -15627,11 +15814,20 @@
 
         } elsif ($type eq 'interval') {
 
-            # Check it's a positive number
-            if (! $axmud::CLIENT->floatCheck($value, 0) || $value == 0) {
-
+            # CHeck the value. Valid values are
+            #   - A positive number
+            #   - A 24-hour clock time, in the form HH::MM (00:00-23:59)
+            #   - A clock time in the form 99:MM (99:00-99:59), for timers that fire once every hour
+            #       at MM minutes past the hour
+            if (
+               ( ! $axmud::CLIENT->floatCheck($value, 0) || $value == 0)
+                && ! ($value =~ m/^([01]?[0-9]|2[0-3])\:[0-5][0-9]$/)
+                && ! ($value =~ m/^99\:[0-5][0-9]$/)
+            ) {
                 return $session->writeWarning(
-                    'Invalid attribute value for \'' . $attrib . '\' (not an interval above 0)',
+                    'Invalid attribute value for \'' . $attrib . '\' (not an interval above 0, a'
+                    . ' 24-hour clock time in the form HH:MM, or an hourly timer in the form'
+                    . ' 99:MM)',
                     $self->_objClass . '->checkAttribValue',
                 );
 
@@ -15643,8 +15839,30 @@
 
         } elsif ($type eq 'keycode') {
 
-            # Must check it's a valid standard keycode
-            if (! $axmud::CLIENT->ivExists('constKeycodeHash', $value)) {
+            my ($modValue, $shiftFlag);
+
+            # Remove modifiers, so we can accept 'f1', 'ctrl f1', 'alt f1', 'shift alt f1', etc
+            #   (but we don't accept either 'shift f1' or 'alt-gr f1')
+            # For keypresses that aren't Axmud standard keycodes (like the letter 'a', for example),
+            #   we accept 'ctrl a', etc but we don't accept 'a' (so that the user can type normally)
+            $modValue = $value;
+            if ($modValue =~ s/(shift\s+|alt_gr\s+)//g) {
+
+                $shiftFlag = TRUE;
+            }
+
+            if (
+                $modValue =~ s/(alt\s+|ctrl\s+)//g
+                && (
+                    $axmud::CLIENT->ivExists('constKeycodeHash', $modValue)
+                    || length ($modValue) == 1
+                )
+            ) {
+                # value is $valid
+                return $value;
+
+            # Otherwise just check it's a valid standard keycode
+            } elsif ($shiftFlag || ! $axmud::CLIENT->ivExists('constKeycodeHash', $modValue)) {
 
                 return $session->writeWarning(
                     'Invalid attribute value for \'' . $attrib . '\' (not ' . $axmud::NAME_ARTICLE

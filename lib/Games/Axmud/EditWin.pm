@@ -2277,7 +2277,8 @@
 
         } elsif ($self->editObj->cageType eq 'timer') {
 
-            $entry = $self->addEntryWithIcon($table, undef, 'float', 0.01, undef,
+            $entry = $self->addEntryWithIcon(
+                $table, undef, \&interfacesTab_checkInterval, undef, undef,
                 3, 12, 8, 9);
 
         } elsif ($self->editObj->cageType eq 'hook') {
@@ -2650,6 +2651,40 @@
         }
 
         return 1;
+    }
+
+    sub interfacesTab_checkInterval {
+
+        # Called by $self->interfacesTab_addButtons to check a timer interval is valid
+        #
+        # Expected arguments
+        #   $value      - The value to check, should be a number (minimum value 0.01), or a 24-hour
+        #                   clock time in the form HH::MM
+        #
+        # Return values
+        #   'undef' on improper arguments or if $value is invalid
+        #   1 if $value is valid
+
+        my ($self, $value, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $value || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->interfacesTab_checkInterval',
+                @_,
+            );
+        }
+
+        if (
+            ! $axmud::CLIENT->floatCheck($value, 0.1)
+            && ! ($value =~ m/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+            && ! ($value =~ m/^99\:[0-5][0-9]$/)
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
     }
 
     ##################
@@ -4359,7 +4394,9 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
         }
 
+        $self->colourTab();
         $self->overrideTab();
+        $self->textTab();
 
         return 1;
     }
@@ -4460,24 +4497,52 @@
             $checkButton->set_active(TRUE);
         }
 
-        # Colour settings
-        $self->addLabel($table, '<i><u>Colour settings</u></i>',
-            1, 12, 2, 3);
+#       # Tab complete (handled by the calling function)
+#       $vBox->pack_start($table, 0, 0, 0);
 
-        my $hiddenButton = $self->nameTab_addRow($table, 'textColour', 'Text colour', 3);
-        my $hiddenButton2 = $self->nameTab_addRow($table, 'underlayColour', 'Underlay colour', 5);
-        my $hiddenButton3 = $self->nameTab_addRow(
+        return 1;
+    }
+
+    sub colourTab {
+
+        # Colour tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->colourTab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('_Colours', $self->notebook);
+
+        # Colour settings
+        $self->addLabel($table, '<b>Colour settings</b>',
+            0, 12, 0, 1);
+
+        my $hiddenButton = $self->colourTab_addRow($table, 'textColour', 'Text colour', 1);
+        my $hiddenButton2 = $self->colourTab_addRow($table, 'underlayColour', 'Underlay colour', 3);
+        my $hiddenButton3 = $self->colourTab_addRow(
             $table,
             'backgroundColour',
             'Background colour',
-            7,
+            5,
         );
 
         my $button = $self->addButton($table,
             'Set underlay to match background',
             'Update the underlay colour',
             undef,
-            1, 6, 9, 10);
+            1, 12, 7, 8);
         $button->signal_connect('clicked' => sub {
 
             my $background = $self->getEditHash_scalarIV('backgroundColour');
@@ -4497,7 +4562,7 @@
             'Swap text and background colours',
             'Update the text and background colours',
             undef,
-            6, 12, 9, 10);
+            1, 12, 8, 9);
         $button2->signal_connect('clicked' => sub {
 
             my ($text, $underlay, $background);
@@ -4520,60 +4585,13 @@
             $hiddenButton3->clicked();
         });
 
-        # Font settings
-        $self->addLabel($table, '<i><u>Font settings</u></i>',
-            1, 12, 10, 11);
-
-        $self->addLabel($table, 'Font',
-            1, 4, 11, 12);
-
-        my $entry = $self->addEntry($table, undef, FALSE,
-            4, 6, 11, 12);
-        $entry->set_text($self->editObj->font . ' ' . $self->editObj->fontSize);
-
-        my $button3 = $self->addButton($table, 'Change', 'Change this font', undef,
-            6, 7, 11, 12);
-        $button3->signal_connect('clicked' => sub {
-
-            my $font = $self->showFontSelectionDialogue(
-                'Colour scheme \'' . $self->editObj->name . '\' font',
-            );
-
-            if (defined $font) {
-
-                # $font is a string in the form 'Monospace 10'. Separate the font name from the
-                #   size
-                if ($font =~ m/(.*)\s(.\d)$/) {
-
-                    $self->ivAdd('editHash', 'font', $1);
-                    $self->ivAdd('editHash', 'fontSize', $2);
-
-                    $entry->set_text($font);
-                }
-            }
-        });
-
-        my $entry2 = $self->addEntry($table, undef, FALSE,
-            9, 11, 11, 12);
-        $entry2->set_text($axmud::CLIENT->constFont . ' ' . $axmud::CLIENT->constFontSize);
-
-        my $button4 = $self->addButton($table, 'Use default', 'Use the default font', undef,
-            11, 12, 11, 12);
-        $button4->signal_connect('clicked' => sub {
-
-            $self->ivAdd('editHash', 'font', $axmud::CLIENT->constFont);
-            $self->ivAdd('editHash', 'fontSize', $axmud::CLIENT->constFontSize);
-
-            $entry->set_text($axmud::CLIENT->constFont . ' ' . $axmud::CLIENT->constFontSize);
-        });
-
-#       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
 
         return 1;
     }
 
-    sub nameTab_addRow {
+    sub colourTab_addRow {
 
         # Called by $self->nameTab
         # Adds a single row of labels, entry boxes and buttons to allow configuration of a single
@@ -4603,7 +4621,7 @@
             ! defined $table || ! defined $iv || ! defined $text || ! defined $row
             || defined $check
         ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab_addRow', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->colourTab_addRow', @_);
         }
 
         # Initialise vars
@@ -4759,7 +4777,7 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('_Colour overrides', $self->notebook);
+        my ($vBox, $table) = $self->addTab('Colour _overrides', $self->notebook);
 
         # Colour overrides
         $self->addLabel($table, '<b>Colour overrides</b>',
@@ -4962,6 +4980,137 @@
                 return TRUE;
             }
         }
+    }
+
+    sub textTab {
+
+        # Colour tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $count, $current,
+            @list, @comboList,
+            %descripHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->textTab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('_Text settings', $self->notebook);
+
+        # Text settings
+        $self->addLabel($table, '<b>Text settings</b>',
+            0, 12, 0, 1);
+
+        # Font settings
+        $self->addLabel($table, '<i><u>Font settings</u></i>',
+            1, 12, 1, 2);
+
+        $self->addLabel($table, 'Font',
+            1, 4, 2, 3);
+
+        my $entry = $self->addEntry($table, undef, FALSE,
+            4, 6, 2, 3);
+        $entry->set_text($self->editObj->font . ' ' . $self->editObj->fontSize);
+
+        my $button3 = $self->addButton($table, 'Change', 'Change this font', undef,
+            6, 7, 2, 3);
+        $button3->signal_connect('clicked' => sub {
+
+            my $font = $self->showFontSelectionDialogue(
+                'Colour scheme \'' . $self->editObj->name . '\' font',
+            );
+
+            if (defined $font) {
+
+                # $font is a string in the form 'Monospace 10'. Separate the font name from the
+                #   size
+                if ($font =~ m/(.*)\s(.\d)$/) {
+
+                    $self->ivAdd('editHash', 'font', $1);
+                    $self->ivAdd('editHash', 'fontSize', $2);
+
+                    $entry->set_text($font);
+                }
+            }
+        });
+
+        my $entry2 = $self->addEntry($table, undef, FALSE,
+            9, 11, 2, 3);
+        $entry2->set_text($axmud::CLIENT->constFont . ' ' . $axmud::CLIENT->constFontSize);
+
+        my $button4 = $self->addButton($table, 'Use default', 'Use the default font', undef,
+            11, 12, 2, 3);
+        $button4->signal_connect('clicked' => sub {
+
+            $self->ivAdd('editHash', 'font', $axmud::CLIENT->constFont);
+            $self->ivAdd('editHash', 'fontSize', $axmud::CLIENT->constFontSize);
+
+            $entry->set_text($axmud::CLIENT->constFont . ' ' . $axmud::CLIENT->constFontSize);
+        });
+
+        # Word wrap settings
+        $self->addLabel($table, '<i><u>Word wrap settings</u></i>',
+            1, 12, 3, 4);
+
+        @list = (
+            'no_wrap'           => 'Don\'t wrap text to fit the window',
+            'wrap_char'         => 'Wrap text and split up words',
+            'wrap_word'         => 'Wrap text and don\'t split up words',
+            'wrap_word_char'    => 'Don\'t split up words unless it\'s necessary',
+        );
+
+        $count = -1;
+
+        do {
+
+            my ($mode, $descrip);
+
+            $mode = shift @list;
+            $descrip = shift @list;
+            $count++;
+
+            $descripHash{$descrip} = $mode;
+            push (@comboList, $descrip);
+
+            if ($mode eq $self->editObj->wrapMode) {
+
+                $current = $count;
+            }
+
+        } until (! @list);
+
+        my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,               # No 'undef' value used
+            1, 6, 4, 5);
+        if (defined $current) {
+
+            $comboBox->set_active($current);
+        }
+        $comboBox->signal_connect('changed' => sub {
+
+            my $descrip = $comboBox->get_active_text();
+
+            $self->ivAdd('editHash', 'wrapMode', $descripHash{$descrip});
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
     }
 
     ##################
@@ -13181,10 +13330,16 @@
             9, 12, 11, 12);
 
         ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'other\'', 'exitState', 'other', FALSE,
+            $table, $group, '\'emphasis\'', 'exitState', 'emphasis', FALSE,
             7, 9, 12, 13);
-        $self->addLabel($table, 'Other state',
+        $self->addLabel($table, 'Exit emphasised',
             9, 12, 12, 13);
+
+        ($group, $radioButton) = $self->addRadioButton(
+            $table, $group, '\'other\'', 'exitState', 'other', FALSE,
+            7, 9, 13, 14);
+        $self->addLabel($table, 'Other state',
+            9, 12, 13, 14);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -13478,17 +13633,27 @@
         $self->addLabel($table, 'Stimulus <i>(' . $interfaceModelObj->stimulusName . ')</i>',
             1, 3, 3, 4);
         # For hooks, use a combo; for everything else, use an entry
-        if ($self->editObj->category eq 'hook') {
+        if ($self->editObj->category eq 'trigger' || $self->editObj->category eq 'alias') {
+
+            $self->addEntryWithIcon($table, 'stimulus', 'regex', 1, undef,
+                3, 12, 3, 4);
+
+        } elsif ($self->editObj->category eq 'macro') {
+
+            $self->addEntryWithIcon($table, 'stimulus', 'string', 1, undef,
+                3, 12, 3, 4);
+
+        } elsif ($self->editObj->category eq 'timer') {
+
+            $self->addEntryWithIcon($table, 'stimulus', \&nameTab_checkInterval, undef, undef,
+                3, 12, 3, 4);
+
+        } elsif ($self->editObj->category eq 'hook') {
 
             @comboList = sort {$a cmp $b} ($interfaceModelObj->ivKeys('hookEventHash'));
             $self->addComboBox($table, 'stimulus', \@comboList, '',
                 TRUE,               # No 'undef' value used
                 3, 6, 3, 4);
-
-        } else {
-
-            $self->addEntryWithIcon($table, 'stimulus', 'string', 1, undef,
-                3, 12, 3, 4);
         }
 
         # For triggers, the response can be any of 'instruction', 'pattern', 'substitution'
@@ -13512,6 +13677,40 @@
 #       $vBox->pack_start($table, 0, 0, 0);
 
         return 1;
+    }
+
+    sub nameTab_checkInterval {
+
+        # Called by $self->nameTab to check a timer interval is valid
+        #
+        # Expected arguments
+        #   $value      - The value to check, should be a number (minimum value 0.01), or a 24-hour
+        #                   clock time in the form HH::MM
+        #
+        # Return values
+        #   'undef' on improper arguments or if $value is invalid
+        #   1 if $value is valid
+
+        my ($self, $value, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $value || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->nameTab_checkInterval',
+                @_,
+            );
+        }
+
+        if (
+            ! $axmud::CLIENT->floatCheck($value, 0.1)
+            && ! ($value =~ m/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+            && ! ($value =~ m/^99\:[0-5][0-9]$/)
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
     }
 
     sub beforeAfterTab {
@@ -16353,7 +16552,7 @@
             # For regions and rooms, update any Automapper windows
             if ($self->editObj->category eq 'region') {
 
-                # Redraw this region, if it currently visible
+                # Redraw this region, if drawn
                 $self->session->worldModelObj->updateRegion($self->editObj->name);
 
             } elsif ($self->editObj->category eq 'room') {
@@ -18587,14 +18786,14 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->saveChanges', @_);
         }
 
+        # Import the world model (for convenience)
+        $wmObj = $self->session->worldModelObj;
+
         if ($self->editHash) {
 
             # For changes to ->involuntaryExitPatternHash, other objects in the world model must be
             #   updated
             if ($self->ivExists('editHash', 'involuntaryExitPatternHash')) {
-
-                # Import the world model (for convenience)
-                $wmObj = $self->session->worldModelObj;
 
                 # Simplest way to deal with changes to involuntary exits is to delete all the
                 #   existing patterns (if any), then add new ones (if any)
@@ -18614,9 +18813,6 @@
 
             # Same process for ->repulseExitPatternHash
             if ($self->ivExists('editHash', 'repulseExitPatternHash')) {
-
-                # Import the world model (for convenience)
-                $wmObj = $self->session->worldModelObj;
 
                 # Simplest way to deal with changes to repulse exits is to delete all the existing
                 #   patterns (if any), then add new ones (if any)
@@ -18654,6 +18850,9 @@
 
                 $self->session->viewerWin->updateNotebook();
             }
+
+            # Redraw the room in every automapper window using the same world model
+            $wmObj->updateMaps('room', $self->editObj);
         }
 
         return 1;
@@ -19100,7 +19299,7 @@
             7, 12, 4, 6);
 
         # Unspecified room patterns
-        $self->addLabel($table, '<b>Unspecified room patterns commands</b>',
+        $self->addLabel($table, '<b>Unspecified room patterns</b>',
             0, 12, 6, 8);
         $self->addLabel(
             $table,
@@ -27696,6 +27895,8 @@
         $self->rooms17Tab($innerNotebook);
         $self->rooms18Tab($innerNotebook);
         $self->rooms19Tab($innerNotebook);
+        $self->rooms20Tab($innerNotebook);
+        $self->rooms21Tab($innerNotebook);
 
         return 1;
     }
@@ -29004,15 +29205,15 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 9,
-            -1, 200);     # Fixed height
+            1, 12, 2, 8,
+            -1, 180);     # Fixed height
 
         # Initialise the simple list
         $self->rooms14Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add editing widgets
         $self->addLabel($table, 'Exit state',
-            1, 3, 9, 10);
+            1, 3, 8, 9);
         @comboList = (
             'open',
             'closed',
@@ -29024,6 +29225,7 @@
             'impass',
             'dark',
             'danger',
+            'emphasis',
             'other',
             'ignore',
             # Put 'normal' at the end, since it's the default exit state (but is probably never
@@ -29032,48 +29234,60 @@
         );
         my $combo = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,           # No 'undef' value used
-            3, 6, 9, 10);
+            3, 6, 8, 9);
+
+        $self->addLabel($table, '(or) specify an assisted move',
+            7, 9, 8, 9);
+        my $entry = $self->addEntry($table, undef, TRUE,
+            9, 12, 8, 9);
 
         $self->addLabel($table, 'Start string',
-            7, 9, 9, 10);
-        my $entry = $self->addEntry($table, undef, TRUE,
-            9, 12, 9, 10);
+            1, 3, 9, 10);
+        my $entry2 = $self->addEntry($table, undef, TRUE,
+            3, 6, 9, 10);
 
         $self->addLabel($table, 'Middle string',
-            1, 3, 10, 11);
-        my $entry2 = $self->addEntry($table, undef, TRUE,
-            3, 6, 10, 11);
+            7, 9, 9, 10);
+        my $entry3 = $self->addEntry($table, undef, TRUE,
+            9, 12, 9, 10);
 
         $self->addLabel($table, 'End string',
-            7, 9, 10, 11);
-        my $entry3 = $self->addEntry($table, undef, TRUE,
-            9, 11, 10, 11);
+            1, 3, 10, 11);
+        my $entry4 = $self->addEntry($table, undef, TRUE,
+            3, 6, 10, 11);
 
         my $button = $self->addButton(
             $table, 'Add', 'Add this exit state', undef,
-            11, 12, 10, 11);
+            1, 4, 11, 12);
         $button->signal_connect('clicked' => sub {
 
             my (
-                $state, $start, $middle, $end,
+                $text, $text2, $state, $start, $middle, $end,
                 @ivList,
             );
 
-            $state = $combo->get_active_text();
-            $start = $entry->get_text();
+            $text = $combo->get_active_text();
+            $text2 = $entry->get_text();
+            if (defined $text2 && $text2 ne '') {
+                $state = $text2;
+            } else {
+                $state = $text;
+            }
+
+            $start = $entry2->get_text();
             if (! $start) {
 
                 # Use an empty string, rather than 'undef'
                 $start = '';
             }
 
-            $middle = $entry2->get_text();
+            $middle = $entry3->get_text();
             if (! $middle) {
 
                 $middle = '';
             }
 
-            $end = $entry3->get_text();
+            $end = $entry4->get_text();
             if (! $end) {
 
                 $end = '';
@@ -29090,7 +29304,7 @@
 
         my $button2 = $self->addButton(
             $table, 'Delete', 'Delete the selected exit state from the list', undef,
-            8, 10, 11, 12);
+            4, 6, 11, 12);
         $button2->signal_connect('clicked' => sub {
 
             my (
@@ -29177,6 +29391,9 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Local variables
+        my (@columnList, @comboList);
+
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -29186,51 +29403,137 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page 15', $innerNotebook);
 
-        # Exit remove/info patterns
-        $self->addLabel($table, '<b>Exit state/remove/info patterns</b>',
-            0, 10, 0, 1);
-        $self->addRegexButton($table,
-            [
-                'list', 'exitStatePatternList',
-                'list', 'exitRemovePatternList',
-                'list', 'exitInfoPatternList',
-            ],
-            10, 12, 0, 1);
-
-        $self->addLabel(
-            $table,
-            '<i>If exit delimiters interfere with state strings, matching parts of the exit area'
-            . ' removed before delimiters are applied</i>',
+        # Exit state colour tags
+        $self->addLabel($table, '<b>Exit state colour tags</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table,
+            '<i>List of colour tags which specify an exit state, when they occur at the beginning'
+            . ' of an exit</i>',
             1, 12, 1, 2);
-        $self->addTextView($table, 'exitStatePatternList', TRUE,
-            1, 12, 2, 5,
-            TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 80);                   # Fixed height
 
-        $self->addLabel(
-            $table,
-            '<i>Parts of the exit which match these patterns are removed, before the exit is'
-            . ' processed</i>',
-            1, 12, 5, 6);
-        $self->addTextView($table, 'exitRemovePatternList', TRUE,
-            1, 12, 6, 9,
-            TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 80);                   # Fixed height
+        # Add a simple list
+        @columnList = (
+            'Colour tag', 'text',
+            'Exit state', 'text',
+        );
 
-        $self->addLabel(
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 3, 9,
+            -1, 200);      # Fixed height
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'exitStateTagHash');
+
+        # Add entries/comboboxes for adding new patterns
+        $self->addLabel($table, 'Colour tag',
+            1, 3, 9, 10);
+        my $entry = $self->addEntryWithIcon($table, undef, \&rooms15Tab_checkEntry, undef, undef,
+            3, 6, 9, 10);
+
+        $self->addLabel($table, 'Exit state',
+            1, 3, 10, 11);
+        @comboList = (
+            'open',
+            'closed',
+            'locked',
+            'secret',
+            'secret_open',
+            'secret_closed',
+            'secret_locked',
+            'impass',
+            'dark',
+            'danger',
+            'emphasis',
+            'other',
+            'ignore',
+            # Put 'normal' at the end, since it's the default exit state (but is probably never
+            #   added to $self->ediObj->exitStateStringList)
+            'normal',
+        );
+        my $combo = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,           # No 'undef' value used
+            3, 6, 10, 11);
+
+        $self->addLabel($table, '(or) specify an assisted move',
+            7, 9, 10, 11);
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+            9, 12, 10, 11);
+
+        # Add standard editing buttons to the simple list
+        my $button = $self->addSimpleListButtons_hashIV(
             $table,
-            '<i>Parts of the exit which match these patterns are removed (but the first'
-            . ' group substring is stored)</i>',
-            1, 12, 9, 10);
-        $self->addTextView($table, 'exitInfoPatternList', TRUE,
-            1, 12, 10, 13,
-            TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 80);                   # Fixed height
+            $slWidget,
+            'exitStateTagHash',
+            11,
+            $entry, $entry2,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            my ($tag, $text, $text2, $state);
+
+            $tag = $entry->get_text();
+
+            $text = $combo->get_active_text();
+            $text2 = $entry2->get_text();
+            if (defined $text2 && $text2 ne '') {
+                $state = $text2;
+            } else {
+                $state = $text;
+            }
+
+            if ($self->checkEntryIcon($entry, $entry2)) {
+
+                # Add a new key-value pair
+                $self->modifyEditHash_hashIV('exitStateTagHash', $tag, $state);
+
+                # Refresh the simple list and reset entry boxes
+                $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'exitStateTagHash');
+                $self->resetEntryBoxes($entry, $entry2);
+            }
+        });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
 
         return 1;
+    }
+
+    sub rooms15Tab_checkEntry {
+
+        # Called by $self->rooms15Tab to check the text in the Gtk2::Entry
+        #
+        # Expected arguments
+        #   $text       - The contents of the Gtk2::Entry
+        #
+        # Return values
+        #   'undef' on improper arguments or if $text is invalid
+        #   1 if $text is valid
+
+        my ($self, $text, $check) = @_;
+
+        # Local variables
+        my $result;
+
+        # Check for improper arguments
+        if (! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->rooms15Tab_checkEntry', @_);
+        }
+
+        # $text can be an empty string, or any valid Axmud colour tag
+        if ($text eq '') {
+
+            return 1;
+
+        } else {
+
+            ($result) = $axmud::CLIENT->checkColourTags($text);
+            if (defined $result) {
+                return 1;
+            } else {
+                return undef;
+            }
+        }
     }
 
     sub rooms16Tab {
@@ -29325,7 +29628,7 @@
         return 1;
     }
 
-    sub rooms17Tab {
+    sub rooms17Tab {     # split
 
         # Rooms17 tab
         #
@@ -29346,6 +29649,123 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page 17', $innerNotebook);
+
+        # Exit state patterns
+        $self->addLabel($table, '<b>Exit state patterns</b>',
+            0, 10, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'exitStatePatternList',
+            ],
+            10, 12, 0, 1);
+
+        $self->addLabel(
+            $table,
+            '<i>If exit delimiters interfere with state strings, matching parts of the exit area'
+            . ' removed before delimiters are applied</i>',
+            1, 12, 1, 2);
+        $self->addTextView($table, 'exitStatePatternList', TRUE,
+            1, 12, 2, 6,
+            TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
+
+        # Duplicate exit replacement string
+        $self->addLabel($table, '<b>Duplicate exit replacement string</b>',
+            0, 12, 6, 7);
+        $self->addLabel(
+            $table,
+            '<i>If an exit appears in an exit list twice, the second one is converted to this'
+            . ' string. <b>@@@</b> is substituted for the duplicate</i>',
+            0, 12, 7, 8);
+        $self->addEntryWithButton($table, 'duplicateReplaceString', TRUE,
+            1, 12, 8, 9,
+            64, 64);                    # Use high max characters for layout reasons
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub rooms18Tab {
+
+        # Rooms18 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->rooms18Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page 18', $innerNotebook);
+
+        # Exit remove/info patterns
+        $self->addLabel($table, '<b>Exit remove/info patterns</b>',
+            0, 10, 0, 1);
+        $self->addRegexButton($table,
+            [
+                'list', 'exitRemovePatternList',
+                'list', 'exitInfoPatternList',
+            ],
+            10, 12, 0, 1);
+
+        $self->addLabel(
+            $table,
+            '<i>Parts of the exit which match these patterns are removed, before the exit is'
+            . ' processed</i>',
+            1, 12, 1, 2);
+        $self->addTextView($table, 'exitRemovePatternList', TRUE,
+            1, 12, 2, 6,
+            TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                  # Fixed height
+
+        $self->addLabel(
+            $table,
+            '<i>Parts of the exit which match these patterns are removed (but the first'
+            . ' group substring is stored)</i>',
+            1, 12, 6, 7);
+        $self->addTextView($table, 'exitInfoPatternList', TRUE,
+            1, 12, 7, 12,
+            TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                  # Fixed height
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub rooms19Tab {
+
+        # Rooms19 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->rooms19Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page 19', $innerNotebook);
 
         # Contents list patterns
         $self->addLabel($table, '<b>Contents list patterns</b>',
@@ -29370,9 +29790,9 @@
         return 1;
     }
 
-    sub rooms18Tab {
+    sub rooms20Tab {
 
-        # Rooms18 tab
+        # Rooms20 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -29389,11 +29809,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->rooms18Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->rooms20Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page 18', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page 20', $innerNotebook);
 
         # Status commands
         $self->addLabel($table, '<b>Special contents patterns</b>',
@@ -29463,9 +29883,9 @@
         return 1;
     }
 
-    sub rooms19Tab {
+    sub rooms21Tab {
 
-        # Rooms19 tab
+        # Rooms21 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -29479,11 +29899,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->rooms19Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->rooms21Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page 19', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page 21', $innerNotebook);
 
         # Room command delimiter/marker strings
         $self->addLabel($table,
@@ -40711,7 +41131,7 @@
                 $self->session->viewerWin->updateNotebook();
             }
 
-            # Redraw this region (only) in all Automapper windows using this world model
+            # Redraw this region in all Automapper windows using this world model
             $self->session->worldModelObj->updateRegion($self->editObj->name);
 
             if ($failFlag) {
@@ -44882,6 +45302,10 @@
 
             $self->parametersCondition1Tab($innerNotebook);
 
+        } elsif ($self->editObj->name eq 'connections_task') {
+
+            $self->parametersConnections1Tab($innerNotebook);
+
         } elsif ($self->editObj->name eq 'divert_task') {
 
             $self->parametersDivert1Tab($innerNotebook);
@@ -45574,6 +45998,90 @@
             }
         });
         $checkButton->set_active($self->editObj->checkOnceFlag);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub parametersConnections1Tab {
+
+        # Parameters Connections1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my (
+            @list, @comboList,
+            %descripHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->parametersConnections1Tab',
+                @_,
+            );
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+
+        # Task parameters
+        $self->addLabel($table, '<b>Task parameters</b>',
+            0, 12, 0, 1);
+
+        $self->addLabel(
+            $table,
+            'Show additional connection information (requires a larger task window)',
+            1, 11, 1, 2);
+        $self->addCheckButton($table, 'showInfoFlag', TRUE,
+            11, 12, 1, 2);
+        $self->addLabel($table,'This task create its own macros to switch between sessions',
+            1, 11, 2, 3);
+        $self->addCheckButton($table, 'useMacrosFlag', TRUE,
+            11, 12, 2, 3);
+        $self->addLabel($table,'If macros are created, which keycodes to use',
+            1, 6, 3, 4);
+
+        @list = (
+            'CTRL+1, CTRL+2 ... CTRL+9'     => 'default',
+            'F1, F2 ... F9'                 => 'simple',
+        );
+
+        do {
+
+            my ($descrip, $mode);
+
+            $descrip = shift @list;
+            $mode = shift @list;
+
+            $descripHash{$descrip} = $mode;
+
+            if ($self->editObj->macroMode eq $mode) {
+                unshift(@comboList, $descrip);
+            } else {
+                push (@comboList, $descrip);
+            }
+
+        } until (! @list);
+
+        my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,              # 'undef' value not allowed
+            6, 12, 3, 4);
+        $comboBox->signal_connect('changed' => sub {
+
+            $self->ivAdd('editHash', 'macroMode', $descripHash{$comboBox->get_active_text()});
+        });
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -48364,9 +48872,9 @@
             $button6->set_sensitive(FALSE);
 
             $label2->set_markup('Voice (e.g.  <b>english_rp  english-us  en-scottish</b>  )');
-            $label3->set_markup('Word speed (words per minute; 0 for default speed)');
+            $label3->set_markup('Word speed (words per minute; 0-100, 0 is default)');
             $label4->set_markup('Word rate (not available with eSpeak)');
-            $label5->set_markup('Word pitch (value in the range 0 - 99)');
+            $label5->set_markup('Word pitch (value in the range 0 - 100)');
             $label6->set_markup('Volume (not available with eSpeak)');
 
         } elsif ($engine eq 'esng') {
@@ -48384,10 +48892,10 @@
             $button6->set_sensitive(TRUE);
 
             $label2->set_markup('Voice (e.g.  <b>en  es  fr</b>  )');
-            $label3->set_markup('Word speed (words per minute; value in range 10-200)');
+            $label3->set_markup('Word speed (words per minute; value in range 0-100)');
             $label4->set_markup('Word rate (not available with espeak-ng)');
-            $label5->set_markup('Word pitch (value in the range 0 - 99)');
-            $label6->set_markup('Volume (value in the range 0-200)');
+            $label5->set_markup('Word pitch (value in the range 0-100)');
+            $label6->set_markup('Volume (value in the range 0-100)');
 
         } elsif ($engine eq 'flite') {
 
@@ -48425,9 +48933,9 @@
 
             $label2->set_markup('Voice (e.g.  <b>voice_kal_diphone  voice_rab_diphone</b>  )');
             $label3->set_markup('Word speed (not available with Festival)');
-            $label4->set_markup('Word rate (value in the range 0.5 - 2)');
+            $label4->set_markup('Word rate (value in the range 0-100)');
             $label5->set_markup('Word pitch (not available with Festival)');
-            $label6->set_markup('Volume (value in the range 0.33 - 6)');
+            $label6->set_markup('Volume (value in the range 0-100)');
 
         } elsif ($engine eq 'swift') {
 
@@ -48446,7 +48954,7 @@
                 $button6->set_sensitive(TRUE);
 
                 $label2->set_markup('Voice (e.g.  <b>Allison  David</b>  )');
-                $label3->set_markup('Word speed (words per minute; value in range 100-400)');
+                $label3->set_markup('Word speed (words per minute; value in range 0-100)');
                 $label4->set_markup('Word rate (not available with Swift)');
                 $label5->set_markup('Word pitch (value in the range 0.1 - 5)');
                 $label6->set_markup('Volume (value in the range 0-100)');
@@ -48467,9 +48975,9 @@
 
                 $label2->set_markup('Voice (e.g.  <b>Allison  David</b>  )');
                 $label3->set_markup('Word speed (not available with Swift)');
-                $label4->set_markup('Word rate (value in the range 0.5 - 2)');
-                $label5->set_markup('Word pitch (value in the range 0.1 - 5)');
-                $label6->set_markup('Volume (value in the range 0.33 - 6)');
+                $label4->set_markup('Word rate (value in the range 0-100)');
+                $label5->set_markup('Word pitch (value in the range 0-100)');
+                $label6->set_markup('Volume (value in the range 0-100)');
             }
 
         } elsif ($engine eq 'none') {
@@ -53786,9 +54294,14 @@
             # (GA::Obj::WorldModel flags)
             @ivList = (
                 # ->settings1Tab
-                'trackPosnFlag', 'track_current_room', 'icon_track_current_room',
                 'drawOrnamentsFlag', 'draw_ornaments', 'icon_draw_ornaments',
-                # ->settings2Tab
+                'trackPosnFlag', 'track_current_room', 'icon_track_current_room',
+                 # ->settings2Tab
+                'fixedRoomTagFlag', 'fixed_room_tag', undef,
+                'fixedRoomGuildFlag', 'fixed_room_guild', undef,
+                'fixedExitTagFlag', 'fixed_exit_tag', undef,
+                'fixedLabelFlag', 'fixed_label', undef,
+                # ->settings3Tab
                 'matchTitleFlag', 'match_title', undef,
                 'matchDescripFlag', 'match_descrip', undef,
                 'matchExitFlag', 'match_exit', undef,
@@ -53802,7 +54315,7 @@
                 'updateVNumFlag', 'update_vnum', undef,
                 'updateRoomCmdFlag', 'update_room_cmd', undef,
                 'updateOrnamentFlag', 'update_ornament', undef,
-                 # ->settings3Tab
+                 # ->settings4Tab
 #               'autoCompareAllFlag', 'auto_compare_region', undef,         # Set below
                 'autoRescueFlag', 'auto_rescue', undef,
                 'autoRescueFirstFlag', 'auto_rescue_first', undef,
@@ -53810,12 +54323,12 @@
                 'autoRescueNoMoveFlag', 'auto_rescue_no_move', undef,
                 'autoRescueVisitsFlag', 'auto_rescue_visits', undef,
                 'autoRescueForceFlag', 'auto_rescue_foce', undef,
-                 # ->settings4Tab
+                 # ->settings5Tab
                 'allowModelScriptFlag', 'allow_model_scripts', undef,
                 'allowRoomScriptFlag', 'allow_room_scripts', undef,
-                 # ->settings5Tab
+                 # ->settings6Tab
                 # (none)
-                # ->settings6Tab
+                # ->settings7Tab
                 'assistedMovesFlag', 'allow_assisted_moves', undef,
                 'assistedBreakFlag', 'break_before_move', undef,
                 'assistedPickFlag', 'pick_before_move', undef,
@@ -53832,7 +54345,7 @@
                 'autocompleteExitsFlag', 'autocomplete_uncertain', undef,
                 'collectCheckedDirsFlag', 'collect_checked_dirs', undef,
                 'drawCheckedDirsFlag', 'draw_checked_dirs', undef,
-                # ->settings7Tab
+                # ->settings8Tab
                 'autoOpenWinFlag', 'auto_open_win', undef,
                 'pseudoWinFlag', 'pseudo_win', undef,
                 'allowTrackAloneFlag', 'keep_following', undef,
@@ -53985,7 +54498,10 @@
                 $self->session->viewerWin->updateNotebook();
             }
 
-            # Redraw maps in all Automapper windows using this world model
+            # Redraw drawn regions in all Automapper windows using this world model. This can take
+            #    a very long time, so first destroy the 'edit' window (an operation that would
+            #   normally be performed by the generic ->buttonOK function)
+            $self->winDestroy();
             $self->editObj->updateRegion();
 
             if ($failFlag) {
@@ -54310,8 +54826,8 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
 
-        # Models
-        $self->addLabel($table, '<b>Models</b>',
+        # Objects
+        $self->addLabel($table, '<b>Objects</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -55242,6 +55758,7 @@
         $self->settings5Tab($innerNotebook);
         $self->settings6Tab($innerNotebook);
         $self->settings7Tab($innerNotebook);
+        $self->settings8Tab($innerNotebook);
 
         return 1;
     }
@@ -55327,96 +55844,75 @@
         $self->addCheckButton($table, 'showCanvasFlag', TRUE,
             5, 6, 5, 6, 1, 0.5);
 
-        $self->addLabel($table, '<u>Tracking</u>',
-            1, 6, 6, 7);
-        $self->addLabel($table, 'Track position',
-            1, 5, 7, 8);
-        $self->addCheckButton($table, 'trackPosnFlag', TRUE,
-            5, 6, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Tracking sensitivity',
-            1, 4, 8, 9);
-        $self->addEntry($table, 'trackingSensitivity', FALSE,
-            4, 6, 8, 9, 4, 4);
-
-        $self->addLabel($table, '<u>Painter</u>',
-            1, 6, 9, 10);
-        $self->addLabel($table, 'Paint existing rooms',
-            1, 5, 10, 11);
-        $self->addCheckButton($table, 'paintAllRoomsFlag', FALSE,
-            5, 6, 10, 11, 1, 0.5);
-        $self->addLabel($table, 'Quick-paint without resetting',
-            1, 5, 11, 12);
-        $self->addCheckButton($table, 'quickPaintMultiFlag', FALSE,
-            5, 6, 11, 12, 1, 0.5);
-
-        # Right column
         $self->addLabel($table, '<u>Drawing modes</u>',
-            7, 12, 1, 2);
+            1, 6, 6, 7);
 
         $self->addLabel($table, 'Current room mode',
-            7, 9, 2, 3);
+            1, 3, 7, 8);
         my $entry = $self->addEntry($table, undef, FALSE,
-            9, 12, 2, 3);
+            3, 6, 7, 8);
         $entry->set_text($currentModeHash{$self->editObj->currentRoomMode});
 
         $self->addLabel($table, 'Room interior mode',
-            7, 9, 3, 4);
+            1, 3, 8, 9);
         my $entry2 = $self->addEntry($table, undef, FALSE,
-            9, 12, 3, 4);
+            3, 6, 8, 9);
         $entry2->set_text($interiorModeHash{$self->editObj->roomInteriorMode});
 
         $self->addLabel($table, 'Draw exit mode',
-            7, 9, 4, 5);
+            1, 3, 9, 10);
         my $entry3 = $self->addEntry($table, undef, FALSE,
-            9, 12, 4, 5);
+            3, 6, 9, 10);
         $entry3->set_text($exitModeHash{$self->editObj->drawExitMode});
 
         $self->addLabel($table, 'Draw exit ornaments',
-            7, 11, 5, 6);
+            1, 5, 10, 11);
         $self->addCheckButton($table, 'drawOrnamentsFlag', TRUE,
-            11, 12, 5, 6, 1, 0.5);
+            5, 6, 10, 11, 1, 0.5);
 
-        $self->addLabel($table, '<u>Map font</u>',
-            7, 12, 6, 7);
+        # Right column
+        $self->addLabel($table, '<u>Show \'Working...\' dialogue</u>',
+            7, 12, 1, 2);
+        $self->addLabel($table, 'Draw objects (100+)',
+            7, 9, 2, 3);
+        $self->addEntryWithIcon($table, 'drawPauseNum', 'int', 100, undef,
+            9, 12, 2, 3,
+            8, 8);
+        $self->addLabel($table, 'Calculate region paths (10+)',
+            7, 9, 3, 4);
+        $self->addEntryWithIcon($table, 'recalculatePauseNum', 'int', 10, undef,
+            9, 12, 3, 4,
+            8, 8);
 
-        $self->addLabel($table, 'Font',
+        $self->addLabel($table, '<u>Pre-drawing of maps</u>',
+            7, 12, 4, 5);
+        $self->addLabel($table, 'Pre-draw if this many rooms',
+            7, 9, 5, 6);
+        $self->addEntryWithIcon($table, 'preDrawMinRooms', 'int', 0, undef,
+            9, 12, 5, 6,
+            8, 8);
+        $self->addLabel($table, 'Retain in memory if this many rooms',
+            7, 9, 6, 7);
+        $self->addEntryWithIcon($table, 'retainDrawMinRooms', 'int', 0, undef,
+            9, 12, 6, 7,
+            8, 8);
+        $self->addLabel($table, 'Queued objects drawn per second',
             7, 9, 7, 8);
-        my $entry4 = $self->addEntry($table, undef, FALSE,
-            9, 10, 7, 8);
-        $entry4->set_text($self->editObj->mapFont);
-        my $button = $self->addButton($table, 'Modify', 'Change the automapper font', undef,
-            10, 12, 7, 8);
-        $button->signal_connect('clicked' => sub {
+        $self->addEntryWithIcon($table, 'queueDrawMaxObjs', 'int', 0, undef,
+            9, 12, 7, 8,
+            8, 8);
 
-            my $newFont = $self->showFontSelectionDialogue('Automapper window font');
-
-            if (defined $newFont) {
-
-                # $newFont is a string in the form 'Monospace 10'. Separate the font name from the
-                #   size
-                if ($newFont =~ m/(.*)\s(.\d)$/) {
-
-                    $self->ivAdd('editHash', 'mapFont', $1);
-                    $entry4->set_text($self->ivShow('editHash', 'mapFont'));
-                }
-            }
-        });
-
-        $self->addLabel($table, '<u>Label alignment</u>',
+        $self->addLabel($table, '<u>Tracking</u>',
             7, 12, 8, 9);
-
-        $self->addLabel($table, 'Labels alignored horizontally',
+        $self->addLabel($table, 'Track position',
             7, 11, 9, 10);
-        $self->addCheckButton($table, 'mapLabelAlignXFlag', FALSE,
-            11, 12, 9, 10, 1, 0.5);
-        $self->addLabel($table, 'Labels aligned vertically',
-            7, 11, 10, 11);
-        $self->addCheckButton($table, 'mapLabelAlignYFlag', FALSE,
-            11, 12, 10, 11, 1, 0.5);
-        $self->addLabel($table, 'Label configuration window uses multi-line input',
-            7, 11, 11, 12);
-        $self->addCheckButton($table, 'mapLabelTextViewFlag', FALSE,
-            11, 12, 11, 12, 1, 0.5);
+        $self->addCheckButton($table, 'trackPosnFlag', TRUE,
+            11, 12, 9, 10,
+            1, 0.5);
+        $self->addLabel($table, 'Tracking sensitivity',
+            7, 9, 10, 11);
+        $self->addEntry($table, 'trackingSensitivity', FALSE,
+            9, 12, 10, 11, 4, 4);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -55445,6 +55941,113 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
+
+        # Settings (cont.)
+        $self->addLabel($table, '<b>Settings (cont.)</b>',
+            0, 12, 0, 1);
+
+        # Left column
+        $self->addLabel($table, '<u>Preserve size of text during zooms</u>',
+            1, 6, 1, 2);
+
+        $self->addLabel($table, 'Preserve room tags',
+            1, 5, 2, 3);
+        $self->addCheckButton($table, 'fixedRoomTagFlag', FALSE,
+            5, 6, 2, 3, 1, 0.5);
+        $self->addLabel($table, 'Preserve room guilds',
+            1, 5, 3, 4);
+        $self->addCheckButton($table, 'fixedRoomGuildFlag', FALSE,
+            5, 6, 3, 4, 1, 0.5);
+        $self->addLabel($table, 'Preserve exit tags',
+            1, 5, 4, 5);
+        $self->addCheckButton($table, 'fixedExitTagFlag', FALSE,
+            5, 6, 4, 5, 1, 0.5);
+        $self->addLabel($table, 'Preserve labels',
+            1, 5, 5, 6);
+        $self->addCheckButton($table, 'fixedLabelFlag', FALSE,
+            5, 6, 5, 6, 1, 0.5);
+
+        $self->addLabel($table, '<u>Label alignment</u>',
+            1, 6, 6, 7);
+
+        $self->addLabel($table, 'Labels alignored horizontally',
+            1, 5, 7, 8);
+        $self->addCheckButton($table, 'mapLabelAlignXFlag', FALSE,
+            5, 6, 7, 8, 1, 0.5);
+        $self->addLabel($table, 'Labels aligned vertically',
+            1, 5, 8, 9);
+        $self->addCheckButton($table, 'mapLabelAlignYFlag', FALSE,
+            5, 6, 8, 9, 1, 0.5);
+        $self->addLabel($table, 'Label configuration window uses multi-line input',
+            1, 5, 9, 10);
+        $self->addCheckButton($table, 'mapLabelTextViewFlag', FALSE,
+            5, 6, 9, 10, 1, 0.5);
+
+        # Right column
+        $self->addLabel($table, '<u>Map font</u>',
+            7, 12, 1, 2);
+
+        $self->addLabel($table, 'Font',
+            7, 9, 2, 3);
+        my $entry4 = $self->addEntry($table, undef, FALSE,
+            9, 10, 2, 3);
+        $entry4->set_text($self->editObj->mapFont);
+        my $button = $self->addButton($table, 'Modify', 'Change the automapper font', undef,
+            10, 12, 2, 3);
+        $button->signal_connect('clicked' => sub {
+
+            my $newFont = $self->showFontSelectionDialogue('Automapper window font');
+
+            if (defined $newFont) {
+
+                # $newFont is a string in the form 'Monospace 10'. Separate the font name from the
+                #   size
+                if ($newFont =~ m/(.*)\s(.\d)$/) {
+
+                    $self->ivAdd('editHash', 'mapFont', $1);
+                    $entry4->set_text($self->ivShow('editHash', 'mapFont'));
+                }
+            }
+        });
+
+        $self->addLabel($table, '<u>Painter</u>',
+            7, 12, 3, 4);
+        $self->addLabel($table, 'Paint existing rooms',
+            7, 11, 4, 5);
+        $self->addCheckButton($table, 'paintAllRoomsFlag', FALSE,
+            11, 12, 4, 5, 1, 0.5);
+        $self->addLabel($table, 'Quick-paint without resetting',
+            7, 11, 5, 6);
+        $self->addCheckButton($table, 'quickPaintMultiFlag', FALSE,
+            11, 12, 5, 6, 1, 0.5);
+
+        # Tab complete
+        $vBox->pack_start($table, 0, 0, 0);
+
+        return 1;
+    }
+
+    sub settings3Tab {
+
+        # Settings3 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings3Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
@@ -55520,9 +56123,9 @@
         return 1;
     }
 
-    sub settings3Tab {
+    sub settings4Tab {
 
-        # Settings3 tab
+        # Settings4 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -55536,11 +56139,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings3Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings4Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _3', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
 
         # (Need just a little extra space to make everything fit)
         $table->set_col_spacings($self->spacingPixels - 1);
@@ -55599,9 +56202,9 @@
         });
 
         $self->addLabel($table, '<i>Max comparisons (0 - no limit)</i>',
-            1, 4, 8, 9);
+            1, 4, 9, 10);
         $self->addEntryWithIcon($table, 'autoCompareMax', 'int', 0, undef,
-            4, 6, 8, 9, 8, 8);
+            4, 6, 9, 10, 8, 8);
 
         # Auto-rescue mode
         $self->addLabel($table, '<u>Auto-rescue mode</u>',
@@ -55675,9 +56278,9 @@
         return 1;
     }
 
-    sub settings4Tab {
+    sub settings5Tab {
 
-        # Settings4 tab
+        # Settings5 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -55691,11 +56294,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings4Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings5Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
@@ -55740,9 +56343,9 @@
         return 1;
     }
 
-    sub settings5Tab {
+    sub settings6Tab {
 
-        # Settings5 tab
+        # Settings6 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -55753,21 +56356,14 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
-        # Local variables
-        my (
-            $useIndex,
-            @list, @comboList,
-            %descripHash,
-        );
-
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings5Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings6Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _5', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
@@ -55806,85 +56402,43 @@
         $self->addCheckButton($table, 'locateRandomAnywhereFlag', TRUE,
             5, 6, 9, 10, 1, 0.5);
 
-        $self->addLabel($table, '<u>Show \'Working...\' dialogue</u>',
-            1, 6, 10, 11);
-        $self->addLabel($table, 'Draw objects (100+)',
-            1, 3, 11, 12);
-        $self->addEntryWithIcon($table, 'drawPauseNum', 'int', 100, undef,
-            3, 6, 11, 12, 8, 8);
-        $self->addLabel($table, 'Calculate region paths (10+)',
-            1, 3, 12, 13);
-        $self->addEntryWithIcon($table, 'recalculatePauseNum', 'int', 10, undef,
-            3, 6, 12, 13, 8, 8);
-
         # Right column
-        $self->addLabel($table, '<u>Exit lengths</u>',
+        $self->addLabel($table, '<u>Pathfinding</u>',
             7, 12, 1, 2);
-        $self->addLabel($table, 'Horizontal exit length (blocks)',
-            7, 9, 2, 3);
-        $self->addEntryWithIcon(
-            $table,
-            'horizontalExitLengthBlocks',
-            'int', 1, $self->editObj->maxExitLengthBlocks,
-            9, 12, 2, 3, 2, 2);
-        $self->addLabel($table, 'Vertical exit length (blocks)',
-            7, 9, 3, 4);
-        $self->addEntryWithIcon(
-            $table,
-            'verticalExitLengthBlocks',
-            'int', 1, $self->editObj->maxExitLengthBlocks,
-            9, 12, 3, 4, 2, 2);
-        $self->addLabel($table, 'Maximum exit length (blocks)',
-            7, 9, 4, 5);
-        $self->addEntry($table, 'maxExitLengthBlocks', FALSE,
-            9, 12, 4, 5, 4, 4);
+        $self->addLabel($table, 'Avoid hazards',
+            7, 11, 2, 3);
+        $self->addCheckButton($table, 'avoidHazardsFlag', TRUE,
+            11, 12, 2, 3, 1, 0.5);
+        $self->addLabel($table, 'Apply post-processing to paths',
+            7, 11, 3, 4);
+        $self->addCheckButton($table, 'postProcessingFlag', TRUE,
+            11, 12, 3, 4, 1, 0.5);
+        $self->addLabel($table, 'Double-click pathfinding',
+            7, 11, 4, 5);
+        $self->addCheckButton($table, 'quickPathFindFlag', TRUE,
+            11, 12, 4, 5, 1, 0.5);
+        $self->addLabel($table, 'Maximum steps in path (0 - no limit)',
+            7, 10, 5, 6);
+        $self->addEntryWithIcon($table, 'pathFindStepLimit', 'int', 0, undef,
+            10, 12, 5, 6, 8, 8);
 
-        $self->addLabel($table, '<u>Checked directions</u>',
-            7, 12, 5, 6);
-        $self->addLabel($table, 'Collect checked directions',
-            7, 11, 6, 7);
-        $self->addCheckButton($table, 'collectCheckedDirsFlag', TRUE,
-            11, 12, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Draw checked directions',
-            7, 11, 7, 8);
-        $self->addCheckButton($table, 'drawCheckedDirsFlag', TRUE,
-            11, 12, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Checkable directions to count',
+        $self->addLabel($table, '<u>Simple pathfinding - adjacent region mode</u>',
+            7, 12, 6, 7);
+
+        my ($radioGroup, $radioButton, $radioButton2, $radioButton3);
+        ($radioGroup, $radioButton) = $self->addRadioButton($table,
+            undef, 'Path must be in a single region', 'adjacentMode', 'default', TRUE,
+            7, 12, 7, 8);
+        ($radioGroup, $radioButton2) = $self->addRadioButton($table,
+            $radioGroup, 'Path can use adjacent regions', 'adjacentMode', 'near', TRUE,
             7, 12, 8, 9);
-
-        @list = (
-            'simple', '\'simple\' - count NSEW', 0,
-            'diku', '\'diku\' - count NSEWUD', 1,
-            'lp', '\'lp\' - count NSEWUD, NE/NW/SE/SW', 2,
-            'complex', '\'complex\' - count all primary directions', 3,
-        );
-
-        do {
-
-            my $value = shift @list;
-            my $descrip = shift @list;
-            my $index = shift @list;
-
-            push (@comboList, $descrip);
-            $descripHash{$descrip} = $value;
-
-            if ($self->editObj->checkableDirMode eq $value) {
-
-                $useIndex = $index;
-            }
-
-        } until (! @list);
-
-        my $combo = $self->addComboBox($table, undef, \@comboList, '',
-            TRUE,              # 'undef' value not used
-            7, 10, 9, 10);
-        $combo->set_active($useIndex);
-        $combo->signal_connect('changed' => sub {
-
-            my $text = $combo->get_active_text();
-
-            $self->ivAdd('editHash', 'checkableDirMode', $descripHash{$text});
-        });
+        ($radioGroup, $radioButton3) = $self->addRadioButton($table,
+            $radioGroup, 'Path can use all regions', 'adjacentMode', 'all', TRUE,
+            7, 12, 9, 10);
+        $self->addLabel($table, 'Adjacent regions to use (0 - none)',
+            7, 10, 10, 11);
+        $self->addEntryWithIcon($table, 'adjacentCount', 'int', 0, undef,
+            10, 12, 10, 11, 4, 4);
 
         # Tab complete
         $vBox->pack_start($table, 0, 0, 0);
@@ -55892,9 +56446,9 @@
         return 1;
     }
 
-    sub settings6Tab {
+    sub settings7Tab {
 
-        # Settings6 tab
+        # Settings7 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -55905,14 +56459,21 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Local variables
+        my (
+            $useIndex,
+            @list, @comboList,
+            %descripHash,
+        );
+
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings6Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings7Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _6', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _7', $innerNotebook);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
@@ -55988,42 +56549,73 @@
             $checkButton4->set_state('insensitive');
         }
 
-        $self->addLabel($table, '<u>Pathfinding</u>',
+        $self->addLabel($table, '<u>Exit lengths</u>',
             7, 12, 3, 4);
-        $self->addLabel($table, 'Avoid hazards',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'avoidHazardsFlag', TRUE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Apply post-processing to paths',
-            7, 11, 5, 6);
-        $self->addCheckButton($table, 'postProcessingFlag', TRUE,
-            11, 12, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Double-click pathfinding',
-            7, 11, 6, 7);
-        $self->addCheckButton($table, 'quickPathFindFlag', TRUE,
-            11, 12, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Maximum steps in path (0 - no limit)',
-            7, 10, 7, 8);
-        $self->addEntryWithIcon($table, 'pathFindStepLimit', 'int', 0, undef,
-            10, 12, 7, 8, 8, 8);
+        $self->addLabel($table, 'Horizontal exit length (blocks)',
+            7, 9, 4, 5);
+        $self->addEntryWithIcon(
+            $table,
+            'horizontalExitLengthBlocks',
+            'int', 1, $self->editObj->maxExitLengthBlocks,
+            9, 12, 4, 5, 2, 2);
+        $self->addLabel($table, 'Vertical exit length (blocks)',
+            7, 9, 5, 6);
+        $self->addEntryWithIcon(
+            $table,
+            'verticalExitLengthBlocks',
+            'int', 1, $self->editObj->maxExitLengthBlocks,
+            9, 12, 5, 6, 2, 2);
+        $self->addLabel($table, 'Maximum exit length (blocks)',
+            7, 9, 6, 7);
+        $self->addEntry($table, 'maxExitLengthBlocks', FALSE,
+            9, 12, 6, 7, 4, 4);
 
-        $self->addLabel($table, '<u>Simple pathfinding - adjacent region mode</u>',
-            7, 12, 8, 9);
-
-        my ($radioGroup, $radioButton, $radioButton2, $radioButton3);
-        ($radioGroup, $radioButton) = $self->addRadioButton($table,
-            undef, 'Path must be in a single region', 'adjacentMode', 'default', TRUE,
-            7, 12, 9, 10);
-        ($radioGroup, $radioButton2) = $self->addRadioButton($table,
-            $radioGroup, 'Path can use adjacent regions', 'adjacentMode', 'near', TRUE,
+        $self->addLabel($table, '<u>Checked directions</u>',
+            7, 12, 7, 8);
+        $self->addLabel($table, 'Collect checked directions',
+            7, 11, 8, 9);
+        $self->addCheckButton($table, 'collectCheckedDirsFlag', TRUE,
+            11, 12, 8, 9, 1, 0.5);
+        $self->addLabel($table, 'Draw checked directions',
+            7, 11, 9, 10);
+        $self->addCheckButton($table, 'drawCheckedDirsFlag', TRUE,
+            11, 12, 9, 10, 1, 0.5);
+        $self->addLabel($table, 'Checkable directions to count',
             7, 12, 10, 11);
-        ($radioGroup, $radioButton3) = $self->addRadioButton($table,
-            $radioGroup, 'Path can use all regions', 'adjacentMode', 'all', TRUE,
-            7, 12, 11, 12);
-        $self->addLabel($table, 'Adjacent regions to use (0 - none)',
-            7, 10, 12, 13);
-        $self->addEntryWithIcon($table, 'adjacentCount', 'int', 0, undef,
-            10, 12, 12, 13, 4, 4);
+
+        @list = (
+            'simple', '\'simple\' - count NSEW', 0,
+            'diku', '\'diku\' - count NSEWUD', 1,
+            'lp', '\'lp\' - count NSEWUD, NE/NW/SE/SW', 2,
+            'complex', '\'complex\' - count all primary directions', 3,
+        );
+
+        do {
+
+            my $value = shift @list;
+            my $descrip = shift @list;
+            my $index = shift @list;
+
+            push (@comboList, $descrip);
+            $descripHash{$descrip} = $value;
+
+            if ($self->editObj->checkableDirMode eq $value) {
+
+                $useIndex = $index;
+            }
+
+        } until (! @list);
+
+        my $combo = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,              # 'undef' value not used
+            7, 10, 11, 12);
+        $combo->set_active($useIndex);
+        $combo->signal_connect('changed' => sub {
+
+            my $text = $combo->get_active_text();
+
+            $self->ivAdd('editHash', 'checkableDirMode', $descripHash{$text});
+        });
 
         # ->signal_connects from above
         $checkButton->signal_connect('toggled' => sub {
@@ -56062,9 +56654,9 @@
         return 1;
     }
 
-    sub settings7Tab {
+    sub settings8Tab {
 
-        # Settings7 tab
+        # Settings8 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
@@ -56078,11 +56670,11 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings7Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->settings8Tab', @_);
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _7', $innerNotebook);
+        my ($vBox, $table) = $self->addTab('Page _8', $innerNotebook);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',

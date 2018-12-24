@@ -94,6 +94,12 @@
             font                        => $axmud::CLIENT->constFont,
             fontSize                    => $axmud::CLIENT->constFontSize,
 
+            # Word wrapping setting - 'no_wrap', 'wrap_char', 'wrap_word', 'wrap_word_char'
+            # NB Changing this setting may not change the appearance of a 'main' window's textviews
+            #   because NAWS tells the world the size of the textview, and the world itself wraps
+            #   text
+            wrapMode                    => 'wrap_word_char',
+
             # The user can specify that certain Axmud colour tags (standard, xterm or RGB) can be
             #   overridden with a different tag or ignored altogether, when displayed in a textview
             #   object (GA::Obj::TextView)
@@ -318,6 +324,9 @@
         { $_[0]->{font} }
     sub fontSize
         { $_[0]->{fontSize} }
+
+    sub wrapMode
+        { $_[0]->{wrapMode} }
 
     sub overrideHash
         { my $self = shift; return %{$self->{overrideHash}}; }

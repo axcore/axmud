@@ -1248,12 +1248,25 @@
             # The final kind of exit state which is simple ignored; the colons (or whatever) are
             #   removed, but GA::Obj::Exit->exitState is not modified
             # List of exit state strings (groups of 4)
-            #   [0] - The exit state represented, one of 'normal', 'open', 'closed', 'locked',
+            #   [0] - The exit state represented, one of the values specified by
+            #           GA::Client->constExitStateHash ('normal', 'open', 'closed', 'locked',
             #           'secret', 'secret_open', 'secret_closed', 'secret_locked', 'impass', 'dark',
-            #           'danger', 'other', 'ignore'
-            #         Exits which lack exit state strings (e.g. 'west') have the exit state 'normal'
-            #           by default, but in case some world uses exit state strings on ALL exits,
-            #           it's possible to specify 'normal' exit state strings here, too
+            #           'danger', 'emphasis', 'other'), or the value 'ignore', or a custom
+            #           string
+            #       - Exits which lack exit state strings (e.g. 'west') have the exit state
+            #           'normal' by default, but in case some world uses exit state strings on ALL
+            #           exits, it's possible to specify 'normal' exit state strings here, too
+            #       - The exit's nominal direction (GA::Obj::Exit->dir) is the exit with its exit
+            #           state symbols removed (i.e. 'east'). If the exit state is a custom string,
+            #           then that custom string is used as the exit's assisted move. If the custom
+            #           string contains '@@@', that sequence is substituted for the exit with its
+            #           exit state symbols removed. In other words, for '(east)', if the custom
+            #           string is 'swim @@@', the exit's nominal direction is 'east' and the
+            #           assisted move is 'swim @@@'
+            #       - If the exit state is a custom string, the exit object's ->exitState IV is set
+            #           to normal (the exit object, once created, doesn't know about the custom
+            #           string in this IV)
+            #       - For an explanation of the other values, see the comments in GA::Obj::Exit->new
             #   [1] - String appearing at the beginning of the exit (or an empty string), e.g. '('
             #   [2] - String appearing in the middle (or end) of the exit (or an empty string)
             #   [3] - String appearing at the end of the exit (or an empty string), e.g. ')'
@@ -1281,6 +1294,17 @@
             #   one of these patterns is removed and treated as a single exit, before the text is
             #   split into individual exits using exit delimiters
             exitStatePatternList        => [],
+            # As well as literal text, an exit state can be indicated by an Axmud colour tag (either
+            #   text or underlay). Style tags cannot be used to indicate exit states. If a bold
+            #   colour tag is required, it must be specified (the component object's
+            #   ->boldSensitiveFlag is not consulted)
+            # If the colour tag applies to the first character of an exit, the corresponding exit
+            #   state applies to that exit
+            # Hash in the form
+            #   $exitStateTagHash{tag} = exit_state
+            # ...where 'tag' is any Axmud colour tag, and 'exit_state' is one of the values
+            #   described above
+            exitStateTagHash            => {},
             # Some worlds use exit lists, with two or more exits represented as a single word;
             #   for example, Lost Souls uses 'compass' to mean 'n w s e nw ne sw se'
             # Hash of exit aliases. The key is a pattern found in the world's exit list; the
@@ -1288,6 +1312,16 @@
             #   exit alias for the replacement string (in a normal regex substitution)
             # e.g. $exitAliasHash{compass} = 'n w s e nw ne sw se'
             exitAliasHash               => {},
+            # An IV for worlds like Two Towers that might display the same 'east' exit twice, once
+            #   as a normal exit, and once as an exit for which the user must type 'swim east' or
+            #   something
+            # If not specified, any duplicate exits are ignored. If specified, the exit's direction
+            #   is replaced by this string. The string must contain a '@@@' sequence, which is
+            #   substituted for the original exit
+            # For example, use 'swim @@@' to convert a duplicate 'east' into 'swim east'. The
+            #   automapper will draw this as an unallocated exit; it's up to the user to decide, in
+            #   each room, how to draw the duplicate
+            duplicateReplaceString      => undef,
 
             # List of patterns used in contents list which shouldn't be parsed (i.e. are not a part
             #   of the object itself)
@@ -1658,7 +1692,9 @@
             exitRemovePatternList       => [$self->exitRemovePatternList],
             exitStateStringList         => [$self->exitStateStringList],
             exitStatePatternList        => [$self->exitStatePatternList],
+            exitStateTagHash            => {$self->exitStateTagHash},
             exitAliasHash               => {$self->exitAliasHash},
+            duplicateReplaceString      => $self->duplicateReplaceString,
 
             contentPatternList          => [$self->contentPatternList],
             specialPatternHash          => {$self->specialPatternHash},
@@ -2212,7 +2248,9 @@
         $self->mergeList('exitRemovePatternList', $otherObj);
         $self->mergeGroupList('exitStateStringList', $otherObj, 4);
         $self->mergeList('exitStatePatternList', $otherObj);
+        $self->mergeHash('exitStateTagHash', $otherObj);
         $self->mergeHash('exitAliasHash', $otherObj);
+        $self->ivPoke('duplicateReplaceString', $otherObj->duplicateReplaceString);
 
         $self->mergeList('contentPatternList', $otherObj);
         $self->mergeHash('specialPatternHash', $otherObj);
@@ -2844,8 +2882,12 @@
         { my $self = shift; return @{$self->{exitStateStringList}}; }
     sub exitStatePatternList
         { my $self = shift; return @{$self->{exitStatePatternList}}; }
+    sub exitStateTagHash
+        { my $self = shift; return %{$self->{exitStateTagHash}}; }
     sub exitAliasHash
         { my $self = shift; return %{$self->{exitAliasHash}}; }
+    sub duplicateReplaceString
+        { $_[0]->{duplicateReplaceString} }
 
     sub contentPatternList
         { my $self = shift; return @{$self->{contentPatternList}}; }

@@ -1,8 +1,8 @@
 acs / addcolourscheme         Adds a colour scheme
  
    Format:
-      ;acs <name>             Adds a colour scheme with default colours/font
-      ;acs <name> <switches>  Adds a colour scheme with specified colours/font
+      ;acs <name>             Adds a colour scheme with default settings
+      ;acs <name> <switches>  Adds a colour scheme with custom settings
  
    Notes:
       A textview is a scrolling area of a window where text is displayed. A
@@ -29,7 +29,18 @@ acs / addcolourscheme         Adds a colour scheme
          -f <font>        - Sets the font
          -s <size>        - Sets the font size, must be a positive integer
 
-      If colours/fonts are not specified, then default colours/fonts are used.
+         -n               - Turns off text wrapping
+         -c               - Ignores words when wrapping text
+         -w               - Preserves words when wrapping text
+         -e               - Preserves words when wrapping text (if possible;
+                               this is the default setting)
+
+      If settings are not specified, then default settings are used.
+      If you specify more than one of the text wrapping switches, only the first
+          one is used; the rest are ignored. Note that, in most cases, the world
+          knows how big Axmud's 'main' window is, and formats text before
+          sending it, so changing the setting for the 'main' colour scheme may
+          not have any effect.
 
       If you add a colour scheme with the same name as a task, the colour scheme
          is applied to the task automatically whenever it starts. For example,

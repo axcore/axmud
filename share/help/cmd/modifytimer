@@ -37,7 +37,9 @@ mti / modifytimer             Modifies a timer
  
       One or more of the following group 2/3 switch options must be used.
       Group 2 switch options: 
-         -s <number>          - Modifies the 'stimulus' attribute (a number)
+         -s <number>          - Modifies the 'stimulus' attribute (minimum value
+                                   0.1 or a clock time in the form HH::MM or
+                                   99::MM)
          -p <statement>       - Modifies the 'response' attribute (the command  
                                    to execute)
       Group 3 switch options: 

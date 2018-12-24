@@ -115,9 +115,11 @@
             # The current level (i.e., the z-coordinate currently displayed). The initial level is
             #   0, the level in the middle
             currentLevel                => 0,
-            # The highest level occupied by a room (set to 'undef' when the regionmap has no rooms)
+            # The highest level occupied by a room or label (set to 'undef' when the regionmap has
+            #   no rooms or labels)
             highestLevel                => undef,
-            # The lowest level occupied by a room (set to 'undef' when the regionmap has no rooms)
+            # The lowest level occupied by a room (set to 'undef' when the regionmap has no rooms or
+            #   labels)
             lowestLevel                 => undef,
 
             # The region's layout is stored in the following IVs as a collection of

@@ -3389,7 +3389,7 @@
             }
         }
 
-        # Set the chosen $protocl, or leave 'undef' to use the world profile's default protocol
+        # Set the chosen $protocol, or leave 'undef' to use the world profile's default protocol
         if ($self->radioButton2->get_active()) {
             $protocol = 'telnet';
         } elsif ($self->radioButton3->get_active()) {
@@ -5722,22 +5722,49 @@
         $textView->set_editable(TRUE);
         $textView->set_cursor_visible(TRUE);
 
-        # At the bottom, create a button strip in a horizontal packing box
+        # At the bottom, create several horizontal packing boxes for various widgets
         my $hBox = Gtk2::HBox->new(FALSE, 0);
-        $packingBox->pack_end($hBox, FALSE, FALSE, 0);
+        $packingBox->pack_start($hBox, FALSE, FALSE, 0);
 
-        # Create some buttons
         my $radioButton = Gtk2::RadioButton->new(undef, 'Execute instructions');
-        $hBox->pack_start($radioButton, 0, 0, $self->spacingPixels);
+        $hBox->pack_start($radioButton, TRUE, TRUE, $self->spacingPixels);
 
         my $checkButton = Gtk2::CheckButton->new_with_label('(ignore empty lines)');
-        $hBox->pack_start($checkButton, 0, 0, $self->spacingPixels);
+        $hBox->pack_start($checkButton, TRUE, TRUE, $self->spacingPixels);
 
         my $radioButton2 = Gtk2::RadioButton->new($radioButton, 'Run as a script');
-        $hBox->pack_start($radioButton2, 0, 0, $self->spacingPixels);
+        $hBox->pack_start($radioButton2, TRUE, TRUE, $self->spacingPixels);
+
+        # Second strip
+        my $hBox2 = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->pack_start($hBox2, FALSE, FALSE, 0);
+
+        my $label = Gtk2::Label->new('Prepend:');
+        $hBox2->pack_start($label, FALSE, FALSE, $self->spacingPixels);
+
+        my $entry = Gtk2::Entry->new();
+        $hBox2->pack_start($entry, TRUE, TRUE, 0);
+        $entry->set_tooltip_text('Prepend this to every world command');
+
+        my $label2 = Gtk2::Label->new('Append:');
+        $hBox2->pack_start($label2, FALSE, FALSE, $self->spacingPixels);
+
+        my $entry2 = Gtk2::Entry->new();
+        $hBox2->pack_start($entry2, TRUE, TRUE, 0);
+        $entry2->set_tooltip_text('Append this to every world command');
+
+        # Fourth strip
+        my $hBox4 = Gtk2::HBox->new(FALSE, 0);
+        $packingBox->pack_end($hBox4, FALSE, FALSE, 0);
 
         my $okButton = Gtk2::Button->new('Send');
-        $hBox->pack_end($okButton, TRUE, TRUE, $self->borderPixels);
+        $hBox4->pack_start($okButton, TRUE, TRUE, 0);
+
+        my $clearButton = Gtk2::Button->new('   Send and clear text   ');
+        $hBox4->pack_start($clearButton, FALSE, FALSE, 0);
+
+        my $closeButton = Gtk2::Button->new('   Close window   ');
+        $hBox4->pack_start($closeButton, FALSE, FALSE, 0);
 
         # ->signal_connects for the buttons
         $radioButton->signal_connect('toggled' => sub {
@@ -5745,7 +5772,12 @@
             if ($radioButton->get_active()) {
 
                 $checkButton->set_sensitive(TRUE);
+
+                $entry->set_sensitive(TRUE);
+                $entry2->set_sensitive(TRUE);
+
                 $okButton->set_label('Send');
+                $clearButton->set_label('   Send and clear text   ');
             }
         });
 
@@ -5755,56 +5787,60 @@
 
                 $checkButton->set_active(FALSE);
                 $checkButton->set_sensitive(FALSE);
+
+                $entry->set_sensitive(FALSE);
+                $entry->set_text('');
+                $entry2->set_sensitive(FALSE);
+                $entry2->set_text('');
+
                 $okButton->set_label('Run');
+                $clearButton->set_label('   Run and clear text   ');
             }
         });
 
         $okButton->signal_connect('clicked' => sub {
 
-            my (
-                $text,
-                @cmdList, @finalList,
-            );
+            if ($radioButton->get_active()) {
 
-            $text = $axmud::CLIENT->desktopObj->bufferGetText($buffer);
+                # Execute instructions
+                $self->executeInstructions(
+                    $axmud::CLIENT->desktopObj->bufferGetText($buffer),
+                    $entry->get_text(),
+                    $entry2->get_text(),
+                    $checkButton->get_active(),
+                );
 
-            # If the textview contains some text, and if the calling GA::Session still exists...
-            if ($text && $axmud::CLIENT->ivExists('sessionHash', $self->session->number)) {
+            } else {
 
-                if ($radioButton->get_active()) {
-
-                    # Split the text into lines
-                    @cmdList = split(/\n/, $text);
-
-                    # Ignore empty lines, if required
-                    if (! $checkButton->get_active()) {
-
-                        @finalList = @cmdList;
-
-                    } else {
-
-                        # Remove empty lines
-                        foreach my $cmd (@cmdList) {
-
-                            if (! ($cmd =~ m/^\s*$/)) {
-
-                                push (@finalList, $cmd);
-                            }
-                        }
-                    }
-
-                    # Send as instructions
-                    foreach my $instruct (@finalList) {
-
-                        $self->session->doInstruct($instruct);
-                    }
-
-                } else {
-
-                    # Save the script as a temporary file, and execute it
-                    $self->runScript($text);
-                }
+                # Save the script as a temporary file, and execute it
+                $self->runScript($axmud::CLIENT->desktopObj->bufferGetText($buffer));
             }
+        });
+
+        $clearButton->signal_connect('clicked' => sub {
+
+            if ($radioButton->get_active()) {
+
+                # Execute instructions
+                $self->executeInstructions(
+                    $axmud::CLIENT->desktopObj->bufferGetText($buffer),
+                    $entry->get_text(),
+                    $entry2->get_text(),
+                    $checkButton->get_active(),
+                );
+
+            } else {
+
+                # Save the script as a temporary file, and execute it
+                $self->runScript($axmud::CLIENT->desktopObj->bufferGetText($buffer));
+            }
+
+            $buffer->set_text('');
+        });
+
+        $closeButton->signal_connect('clicked' => sub {
+
+            $self->winDestroy();
         });
 
         # Update IVs (not worth storing widgets other than the main packing box)
@@ -5819,10 +5855,79 @@
 
     # Other functions
 
+    sub executeInstructions {
+
+        # Called by $self->drawWidgets when the user clicks the 'Send' button
+        # Executes the contents of the window as instructions, one line at a time
+        #
+        # Expected arguments
+        #   $text       - The contents of the Gtk2::TextBuffer
+        #   $preText    - Text to prepend to any world commands (or an empty string)
+        #   $postText   - Text to append to any world commands (or an empty string)
+        #   $ignoreFlag - TRUE if empty lines should be ignored, FALSE if they should be used (as
+        #                   world commands)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $text, $preText, $postText, $ignoreFlag, $check) = @_;
+
+        # Local variables
+        my (@cmdList, @finalList);
+
+        # Check for improper arguments
+        if (
+            ! defined $text || ! defined $preText || ! defined $postText || ! defined $ignoreFlag
+            || defined $check
+        ) {
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->executeInstructions', @_);
+        }
+
+        # Split $text into lines
+        @cmdList = split(/\n/, $text);
+
+        # Ignore empty lines, if required
+        if (! $ignoreFlag) {
+
+            @finalList = @cmdList;
+
+        } else {
+
+            # Remove empty lines
+            foreach my $cmd (@cmdList) {
+
+                if (! ($cmd =~ m/^\s*$/)) {
+
+                    push (@finalList, $cmd);
+                }
+            }
+        }
+
+        # GA::Session->doInstruct expects 'undef' rather than an empty string
+        if ($preText eq '') {
+
+            $preText = undef;
+        }
+
+        if ($postText eq '') {
+
+            $postText = undef;
+        }
+
+        # Execute every line as an instruction
+        foreach my $instruct (@finalList) {
+
+            $self->session->doInstruct($instruct, undef, $preText, $postText);
+        }
+
+        return 1;
+    }
+
     sub runScript {
 
         # Called by $self->drawWidgets when the user clicks the 'Run' button
-        # Runs the contents of the window as an Axbasic script
+        # Runs the contents of the textview as an Axbasic script
         #
         # Expected arguments
         #   $text       - The contents of the Gtk2::TextBuffer

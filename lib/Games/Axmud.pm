@@ -131,7 +131,7 @@
     use diagnostics;
 
     # (This variable exists for the benefit of Kwalitee, and is never referenced by the code)
-    our $VERSION = '1.1.343';
+    our $VERSION = '1.1.405';
 
     use Glib qw(TRUE FALSE);
 
@@ -186,6 +186,7 @@
     use Games::Axmud::Obj::MiniWorld;
     use Games::Axmud::Obj::Mission;
     use Games::Axmud::Obj::Monitor;
+    use Games::Axmud::Obj::Parchment;
     use Games::Axmud::Obj::Phrasebook;
     use Games::Axmud::Obj::Plugin;
     use Games::Axmud::Obj::Protect;

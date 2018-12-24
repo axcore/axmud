@@ -101,6 +101,7 @@
             scroll2                     => undef,           # Gtk2::ScrolledWindow
             startMark                   => undef,           # Gtk2::TextMark
             endMark                     => undef,           # Gtk2::TextMark
+            searchMark                  => undef,           # Gtk2::TextMark
             popupMenu                   => undef,           # Gtk2::Menu
 
             # Other IVs
@@ -568,7 +569,7 @@
 
         # Create the Gtk2::TextView(s)
         my ($scroll, $scroll2, $vPaned, $textView, $textView2);
-        $textView = $self->createTextViewWidget($self->buffer);
+        $textView = $self->createTextViewWidget($self->buffer, $colourSchemeObj);
         if ($self->splitScreenMode eq 'single') {
 
             # Pack the textview into a container widget
@@ -576,7 +577,7 @@
 
         } else {
 
-            $textView2 = $self->createTextViewWidget($self->buffer);
+            $textView2 = $self->createTextViewWidget($self->buffer, $colourSchemeObj);
 
             # Pack the textviews into a container widget
             ($vPaned, $scroll, $scroll2) = $self->setupVPaned($textView, $textView2);
@@ -602,9 +603,15 @@
         #   the beginning of the Gtk2::TextBuffer)
         $self->buffer->create_mark('line_0', $self->buffer->get_start_iter(), TRUE);
 
+        # Create a search mark which moves whenever $self->searchBuffer is called, and is initially
+        #   at the beginning of the buffer
+        my $searchMark
+            = $self->buffer->create_mark('search_mark', $self->buffer->get_start_iter(), TRUE);
+
         # Update IVs again
         $self->ivPoke('startMark', $startMark);
         $self->ivPoke('endMark', $endMark);
+        $self->ivPoke('searchMark', $searchMark);
 
         # Gtk2::TextTags might not exist for any RGB tags that have just been copied to
         #   $self->textColour and/or $self->underlayColour, and $self->interpretTags won't have the
@@ -756,10 +763,10 @@
 
         # Create replacement textview widget(s), retaining the original buffer
         my ($textView, $textView2);
-        $textView = $self->createTextViewWidget($self->buffer);
+        $textView = $self->createTextViewWidget($self->buffer, $colourSchemeObj);
         if ($self->textView2) {
 
-            $textView2 = $self->createTextViewWidget($self->buffer);
+            $textView2 = $self->createTextViewWidget($self->buffer, $colourSchemeObj);
         }
 
         # Pack the textview(s) into a container widget
@@ -1134,7 +1141,7 @@
         #
         # Optional arguments
         #   $flag   - If set to TRUE, the second textview (created in split screen mode) is
-        #               scrolled; if FALSE (or 'undef'), the original textview is scrolled
+        #               scrolled, if it exists. Otherwise, the original textview is scrolled
         #
         # Return values
         #   'undef' on improper arguments
@@ -1148,11 +1155,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->scrollToTop', @_);
         }
 
-        if (! $flag && $self->textView) {
-
-            $self->textView->scroll_to_mark($self->buffer->get_mark('start_mark'), 0.0, TRUE, 0, 0)
-
-        } elsif ($flag && $self->textView2) {
+        if ($flag && $self->textView2 && $self->splitScreenMode eq 'split') {
 
             $self->textView2->scroll_to_mark(
                 $self->buffer->get_mark('start_mark'),
@@ -1161,6 +1164,10 @@
                 0,
                 0,
             );
+
+        } elsif ($self->textView) {
+
+            $self->textView->scroll_to_mark($self->buffer->get_mark('start_mark'), 0.0, TRUE, 0, 0)
         }
 
         $self->winObj->winShowAll($self->_objClass . '->scrollToTop');
@@ -1178,7 +1185,7 @@
         #
         # Optional arguments
         #   $flag   - If set to TRUE, the second textview (created in split screen mode) is
-        #               scrolled; if FALSE (or 'undef'), the original textview is scrolled
+        #               scrolled, if it exists. Otherwise, the original textview is scrolled
         #
         # Return values
         #   'undef' on improper arguments
@@ -1192,10 +1199,10 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->scrollToBottom', @_);
         }
 
-        if (! $flag && $self->textView) {
-            $self->textView->scroll_to_mark($self->buffer->get_mark('end_mark'), 0.0, TRUE, 0, 0);
-        } elsif ($flag && $self->textView2) {
+        if ($flag && $self->textView2 && $self->splitScreenMode eq 'split') {
             $self->textView2->scroll_to_mark($self->buffer->get_mark('end_mark'), 0.0, TRUE, 0, 0);
+        } elsif ($self->textView) {
+            $self->textView->scroll_to_mark($self->buffer->get_mark('end_mark'), 0.0, TRUE, 0, 0);
         }
 
         $self->winObj->winShowAll($self->_objClass . '->scrollToBottom');
@@ -1212,11 +1219,15 @@
         # Expected arguments
         #   $iter   - Scroll to this Gtk2::TextIter
         #
+        # Optional arguments
+        #   $flag   - If set to TRUE, the second textview (created in split screen mode) is
+        #               scrolled, if it exists. Otherwise, the original textview is scrolled
+        #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $iter, $check) = @_;
+        my ($self, $iter, $flag, $check) = @_;
 
         # Check for improper arguments
         if (! defined $iter || defined $check) {
@@ -1224,11 +1235,13 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->scrollToIter', @_);
         }
 
-        if ($self->textView) {
-
+        if ($flag && $self->textView2 && $self->splitScreenMode eq 'split') {
+            $self->textView2->scroll_to_iter($iter, 0.0, TRUE, 0, 1);
+        } elsif ($self->textView) {
             $self->textView->scroll_to_iter($iter, 0.0, TRUE, 0, 1);
-            $self->winObj->winShowAll($self->_objClass . '->scrollToIter');
         }
+
+        $self->winObj->winShowAll($self->_objClass . '->scrollToIter');
 
         return 1;
     }
@@ -1242,11 +1255,15 @@
         # Expected arguments
         #   $mark   - Scroll to this Gtk2::TextMark
         #
+        # Optional arguments
+        #   $flag   - If set to TRUE, the second textview (created in split screen mode) is
+        #               scrolled, if it exists. Otherwise, the original textview is scrolled
+        #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $mark, $check) = @_;
+        my ($self, $mark, $flag, $check) = @_;
 
         # Check for improper arguments
         if (! defined $mark || defined $check) {
@@ -1254,11 +1271,13 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->scrollToMark', @_);
         }
 
-        if ($self->textView) {
-
+        if ($flag && $self->textView2 && $self->splitScreenMode eq 'split') {
+            $self->textView2->scroll_to_mark($mark, 0.0, TRUE, 0, 1);
+        } elsif ($self->textView) {
             $self->textView->scroll_to_mark($mark, 0.0, TRUE, 0, 1);
-            $self->winObj->winShowAll($self->_objClass . '->scrollToMark');
         }
+
+        $self->winObj->winShowAll($self->_objClass . '->scrollToMark');
 
         return 1;
     }
@@ -3557,11 +3576,12 @@
 
             my ($segment, $posn, $before);
 
+            # (Check email first, otherwise gmail.com is detected and fred@gmail.com isn't)
             if (
-                $text =~ m/($url)/
-                || ($axmud::CLIENT->shortUrlFlag && $text =~ m/($shortUrl)/)
+                $text =~ m/($mail)/
+                || $text =~ m/($url)/
                 || $text =~ m/($longMail)/
-                || $text =~ m/($mail)/
+                || ($axmud::CLIENT->shortUrlFlag && $text =~ m/($shortUrl)/)
                 || $text =~ m/(telnet\:\/\/([^\:\s]+)(\:(\d+))?)/
                 || $text =~ m/(ssh\:\/\/([^\:\s]+)(\:(\d+))?)/
                 || $text =~ m/(ssl\:\/\/([^\:\s]+)(\:(\d+))?)/
@@ -5555,6 +5575,554 @@
         }
     }
 
+    # Other functions - search the buffer
+
+    sub setSearchMark {
+
+        # Can be called by anything
+        # Moves the Gtk2::TextMark used for searching the buffer from its current position to a new
+        #   position
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $line   - The line number at which to place the mark. Use 0 for the beginning of the
+        #               buffer, 1 for the second line, and so on. If 'undef' or if $line is greater
+        #               than the size of the buffer, the mark is placed at the end of the buffer
+        #   $offset - The offset on the line at which to place the mark. Use 0 for the beginning of
+        #               the line, 1 to place the mark before the 2nd character, and so on. If
+        #               'undef', the mark is placed at the end of the line (but before the newline
+        #               character, if any)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $line, $offset, $check) = @_;
+
+        # Local variables
+        my ($size, $startIter, $length, $endIter);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setSearchMark', @_);
+        }
+
+        # Get the current size of the buffer
+        $size = $self->buffer->get_line_count();
+        if (! defined $line || $line >= $size) {
+
+            $line = $size - 1;
+        }
+
+        # Get the iter at the start of that line
+        $startIter = $self->buffer->get_iter_at_line_offset($line, 0);
+        $length = $self->getLineLength($startIter);
+
+        # Get the iter at the end of the buffer. If this line is not the last line in the buffer,
+        #   we need to take account of the newline character
+        $endIter = $self->buffer->get_end_iter();
+        if ($endIter->get_line() != $startIter->get_line()) {
+
+            $length--;
+        }
+
+        if (! defined $offset || $offset >= $length) {
+
+            $offset = $length - 1;
+            # Sanity check
+            if ($offset < 0) {
+
+                $offset = 0;
+            }
+        }
+
+        # Move the search mark to the specified location
+        $self->ivPoke(
+            'searchMark',
+            $self->buffer->create_mark(
+                'search_mark',
+                $self->buffer->get_iter_at_line_offset($line, $offset),
+                TRUE,
+            ),
+        );
+
+        return 1;
+    }
+
+    sub searchBuffer {
+
+        # Can be called by anything
+        # Searches the buffer using a specified pattern, stopping at the first matching text
+        # If the beginning of the buffer is reached and no match is found, the search continues
+        #   from the end of the buffer (and vice versa)
+        # If a match is found, moves $self->searchMark to just before (or after) that location, so
+        #   the next search can continue from that point
+        #
+        # Expected arguments
+        #   $regex      - The regex to match
+        #   $mode       - FALSE to search, line by line, from before $self->searchMark; TRUE to
+        #                   search, line by line, from after $self->searchMark
+        #
+        # Optional arguments
+        #   $selectFlag - If TRUE, the matching text is selected and the textview is scrolled to the
+        #                   matching text
+        #   $caseFlag   - If TRUE, a case-sensitive match is performed. If FALSE (or 'undef'), a
+        #                   case-insensitive match is performed
+        #
+        # Return values
+        #   An empty list on improper arguments or if no matching text is found
+        #   1 otherwise
+
+        my ($self, $regex, $mode, $selectFlag, $caseFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $size, $searchIter, $searchLine, $searchPosn, $text, $matchLine, $matchPosn, $matchLen,
+            $matchIter,
+            @emptyList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->searchBuffer', @_);
+            return @emptyList;
+        }
+
+        # Obviously, if the regex is empty, then there's nothing so search
+        if ($regex eq '') {
+
+            return @emptyList;
+        }
+
+        # Get the size of the buffer
+        $size = $self->buffer->get_line_count();
+        if (! $size) {
+
+            # Buffer is empty
+            return @emptyList;
+        }
+
+        # $self->searchIter records the position of the last successful search (or the position at
+        #   which to start a search), so we'll start there
+        $searchIter = $self->buffer->get_iter_at_mark($self->searchMark);
+        if (! $searchIter) {
+
+            # Something's gone wrong
+            return @emptyList;
+        }
+
+        # If searching forwards, start searching from the first character after $searchIter
+        if ($mode) {
+
+            $searchIter->forward_char();
+        }
+
+        $searchLine = $searchIter->get_line();
+        $searchPosn = $searchIter->get_line_offset();
+
+        # Search lines, one by one, starting with $searchLine
+        if (! $mode) {
+
+            $text = $self->buffer->get_text(
+                $self->buffer->get_iter_at_line_offset($searchLine, 0),
+                $searchIter,
+                FALSE,
+            );
+
+        } elsif ($searchLine >= ($size - 1)) {
+
+            $text = $self->buffer->get_text(
+                $searchIter,
+                $self->buffer->get_end_iter(),
+                FALSE,
+            );
+
+        } else {
+
+            $text = $self->buffer->get_text(
+                $searchIter,
+                $self->buffer->get_iter_at_line_offset(($searchLine + 1), 0),
+                FALSE,
+            );
+        }
+
+        if (
+            $text ne ''
+            && (
+                # Find last match in $text, just before $searchMark
+                (
+                    ! $mode
+                    && (
+                        (! $caseFlag && $text =~ m/$regex/gi)
+                        || ($caseFlag && $text =~ m/$regex/g)
+                    )
+                # Find first match in $text, just after $searchMark
+                ) || (
+                    $mode
+                    && (
+                        (! $caseFlag && $text =~ m/$regex/i)
+                        || ($caseFlag && $text =~ m/$regex/)
+                    )
+                )
+            )
+        ) {
+            # Match found!
+            $matchLine = $searchLine;
+            $matchPosn = $-[0];
+            $matchLen = $+[0] - $matchPosn;
+            if ($mode) {
+
+                $matchPosn += $searchPosn;
+            }
+
+            $self->setSearchMark($matchLine, $matchPosn);
+            if ($selectFlag) {
+
+                $self->selectTextInLine($matchLine, $matchPosn, $matchLen, TRUE);
+            }
+
+            return ($matchLine, $matchPosn, $matchLen);
+        }
+
+        # Search before (or after) $searchLine
+        if ($size > 1) {
+
+            if (! $mode && $searchLine > 0) {
+
+                for (my $count = ($searchLine - 1); $count >= 0; $count--) {
+
+                    $text = $self->buffer->get_text(
+                        $self->buffer->get_iter_at_line_offset($count, 0),
+                        $self->buffer->get_iter_at_line_offset(($count + 1), 0),
+                        FALSE,
+                    );
+
+                    # Find last match in $text
+                    if (
+                        $text ne ''
+                        && (
+                            (! $caseFlag && $text =~ m/$regex/gi)
+                            || ($caseFlag && $text =~ m/$regex/g)
+                        )
+                    ) {
+                        # Match found!
+                        $matchLine = $count;
+                        $matchPosn = $-[0];
+                        $matchLen = $+[0] - $matchPosn;
+
+                        $self->setSearchMark($matchLine, $matchPosn);
+                        if ($selectFlag) {
+
+                            $self->selectTextInLine($matchLine, $matchPosn, $matchLen, TRUE);
+                        }
+
+                        return ($matchLine, $matchPosn, $matchLen);
+                    }
+                }
+
+            } elsif ($mode && $searchLine < ($size - 1)) {
+
+                for (my $count = ($searchLine + 1); $count <= ($size - 1); $count++) {
+
+                    $text = $self->buffer->get_text(
+                        $self->buffer->get_iter_at_line_offset($count, 0),
+                        $self->buffer->get_iter_at_line_offset(($count + 1), 0),
+                        FALSE,
+                    );
+
+                    # Find first match in $text
+                    if (
+                        $text ne ''
+                        && (
+                            (! $caseFlag && $text =~ m/$regex/i)
+                            || ($caseFlag && $text =~ m/$regex/)
+                        )
+                    ) {
+                        # Match found!
+                        $matchLine = $count;
+                        $matchPosn = $-[0];
+                        $matchLen = $+[0] - $matchPosn;
+
+                        $self->setSearchMark($matchLine, $matchPosn);
+                        if ($selectFlag) {
+
+                            $self->selectTextInLine($matchLine, $matchPosn, $matchLen, TRUE);
+                        }
+
+                        return ($matchLine, $matchPosn, $matchLen);
+                    }
+                }
+            }
+
+            # Reached the beginning (or the end) of the buffer, so now search the other part of the
+            #   buffer from the opposite direction (i.e. if we reached the beginning of the buffer,
+            #   search from the end)
+            if (! $mode && $searchLine < ($size - 1)) {
+
+                for (my $count = ($size - 1); $count > $searchLine; $count--) {
+
+                    $text = $self->buffer->get_text(
+                        $self->buffer->get_iter_at_line_offset($count, 0),
+                        $self->buffer->get_iter_at_line_offset(($count + 1), 0),
+                        FALSE,
+                    );
+
+                    # Find first match in $text
+                    if (
+                        $text ne ''
+                        && (
+                            (! $caseFlag && $text =~ m/$regex/i)
+                            || ($caseFlag && $text =~ m/$regex/)
+                        )
+                    ) {
+                        # Match found!
+                        $matchLine = $count;
+                        $matchPosn = $-[0];
+                        $matchLen = $+[0] - $matchPosn;
+
+                        $self->setSearchMark($matchLine, $matchPosn);
+                        if ($selectFlag) {
+
+                            $self->selectTextInLine($matchLine, $matchPosn, $matchLen, TRUE);
+                        }
+
+                        return ($matchLine, $matchPosn, $matchLen);
+                    }
+                }
+
+            } elsif ($mode && $searchLine > 0) {
+
+                for (my $count = 0; $count < $searchLine; $count++) {
+
+                    $text = $self->buffer->get_text(
+                        $self->buffer->get_iter_at_line_offset($count, 0),
+                        $self->buffer->get_iter_at_line_offset(($count + 1), 0),
+                        FALSE,
+                    );
+
+                    # Find first match in $text
+                    if (
+                        $text ne ''
+                        && (
+                            (! $caseFlag && $text =~ m/$regex/gi)
+                            || ($caseFlag && $text =~ m/$regex/g)
+                        )
+                    ) {
+                        # Match found!
+                        $matchLine = $count;
+                        $matchPosn = $-[0];
+                        $matchLen = $+[0] - $matchPosn;
+
+                        $self->setSearchMark($matchLine, $matchPosn);
+                        if ($selectFlag) {
+
+                            $self->selectTextInLine($matchLine, $matchPosn, $matchLen, TRUE);
+                        }
+
+                        return ($matchLine, $matchPosn, $matchLen);
+                    }
+                }
+            }
+        }
+
+        # Now search the other part of $searchLine
+        if ($mode) {
+
+            $text = $self->buffer->get_text(
+                $self->buffer->get_iter_at_line_offset($searchLine, 0),
+                $searchIter,
+                FALSE,
+            );
+
+        } elsif ($searchLine >= ($size - 1)) {
+
+            $text = $self->buffer->get_text(
+                $searchIter,
+                $self->buffer->get_end_iter(),
+                FALSE,
+            );
+
+        } else {
+
+            $text = $self->buffer->get_text(
+                $searchIter,
+                $self->buffer->get_iter_at_line_offset(($searchLine + 1), 0),
+                FALSE,
+            );
+        }
+
+        if (
+            $text ne ''
+            && (
+                # Find last match in $text, just before $searchMark
+                (
+                    $mode
+                    && (
+                        (! $caseFlag && $text =~ m/$regex/gi)
+                        || ($caseFlag && $text =~ m/$regex/g)
+                    )
+                # Find first match in $text, just after $searchMark
+                ) || (
+                    ! $mode
+                    && (
+                        (! $caseFlag && $text =~ m/$regex/i)
+                        || ($caseFlag && $text =~ m/$regex/)
+                    )
+                )
+            )
+        ) {
+            # Match found!
+            $matchLine = $searchLine;
+            $matchPosn = $-[0];
+            $matchLen = $+[0] - $matchPosn;
+            if ($mode) {
+
+                $matchPosn += $searchPosn;
+            }
+
+            $self->setSearchMark($matchLine, $matchPosn);
+            if ($selectFlag) {
+
+                $self->selectTextInLine($matchLine, $matchPosn, $matchLen, TRUE);
+            }
+
+            return ($matchLine, $matchPosn, $matchLen);
+        }
+
+        # No matches found
+        return @emptyList;
+    }
+
+    sub selectTextInLine {
+
+        # Can be called by anything, but mainly called by $self->searchBuffer
+        # Selects some text on a single line, from one specified position to another. If required,
+        #   the textview is scrolled to the start of the selected text
+        #
+        # Expected arguments
+        #   $line           - The line number at which to select text. If the buffer doesn't contain
+        #                       enough lines, no text is selected
+        #   $offset         - The offset on the line from which to select text. If the line doesn't
+        #                       contain enough characters, no text is selected
+        #   $selectLength   - The length of the selected text. If it's longer than the line itself,
+        #                       $selectLength is shortened so that only text on one line is selected
+        #
+        # Optional arguments
+        #   $scrollFlag - If TRUE, the textview is scrolled to $line. If FALSE or 'undef', no
+        #                   scrolling takes place
+        #
+        # Return values
+        #   'undef' on improper arguments or if no text can be selected
+        #   1 otherwise
+
+        my ($self, $line, $offset, $selectLength, $scrollFlag, $check) = @_;
+
+        # Local variables
+        my ($size, $startIter, $lineLength, $endIter);
+
+        # Check for improper arguments
+        if (! defined $line || ! defined $offset || ! defined $selectLength || defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->selectTextInLine', @_);
+        }
+
+        # Get the current size of the buffer
+        $size = $self->buffer->get_line_count();
+        if ($line >= $size) {
+
+            # Buffer isn't big enough
+            return undef;
+        }
+
+        # Get the iter at the specified position
+        $startIter = $self->buffer->get_iter_at_line_offset($line, $offset);
+        $lineLength = $self->getLineLength($startIter);
+
+        # Get the iter at the end of the buffer. If this line is not the last line in the buffer,
+        #   we need to take account of the newline character
+        $endIter = $self->buffer->get_end_iter();
+        if ($endIter->get_line() != $startIter->get_line()) {
+
+            $lineLength--;
+        }
+
+        if ($offset >= $lineLength) {
+
+            # The specified offset occurs after the end of the line
+            return undef;
+
+        } elsif (($offset + $selectLength) >= $lineLength) {
+
+            # Reduce $selectLength so that text to the end of the line is selected
+            $selectLength = $lineLength - $offset;
+            if (! $selectLength) {
+
+                # No text to select
+                return undef;
+            }
+        }
+
+        # Select the text
+        $self->buffer->select_range(
+            $startIter,
+            $self->buffer->get_iter_at_line_offset($line, ($offset + $selectLength)),
+        );
+
+        # Scroll the textview, if required
+        if ($scrollFlag) {
+
+            if ($endIter->get_line() == $startIter->get_line()) {
+
+                $self->scrollToBottom();
+
+            } else {
+
+                # Scroll to one line after the the matching text, as it looks nicer. The TRUE
+                #   argument means to scroll $self->textView2, if split-screen mode is one
+                $self->scrollToIter(
+                    $self->buffer->get_iter_at_line_offset(($line + 1), 0),
+                    TRUE,
+                );
+            }
+        }
+
+        return 1;
+    }
+
+    sub unselectText {
+
+        # Can be called by anything
+        # Unselects any text in the textview (possibly from an earlier call to
+        #   $self->selectTextInLine)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $iter;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->unselectText', @_);
+        }
+
+        $iter = $self->buffer->get_iter_at_mark($self->searchMark);
+        $self->buffer->select_range($iter, $iter);
+
+        return 1;
+    }
+
     # Other functions - must be called by specific code
 
     sub setupScroller {
@@ -5715,11 +6283,15 @@
         # Expected arguments
         #   $buffer         - The Gtk2::TextBuffer to use in the textview
         #
+        # Optional arguments
+        #   $schemeObj      - The colour scheme object (GA::Obj::ColourScheme), if known; otherwise,
+        #                       this function looks it up
+        #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $buffer, $check) = @_;
+        my ($self, $buffer, $schemeObj, $check) = @_;
 
         # Check for improper arguments
         if (! defined $buffer || defined $check) {
@@ -5727,14 +6299,30 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->createTextViewWidget', @_);
         }
 
+        # Fetch the colour scheme object, if not supplied
+        if (! $schemeObj) {
+
+            $schemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $self->colourScheme);
+        }
+
+        # Create the new textview
         my $textView = Gtk2::TextView->new_with_buffer($buffer);
 
         $textView->set_editable(FALSE);
         $textView->set_cursor_visible(FALSE);       # Invisible cursor
         $textView->can_focus(FALSE);
-        $textView->set_wrap_mode('word-char');      # Wrap words if possible, characters if not
         $textView->set_justification('left');
         $textView->set_overwrite($self->overwriteFlag);
+
+        if ($schemeObj->wrapMode eq 'no_wrap') {
+            $textView->set_wrap_mode('none');
+        } elsif ($schemeObj->wrapMode eq 'wrap_char') {
+            $textView->set_wrap_mode('char');
+        } elsif ($schemeObj->wrapMode eq 'wrap_word') {
+            $textView->set_wrap_mode('word');
+        } elsif ($schemeObj->wrapMode eq 'wrap_word_char') {
+            $textView->set_wrap_mode('word-char');
+        }
 
         # Set up ->signal_connects
         $self->setMotionNotifyEvent($textView);     # 'motion-notify-event'
@@ -7614,7 +8202,7 @@
         } elsif ($hoverFlag) {
 
             # Find the corresponding GA::Obj::Link
-            $listRef = $self->ivShow('linkObjLineHash', $lineNum);
+            $listRef = $self->ivShow('linkObjLineHash', $lineNum + $self->nextDeleteLine);
             if (defined $listRef) {
 
                 OUTER: foreach my $thisLinkObj (@$listRef) {
@@ -7879,8 +8467,9 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupLink', @_);
         }
 
-        # Get the position of the start of the link
-        $lineNum = $iter->get_line();
+        # Get the position of the start of the link. If the buffer is full, take account of any
+        #   lines that have been deleted from the start of it
+        $lineNum = $iter->get_line() + $self->nextDeleteLine;
         $posn = $iter->get_line_offset();
 
         # Check $text to see if it matches the start of an acceptable link, in the form
@@ -7902,15 +8491,17 @@
         #   created
         $short = '^' . $axmud::CLIENT->constShortUrlRegex;
         $email = '^' . $axmud::CLIENT->constEmailRegex;
-        if (
+
+        # (Check email first, otherwise gmail.com is detected and fred@gmail.com isn't)
+        if ($text =~ m/^mailto\:/i || $text =~ m/$email/i) {
+
+            $type = 'mail';
+
+        } elsif (
             $text =~ m/^https?\:\/\//i
             || ($axmud::CLIENT->shortUrlFlag && $text =~ m/$short/i)
         ) {
             $type = 'www';
-
-        } elsif ($text =~ m/^mailto\:/i || $text =~ m/$email/i) {
-
-            $type = 'mail';
 
         } elsif ($text =~ m/^telnet\:\/\//i) {
 
@@ -8543,14 +9134,14 @@
                 if (! $self->overwriteFlag) {
 
                     $self->buffer->create_mark(
-                        'line_' . $lineNum,
+                        'line_' . ($lineNum + 1 + $self->nextDeleteLine),
                         $self->buffer->get_end_iter(),
                         TRUE,
                     );
 
                     # If the buffer has exceeded its maximum number of lines, delete the oldest
                     #   remaining line
-                    if ($self->maxLines && ($lineNum - $self->maxLines) >= $self->nextDeleteLine) {
+                    if ($self->maxLines && $lineNum >= $self->maxLines) {
 
                         $self->removeOldLine();
                     }
@@ -8623,7 +9214,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($mark, $listRef, $ordinaryLineNum);
+        my ($startIter, $stopIter, $listRef, $ordinaryLineNum);
 
         # Check for improper arguments
         if (defined $check) {
@@ -8631,13 +9222,11 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->removeOldLine', @_);
         }
 
-        $mark = $self->buffer->get_mark('line_' . $self->nextDeleteLine);
-        if ($mark) {
+        $startIter = $self->buffer->get_start_iter();
+        $stopIter = $self->buffer->get_iter_at_line_offset(1, 0);
+        if ($startIter && $stopIter) {
 
-            $self->buffer->delete(
-                $self->buffer->get_start_iter(),
-                $self->buffer->get_iter_at_mark($mark),
-            );
+            $self->buffer->delete($startIter, $stopIter);
 
             # Remove any link objects for links on the deleted line
             $listRef = $self->ivShow('linkObjLineHash', $self->nextDeleteLine);
@@ -8845,8 +9434,8 @@
 
         # Local variables
         my (
-            $listRef, $beginIter, $length, $endIter, $lastLineFlag, $startPosn, $startIter,
-            $stopPosn, $stopIter,
+            $listRef, $modLineNum, $beginIter, $length, $endIter, $lastLineFlag, $startPosn,
+            $startIter, $stopPosn, $stopIter,
         );
 
         # Check for improper arguments
@@ -8877,9 +9466,13 @@
 
         $self->ivIncrement('linkObjCount');
 
+        # The link object stores a line number which corresponds to the total number of lines
+        #   displayed; if the buffer is full, take account of any lines that have been deleted
+        $modLineNum = $linkObj->lineNum - $self->nextDeleteLine;
+
         # This function has historically been the cause of sudden crashes when $stopIter or even
         #   $startIter have been outside the length of the line, so we need to check both of them
-        $beginIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, 0);
+        $beginIter = $self->buffer->get_iter_at_line_offset($modLineNum, 0);
         $length = $self->getLineLength($beginIter);
         $endIter = $self->buffer->get_end_iter();
 
@@ -8899,7 +9492,7 @@
 
         } else {
 
-            $startIter = $self->buffer->get_iter_at_line_offset($linkObj->lineNum, $startPosn);
+            $startIter = $self->buffer->get_iter_at_line_offset($modLineNum, $startPosn);
         }
 
         # If the link ends beyond the end of the line, move the end of the link to the end of the
@@ -8911,10 +9504,7 @@
             $stopPosn = $length - 1;
         }
 
-        $stopIter = $self->buffer->get_iter_at_line_offset(
-            $linkObj->lineNum,
-            $stopPosn,
-        );
+        $stopIter = $self->buffer->get_iter_at_line_offset($modLineNum, $stopPosn);
 
         # Add Axmud 'link' and 'link_off' tags at the appropriate places
         if ($startIter && $stopIter) {
@@ -9189,6 +9779,8 @@
         { $_[0]->{startMark} }
     sub endMark
         { $_[0]->{endMark} }
+    sub searchMark
+        { $_[0]->{searchMark} }
     sub popupMenu
         { $_[0]->{popupMenu} }
 

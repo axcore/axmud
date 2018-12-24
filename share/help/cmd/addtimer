@@ -20,8 +20,12 @@ ati / addtimer                Adds a timer
       All interfaces have four standard attributes:
          'name'      - A name for the timer
          'stimulus'  - What causes the timer to 'fire'. The stimulus is a time 
-                          interval in seconds, after which the timer fires. A
-                          timer can't fire more often than ten times a second
+                          interval in seconds (minimum 0.1), after which the
+                          timer fires. It can also be a 24-hour clock time in
+                          the form HH::MM, or a value in the form 99:MM for a
+                          timer that fires at MM minutes past the hour, every
+                          hour. A timer can't fire more often than ten times a
+                          second
          'response'  - The instruction to execute when the timer fires. Includes
                           world commands, forced world commands (starting with
                           ',,'), client commands (starting ';'), echo commands
@@ -36,13 +40,15 @@ ati / addtimer                Adds a timer
                           timer fires indefinitely
          'initial_delay'
                      - How long to wait, before the timer fires for the first
-                          time. If set to 0, no initial delay
+                          time. If set to 0, no initial delay. Ignored if the
+                          stimulus is a clock time (including 99:MM)
          'random_delay'
                      - A flag set to 1 or 0 (default). When set to 1, the timer
                           fires after a random interval between 0 and the 
                           interval stored in the 'stimulus' attribute. When set
                           to 0, always uses the interval stored in the 
-                          'stimulus' attribute
+                          'stimulus' attribute. Ignored if the stimulus is a
+                          clock time (including (99:MM)
          'random_min'
                      - When the 'random_delay' attribute is 1, the minimum delay
                           (can be 0 for no delay, or any positive number)
@@ -70,7 +76,8 @@ ati / addtimer                Adds a timer
          -d <prof>            - Adds a timer belonging to profile <prof>
 
       Group 2 switch options: both of the following options must be used:
-         -s <number>          - Sets the 'stimulus' attribute (a number)
+         -s <interval>        - Sets the 'stimulus' attribute (minimum value 0.1
+                                   or a clock time in the form HH::MM or 99::MM)
          -p <instruction>     - Sets the 'response' attribute (the instruction 
                                    to execute)
       Group 3 switch options: 0, 1 or more of the following options can be used:

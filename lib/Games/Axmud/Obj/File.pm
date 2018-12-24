@@ -596,7 +596,7 @@
             '# Auto-save wait time (minutes)',
                 $client->autoSaveWaitTime,
             '# Auto-retain most recent temporary backup file',
-                $client->autoRetainFileFlag,
+                $self->convert($client->autoRetainFileFlag),
             '# Auto-backup mode',
                 $client->autoBackupMode,
             '# Auto-backup directory',
@@ -670,6 +670,10 @@
                 scalar $client->favouriteWorldList,
             '# Favourite world list',
                 $client->favouriteWorldList,
+            '# Number of auto-connecting worlds',
+                scalar $client->autoConnectList,
+            '# Auto-connect list (world profile name followed by 0, 1 or more characters)',
+                $client->autoConnectList,
             '@@@ eos',
         );
 
@@ -712,6 +716,13 @@
 
             push (@list, $item, $self->convert($flag));
         }
+
+        push (@list,
+            '# Number of lines in log preamble',
+                scalar $axmud::CLIENT->logPreambleList,
+            '# Log preamble',
+                $client->logPreambleList,
+        );
 
         push (@list, '@@@ eos');
 
@@ -800,13 +811,13 @@
             '# Custom window controls bottom size',
                 $client->customControlsBottomSize,
             '# Sessions share a \'main\' window',
-                $client->shareMainWinFlag,
+                $self->convert($client->shareMainWinFlag),
             '# (The setting to use when ' . $axmud::SCRIPT . ' next starts)',
-                $client->restartShareMainWinFlag,
+                $client->restartShareMainWinMode,
             '# Workspace grids are activated',
-                $client->activateGridFlag,
+                $self->convert($client->activateGridFlag),
             '# Store \'grid\' window positions',
-                $client->storeGridPosnFlag,
+                $self->convert($client->storeGridPosnFlag),
         );
 
         %storeGridHash = $client->storeGridPosnHash;
@@ -1040,40 +1051,40 @@
             '# Customised client version',
                 $client->customClientVersion,
             '# Use VT100 control sequences',
-                $client->useCtrlSeqFlag,
+                $self->convert($client->useCtrlSeqFlag),
             '# Use visible cursor in default textview',
-                $client->useVisibleCursorFlag,
+                $self->convert($client->useVisibleCursorFlag),
             '# Cursor blinks quickly, when visible',
-                $client->useFastCursorFlag,
+                $self->convert($client->useFastCursorFlag),
             '# Use direct keyboard input in default textview',
-                $client->useDirectKeysFlag,
+                $self->convert($client->useDirectKeysFlag),
             '# TELNET OPTION DEBUG FLAGS',
             '# Show invalid escape sequence debug messages',
-                $client->debugEscSequenceFlag,
+                $self->convert($client->debugEscSequenceFlag),
             '# Show option negotiation debug messages',
-                $client->debugTelnetFlag,
+                $self->convert($client->debugTelnetFlag),
             '# Show option negotiation short debug messages',
-                $client->debugTelnetMiniFlag,
+                $self->convert($client->debugTelnetMiniFlag),
             '# Ask GA::Obj::Telnet to write negotiation logfile',
-                $client->debugTelnetLogFlag,
+                $self->convert($client->debugTelnetLogFlag),
             '# Show MSDP debug messages for Status/Locator',
-                $client->debugMsdpFlag,
+                $self->convert($client->debugMsdpFlag),
             '# Show debug messages for MXP problems',
-                $client->debugMxpFlag,
+                $self->convert($client->debugMxpFlag),
             '# Show debug messages for MXP comments',
-                $client->debugMxpCommentFlag,
+                $self->convert($client->debugMxpCommentFlag),
             '# Show debug messages for Pueblo problems',
-                $client->debugPuebloFlag,
+                $self->convert($client->debugPuebloFlag),
             '# Show debug messages for Pueblo comments',
-                $client->debugPuebloCommentFlag,
+                $self->convert($client->debugPuebloCommentFlag),
             '# Show debug messages for incoming ZMP data',
-                $client->debugZmpFlag,
+                $self->convert($client->debugZmpFlag),
             '# Show debug messages for incoming ATCP data',
-                $client->debugAtcpFlag,
+                $self->convert($client->debugAtcpFlag),
             '# Show debug messages for incoming GMCP data',
-                $client->debugGmcpFlag,
+                $self->convert($client->debugGmcpFlag),
             '# Show debug messages for MCP problems',
-                $client->debugMcpFlag,
+                $self->convert($client->debugMcpFlag),
             '@@@ eos',
         );
 
@@ -1479,6 +1490,10 @@
         }
         $failFlag = $self->readList($failFlag, \%dataHash, 'world_prof_list');
         $failFlag = $self->readList($failFlag, \%dataHash, 'favourite_world_list');
+        if ($self->scriptConvertVersion >= 1_001_396) {
+
+            $failFlag = $self->readList($failFlag, \%dataHash, 'auto_connect_list');
+        }
         $failFlag = $self->readEndOfSection($failFlag, $fileHandle);
 
         # Read logging preferences
@@ -1496,6 +1511,10 @@
         $failFlag = $self->readValue($failFlag, \%dataHash, 'status_before_count');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'status_after_count');
         $failFlag = $self->readHash($failFlag, \%dataHash, 'log_pref_hash');
+        if ($self->scriptConvertVersion >= 1_001_395) {
+
+            $failFlag = $self->readList($failFlag, \%dataHash, 'log_preamble_list');
+        }
         $failFlag = $self->readEndOfSection($failFlag, $fileHandle);
 
         # Read colour tags
@@ -1575,7 +1594,7 @@
         if ($self->scriptConvertVersion >= 1_000_800) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'share_main_win_flag');
-            $failFlag = $self->readFlag($failFlag, \%dataHash, 'restart_share_main_win_flag');
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'restart_share_main_win_mode');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'activate_grid_flag');
         }
         if ($self->scriptConvertVersion >= 1_001_164) {
@@ -2109,6 +2128,10 @@
         }
         $client->ivPoke('configWorldProfList', @{$dataHash{'world_prof_list'}});
         $client->ivPoke('favouriteWorldList', @{$dataHash{'favourite_world_list'}});
+        if ($self->scriptConvertVersion >= 1_001_396) {
+
+            $client->ivPoke('autoConnectList', @{$dataHash{'auto_connect_list'}});
+        }
 
         # Set logging preferences
         $client->ivPoke('allowLogsFlag', $dataHash{'allow_logs_flag'});
@@ -2125,6 +2148,10 @@
         $client->ivPoke('statusEventBeforeCount', $dataHash{'status_before_count'});
         $client->ivPoke('statusEventAfterCount', $dataHash{'status_after_count'});
         $client->ivPoke('logPrefHash', %{$dataHash{'log_pref_hash'}});
+        if ($self->scriptConvertVersion >= 1_001_395) {
+
+            $client->ivPoke('logPreambleList', @{$dataHash{'log_preamble_list'}});
+        }
 
         # Set colour tags
         if ($self->scriptConvertVersion >= 1_000_165) {
@@ -2174,7 +2201,21 @@
         if ($self->scriptConvertVersion >= 1_000_800) {
 
             $client->ivPoke('shareMainWinFlag', $dataHash{'share_main_win_flag'});
-            $client->ivPoke('restartShareMainWinFlag', $dataHash{'restart_share_main_win_flag'});
+
+            if ($self->scriptConvertVersion < 1_001_394) {
+
+                # The IV now uses the values 'default', 'on' and 'off', rather than TRUE and FALSE
+                #   (which didn't work as intended). Just change the value to 'default'
+                $client->ivPoke('restartShareMainWinMode', 'default');
+
+            } else {
+
+                $client->ivPoke(
+                    'restartShareMainWinMode',
+                    $dataHash{'restart_share_main_win_mode'},
+                );
+            }
+
             $client->ivPoke('activateGridFlag', $dataHash{'activate_grid_flag'});
         }
         if ($self->scriptConvertVersion >= 1_001_164) {
@@ -6596,6 +6637,47 @@
                 }
             }
 
+            if ($version < 1_001_365) {
+
+                # Update world profiles with a new IV
+                foreach my $profObj ($axmud::CLIENT->ivValues('worldProfHash')) {
+
+                    if (! exists $profObj->{exitStateTagHash}) {
+
+                        $profObj->{exitStateTagHash} = {};
+                        $profObj->ivEmpty('exitStateTagHash');
+                    }
+                }
+            }
+
+            if ($version < 1_001_374) {
+
+                # Update world profiles with a new IV
+                foreach my $profObj ($axmud::CLIENT->ivValues('worldProfHash')) {
+
+                    if (! exists $profObj->{duplicateReplaceString}) {
+
+                        $profObj->{duplicateReplaceString} = undef;
+                        $profObj->ivUndef('duplicateReplaceString');
+                    }
+                }
+            }
+
+            if ($version < 1_001_382 && $self->session) {
+
+                # This version adds a new trigger attribute. Update every trigger cage
+                foreach my $cage ($self->session->ivValues('cageHash')) {
+
+                    if ($cage->{cageType} eq 'trigger') {
+
+                        foreach my $trigObj ($cage->ivValues('interfaceHash')) {
+
+                            $trigObj->ivAdd('attribHash', 'ignore_response', FALSE);
+                        }
+                    }
+                }
+            }
+
         ### worldmodel ###########################################################################
 
         } elsif ($self->fileType eq 'worldmodel') {
@@ -8583,6 +8665,57 @@
                     }
                 }
             }
+
+            if ($version < 1_001_335) {
+
+                # This version fixes a bug in which each regionmap's highest and lowest occupied
+                #   levels were set only with rooms, not with rooms and labels
+                # Reset all highest/lowest levels
+                foreach my $regionmapObj ($wmObj->ivValues('regionmapHash')) {
+
+                    $wmObj->ivAdd('checkLevelsHash', $regionmapObj->name, undef);
+                }
+
+                $wmObj->updateRegionLevels();
+            }
+
+            if ($version < 1_001_358) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{preDrawMinRooms}) {
+
+                    $wmObj->{preDrawMinRooms} = undef;
+                    $wmObj->ivPoke('preDrawMinRooms', 500);
+                    $wmObj->{queueDrawMaxObjs} = undef;
+                    $wmObj->ivPoke('queueDrawMaxObjs', 500);
+                }
+            }
+
+            if ($version < 1_001_358) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{fixedRoomTagFlag}) {
+
+                    $wmObj->{fixedRoomTagFlag} = undef;
+                    $wmObj->ivPoke('fixedRoomTagFlag', FALSE);
+                    $wmObj->{fixedRoomGuildFlag} = undef;
+                    $wmObj->ivPoke('fixedRoomGuildFlag', FALSE);
+                    $wmObj->{fixedExitTagFlag} = undef;
+                    $wmObj->ivPoke('fixedExitTagFlag', FALSE);
+                    $wmObj->{fixedLabelFlag} = undef;
+                    $wmObj->ivPoke('fixedLabelFlag', FALSE);
+                }
+            }
+
+            if ($version < 1_001_376) {
+
+                # This version adds a new IV to the world model
+                if (! exists $wmObj->{retainDrawMinRooms}) {
+
+                    $wmObj->{retainDrawMinRooms} = undef;
+                    $wmObj->ivPoke('retainDrawMinRooms', 500);
+                }
+            }
         }
 
         ### new built-in tasks (new IVs for existing tasks are below) #############################
@@ -8688,6 +8821,32 @@
 
                     $axmud::CLIENT->ivAdd('taskLabelHash', 'sys', 'system_task');
                     $axmud::CLIENT->ivAdd('taskLabelHash', 'system', 'system_task');
+                }
+            }
+
+            if ($version < 1_001_386) {
+
+                # This version adds new built-in tasks
+                if (! $axmud::CLIENT->ivExists('taskLabelHash', 'countdown')) {
+
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'cd', 'countdown_task');
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'count', 'countdown_task');
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'countdown', 'countdown_task');
+
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'mc', 'map_check_task');
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'map', 'map_check_task');
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'mapcheck', 'map_check_task');
+                }
+            }
+
+            if ($version < 1_001_388) {
+
+                # This version adds a new built-in task
+                if (! $axmud::CLIENT->ivExists('taskLabelHash', 'connections')) {
+
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'conn', 'connections_task');
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'connect', 'connections_task');
+                    $axmud::CLIENT->ivAdd('taskLabelHash', 'connections', 'connections_task');
                 }
             }
         }
@@ -10878,6 +11037,65 @@
                 }
             }
 
+            if ($version < 1_001_393) {
+
+                # This version adds a new strip object, for which we must update the equivalent
+                #   winmaps
+                # This version adds a new button in 'main' windows, for which we must update the
+                #   equivalent winmaps
+                foreach my $winmapObj ($axmud::CLIENT->ivValues('winmapHash')) {
+
+                    my (@oldList, @newList);
+
+                    if (
+                        $winmapObj->name eq 'main_fill'
+                        || $winmapObj->name eq 'main_part'
+                        || $winmapObj->name eq 'main_empty'
+                    ) {
+                        @oldList = $winmapObj->stripInitList;
+                        if (@oldList) {
+
+                            do {
+
+                                my ($package, $hashRef);
+
+                                $package = shift @oldList;
+                                $hashRef = shift @oldList;
+
+                                if ($package eq 'Games::Axmud::Strip::Entry') {
+
+                                    # Add the search box just above the entry strip object (which
+                                    #   we'll assume still exists)
+                                    push (@newList, 'Games::Axmud::Strip::SearchBox', undef);
+
+                                    # The entry strip object itself gets two new flags
+                                    $$hashRef{'add_flag'} = TRUE;
+                                    $$hashRef{'search_flag'} = TRUE;
+                                }
+
+                                push (@newList, $package, $hashRef);
+
+                            } until (! @oldList);
+
+                            $winmapObj->{stripInitList} = \@newList;
+                        }
+                    }
+                }
+            }
+
+            if ($version < 1_001_400) {
+
+                # This version adds an IV to colour scheme objects
+                foreach my $obj ($axmud::CLIENT->ivValues('colourSchemeHash')) {
+
+                    if (! exists $obj->{wrapMode}) {
+
+                        $obj->{wrapMode} = undef;
+                        $obj->ivPoke('wrapMode', 'wrap_word_char');
+                    }
+                }
+            }
+
         ## tts ####################################################################################
 
         } elsif ($self->fileType eq 'tts') {
@@ -10935,6 +11153,104 @@
                     $axmud::CLIENT->ivAdd('ttsFlagAttribHash', 'channels', 'channels_task');
                 }
             }
+
+            if ($version < 1_001_401) {
+
+                # This version changes the scale used for speed, rate, pitch and volume. We now use
+                #   a standard range of 0-100 for all speech engines
+                # Update all TTS configuration objects
+                foreach my $ttsObj ($axmud::CLIENT->ivValues('ttsObjHash')) {
+
+                    my ($speed, $rate, $pitch, $volume);
+
+                    if ($ttsObj->engine eq 'espeak') {
+
+                        $speed = int(($ttsObj->speed - 10) / 1.9);
+                        $pitch = int($ttsObj->pitch);
+
+                    } elsif ($ttsObj->engine eq 'esng') {
+
+                        $speed = int(($ttsObj->speed - 10) / 1.9);
+                        $pitch = int($ttsObj->pitch);
+
+                        # Some default values seem to have been missing from
+                        #   GA::Client->constTtsDefaultList; fill them in as we go
+                        if (! defined $ttsObj->volume) {
+                            $volume = 80;
+                        } else {
+                            $volume = int($ttsObj->volume / 2);
+                        }
+
+                    # (flite doesn't use speed/rate/pitch/volume)
+
+                    } elsif ($ttsObj->engine eq 'festival') {
+
+                        $rate = int(($ttsObj->rate - 0.5) * 66);
+                        $volume = int(($ttsObj->volume - 0.33) * 17.6);
+
+                    } elsif ($ttsObj->engine eq 'swift') {
+
+                        if ($^O eq 'MSWin32') {
+
+                            if (! defined $ttsObj->speed) {
+                                $speed = 30;
+                            } else {
+                                $speed = int(($ttsObj->speed - 100) / 3);
+                            }
+
+                        } else {
+
+                            if (! defined $ttsObj->rate) {
+                                $rate = 50;
+                            } else {
+                                $rate = int(($ttsObj->rate - 0.5) * 66);
+                            }
+                        }
+
+                        if (! defined $ttsObj->pitch) {
+                            $pitch = 50;
+                        } else {
+                            $pitch = int($ttsObj->pitch * 20);
+                        }
+
+                        if (! defined $ttsObj->volume) {
+                            $volume = 80;
+                        } elsif ($^O eq 'MSWin32') {
+                            $volume = int($ttsObj->volume);
+                        } else {
+                            $volume = int(($ttsObj->volume - 0.33) * 17.6);
+                        }
+                    }
+
+                    # For all four values, take care of rounding errors by increasing value of 98
+                    #   or above to 100
+                    if (defined $speed && $speed >= 98) {
+
+                        $speed = 100;
+                    }
+
+                    if (defined $rate && $rate >= 98) {
+
+                        $rate = 100;
+                    }
+
+                    if (defined $pitch && $pitch >= 98) {
+
+                        $pitch = 100;
+                    }
+
+                    if (defined $volume && $volume >= 98) {
+
+                        $volume = 100;
+                    }
+
+                    # Update the configuration. Some of these values may still be 'undef'
+                    $ttsObj->ivPoke('speed', $speed);
+                    $ttsObj->ivPoke('rate', $rate);
+                    $ttsObj->ivPoke('pitch', $pitch);
+                    $ttsObj->ivPoke('volume', $volume);
+                }
+            }
         }
 
         return 1;
@@ -10978,7 +11294,7 @@
             $axmud::CLIENT->ivShow('constWorldPatchHash', $world),
         );
 
-        if ($fileVersion > $patchVersion) {
+        if ($fileVersion >= $patchVersion) {
 
             # No patch required
             return undef;
@@ -11541,6 +11857,16 @@
             $worldObj->ivEmpty('followPatternList');
         }
 
+        if ($world eq 'nanvaent' && $fileVersion < 1_001_405) {
+
+            # Update exit states
+            $worldObj->ivPoke(
+                'exitStateTagHash',
+                'cyan',
+                'emphasis',
+            );
+        }
+
         if ($world eq 'pict' && $fileVersion < 1_001_174) {
 
             # Change of DNS/IP address, replacing pict.genesismuds.com 4200
@@ -11738,6 +12064,111 @@
                     '[^\s]\(([^\(\)]+\)\s\[[^\[\]]+)\]\s*$',        # Rooms with swimming
                     '[^\s]\(([^\(\)]+)\)\s*$',                      # Rooms without swimming
             );
+        }
+
+        if ($world eq 'twotowers' && $fileVersion < 1_001_405) {
+
+            my $compObj;
+
+            # Add a new failed exit
+            $worldObj->ivPush('failExitPatternList', '^You\'re too tired to swim right now');
+
+            # Update exit states
+            $worldObj->ivPoke(
+                'exitStateTagHash',
+                'BLUE',
+                'swim @@@',
+            );
+
+            # Set a duplicate exit replacement
+            $worldObj->ivPoke('duplicateReplaceString', 'swim @@@');
+
+            # Fix handling of room statements, after a Locator reset, in rooms with water exits
+            $worldObj->ivPoke(
+                'verboseAnchorPatternList',
+                    '^\s\s\s\sThe only obvious exits are (.*)\.',
+                    '^\s\s\s\sThe only obvious exit is (.*)\.',
+            );
+
+            $worldObj->ivDelete('componentHash', 'verb_exit');
+
+            $worldObj->ivPoke(
+                'verboseComponentList',
+                    'verb_descrip',
+                    'verb_exit_1',
+                    'anchor',
+                    'verb_exit_2',
+            );
+
+            $compObj = Games::Axmud::Obj::Component->new(
+                $axmud::CLIENT,
+                $worldObj,
+                'verb_exit_1',
+                'verb_exit',
+            );
+
+            if ($compObj) {
+
+                $compObj->{size} = 0;
+                $compObj->{minSize} = 0;                    # Optional
+                $compObj->{maxSize} = 16;
+                $compObj->{analyseMode} = 'check_line';
+                $compObj->{boldSensitiveFlag} = FALSE;
+                $compObj->{useInitialTagsFlag} = FALSE;
+                $compObj->{combineLinesFlag} = FALSE;       # Water & normal exits on separate lines
+
+                $compObj->{startPatternList} = [];
+                $compObj->{startTagList} = [
+                    'blue',
+                ];
+                $compObj->{startAllFlag} = FALSE;
+                $compObj->{startTagMode} = 'default';
+
+                $compObj->{stopAtPatternList} = [
+                    '^\s\s\s\sThere is water to the (.*)\.',
+                ];
+                $compObj->{stopAtTagList} = [];
+                $compObj->{stopAtAllFlag} = FALSE;
+                $compObj->{stopAtTagMode} = 'default';
+
+                $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
+            }
+
+            $compObj = Games::Axmud::Obj::Component->new(
+                $axmud::CLIENT,
+                $worldObj,
+                'verb_exit_2',
+                'verb_exit',
+            );
+
+            if ($compObj) {
+
+                $compObj->{size} = 0;
+                $compObj->{minSize} = 1;
+                $compObj->{maxSize} = 16;
+                $compObj->{analyseMode} = 'check_line';
+                $compObj->{boldSensitiveFlag} = FALSE;
+                $compObj->{useInitialTagsFlag} = FALSE;
+                $compObj->{combineLinesFlag} = FALSE;       # Water & normal exits on separate lines
+
+                $compObj->{startPatternList} = [
+                    '^\s\s\s\sThe only obvious exits are (.*)\.',
+                    '^\s\s\s\sThe only obvious exit is (.*)\.',
+                ];
+                $compObj->{startTagList} = [];
+                $compObj->{startAllFlag} = FALSE;
+                $compObj->{startTagMode} = 'default';
+
+                $compObj->{stopBeforeNoPatternList} = [
+                    '^\s\s\s\sThe only obvious exits are (.*)\.',
+                    '^\s\s\s\sThe only obvious exit is (.*)\.',
+                ];
+                $compObj->{stopBeforeNoTagList} = [];
+                $compObj->{stopBeforeNoAllFlag} = FALSE;
+                $compObj->{stopBeforeNoTagMode} = 'default';
+
+                $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
+            }
         }
 
         return 1;
