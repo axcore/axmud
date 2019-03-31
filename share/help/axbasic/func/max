@@ -1,4 +1,4 @@
-MAX (x, y)
+Max (x, y)
 
    Synopsis:
       Returns the larger of the two values, x and y

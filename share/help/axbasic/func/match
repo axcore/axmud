@@ -1,11 +1,11 @@
-MATCH (string, regex)
+Match (string, regex)
 
    Synopsis:
-      MATCH is the Axbasic pattern-matching function, comparing a Perl regular
-         expression (regex) with a string to see whether the pattern matches
+      An Axbasic pattern-matching function, comparing a Perl regular expression
+         (regex) with a string to see whether the pattern matches
 
    Notes:
       'regex' is a Perl regular expression like "orc", "^orc" or "^orc (.*)$".
-         If this pattern matches the string, MATCH returns 1; otherwise it
+         If this pattern matches the string, Match () returns 1; otherwise it
          returns 0.
-      See also the help for MATCHI.
+      See also the help for Matchi ().

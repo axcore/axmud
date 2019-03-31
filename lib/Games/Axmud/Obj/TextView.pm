@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -13,7 +13,7 @@
 #
 #
 # Games::Axmud::Obj::TextView
-# A textview object, which handles a single Gtk2::TextView
+# A textview object, which handles a single Gtk3::TextView
 
 { package Games::Axmud::Obj::TextView;
 
@@ -31,8 +31,8 @@
     sub new {
 
         # Called by GA::Obj::Desktop->add_textview()
-        # Creates a textview object, which handles a single Gtk2::TextView (or, in split screen
-        #   mode, two textviews sharing a single Gtk2::TextBuffer)
+        # Creates a textview object, which handles a single Gtk3::TextView (or, in split screen
+        #   mode, two textviews sharing a single Gtk3::TextBuffer)
         #
         # Expected arguments
         #   $session    - The GA::Session which controls this textview
@@ -42,10 +42,10 @@
         #                   object's textview(s) are displayed
         #
         # Optional aguments
-        #   $paneObj    - For textview objects that will be added to the Gtk2::Table in an
-        #                   'internal' window (specifically, added directly to a GA::Strip::Table
-        #                   object), that GA::Strip::Table object. Set to 'undef' for a textview
-        #                   object created for any other reason
+        #   $paneObj    - For textview objects that will be added to the Gtk3::Grid in an 'internal'
+        #                   window (specifically, added directly to a GA::Strip::Table object), that
+        #                   GA::Strip::Table object. Set to 'undef' for a textview object created
+        #                   for any other reason
         #
         # Return values
         #   'undef' on improper arguments
@@ -86,43 +86,43 @@
             # The window object (inheriting from GA::Generic::Win) in which this object's
             #   textview(s) are displayed
             winObj                      => $winObj,
-            # For textview objects that will be added to the Gtk2::Table in an 'internal' window
+            # For textview objects that will be added to the Gtk3::Grid in an 'internal' window
             #   (specifically, added directly to a GA::Strip::Table object), that
             #   GA::Strip::Table object. Set to 'undef' for a textview object created for any
             #   other reason
             paneObj                     => $paneObj,
 
             # Widgets
-            textView                    => undef,           # Gtk2::TextView
-            textView2                   => undef,           # Gtk2::TextView
-            buffer                      => undef,           # Gtk2::TextBuffer
-            vPaned                      => undef,           # Gtk2::VPaned
-            scroll                      => undef,           # Gtk2::ScrolledWindow
-            scroll2                     => undef,           # Gtk2::ScrolledWindow
-            startMark                   => undef,           # Gtk2::TextMark
-            endMark                     => undef,           # Gtk2::TextMark
-            searchMark                  => undef,           # Gtk2::TextMark
-            popupMenu                   => undef,           # Gtk2::Menu
+            textView                    => undef,           # Gtk3::TextView
+            textView2                   => undef,           # Gtk3::TextView
+            buffer                      => undef,           # Gtk3::TextBuffer
+            vPaned                      => undef,           # Gtk3::VPaned
+            scroll                      => undef,           # Gtk3::ScrolledWindow
+            scroll2                     => undef,           # Gtk3::ScrolledWindow
+            startMark                   => undef,           # Gtk3::TextMark
+            endMark                     => undef,           # Gtk3::TextMark
+            searchMark                  => undef,           # Gtk3::TextMark
+            popupMenu                   => undef,           # Gtk3::Menu
 
             # Other IVs
 
             # Flag set to TRUE when the scroll lock is enabled, FALSE when it is disabled (only
-            #   applies to the original Gtk2::TextView)
+            #   applies to the original Gtk3::TextView)
             scrollLockFlag              => TRUE,
             # What type of scroll lock to apply - 'top' if the original textview should remain
             #   scrolled to the top, 'bottom' if it should remain scrolled to the bottom
             scrollLockType              => 'bottom',
-            # Split screen mode. Because of performance issues with very large Gtk2::TextBuffers,
-            #   if the user is likely to want a split screen (with two Gtk2::TextView, separated by
-            #   a divider and sharing the same Gtk2::TextBuffer), it's usually better to create both
-            #   Gtk2::TextViews when this textview object is created, rather than starting with a
+            # Split screen mode. Because of performance issues with very large Gtk3::TextBuffers,
+            #   if the user is likely to want a split screen (with two Gtk3::TextView, separated by
+            #   a divider and sharing the same Gtk3::TextBuffer), it's usually better to create both
+            #   Gtk3::TextViews when this textview object is created, rather than starting with a
             #   single textview and creating (or destroying) the second one as need be
             # This IV is set to the current split screen mode, and is updated whenever the mode is
             #   changed via calls to $self->setSplitScreenMode:
-            #       'single'    - Only one Gtk2::TextView
-            #       'split'     - Two Gtk2::TextViews with a divider between them, positioned so
+            #       'single'    - Only one Gtk3::TextView
+            #       'split'     - Two Gtk3::TextViews with a divider between them, positioned so
             #                       they are both visible
-            #       'hidden'    - Two Gtk2::TextViews with a divider between them, positioned at the
+            #       'hidden'    - Two Gtk3::TextViews with a divider between them, positioned at the
             #                       top of the screen so the second textview is invisible (and the
             #                       divider itself is almost invisible); however, the user is free
             #                       to move it manually, and when they do so, the IV remains set to
@@ -175,7 +175,7 @@
             # When ->resetMonochromeMode is called, this flag is set back to FALSE
             monochromeModFlag           => FALSE,
             # Ovewrite mode. The default value is FALSE, in which calls to $self->insertText (etc)
-            #   and ->insertCmd insert text at the end of the Gtk2::TextBuffer (or very near the
+            #   and ->insertCmd insert text at the end of the Gtk3::TextBuffer (or very near the
             #   end, if system messages are visible on the final lines)
             # Any code that uses cursor control to overwrite existing lines will call
             #   $self->setInsertPosn, ->adjustInsertPosn, ->adjustInsertLine, ->adjustInsertOffset
@@ -192,7 +192,7 @@
             #   maximum number of lines, the oldest line is not deleted
             overwriteFlag               => FALSE,
 
-            # The maximum number of lines that the Gtk2::TextBuffer can contain. If 'undef' or 0,
+            # The maximum number of lines that the Gtk3::TextBuffer can contain. If 'undef' or 0,
             #   unlimited lines; otherwise when the maximum is reached, the earliest line is
             #   removed when a new line is added
             maxLines                    => $axmud::CLIENT->customTextBufferSize,
@@ -243,7 +243,7 @@
             #   inserted into it (the flag is automatically set back to FALSE after that operation)
             clearAfterInsertFlag        => TRUE,
 
-            # The Gtk2::TextMark which marks the point in the Gtk2::TextBuffer at which
+            # The Gtk3::TextMark which marks the point in the Gtk3::TextBuffer at which
             #   $self->insertText inserts text, and at which $self->insertCmd inserts world
             #   commands. Whenever it is 'undef', both are inserted at the end of the buffer. Code
             #   can call $self->setInsertPosn to set a different insert position, and then call
@@ -262,7 +262,7 @@
             # When $self->newLineFlag is FALSE (meaning the buffer doesn't end with a newline
             #   character) and a system message needs to be shown (via a call to
             #   $self->showSystemText, ->showError, ->showWarning, ->showDebug or ->showImproper),
-            #   the Gtk2::TextMark is created at the end of the buffer and stored in this IV
+            #   the Gtk3::TextMark is created at the end of the buffer and stored in this IV
             # An artificial newline character is then added to the end of the buffer, and the
             #   system message is shown after that. The next call to $self->insertText or
             #   ->insertCmd when $self->insertMark is set to 'undef' (meaning, the usual insertion
@@ -297,12 +297,12 @@
             # Flag set to TRUE if the visible cursor is enabled and 'on', and set to FALSE if the
             #   visible cursor is either disabled or 'off'
             cursorOnFlag                => FALSE,
-            # A visible cursor is implemented by creating a single Gtk2::TextTag and turning its
+            # A visible cursor is implemented by creating a single Gtk3::TextTag and turning its
             #   underline on/off (i.e. from ->spinClientLoop)
             # Only one of these text tags exist; to move the visible cursor's position, we just
             #   remove the old tag and insert a new one
-            # This Gtk2::TextMark stores the position at which the visible cursor has been placed
-            #   (i.e. the position at which the Gtk2::TextTag has been inserted)
+            # This Gtk3::TextMark stores the position at which the visible cursor has been placed
+            #   (i.e. the position at which the Gtk3::TextTag has been inserted)
             cursorMark                  => undef,
             # If the visible cursor is at the end of the buffer, we have to add an extra space
             #   character, at that point, so the cursor is visible. The space character is
@@ -326,7 +326,7 @@
             #   $linkObjHash{unique_number} = blessed_reference_of_link_object
             # ...where 'unique_number' is a number unique within this textview object
             linkObjHash                 => {},
-            # A parallel hash of GA::Obj::Link objects, sorted by the Gtk2::TextBuffer line on
+            # A parallel hash of GA::Obj::Link objects, sorted by the Gtk3::TextBuffer line on
             #   which they appear (so that when the buffer is full and the earliest line is removed,
             #   any links on that line can also be removed)
             # Hash in the form
@@ -353,7 +353,7 @@
             #   (GA::Buffer::Display)
             # Hash in the form
             #   $tooltipHash{our_line_num} = tooltip_text
-            # ...where 'our_line_num' is the Gtk2::TextBuffer line number of the insert position
+            # ...where 'our_line_num' is the Gtk3::TextBuffer line number of the insert position
             #   used
             tooltipHash                 => {},
             # The 'our_line_num' for the last tooltip displayed, so when the mouse moves over a new
@@ -388,7 +388,7 @@
             #   %colourStyleHash = (
             #       # Colour tags - when set to 'undef', the default colours are used. Standard or
             #       #   xterm colour tags, but not RGB colour tags (because ANSI escape sequences
-            #       #   don't use them, and because unlike standard/xterm colour, Gtk2::TextTags
+            #       #   don't use them, and because unlike standard/xterm colour, Gtk3::TextTags
             #       #   for RGB colours are not created until needed)
             #       text                => undef,   # Axmud colour tag, e.g. 'red' or 'x230'
             #       underlay            => undef,   # Axmud underlay colour tag, e.g. 'ul_white'
@@ -454,7 +454,7 @@
     sub objEnable {
 
         # Called by anything after the call to $self->new
-        # Creates the Gtk2::TextView itself, packed into a Gtk2::ScrolledWindow (the scrolled window
+        # Creates the Gtk3::TextView itself, packed into a Gtk3::ScrolledWindow (the scrolled window
         #   is returned)
         #
         # Expected arguments
@@ -463,29 +463,29 @@
         # Optional arguments
         #   $splitScreenMode
         #                   - Sets the textview object's initial split screen mode - 'single' for a
-        #                       single Gtk2::TextView, 'split' for two Gtk2::TextViews with a
+        #                       single Gtk3::TextView, 'split' for two Gtk3::TextViews with a
         #                       divider between them, positioned so they are both visible, or
-        #                       'hidden' for two Gtk2::Textviews with a divider between them,
+        #                       'hidden' for two Gtk3::Textviews with a divider between them,
         #                       positioned at the top of the screen so the second textview is
         #                       invisible (and the divider itself is almost invisible). If 'undef'
         #                       or an unrecognised value, the default value of 'single' is used
         #   $colourScheme   - The name of the GA::Obj::ColourScheme to use (matches a key in
         #                       GA::CLIENT->colourSchemeHash). If 'undef', the default colour
         #                       scheme for the parent window type is used
-        #   $maxLines       - The maximum number of lines that can be shown in the Gtk2::TextView
+        #   $maxLines       - The maximum number of lines that can be shown in the Gtk3::TextView
         #                       (when the limit is reached, the earliest line is removed when a
         #                       new line is added)
         #   $newLineDefault - The default behaviour when a string is inserted into the
-        #                       Gtk2::TextView: 'before' prepends a newline character to the string,
+        #                       Gtk3::TextView: 'before' prepends a newline character to the string,
         #                       'after'/'nl' prepends a newline character after the string, 'echo'
         #                       does not prepend/a newline character by default. If 'undef' or an
         #                       unrecognised value, 'after' is used
-        #   $oldBuffer      - If we want the new Gtk2::TextView to use an existing Gtk2::TextBuffer
+        #   $oldBuffer      - If we want the new Gtk3::TextView to use an existing Gtk3::TextBuffer
         #                       any reason, that buffer; set to 'undef' otherwise
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the Gtk2::ScrolledWindow
+        #   Otherwise returns the Gtk3::ScrolledWindow
 
         my (
             $self, $splitScreenMode, $colourScheme, $maxLines, $newLineDefault, $oldBuffer, $check
@@ -526,14 +526,6 @@
         $self->ivPoke('font', $colourSchemeObj->font);
         $self->ivPoke('fontSize', $colourSchemeObj->fontSize);
 
-        # Set the Gtk2 external style for a Gtk2::TextView and its Gtk2::TextBuffer
-        $axmud::CLIENT->desktopObj->setTextViewStyle(
-            $axmud::CLIENT->returnRGBColour($self->textColour),
-            $axmud::CLIENT->returnRGBColour($self->backgroundColour),
-            $self->font,
-            $self->fontSize,
-        );
-
         # Apply the maximum number of lines, if specified; otherwise keep using the default value
         if (defined $maxLines) {
 
@@ -553,10 +545,10 @@
             $self->ivPoke('newLineDefault', $newLineDefault);
         }
 
-        # If $oldBuffer wasn't specified, create a new Gtk2::TextBuffer
+        # If $oldBuffer wasn't specified, create a new Gtk3::TextBuffer
         if (! $oldBuffer) {
 
-            $self->ivPoke('buffer', Gtk2::TextBuffer->new());
+            $self->ivPoke('buffer', Gtk3::TextBuffer->new());
 
             # Create colour/style tags for the new textbuffer
             $self->createColourTags();
@@ -567,7 +559,7 @@
             $self->ivPoke('buffer', $oldBuffer);
         }
 
-        # Create the Gtk2::TextView(s)
+        # Create the Gtk3::TextView(s)
         my ($scroll, $scroll2, $vPaned, $textView, $textView2);
         $textView = $self->createTextViewWidget($self->buffer, $colourSchemeObj);
         if ($self->splitScreenMode eq 'single') {
@@ -582,6 +574,17 @@
             # Pack the textviews into a container widget
             ($vPaned, $scroll, $scroll2) = $self->setupVPaned($textView, $textView2);
         }
+
+        # Set the textview's CSS style
+        $axmud::CLIENT->desktopObj->setTextViewObjStyle(
+            $self->number,
+            $axmud::CLIENT->returnRGBColour($self->textColour),
+            $axmud::CLIENT->returnRGBColour($self->backgroundColour),
+            $self->font,
+            $self->fontSize,
+            $textView,
+            $textView2,
+        );
 
         # Update IVs
         $self->ivPoke('textView', $textView);
@@ -600,7 +603,7 @@
         my $endMark
             = $self->buffer->create_mark('end_mark', $self->buffer->get_end_iter(), FALSE);
         # ($self->insertNewLine creates a 'line_N' mark after every newline character, but not at
-        #   the beginning of the Gtk2::TextBuffer)
+        #   the beginning of the Gtk3::TextBuffer)
         $self->buffer->create_mark('line_0', $self->buffer->get_start_iter(), TRUE);
 
         # Create a search mark which moves whenever $self->searchBuffer is called, and is initially
@@ -613,7 +616,7 @@
         $self->ivPoke('endMark', $endMark);
         $self->ivPoke('searchMark', $searchMark);
 
-        # Gtk2::TextTags might not exist for any RGB tags that have just been copied to
+        # Gtk3::TextTags might not exist for any RGB tags that have just been copied to
         #   $self->textColour and/or $self->underlayColour, and $self->interpretTags won't have the
         #   opportunity to create them, so create them right away
         $self->updateRGBTags();
@@ -657,10 +660,7 @@
         # Also called by $self->setMonochromeMode and ->resetMonochromeMode when a monochrome colour
         #   scheme is applied/removed
         #
-        # Applies a colour scheme to this object's Gtk2::TextView(s)
-        # Actually, it creates new Gtk2::TextView(s) with the right colour scheme, packs the
-        #   textview(s) into a Gtk2::ScrolledWindow or Gtk2::VPaned, and returns the scrolled window
-        #   / vpaned
+        # Applies a colour scheme to this object's Gtk3::TextView(s)
         #
         # Expected arguments
         #   (none besides $self)
@@ -673,7 +673,7 @@
         #
         # Return values
         #   'undef' on improper arguments or if the specified colour scheme doesn't exist
-        #   Otherwise returns the scrolled window/vpaned described above
+        #   1 otherwise
 
         my ($self, $colourScheme, $check) = @_;
 
@@ -748,46 +748,23 @@
             }
         }
 
-        # Gtk2::TextTags might not exist for any RGB tags that have just been copied to
+        # Update the textview's CSS style
+        $axmud::CLIENT->desktopObj->setTextViewObjStyle(
+            $self->number,
+            $self->textColour,
+            $self->backgroundColour,
+            $self->font,
+            $self->fontSize,
+            $self->textView,
+            $self->textView2,       # May be 'undef'
+        );
+
+        # Gtk3::TextTags might not exist for any RGB tags that have just been copied to
         #   $self->textColour and/or $self->underlayColour, and $self->interpretTags won't have the
         #   opportunity to create them, so create them right away
         $self->updateRGBTags();
 
-        # Set the Gtk2 external style for a Gtk2::TextView and its Gtk2::TextBuffer
-        $axmud::CLIENT->desktopObj->setTextViewStyle(
-            $axmud::CLIENT->returnRGBColour($self->textColour),
-            $axmud::CLIENT->returnRGBColour($self->backgroundColour),
-            $self->font,
-            $self->fontSize,
-        );
-
-        # Create replacement textview widget(s), retaining the original buffer
-        my ($textView, $textView2);
-        $textView = $self->createTextViewWidget($self->buffer, $colourSchemeObj);
-        if ($self->textView2) {
-
-            $textView2 = $self->createTextViewWidget($self->buffer, $colourSchemeObj);
-        }
-
-        # Pack the textview(s) into a container widget
-        my ($scroll, $vPaned, $scroll2);
-        if (! $self->textView2) {
-
-            $scroll = $self->setupScroller($textView);
-
-        } else {
-
-            ($vPaned, $scroll, $scroll2) = $self->setupVPaned($textView, $textView2);
-        }
-
-        # Update IVs (some values might be 'undef')
-        $self->ivPoke('textView', $textView);
-        $self->ivPoke('textView2', $textView2);
-        $self->ivPoke('vPaned', $vPaned);
-        $self->ivPoke('scroll', $scroll);
-        $self->ivPoke('scroll2', $scroll2);
-
-        # Create any new Gtk2::TextTags that don't already exist, using a phoney call to
+        # Create any new Gtk3::TextTags that don't already exist, using a phoney call to
         #   $self->interpretTags
         # NB Default values for these IVs are 'undef', so we have to check for that
         if ($self->textColour) {
@@ -810,15 +787,8 @@
             $self->interpretTags($self->newLineDefault, @list);
         }
 
-        # Return the correct container widget
-        if (! $textView2) {
-
-            return $scroll;
-
-        } else {
-
-            return $vPaned;
-        }
+        # Operation complete
+        return 1;
     }
 
     # ->signal_connects
@@ -829,7 +799,7 @@
         # Set up a ->signal_connect to watch out for the motion over clickable links
         #
         # Expected arguments
-        #   $textView   - The Gtk2::TextView that generated the signal (later stored in either
+        #   $textView   - The Gtk3::TextView that generated the signal (later stored in either
         #                   $self->textView or $self->textView2)
         #
         # Return values
@@ -861,7 +831,7 @@
         # Set up a ->signal_connect to watch out for the motion over clickable links
         #
         # Expected arguments
-        #   $textView   - The Gtk2::TextView that generated the signal (later stored in either
+        #   $textView   - The Gtk3::TextView that generated the signal (later stored in either
         #                   $self->textView or $self->textView2)
         #
         # Return values
@@ -895,7 +865,7 @@
         # Set up a ->signal_connect to watch out for the motion over clickable links
         #
         # Expected arguments
-        #   $textView   - The Gtk2::TextView that generated the signal (later stored in either
+        #   $textView   - The Gtk3::TextView that generated the signal (later stored in either
         #                   $self->textView or $self->textView2)
         #
         # Return values
@@ -929,7 +899,7 @@
         # Set up a ->signal_connect to watch out for mouse clicks on a clickable link
         #
         # Expected arguments
-        #   $textView   - The Gtk2::TextView that generated the signal (later stored in either
+        #   $textView   - The Gtk3::TextView that generated the signal (later stored in either
         #                   $self->textView or $self->textView2)
         #
         # Return values
@@ -1083,12 +1053,12 @@
 
         # Called by $self->enableSplitScreen and ->enableHiddenSplitScreen, as well as by
         #   GA::Table::Pane->addSimpleTab and ->addTab
-        # Set up a ->signal_connect to watch out for scrolling in the Gtk2::ScrolledWindow which
+        # Set up a ->signal_connect to watch out for scrolling in the Gtk3::ScrolledWindow which
         #   contains a textview
         #
         # Expected arguments
-        #   $scroll     - The Gtk2::ScrolledWindow that generated the signal
-        #   $textView   - The Gtk2::TextView it contains
+        #   $scroll     - The Gtk3::ScrolledWindow that generated the signal
+        #   $textView   - The Gtk3::TextView it contains
         #
         # Return values
         #   'undef' on improper arguments
@@ -1149,6 +1119,9 @@
 
         my ($self, $flag, $check) = @_;
 
+        # Local variables
+        my $textView;
+
         # Check for improper arguments
         if (defined $check) {
 
@@ -1156,21 +1129,20 @@
         }
 
         if ($flag && $self->textView2 && $self->splitScreenMode eq 'split') {
-
-            $self->textView2->scroll_to_mark(
-                $self->buffer->get_mark('start_mark'),
-                0.0,
-                TRUE,
-                0,
-                0,
-            );
-
+            $textView = $self->textView2;
         } elsif ($self->textView) {
-
-            $self->textView->scroll_to_mark($self->buffer->get_mark('start_mark'), 0.0, TRUE, 0, 0)
+            $textView = $self->textView;
         }
 
-        $self->winObj->winShowAll($self->_objClass . '->scrollToTop');
+        if ($textView) {
+
+            # Apply the nice visual effect...
+            $textView->scroll_to_mark($self->buffer->get_mark('start_mark'), 0.0, TRUE, 0, 0);
+
+            # ...and instruct the GA::Session to make sure, on the next spin of its maintain loop,
+            #   that the textview really is scrolled to the top
+            $self->session->add_textViewScrollUp($textView);
+        }
 
         return 1;
     }
@@ -1193,6 +1165,9 @@
 
         my ($self, $flag, $check) = @_;
 
+        # Local variables
+        my $textView;
+
         # Check for improper arguments
         if (defined $check) {
 
@@ -1200,12 +1175,20 @@
         }
 
         if ($flag && $self->textView2 && $self->splitScreenMode eq 'split') {
-            $self->textView2->scroll_to_mark($self->buffer->get_mark('end_mark'), 0.0, TRUE, 0, 0);
+            $textView = $self->textView2;
         } elsif ($self->textView) {
-            $self->textView->scroll_to_mark($self->buffer->get_mark('end_mark'), 0.0, TRUE, 0, 0);
+            $textView = $self->textView;
         }
 
-        $self->winObj->winShowAll($self->_objClass . '->scrollToBottom');
+        if ($textView) {
+
+            # Apply the nice visual effect...
+            $textView->scroll_to_mark($self->buffer->get_mark('end_mark'), 0.0, TRUE, 0, 1);
+
+            # ...and instruct the GA::Session to make sure, on the next spin of its maintain loop,
+            #   that the textview really is scrolled to the bottom
+            $self->session->add_textViewScrollDown($textView);
+        }
 
         return 1;
     }
@@ -1213,11 +1196,11 @@
     sub scrollToIter {
 
         # Can be called by anything
-        # Scrolls the (original) textview to a specified Gtk2::TextIter (if split screen mode
+        # Scrolls the (original) textview to a specified Gtk3::TextIter (if split screen mode
         #   applies, the upper textview doesn't scroll)
         #
         # Expected arguments
-        #   $iter   - Scroll to this Gtk2::TextIter
+        #   $iter   - Scroll to this Gtk3::TextIter
         #
         # Optional arguments
         #   $flag   - If set to TRUE, the second textview (created in split screen mode) is
@@ -1249,11 +1232,11 @@
     sub scrollToMark {
 
         # Can be called by anything
-        # Scrolls the (original) textview to a specified Gtk2::TextMark (if split screen mode
+        # Scrolls the (original) textview to a specified Gtk3::TextMark (if split screen mode
         #   applies, the upper textview doesn't scroll)
         #
         # Expected arguments
-        #   $mark   - Scroll to this Gtk2::TextMark
+        #   $mark   - Scroll to this Gtk3::TextMark
         #
         # Optional arguments
         #   $flag   - If set to TRUE, the second textview (created in split screen mode) is
@@ -1322,7 +1305,7 @@
 
         # Can be called by anything (also called by $self->insertText, ->insertQuick,
         #   ->showSystemText and ->showImage)
-        # Empties the Gtk2::TextBuffer of text
+        # Empties the Gtk3::TextBuffer of text
         #
         # Expected arguments
         #   (none besides $self)
@@ -1353,7 +1336,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         if (! $noCursorFlag) {
 
             $self->removeCursor();
@@ -1365,7 +1348,7 @@
         $self->reset_link();
 
         # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
-        #   Gtk2::TextTag)
+        #   Gtk3::TextTag)
         if (! $noCursorFlag) {
 
             $self->moveCursor();
@@ -1381,8 +1364,17 @@
         $self->ivUndef('restoreInsertMark');
         $self->ivUndef('tempInsertMark');
         $self->ivUndef('systemInsertMark');
+        $self->ivUndef('systemTextBuffer');
+        $self->ivPoke('cursorEnableFlag', FALSE);
+        $self->ivPoke('cursorOnFlag', FALSE);
+        $self->ivUndef('cursorMark');
+        $self->ivPoke('cursorEndFlag', FALSE);
         $self->ivPoke('storePosnYPos', 0);
         $self->ivPoke('storePosnXPos', 0);
+        $self->ivEmpty('linkObjHash');
+        $self->ivEmpty('linkObjLineHash');
+        $self->ivPoke('linkObjCount', 0);
+        $self->ivUndef('currentLinkObj');
         $self->ivEmpty('tooltipHash');
         $self->ivPoke('lastTooltipLine', undef);
         # Reset colours/styles
@@ -1395,10 +1387,10 @@
     sub clearBufferBeforeMark {
 
         # Can be called by anything
-        # Empties the Gtk2::TextBuffer of text before a specified mark
+        # Empties the Gtk3::TextBuffer of text before a specified mark
         #
         # Expected arguments
-        #   $mark           - The Gtk2::TextMark before which the buffer should be cleared
+        #   $mark           - The Gtk3::TextMark before which the buffer should be cleared
         #
         # Optional arguments
         #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
@@ -1429,7 +1421,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         $stopIter = $self->buffer->get_iter_at_mark($mark);
@@ -1509,10 +1501,10 @@
     sub clearBufferAfterMark {
 
         # Can be called by anything
-        # Empties the Gtk2::TextBuffer of text after a specified mark
+        # Empties the Gtk3::TextBuffer of text after a specified mark
         #
         # Expected arguments
-        #   $mark           - The Gtk2::TextMark after which the buffer should be cleared
+        #   $mark           - The Gtk3::TextMark after which the buffer should be cleared
         #
         # Optional arguments
         #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
@@ -1540,7 +1532,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         $startIter = $self->buffer->get_iter_at_mark($mark);
@@ -1630,12 +1622,12 @@
     sub clearLineBeforeMark {
 
         # Can be called by anything
-        # Given a specified mark on a line in the Gtk2::TextBuffer, empties everything on the line
+        # Given a specified mark on a line in the Gtk3::TextBuffer, empties everything on the line
         #   up to that point
         # (In other words, all characters before the mark are replaced by space characters)
         #
         # Expected arguments
-        #   $mark           - The Gtk2::TextMark before which the line should be emptied
+        #   $mark           - The Gtk3::TextMark before which the line should be emptied
         #
         # Optional arguments
         #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
@@ -1663,7 +1655,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         $stopIter = $self->buffer->get_iter_at_mark($mark);
@@ -1696,7 +1688,7 @@
         # (In other words, all characters on the same line are replaced by space characters)
         #
         # Expected arguments
-        #   $mark           - The Gtk2::TextMark after which the line should be emptied
+        #   $mark           - The Gtk3::TextMark after which the line should be emptied
         #
         # Optional arguments
         #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
@@ -1724,7 +1716,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         $midIter = $self->buffer->get_iter_at_mark($mark);
@@ -1749,12 +1741,12 @@
     sub clearLineAfterMark {
 
         # Can be called by anything
-        # Given a specified mark on a line in the Gtk2::TextBuffer, empties the rest of the line
+        # Given a specified mark on a line in the Gtk3::TextBuffer, empties the rest of the line
         # (In other words, all characters after the mark are replaced by space characters, but the
         #   newline character is preserved, if present)
         #
         # Expected arguments
-        #   $mark           - The Gtk2::TextMark after which the line should be emptied
+        #   $mark           - The Gtk3::TextMark after which the line should be emptied
         #
         # Optional arguments
         #   $overwriteFlag  - If TRUE, overwite mode is turned on (if not already on). If FALSE or
@@ -1782,7 +1774,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         $startIter = $self->buffer->get_iter_at_mark($mark);
@@ -1847,7 +1839,7 @@
     sub clearBufferBeforePosn {
 
         # Can be called by anything
-        # Empties the Gtk2::TextBuffer of text before a specified position
+        # Empties the Gtk3::TextBuffer of text before a specified position
         #
         # Expected arguments
         #   (none besides $self)
@@ -1884,7 +1876,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         if (! defined $currentYPos || ! defined $currentXPos) {
@@ -1971,7 +1963,7 @@
     sub clearBufferAfterPosn {
 
         # Can be called by anything
-        # Empties the Gtk2::TextBuffer of text after a specified position
+        # Empties the Gtk3::TextBuffer of text after a specified position
         #
         # Expected arguments
         #   (none besides $self)
@@ -2005,7 +1997,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         if (! defined $currentYPos || ! defined $currentXPos) {
@@ -2102,7 +2094,7 @@
     sub clearLineBeforePosn {
 
         # Called by GA::Session->processCtrlSequence (or by any other code)
-        # Given a specified position on a line in the Gtk2::TextBuffer, empties everything on the
+        # Given a specified position on a line in the Gtk3::TextBuffer, empties everything on the
         #   line up to that point
         # (In other words, all characters before the position are replaced by space characters)
         #
@@ -2138,7 +2130,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         if (! defined $currentYPos || ! defined $currentXPos) {
@@ -2205,7 +2197,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         if (! defined $currentYPos || ! defined $currentXPos) {
@@ -2233,7 +2225,7 @@
     sub clearLineAfterPosn {
 
         # Called by GA::Session->processCtrlSequence (or by any other code)
-        # Given a specified position on a line in the Gtk2::TextBuffer, empties the rest of the line
+        # Given a specified position on a line in the Gtk3::TextBuffer, empties the rest of the line
         # (In other words, all characters after the position are replaced by space characters, but
         #   the newline character is preserved, if present)
         #
@@ -2269,7 +2261,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         if (! defined $currentYPos || ! defined $currentXPos) {
@@ -2337,7 +2329,7 @@
         # Called by several functions in this textview object
         # Also alled by GA::Session->processMxpLinkElement, ->processMxpSendElement,
         #   GA::Session->processLineSegment or by any other code
-        # Gets the position in the Gtk2::TextBuffer at which text is being inserted (via calls to
+        # Gets the position in the Gtk3::TextBuffer at which text is being inserted (via calls to
         #   $self->insertText), expressed in a line number and character offset
         # If no insertion position is specified by $self->insertMark or ->tempInsertMark, returns
         #   the position of the end of the buffer, as if the insertion position was set to that
@@ -2386,7 +2378,7 @@
 
         # Called by GA::Session->processMxpDestElement, GA::Session->processCtrlSequence (or by any
         #   other code)
-        # Sets the position in the Gtk2::TextBuffer at which text is being inserted (via calls to
+        # Sets the position in the Gtk3::TextBuffer at which text is being inserted (via calls to
         #   $self->insertText, ->insertMultipleText, ->insertWithLinks or ->insertCmd)
         # The position is expressed as a line number and character offset
         # If the specified position doesn't exist, newline character and whitespace are added to
@@ -2423,7 +2415,7 @@
             $self->enableOverwrite();
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         # Use default line number/character offset if they weren't specified
@@ -2484,7 +2476,7 @@
         $restoreMark = $self->buffer->create_mark('restore_insert_mark', $insertIter, TRUE);
         $self->ivPoke('restoreInsertMark', $restoreMark);
 
-        # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+        # If the cursor is visible, move it to this position (i.e. insert a new Gtk3::TextTag)
         $self->moveCursor($self->buffer->get_iter_at_mark($insertMark));
 
         return 1;
@@ -2493,7 +2485,7 @@
     sub resetInsertPosn {
 
         # Called by GA::Session->processMxpDestElement (or by any other code)
-        # Resets the position in the Gtk2::TextBuffer at which text is being inserted to the
+        # Resets the position in the Gtk3::TextBuffer at which text is being inserted to the
         #   position before the most recent call to $self->setInsertPosn
         #
         # Expected arguments
@@ -2974,7 +2966,7 @@
     sub insertText {
 
         # Can be called by anything
-        # Inserts text into the Gtk2::TextBuffer, optionally applying Axmud colour/style tags and/or
+        # Inserts text into the Gtk3::TextBuffer, optionally applying Axmud colour/style tags and/or
         #   a newline character, and optionally emptying the buffer of text
         # NB This function doesn't write to any log files; the calling function can do that, if
         #   required
@@ -3025,7 +3017,7 @@
 
         # (No improper arguments to check)
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
         # If the buffer is due to be cleared before inserting any text, then clear it
         if ($self->clearAfterInsertFlag) {
@@ -3149,7 +3141,7 @@
             $self->setupLink($iter, $text);
         }
 
-        # Insert the text into the Gtk2::TextBuffer
+        # Insert the text into the Gtk3::TextBuffer
         if (! $monochromeFlag) {
 
             $iter = $self->insertWithTags(
@@ -3183,7 +3175,7 @@
             #   immediately after $iter
             $mark = $self->buffer->create_mark('insert_mark', $iter, TRUE);
             $self->ivPoke('insertMark', $mark);
-            # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+            # If the cursor is visible, move it to this position (i.e. insert a new Gtk3::TextTag)
             $self->moveCursor($self->buffer->get_iter_at_mark($mark));
 
         } elsif ($tempInsertFlag) {
@@ -3196,7 +3188,7 @@
         } else {
 
             # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->moveCursor();
         }
 
@@ -3246,7 +3238,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->insertMultipleText', @_);
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
         # If the buffer is due to be cleared before inserting any text, then clear it
         if ($self->clearAfterInsertFlag) {
@@ -3395,7 +3387,7 @@
                 $self->setupLink($iter, $text);
             }
 
-            # Insert the text into the Gtk2::TextBuffer
+            # Insert the text into the Gtk3::TextBuffer
             if (! $monochromeFlag) {
 
                 $iter = $self->insertWithTags(
@@ -3444,7 +3436,7 @@
             #   immediately after $iter
             $mark = $self->buffer->create_mark('insert_mark', $iter, TRUE);
             $self->ivPoke('insertMark', $mark);
-            # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+            # If the cursor is visible, move it to this position (i.e. insert a new Gtk3::TextTag)
             $self->moveCursor($self->buffer->get_iter_at_mark($mark));
 
         } elsif ($tempInsertFlag && ! $finalAfterFlag) {
@@ -3457,7 +3449,7 @@
         } else {
 
             # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->moveCursor();
         }
 
@@ -3651,7 +3643,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->insertQuick', @_);
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
 
         # Clear the buffer. The TRUE argument means 'don't remove/move the cursor'
@@ -3663,7 +3655,7 @@
         }
 
         # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
-        #   Gtk2::TextTag)
+        #   Gtk3::TextTag)
         $self->moveCursor();
 
         # Update IVs
@@ -3699,7 +3691,7 @@
 
         # Called by GA::Session->dispatchCmd and ->dispatchPassword when this textview object is
         #   the session's default textview object
-        # Inserts text into the Gtk2::TextBuffer to show the world command/password, using a
+        # Inserts text into the Gtk3::TextBuffer to show the world command/password, using a
         #   standard colour
         # NB This function doesn't write to any log files; the calling function does that
         #
@@ -3726,7 +3718,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->insertCmd', @_);
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
         # If the buffer is due to be cleared before inserting any text, then clear it
         if ($self->clearAfterInsertFlag) {
@@ -3772,7 +3764,7 @@
             $iter = $self->insertNewLine($iter);
         }
 
-        # Insert the text into the Gtk2::TextBuffer
+        # Insert the text into the Gtk3::TextBuffer
         if ($cmd ne '') {
 
             if ($monochromeFlag) {
@@ -3817,13 +3809,13 @@
             #   immediately after $iter
             $mark = $self->buffer->create_mark('insert_mark', $iter, TRUE);
             $self->ivPoke('insertMark', $mark);
-            # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+            # If the cursor is visible, move it to this position (i.e. insert a new Gtk3::TextTag)
             $self->moveCursor($self->buffer->get_iter_at_mark($mark));
 
         } else {
 
             # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->moveCursor();
         }
 
@@ -3842,7 +3834,7 @@
     sub showSystemText {
 
         # Called by Games::Axmud->writeText
-        # Inserts system text into the Gtk2::TextBuffer, optionally applying Axmud colour/style tags
+        # Inserts system text into the Gtk3::TextBuffer, optionally applying Axmud colour/style tags
         #   and/or newline characters, and optionally emptying the buffer of text
         # Optionally updates the System task's window
         #
@@ -3974,7 +3966,7 @@
 
         if ($hereFlag) {
 
-            # If the last piece of text inserted at the Gtk2::TextBuffer via a call to
+            # If the last piece of text inserted at the Gtk3::TextBuffer via a call to
             #   $self->insertText didn't end in a newline character, we need to insert an artifical
             #   newline character so the system message appears on its own line, at the end of the
             #   buffer
@@ -3997,7 +3989,7 @@
             }
 
             # If the cursor is visible, remove it temporarily (i.e. remove the existing
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->removeCursor();
             # If the buffer is due to be cleared before inserting any text, then clear it
             if ($self->clearAfterInsertFlag) {
@@ -4013,7 +4005,7 @@
                 $iter = $self->buffer->get_end_iter();
             }
 
-            # Insert a newline character into the Gtk2::TextBuffer
+            # Insert a newline character into the Gtk3::TextBuffer
             if ($beforeFlag) {
 
                 # (Make sure the beginning of a link appears after the extra newline character, not
@@ -4028,7 +4020,7 @@
                 $self->setupLink($iter, $modText);
             }
 
-            # Insert the text into the Gtk2::TextBuffer
+            # Insert the text into the Gtk3::TextBuffer
             if ($monochromeFlag) {
 
                 $iter = $self->insertWithTags(
@@ -4183,7 +4175,7 @@
     sub showError {
 
         # Called by Games::Axmud->writeError
-        # Inserts a system error message into the Gtk2::TextBuffer and/or updates the System task's
+        # Inserts a system error message into the Gtk3::TextBuffer and/or updates the System task's
         #   window
         #
         # Expected arguments
@@ -4212,7 +4204,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showError', @_);
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
         # If the buffer is due to be cleared before inserting any text, then clear it
         if ($self->clearAfterInsertFlag) {
@@ -4294,7 +4286,7 @@
                 $iter = $self->insertNewLine($iter);
                 $self->ivUndef('systemInsertMark');
 
-            # If the last piece of text inserted at the Gtk2::TextBuffer via a call to
+            # If the last piece of text inserted at the Gtk3::TextBuffer via a call to
             #   $self->insertText didn't end in a newline character, we need to insert an artifical
             #   newline character so the system message appears on its own line, at the end of the
             #   buffer
@@ -4314,7 +4306,7 @@
             }
 
             # If the cursor is visible, remove it temporarily (i.e. remove the existing
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->removeCursor();
             # If the buffer is due to be cleared before inserting any text, then clear it
             if ($self->clearAfterInsertFlag) {
@@ -4326,7 +4318,7 @@
             # Set the insertion point
             $iter = $self->buffer->get_end_iter();
 
-            # Insert the text into the Gtk2::TextBuffer
+            # Insert the text into the Gtk3::TextBuffer
             if ($beforeFlag) {
 
                 # (Make sure the beginning of a link appears after the artificially-inserted newline
@@ -4432,7 +4424,7 @@
     sub showWarning {
 
         # Called by Games::Axmud->writeWarning
-        # Inserts a system warning message into the Gtk2::TextBuffer and/or updates the System
+        # Inserts a system warning message into the Gtk3::TextBuffer and/or updates the System
         #   task's window
         #
         # Expected arguments
@@ -4461,7 +4453,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showWarning', @_);
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
         # If the buffer is due to be cleared before inserting any text, then clear it
         if ($self->clearAfterInsertFlag) {
@@ -4543,7 +4535,7 @@
                 $iter = $self->insertNewLine($iter);
                 $self->ivUndef('systemInsertMark');
 
-            # If the last piece of text inserted at the Gtk2::TextBuffer via a call to
+            # If the last piece of text inserted at the Gtk3::TextBuffer via a call to
             #   $self->insertText didn't end in a newline character, we need to insert an artifical
             #   newline character so the system message appears on its own line, at the end of the
             #   buffer
@@ -4563,7 +4555,7 @@
             }
 
             # If the cursor is visible, remove it temporarily (i.e. remove the existing
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->removeCursor();
             # If the buffer is due to be cleared before inserting any text, then clear it
             if ($self->clearAfterInsertFlag) {
@@ -4575,7 +4567,7 @@
             # Set the insertion point
             $iter = $self->buffer->get_end_iter();
 
-            # Insert the text into the Gtk2::TextBuffer
+            # Insert the text into the Gtk3::TextBuffer
             if ($beforeFlag) {
 
                 # (Make sure the beginning of a link appears after the artificially-inserted newline
@@ -4681,7 +4673,7 @@
     sub showDebug {
 
         # Called by Games::Axmud->writeDebug or ->wd
-        # Inserts a system debug message into the Gtk2::TextBuffer and/or updates the System task's
+        # Inserts a system debug message into the Gtk3::TextBuffer and/or updates the System task's
         #   window
         #
         # Expected arguments
@@ -4710,7 +4702,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showDebug', @_);
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
         # If the buffer is due to be cleared before inserting any text, then clear it
         if ($self->clearAfterInsertFlag) {
@@ -4792,7 +4784,7 @@
                 $iter = $self->insertNewLine($iter);
                 $self->ivUndef('systemInsertMark');
 
-            # If the last piece of text inserted at the Gtk2::TextBuffer via a call to
+            # If the last piece of text inserted at the Gtk3::TextBuffer via a call to
             #   $self->insertText didn't end in a newline character, we need to insert an artifical
             #   newline character so the system message appears on its own line, at the end of the
             #   buffer
@@ -4811,7 +4803,7 @@
                 $beforeFlag = TRUE;
             }
             # If the cursor is visible, remove it temporarily (i.e. remove the existing
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->removeCursor();
             # If the buffer is due to be cleared before inserting any text, then clear it
             if ($self->clearAfterInsertFlag) {
@@ -4823,7 +4815,7 @@
             # Set the insertion point
             $iter = $self->buffer->get_end_iter();
 
-            # Insert the text into the Gtk2::TextBuffer
+            # Insert the text into the Gtk3::TextBuffer
             if ($beforeFlag) {
 
                 # (Make sure the beginning of a link appears after the artificially-inserted newline
@@ -4929,7 +4921,7 @@
     sub showImproper {
 
         # Called by Games::Axmud->writeImproper
-        # Inserts a system 'improper arguments' message into the Gtk2::TextBuffer and/or updates the
+        # Inserts a system 'improper arguments' message into the Gtk3::TextBuffer and/or updates the
         #   System task's window
         #
         # Expected arguments
@@ -5031,7 +5023,7 @@
                 $iter = $self->insertNewLine($iter);
                 $self->ivUndef('systemInsertMark');
 
-            # If the last piece of text inserted at the Gtk2::TextBuffer via a call to
+            # If the last piece of text inserted at the Gtk3::TextBuffer via a call to
             #   $self->insertText didn't end in a newline character, we need to insert an artifical
             #   newline character so the system message appears on its own line, at the end of the
             #   buffer
@@ -5051,7 +5043,7 @@
             }
 
             # If the cursor is visible, remove it temporarily (i.e. remove the existing
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->removeCursor();
             # If the buffer is due to be cleared before inserting any text, then clear it
             if ($self->clearAfterInsertFlag) {
@@ -5063,7 +5055,7 @@
             # Set the insertion point
             $iter = $self->buffer->get_end_iter();
 
-            # Insert the text into the Gtk2::TextBuffer
+            # Insert the text into the Gtk3::TextBuffer
             if ($beforeFlag) {
 
                 # (Make sure the beginning of a link appears after the artificially-inserted newline
@@ -5168,7 +5160,7 @@
         # Inserts an image pixbuf into the textview at the current insertion point
         #
         # Expected arguments
-        #   $pixbuf     - The Gtk2::Gdk::Pixbuf of the image to display
+        #   $pixbuf     - The Gtk3::Gdk::Pixbuf of the image to display
         #
         # Optional arguments
         #   $linkObj    - For clickable images, the corresponding GA::Obj::Link object. Can be a an
@@ -5206,7 +5198,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showImage', @_);
         }
 
-        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk2::TextTag)
+        # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
         $self->removeCursor();
         # If the buffer is due to be cleared before inserting any text, then clear it
         if ($self->clearAfterInsertFlag || $emptyFlag) {
@@ -5270,8 +5262,8 @@
         } else {
 
             # Image clickable
-            $image = Gtk2::Image->new_from_pixbuf($pixbuf);
-            $ebox = Gtk2::EventBox->new();
+            $image = Gtk3::Image->new_from_pixbuf($pixbuf);
+            $ebox = Gtk3::EventBox->new();
 
             $ebox->signal_connect('button-press-event' => sub {
 
@@ -5333,7 +5325,7 @@
             #   immediately after $newIter
             $newMark = $self->buffer->create_mark('insert_mark', $newIter, TRUE);
             $self->ivPoke('insertMark', $newMark);
-            # If the cursor is visible, move it to this position (i.e. insert a new Gtk2::TextTag)
+            # If the cursor is visible, move it to this position (i.e. insert a new Gtk3::TextTag)
             $self->moveCursor($self->buffer->get_iter_at_mark($mark));
 
         } elsif ($tempInsertFlag) {
@@ -5346,7 +5338,7 @@
         } else {
 
             # If the cursor is visible, move it to the end of the buffer (i.e. insert a new
-            #   Gtk2::TextTag)
+            #   Gtk3::TextTag)
             $self->moveCursor();
         }
 
@@ -5412,7 +5404,7 @@
             $iter = $self->buffer->get_iter_at_mark($self->cursorMark);
         }
 
-        # Remove the Gtk2::TextTag
+        # Remove the Gtk3::TextTag
         $self->buffer->remove_tag_by_name(
             'cursor',
             # Would like to remove the text tag just for the one space character, but it doesn't
@@ -5449,7 +5441,7 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $iter   - The Gtk2::TextIter at which to position the cursor. If 'undef', the cursor is
+        #   $iter   - The Gtk3::TextIter at which to position the cursor. If 'undef', the cursor is
         #               positioned at the end of the buffer
         #
         # Return values
@@ -5531,7 +5523,7 @@
 
             } else {
 
-                # Just insert the Gtk2::TextTag for the cursor at this position
+                # Just insert the Gtk3::TextTag for the cursor at this position
                 $self->buffer->apply_tag_by_name(
                     'cursor',
                     $iter,
@@ -5580,7 +5572,7 @@
     sub setSearchMark {
 
         # Can be called by anything
-        # Moves the Gtk2::TextMark used for searching the buffer from its current position to a new
+        # Moves the Gtk3::TextMark used for searching the buffer from its current position to a new
         #   position
         #
         # Expected arguments
@@ -6132,11 +6124,11 @@
         #   mode is off)
         #
         # Expected arguments
-        #   $textView       - The Gtk2::TextView to pack into its container widgets
+        #   $textView       - The Gtk3::TextView to pack into its container widgets
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the Gtk2::ScrolledWindow which contains the textview
+        #   Otherwise returns the Gtk3::ScrolledWindow which contains the textview
 
         my ($self, $textView, $check) = @_;
 
@@ -6146,7 +6138,7 @@
              return $axmud::CLIENT->writeImproper($self->_objClass . '->setupScroller', @_);
         }
 
-        my $scroll = Gtk2::ScrolledWindow->new(undef, undef);
+        my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
         $scroll->set_shadow_type('none');
         $scroll->set_policy('automatic', 'automatic');     # But word-wrapping turned on
         $scroll->set_border_width(0);
@@ -6170,7 +6162,7 @@
         #
         # Expected arguments
         #   $textView, $textView2
-        #           - The Gtk2::TextViews to pack into their container widgets
+        #           - The Gtk3::TextViews to pack into their container widgets
         #
         # Return values
         #   An empty list on improper arguments
@@ -6192,29 +6184,30 @@
              return @emptyList;
         }
 
-        my $vPaned = Gtk2::VPaned->new();
+        my $vPaned = Gtk3::VPaned->new();
+        $vPaned->set_wide_handle(TRUE);
 
-        # Decide where to put the Gtk2::VPaned divider
+        # Decide where to put the Gtk3::VPaned divider
         $self->setDividerPosn($vPaned);
 
         # When replacing a single textview with two, the original textview ($textView) is added to
         #   the bottom half of the vpaned
-        my $scroll = Gtk2::ScrolledWindow->new(undef, undef);
+        my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
         $vPaned->pack2($scroll, FALSE, FALSE);
-        $scroll->set_shadow_type('none');
-        $scroll->set_policy('automatic', 'automatic');     # But word-wrapping turned on
+        $scroll->set_shadow_type('in');
+        $scroll->set_policy('automatic', 'automatic');      # But word-wrapping turned on
         $scroll->set_border_width(0);
 
-        my $scroll2 = Gtk2::ScrolledWindow->new(undef, undef);
+        my $scroll2 = Gtk3::ScrolledWindow->new(undef, undef);
         $vPaned->pack1($scroll2, FALSE, TRUE);
-        $scroll2->set_shadow_type('none');
+        $scroll2->set_shadow_type('in');
         $scroll2->set_policy('automatic', 'automatic');     # But word-wrapping turned on
         $scroll2->set_border_width(0);
 
         # Pack the textviews
-        if ($textView->parent) {
+        if ($textView->get_parent()) {
 
-            $textView->parent->remove($textView);
+            $textView->unparent();
         }
 
         $scroll->add($textView);
@@ -6232,11 +6225,11 @@
     sub setDividerPosn {
 
         # Called by $self->setupVPaned, ->enableSplitScreen and ->enableHiddenSplitScreen
-        # In split screen modes 'split' and 'hidden', sets the position of the Gtk2::VPaned's
+        # In split screen modes 'split' and 'hidden', sets the position of the Gtk3::VPaned's
         #   divider
         #
         # Expected arguments
-        #   $vPaned     - The Gtk2::VPaned object
+        #   $vPaned     - The Gtk3::VPaned object
         #
         # Return values
         #   'undef' on improper arguments
@@ -6277,11 +6270,10 @@
     sub createTextViewWidget {
 
         # Called by various functions in this textview object (only) to create a uniform
-        #   Gtk2::Textview widget (the calling function must first call
-        #   GA::Obj::Desktop->setTextViewStyle or ->getTextViewStyle)
+        #   Gtk3::Textview widget
         #
         # Expected arguments
-        #   $buffer         - The Gtk2::TextBuffer to use in the textview
+        #   $buffer         - The Gtk3::TextBuffer to use in the textview
         #
         # Optional arguments
         #   $schemeObj      - The colour scheme object (GA::Obj::ColourScheme), if known; otherwise,
@@ -6306,11 +6298,11 @@
         }
 
         # Create the new textview
-        my $textView = Gtk2::TextView->new_with_buffer($buffer);
+        my $textView = Gtk3::TextView->new_with_buffer($buffer);
 
         $textView->set_editable(FALSE);
         $textView->set_cursor_visible(FALSE);       # Invisible cursor
-        $textView->can_focus(FALSE);
+        $textView->set_can_focus(FALSE);
         $textView->set_justification('left');
         $textView->set_overwrite($self->overwriteFlag);
 
@@ -6336,7 +6328,7 @@
     sub createColourTags {
 
         # Called by $self->objEnable
-        # Defines the colour tags used by this Gtk2::TextView to change text and underlay colours
+        # Defines the colour tags used by this Gtk3::TextView to change text and underlay colours
         #
         # Expected arguments
         #   (none besides $self)
@@ -6417,9 +6409,9 @@
     sub updateStandardTag {
 
         # Called by GA::Cmd::SetColour->do
-        # Updates the Gtk2::TextTag for a specified Axmud standard text colour tag, when the colour
+        # Updates the Gtk3::TextTag for a specified Axmud standard text colour tag, when the colour
         #   is modified
-        # If the Gtk2::TextTag doesn't exist (for some reason), creates it
+        # If the Gtk3::TextTag doesn't exist (for some reason), creates it
         #
         # Expected arguments
         #   $tag    - An Axmud standard text or underlay colour tag, e.g. 'red', 'BLUE', 'ul_red',
@@ -6449,12 +6441,12 @@
             return undef;
         }
 
-        # Get Gtk2 objects
+        # Get Gtk3 objects
         $tagTable = $self->buffer->get_tag_table();
         $textTag = $tagTable->lookup($tag);
         if (! $textTag) {
 
-            # Add a new Gtk2::TextTag
+            # Add a new Gtk3::TextTag
             if (! $boldType) {
 
                 if (! $underlayFlag) {
@@ -6492,7 +6484,7 @@
 
         } else {
 
-            # Modify an existing Gtk2::TextTag
+            # Modify an existing Gtk3::TextTag
             if (! $boldType) {
 
                 if (! $underlayFlag) {
@@ -6531,9 +6523,9 @@
     sub updateXTermTags {
 
         # Called by GA::Cmd::SetXTerm->do
-        # Updates all Gtk2::TextTags for xterm colour tags, usually after the xterm colour cube is
+        # Updates all Gtk3::TextTags for xterm colour tags, usually after the xterm colour cube is
         #   switched
-        # If the Gtk2::TextTag doesn't exist (for some reason), creates it
+        # If the Gtk3::TextTag doesn't exist (for some reason), creates it
         #
         # Expected arguments
         #   (none besides $self)
@@ -6558,7 +6550,7 @@
 
         # Import the IV
         %tagHash = $axmud::CLIENT->xTermColourHash;
-        # Get Gtk2::TextTagTable
+        # Get Gtk3::TextTagTable
         $tagTable = $self->buffer->get_tag_table();
 
         # Update (or create) each xterm colour tag in turn
@@ -6607,10 +6599,10 @@
         # Called by $self->objEnable and ->objUpdate (only)
         # When a colour scheme is applied to this textview, $self->textColour and/or
         #   ->underlayColour might be set
-        # Gtk2::TextTags are usually created only as needed by $self->interpretTags, but that
-        #   function won't have a chance to create Gtk2::TextTags if $self->textColour and/or
+        # Gtk3::TextTags are usually created only as needed by $self->interpretTags, but that
+        #   function won't have a chance to create Gtk3::TextTags if $self->textColour and/or
         #   ->underlayColour are now set to RGB colour tags like '#ABCDEF and 'u#ABCDEF'
-        # Check which (if any) Gtk2::TextTags must be created, and create them
+        # Check which (if any) Gtk3::TextTags must be created, and create them
         #
         # Expected arguments
         #   (none besides $self)
@@ -6687,7 +6679,7 @@
     sub createStyleTags {
 
         # Called by $self->objEnable
-        # Defines the style tags used by this Gtk2::TextView to change the text style
+        # Defines the style tags used by this Gtk3::TextView to change the text style
         #
         # Expected arguments
         #   (none besides $self)
@@ -6719,11 +6711,11 @@
             'underline'         => 'single',
         );
 
-        # Blink: because the 'blink_slow' tag is sent to Gtk2 after the text and/or underlay tags,
+        # Blink: because the 'blink_slow' tag is sent to Gtk3 after the text and/or underlay tags,
         #   it overrules them when 'foreground-set' and 'background-set' are TRUE, but doesn't
         #   overrule them when 'foreground-set' and 'background-set' are FALSE. We can make the text
         #   blink by alternating the values between TRUE and FALSE.
-        # NB Gtk2 doesn't understand Axmud colour tags like 'ul_green', so we must convert them to
+        # NB Gtk3 doesn't understand Axmud colour tags like 'ul_green', so we must convert them to
         #   RGB
         $background = $axmud::CLIENT->returnRGBColour($self->backgroundColour);
 
@@ -6815,8 +6807,7 @@
         # Return values
         #   'undef' on improper arguments or if a specified $backgroundColour is not a recognised
         #       Axmud colour tag
-        #   Otherwise returns the value of the call to $self->objUpdate (a Gtk2::ScrolledWindow or
-        #       Gtk2::VPaned)
+        #   1 otherwise
 
         my ($self, $backgroundColour, $textColour, $check) = @_;
 
@@ -6914,8 +6905,7 @@
         #
         # Return values
         #   'undef' on improper arguments or if a monochrome colour scheme isn't in use currently
-        #   Otherwise returns the value of the call to $self->objUpdate (a Gtk2::ScrolledWindow or
-        #       Gtk2::VPaned)
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -7532,7 +7522,7 @@
         #   (GA::Buffer::Display) corresponding to this line
         #
         # Expected arguments
-        #   $lineNum    - The line number of the Gtk2::TextBuffer line above which the mouse is
+        #   $lineNum    - The line number of the Gtk3::TextBuffer line above which the mouse is
         #                   hovering
         #
         # Return values
@@ -7642,7 +7632,7 @@
         }
 
         # The hash only needs to be updated, once per line of non-system message text
-        # The Gtk2::Textbuffer renumbers its line every time we delete one from the beginning of the
+        # The Gtk3::Textbuffer renumbers its line every time we delete one from the beginning of the
         #   buffer, so here we must add $self->nextDeleteLine
         if (! $self->insertMark && $self->newLineFlag) {
 
@@ -7701,7 +7691,7 @@
         }
 
         # Create the popup menu
-        my $menu = Gtk2::Menu->new();
+        my $menu = Gtk3::Menu->new();
 
         # The GA::Obj::Link stores menu items and corresponding world commands each as a single
         #   string, with items/commands separated by a | character
@@ -7718,7 +7708,7 @@
 
             # Prefer to use a hint over a raw command, if a hint was supplied
             $hint = shift (@optionList);
-            $menuItem = Gtk2::MenuItem->new_with_label('');
+            $menuItem = Gtk3::MenuItem->new_with_label('');
 
             my $label = $menuItem->get_child();
             if ($hint) {
@@ -7873,7 +7863,7 @@
         #   If $mode is already the same value as $self->splitScreenMode, nothing happens and
         #       'undef' is returned
         #   If $mode is 'split' or 'hidden', and if $self->splitScreenMode is already 'split' or
-        #       'hidden', returns 'undef' (as no Gtk2 widgets need to be repacked)
+        #       'hidden', returns 'undef' (as no Gtk3 widgets need to be repacked)
         #   If $mode is 'single' and $self->splitScreenMode is not 'single', or vice-versa, then
         #       returns a packable widget which should be packed into the space occupied by the
         #       previous packable widget
@@ -7912,8 +7902,8 @@
 
         # Called by $self->setSplitScreenMode (or directly by any code)
         # Sets $self->splitScreenMode to 'single'
-        # If $self->splitScreenMode was 'split' or 'hidden', replaces the existing Gtk2::VPaned,
-        #   containing two textviews, with a Gtk2::Frame containing a single textview, and returns
+        # If $self->splitScreenMode was 'split' or 'hidden', replaces the existing Gtk3::VPaned,
+        #   containing two textviews, with a Gtk3::Frame containing a single textview, and returns
         #   the frame. The calling function should pack the frame into the space previously occupied
         #   by the vpaned
         #
@@ -7922,7 +7912,7 @@
         #
         # Return values
         #   'undef' on improper arguments or if $self->splitScreenMode is already 'single'
-        #   Otherwise, returns the Gtk2::Frame
+        #   Otherwise, returns the Gtk3::Frame
 
         my ($self, $check) = @_;
 
@@ -7942,16 +7932,18 @@
             # Set the new mode
             $self->ivPoke('splitScreenMode', 'single');
 
-            # Set the Gtk2 external style for a Gtk2::TextView and its Gtk2::TextBuffer
-            $axmud::CLIENT->desktopObj->setTextViewStyle(
-                $axmud::CLIENT->returnRGBColour($self->textColour),
-                $axmud::CLIENT->returnRGBColour($self->backgroundColour),
+            # Create the new Gtk3::TextView, using the same Gtk3::TextBuffer as the original one
+            my $textView = $self->createTextViewWidget($self->buffer);
+
+            # Set the textview's CSS style
+            $axmud::CLIENT->desktopObj->setTextViewObjStyle(
+                $self->number,
+                $self->textColour,
+                $self->backgroundColour,
                 $self->font,
                 $self->fontSize,
+                $textView,
             );
-
-            # Create the new Gtk2::TextView, using the same Gtk2::TextBuffer as the original one
-            my $textView = $self->createTextViewWidget($self->buffer);
 
             # Pack the textview into a container widget
             my $scroll = $self->setupScroller($textView);
@@ -7976,8 +7968,8 @@
 
         # Called by $self->setSplitScreenMode (or directly by any code)
         # Sets $self->splitScreenMode to 'split'
-        # If $self->splitScreenMode was 'single', replaces the existing Gtk2::Frame, containing a
-        #   single textview, with a Gtk2::VPaned, containing two textviews, and returns the vpaned.
+        # If $self->splitScreenMode was 'single', replaces the existing Gtk3::Frame, containing a
+        #   single textview, with a Gtk3::VPaned, containing two textviews, and returns the vpaned.
         #   The calling function should pack the vpaned into the space previously occupied by the
         #   frame
         # If $self->splitScreenMode was 'hidden', moves the divider so that the hidden textview
@@ -7990,7 +7982,7 @@
         # Return values
         #   'undef' on improper arguments or if $self->splitScreenMode is currently 'split' or
         #       'hidden'
-        #   Otherwise, returns the Gtk2::VPaned
+        #   Otherwise, returns the Gtk3::VPaned
 
         my ($self, $check) = @_;
 
@@ -8025,16 +8017,19 @@
                 # Set the new mode
                 $self->ivPoke('splitScreenMode', 'split');
 
-                # Set the Gtk2 external style for a Gtk2::TextView and its Gtk2::TextBuffer
-                $axmud::CLIENT->desktopObj->setTextViewStyle(
-                    $axmud::CLIENT->returnRGBColour($self->textColour),
-                    $axmud::CLIENT->returnRGBColour($self->backgroundColour),
+                # Create the new Gtk3::TextView, using the same Gtk3::TextBuffer as the original one
+                my $textView2 = $self->createTextViewWidget($self->buffer);
+
+                # Update the textviews' CSS style
+                $axmud::CLIENT->desktopObj->setTextViewObjStyle(
+                    $self->number,
+                    $self->textColour,
+                    $self->backgroundColour,
                     $self->font,
                     $self->fontSize,
+                    $self->textView,
+                    $textView2,
                 );
-
-                # Create the new Gtk2::TextView, using the same Gtk2::TextBuffer as the original one
-                my $textView2 = $self->createTextViewWidget($self->buffer);
 
                 # Pack the textviews into a container widget
                 my ($vPaned, $scroll, $scroll2) = $self->setupVPaned($self->textView, $textView2);
@@ -8055,8 +8050,8 @@
 
         # Called by $self->setSplitScreenMode (or directly by any code)
         # Sets $self->splitScreenMode to 'hidden'
-        # If $self->splitScreenMode was 'single', replaces the existing Gtk2::Frame, containing a
-        #   single textview, with a Gtk2::VPaned, containing two textviews, and returns the vpaned.
+        # If $self->splitScreenMode was 'single', replaces the existing Gtk3::Frame, containing a
+        #   single textview, with a Gtk3::VPaned, containing two textviews, and returns the vpaned.
         #   The calling function should pack the vpaned into the space previously occupied by the
         #   frame
         # If $self->splitScreenMode was 'split', moves the divider so that the second textview
@@ -8068,7 +8063,7 @@
         # Return values
         #   'undef' on improper arguments or if $self->splitScreenMode is currently 'split' or
         #       'hidden'
-        #   Otherwise, returns the Gtk2::VPaned
+        #   Otherwise, returns the Gtk3::VPaned
 
         my ($self, $check) = @_;
 
@@ -8110,16 +8105,19 @@
                 # Set the new mode
                 $self->ivPoke('splitScreenMode', 'hidden');
 
-                # Set the Gtk2 external style for a Gtk2::TextView and its Gtk2::TextBuffer
-                $axmud::CLIENT->desktopObj->setTextViewStyle(
-                    $axmud::CLIENT->returnRGBColour($self->textColour),
-                    $axmud::CLIENT->returnRGBColour($self->backgroundColour),
+                # Create the new Gtk3::TextView, using the same Gtk3::TextBuffer as the original one
+                my $textView2 = $self->createTextViewWidget($self->buffer);
+
+                # Update the textviews' CSS style
+                $axmud::CLIENT->desktopObj->setTextViewObjStyle(
+                    $self->number,
+                    $self->textColour,
+                    $self->backgroundColour,
                     $self->font,
                     $self->fontSize,
+                    $self->textView,
+                    $textView2,
                 );
-
-                # Create the new Gtk2::TextView, using the same Gtk2::TextBuffer as the original one
-                my $textView2 = $self->createTextViewWidget($self->buffer);
 
                 # Pack the textviews into a container widget
                 my ($vPaned, $scroll, $scroll2) = $self->setupVPaned($self->textView, $textView2);
@@ -8139,7 +8137,7 @@
     sub checkMousePosn {
 
         # Called by ->signal_connects in $self->setMotionNotifyEvent
-        # When the mouse moves over a clickable link in a Gtk2::TextView, we should change the mouse
+        # When the mouse moves over a clickable link in a Gtk3::TextView, we should change the mouse
         #   cursor. When the mouse moves away from a clickable link, we should restore the mouse
         #   cursor
         #
@@ -8147,8 +8145,8 @@
         #   $self->showImage
         #
         # Expected arguments
-        #   $textView   - The Gtk2::TextView over which the mouse is moving
-        #   $event      - The Gtk2::Gdk::Event
+        #   $textView   - The Gtk3::TextView over which the mouse is moving
+        #   $event      - The Gtk3::Gdk::Event
         #
         # Return values
         #   'undef' on improper arguments
@@ -8158,8 +8156,8 @@
 
         # Local variables
         my (
-            $xPos, $yPos, $iter, $lineNum, $posn, $hoverFlag, $window, $listRef, $linkObj,
-            $tooltipsFlag, $tooltip,
+            $xPos, $yPos, $iter, $lineNum, $posn, $hoverFlag, $listRef, $window, $listRef2,
+            $linkObj, $tooltipsFlag, $tooltip,
         );
 
         # Check for improper arguments
@@ -8179,12 +8177,16 @@
         # Get all the tags associated with this iter, looking for the Axmud style tag 'link'
         # (Setting this flag makes any debug messages we might insert work without errors)
         $hoverFlag = FALSE;
-        OUTER: foreach my $tag ($iter->get_tags()) {
+        $listRef = $iter->get_tags();
+        if (defined $listRef) {
 
-            if ($tag->get_property('name') eq 'link') {
+            OUTER: foreach my $tag (@$listRef) {
 
-                $hoverFlag = TRUE;
-                last OUTER;
+                if ($tag->get_property('name') eq 'link') {
+
+                    $hoverFlag = TRUE;
+                    last OUTER;
+                }
             }
         }
 
@@ -8302,7 +8304,7 @@
 
             # Only lines created by the GA::Session, and displayed in its default textview object,
             #   cause key-value pairs to be added to this hash
-            # NB The Gtk2::Textbuffer renumbers its line every time we delete one from the
+            # NB The Gtk3::Textbuffer renumbers its line every time we delete one from the
             #   beginning of the buffer, so here we must add $self->nextDeleteLine
             if ($self->ivExists('tooltipHash', ($lineNum + $self->nextDeleteLine))) {
 
@@ -8322,11 +8324,18 @@
         # Called by Games::Axmud::Obj::Desktop->updateWidgets (only) for any textview object whose
         #   ->sizeUpdateFlag is set
         # Updates IVs and informs the GA::Session
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
         # Local variables
-        my ($charWidth, $charHeight, $rectObj, $textViewWidth, $textViewHeight);
+        my ($charWidth, $charHeight, $hashRef, $textViewWidth, $textViewHeight);
 
         # Check for improper arguments
         if (defined $check) {
@@ -8337,13 +8346,13 @@
         # Do nothing while split screen mode is on
         if ($self->splitScreenMode ne 'split') {
 
-            # Get the width/height of a character in the Gtk2::TextView
+            # Get the width/height of a character in the Gtk3::TextView
             ($charWidth, $charHeight) = $self->getCharSize();
-            # Get a Gtk2::Gdk::Rectangle
-            $rectObj = $self->textView->get_visible_rect();
+            # Get a Gtk3::Gdk::Rectangle
+            $hashRef = $self->textView->get_visible_rect();
             # Get the size of the textview
-            $textViewWidth = int($rectObj->width / $charWidth);
-            $textViewHeight = int($rectObj->height / $charHeight);
+            $textViewWidth = int($$hashRef{width} / $charWidth);
+            $textViewHeight = int($$hashRef{height} / $charHeight);
 
             if (
                 ! defined $self->textWidthChars
@@ -8366,7 +8375,7 @@
     sub getCharSize {
 
         # Called by $self->updateVisibleSize
-        # Gets the size (in pixels) of a single character in the Gtk2::TextView
+        # Gets the size (in pixels) of a single character in the Gtk3::TextView
         #
         # Expected arguments
         #   (none besides $self)
@@ -8410,12 +8419,12 @@
 
     sub getLineLength {
 
-        # For reasons unknown, calls to Gtk2::TextIter->get_chars_in_line returns the actual number
+        # For reasons unknown, calls to Gtk3::TextIter->get_chars_in_line returns the actual number
         #   of characters in a line, plus 10,000
         # Return the number of characters in a line, subtracting 10,000 if necessary
         #
         # Expected arguments
-        #   $iter   - A Gtk2::TextIter anywhere on the line
+        #   $iter   - A Gtk3::TextIter anywhere on the line
         #
         # Return values
         #   'undef' on improper arguments
@@ -8448,7 +8457,7 @@
         #   amends an existing one) to store data until the user clicks on the link
         #
         # Expected arguments
-        #   $iter       - The Gtk2::TextIter marking the position in the Gtk2::TextBuffer
+        #   $iter       - The Gtk3::TextIter marking the position in the Gtk3::TextBuffer
         #                   (stored in $self->buffer) at which the link will be displayed
         #   $text       - The text of the link itself
         #
@@ -8621,7 +8630,7 @@
         # Interprets a list of arguments passed to those functions, including Axmud colour and style
         #   tags and some additional strings for implementing newline characters and clearing the
         #   buffer
-        # For RGB colour tags (e.g. '#FFFFFF' and 'u#FFFFFF'), a new Gtk2::TextTag is created, if
+        # For RGB colour tags (e.g. '#FFFFFF' and 'u#FFFFFF'), a new Gtk3::TextTag is created, if
         #   one does not already exist
         # Duplicate arguments are ignored. Only the first text colour tag (if any) is used, and only
         #   the first underlay colour tag (if any) is used. Unrecognised tags are ignored
@@ -8745,7 +8754,7 @@
                 # Ignore duplicate 'mxpf_' tags
                 if (! $mxpfFlag) {
 
-                    # If a Gtk2::TextTag for this exact combination of fonts and font sizes doesn't
+                    # If a Gtk3::TextTag for this exact combination of fonts and font sizes doesn't
                     #   exist, create a new one
                     if (! $self->buffer->get_tag_table->lookup($item)) {
 
@@ -8820,10 +8829,10 @@
                     $tag = substr($item, 1);                    # Strip away the initial 'u'
                     if ($tag =~ m/^\#[A-Fa-f0-9]{6}$/) {
 
-                        # (Gtk2 expects an upper-case string like '#FFFFFF')
+                        # (Gtk3 expects an upper-case string like '#FFFFFF')
                         $underlayColour = 'u' . uc($tag);
                         # There are 16.7 million possible RGB colour tags, so we take the pragmatic
-                        #   approach and create a Gtk2::TextTag for each one, only when it is needed
+                        #   approach and create a Gtk3::TextTag for each one, only when it is needed
                         if (! $self->buffer->get_tag_table->lookup($underlayColour)) {
 
                             $self->buffer->create_tag(
@@ -8839,10 +8848,10 @@
                 # It's an RGB colour tag for text
                 if (! $textColour && $item =~ m/^\#[A-Fa-f0-9]{6}$/) {
 
-                    # (Gtk2 expects an upper-case string like '#FFFFFF')
+                    # (Gtk3 expects an upper-case string like '#FFFFFF')
                     $textColour = uc($item);
                     # There are 16.7 million possible RGB colour tags, so we take the pragmatic
-                    #   approach and create a Gtk2::TextTag for each one, only when it is needed
+                    #   approach and create a Gtk3::TextTag for each one, only when it is needed
                     if (! $self->buffer->get_tag_table->lookup($textColour)) {
 
                         $self->buffer->create_tag(
@@ -8907,9 +8916,9 @@
         #
         # Optional arguments
         #   $textColour     - The text colour tag that's going to be inserted into the
-        #                       Gtk2::TextView (or 'undef' if no colour tag is going to be used)
+        #                       Gtk3::TextView (or 'undef' if no colour tag is going to be used)
         #   $underlayColour - The underlay colour tag that's going to be inserted into the
-        #                       Gtk2::TextView (or 'undef' if no colour tag is going to be used)
+        #                       Gtk3::TextView (or 'undef' if no colour tag is going to be used)
         #
         # Return values
         #   An empty list on improper arguments
@@ -8970,10 +8979,10 @@
 
         # Called by $self->insertText, ->insertCmd, ->showSystemText, ->showError, ->showWarning,
         #   ->showDebug, ->showImproper and ->showImage
-        # Inserts some text and (optionally) colour and style tags into the Gtk2::TextBuffer
+        # Inserts some text and (optionally) colour and style tags into the Gtk3::TextBuffer
         #
         # Expected arguments
-        #   $iter       - The Gtk2::TextIter, representing the point in the buffer at which the text
+        #   $iter       - The Gtk3::TextIter, representing the point in the buffer at which the text
         #                   is inserted
         #   $text       - A string consisting of 0, 1 or more characters which aren't newline
         #                   characters
@@ -8985,7 +8994,7 @@
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the Gtk2::TextIter immediately after the inserted text (which might be
+        #   Otherwise returns the Gtk3::TextIter immediately after the inserted text (which might be
         #       the end of the textbuffer, or not)
 
         my ($self, $iter, $text, @tags) = @_;
@@ -9008,7 +9017,7 @@
         #   both 0 and 1, which causes an Axmud crash)
         $text =~ s/[\n\r\x00]//;
 
-#        # Insert the text and tags into the Gtk2::TextBuffer
+#        # Insert the text and tags into the Gtk3::TextBuffer
 #        $self->buffer->insert_with_tags_by_name($iter, $text, @tags);
         # Gtk overwrite mode doesn't work (for some reason), so we're forced to implement our own
         #   overwrite mode by deleting existing text before inserting new text
@@ -9091,15 +9100,19 @@
         # Called by $self->insertText, ->insertMultipleText, ->insertCmd, ->showSystemText,
         #   ->showError, ->showWarning, ->showDebug, ->showImproper and ->showImage
         # Also called by $self->setInsertPosn to add empty lines, if they don't already exist
-        # Inserts a newline character into the Gtk2::TextBuffer and updates IVs
+        # Inserts a newline character into the Gtk3::TextBuffer and updates IVs
         #
         # Expected arguments
-        #   $iter           - The Gtk2::TextIter, representing the point in the buffer at which the
-        #                       text is inserted
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $iter   - The Gtk3::TextIter, representing the point in the buffer at which the newline
+        #               character is inserted. If 'undef', the newline character is inserted at the
+        #               end of the buffer
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the Gtk2::TextIter immediately after the inserted newline character
+        #   Otherwise returns the Gtk3::TextIter immediately after the inserted newline character
         #       (which might be the end of the textbuffer, or not)
 
         my ($self, $iter, $check) = @_;
@@ -9108,9 +9121,14 @@
         my ($lineNum, $posn, $endIter, $forceFlag);
 
         # Check for improper arguments
-        if (! defined $iter || defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->insertNewLine', @_);
+        }
+
+        if (! defined $iter) {
+
+            $iter = $self->buffer->get_end_iter();
         }
 
         # Get the iter's position in the textview buffer
@@ -9190,7 +9208,7 @@
 
         } else {
 
-            # Just return the Gtk2::TextIter at the new insertion position
+            # Just return the Gtk3::TextIter at the new insertion position
             return $self->buffer->get_iter_at_line_offset(($lineNum + 1), 0);
         }
     }
@@ -9198,7 +9216,7 @@
     sub removeOldLine {
 
         # Called by $self->insertNewLine
-        # When the Gtk2::TextBuffer is full (i.e. the number of lines in the buffer exceeds the
+        # When the Gtk3::TextBuffer is full (i.e. the number of lines in the buffer exceeds the
         #   maximum), remove the oldest line
         # Also check $self->insertMark, etc, just in case they no longer exist (and update them, if
         #   so)
@@ -9214,7 +9232,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($startIter, $stopIter, $listRef, $ordinaryLineNum);
+        my ($number, $startIter, $stopIter, $listRef, $ordinaryLineNum);
 
         # Check for improper arguments
         if (defined $check) {
@@ -9222,29 +9240,49 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->removeOldLine', @_);
         }
 
+        # v1.2.0 - because of Gtk3 performance issues, we no longer delete one line at a time,
+        #   therefore keeping a constant number of lines in the buffer (once full)
+        # Instead, we delete 100 lines at a time (or fewer, if the maximum textview size is small)
+        if ($self->maxLines >= 1000) {
+
+            $number = 100;
+
+        } else {
+
+            $number = int($self->maxLines / 10);
+            if (! $number) {
+
+                $number = 1;
+            }
+        }
+
         $startIter = $self->buffer->get_start_iter();
-        $stopIter = $self->buffer->get_iter_at_line_offset(1, 0);
+        $stopIter = $self->buffer->get_iter_at_line_offset($number, 0);
         if ($startIter && $stopIter) {
 
+            # Perform the deletion operation
             $self->buffer->delete($startIter, $stopIter);
 
-            # Remove any link objects for links on the deleted line
-            $listRef = $self->ivShow('linkObjLineHash', $self->nextDeleteLine);
-            if (defined $listRef) {
+            for (my $count = 0; $count < $number; $count++) {
 
-                foreach my $linkObj (@$listRef) {
+                # Remove any link objects for links on the deleted line(s)
+                $listRef = $self->ivShow('linkObjLineHash', $self->nextDeleteLine);
+                if (defined $listRef) {
 
-                    $self->ivDelete('linkObjHash', $linkObj->number);
+                    foreach my $linkObj (@$listRef) {
+
+                        $self->ivDelete('linkObjHash', $linkObj->number);
+                    }
+
+                    $self->ivDelete('linkObjLineHash', $self->nextDeleteLine);
                 }
 
-                $self->ivDelete('linkObjLineHash', $self->nextDeleteLine);
+                # No need to display a tooltip for this line every again
+                $self->ivDelete('tooltipHash', $self->nextDeleteLine);
             }
 
-            # No need to display a tooltip for this line every again
-            $self->ivDelete('tooltipHash', $self->nextDeleteLine);
-
-            # Do the IVs $self->insertMark, etc refer to a position on this line? If so, they must
-            #   be reset
+            # Do the IVs $self->insertMark, etc refer to a position on these line(s)? If so, they
+            #   must be reset
             if ($self->insertMark && ! $self->insertMark->get_buffer()) {
 
                 $self->ivPoke('insertMark', undef);
@@ -9265,9 +9303,9 @@
 
                 $self->ivPoke('systemInsertMark', undef);
             }
-        }
 
-        $self->ivIncrement('nextDeleteLine');
+            $self->ivIncrement('nextDeleteLine');
+        }
 
         return 1;
     }
@@ -9427,7 +9465,7 @@
     sub add_incompleteLink {
 
         # Called by various MXP functions in GA::Session to convert an incomplete link (one in
-        #   which the link hasn't actually been applied to the Gtk2::TextView yet) into a complete
+        #   which the link hasn't actually been applied to the Gtk3::TextView yet) into a complete
         #   one, stored in IVs in this textview object
 
         my ($self, $linkObj, $check) = @_;

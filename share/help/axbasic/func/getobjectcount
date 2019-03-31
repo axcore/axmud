@@ -1,4 +1,4 @@
-GETOBJECTCOUNT (number)
+Getobjectcount (number)
         
    Synopsis:
       Returns the number of (real) world objects stored in a single model object
@@ -14,4 +14,4 @@ GETOBJECTCOUNT (number)
       If the Locator task isn't running, if it doesn't know about the current
          location or if the numbered object doesn't exist, 0 is returned.
       To get the number of objects in the curent location, see the
-         GETROOMOBJECTS function.
+         Getroomobjects () function.

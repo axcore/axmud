@@ -18,4 +18,4 @@ DELIFACE expression
 
    Examples:
       DELIFACE "status_task_trigger_11"
-      DELIFACE ifacename$()
+      DELIFACE Ifacename$ ()

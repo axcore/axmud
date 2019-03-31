@@ -12,14 +12,13 @@ LOGIN
          continues immediately with the next statement.
 
    Examples:
-      ! Tell the current world profile to run this Axbasic script to handle the
-      ! automatic login
-      LET $name = "gandalf"
-      LET $password = "123456"
+      ! Perform an automatic login
+      LET name$ = "gandalf"
+      LET password$ = "123456"
       ! Send an ordinary non-movement command
-      RELAY $name
+      RELAY name$
       ! Send an obscured password
-      RELAY $password, $password
+      RELAY password$, password$
       PAUSE 1
       LOGIN
       END

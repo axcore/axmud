@@ -1,4 +1,4 @@
-IFACECOUNT ()
+Ifacecount ()
 
    Synopsis:
       Returns the number of interface notifications received

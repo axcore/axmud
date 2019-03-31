@@ -34,8 +34,8 @@ WRITEWIN expression [ , expression [ , expression ... ] ]
          to its default black-and-white colour scheme.
 
       If the task window is not open, WRITEWIN statements are ignored (and no
-         error message is generated). However, if OPTION DIVERT has been
-         specified, the text is diverted to the 'main' window.
+         error message is generated). However, if OPTION REDIRECT has been
+         specified, the text is redirected to the 'main' window.
 
    Examples:
       ! No special effects

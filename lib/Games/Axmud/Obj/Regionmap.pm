@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -80,7 +80,7 @@
             scrollYPos                  => 0.5,
             # They are also stored when the user zooms out fully, so that there are no scrollbars
             #   visible - so that, the next time the user zooms in, the map is in the same position.
-            #   (GTK2::Canvas conveniently forgets, so we have to remember ourselves.)
+            #   (Gtk3::Canvas conveniently forgets, so we have to remember ourselves.)
             # When that happens, this flag is set to TRUE. Whenever the user zooms in or out,
             #   ->zoomCallback checks this flag. If it has been set to TRUE, ->zoomCallback knows
             #   that the previous zoom was maximum, and that therefore the scrollbars are in the

@@ -56,8 +56,8 @@ PEEK ARRAY variable-name = axmud-object-property
       Note that Axmud variable names are case sensitive, so the first of these
          statements is valid, but the second will produce an error:
          
-            PEEK patterns$ = "world.current.doorPatternList"
-            PEEK patterns$ = "world.current.doorpatternlist"
+            PEEK ARRAY patterns$ = "world.current.doorPatternList"
+            PEEK ARRAY patterns$ = "world.current.doorpatternlist"
 
       There are a number of statements besides PEEK (such as PEEKVALUES, 
          PEEKNUMBER, and so on) that can be used to import Axmud's internal 

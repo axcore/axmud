@@ -18,7 +18,7 @@ adr / adddirectory            Starts using directory containing Axbasic scripts
       <dir> is the full path to the directory. If it contains spaces, you will
          need to enclose it with diamond brackets, e.g.:
          
-            ;addirectory <home/my_name/my_dir/scripts/kill.bas>
+            ;addirectory <home/my_name/my_dir/scripts>
             
       If you don't specify <dir>, you will be prompted to choose one.
 

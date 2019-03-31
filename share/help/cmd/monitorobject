@@ -70,4 +70,4 @@ mno / monitorobject           Sets objects monitored by the Condition task
       See also the help for ';protectobject'.
  
    User commands:
-      mno / monitorobj / monitorobject
+      mno / monitor / monitorobj / monitorobject

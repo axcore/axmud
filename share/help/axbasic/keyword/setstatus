@@ -19,15 +19,15 @@ SETSTATUS expression , expression , expression
          required) to be constant, at least in the short term.
 
    Examples:
-      REM Character's health points are at 50%
+      ! Character's health points are at 50%
       ADDSTATUS 1, "HP"
       SETSTATUS 1, 50, 100
 
-      REM Character's energy points are very low
+      ! Character's energy points are very low
       ADDSTATUS 2, "EP"
       SETSTATUS 2, 0.017, 1
 
-      REM Show a status bar where the two numbers are added
-      REM Character has 900xp, and needs 100 more to level up
+      ! Show a status bar where the two numbers are added
+      ! Character has 900xp, and needs 100 more to level up
       ADDCONSTATUS 3, "XP"
       SETSTATUS 3, 900, 100

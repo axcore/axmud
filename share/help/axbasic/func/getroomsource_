@@ -1,4 +1,4 @@
-GETROOMSOURCE$ ()
+Getroomsource$ ()
  
    Synopsis:
       Returns the source code path of the automapper's current room

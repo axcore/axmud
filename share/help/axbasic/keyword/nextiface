@@ -10,7 +10,7 @@ NEXTIFACE
          but not yet processed. One of them - usually the first one in the
          list - is the 'current' notification.
          
-      Axbasic functions like IFACENAME$() and IFACENUM() can be used to import
+      Axbasic functions like Ifacename$ () and Ifacenum () can be used to import
          information about the trigger that caused the current notification.
       Once you have all the information you need, use a NEXTIFACE statement to
          remove that notification from the list (permanently).
@@ -24,10 +24,10 @@ NEXTIFACE
       SETTRIG "You are dead"
 
       WHILE 1
-         IF IFACECOUNT() > 1
+         IF Ifacecount () > 1 THEN
             ! Get the name and number of the current interface notification
-            LET $name = IFACENAME$()
-            LET number = IFACENUM()
+            LET name$ = Ifacename$ ()
+            LET number = Ifacenum ()
             ! Delete the notification
             NEXTIFACE
          END IF

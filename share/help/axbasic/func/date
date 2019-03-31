@@ -1,8 +1,11 @@
-DATE ()
+Date ()
 
    Synopsis:
       Returns the date in the form YYDDD, where YY is the last two digits of the
          year and DDD is the number of the day in the year
 
+   Notes:
+      See also the help for the Date$ () function.
+      
    Examples:
       On the date '1st January 2014' the value returned was 14001.

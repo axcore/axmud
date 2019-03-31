@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -14,7 +14,7 @@
 #
 # Games::Axmud::Table::xxx
 # Table objects, which handle individual widgets (usually groups of widgets, within a single
-#   container widget) on an 'internal' window's Gtk2::Table
+#   container widget) on an 'internal' window's Gtk3::Table
 
 # Container table objects
 
@@ -50,7 +50,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -137,15 +137,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -164,7 +164,7 @@
 
             # The container widget(s) for this table object; both IVs are always set to the same
             #   widget
-            packingBox                  => undef,       # Gtk2::HBox, ::VBox, ::ScrolledWindow,
+            packingBox                  => undef,       # Gtk3::HBox, ::VBox, ::ScrolledWindow,
                                                         #   ::Frame
             packingBox2                 => undef,       # ditto
 
@@ -218,7 +218,7 @@
         }
 
         # Create the packing box, depending on $type
-        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        my $packingBox = Gtk3::VBox->new(FALSE, 0);
 
         # For this table object, ->packingBox and ->packingBox2 always refer to the same widget
         my $packingBox2 = $packingBox;
@@ -287,7 +287,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -297,11 +297,11 @@
         #                   of the key-value pairs in the hash, if there are any
         #               - This type of table object recognises these initialisation settings:
         #
-        #                   'type' - 'horizontal'/'hbox' for a Gtk2::HBox, 'vertical'/'vbox' for a
-        #                       Gtk2::VBox, 'scroll'/'scroller' for a Gtk2::ScrolledWindow, 'frame'
-        #                       for a Gtk2::Frame. If an invalid 'type' or if 'type' is not
+        #                   'type' - 'horizontal'/'hbox' for a Gtk3::HBox, 'vertical'/'vbox' for a
+        #                       Gtk3::VBox, 'scroll'/'scroller' for a Gtk3::ScrolledWindow, 'frame'
+        #                       for a Gtk3::Frame. If an invalid 'type' or if 'type' is not
         #                       specified, 'vertical' is used
-        #                   'homo_flag' - Ignored if 'type' is not 'horizontal' or 'vertical'.
+        #                   'equal_flag' - Ignored if 'type' is not 'horizontal' or 'vertical'.
         #                       If TRUE, sets the container's homogeneity flag to TRUE; if FALSE,
         #                       'undef' or not specified, sets it to FALSE
         #                   'spacing' - Ignored if 'type' is not 'horizontal' or 'vertical'. Sets
@@ -351,7 +351,7 @@
         # Default initialisation settings
         %modHash = (
             'type'                      => 'vertical',
-            'homo_flag'                 => FALSE,
+            'equal_flag'                => FALSE,
             'spacing'                   => 0,
             'scroll_horizontal'         => 'automatic',
             'scroll_vertical'           => 'automatic',
@@ -363,7 +363,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'homo_flag') {
+                if ($key eq 'equal_flag') {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -408,15 +408,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -435,7 +435,7 @@
 
             # The container widget(s) for this table object; both IVs are always set to the same
             #   widget
-            packingBox                  => undef,       # Gtk2::HBox, ::VBox, ::ScrolledWindow,
+            packingBox                  => undef,       # Gtk3::HBox, ::VBox, ::ScrolledWindow,
                                                         #   ::Frame
             packingBox2                 => undef,       # ditto
 
@@ -473,7 +473,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($type, $homoFlag, $spacing, $hScroll, $vScroll, $label);
+        my ($type, $equalFlag, $spacing, $hScroll, $vScroll, $label);
 
         # Check for improper arguments
         if (defined $check) {
@@ -495,7 +495,7 @@
             $type = 'vertical';
         }
 
-        $homoFlag = $self->testFlag($self->ivShow('initHash', 'homo_flag'));
+        $equalFlag = $self->testFlag($self->ivShow('initHash', 'equal_flag'));
         $spacing = $self->testInt($self->ivShow('initHash', 'spacing'), 0, 0);
 
         $hScroll = $self->ivShow('initHash', 'scroll_horizontal');
@@ -520,26 +520,26 @@
         my ($packingBox, $packingBox2);
         if ($type eq 'horizontal' || $type eq 'hbox') {
 
-            $packingBox = Gtk2::HBox->new($homoFlag, $spacing);
+            $packingBox = Gtk3::HBox->new($equalFlag, $spacing);
             $type = 'horizontal';
 
         } elsif ($type eq 'vertical' || $type eq 'vbox') {
 
-            $packingBox = Gtk2::VBox->new($homoFlag, $spacing);
+            $packingBox = Gtk3::VBox->new($equalFlag, $spacing);
             $type = 'vertical';
 
         } elsif ($type eq 'scroll' || $type eq 'scroller') {
 
-            $packingBox = Gtk2::ScrolledWindow->new();
+            $packingBox = Gtk3::ScrolledWindow->new();
             $packingBox->set_policy($hScroll, $vScroll);
             $type = 'scroll';
 
         } elsif ($type eq 'frame') {
 
             if (! $label) {
-                $packingBox = Gtk2::Frame->new();
+                $packingBox = Gtk3::Frame->new();
             } else {
-                $packingBox = Gtk2::Frame->new($label);
+                $packingBox = Gtk3::Frame->new($label);
             }
         }
 
@@ -575,7 +575,7 @@
         #   called once (in that case, both functions behave identically)
         #
         # Expected arguments
-        #   $widget     - The Gtk2 widget to add to the main container widget
+        #   $widget     - The Gtk3 widget to add to the main container widget
         #
         # Optional arguments (ignored if $self->type is not 'horizontal' or 'vertical'
         #   $expandFlag - If TRUE, the widget receives extra space when the container gets bigger.
@@ -649,7 +649,7 @@
         #   called once (in that case, both functions behave identically)
         #
         # Expected arguments
-        #   $widget     - The Gtk2 widget to add to the main container widget
+        #   $widget     - The Gtk3 widget to add to the main container widget
         #
         # Optional arguments (ignored if $self->type is not 'horizontal' or 'vertical'
         #   $expandFlag - If TRUE, the widget receives extra space when the container gets bigger.
@@ -719,7 +719,7 @@
         # Can be called by anything to remove a widget from the main container widget
         #
         # Expected arguments
-        #   $widget     - The Gtk2 widget to remove from the main container widget
+        #   $widget     - The Gtk3 widget to remove from the main container widget
         #
         # Return values
         #   'undef' on improper arguments
@@ -766,14 +766,14 @@
     ##################
     # Accessors - set
 
-    sub set_homo {
+    sub set_equal {
 
         my ($self, $flag, $check) = @_;
 
         # Check for improper arguments
         if (! defined $flag || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_homo', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_equal', @_);
         }
 
         if ($self->type ne 'horizontal' && $self->type ne 'vertical') {
@@ -782,9 +782,14 @@
         }
 
         if (! $flag) {
-            $self->packingBox2->set_homogeneous(FALSE);
+
+            $self->packingBox2->set_column_homogeneous(FALSE);
+            $self->packingBox2->set_row_homogeneous(FALSE);
+
         } else {
-            $self->packingBox2->set_homogenous(TRUE);
+
+            $self->packingBox2->set_column_homogeneous(TRUE);
+            $self->packingBox2->set_row_homogeneous(TRUE);
         }
 
         return 1;
@@ -862,7 +867,7 @@
 
     # (Get equivalents)
 
-    sub get_homo {
+    sub get_equal {
 
         # Returns flag
 
@@ -871,7 +876,7 @@
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->get_homo', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->get_equal', @_);
         }
 
         if ($self->type ne 'horizontal' && $self->type ne 'vertical') {
@@ -879,7 +884,8 @@
             return undef;
         }
 
-        if (! $self->packingBox2->get_homogeneous()) {
+        # Columns and rows are set together, so we can return a single value
+        if (! $self->packingBox2->get_column_homogeneous()) {
             return FALSE;
         } else {
             return TRUE;
@@ -1026,7 +1032,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -1036,16 +1042,15 @@
         #                   of the key-value pairs in the hash, if there are any
         #               - This type of table object recognises these initialisation settings:
         #
-        #                   'rows' - The number of rows (must be an integer > 0). If not specified
-        #                       or an invalid value, 60 is used
-        #                   'columns' - The number of columns (must be an integer > 0). If not
-        #                       specified or an invalid value, 60 is used
-        #                   'homo_flag' - If TRUE, sets the table's homogeneity flag to TRUE; if
-        #                       FALSE, 'undef' or not specified, sets it to FALSE
-        #                   'row_spacing' - Sets the vertical spacing between table widgets, in
+        #                   'column_equal_flag' - If TRUE, sets the table's homogeneity flag for
+        #                       columns to TRUE; if FALSE, 'undef' or not specified, sets it to
+        #                       FALSE
+        #                   'row_equal_flag' - If TRUE, sets the table's homogeneity flag for rows
+        #                       to TRUE; if FALSE, 'undef' or not specified, sets it to FALSE
+        #                   'column_spacing' - Sets the horizontal spacing between table widgets, in
         #                       pixels (must be an integer, >= 0). If not specified or an invalid
         #                       value, a spacing of 0 is used
-        #                   'column_spacing' - Sets the horizontal spacing between table widgets, in
+        #                   'row_spacing' - Sets the vertical spacing between table widgets, in
         #                       pixels (must be an integer, >= 0). If not specified or an invalid
         #                       value, a spacing of 0 is used
         #
@@ -1078,11 +1083,10 @@
 
         # Default initialisation settings
         %modHash = (
-            'rows'                      => 60,
-            'columns'                   => 60,
-            'homo_flag'                 => FALSE,
-            'row_spacing'               => 0,
+            'column_equal_flag'         => FALSE,
+            'row_equal_flag'            => FALSE,
             'column_spacing'            => 0,
+            'row_spacing'               => 0,
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -1090,7 +1094,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'homo_flag') {
+                if ($key eq 'row_equal_flag' || $key eq 'column_equal_flag') {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -1135,15 +1139,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -1162,8 +1166,8 @@
 
             # The container widget(s) for this table object; both IVs are always set to the same
             #   widget
-            packingBox                  => undef,       # Gtk2::Table
-            packingBox2                 => undef,       # Gtk2::Table
+            packingBox                  => undef,       # Gtk3::Grid
+            packingBox2                 => undef,       # Gtk3::Grid
 
             # Other IVs
             # ---------
@@ -1197,7 +1201,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($rows, $columns, $homoFlag, $rowSpacing, $colSpacing);
+        my ($colEqualFlag, $rowEqualFlag, $colSpacing, $rowSpacing);
 
         # Check for improper arguments
         if (defined $check) {
@@ -1206,16 +1210,18 @@
         }
 
         # Interpret $self->initHash, replacing any invalid values
-        $rows = $self->testInt($self->ivShow('initHash', 'rows'), 0, 60);
-        $columns = $self->testInt($self->ivShow('initHash', 'columns'), 0, 60);
-        $homoFlag = $self->testFlag($self->ivShow('initHash', 'homo_flag'));
-        $rowSpacing = $self->testInt($self->ivShow('initHash', 'row_spacing'), 0, 0);
+        $colEqualFlag = $self->testFlag($self->ivShow('initHash', 'column_equal_flag'));
+        $rowEqualFlag = $self->testFlag($self->ivShow('initHash', 'row_equal_flag'));
         $colSpacing = $self->testInt($self->ivShow('initHash', 'column_spacing'), 0, 0);
+        $rowSpacing = $self->testInt($self->ivShow('initHash', 'row_spacing'), 0, 0);
 
         # Create the packing box
-        my ($packingBox, $packingBox2) = Gtk2::Table->new($rows, $columns, $homoFlag);
-        $packingBox2->set_col_spacings($colSpacing);
-        $packingBox2->set_row_spacings($rowSpacing);
+        my ($packingBox, $packingBox2);
+        $packingBox = $packingBox2 = Gtk3::Grid->new();
+        $packingBox2->set_column_homogeneous($colEqualFlag);
+        $packingBox2->set_row_homogeneous($rowEqualFlag);
+        $packingBox2->set_column_spacing($colSpacing);
+        $packingBox2->set_row_spacing($rowSpacing);
 
         # Update IVs
         $self->ivPoke('packingBox', $packingBox);
@@ -1243,7 +1249,7 @@
         #   regardless of any existing widgets that are already on the table
         #
         # Expected arguments
-        #   $widget     - The Gtk2 widget to add to the main container widget
+        #   $widget     - The Gtk3 widget to add to the main container widget
         #   $left, Right, $top, $bottom
         #               - The table coordinates to use
         #
@@ -1271,7 +1277,7 @@
         # Can be called by anything to remove a widget from the mini-table
         #
         # Expected arguments
-        #   $widget     - The Gtk2 widget to remove from the mini-table
+        #   $widget     - The Gtk3 widget to remove from the mini-table
         #
         # Return values
         #   'undef' on improper arguments
@@ -1318,12 +1324,12 @@
     ##################
     # Accessors - set
 
-    sub set_homo {
+    sub set_equal {
 
-        my ($self, $flag, $check) = @_;
+        my ($self, $colFlag, $rowFlag, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $flag || defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->set_homo', @_);
         }
@@ -1333,35 +1339,19 @@
             return undef;
         }
 
-        if (! $flag) {
-            $self->packingBox2->set_homogeneous(FALSE);
+        if (! $colFlag) {
+            $self->packingBox2->set_column_homogeneous(FALSE);
         } else {
-            $self->packingBox2->set_homogenous(TRUE);
+            $self->packingBox2->set_column_homogeneous(TRUE);
+        }
+
+        if (! $rowFlag) {
+            $self->packingBox2->set_row_homogeneous(FALSE);
+        } else {
+            $self->packingBox2->set_row_homogeneous(TRUE);
         }
 
         return 1;
-    }
-
-    sub set_size {
-
-        my ($self, $rows, $columns, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $rows || ! defined $columns || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_size', @_);
-        }
-
-        if (! $axmud::CLIENT->intCheck($rows, 1) || ! $axmud::CLIENT->intCheck($columns, 1)) {
-
-            return undef;
-
-        } else {
-
-            $self->packingBox2->resize($rows, $columns);
-
-            return 1;
-        }
     }
 
     sub set_spacing {
@@ -1382,8 +1372,8 @@
 
         } else {
 
-            $self->packingBox2->set_row_spacings($rowSpacing);
-            $self->packingBox2->set_col_spacings($colSpacing);
+            $self->packingBox2->set_column_spacing($colSpacing);
+            $self->packingBox2->set_row_spacing($rowSpacing);
 
             return 1;
         }
@@ -1391,52 +1381,44 @@
 
     # (Get equivalents)
 
-    sub get_homo {
+    sub get_equal {
 
-        # Returns flag
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->get_homo', @_);
-        }
-
-        if ($self->type ne 'horizontal' && $self->type ne 'vertical') {
-
-            return undef;
-        }
-
-        if (! $self->packingBox2->get_homogeneous()) {
-            return FALSE;
-        } else {
-            return TRUE;
-        }
-    }
-
-    sub get_size {
-
-        # Returns list in form (rows, columns)
+        # Returns list in form (col_flag, row_flag)
 
         my ($self, $check) = @_;
 
         # Local variables
-        my @emptyList;
+        my (@emptyList, @returnList);
 
         # Check for improper arguments
         if (defined $check) {
 
-            $axmud::CLIENT->writeImproper($self->_objClass . '->get_size', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->get_equal', @_);
+        }
+
+        if ($self->type ne 'horizontal' && $self->type ne 'vertical') {
+
             return @emptyList;
         }
 
-        return ($self->packingBox2->get_size());
+        if (! $self->packingBox2->get_column_homogeneous()) {
+            push (@emptyList, FALSE);
+        } else {
+            push (@emptyList, TRUE);
+        }
+
+        if (! $self->packingBox2->get_row_homogeneous()) {
+            push (@returnList, FALSE);
+        } else {
+            push (@returnList, TRUE);
+        }
+
+        return @returnList;
     }
 
     sub get_spacing {
 
-        # Returns list in form (row_spacing, col_spacing)
+        # Returns list in form (col_spacing, row_spacing)
 
         my ($self, $check) = @_;
 
@@ -1497,7 +1479,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::Label, which contains a simple Gtk2::Label
+        # Creates the GA::Table::Label, which contains a simple Gtk3::Label
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -1512,7 +1494,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -1522,11 +1504,11 @@
         #                   of the key-value pairs in the hash, if there are any
         #               - This type of table object recognises these initialisation settings:
         #
-        #                   'text' - The text to display in the Gtk2::Label. Can be plain text or
+        #                   'text' - The text to display in the Gtk3::Label. Can be plain text or
         #                       pango markup text. If not specified, 'undef' or an empty string, an
         #                       empty string is used
         #                   'justify' - The text's justification. If specified, should be 'left',
-        #                       'right', 'centre'/'center' or 'fill' (of a Gtk2::Justification like
+        #                       'right', 'centre'/'center' or 'fill' (of a Gtk3::Justification like
         #                       'GTK_JUSTIFY_LEFT'). If not specified, 'left' is used. Ignored if
         #                       'text' is not specified
         #                   'underline_flag' - If TRUE, text is underlined. If FALSE (or not
@@ -1535,7 +1517,7 @@
         #                   'tooltips' - The text to display as tooltips for the button. Can be
         #                       plain text or pango markup text. If not specified, 'undef' or an
         #                       empty string, no tooltips are displayed
-        #                   'align_x', 'align_y' - the Gtk2::Label's alignment, values in the range
+        #                   'align_x', 'align_y' - the Gtk3::Label's alignment, values in the range
         #                       0-1. If not specified, 'align_x' is set to 0, 'align_y' is set to
         #                       0.5. Ignored if 'text' is not specified
         #
@@ -1626,15 +1608,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -1652,14 +1634,14 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::HBox or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::HBox
+            packingBox                  => undef,       # Gtk3::HBox or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::HBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            label                       => undef,       # Gtk2::Label
+            label                       => undef,       # Gtk3::Label
         };
 
         # Bless the object into existence
@@ -1711,10 +1693,10 @@
         $alignY = $self->testAlign($self->ivShow('initHash', 'align_y'), 0.5);
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::HBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::HBox->new(FALSE, 0));
 
-        # Create the Gtk2::Label
-        my $label = Gtk2::Label->new();
+        # Create the Gtk3::Label
+        my $label = Gtk3::Label->new();
         $packingBox2->pack_start($label, FALSE, FALSE, 0);
         $label->set_markup($self->ivShow('initHash', 'text'));
 
@@ -1957,7 +1939,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::Button, which contains a simple Gtk2::Button
+        # Creates the GA::Table::Button, which contains a simple Gtk3::Button
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -1972,7 +1954,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -1996,9 +1978,9 @@
         #                       ('press' the button by pressing ALT + character). Must be plain
         #                       text, not pango markup. If not specified, 'undef' or an empty
         #                       string, no text is displayed
-        #                   'stock' - The stock Gtk2 icon and text to use on the button (e.g.
+        #                   'stock' - The stock Gtk3 icon and text to use on the button (e.g.
         #                       'gtk-yes', 'gtk-save'. Ignored if 'text' is specified
-        #                   'image' - A Gtk2::Widget to display as an image on the button. Ignored
+        #                   'image' - A Gtk3::Widget to display as an image on the button. Ignored
         #                       if 'text' or 'stock' are specified
         #                   'underline_flag' - If TRUE, text is underlined. If FALSE (or not
         #                       specified), text is not underlined. Ignored if 'text' is not
@@ -2006,7 +1988,7 @@
         #                   'tooltips' - The text to display as tooltips for the button. Can be
         #                       plain text or pango markup text. If not specified, 'undef' or an
         #                       empty string, no tooltips are displayed
-        #                   'align_x', 'align_y' - The Gtk2::Button's alignment, values in the
+        #                   'align_x', 'align_y' - The Gtk3::Button's alignment, values in the
         #                       range 0-1. If not specified, 'align_x' and/or 'align_y' are set to
         #                       0.5. Ignored if 'text' is not specified
         #                   'normal_flag' - If TRUE (or not specified), the button's state is
@@ -2112,15 +2094,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -2138,15 +2120,15 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::VBox or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::VBox
 
 
             # Other IVs
             # ---------
 
             # Widgets
-            button                      => undef,       # Gtk2::Button
+            button                      => undef,       # Gtk3::Button
         };
 
         # Bless the object into existence
@@ -2200,16 +2182,16 @@
         $expandFlag = $self->testFlag($self->ivShow('initHash', 'expand_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
 
-        # Create the Gtk2::Button
+        # Create the Gtk3::Button
         my $button;
         if (defined $text && $text ne '') {
-            $button = Gtk2::Button->new($text);
+            $button = Gtk3::Button->new($text);
         } elsif ($stock) {
-            $button = Gtk2::Button->new_from_stock($stock);
+            $button = Gtk3::Button->new_from_stock($stock);
         } else {
-            $button = Gtk2::Button->new();
+            $button = Gtk3::Button->new();
         }
 
         $packingBox2->pack_start($button, $expandFlag, $expandFlag, 0);
@@ -2498,7 +2480,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::CheckButton, which contains a simple Gtk2::CheckButton
+        # Creates the GA::Table::CheckButton, which contains a simple Gtk3::CheckButton
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -2513,7 +2495,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -2540,7 +2522,7 @@
         #                   'tooltips' - The text to display as tooltips for the button. Can be
         #                       plain text or pango markup text. If not specified, 'undef' or an
         #                       empty string, no tooltips are displayed
-        #                   'align_x', 'align_y' - The Gtk2::Button's alignment, values in the
+        #                   'align_x', 'align_y' - The Gtk3::Button's alignment, values in the
         #                       range 0-1. If not specified, 'align_x' is set to 0, 'align_y' is set
         #                       to 0.5. Ignored if 'text' is not specified
         #                   'select_flag' - If TRUE, the button is selected (checked) initially, if
@@ -2642,15 +2624,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -2668,15 +2650,15 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::VBox or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::VBox
 
 
             # Other IVs
             # ---------
 
             # Widgets
-            button                      => undef,       # Gtk2::CheckButton
+            button                      => undef,       # Gtk3::CheckButton
         };
 
         # Bless the object into existence
@@ -2724,14 +2706,14 @@
         $normalFlag = $self->testFlag($self->ivShow('initHash', 'normal_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
 
-        # Create the Gtk2::CheckButton
+        # Create the Gtk3::CheckButton
         my $button;
         if (defined $text && $text ne '') {
-            $button = Gtk2::CheckButton->new_with_mnemonic($text);
+            $button = Gtk3::CheckButton->new_with_mnemonic($text);
         } else {
-            $button = Gtk2::CheckButton->new();
+            $button = Gtk3::CheckButton->new();
         }
 
         $packingBox2->pack_start($button, FALSE, FALSE, 0);
@@ -3023,7 +3005,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::RadioButton, which contains a simple Gtk2::RadioButton
+        # Creates the GA::Table::RadioButton, which contains a simple Gtk3::RadioButton
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -3038,7 +3020,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -3065,7 +3047,7 @@
         #                   'tooltips' - The text to display as tooltips for the button. Can be
         #                       plain text or pango markup text. If not specified, 'undef' or an
         #                       empty string, no tooltips are displayed
-        #                   'align_x', 'align_y' - The Gtk2::Button's alignment, values in the
+        #                   'align_x', 'align_y' - The Gtk3::Button's alignment, values in the
         #                       range 0-1. If not specified, 'align_x' is set to 0, 'align_y' is set
         #                       to 0.5. Ignored if 'text' is not specified
         #                   'select_flag' - If TRUE, the button is selected initially, if FALSE (or
@@ -3172,15 +3154,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -3198,14 +3180,14 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::VBox or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::VBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            button                      => undef,       # Gtk2::RadioButton
+            button                      => undef,       # Gtk3::RadioButton
             group                       => undef,       # Reference to array of widget references
         };
 
@@ -3257,10 +3239,10 @@
         $group = $self->ivShow('initHash', 'group');
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
 
-        # Create the Gtk2::RadioButton
-        my $button = Gtk2::RadioButton->new();
+        # Create the Gtk3::RadioButton
+        my $button = Gtk3::RadioButton->new();
         $packingBox2->pack_start($button, FALSE, FALSE, 0);
 
         if (defined $text && $text ne '') {
@@ -3555,7 +3537,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::Entry, which contains a simple Gtk2::Entry
+        # Creates the GA::Table::Entry, which contains a simple Gtk3::Entry
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -3570,7 +3552,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -3737,15 +3719,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -3763,14 +3745,14 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::HBox or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::HBox
+            packingBox                  => undef,       # Gtk3::HBox or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::HBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            entry                       => undef,       # Gtk2::Entry
+            entry                       => undef,       # Gtk3::Entry
 
             # IVs set by $self->objEnable, using values from $self->initHash after checking they're
             #   valid (and using default values, if not)
@@ -3882,10 +3864,10 @@
         }
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::HBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::HBox->new(FALSE, 0));
 
-        # Create the Gtk2::Entry
-        my $entry = Gtk2::Entry->new();
+        # Create the Gtk3::Entry
+        my $entry = Gtk3::Entry->new();
         $packingBox2->pack_start($entry, $expandFlag, $expandFlag, 0);
         if (defined $text && $text ne '') {
 
@@ -4371,7 +4353,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::ComboBox, which contains a simple Gtk2::ComboBox
+        # Creates the GA::Table::ComboBox, which contains a simple Gtk3::ComboBox
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -4386,7 +4368,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -4512,15 +4494,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -4538,14 +4520,14 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::HBox or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::HBox
+            packingBox                  => undef,       # Gtk3::HBox or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::HBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            comboBox                    => undef,       # Gtk2::ComboBox
+            comboBox                    => undef,       # Gtk3::ComboBox
 
             # Item in the combobox used as a title ('undef' if no title specified). Set by
             #   $self->objEnable from $self->initHash
@@ -4596,10 +4578,10 @@
         $expandFlag = $self->testFlag($self->ivShow('initHash', 'expand_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::HBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::HBox->new(FALSE, 0));
 
-        # Create the Gtk2::ComboBox
-        my $comboBox = Gtk2::ComboBox->new_text();
+        # Create the Gtk3::ComboBox
+        my $comboBox = Gtk3::ComboBoxText->new();
         $packingBox2->pack_start($comboBox, $expandFlag, $expandFlag, 0);
         if (defined $title) {
 
@@ -4888,7 +4870,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::SimpleList, which contains a simple GA::Obj::Simple::List
+        # Creates the GA::Table::SimpleList, which contains a simple GA::Obj::SimpleList
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -4903,7 +4885,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -4928,12 +4910,12 @@
         #                   'column_ref' - Reference to a list of column headings and types, in the
         #                       form ('heading', 'column_type', 'heading', 'column_type'...), where
         #                       'column_type' is one of the column types recognised by
-        #                       GA::Obj::Simple::List, i.e. 'text', 'markup', 'int', 'double',
+        #                       GA::Obj::SimpleList, i.e. 'text', 'markup', 'int', 'double',
         #                       'bool', 'scalar' or 'pixbuf'. If 'undef' or an empty list, a single
         #                       column of type 'text' is created. If the list contains an odd
         #                       number of items, the final one is discarded
         #                   'data_ref' - Reference to a list used to populate the
-        #                       GA::Obj::Simple::List. If there are 2 columns, a list in the form
+        #                       GA::Obj::SimpleList. If there are 2 columns, a list in the form
         #                       (a, b, a, b...) is expected. If there are 3 columns, a list in the
         #                       form (a, b, c, a, b, c) is expected. If 'undef' or an empty list,
         #                       nothing is added to the simple list
@@ -5020,15 +5002,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -5046,14 +5028,14 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::ScrolledWindow or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::ScrolledWindow
+            packingBox                  => undef,       # Gtk3::ScrolledWindow or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::ScrolledWindow
 
             # Other IVs
             # ---------
 
             # Widgets
-            slWidget                    => undef,       # GA::Obj::Simple::List
+            slWidget                    => undef,       # GA::Obj::SimpleList
 
             # The number of columns in the simple list (minimum 1)
             numColumns                  => undef,
@@ -5126,11 +5108,11 @@
         }
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::ScrolledWindow->new());
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::ScrolledWindow->new());
         $packingBox2->set_policy('automatic', 'automatic');
 
-        # Create the GA::Obj::Simple::List
-        my $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
+        # Create the GA::Obj::SimpleList
+        my $slWidget = Games::Axmud::Obj::SimpleList->new(@columnList);
         $packingBox2->add_with_viewport($slWidget);
 
         # Make all columns of type 'bool' (which are composed of checkbuttons) non-activatable, so
@@ -5148,7 +5130,7 @@
 
             if ($type eq 'bool') {
 
-                my ($cellRenderer) = $slWidget->get_column($count)->get_cell_renderers();
+                my ($cellRenderer) = $slWidget->get_column($count)->get_cells();
                 $cellRenderer->set(activatable => FALSE);
             }
 
@@ -5339,7 +5321,7 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::TextView, which contains a simple Gtk2::TextView
+        # Creates the GA::Table::TextView, which contains a simple Gtk3::TextView
         # If all you want to do is to display some monochrome text in a scrolling textview (and
         #   optionally allow the user to edit it), use this table object
         # For anything more ambitious, use a GA::Table::Pane object
@@ -5357,7 +5339,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -5389,7 +5371,7 @@
         #                       in GA::Client->colourSchemeHash). If not specified or 'undef', the
         #                       parent window's colour scheme is used
         #                   'spacing' - The size (in pixels) of the gap between the textview itself
-        #                       and its containing Gtk2::Frame. A value in the range 0-100. If
+        #                       and its containing Gtk3::Frame. A value in the range 0-100. If
         #                       'undef', not specified or an invalid value, a value of 0 is used
         #
         # Return values
@@ -5485,15 +5467,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -5511,17 +5493,17 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::VBox or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::VBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            frame                       => undef,       # Gtk2::Frame (may be 'undef')
-            scroll                      => undef,       # Gtk2::ScrolledWindow
-            textView                    => undef,       # Gtk2::TextView
-            buffer                      => undef,       # Gtk2::TextBuffer
+            frame                       => undef,       # Gtk3::Frame (may be 'undef')
+            scroll                      => undef,       # Gtk3::ScrolledWindow
+            textView                    => undef,       # Gtk3::TextView
+            buffer                      => undef,       # Gtk3::TextBuffer
         };
 
         # Bless the object into existence
@@ -5573,25 +5555,25 @@
         $spacing = $self->testInt($self->ivShow('initHash', 'spacing'), 0, 0);
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
 
-        # Create the Gtk2::TextView inside a Gtk2::Frame and Gtk2::ScrolledWindow. However, if
-        #   $packingBox is itself a Gtk2::Frame, don't create a second one
+        # Create the Gtk3::TextView inside a Gtk3::Frame and Gtk3::ScrolledWindow. However, if
+        #   $packingBox is itself a Gtk3::Frame, don't create a second one
         my ($frame, $scroll);
-        if (! $packingBox->isa('Gtk2::Frame')) {
+        if (! $packingBox->isa('Gtk3::Frame')) {
 
-            $frame = Gtk2::Frame->new(undef);
-            # (Using TRUE, TRUE rather than the usual FALSE, FALSE forces the Gtk2::TextView to take
-            #   up its full allocated size in the Gtk2::Table)
+            $frame = Gtk3::Frame->new(undef);
+            # (Using TRUE, TRUE rather than the usual FALSE, FALSE forces the Gtk3::TextView to take
+            #   up its full allocated size in the Gtk3::Grid)
             $packingBox2->pack_start($frame, TRUE, TRUE, 0);
             $frame->set_border_width($spacing);
 
-            $scroll = Gtk2::ScrolledWindow->new(undef, undef);
+            $scroll = Gtk3::ScrolledWindow->new(undef, undef);
             $frame->add($scroll);
 
         } else {
 
-            my $scroll = Gtk2::ScrolledWindow->new(undef, undef);
+            my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
             $packingBox2->pack_start($scroll, TRUE, TRUE, 0);
         }
 
@@ -5600,46 +5582,33 @@
         $scroll->set_border_width($spacing);
 
         # Create a textview
-        my $textView;
-        if ($systemFlag) {
-
-            # Using the sub-class preserves the system's preferred colours/fonts
-            $textView = Games::Axmud::Widget::TextView::Gtk2->new();
-
-        } else {
-
-            # Use colours/fonts specified by an Axmud colour scheme
-            if (
-                defined $colourScheme
-                && $axmud::CLIENT->ivExists('colourSchemeHash', $colourScheme)
-            ) {
-                $axmud::CLIENT->desktopObj->getTextViewStyle($colourScheme);
-            } else {
-                $axmud::CLIENT->desktopObj->getTextViewStyle($self->winObj->winType);
-            }
-
-            $textView = Gtk2::TextView->new();
-        }
-
+        my $textView = Gtk3::TextView->new();
         $scroll->add($textView);
-        my $buffer = Gtk2::TextBuffer->new();
+        my $buffer = Gtk3::TextBuffer->new();
         $textView->set_buffer($buffer);
 
         if (! $editFlag) {
 
             $textView->set_editable(FALSE);
             $textView->set_cursor_visible(FALSE);
-            $textView->can_focus(FALSE);
+            $textView->set_can_focus(FALSE);
 
         } else {
 
             $textView->set_editable(TRUE);
             $textView->set_cursor_visible(TRUE);
-            $textView->can_focus(TRUE);
+            $textView->set_can_focus(TRUE);
         }
 
         $textView->set_wrap_mode('word-char');      # Wrap words if possible, characters if not
         $textView->set_justification('left');
+
+        if ($systemFlag && $axmud::CLIENT->ivExists('colourSchemeHash', $colourScheme)) {
+            $axmud::CLIENT->desktopObj->setTextViewStyle($colourScheme, $textView);
+        } else {
+            $axmud::CLIENT->desktopObj->setTextViewStyle($self->winObj->winType, $textView);
+        }
+
         $buffer->set_text($text);
 
         # Update IVs
@@ -5725,13 +5694,13 @@
 
             $self->textView->set_editable(FALSE);
             $self->textView->set_cursor_visible(FALSE);
-            $self->textView->can_focus(FALSE);
+            $self->textView->set_can_focus(FALSE);
 
         } else {
 
             $self->textView->set_editable(TRUE);
             $self->textView->set_cursor_visible(TRUE);
-            $self->textView->can_focus(TRUE);
+            $self->textView->set_can_focus(TRUE);
         }
 
         return 1;
@@ -5844,8 +5813,8 @@
     sub new {
 
         # Called by GA::Strip::Table->addTableObj
-        # Creates the GA::Table::Pane, which contains one or more Gtk2::TextViews sharing a single
-        #   Gtk2::TextBuffer
+        # Creates the GA::Table::Pane, which contains one or more Gtk3::TextViews sharing a single
+        #   Gtk3::TextBuffer
         #
         # Expected arguments
         #   $number     - The table object's number within the parent strip object (matches
@@ -5860,7 +5829,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -5873,7 +5842,7 @@
         #                   'frame_title' - If specified, the table object is drawn inside a frame
         #                       with the specified title. If 'undef', an empty string or not
         #                       specified, the table object does not use a frame and title
-        #                   'entry_flag' - TRUE if a Gtk2::Entry should be drawn beneath the
+        #                   'entry_flag' - TRUE if a Gtk3::Entry should be drawn beneath the
         #                       textview(s), FALSE if not. Ignored if 'func' is not also specified
         #                   'func' - Reference to a function to call when the user types something
         #                       in the pane's own entry box and presses 'return'. If not specified
@@ -6057,15 +6026,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -6083,16 +6052,16 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk2::VBox or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::VBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            notebook                    => undef,       # Gtk2::Notebook
-            hBox                        => undef,       # Gtk2::HBox
-            entry                       => undef,       # Gtk2::Entry
+            notebook                    => undef,       # Gtk3::Notebook
+            hBox                        => undef,       # Gtk3::HBox
+            entry                       => undef,       # Gtk3::Entry
 
             # The normal and modified border widths to apply to $self->packingBox2 when this pane is
             #   selected and unselected by the switcher button in
@@ -6103,48 +6072,48 @@
             # Hashes of tabs and their corresponding tab objects (GA::Obj::Tab), which store the
             #   widgets required to create, modify or remove each tab
             # Every tab contains a single textview object (GA::Obj::TextView). A textview object
-            #   handles either a single Gtk2::TextView, or two Gtk2::TextViews sharing a single
-            #   Gtk2::TextBuffer (depending on whether split screen mode is off or on)
+            #   handles either a single Gtk3::TextView, or two Gtk3::TextViews sharing a single
+            #   Gtk3::TextBuffer (depending on whether split screen mode is off or on)
             # The tab object stores that textview object, the controlling session (GA::Session)
-            #   and details of which Gtk2 widgets to pack/unpack when the appearance of the tab is
+            #   and details of which Gtk3 widgets to pack/unpack when the appearance of the tab is
             #   modified
             #
-            # When a Gtk2::Notebook is in use, the Gtk2 inheritance tree looks like this:
-            #       Gtk2::VBox                                  ($self->packingBox, ->packingBox2)
-            #           Gtk2::Notebook
-            #               Gtk2::VBox                          ($tabObj->packableObj)
-            #                   Gtk2::ScrolledWindow            ($tabObj->packedObj)
-            #                       Gtk2::TextView              ($tabObj->textViewObj->textView)
+            # When a Gtk3::Notebook is in use, the Gtk3 inheritance tree looks like this:
+            #       Gtk3::VBox                                  ($self->packingBox, ->packingBox2)
+            #           Gtk3::Notebook
+            #               Gtk3::VBox                          ($tabObj->packableObj)
+            #                   Gtk3::ScrolledWindow            ($tabObj->packedObj)
+            #                       Gtk3::TextView              ($tabObj->textViewObj->textView)
             # ...or like this, when split screen mode is on:
-            #       Gtk2::VBox                                  ($self->packingBox, ->packingBox2)
-            #           Gtk2::Notebook
-            #               Gtk2::VBox                          ($tabObj->packableObj)
-            #                   Gtk2::VPaned                    ($tabObj->packedObj)
-            #                       Gtk2::Scroll
-            #                           Gtk2::TextView          ($tabObj->textViewObj->textView)
-            #                       Gtk2::Scroll
-            #                           Gtk2::TextView          ($tabObj->textViewObj->textView2)
+            #       Gtk3::VBox                                  ($self->packingBox, ->packingBox2)
+            #           Gtk3::Notebook
+            #               Gtk3::VBox                          ($tabObj->packableObj)
+            #                   Gtk3::VPaned                    ($tabObj->packedObj)
+            #                       Gtk3::Scroll
+            #                           Gtk3::TextView          ($tabObj->textViewObj->textView)
+            #                       Gtk3::Scroll
+            #                           Gtk3::TextView          ($tabObj->textViewObj->textView2)
             # ..and the hash in the form
             #       $tabObjHash{unique_number} = blessed_reference_to_tab_object
             #
-            # When a Gtk2::Notebook is not in use, the comments in this table object describe a
+            # When a Gtk3::Notebook is not in use, the comments in this table object describe a
             #   'simple tab'. In actuality, the simplified inheritance tree looks like this:
-            #       Gtk2::VBox                                  ($self->packingBox, ->packingBox2)
-            #           Gtk2::ScrolledWindow                    ($tabObj->packedObj)
-            #               Gtk2::TextView                      ($tabObj->textViewObj->textView)
+            #       Gtk3::VBox                                  ($self->packingBox, ->packingBox2)
+            #           Gtk3::ScrolledWindow                    ($tabObj->packedObj)
+            #               Gtk3::TextView                      ($tabObj->textViewObj->textView)
             # ...or like this, when split screen mode is on:
-            #       Gtk2::VBox                                  ($self->packingBox, ->packingBox2)
-            #           Gtk2::VPaned                            ($tabObj->packedObj)
-            #               Gtk2::ScrolledWindow
-            #                   Gtk2::TextView                  ($tabObj->textViewObj->textView)
-            #               Gtk2::ScrolledWindow
-            #                   Gtk2::TextView                  ($tabObj->textViewObj->textView2)
+            #       Gtk3::VBox                                  ($self->packingBox, ->packingBox2)
+            #           Gtk3::VPaned                            ($tabObj->packedObj)
+            #               Gtk3::ScrolledWindow
+            #                   Gtk3::TextView                  ($tabObj->textViewObj->textView)
+            #               Gtk3::ScrolledWindow
+            #                   Gtk3::TextView                  ($tabObj->textViewObj->textView2)
             #   ...and the hash contains a single key-value pair, in the form
             #       $tabObjHash{0} = blessed_reference_to_tab_object
             #
             # NB If a 'frame_title' was specified by the calling function, $self->packingBox will
-            #   be a Gtk2::Frame, and $self->packingBox2 will be a Gtk2::VBox. If not, both
-            #   $self->packingBox and ->packingBox2 will be the same Gtk2::VBox widget
+            #   be a Gtk3::Frame, and $self->packingBox2 will be a Gtk3::VBox. If not, both
+            #   $self->packingBox and ->packingBox2 will be the same Gtk3::VBox widget
             tabObjHash                  => {},
             # Number of tab objects created since this pane object was created (used to give each
             #   tab object a unique number). When converting from a simple tab to (normal) tabs, or
@@ -6219,19 +6188,19 @@
         }
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
         $packingBox2->set_border_width($self->normalBorderWidth);
 
-        # Draw a Gtk2::Entry, if specified
+        # Draw a Gtk3::Entry, if specified
         my ($hBox, $entry);
         if (
             $self->ivShow('initHash', 'entry_flag')
             && $self->ivShow('initHash', 'func')
         ) {
-            $hBox = Gtk2::HBox->new(FALSE, 0);
+            $hBox = Gtk3::HBox->new(FALSE, 0);
             $packingBox2->pack_end($hBox, FALSE, FALSE, $axmud::CLIENT->constGridSpacingPixels);
 
-            $entry = Gtk2::Entry->new();
+            $entry = Gtk3::Entry->new();
             $hBox->pack_start($entry, TRUE, TRUE, $axmud::CLIENT->constGridSpacingPixels);
         }
 
@@ -6302,7 +6271,7 @@
 
         # Called by GA::Strip::Table->resizeTableObj
         # Allows this table object to update its widgets whenever the table object is resized on its
-        #   Gtk2::Table
+        #   Gtk3::Grid
         #
         # Expected arguments
         #   $left, $right, $top, $bottom
@@ -6323,7 +6292,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setWidgetsOnResize', @_);
         }
 
-        # For some reason, resizing the table object makes the Gtk2::TextView use the most recent
+        # For some reason, resizing the table object makes the Gtk3::TextView use the most recent
         #   rc file, which messes up the colours; therefore, we have to re-apply the colour scheme
         #   for each tab
         $self->updateColourScheme();
@@ -6338,7 +6307,7 @@
         # Called by $self->drawNotebook
         #
         # Expected arguments
-        #   $notebook   - The Gtk2::Notebook which emits the signal
+        #   $notebook   - The Gtk3::Notebook which emits the signal
         #
         # Return values
         #   'undef' on improper arguments
@@ -6373,7 +6342,7 @@
         # Called by $self->addTab
         #
         # Expected arguments
-        #   $button     - The Gtk2::Button which emits the signal
+        #   $button     - The Gtk3::Button which emits the signal
         #   $tabObj     - The corresponding GA::Obj::Tab
         #
         # Optional arguments
@@ -6469,14 +6438,14 @@
     sub drawNotebook {
 
         # Called by $self->addTab and $self->convertSimpleTab
-        # Draws a Gtk2::Notebook whose tabs can each contain a Gtk2::TextView
+        # Draws a Gtk3::Notebook whose tabs can each contain a Gtk3::TextView
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments or if the widget can't be drawn
-        #   Otherwise returns the Gtk2::Notebook
+        #   Otherwise returns the Gtk3::Notebook
 
         my ($self, $check) = @_;
 
@@ -6487,12 +6456,12 @@
         }
 
         # Create the notebook, stored in $self->notebook
-        my $notebook = Gtk2::Notebook->new();
+        my $notebook = Gtk3::Notebook->new();
         $notebook->set_scrollable(TRUE);
-        $notebook->can_focus(FALSE);
-        $notebook->set_tab_border(0);
+        $notebook->popup_enable();
+        $notebook->set_can_focus(FALSE);
 
-        # Gtk2::Notebook created
+        # Gtk3::Notebook created
         $self->packingBox2->pack_start($notebook, TRUE, TRUE, 0);
         # Set up ->signal_connects
         $self->setSwitchPageEvent($notebook);
@@ -6524,9 +6493,9 @@
         #                       'undef') otherwise (might be TRUE even if $sessionFlag is FALSE)
         #   $labelText      - The text to use in the tab label, ignored if specified (exists for
         #                       compatibility with other functions in this group)
-        #   $oldBuffer      - If a Gtk2::Notebook with a single tab is being replaced by a
+        #   $oldBuffer      - If a Gtk3::Notebook with a single tab is being replaced by a
         #                       standalone textview object, the old textview object's
-        #                       Gtk2::TextBuffer, which is transferred to the new textview object
+        #                       Gtk3::TextBuffer, which is transferred to the new textview object
         #                       ('undef' otherwise)
         #
         # Return values
@@ -6548,8 +6517,8 @@
              return $axmud::CLIENT->writeImproper($self->_objClass . '->addSimpleTab', @_);
         }
 
-        # If this pane object has drawn a notebook, not a simple container (a Gtk2::ScrolledWindow
-        #   or Gtk2::VPaned), $self->addTab should have been called instead. Show a warning, then
+        # If this pane object has drawn a notebook, not a simple container (a Gtk3::ScrolledWindow
+        #   or Gtk3::VPaned), $self->addTab should have been called instead. Show a warning, then
         #   redirect the function call
         if ($self->notebook) {
 
@@ -6577,7 +6546,7 @@
             );
         }
 
-        # Create a new GA::Obj::Textview object to handle the Gtk2::Textview(s)
+        # Create a new GA::Obj::Textview object to handle the Gtk3::Textview(s)
         $textViewObj = $axmud::CLIENT->desktopObj->add_textView(
             $session,
             $self->winObj,
@@ -6597,8 +6566,8 @@
             $colourScheme = $self->ivShow('initHash', 'colour_scheme');
         }
 
-        # Create the Gtk2::TextView(s) themselves. The function call returns a Gtk2::ScrolledWindow
-        #   or a Gtk2::VPaned containing the textview(s)
+        # Create the Gtk3::TextView(s) themselves. The function call returns a Gtk3::ScrolledWindow
+        #   or a Gtk3::VPaned containing the textview(s)
         $packedObj = $textViewObj->objEnable(
             $self->ivShow('initHash', 'split_mode'),
             $colourScheme,
@@ -6613,7 +6582,7 @@
             return undef;
         }
 
-        # Pack the Gtk2::ScrolledWindow/Gtk2::VPaned into our main Gtk2::VBox
+        # Pack the Gtk3::ScrolledWindow/Gtk3::VPaned into our main Gtk3::VBox
         $self->packingBox2->pack_start($packedObj, TRUE, TRUE, 0);
 
         # Create a tab object to store details about the tab
@@ -6644,7 +6613,7 @@
     sub addTab {
 
         # Called by GA::Session->setDefaultTab, $self->convertSimpleTab or by any other code
-        # Adds a (normal) tab to the Gtk2::Notebook
+        # Adds a (normal) tab to the Gtk3::Notebook
         #
         # Expected arguments
         #   $session        - The GA::Session that will control the tab (and the textview object
@@ -6662,8 +6631,8 @@
         #                       'undef') otherwise (might be TRUE even if $sessionFlag is FALSE)
         #   $labelText      - The text to use in the tab label (empty strings are acceptable). If
         #                       'undef', 'Tab #' is used
-        #   $oldBuffer      - If a standalone textview object is being replaced by a Gtk2::Notebook
-        #                       with a single tab, the old textview object's Gtk2::TextBuffer, which
+        #   $oldBuffer      - If a standalone textview object is being replaced by a Gtk3::Notebook
+        #                       with a single tab, the old textview object's Gtk3::TextBuffer, which
         #                       is transferred to the new textview object ('undef' otherwise)
         #
         # Return values
@@ -6686,7 +6655,7 @@
         }
 
         # If this table object isn't using a notebook, but a simple container (a
-        #   Gtk2::ScrolledWindow or a Gtk2::VPaned), convert from the latter to the former
+        #   Gtk3::ScrolledWindow or a Gtk3::VPaned), convert from the latter to the former
         if (! $self->notebook) {
 
             if ($self->tabObjHash) {
@@ -6715,12 +6684,12 @@
         # Create the tab
 
         # The tab contains a vertical packing box, which contains everything else
-        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        my $vBox = Gtk3::VBox->new(FALSE, 0);
         $vBox->set_border_width(0);
 
-        # A horizontal packing box is used as the tab's label (in place of a Gtk2::Label)
-        my $hBox = Gtk2::HBox->new(FALSE, 0);
-        my $label = Gtk2::Label->new();
+        # A horizontal packing box is used as the tab's label (in place of a Gtk3::Label)
+        my $hBox = Gtk3::HBox->new(FALSE, 0);
+        my $label = Gtk3::Label->new();
         $hBox->pack_start($label, FALSE, FALSE, 0);
         $label->show();
 
@@ -6728,14 +6697,14 @@
         my $button;
         if ($self->canCloseFlag) {
 
-            $button = Gtk2::Button->new();
+            $button = Gtk3::Button->new();
             $hBox->pack_start($button, FALSE, FALSE, 0);
-            $button->set_image(Gtk2::Image->new_from_stock('gtk-close', 'menu'));
+            $button->set_image(Gtk3::Image->new_from_stock('gtk-close', 'menu'));
             $button->set_relief('none');
             $button->show();
         }
 
-        # Create a new GA::Obj::Textview object to handle the Gtk2::Textview(s)
+        # Create a new GA::Obj::Textview object to handle the Gtk3::Textview(s)
         $textViewObj = $axmud::CLIENT->desktopObj->add_textView(
             $session,
             $self->winObj,
@@ -6755,8 +6724,8 @@
             $colourScheme = $self->ivShow('initHash', 'colour_scheme');
         }
 
-        # Create the Gtk2::TextView(s) themselves. The function call returns a Gtk2::ScrolledWindow
-        #   or a Gtk2::VPaned containing the textview(s)
+        # Create the Gtk3::TextView(s) themselves. The function call returns a Gtk3::ScrolledWindow
+        #   or a Gtk3::VPaned containing the textview(s)
         $packedObj = $textViewObj->objEnable(
             $self->ivShow('initHash', 'split_mode'),
             $colourScheme,
@@ -6771,7 +6740,7 @@
             return undef;
         }
 
-        # Pack the Gtk2::ScrolledWindow/Gtk2::VPaned into this tab's Gtk2::VBox
+        # Pack the Gtk3::ScrolledWindow/Gtk3::VPaned into this tab's Gtk3::VBox
         $vBox->pack_start($packedObj, TRUE, TRUE, 0);
 
         # From Gtk documentation: 'Note that due to historical reasons, GtkNotebook refuses to
@@ -6813,7 +6782,7 @@
         $self->ivIncrement('tabObjCount');
 
         # The new tab should be the visible (current) one
-        # NB When replacing a standalone textview object with a Gtk2::Notebook, adding the old
+        # NB When replacing a standalone textview object with a Gtk3::Notebook, adding the old
         #   textview object's buffer to the new notebook's first tab, we don't set the first tab as
         #   the current page - because the calling function wants to set the (new) second tab as the
         #   current page
@@ -6822,7 +6791,7 @@
             $self->notebook->set_current_page($tabNum);
         }
 
-        # After replacing a standalone textview object with a Gtk2::Notebook, the original session's
+        # After replacing a standalone textview object with a Gtk3::Notebook, the original session's
         #   textview(s) don't scroll to the bottom (as it should) without this code (and placing the
         #   code anywhere else doesn't work, either)
         if ($oldBuffer) {
@@ -6861,7 +6830,7 @@
         #   parts of the code want to remove a non-default tab, they should call
         #   $self->removeTabNum)
         # After removing the tab, if there is then only a single session open, and if the
-        #   initialisation setting demands that we use a simple tab rather than a Gtk2::Notebook
+        #   initialisation setting demands that we use a simple tab rather than a Gtk3::Notebook
         #   tab, replace the notebook with a simple tab
         #
         # Expected arguments
@@ -6907,7 +6876,7 @@
 
         } else {
 
-            # A tab in a Gtk2::Notebook. Find which one corresponds to the session
+            # A tab in a Gtk3::Notebook. Find which one corresponds to the session
             $tabObj = $self->findSession($session);
             if (! defined $tabObj) {
 
@@ -6915,7 +6884,7 @@
                 return undef;
             }
 
-            # Remove the tab from its Gtk2::Notebook
+            # Remove the tab from its Gtk3::Notebook
             $self->notebook->remove_page($self->notebook->page_num($tabObj->tabWidget));
             # Inform the textview object (if any) of its demise
             if ($tabObj->textViewObj) {
@@ -7007,9 +6976,9 @@
 
         } else {
 
-            # A tab in a Gtk2::Notebook
+            # A tab in a Gtk3::Notebook
 
-            # Remove the tab from its Gtk2::Notebook
+            # Remove the tab from its Gtk3::Notebook
             $self->notebook->remove_page($self->notebook->page_num($tabObj->tabWidget));
             # Inform the textview object (if any) of its demise
             if ($tabObj->textViewObj) {
@@ -7064,8 +7033,8 @@
 
         # Called by $self->addTab, when a simple tab is currently visible
         #
-        # Converts the standalone textview object (a simple tab) into a new tab on a Gtk2::Notebook,
-        #   preserving the Gtk2::TextBuffer
+        # Converts the standalone textview object (a simple tab) into a new tab on a Gtk3::Notebook,
+        #   preserving the Gtk3::TextBuffer
         #
         # Expected arguments
         #   (none besides $self)
@@ -7095,7 +7064,7 @@
         # Remove the standalone textview object
         $axmud::CLIENT->desktopObj->removeWidget($self->packingBox2, $oldTabObj->packedObj);
 
-        # Add a Gtk2::Notebook in its place
+        # Add a Gtk3::Notebook in its place
         $notebook = $self->drawNotebook();
         if (! $notebook) {
 
@@ -7160,10 +7129,10 @@
 
     sub convertTab {
 
-        # Called by $self->removeSessionTab or ->removeTab when there's only a single Gtk2::Notebook
+        # Called by $self->removeSessionTab or ->removeTab when there's only a single Gtk3::Notebook
         #   tab left, and the initialisation setting specifies that a tab label shouldn't be visible
-        # Converts the Gtk2::Notebook containing a single remaining tab into a standalone textview
-        #   object, preserving its Gtk2::TextBuffer (a simple tab)
+        # Converts the Gtk3::Notebook containing a single remaining tab into a standalone textview
+        #   object, preserving its Gtk3::TextBuffer (a simple tab)
         #
         # Expected arguments
         #   (none besides $self)
@@ -7197,7 +7166,7 @@
             );
         }
 
-        # Remove the Gtk2::Notebook
+        # Remove the Gtk3::Notebook
         $axmud::CLIENT->desktopObj->removeWidget($self->packingBox2, $self->notebook);
 
         # v1.1.128 This is not necessary, and in fact messes up everything
@@ -7294,30 +7263,7 @@
 
             if (! $colourScheme || $tabObj->textViewObj->colourScheme eq $colourScheme) {
 
-                $packedObj = $tabObj->textViewObj->objUpdate($colourScheme);
-                if (defined $packedObj) {
-
-                    $axmud::CLIENT->desktopObj->removeWidget(
-                        $tabObj->packableObj,
-                        $tabObj->packedObj,
-                    );
-
-                    $tabObj->packableObj->pack_start($packedObj, TRUE, TRUE, 0);
-                    $tabObj->ivPoke('packedObj', $packedObj);
-                }
-            }
-        }
-
-        if (! $noDrawFlag) {
-
-            # (If we try to scroll the textviews before they've been packed, we get an uncomfortable
-            #   flash, so the scrolling function is called last)
-            $self->winObj->winShowAll($self->_objClass . '->updateColourScheme');
-            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->updateColourScheme');
-
-            foreach my $tabObj ($self->ivValues('tabObjHash')) {
-
-                $tabObj->textViewObj->scrollToLock();
+                $tabObj->textViewObj->objUpdate($colourScheme);
             }
         }
 
@@ -7375,26 +7321,7 @@
         # Apply the colour scheme
         foreach my $thisTabObj (@tabList) {
 
-            my $packedObj = $thisTabObj->textViewObj->objUpdate($colourScheme);
-            if (defined $packedObj) {
-
-                $axmud::CLIENT->desktopObj->removeWidget(
-                    $thisTabObj->packableObj,
-                    $thisTabObj->packedObj,
-                );
-
-                $thisTabObj->packableObj->pack_start($packedObj, TRUE, TRUE, 0);
-                $thisTabObj->ivPoke('packedObj', $packedObj);
-            }
-        }
-
-        # (If we try to scroll the textviews before they've been packed, we get an uncomfortable
-        #   flash, so the scrolling function is called last)
-        $self->winObj->winShowAll($self->_objClass . '->applyColourScheme');
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->applyColourScheme');
-        foreach my $tabObj (@tabList) {
-
-            $tabObj->textViewObj->scrollToLock();
+            $thisTabObj->textViewObj->objUpdate($colourScheme);
         }
 
         return 1;
@@ -7469,28 +7396,7 @@
         # Switch on monochrome mode for the specified tab(s)
         foreach my $thisTabObj (@tabList) {
 
-            my $packedObj
-                = $thisTabObj->textViewObj->setMonochromeMode($backgroundColour, $textColour);
-
-            if (defined $packedObj) {
-
-                $axmud::CLIENT->desktopObj->removeWidget(
-                    $thisTabObj->packableObj,
-                    $thisTabObj->packedObj,
-                );
-
-                $thisTabObj->packableObj->pack_start($packedObj, TRUE, TRUE, 0);
-                $thisTabObj->ivPoke('packedObj', $packedObj);
-            }
-        }
-
-        # (If we try to scroll the textviews before they've been packed, we get an uncomfortable
-        #   flash, so the scrolling function is called last)
-        $self->winObj->winShowAll($self->_objClass . '->applyMonochrome');
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->applyMonochrome');
-        foreach my $tabObj (@tabList) {
-
-            $tabObj->textViewObj->scrollToLock();
+            $thisTabObj->textViewObj->setMonochromeMode($backgroundColour, $textColour);
         }
 
         return 1;
@@ -7534,26 +7440,7 @@
         # Switch off monochrome mode for the specified tab(s)
         foreach my $thisTabObj (@tabList) {
 
-            my $packedObj = $thisTabObj->textViewObj->resetMonochromeMode();
-            if (defined $packedObj) {
-
-                $axmud::CLIENT->desktopObj->removeWidget(
-                    $thisTabObj->packableObj,
-                    $thisTabObj->packedObj,
-                );
-
-                $thisTabObj->packableObj->pack_start($packedObj, TRUE, TRUE, 0);
-                $thisTabObj->ivPoke('packedObj', $packedObj);
-            }
-        }
-
-        # (If we try to scroll the textviews before they've been packed, we get an uncomfortable
-        #   flash, so the scrolling function is called last)
-        $self->winObj->winShowAll($self->_objClass . '->removeMonochrome');
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->removeMonochrome');
-        foreach my $tabObj (@tabList) {
-
-            $tabObj->textViewObj->scrollToLock();
+            $thisTabObj->textViewObj->resetMonochromeMode();
         }
 
         return 1;
@@ -7626,8 +7513,8 @@
         #   'single' when the textview object is created with that mode set. Once the mode is
         #   changed (by this function), it cannot be restored to 'single' (by this function)
         #
-        # This change has been made because of Gtk2 performance issues, particularly with
-        #   Gtk2::TextViews with large buffers. In general, any pane in which split screen mode
+        # This change has been made because of Gtk3 performance issues, particularly with
+        #   Gtk3::TextViews with large buffers. In general, any pane in which split screen mode
         #   might be turned 'on' should probably create the textview object using the mode 'hidden'
         #   rather than 'single'
         #
@@ -7707,7 +7594,7 @@
 
         # Can be called by anything
         # Finds the tab object (GA::Obj::Tab) corresponding to a specified page in the
-        #   Gtk2::Notebook, when normal tabs (not simple tabs) are visible
+        #   Gtk3::Notebook, when normal tabs (not simple tabs) are visible
         # If there is a simple tab visible and the specified page is 0, return it
         #
         # Expected arguments
@@ -8107,7 +7994,7 @@
         # Called by GA::Obj::TextView->setupVPaned or by any other code
         # Returns the size of the area occupied by a tab in this pane object
         # If there is only a simple tab, it's the same size as the pane. If the pane object is
-        #   using a Gtk2::Notebook, it's the size of the notebook page
+        #   using a Gtk3::Notebook, it's the size of the notebook page
         #
         # Expected arguments
         #   (none besides $self)
@@ -8120,7 +8007,7 @@
 
         # Local variables
         my (
-            $tabObj,
+            $tabObj, $hashRef,
             @emptyList,
         );
 
@@ -8140,10 +8027,8 @@
 
         } else {
 
-            return (
-                $tabObj->packableObj->allocation->width,
-                $tabObj->packableObj->allocation->height,
-            );
+            $hashRef = $tabObj->packableObj->get_allocation;
+            return ($$hashRef{'width'}, $$hashRef{'height'});
         }
     }
 
@@ -8317,12 +8202,12 @@
         #   for example, tasks tend to call functions in GA::Generic::Task rather than functions
         #   inherited from GA::Generic::Win
         # In general, the main problem is using the window object's ->winWidget and ->winBox IVs. In
-        #   most windows, these IVs are set to the same value (the Gtk2::Window), but in
-        #   pseudo-windows, ->winWidget is set to the parent window's Gtk2::Window, and ->winBox is
-        #   set to this table object's ->packingBox, a Gtk2::VBox
-        # When you wants to do something to the Gtk2::Window in its capacity as a window (such as
+        #   most windows, these IVs are set to the same value (the Gtk3::Window), but in
+        #   pseudo-windows, ->winWidget is set to the parent window's Gtk3::Window, and ->winBox is
+        #   set to this table object's ->packingBox, a Gtk3::VBox
+        # When you wants to do something to the Gtk3::Window in its capacity as a window (such as
         #   minimise it or make it active), the code should use ->winWidget. When you want to do
-        #   something to the Gtk2::Window in its capacity as a container (such as add or remove
+        #   something to the Gtk3::Window in its capacity as a container (such as add or remove
         #   widgets), the code should use ->winBox
         #
         # Expected arguments
@@ -8338,7 +8223,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary table
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary table objects
         #
         # Optional arguments
@@ -8453,15 +8338,15 @@
             #   temporary table objects
             winObj                      => $winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be removed from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be removed from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -8480,8 +8365,8 @@
 
             # The container widget(s) for this table object; both IVs are always set to the same
             #   widget
-            packingBox                  => undef,       # Gtk2::VBox
-            packingBox2                 => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox
+            packingBox2                 => undef,       # Gtk3::VBox
 
             # Other IVs
             # ---------
@@ -8552,7 +8437,7 @@
         }
 
         # Create the packing box
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk2::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
 
         # Set the package name (for 'fixed' windows, $package is definitely set)
         if (! $package) {

@@ -1,4 +1,4 @@
-GETROOMTITLE$ ()
+Getroomtitle$ ()
  
    Synopsis:
       Returns the title of the automapper's current room

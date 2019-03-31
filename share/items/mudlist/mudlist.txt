@@ -1,4 +1,4 @@
-# Axmud list of all worlds, created Mon Dec 24, 2018
+# Axmud list of all worlds, created Sun Mar 31, 2019
 
 Aabahran, The Forsaken Lands
 aabahran
@@ -7,9 +7,9 @@ play.theforsakenlands.com
 0
 English
 
-Aadarian Realms
+Aadaria
 aadarian
-adr.godwars.net
+aadaria.net
 1111
 0
 English
@@ -88,6 +88,13 @@ Achaea, Dreams of Divine Lands
 achaea
 achaea.com
 23
+0
+English
+
+Acropolis: Revival
+acropolis
+173.230.158.91
+4000
 0
 English
 
@@ -186,6 +193,13 @@ Age of Heroes - Fire, Iron and Blood
 ageofheroes
 ianshirm.genesismuds.com
 2250
+0
+English
+
+Alternate Identities MUX
+aimux
+aimux.dune.net
+7277
 0
 English
 
@@ -305,6 +319,13 @@ AnimeMUD
 animemud
 167.88.124.142
 9000
+0
+English
+
+AnimeMUD 2
+animemud2
+167.88.124.142
+6900
 0
 English
 
@@ -513,6 +534,13 @@ English
 
 Asgardian Nightmare
 asgardian
+asgardiannightmare.ddns.net
+4000
+0
+English
+
+Asgardian Nightmare Turbo
+asgardianturbo
 wayynesgames.com
 2222
 0
@@ -644,6 +672,13 @@ redstreak.no-ip.org
 0
 English
 
+Azuria Online
+azuria
+azuria.online
+4555
+0
+English
+
 Before the Dawn
 b4dawn
 infiniteodysseys.com
@@ -728,10 +763,10 @@ baymoo.org
 0
 English
 
-Between Darkness and Light
-bdal
-spodzone.com
-1350
+Bayou
+bayou
+debayou.net
+4444
 0
 English
 
@@ -994,6 +1029,13 @@ chaosmud
 0
 English
 
+ChatMUD
+chatmud
+chatmud.com
+7777
+0
+English
+
 CheesyMUD
 cheesymud
 cheesymud.com
@@ -1012,6 +1054,13 @@ Chronicles 2: The Dark Ages
 chronicles
 dalazonen.com
 9009
+0
+English
+
+Legend of Chrystancia
+chrystancia
+godwars.net
+6500
 0
 English
 
@@ -1456,6 +1505,13 @@ dbinfinity.bounceme.net
 0
 English
 
+Dragonball Intergalactic Warriors
+dbinter
+mud.morchronium.com
+7777
+0
+English
+
 DragonBall: The New World
 dbnewworld
 mud.morchronium.com
@@ -1878,7 +1934,7 @@ English
 
 DuneMUD
 dunemud
-dunemud.com
+dunemud.net
 6789
 0
 English
@@ -2146,6 +2202,13 @@ Eternea
 eternea
 game.eternalescape.org
 4000
+0
+English
+
+EternityMUD
+eternitymud
+eternitymud.com
+23
 0
 English
 
@@ -2422,6 +2485,13 @@ forgotten
 0
 English
 
+Fossworld MUD
+fossworld
+86.151.189.224
+4000
+0
+English
+
 4Dimensions
 fourdims
 4dimensions.org
@@ -2674,6 +2744,13 @@ haelrahv.com
 0
 English
 
+Hakkard
+hakkard
+cerberus.devosmium.xyz
+5555
+0
+English
+
 Halcyon
 halcyon
 halcyon.bluecows.com
@@ -2919,6 +2996,13 @@ imperialdiku
 0
 English
 
+Imperial Expansion
+imperialexp
+mud.imperialexpansion.com
+4000
+0
+English
+
 Imperian: Sundered Heavens
 imperian
 imperian.com
@@ -3026,8 +3110,15 @@ English
 
 Islands
 islands
-islands.genesismuds.com
+play.islands-game.live
 3000
+0
+English
+
+Ithir MUSH
+ithirmush
+ithirmush.org
+4000
 0
 English
 
@@ -3332,6 +3423,13 @@ lostsouls.org
 0
 English
 
+Lost Time
+losttime
+the3beers.com
+5000
+0
+English
+
 Lostways BBS
 lostways
 lostwaysbbs.mooo.com
@@ -3434,6 +3532,13 @@ MahouMUSH
 mahoumush
 mahoumush.com
 7342
+0
+English
+
+MajorMUD on TDOD
+majortdod
+tdod.org
+23
 0
 English
 
@@ -3829,6 +3934,13 @@ arkadiamud.com.br
 0
 Portugues
 
+Mundo Sangre
+mundosangre
+mundosangre.com
+23
+0
+English
+
 M*U*S*H
 mushmush
 mush.pennmush.org
@@ -3976,13 +4088,6 @@ www.newhopemush.com
 0
 English
 
-New Moon
-newmoon
-newmoonmud.org
-7680
-0
-English
-
 Nightfall
 nightfall
 nightfall.org
@@ -4088,10 +4193,24 @@ oim.wolfpaw.net
 0
 English
 
+Omphalos
+omphalos
+omphalos.site
+4444
+0
+English
+
 Once Upon A MOO
 onceupon
 rupert.twyst.org
 7777
+0
+English
+
+Lands of Oneiro
+oneiro
+www.lands-of-oneiro.net
+6000
 0
 English
 
@@ -4184,6 +4303,13 @@ penultimate
 penultimatemush.com
 9500
 1
+English
+
+Penumbra
+penumbra
+mud.vanaheimstudios.com
+4002
+0
 English
 
 Perilous Realms
@@ -4295,6 +4421,13 @@ Primal Darkness
 prdarkness
 primaldarkness.com
 5000
+0
+English
+
+PrimulaMUD
+primula
+primula.genesismuds.com
+4400
 0
 English
 
@@ -4515,10 +4648,10 @@ omen.genesismuds.com
 0
 English
 
-Realms of Mysteria
+Realm of Mysteria
 romysteria
 mud.mysteria.dk
-4242
+3000
 0
 English
 
@@ -5859,6 +5992,13 @@ wiandwi.net
 0
 English
 
+Wildfire Cove
+wildfirecove
+wildfirecove.tk
+4201
+0
+English
+
 Winds of Time
 windsmud
 windsmud.com
@@ -6017,6 +6157,13 @@ Zee MUD
 zeemud
 mud.zeemud.org
 4000
+0
+English
+
+Zephyr MUD
+zephyrmud
+zephyr.pocketmud.com
+23
 0
 English
 

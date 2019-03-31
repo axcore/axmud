@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -118,11 +118,9 @@
             strikeFlag                  => FALSE,
             # If TRUE, a box is drawn around the text
             boxFlag                     => FALSE,
-            # The texts gravity, matching the corresponding Pango setting - 'south' is the right way
-            #   up (in English script), 'north' is upside-down and 'west'/'east' are rotated at 90
-            #   degrees
-            # NB Gravity is not yet implemented (or implementable) on the Gnome2::Canvas
-            gravity                     => 'south',
+            # The angle of rotation (in degrees). 0 represents normal text; acceptable values are
+            #   0-359
+            rotateAngle                 => 0,
         };
 
         # Bless the object into existence
@@ -160,7 +158,7 @@
         $self->ivPoke('underlineFlag', FALSE);
         $self->ivPoke('strikeFlag', FALSE);
         $self->ivPoke('boxFlag', FALSE);
-        $self->ivUndef('gravity');
+        $self->ivPoke('rotateAngle', 0);
 
         return 1;
     }
@@ -219,8 +217,8 @@
         { $_[0]->{strikeFlag} }
     sub boxFlag
         { $_[0]->{boxFlag} }
-    sub gravity
-        { $_[0]->{gravity} }
+    sub rotateAngle
+        { $_[0]->{rotateAngle} }
 }
 
 { package Games::Axmud::Obj::MapLabelStyle;
@@ -346,11 +344,9 @@
             strikeFlag                  => FALSE,
             # If TRUE, a box is drawn around the text
             boxFlag                     => FALSE,
-            # The texts gravity, matching the corresponding Pango setting - 'south' is the right way
-            #   up (in English script), 'north' is upside-down and 'west'/'east' are rotated at 90
-            #   degrees
-            # NB Gravity is not yet implemented (or implementable) on the Gnome2::Canvas
-            gravity                     => 'south',
+            # The angle of rotation (in degrees). 0 represents normal text; acceptable values are
+            #   0-359
+            rotateAngle                 => 0,
         };
 
         # Bless the object into existence
@@ -386,8 +382,8 @@
         { $_[0]->{strikeFlag} }
     sub boxFlag
         { $_[0]->{boxFlag} }
-    sub gravity
-        { $_[0]->{gravity} }
+    sub rotateAngle
+        { $_[0]->{rotateAngle} }
 }
 
 # Package must return a true value

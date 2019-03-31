@@ -1,4 +1,4 @@
-ADDLABEL (string, x, y, z)
+Addlabel (string, x, y, z)
         
    Synopsis:
       Adds a new label near the automapper's current room
@@ -13,11 +13,11 @@ ADDLABEL (string, x, y, z)
          returned.    
 
    Examples:
-      ADDLABEL("text", 1, 2, 0)    >> Adds a label one block below and two
+      Addlabel ("text", 1, 2, 0)    >> Adds a label one block below and two
                                        blocks to the right of the current room
-      ADDLABEL("text", -3, -4, 0)  >> Adds a label three blocks above and four
+      Addlabel ("text", -3, -4, 0)  >> Adds a label three blocks above and four
                                        blocks to the left of the current room
-      ADDLABEL("text", 0, 0, 1)    >> Adds a label one level higher than the
+      Addlabel ("text", 0, 0, 1)    >> Adds a label one level higher than the
                                        current room
-      ADDLABEL("text", 0, 0, -2)   >> Adds a label two levels lower than the
+      Addlabel ("text", 0, 0, -2)   >> Adds a label two levels lower than the
                                        current room

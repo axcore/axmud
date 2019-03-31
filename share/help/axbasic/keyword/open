@@ -64,7 +64,7 @@ OPEN #channel: NAME expression [, ORGANIZATION expression ]
       INPUT #1: question$
       INPUT #1: answer$
       CLOSE #1
-      PRINT $question, $answer
+      PRINT question$, answer$
       END
 
       ! Write to a file, erasing any previous contents
@@ -77,6 +77,6 @@ OPEN #channel: NAME expression [, ORGANIZATION expression ]
       END
 
       ! A subroutine that opens a channel using expressions, not keywords
-      SUB OpenFile($file$, cr$, acc$) 
+      SUB OpenFile(file$, cr$, acc$) 
          OPEN #1: NAME file$, CREATE cr$, ACCESS acc$
       END SUB 

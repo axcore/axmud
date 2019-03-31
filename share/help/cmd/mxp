@@ -14,7 +14,9 @@ mxp / mxp                     Manages the Mud Xtension Protocol (MXP)
       ;mxp -n                 Allow MXP to use frames inside 'main' windows
       ;mxp -c                 Allow MXP to crosslink to new servers
       ;mxp -r                 Allow Locator task to use MXP room data
- 
+      ;mxp -k                 Allow MXP to use (some) illegal keywords
+                                 (not recommended)
+       
    Notes:
       The Mud Xtension Protocol (MXP) allows a world more control over the way
          text is displayed in the client. Typically it's used to change colours

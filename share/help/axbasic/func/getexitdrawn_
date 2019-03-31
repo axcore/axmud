@@ -1,4 +1,4 @@
-GETEXITDRAWN$ (number)
+Getexitdrawn$ (number)
         
    Synopsis:
       Returns the direction in which an exit is drawn on the map
@@ -11,6 +11,6 @@ GETEXITDRAWN$ (number)
       If there is no current room, if the numbered exit doesn't exist or if it 
          hasn't been allocated a primary direction (not even a temporary one),
          returns an empty string.
-      To get the number of exits in the current room, see the GETROOMEXITS
+      To get the number of exits in the current room, see the Getroomexits ()
          function.
-      To get the exit's actual direction, see the GETEXIT$ function.
+      To get the exit's actual direction, see the Getexit$ () function.

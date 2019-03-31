@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -100,8 +100,6 @@
         package Language::Axbasic::Statement::peekmatch;
         package Language::Axbasic::Statement::peeknumber;
         package Language::Axbasic::Statement::peekpairs;
-        package Language::Axbasic::Statement::peekpop;
-        package Language::Axbasic::Statement::peekshift;
         package Language::Axbasic::Statement::peekshow;
         package Language::Axbasic::Statement::peekvalues;
         package Language::Axbasic::Statement::perl;
@@ -120,14 +118,17 @@
         package Language::Axbasic::Statement::pokeminus;
         package Language::Axbasic::Statement::pokemultiply;
         package Language::Axbasic::Statement::pokeplus;
+        package Language::Axbasic::Statement::pokepop;
         package Language::Axbasic::Statement::pokepush;
         package Language::Axbasic::Statement::pokereplace;
         package Language::Axbasic::Statement::pokeset;
+        package Language::Axbasic::Statement::pokeshift;
         package Language::Axbasic::Statement::poketrue;
         package Language::Axbasic::Statement::pokeundef;
         package Language::Axbasic::Statement::pokeunshift;
         package Language::Axbasic::Statement::print;
         package Language::Axbasic::Statement::profile;
+        package Language::Axbasic::Statement::randomize;
         package Language::Axbasic::Statement::read;
         package Language::Axbasic::Statement::redim;
         package Language::Axbasic::Statement::relay;
@@ -471,7 +472,7 @@
         my ($self, $forceFlag, $extraFlag, $check) = @_;
 
         # Local variables
-        my ($token, $arrayFlag, $varName, $varObj, $result, $expression, $extraExp);
+        my ($token, $arrayFlag, $varName, $varObj, $expression, $extraExp);
 
         # Check for improper arguments
         if (defined $check) {
@@ -534,8 +535,7 @@
         }
 
         # Extract the assignment operator
-        $result = $self->tokenGroupObj->shiftTokenIfCategory('assignment_operator');
-        if (! defined $result) {
+        if (! defined $self->tokenGroupObj->shiftTokenIfCategory('assignment_operator')) {
 
             return $self->scriptObj->setError(
                 'missing_assignment_operator',
@@ -2646,6 +2646,7 @@
         Language::Axbasic::Statement
     );
 
+    # CALL subroutine-name
     # CALL subroutine-name ( [ expression [ , expression ... ] ] )
 
     ##################
@@ -2712,10 +2713,13 @@
             );
         }
 
-        # Get an argument list
+        # Get an argument list. The TRUE argument means that an empty token group is treated
+        #   the same an empty arglist, in this case (e.g. 'CALL hello ()' and 'CALL hello' are both
+        #   acceptable)
         $argListObj = Language::Axbasic::Expression::ArgList->new(
             $self->scriptObj,
             $self->tokenGroupObj,
+            TRUE,
         );
 
         if (! defined $argListObj) {
@@ -3874,7 +3878,7 @@
 
         # Local variables
         my (
-            $nameExp, $name, $profile, $result,
+            $nameExp, $name, $profile,
             @interfaceList, @newList,
         );
 
@@ -3897,13 +3901,12 @@
         }
 
         # Send the command
-        $result = $self->scriptObj->session->pseudoCmd(
-            'deletealias <' . $name . '> -d ' . $profile,
-            $self->scriptObj->pseudoCmdMode,
-        );
-
-        if ($result) {
-
+        if (
+            $self->scriptObj->session->pseudoCmd(
+                'deletealias <' . $name . '> -d ' . $profile,
+                $self->scriptObj->pseudoCmdMode,
+            )
+        ) {
             # Update the LA::Script's IVs
             @interfaceList = $self->scriptObj->indepInterfaceList;
             if (@interfaceList) {
@@ -4150,7 +4153,7 @@
 
         # Local variables
         my (
-            $nameExp, $name, $profile, $result,
+            $nameExp, $name, $profile,
             @interfaceList, @newList,
         );
 
@@ -4173,13 +4176,12 @@
         }
 
         # Send the command
-        $result = $self->scriptObj->session->pseudoCmd(
-            'deletehook <' . $name . '> -d ' . $profile,
-            $self->scriptObj->pseudoCmdMode,
-        );
-
-        if ($result) {
-
+        if (
+            $self->scriptObj->session->pseudoCmd(
+                'deletehook <' . $name . '> -d ' . $profile,
+                $self->scriptObj->pseudoCmdMode,
+            )
+        ) {
             # Update the LA::Script's IVs
             @interfaceList = $self->scriptObj->indepInterfaceList;
             if (@interfaceList) {
@@ -4455,7 +4457,7 @@
 
         # Local variables
         my (
-            $nameExp, $name, $profile, $result,
+            $nameExp, $name, $profile,
             @interfaceList, @newList,
         );
 
@@ -4478,13 +4480,12 @@
         }
 
         # Send the command
-        $result = $self->scriptObj->session->pseudoCmd(
-            'deletemacro <' . $name . '> -d ' . $profile,
-            $self->scriptObj->pseudoCmdMode,
-        );
-
-        if ($result) {
-
+        if (
+            $self->scriptObj->session->pseudoCmd(
+                'deletemacro <' . $name . '> -d ' . $profile,
+                $self->scriptObj->pseudoCmdMode,
+            )
+        ) {
             # Update the LA::Script's IVs
             @interfaceList = $self->scriptObj->indepInterfaceList;
             if (@interfaceList) {
@@ -4731,7 +4732,7 @@
 
         # Local variables
         my (
-            $nameExp, $name, $profile, $result,
+            $nameExp, $name, $profile,
             @interfaceList, @newList,
         );
 
@@ -4754,13 +4755,12 @@
         }
 
         # Send the command
-        $result = $self->scriptObj->session->pseudoCmd(
-            'deletetimer <' . $name . '> -d ' . $profile,
-            $self->scriptObj->pseudoCmdMode,
-        );
-
-        if ($result) {
-
+        if (
+            $self->scriptObj->session->pseudoCmd(
+                'deletetimer <' . $name . '> -d ' . $profile,
+                $self->scriptObj->pseudoCmdMode,
+            )
+        ) {
             # Update the LA::Script's IVs
             @interfaceList = $self->scriptObj->indepInterfaceList;
             if (@interfaceList) {
@@ -4885,7 +4885,7 @@
 
         # Local variables
         my (
-            $nameExp, $name, $profile, $result,
+            $nameExp, $name, $profile,
             @interfaceList, @newList,
         );
 
@@ -4908,13 +4908,12 @@
         }
 
         # Send the command
-        $result = $self->scriptObj->session->pseudoCmd(
-            'deletetrigger <' . $name . '> -d ' . $profile,
-            $self->scriptObj->pseudoCmdMode,
-        );
-
-        if ($result) {
-
+        if (
+            $self->scriptObj->session->pseudoCmd(
+                'deletetrigger <' . $name . '> -d ' . $profile,
+                $self->scriptObj->pseudoCmdMode,
+            )
+        ) {
             # Update the LA::Script's IVs
             @interfaceList = $self->scriptObj->indepInterfaceList;
             if (@interfaceList) {
@@ -6705,7 +6704,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($token, $argListObj, $lvalue, $result);
+        my ($token, $argListObj, $lvalue);
 
         # Check for improper arguments
         if (defined $check) {
@@ -6748,8 +6747,7 @@
         $self->scriptObj->set_declareMode('default');
 
         # Check there is nothing else (except for the statement separator, :)
-        $result = $self->tokenGroupObj->testStatementEnd();
-        if (! defined $result) {
+        if (! defined $self->tokenGroupObj->testStatementEnd()) {
 
             return $self->scriptObj->setError(
                 'unexpected_keywords,_operators_or_expressions',
@@ -7311,7 +7309,7 @@
             }
 
             # Make sure we don't do the 'else' after the 'then'!
-            $previousStatement->set_nextStatement('nextStatement', undef);
+            $previousStatement->set_nextStatement(undef);
 
             # If there is anything left in $self->tokenGroup, it's the 'else' clause
             if (defined $self->tokenGroupObj->shiftMatchingToken('else')) {
@@ -7710,6 +7708,11 @@
 
                 $lvalue = $lvalueList[$count];
                 $varObj = $lvalue->variable;
+                if (! $varObj) {
+
+                    # Subscript out of bounds, or similar error, has already been set
+                    return undef;
+                }
 
                 # Read a line from the file
                 $line = <$fileHandle>;
@@ -7796,6 +7799,11 @@
 
                     $lvalue = $lvalueList[$count];
                     $varObj = $lvalue->variable;
+                    if (! $varObj) {
+
+                        # Subscript out of bounds, or similar error, has already been set
+                        return undef;
+                    }
 
                     if ($prompt) {
                         $msg = $prompt . '?';
@@ -8006,9 +8014,7 @@
             $variable = $lvalue->variable;
             if (! defined $variable) {
 
-                # $variable might be 'undef' if we use a script like
-                #   DIM var$ (5)
-                #   LET var$ (6) = "hello";
+                # Subscript out of bounds, or similar error, has already been set
                 return undef;
             }
 
@@ -8054,7 +8060,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($token, $argListObj, $result);
+        my ($token, $argListObj);
 
         # Check for improper arguments
         if (defined $check) {
@@ -8097,8 +8103,7 @@
         $self->scriptObj->set_declareMode('default');
 
         # Check there is nothing else (except for the statement separator, :)
-        $result = $self->tokenGroupObj->testStatementEnd();
-        if (! defined $result) {
+        if (! defined $self->tokenGroupObj->testStatementEnd()) {
 
             return $self->scriptObj->setError(
                 'unexpected_keywords,_operators_or_expressions',
@@ -8719,7 +8724,7 @@
         $var->set($value);
 
         # Termination test
-        if (! ($step > 0 && $value > $term) || ($step < 0 && $value < $term)) {
+        if (($step > 0 && $value <= $term) || ($step < 0 && $value >= $term)) {
 
             # Perform another iteration of the loop. Go to the statement immediately after the
             #   corresponding FOR statement
@@ -9337,7 +9342,7 @@
 
         # Check that there aren't already too many channels open. True BASIC specifies a limit of
         #   25 simultaneous channels; same limit used by Axbasic
-        $channelCount = $self->scriptObj->ivPairs('fineChannelHash');
+        $channelCount = $self->scriptObj->ivPairs('fileChannelHash');
         if ($channelCount >= 25) {
 
             return $self->scriptObj->setError(
@@ -9694,11 +9699,11 @@
 
     # OPTION ANGLE DEGREES
     # OPTION ANGLE RADIANS
-    # OPTION DIVERT
     # OPTION NEEDTASK
     # OPTION NOLET
     # OPTION PERSIST
     # OPTION PSEUDO expression
+    # OPTION REDIRECT
     # OPTION REQUIRE expression
     # OPTION TYPO
 
@@ -9764,24 +9769,6 @@
                     'syntax_error',
                     $self->_objClass . '->parse',
                 );
-            }
-        }
-
-        # OPTION DIVERT statement
-        $token = $self->tokenGroupObj->shiftMatchingToken('divert');
-        if (defined $token) {
-
-            if (! $self->tokenGroupObj->testStatementEnd()) {
-
-                return $self->scriptObj->setError(
-                    'unexpected_keywords,_operators_or_expressions',
-                    $self->_objClass . '->parse',
-                );
-
-            } else {
-
-                $self->scriptObj->add_optionStatement('divert', TRUE);
-                return 1;
             }
         }
 
@@ -9894,6 +9881,24 @@
             $self->scriptObj->set_pseudoCmdMode($value);
 
             return 1;
+        }
+
+        # OPTION REDIRECT statement
+        $token = $self->tokenGroupObj->shiftMatchingToken('redirect');
+        if (defined $token) {
+
+            if (! $self->tokenGroupObj->testStatementEnd()) {
+
+                return $self->scriptObj->setError(
+                    'unexpected_keywords,_operators_or_expressions',
+                    $self->_objClass . '->parse',
+                );
+
+            } else {
+
+                $self->scriptObj->add_optionStatement('redirect', TRUE);
+                return 1;
+            }
         }
 
         # OPTION REQUIRE Arith-Exp statement
@@ -12274,308 +12279,6 @@
 
             # Import the list/hash into an Axbasic array, resizing it as necessary
             $self->importAsArray($varObj, scalar(keys %hash));
-        }
-
-        # Implementation complete
-        return 1;
-    }
-}
-
-{ package Language::Axbasic::Statement::peekpop;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    @Language::Axbasic::Statement::peekpop::ISA = qw(
-        Language::Axbasic
-        Language::Axbasic::Statement
-    );
-
-    # PEEKPOP variable-name = axmud-object-property
-    # PEEKPOP ARRAY variable-name = axmud-object-property
-
-    ##################
-    # Methods
-
-    sub parse {
-
-        # Called by LA::Line->parse directly after a call to LA::Statement->new
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if there is an error
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
-        }
-
-        # Extract the standard PEEK... tokens. If the extraction is successful, they are stored in
-        #   $self->parseDataHash, ready for $self->implement to access
-        if (! $self->parsePeek()) {
-
-            # ($self->scriptObj->setError has already been called)
-            return undef;
-        }
-
-        # Parsing complete
-        return 1;
-    }
-
-    sub implement {
-
-        # Called by LA::Line->implement directly after a call to $self->parse
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if there is an error
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            # Standard
-            $parseArrayFlag, $basicVarName, $expression, $expValue, $successFlag, $blessed, $ivName,
-            $var, $objFlag, $privFlag, $scalar, $varObj,
-            @array,
-            # Custom (set after $varObj is set)
-            $popValue,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
-        }
-
-        # Get the values stored by $self->parse
-        $parseArrayFlag = $self->ivShow('parseDataHash', 'array_flag');
-        $basicVarName = $self->ivShow('parseDataHash', 'var_name');
-        $expression = $self->ivShow('parseDataHash', 'expression');
-
-        # Evaluate the expression to get the Axmud internal variable, e.g. "current.world.name"
-        $expValue = $expression->evaluate();
-        # Process the string representing the Axmud internal variable
-        ($successFlag, $blessed, $ivName, $var, $objFlag, $privFlag)
-            = $self->scriptObj->session->parsePeekPoke($expValue);
-        if (! $successFlag || ! $blessed || ! $ivName || $privFlag) {
-
-            return $self->scriptObj->setError(
-                'PEEKPOP_operation_failure',
-                $self->_objClass . '->implement',
-            );
-        }
-
-        # Import the Axmud internal variable, setting $scalar if $string refers to a scalar value,
-        #   or @array if $string refers to a list or hash value
-        if (! $objFlag) {
-
-            # This statement only accepts Perl lists
-            if (defined $var && ref($var) eq 'ARRAY') {
-
-                @array = @$var;
-
-            } else {
-
-                return $self->scriptObj->setError(
-                    'PEEKPOP_operation_expects_list',
-                    $self->_objClass . '->implement',
-                );
-            }
-
-        } else {
-
-            return $self->scriptObj->setError(
-                'PEEKPOP_cannot_import_object',
-                $self->_objClass . '->implement',
-            );
-        }
-
-        # Look up the LA::Variable
-        $varObj = $self->fetchVar('PEEKPOP', $basicVarName, $parseArrayFlag);
-        if (! $varObj) {
-
-            # (self->scriptObj->setError already called)
-            return undef;
-        }
-
-        # Now we can set the variable to PEEKPOP's return value. If the list is empty, we use the
-        #   value 'undef' (which is converted by the call to ->importAsScalar or ->importAsList)
-        $popValue = $blessed->ivPop($ivName);
-
-        if (! $parseArrayFlag) {
-
-            # Import the scalar into an Axbasic scalar variable, converting Perl 'undef' as
-            #   necessary
-            $self->importAsScalar($varObj, $popValue);
-
-        } else {
-
-            # Import the list/hash into an Axbasic array, resizing it as necessary
-            $self->importAsArray($varObj, $popValue);
-        }
-
-        # Implementation complete
-        return 1;
-    }
-}
-
-{ package Language::Axbasic::Statement::peekshift;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    @Language::Axbasic::Statement::peekshift::ISA = qw(
-        Language::Axbasic
-        Language::Axbasic::Statement
-    );
-
-    # PEEKSHIFT variable-name = axmud-object-property
-    # PEEKSHIFT ARRAY variable-name = axmud-object-property
-
-    ##################
-    # Methods
-
-    sub parse {
-
-        # Called by LA::Line->parse directly after a call to LA::Statement->new
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if there is an error
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
-        }
-
-        # Extract the standard PEEK... tokens. If the extraction is successful, they are stored in
-        #   $self->parseDataHash, ready for $self->implement to access
-        if (! $self->parsePeek()) {
-
-            # ($self->scriptObj->setError has already been called)
-            return undef;
-        }
-
-        # Parsing complete
-        return 1;
-    }
-
-    sub implement {
-
-        # Called by LA::Line->implement directly after a call to $self->parse
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if there is an error
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            # Standard
-            $parseArrayFlag, $basicVarName, $expression, $expValue, $successFlag, $blessed, $ivName,
-            $var, $objFlag, $privFlag, $scalar, $varObj,
-            @array,
-            # Custom (set after $varObj is set)
-            $shiftValue,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
-        }
-
-        # Get the values stored by $self->parse
-        $parseArrayFlag = $self->ivShow('parseDataHash', 'array_flag');
-        $basicVarName = $self->ivShow('parseDataHash', 'var_name');
-        $expression = $self->ivShow('parseDataHash', 'expression');
-
-        # Evaluate the expression to get the Axmud internal variable, e.g. "current.world.name"
-        $expValue = $expression->evaluate();
-        # Process the string representing the Axmud internal variable
-        ($successFlag, $blessed, $ivName, $var, $objFlag, $privFlag)
-            = $self->scriptObj->session->parsePeekPoke($expValue);
-        if (! $successFlag || ! $blessed || ! $ivName || $privFlag) {
-
-            return $self->scriptObj->setError(
-                'PEEKSHIFT_operation_failure',
-                $self->_objClass . '->implement',
-            );
-        }
-
-        # Import the Axmud internal variable, setting $scalar if $string refers to a scalar value,
-        #   or @array if $string refers to a list or hash value
-        if (! $objFlag) {
-
-            # This statement only accepts Perl lists
-            if (defined $var && ref($var) eq 'ARRAY') {
-
-                @array = @$var;
-
-            } else {
-
-                return $self->scriptObj->setError(
-                    'PEEKSHIFT_operation_expects_list',
-                    $self->_objClass . '->implement',
-                );
-            }
-
-        } else {
-
-            return $self->scriptObj->setError(
-                'PEEKSHIFT_cannot_import_object',
-                $self->_objClass . '->implement',
-            );
-        }
-
-        # Look up the LA::Variable
-        $varObj = $self->fetchVar('PEEKSHIFT', $basicVarName, $parseArrayFlag);
-        if (! $varObj) {
-
-            # (self->scriptObj->setError already called)
-            return undef;
-        }
-
-        # Now we can set the variable to PEEKSHIFT's return value. If the list is empty, we use the
-        #   value 'undef' (which is converted by the call to ->importAsScalar or ->importAsList)
-        $shiftValue = $blessed->ivShift($ivName);
-
-        if (! $parseArrayFlag) {
-
-            # Import the scalar into an Axbasic scalar variable, converting Perl 'undef' as
-            #   necessary
-            $self->importAsScalar($varObj, $shiftValue);
-
-        } else {
-
-            # Import the list/hash into an Axbasic array, resizing it as necessary
-            $self->importAsArray($varObj, $shiftValue);
         }
 
         # Implementation complete
@@ -15109,6 +14812,158 @@
     }
 }
 
+{ package Language::Axbasic::Statement::pokepop;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::pokepop::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # POKEPOP variable-name = axmud-object-property
+    # POKEPOP ARRAY variable-name = axmud-object-property
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract the standard PEEK... tokens. If the extraction is successful, they are stored in
+        #   $self->parseDataHash, ready for $self->implement to access
+        # (NB POKEPOP is closer in format to a PEEK... statement, so we don't call ->parsePoke() )
+        if (! $self->parsePeek()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            # Standard
+            $parseArrayFlag, $basicVarName, $expression, $expValue, $successFlag, $blessed, $ivName,
+            $var, $objFlag, $privFlag, $scalar, $varObj,
+            @array,
+            # Custom (set after $varObj is set)
+            $popValue,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Get the values stored by $self->parse
+        $parseArrayFlag = $self->ivShow('parseDataHash', 'array_flag');
+        $basicVarName = $self->ivShow('parseDataHash', 'var_name');
+        $expression = $self->ivShow('parseDataHash', 'expression');
+
+        # Evaluate the expression to get the Axmud internal variable, e.g. "current.world.name"
+        $expValue = $expression->evaluate();
+        # Process the string representing the Axmud internal variable
+        ($successFlag, $blessed, $ivName, $var, $objFlag, $privFlag)
+            = $self->scriptObj->session->parsePeekPoke($expValue);
+        if (! $successFlag || ! $blessed || ! $ivName || $privFlag) {
+
+            return $self->scriptObj->setError(
+                'POKEPOP_operation_failure',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Import the Axmud internal variable, setting $scalar if $string refers to a scalar value,
+        #   or @array if $string refers to a list or hash value
+        if (! $objFlag) {
+
+            # This statement only accepts Perl lists
+            if (defined $var && ref($var) eq 'ARRAY') {
+
+                @array = @$var;
+
+            } else {
+
+                return $self->scriptObj->setError(
+                    'POKEPOP_operation_expects_list',
+                    $self->_objClass . '->implement',
+                );
+            }
+
+        } else {
+
+            return $self->scriptObj->setError(
+                'POKEPOP_cannot_import_object',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Look up the LA::Variable
+        $varObj = $self->fetchVar('POKEPOP', $basicVarName, $parseArrayFlag);
+        if (! $varObj) {
+
+            # (self->scriptObj->setError already called)
+            return undef;
+        }
+
+        # Now we can set the variable to POKEPOP's return value. If the list is empty, we use the
+        #   value 'undef' (which is converted by the call to ->importAsScalar or ->importAsList)
+        $popValue = $blessed->ivPop($ivName);
+
+        if (! $parseArrayFlag) {
+
+            # Import the scalar into an Axbasic scalar variable, converting Perl 'undef' as
+            #   necessary
+            $self->importAsScalar($varObj, $popValue);
+
+        } else {
+
+            # Import the list/hash into an Axbasic array, resizing it as necessary
+            $self->importAsArray($varObj, $popValue);
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
 { package Language::Axbasic::Statement::pokepush;
 
     use strict;
@@ -15500,6 +15355,158 @@
         # Perform the POKESET operation. If the minimum number of expressions was specified, $value
         #   is 'undef'
         $blessed->ivSet($ivName, $value);
+
+        # Implementation complete
+        return 1;
+    }
+}
+
+{ package Language::Axbasic::Statement::pokeshift;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::pokeshift::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # POKESHIFT variable-name = axmud-object-property
+    # POKESHIFT ARRAY variable-name = axmud-object-property
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract the standard PEEK... tokens. If the extraction is successful, they are stored in
+        #   $self->parseDataHash, ready for $self->implement to access
+        # (NB POKESHIFT is closer in format to a PEEK... statement, so we don't call ->parsePoke() )
+        if (! $self->parsePeek()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            # Standard
+            $parseArrayFlag, $basicVarName, $expression, $expValue, $successFlag, $blessed, $ivName,
+            $var, $objFlag, $privFlag, $scalar, $varObj,
+            @array,
+            # Custom (set after $varObj is set)
+            $shiftValue,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Get the values stored by $self->parse
+        $parseArrayFlag = $self->ivShow('parseDataHash', 'array_flag');
+        $basicVarName = $self->ivShow('parseDataHash', 'var_name');
+        $expression = $self->ivShow('parseDataHash', 'expression');
+
+        # Evaluate the expression to get the Axmud internal variable, e.g. "current.world.name"
+        $expValue = $expression->evaluate();
+        # Process the string representing the Axmud internal variable
+        ($successFlag, $blessed, $ivName, $var, $objFlag, $privFlag)
+            = $self->scriptObj->session->parsePeekPoke($expValue);
+        if (! $successFlag || ! $blessed || ! $ivName || $privFlag) {
+
+            return $self->scriptObj->setError(
+                'POKESHIFT_operation_failure',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Import the Axmud internal variable, setting $scalar if $string refers to a scalar value,
+        #   or @array if $string refers to a list or hash value
+        if (! $objFlag) {
+
+            # This statement only accepts Perl lists
+            if (defined $var && ref($var) eq 'ARRAY') {
+
+                @array = @$var;
+
+            } else {
+
+                return $self->scriptObj->setError(
+                    'POKESHIFT_operation_expects_list',
+                    $self->_objClass . '->implement',
+                );
+            }
+
+        } else {
+
+            return $self->scriptObj->setError(
+                'POKESHIFT_cannot_import_object',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Look up the LA::Variable
+        $varObj = $self->fetchVar('POKESHIFT', $basicVarName, $parseArrayFlag);
+        if (! $varObj) {
+
+            # (self->scriptObj->setError already called)
+            return undef;
+        }
+
+        # Now we can set the variable to POKESHIFT's return value. If the list is empty, we use the
+        #   value 'undef' (which is converted by the call to ->importAsScalar or ->importAsList)
+        $shiftValue = $blessed->ivShift($ivName);
+
+        if (! $parseArrayFlag) {
+
+            # Import the scalar into an Axbasic scalar variable, converting Perl 'undef' as
+            #   necessary
+            $self->importAsScalar($varObj, $shiftValue);
+
+        } else {
+
+            # Import the list/hash into an Axbasic array, resizing it as necessary
+            $self->importAsArray($varObj, $shiftValue);
+        }
 
         # Implementation complete
         return 1;
@@ -16084,7 +16091,7 @@
 
             while (@printList) {
 
-                my ($expression, $endChar, $number, $string);
+                my ($expression, $endChar, $string, $number);
 
                 $expression = shift @printList;
                 $endChar = shift @printList;
@@ -16133,7 +16140,7 @@
             # Otherwise, display the expressions
             while (@printList) {
 
-                my ($expression, $endChar, $string, $number);
+                my ($expression, $endChar, $string, $before, $after);
 
                 $expression = shift @printList;
                 $endChar = shift @printList;
@@ -16155,13 +16162,22 @@
                 }
 
                 # Display the expressions in the 'main' window (unless $self->forcedWinFlag is set,
-                #   in which case the output is diverted to the task window)
+                #   in which case the output is redirected to the task window)
 
                 # Handle the end character (comma or semicolon)
                 if ($endChar eq ',') {
 
-                    $number = 14 - ($self->scriptObj->column % 14);
-                    $string .= (' ' x $number);
+                    $after = 14 - (length($string) % 14);
+                    if ($after < 14) {
+
+                        $string .= ' ' x $after;
+                    }
+
+                    $before = 14 - ($self->scriptObj->column % 14);
+                    if ($before < 14) {
+
+                        $string = (' ' x $before) . $string;
+                    }
 
                     # Display the string without a trailing newline character and adjust the column
                     #   accordingly
@@ -16183,7 +16199,7 @@
                         $session->writeText($string, 'echo');
                     }
 
-                    $self->scriptObj->set_column($self->scriptObj->column + $number);
+                    $self->scriptObj->set_column($self->scriptObj->column + length($string));
 
                 } elsif ($endChar eq ';') {
 
@@ -16224,6 +16240,9 @@
                 }
             }
         }
+
+        # Make sure the text is visible immediately
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->implement');
 
         # Implementation complete
         return 1;
@@ -16359,6 +16378,62 @@
     }
 }
 
+{ package Language::Axbasic::Statement::randomize;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::randomize::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # RANDOMIZE
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($expression);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # RANDOMIZE statements always appear on their own
+        if (! $self->tokenGroupObj->testStatementEnd()) {
+
+            return $self->scriptObj->setError(
+                'unexpected_keywords,_operators_or_expressions',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+#   sub implement {}        # ->implement method from LA::Statement inherited
+}
+
 { package Language::Axbasic::Statement::read;
 
     use strict;
@@ -16451,6 +16526,12 @@
             my ($var, $data, $value);
 
             $var = $lvalue->variable;
+            if (! $var) {
+
+                # Subscript out of bounds, or similar error, has already been set
+                return undef;
+            }
+
             $data = $self->scriptObj->shift_readDataList();
 
             if (! defined $data) {
@@ -19298,8 +19379,12 @@
         Language::Axbasic::Statement
     );
 
-    # SUB STRING subroutine-name ( [ arg-list ] )
-    # SUB NUMERIC subroutine-name ( [ arg-list ] )
+    # SUB NUMERIC subroutine-name
+    # SUB NUMERIC subroutine-name ( [ parameter-list ] )
+    # SUB subroutine-name
+    # SUB subroutine-name ( [ parameter-list ] )
+    # SUB STRING subroutine-name
+    # SUB STRING subroutine-name ( [ parameter-list ] )
 
     ##################
     # Methods
@@ -19318,7 +19403,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($subExpression, $result, $type, $subObj, $expression);
+        my ($subExpression, $type, $subObj, $expression);
 
         # Check for improper arguments
         if (defined $check) {
@@ -19336,26 +19421,15 @@
         }
 
         # Look for the keywords NUMERIC or STRING, which define what type of return value the
-        #   subroutine will produce
-        $result = $self->tokenGroupObj->shiftMatchingToken('numeric');
-        if (defined $result) {
+        #   subroutine will produce. If neither occurs, the subroutine returns a numeric value
+        if (defined $self->tokenGroupObj->shiftMatchingToken('string')) {
 
-            $type = 'numeric';
+            $type = 'string';
 
         } else {
 
-            $result = $self->tokenGroupObj->shiftMatchingToken('string');
-            if (defined $result) {
-
-                $type = 'string';
-
-            } else {
-
-                return $self->scriptObj->setError(
-                    'syntax_error',
-                    $self->_objClass . '->parse',
-                );
-            }
+            $self->tokenGroupObj->shiftMatchingToken('numeric');
+            $type = 'numeric';
         }
 
         # Temporarily set the IV that allows undeclared variables to be created
@@ -19391,8 +19465,7 @@
 
         # Check that there is nothing after the list of arguments (except for the statement
         #   separator, :)
-        $result = $self->tokenGroupObj->testStatementEnd();
-        if (! defined $result) {
+        if (! defined $self->tokenGroupObj->testStatementEnd()) {
 
             return $self->scriptObj->setError(
                 'unexpected_keywords,_operators_or_expressions',
@@ -19592,9 +19665,9 @@
 
             # Write to the window. If $string is an empty string, restore the original title
             if ($string) {
-                $self->scriptObj->parentTask->resetTaskWinTitle($string);
+                $self->scriptObj->parentTask->setTitle($string);
             } else {
-                $self->scriptObj->parentTask->resetTaskWinTitle();
+                $self->scriptObj->parentTask->setTitle();
             }
         }
 
@@ -19704,6 +19777,7 @@
     );
 
     # UNTIL condition
+    # UNTIL expression
 
     ##################
     # Methods
@@ -19743,6 +19817,7 @@
         $condition = Language::Axbasic::Expression::LogicalOr->new(
             $self->scriptObj,
             $self->tokenGroupObj,
+            'maybe_arithmetic',
         );
 
         if (! defined $condition) {
@@ -22060,7 +22135,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($taskNameExp, $taskName, $packageName, $taskObj, $result);
+        my ($taskNameExp, $taskName, $packageName, $taskObj);
 
         # Check for improper arguments
         if (defined $check) {
@@ -22776,6 +22851,7 @@
     );
 
     # WHILE condition
+    # WHILE expression
 
     ##################
     # Methods
@@ -22815,6 +22891,7 @@
         $condition = Language::Axbasic::Expression::LogicalOr->new(
             $self->scriptObj,
             $self->tokenGroupObj,
+            'maybe_arithmetic',
         );
 
         if (! defined $condition) {
@@ -23186,7 +23263,7 @@
                 # Write to the task window
                 $self->scriptObj->parentTask->insertPrint($text, @otherList);
 
-            } elsif ($self->scriptObj->ivShow('optionStatementHash', 'divert')) {
+            } elsif ($self->scriptObj->ivShow('optionStatementHash', 'redirect')) {
 
                 # Write to the 'main' window; ignore the contents of @otherList
                 $self->scriptObj->session->writeText($text);

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -1629,8 +1629,8 @@
 
         # Local variables
         my (
-            $screen, $swapFlag,
-            @areaList, @winObjList,
+            $prevAreaObj,
+            @areaList,
         );
 
         # Check for improper arguments
@@ -1651,99 +1651,71 @@
             return undef;
         }
 
-        # Find the first window object whose Gtk2::Window is known, and from that, get the
-        #   Gtk2::Gdk::Screen
-        OUTER: foreach my $areaObj (@areaList) {
-
-            if (defined $areaObj->winObj->winWidget) {
-
-                $screen = $areaObj->winObj->winWidget->get_screen();
-                if (defined $screen) {
-
-                    last OUTER;
+        # Each area (GA::Obj::Area) handles a window in the zone
+        # Sort the areas by layer, with windows in the lowest layer coming first. (To avoid
+        #   unnecessary stacking operations, we'll sort by window number too)
+        foreach my $areaObj (
+            sort {
+                if ($a->layer != $b->layer) {
+                    $a->layer <=> $b->layer;
+                } else {
+                    $a->number <=> $b->number;
                 }
             }
-        }
+            $self->ivValues('areaHash')
+        ) {
+            my ($winObj, $gdkWin, $state, $minFlag);
 
-        if (! defined $screen) {
+            $winObj = $areaObj->winObj;
+            if ($winObj->winWidget) {
 
-            # Can't continue without a Gtk2::Gdk::Screen (unlikely)
-            return undef;
-        }
+                $gdkWin = $winObj->winWidget->get_window();
+                if ($gdkWin) {
 
-        # From the list of all windows on this screen, extract a list of windows on the workspace
-        #   grid (in the order that they're stacked)
-        OUTER: foreach my $win ($screen->get_window_stack()) {
+                    $state = $gdkWin->get_state();
+                    if ($state =~ m/iconified/) {
 
-            # Find the equivalent window object, if there is one
-            INNER: foreach my $areaObj ($self->ivValues('areaHash')) {
+                        $minFlag = TRUE;
+                    }
+                }
+            }
 
-                my ($winObj, $gdkWin);
+            if ($gdkWin && ! defined $prevAreaObj) {
 
-                $winObj = $areaObj->winObj;
+                # First non-'external' window tested; it will be at the bottom of the stack (we'll
+                #   assume it's not in a layer higher than the current one)
+                $prevAreaObj = $areaObj;
 
-                # Find the Gtk2::Window's equivalent Gtk2::Gdk::Window
-                if ($winObj->winWidget) {
+            } elsif ($prevAreaObj) {
 
-                    $gdkWin = $winObj->winWidget->get_window();
+                # If the window is in a layer higher than the current one, just minimise it
+                if ($areaObj->layer > $self->workspaceGridObj->currentLayer && ! $minFlag) {
 
-                    # Is this window on the workspace grid?
-                    if ($gdkWin && $gdkWin eq $win) {
+                    $winObj->minimise();
 
-                        # If the window is in a layer higher than the current one, just minimise it
-                        #   (unless it's already minimised)
-                        if ($areaObj->layer > $self->workspaceGridObj->currentLayer) {
+                } else {
 
-                            if ($winObj->wnckWin && ! $winObj->wnckWin->is_minimized()) {
+                    # This window is at the current layer, or below it
 
-                                $winObj->wnckWin->minimize();
-                            }
+                    # If the window is minimised, un-minimise it
+                    if ($minFlag) {
 
-                        } else {
+                        $winObj->unminimise();
+                    }
 
-                            # This window is at the current layer, or below it
-                            push (@winObjList, $winObj);
+                    if ($gdkWin) {
 
-                            # If the window is minimised, un-minimise it
-                            if ($winObj->wnckWin && $winObj->wnckWin->is_minimized()) {
-
-                                $winObj->wnckWin->unminimize(time());
-                            }
-
-                            next OUTER;
-                        }
+                        # Restack it just above a window that is either on this level, or on a
+                        #   lower level (we can't restack 'external' windows, only minimise/
+                        #   unminimise them)
+                        $gdkWin->restack(
+                            $prevAreaObj->winObj->winWidget->get_window(),
+                            TRUE,
+                        );
                     }
                 }
             }
         }
-
-        # Gtk2::Gdk::Window allows us to restack window above another, but not to swap the position
-        #   of two windows in the stack, so we're forced to do an evil bubble sort
-        do {
-
-            $swapFlag = FALSE;
-
-            for (my $i = 1; $i < scalar @winObjList; $i++) {
-
-                my ($gdkWin, $gdkWin2);
-
-                # If an adjacent pair of windows is in the wrong order in @winObjList (i.e. if the
-                #   first window has a higher layer than the second one)...
-                if ($winObjList[$i - 1]->areaObj->layer > $winObjList[$i]->areaObj->layer) {
-
-                    # Restack the higher-layer window beneath the lower-layer one (this is the only
-                    #   method that seems to work)
-                    $gdkWin = $winObjList[$i - 1]->winWidget->get_window();
-                    $gdkWin2 = $winObjList[$i]->winWidget->get_window();
-                    $gdkWin2->restack($gdkWin, 0);
-
-                    # Update the bubble sort list
-                    ($winObjList[$i - 1], $winObjList[$i]) = ($winObjList[$i], $winObjList[$i - 1]);
-                    $swapFlag = TRUE;
-                }
-            }
-
-        } until (! $swapFlag);
 
         return 1;
     }

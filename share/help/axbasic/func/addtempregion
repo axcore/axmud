@@ -1,5 +1,5 @@
-ADDTEMPREGION ()
-ADDTEMPREGION (string)
+Addtempregion ()
+Addtempregion (string)
         
    Synopsis:
       Adds a new temporary region to the world model
@@ -11,4 +11,4 @@ ADDTEMPREGION (string)
          automapper window will be automatically updated, if it is open.
       If the operation is successful, the new region's world model number is
          returned. If the operation fails, 0 is returned.
-      To add a permanent region, see the ADDREGION function.
+      To add a permanent region, see the Addregion () function.

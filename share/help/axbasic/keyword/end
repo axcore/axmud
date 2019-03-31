@@ -16,6 +16,6 @@ END SELECT
          END IF, END SUB and END SELECT statements.
 
    Examples:
-      ! The simplest possible Axbasic script
+      ! A trivial Axbasic script
       PRINT "Hello world!"
       END

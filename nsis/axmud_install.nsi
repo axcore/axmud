@@ -1,6 +1,6 @@
-# Axmud v1.1.405 installer script for MS Windows
+# Axmud v1.2.0 installer script for MS Windows
 #
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -18,15 +18,15 @@
 # Build instructions:
 #   - On an MS Windows machine, download and install NSIS from
 #
-#       http://nsis.sourceforge.net/Download/
+#       http://nsis.sourceforge.io/Download/
 #
 #   - If you don't have a suitable editor (Notepad is not good enough), download
 #       and install one, e.g. Notepad++ from
 #
 #       https://notepad-plus-plus.org/
 #
-#   - Download the 32-BIT PORTABLE edition of Strawberry Perl. Note that Axmud
-#       will not work the 64-bit edition, even on a 64-bit machine. Download
+#   - Download the PORTABLE edition of Strawberry Perl. (Since v1.2.0, Axmud
+#       will run on both 32-bit and 64-bit editions of Strawberry Perl. Download
 #       from
 #
 #       http://strawberryperl.com/
@@ -38,17 +38,17 @@
 #
 #   - Download the installer for the eSpeak engine from
 #
-#       http://espeak.sourceforge.net/
+#       http://espeak.sourceforge.io/
 #
 #   - Copy the installer to the same folder, e.g. the standard Downloads folder
 #   - Rename it to 'setup_espeak'
 #
 #   - Download the Axmud source code (the file ending .tar.gz) from
-#       https://sourceforge.net/projects/axmud/
+#       https://sourceforge.io/projects/axmud/
 #   - Extract the .tar.gz file to a convenient location, e.g. the standard
 #       Downloads folder (renaming the extracted folder is not necessary)
 #
-#   - Navigate into the .../strawberry folder
+#   - Navigate into the ...\strawberry folder
 #   - Make two copies of the portableshell.bat file, and name them
 #       'runaxmud.bat' and 'blindaxmud.bat'
 #   - In both files, remove the lines beginning 'echo...'
@@ -60,15 +60,25 @@
 #
 #       perl strawberry\perl\site\bin\baxmud.pl
 #
-#   - Open a command prompt, and navigate to .../strawberry
+#   - Open a command prompt, and navigate to ...\strawberry
 #   - Run portableshell.bat
 #   - From that command prompt, install various Perl modules and libraries:
 #
-#       cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Regexp::IPv6
+#       cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
 #       cpanm --force --build-args SHELL=cmd.exe --install-args SHELL=cmd.exe File::ShareDir::Install
-#       ppm set repository sisyphusion http://sisyphusion.tk/ppm
+#      	ppm set repository sisyphusion http://sisyphusion.tk/ppm
 #       ppm set save
-#       ppm install Cairo Glib Pango Gtk2 Gnome2::Canvas
+#       ppm install Glib Gtk3 GooCanvas2
+#
+#   - Delete the folder ...\strawberry\perl\site\lib\sisyphusion_gtk2_themes_temp
+#
+#   - Run this command, and don't worry about the 'cannot remove directory'
+#       message at the end of its output:
+#
+#       ppm install http://www.sisyphusion.tk/ppm/PPM-Sisyphusion-Gtk2_theme.ppd
+#
+#   - Copy the file ...\strawberry\perl\site\lib\auto\Cairo\s1sfontconfig-1.dll
+#       into the folder ...\strawberry\perl\bin
 #
 #   - Using the same command prompt, navigate into the Axmud folder
 #   - Install Axmud in the usual way
@@ -79,10 +89,10 @@
 #
 #   - You can now close the command prompt window
 #
-#   - The Axmud folder contains an /nsis folder, which contains this file
+#   - The Axmud folder contains an \nsis folder, which contains this file
 #   - In this file, opeupdate the version number just below, e.g.
 #
-#       OutFile "install-axmud-1.1.405.exe"
+#       OutFile "install-axmud-1.2.0.exe"
 #
 #   - Compile the installer (e.g. by right-clicking this file and selecting
 #       'Compile NSIS script file')
@@ -98,7 +108,7 @@
 
     ;Name and file
     Name "Axmud"
-    OutFile "install-axmud-1.1.405.exe"
+    OutFile "install-axmud-1.2.0.exe"
 
     ;Default installation folder
     InstallDir "$LOCALAPPDATA\Axmud"
@@ -154,7 +164,7 @@
     !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
     !define MUI_FINISHPAGE_LINK "Visit the Axmud website for the latest news \
         and support"
-    !define MUI_FINISHPAGE_LINK_LOCATION "http://axmud.sourceforge.net/"
+    !define MUI_FINISHPAGE_LINK_LOCATION "http://axmud.sourceforge.io/"
     !insertmacro MUI_PAGE_FINISH
 
     !insertmacro MUI_UNPAGE_CONFIRM

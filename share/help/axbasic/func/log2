@@ -1,4 +1,4 @@
-LOG2 (x)
+Log2 (x)
 
    Synopsis:
       Returns the logarithm to the base 2 of x

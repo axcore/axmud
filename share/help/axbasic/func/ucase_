@@ -1,4 +1,4 @@
-UCASE$ (string)
+Ucase$ (string)
 
    Synopsis:
       Converts the specified string into upper-case characters

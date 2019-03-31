@@ -1,5 +1,5 @@
-SETROOMNUM ()
-SETROOMNUM (number)
+Setroomnum ()
+Setroomnum (number)
         
    Synopsis:
       Sets the automapper's current room
@@ -10,4 +10,4 @@ SETROOMNUM (number)
       Returns 1 if the specified room is set as the current room, or if the
          current room is unset when no room is specified. Returns 0 if 'number'
          isn't a valid room model number or if the set/unset operation fails.
-      See also the SETROOMTAGGED function.
+      See also the Setroomtagged () function.

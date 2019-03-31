@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -31,7 +31,7 @@
     sub new {
 
         # Called by GA::Win::Internal->drawWidgets or ->addStripObj
-        # Creates the GA::Strip::MenuBar - a non-compulsory strip object containing a Gtk2::MenuBar
+        # Creates the GA::Strip::MenuBar - a non-compulsory strip object containing a Gtk3::MenuBar
         #
         # Expected arguments
         #   $number     - The strip object's number within the parent window (matches
@@ -119,7 +119,7 @@
             # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
             #   allowed to accept the focus, FALSE if not. The restriction is applied during the
             #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
-            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   the container widget can be set to accept the focus (e.g. the Gtk3::Entry in
             #   GA::Strip::MenuBar)
             allowFocusFlag              => FALSE,
 
@@ -137,33 +137,33 @@
             #   to $self->objEnable()
             funcID                      => undef,
 
-            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
-            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
-            packingBox                  => undef,       # Gtk2::VBox
+            # The container widget for this strip object (usually a Gtk3::HBox or Gtk3::VBox). This
+            #   widget is the one added to the window's main Gtk3::HBox or Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::VBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            menuBar                     => undef,       # Gtk2::MenuBar
+            menuBar                     => undef,       # Gtk3::MenuBar
 
             # Menu items which will be sensitised or desensitised, depending on the context. Hash
             #   in the form:
-            #       $menuItemHash{'item_name'} = gtk2_widget
+            #       $menuItemHash{'item_name'} = Gtk3_widget
             #   ...where:
             #       'item_name' is a descriptive scalar, e.g. 'move_up_level'
-            #       'gtk2_widget' is the Gtk2 menu item
+            #       'Gtk3_widget' is the Gtk3 menu item
             menuItemHash                => {},
 
             # The menu column for 'plugins', which can be extended by any loaded plugins
-            pluginMenu                  => undef,       # Gtk2::Menu
+            pluginMenu                  => undef,       # Gtk3::Menu
             # Hash of sub-menus in the 'plugins' menu column, one for each plugin that wants one, in
             #   the form
             #       $pluginHash{plugin_name} = menu_widget
             pluginHash                  => {},
             # Additional list of menu items added by plugins, which will be sensitised or
             #   desensitised, depending on the context. Hash in the form:
-            #       $pluginMenuItemHash{'plugin_name'} = gtk2_widget
+            #       $pluginMenuItemHash{'plugin_name'} = Gtk3_widget
             pluginMenuItemHash          => {},
 
             # Flag set to TRUE when the 'save all sessions' menu item is selected (desensitises
@@ -204,76 +204,76 @@
         }
 
         # Create a packing box
-        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        my $vBox = Gtk3::VBox->new(FALSE, 0);
         $vBox->set_border_width(0);
 
-        # Create a Gtk2::MenuBar
-        my $menuBar = Gtk2::MenuBar->new();
+        # Create a Gtk3::MenuBar
+        my $menuBar = Gtk3::MenuBar->new();
         $vBox->pack_start($menuBar, TRUE, TRUE, 0);
 
         # 'World' column
         my $menuColumn_world = $self->drawWorldColumn();
-        my $menuItem_world = Gtk2::MenuItem->new('_World');
+        my $menuItem_world = Gtk3::MenuItem->new('_World');
         $menuItem_world->set_submenu($menuColumn_world);
         $menuBar->append($menuItem_world);
 
         # 'File' column
         my $menuColumn_file = $self->drawFileColumn();
-        my $menuItem_file = Gtk2::MenuItem->new('_File');
+        my $menuItem_file = Gtk3::MenuItem->new('_File');
         $menuItem_file->set_submenu($menuColumn_file);
         $menuBar->append($menuItem_file);
 
         # 'Edit' column
         my $menuColumn_edit = $self->drawEditColumn();
-        my $menuItem_edit = Gtk2::MenuItem->new('_Edit');
+        my $menuItem_edit = Gtk3::MenuItem->new('_Edit');
         $menuItem_edit->set_submenu($menuColumn_edit);
         $menuBar->append($menuItem_edit);
 
         # 'Interfaces' column
         my $menuColumn_interfaces = $self->drawInterfacesColumn();
-        my $menuItem_interfaces = Gtk2::MenuItem->new('_Interfaces');
+        my $menuItem_interfaces = Gtk3::MenuItem->new('_Interfaces');
         $menuItem_interfaces->set_submenu($menuColumn_interfaces);
         $menuBar->append($menuItem_interfaces);
 
         # 'Tasks' column
         my $menuColumn_tasks = $self->drawTasksColumn();
-        my $menuItem_tasks = Gtk2::MenuItem->new('_Tasks');
+        my $menuItem_tasks = Gtk3::MenuItem->new('_Tasks');
         $menuItem_tasks->set_submenu($menuColumn_tasks);
         $menuBar->append($menuItem_tasks);
 
         # 'Display' column
         my $menuColumn_display = $self->drawDisplayColumn();
-        my $menuItem_display = Gtk2::MenuItem->new('_Display');
+        my $menuItem_display = Gtk3::MenuItem->new('_Display');
         $menuItem_display->set_submenu($menuColumn_display);
         $menuBar->append($menuItem_display);
 
         # 'Commands' column
         my $menuColumn_commands = $self->drawCommandsColumn();
-        my $menuItem_commands = Gtk2::MenuItem->new('_Commands');
+        my $menuItem_commands = Gtk3::MenuItem->new('_Commands');
         $menuItem_commands->set_submenu($menuColumn_commands);
         $menuBar->append($menuItem_commands);
 
         # 'Recordings' column
         my $menuColumn_recordings = $self->drawRecordingsColumn();
-        my $menuItem_recordings = Gtk2::MenuItem->new('_Recordings');
+        my $menuItem_recordings = Gtk3::MenuItem->new('_Recordings');
         $menuItem_recordings->set_submenu($menuColumn_recordings);
         $menuBar->append($menuItem_recordings);
 
         # 'Axbasic' column
         my $menuColumn_basic = $self->drawAxbasicColumn();
-        my $menuItem_basic = Gtk2::MenuItem->new('_' . $axmud::BASIC_NAME);
+        my $menuItem_basic = Gtk3::MenuItem->new('_' . $axmud::BASIC_NAME);
         $menuItem_basic->set_submenu($menuColumn_basic);
         $menuBar->append($menuItem_basic);
 
         # 'Plugins' column
         my $menuColumn_plugins = $self->drawPluginsColumn();
-        my $menuItem_plugins = Gtk2::MenuItem->new('_Plugins');
+        my $menuItem_plugins = Gtk3::MenuItem->new('_Plugins');
         $menuItem_plugins->set_submenu($menuColumn_plugins);
         $menuBar->append($menuItem_plugins);
 
         # 'Help' column
         my $menuColumn_help = $self->drawHelpColumn();
-        my $menuItem_help = Gtk2::MenuItem->new('_Help');
+        my $menuItem_help = Gtk3::MenuItem->new('_Help');
         $menuItem_help->set_submenu($menuColumn_help);
         $menuBar->append($menuItem_help);
 
@@ -353,7 +353,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -370,14 +370,14 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_world = Gtk2::Menu->new();
+        my $menuColumn_world = Gtk3::Menu->new();
         if (! $menuColumn_world) {
 
             return undef;
         }
 
-        my $menuItem_connect = Gtk2::ImageMenuItem->new('_Connect...');
-        my $menuImg_connect = Gtk2::Image->new_from_stock('gtk-connect', 'menu');
+        my $menuItem_connect = Gtk3::ImageMenuItem->new('_Connect...');
+        my $menuImg_connect = Gtk3::Image->new_from_stock('gtk-connect', 'menu');
         $menuItem_connect->set_image($menuImg_connect);
         $menuItem_connect->signal_connect('activate' => sub {
 
@@ -415,8 +415,8 @@
         });
         $menuColumn_world->append($menuItem_connect);
 
-        my $menuItem_reconnect = Gtk2::ImageMenuItem->new('_Reconnect');
-        my $menuImg_reconnect = Gtk2::Image->new_from_stock('gtk-connect', 'menu');
+        my $menuItem_reconnect = Gtk3::ImageMenuItem->new('_Reconnect');
+        my $menuImg_reconnect = Gtk3::Image->new_from_stock('gtk-connect', 'menu');
         $menuItem_reconnect->set_image($menuImg_reconnect);
         $menuItem_reconnect->signal_connect('activate' => sub {
 
@@ -426,7 +426,7 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'reconnect', $menuItem_reconnect);
 
-        my $menuItem_reconnectOffline = Gtk2::MenuItem->new('Reconnect _offline');
+        my $menuItem_reconnectOffline = Gtk3::MenuItem->new('Reconnect _offline');
         $menuItem_reconnectOffline->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('reconnect -o', $mode);
@@ -435,7 +435,7 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'reconnect_offline', $menuItem_reconnectOffline);
 
-        my $menuItem_xConnect = Gtk2::MenuItem->new('Reconnect (no _save)');
+        my $menuItem_xConnect = Gtk3::MenuItem->new('Reconnect (_no save)');
         $menuItem_xConnect->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('xconnect', $mode);
@@ -444,7 +444,7 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'xconnect', $menuItem_xConnect);
 
-        my $menuItem_xConnectOffline = Gtk2::MenuItem->new('Reconnect offline (_no save)');
+        my $menuItem_xConnectOffline = Gtk3::MenuItem->new('Reconnect offline (no _save)');
         $menuItem_xConnectOffline->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('xconnect -o', $mode);
@@ -453,10 +453,10 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'xconnect_offline', $menuItem_xConnectOffline);
 
-        $menuColumn_world->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_world->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_login = Gtk2::ImageMenuItem->new('Character _login');
-        my $menuImg_login = Gtk2::Image->new_from_stock('gtk-network', 'menu');
+        my $menuItem_login = Gtk3::ImageMenuItem->new('Character _login');
+        my $menuImg_login = Gtk3::Image->new_from_stock('gtk-network', 'menu');
         $menuItem_login->set_image($menuImg_login);
         $menuItem_login->signal_connect('activate' => sub {
 
@@ -466,10 +466,10 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'login', $menuItem_login);
 
-        $menuColumn_world->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_world->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_quit = Gtk2::ImageMenuItem->new('Send _quit');
-        my $menuImg_quit = Gtk2::Image->new_from_stock('gtk-disconnect', 'menu');
+        my $menuItem_quit = Gtk3::ImageMenuItem->new('Send _quit');
+        my $menuImg_quit = Gtk3::Image->new_from_stock('gtk-disconnect', 'menu');
         $menuItem_quit->set_image($menuImg_quit);
         $menuItem_quit->signal_connect('activate' => sub {
 
@@ -486,7 +486,7 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'quit', $menuItem_quit);
 
-        my $menuItem_qquit = Gtk2::MenuItem->new('Send quit (no sa_ve)');
+        my $menuItem_qquit = Gtk3::MenuItem->new('Send quit (no sa_ve)');
         $menuItem_qquit->signal_connect('activate' => sub {
 
             if (
@@ -502,7 +502,7 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'qquit', $menuItem_qquit);
 
-        my $menuItem_quitAll = Gtk2::MenuItem->new('Send quit (_all sessions)');
+        my $menuItem_quitAll = Gtk3::MenuItem->new('Send quit (_all sessions)');
         $menuItem_quitAll->signal_connect('activate' => sub {
 
             if (
@@ -518,10 +518,10 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'quit_all', $menuItem_quitAll);
 
-        $menuColumn_world->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_world->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_exit = Gtk2::ImageMenuItem->new('_Exit session');
-        my $menuImg_exit = Gtk2::Image->new_from_stock('gtk-disconnect', 'menu');
+        my $menuItem_exit = Gtk3::ImageMenuItem->new('_Exit session');
+        my $menuImg_exit = Gtk3::Image->new_from_stock('gtk-disconnect', 'menu');
         $menuItem_exit->set_image($menuImg_exit);
         $menuItem_exit->signal_connect('activate' => sub {
 
@@ -538,7 +538,7 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'exit', $menuItem_exit);
 
-        my $menuItem_xxit = Gtk2::MenuItem->new('E_xit session (no save)');
+        my $menuItem_xxit = Gtk3::MenuItem->new('E_xit session (no save)');
         $menuItem_xxit->signal_connect('activate' => sub {
 
             if (
@@ -554,7 +554,7 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'xxit', $menuItem_xxit);
 
-        my $menuItem_exitAll = Gtk2::MenuItem->new('Ex_it all sessions');
+        my $menuItem_exitAll = Gtk3::MenuItem->new('Ex_it all sessions');
         $menuItem_exitAll->signal_connect('activate' => sub {
 
             if (
@@ -570,10 +570,10 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'exit_all', $menuItem_exitAll);
 
-        $menuColumn_world->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_world->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_stopSession = Gtk2::ImageMenuItem->new('S_top session');
-        my $menuImg_stopSession = Gtk2::Image->new_from_stock('gtk-close', 'menu');
+        my $menuItem_stopSession = Gtk3::ImageMenuItem->new('S_top session');
+        my $menuImg_stopSession = Gtk3::Image->new_from_stock('gtk-close', 'menu');
         $menuItem_stopSession->set_image($menuImg_stopSession);
         $menuItem_stopSession->signal_connect('activate' => sub {
 
@@ -595,8 +595,8 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'stop_session', $menuItem_stopSession);
 
-        my $menuItem_stopClient = Gtk2::ImageMenuItem->new('Sto_p client');
-        my $menuImg_stopClient = Gtk2::Image->new_from_stock('gtk-quit', 'menu');
+        my $menuItem_stopClient = Gtk3::ImageMenuItem->new('Sto_p client');
+        my $menuImg_stopClient = Gtk3::Image->new_from_stock('gtk-quit', 'menu');
         $menuItem_stopClient->set_image($menuImg_stopClient);
         $menuItem_stopClient->signal_connect('activate' => sub {
 
@@ -636,7 +636,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -660,14 +660,14 @@
         $allSessionSwitch = '';
 
         # Set up column
-        my $menuColumn_file = Gtk2::Menu->new();
+        my $menuColumn_file = Gtk3::Menu->new();
         if (! $menuColumn_file) {
 
             return undef;
         }
 
-        my $menuItem_loadAll = Gtk2::ImageMenuItem->new('_Load all');
-        my $menuImg_loadAll = Gtk2::Image->new_from_stock('gtk-open', 'menu');
+        my $menuItem_loadAll = Gtk3::ImageMenuItem->new('_Load all');
+        my $menuImg_loadAll = Gtk3::Image->new_from_stock('gtk-open', 'menu');
         $menuItem_loadAll->set_image($menuImg_loadAll);
         $menuItem_loadAll->signal_connect('activate' => sub {
 
@@ -678,88 +678,88 @@
         $self->ivAdd('menuItemHash', 'load_all', $menuItem_loadAll);
 
             # 'Load files' submenu
-            my $subMenu_loadFile = Gtk2::Menu->new();
+            my $subMenu_loadFile = Gtk3::Menu->new();
 
-            my $menuItem_loadFile_worldModel = Gtk2::MenuItem->new('_World model file');
+            my $menuItem_loadFile_worldModel = Gtk3::MenuItem->new('_World model file');
             $menuItem_loadFile_worldModel->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -m', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_worldModel);
 
-            my $menuItem_loadFile_tasks = Gtk2::MenuItem->new('_Tasks file');
+            my $menuItem_loadFile_tasks = Gtk3::MenuItem->new('_Tasks file');
             $menuItem_loadFile_tasks->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -t', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_tasks);
 
-            my $menuItem_loadFile_scripts = Gtk2::MenuItem->new('_Scripts file');
+            my $menuItem_loadFile_scripts = Gtk3::MenuItem->new('_Scripts file');
             $menuItem_loadFile_scripts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -s', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_scripts);
 
-            my $menuItem_loadFile_contacts = Gtk2::MenuItem->new('_Contacts file');
+            my $menuItem_loadFile_contacts = Gtk3::MenuItem->new('_Contacts file');
             $menuItem_loadFile_contacts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -n', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_contacts);
 
-            my $menuItem_loadFile_dicts = Gtk2::MenuItem->new('_Dictionaries file');
+            my $menuItem_loadFile_dicts = Gtk3::MenuItem->new('_Dictionaries file');
             $menuItem_loadFile_dicts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -y', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_dicts);
 
-            my $menuItem_loadFile_toolbar = Gtk2::MenuItem->new('Tool_bar file');
+            my $menuItem_loadFile_toolbar = Gtk3::MenuItem->new('Tool_bar file');
             $menuItem_loadFile_toolbar->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -b', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_toolbar);
 
-            my $menuItem_loadFile_userComm = Gtk2::MenuItem->new('_User commands file');
+            my $menuItem_loadFile_userComm = Gtk3::MenuItem->new('_User commands file');
             $menuItem_loadFile_userComm->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -u', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_userComm);
 
-            my $menuItem_loadFile_zonemaps = Gtk2::MenuItem->new('_Zonemaps file');
+            my $menuItem_loadFile_zonemaps = Gtk3::MenuItem->new('_Zonemaps file');
             $menuItem_loadFile_zonemaps->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -z', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_zonemaps);
 
-            my $menuItem_loadFile_winmaps = Gtk2::MenuItem->new('Winma_ps file');
+            my $menuItem_loadFile_winmaps = Gtk3::MenuItem->new('Win_maps file');
             $menuItem_loadFile_winmaps->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -p', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_winmaps);
 
-            my $menuItem_loadFile_ttsObjs = Gtk2::MenuItem->new('Te_xt-to-speech file');
+            my $menuItem_loadFile_ttsObjs = Gtk3::MenuItem->new('T_ext-to-speech file');
             $menuItem_loadFile_ttsObjs->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('load -x', $mode);
             });
             $subMenu_loadFile->append($menuItem_loadFile_ttsObjs);
 
-        my $menuItem_loadFile = Gtk2::MenuItem->new('L_oad files');
+        my $menuItem_loadFile = Gtk3::MenuItem->new('L_oad files');
         $menuItem_loadFile->set_submenu($subMenu_loadFile);
         $menuColumn_file->append($menuItem_loadFile);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'load_file', $menuItem_loadFile);
 
-        $menuColumn_file->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_file->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_saveAll = Gtk2::ImageMenuItem->new('_Save all');
-        my $menuImg_saveAll = Gtk2::Image->new_from_stock('gtk-save', 'menu');
+        my $menuItem_saveAll = Gtk3::ImageMenuItem->new('_Save all');
+        my $menuImg_saveAll = Gtk3::Image->new_from_stock('gtk-save', 'menu');
         $menuItem_saveAll->set_image($menuImg_saveAll);
         $menuItem_saveAll->signal_connect('activate' => sub {
 
@@ -773,32 +773,32 @@
         $self->ivAdd('menuItemHash', 'save_all', $menuItem_saveAll);
 
             # 'Save files' submenu
-            my $subMenu_saveFile = Gtk2::Menu->new();
+            my $subMenu_saveFile = Gtk3::Menu->new();
 
-            my $menuItem_saveFile_config = Gtk2::MenuItem->new('C_onfig file');
+            my $menuItem_saveFile_config = Gtk3::MenuItem->new('_Config file');
             $menuItem_saveFile_config->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -i' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_config);
 
-            $subMenu_saveFile->append(Gtk2::SeparatorMenuItem->new());  # Separator
+            $subMenu_saveFile->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
-            my $menuItem_saveFile_prof = Gtk2::MenuItem->new('_Profile files');
+            my $menuItem_saveFile_prof = Gtk3::MenuItem->new('_Profile files');
             $menuItem_saveFile_prof->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -d' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_prof);
 
-            my $menuItem_saveFile_currentProf = Gtk2::MenuItem->new('Cu_rrent profile files');
+            my $menuItem_saveFile_currentProf = Gtk3::MenuItem->new('C_urrent profile files');
             $menuItem_saveFile_currentProf->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -c' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_currentProf);
 
-            my $menuItem_saveFile_worldProf = Gtk2::MenuItem->new('World de_finition...');
+            my $menuItem_saveFile_worldProf = Gtk3::MenuItem->new('_World definition...');
             $menuItem_saveFile_worldProf->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a world profile
@@ -815,7 +815,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Save file',
                         'Select a world profile to save',
-                        FALSE,
                         \@worldList,
                     );
 
@@ -831,86 +830,86 @@
             });
             $subMenu_saveFile->append($menuItem_saveFile_worldProf);
 
-            my $menuItem_saveFile_currentWorld = Gtk2::MenuItem->new('Curre_nt world files');
+            my $menuItem_saveFile_currentWorld = Gtk3::MenuItem->new('Cu_rrent world files');
             $menuItem_saveFile_currentWorld->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -w' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_currentWorld);
 
-            $subMenu_saveFile->append(Gtk2::SeparatorMenuItem->new());  # Separator
+            $subMenu_saveFile->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
-            my $menuItem_saveFile_worldModel = Gtk2::MenuItem->new('_World model file');
+            my $menuItem_saveFile_worldModel = Gtk3::MenuItem->new('World _model file');
             $menuItem_saveFile_worldModel->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -m' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_worldModel);
 
-            my $menuItem_saveFile_tasks = Gtk2::MenuItem->new('_Tasks file');
+            my $menuItem_saveFile_tasks = Gtk3::MenuItem->new('_Tasks file');
             $menuItem_saveFile_tasks->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -t' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_tasks);
 
-            my $menuItem_saveFile_scripts = Gtk2::MenuItem->new('_Scripts file');
+            my $menuItem_saveFile_scripts = Gtk3::MenuItem->new('_Scripts file');
             $menuItem_saveFile_scripts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -s' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_scripts);
 
-            my $menuItem_saveFile_contacts = Gtk2::MenuItem->new('_Contacts file');
+            my $menuItem_saveFile_contacts = Gtk3::MenuItem->new('C_ontacts file');
             $menuItem_saveFile_contacts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -n' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_contacts);
 
-            my $menuItem_saveFile_dicts = Gtk2::MenuItem->new('_Dictionaries file');
+            my $menuItem_saveFile_dicts = Gtk3::MenuItem->new('_Dictionaries file');
             $menuItem_saveFile_dicts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -y' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_dicts);
 
-            my $menuItem_saveFile_toolbar = Gtk2::MenuItem->new('Tool_bar file');
+            my $menuItem_saveFile_toolbar = Gtk3::MenuItem->new('Tool_bar file');
             $menuItem_saveFile_toolbar->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -b' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_toolbar);
 
-            my $menuItem_saveFile_userComm = Gtk2::MenuItem->new('_User commands file');
+            my $menuItem_saveFile_userComm = Gtk3::MenuItem->new('Us_er commands file');
             $menuItem_saveFile_userComm->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -u' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_userComm);
 
-            my $menuItem_saveFile_zonemaps = Gtk2::MenuItem->new('_Zonemaps file');
+            my $menuItem_saveFile_zonemaps = Gtk3::MenuItem->new('_Zonemaps file');
             $menuItem_saveFile_zonemaps->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -z' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_zonemaps);
 
-            my $menuItem_saveFile_winmaps = Gtk2::MenuItem->new('Winma_ps file');
+            my $menuItem_saveFile_winmaps = Gtk3::MenuItem->new('W_inmaps file');
             $menuItem_saveFile_winmaps->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -p' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_winmaps);
 
-            my $menuItem_saveFile_ttsObjs = Gtk2::MenuItem->new('Te_xt-to-speech file');
+            my $menuItem_saveFile_ttsObjs = Gtk3::MenuItem->new('Te_xt-to-speech file');
             $menuItem_saveFile_ttsObjs->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('save -x' . $forceSwitch, $mode);
             });
             $subMenu_saveFile->append($menuItem_saveFile_ttsObjs);
 
-        my $menuItem_saveFile = Gtk2::MenuItem->new('S_ave files');
+        my $menuItem_saveFile = Gtk3::MenuItem->new('S_ave files');
         $menuItem_saveFile->set_submenu($subMenu_saveFile);
         $menuColumn_file->append($menuItem_saveFile);
         # (Requires a visible session whose status is 'connected' or 'offline' and
@@ -918,9 +917,12 @@
         $self->ivAdd('menuItemHash', 'save_file', $menuItem_saveFile);
 
             # 'Save options' submenu
-            my $subMenu_saveOptions = Gtk2::Menu->new();
+            my $subMenu_saveOptions = Gtk3::Menu->new();
 
-            my $menuColumn_forced_radio1 = Gtk2::RadioMenuItem->new(undef, 'Forced saves o_ff');
+            my $menuColumn_forced_radio1 = Gtk3::RadioMenuItem->new_with_mnemonic(
+                undef,
+                'Forced saves o_ff',
+            );
             $menuColumn_forced_radio1->signal_connect('toggled' => sub {
 
                 if ($menuColumn_forced_radio1->get_active()) {
@@ -931,15 +933,15 @@
             });
             $subMenu_saveOptions->append($menuColumn_forced_radio1);
 
-            my $menuColumn_forced_radio2 = Gtk2::RadioMenuItem->new(
+            my $menuColumn_forced_radio2 = Gtk3::RadioMenuItem->new_with_mnemonic(
                 $menuColumn_forced_radio1->get_group(),
                 'Forced saves o_n',
             );
             $subMenu_saveOptions->append($menuColumn_forced_radio2);
 
-            $subMenu_saveOptions->append(Gtk2::SeparatorMenuItem->new());  # Separator
+            $subMenu_saveOptions->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
-            my $menuColumn_allSession_radio1 = Gtk2::RadioMenuItem->new(
+            my $menuColumn_allSession_radio1 = Gtk3::RadioMenuItem->new_with_mnemonic(
                 undef,
                 'Save in _this session',
             );
@@ -961,31 +963,31 @@
             });
             $subMenu_saveOptions->append($menuColumn_allSession_radio1);
 
-            my $menuColumn_allSession_radio2 = Gtk2::RadioMenuItem->new(
+            my $menuColumn_allSession_radio2 = Gtk3::RadioMenuItem->new_with_mnemonic(
                 $menuColumn_allSession_radio1->get_group(),
                 'Save in _all sessions',
             );
             $subMenu_saveOptions->append($menuColumn_allSession_radio2);
 
-            $subMenu_saveOptions->append(Gtk2::SeparatorMenuItem->new());  # Separator
+            $subMenu_saveOptions->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
-            my $menuItem_autoSaves_off = Gtk2::MenuItem->new('T_urn auto-saves off');
+            my $menuItem_autoSaves_off = Gtk3::MenuItem->new('T_urn auto-saves off');
             $menuItem_autoSaves_off->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('autosave off', $mode);
             });
             $subMenu_saveOptions->append($menuItem_autoSaves_off);
 
-            my $menuItem_autoSaves_on = Gtk2::MenuItem->new('Tu_rn auto-saves on');
+            my $menuItem_autoSaves_on = Gtk3::MenuItem->new('Tu_rn auto-saves on');
             $menuItem_autoSaves_on->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('autosave on', $mode);
             });
             $subMenu_saveOptions->append($menuItem_autoSaves_on);
 
-            $subMenu_saveOptions->append(Gtk2::SeparatorMenuItem->new());  # Separator
+            $subMenu_saveOptions->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
-            my $menuItem_autoSaves_setTime = Gtk2::MenuItem->new('_Set auto-save time...');
+            my $menuItem_autoSaves_setTime = Gtk3::MenuItem->new('_Set auto-save time...');
             $menuItem_autoSaves_setTime->signal_connect('activate' => sub {
 
                 my $number = $self->winObj->showEntryDialogue(
@@ -1001,15 +1003,15 @@
             });
             $subMenu_saveOptions->append($menuItem_autoSaves_setTime);
 
-        my $menuItem_saveOptions = Gtk2::MenuItem->new('Sa_ve options');
+        my $menuItem_saveOptions = Gtk3::MenuItem->new('Sa_ve options');
         $menuItem_saveOptions->set_submenu($subMenu_saveOptions);
         $menuColumn_file->append($menuItem_saveOptions);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'save_options', $menuItem_saveOptions);
 
-        $menuColumn_file->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_file->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_importFile = Gtk2::MenuItem->new('I_mport files...');
+        my $menuItem_importFile = Gtk3::MenuItem->new('I_mport files...');
         $menuItem_importFile->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('importfiles', $mode);
@@ -1018,7 +1020,7 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'import_files', $menuItem_importFile);
 
-#        my $menuItem_exportAllFile = Gtk2::MenuItem->new('_Export all files...');
+#        my $menuItem_exportAllFile = Gtk3::MenuItem->new('_Export all files...');
 #        $menuItem_exportAllFile->signal_connect('activate' => sub {
 #
 #            $self->winObj->visibleSession->pseudoCmd('exportfiles', $mode);
@@ -1028,9 +1030,9 @@
 #        $self->ivAdd('menuItemHash', 'export_all_files', $menuItem_exportAllFile);
 
             # 'Export files' submenu
-            my $subMenu_exportFile = Gtk2::Menu->new();
+            my $subMenu_exportFile = Gtk3::Menu->new();
 
-            my $menuItem_exportFile_world = Gtk2::MenuItem->new('World _files...');
+            my $menuItem_exportFile_world = Gtk3::MenuItem->new('_World files...');
             $menuItem_exportFile_world->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a world profile
@@ -1047,7 +1049,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export file',
                         'Select a world profile to export',
-                        FALSE,
                         \@worldList,
                     );
 
@@ -1063,9 +1064,9 @@
             });
             $subMenu_exportFile->append($menuItem_exportFile_world);
 
-            $subMenu_exportFile->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_exportFile->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_exportFile_model = Gtk2::MenuItem->new('World _model file...');
+            my $menuItem_exportFile_model = Gtk3::MenuItem->new('World _model file...');
             $menuItem_exportFile_model->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a world profile
@@ -1082,7 +1083,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export file',
                         'Select a world model to export',
-                        FALSE,
                         \@worldList,
                     );
 
@@ -1098,78 +1098,78 @@
             });
             $subMenu_exportFile->append($menuItem_exportFile_model);
 
-            my $menuItem_exportFile_tasks = Gtk2::MenuItem->new('_Tasks file');
+            my $menuItem_exportFile_tasks = Gtk3::MenuItem->new('_Tasks file');
             $menuItem_exportFile_tasks->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -t', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_tasks);
 
-            my $menuItem_exportFile_scripts = Gtk2::MenuItem->new('_Scripts file');
+            my $menuItem_exportFile_scripts = Gtk3::MenuItem->new('_Scripts file');
             $menuItem_exportFile_scripts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -s', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_scripts);
 
-            my $menuItem_exportFile_contacts = Gtk2::MenuItem->new('_Contacts file');
+            my $menuItem_exportFile_contacts = Gtk3::MenuItem->new('_Contacts file');
             $menuItem_exportFile_contacts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -n', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_contacts);
 
-            my $menuItem_exportFile_dicts = Gtk2::MenuItem->new('_Dictionaries file');
+            my $menuItem_exportFile_dicts = Gtk3::MenuItem->new('_Dictionaries file');
             $menuItem_exportFile_dicts->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -y', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_dicts);
 
-            my $menuItem_exportFile_toolbar = Gtk2::MenuItem->new('Tool_bar file');
+            my $menuItem_exportFile_toolbar = Gtk3::MenuItem->new('Tool_bar file');
             $menuItem_exportFile_toolbar->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -b', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_toolbar);
 
-            my $menuItem_exportFile_userComm = Gtk2::MenuItem->new('_User commands file');
+            my $menuItem_exportFile_userComm = Gtk3::MenuItem->new('_User commands file');
             $menuItem_exportFile_userComm->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -u', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_userComm);
 
-            my $menuItem_exportFile_zonemaps = Gtk2::MenuItem->new('_Zonemaps file');
+            my $menuItem_exportFile_zonemaps = Gtk3::MenuItem->new('_Zonemaps file');
             $menuItem_exportFile_zonemaps->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -z', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_zonemaps);
 
-            my $menuItem_exportFile_winmaps = Gtk2::MenuItem->new('Winma_ps file');
+            my $menuItem_exportFile_winmaps = Gtk3::MenuItem->new('W_inmaps file');
             $menuItem_exportFile_winmaps->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -p', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_winmaps);
 
-            my $menuItem_exportFile_ttsObjs = Gtk2::MenuItem->new('Te_xt-to-speech file');
+            my $menuItem_exportFile_ttsObjs = Gtk3::MenuItem->new('Te_xt-to-speech file');
             $menuItem_exportFile_ttsObjs->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('exportfiles -x', $mode);
             });
             $subMenu_exportFile->append($menuItem_exportFile_ttsObjs);
 
-        my $menuItem_exportFile = Gtk2::MenuItem->new('E_xport files');
+        my $menuItem_exportFile = Gtk3::MenuItem->new('E_xport files');
         $menuItem_exportFile->set_submenu($subMenu_exportFile);
         $menuColumn_file->append($menuItem_exportFile);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'export_file', $menuItem_exportFile);
 
-        $menuColumn_file->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_file->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_importData = Gtk2::MenuItem->new('_Import data...');
+        my $menuItem_importData = Gtk3::MenuItem->new('_Import data...');
         $menuItem_importData->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('importdata', $mode);
@@ -1179,9 +1179,9 @@
         $self->ivAdd('menuItemHash', 'import_data', $menuItem_importData);
 
             # 'Export data' submenu
-            my $subMenu_exportData = Gtk2::Menu->new();
+            my $subMenu_exportData = Gtk3::Menu->new();
 
-            my $menuItem_exportData_otherProf = Gtk2::MenuItem->new('_Non-world profiles...');
+            my $menuItem_exportData_otherProf = Gtk3::MenuItem->new('_Non-world profiles...');
             $menuItem_exportData_otherProf->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a non-world profile
@@ -1198,7 +1198,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a non-world profile to export',
-                        FALSE,
                         \@otherProfList,
                     );
 
@@ -1211,7 +1210,7 @@
             });
             $subMenu_exportData->append($menuItem_exportData_otherProf);
 
-            my $menuItem_exportData_singleCage = Gtk2::MenuItem->new('_Single cage...');
+            my $menuItem_exportData_singleCage = Gtk3::MenuItem->new('_Single cage...');
             $menuItem_exportData_singleCage->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a cage
@@ -1229,7 +1228,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a cage to export',
-                        FALSE,
                         \@cageList,
                     );
 
@@ -1242,7 +1240,7 @@
             });
             $subMenu_exportData->append($menuItem_exportData_singleCage);
 
-            my $menuItem_exportData_profCages = Gtk2::MenuItem->new('_All cages in profile...');
+            my $menuItem_exportData_profCages = Gtk3::MenuItem->new('_All cages in profile...');
             $menuItem_exportData_profCages->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a profile
@@ -1261,7 +1259,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a profile whose cages should be exported',
-                        FALSE,
                         \@profList,
                     );
 
@@ -1274,7 +1271,7 @@
             });
             $subMenu_exportData->append($menuItem_exportData_profCages);
 
-            my $menuItem_exportData_template = Gtk2::MenuItem->new('_Profile template...');
+            my $menuItem_exportData_template = Gtk3::MenuItem->new('_Profile template...');
             $menuItem_exportData_template->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a profile template
@@ -1293,7 +1290,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a profile template to export',
-                        FALSE,
                         \@templList,
                     );
 
@@ -1306,9 +1302,9 @@
             });
             $subMenu_exportData->append($menuItem_exportData_template);
 
-            $subMenu_exportData->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_exportData->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_exportData_initialTask = Gtk2::MenuItem->new('(_Global) initial task...');
+            my $menuItem_exportData_initialTask = Gtk3::MenuItem->new('(_Global) initial task...');
             $menuItem_exportData_initialTask->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a (global) initial task
@@ -1325,7 +1321,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a (global) initial task to export',
-                        FALSE,
                         \@taskList,
                     );
 
@@ -1338,7 +1333,7 @@
             });
             $subMenu_exportData->append($menuItem_exportData_initialTask);
 
-            my $menuItem_exportData_customTask = Gtk2::MenuItem->new('_Custom task...');
+            my $menuItem_exportData_customTask = Gtk3::MenuItem->new('_Custom task...');
             $menuItem_exportData_customTask->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a custom task
@@ -1355,7 +1350,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a custom task to export',
-                        FALSE,
                         \@taskList,
                     );
 
@@ -1368,9 +1362,9 @@
             });
             $subMenu_exportData->append($menuItem_exportData_customTask);
 
-            $subMenu_exportData->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_exportData->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_exportData_dict = Gtk2::MenuItem->new('_Dictionary...');
+            my $menuItem_exportData_dict = Gtk3::MenuItem->new('_Dictionary...');
             $menuItem_exportData_dict->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a dictionary
@@ -1388,7 +1382,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a dictionary to export',
-                        FALSE,
                         \@dictList,
                     );
 
@@ -1401,7 +1394,7 @@
             });
             $subMenu_exportData->append($menuItem_exportData_dict);
 
-            my $menuItem_exportData_zonemap = Gtk2::MenuItem->new('_Zonemap...');
+            my $menuItem_exportData_zonemap = Gtk3::MenuItem->new('_Zonemap...');
             $menuItem_exportData_zonemap->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a zonemap
@@ -1417,7 +1410,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a zonemap to export',
-                        FALSE,
                         \@zonemapList,
                     );
 
@@ -1430,7 +1422,7 @@
             });
             $subMenu_exportData->append($menuItem_exportData_zonemap);
 
-            my $menuItem_exportData_winmap = Gtk2::MenuItem->new('_Winmap...');
+            my $menuItem_exportData_winmap = Gtk3::MenuItem->new('_Winmap...');
             $menuItem_exportData_winmap->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a winmap
@@ -1446,7 +1438,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a winmap to export',
-                        FALSE,
                         \@winmapList,
                     );
 
@@ -1459,7 +1450,7 @@
             });
             $subMenu_exportData->append($menuItem_exportData_winmap);
 
-            my $menuItem_exportData_colScheme = Gtk2::MenuItem->new('C_olour scheme...');
+            my $menuItem_exportData_colScheme = Gtk3::MenuItem->new('C_olour scheme...');
             $menuItem_exportData_colScheme->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a colour scheme
@@ -1478,7 +1469,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a colour scheme to export',
-                        FALSE,
                         \@schemeList,
                     );
 
@@ -1491,7 +1481,7 @@
             });
             $subMenu_exportData->append($menuItem_exportData_colScheme);
 
-            my $menuItem_exportData_ttsObj = Gtk2::MenuItem->new('_TTS object...');
+            my $menuItem_exportData_ttsObj = Gtk3::MenuItem->new('_TTS object...');
             $menuItem_exportData_ttsObj->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose a TTS object
@@ -1507,7 +1497,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Export data',
                         'Select a text-to-speech object to export',
-                        FALSE,
                         \@objList,
                     );
 
@@ -1520,41 +1509,41 @@
             });
             $subMenu_exportData->append($menuItem_exportData_ttsObj);
 
-        my $menuItem_exportData = Gtk2::MenuItem->new('Export _data');
+        my $menuItem_exportData = Gtk3::MenuItem->new('Export _data');
         $menuItem_exportData->set_submenu($subMenu_exportData);
         $menuColumn_file->append($menuItem_exportData);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'export_data', $menuItem_exportData);
 
-        $menuColumn_file->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_file->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
             # 'Backup data' submenu
-            my $subMenu_backupRestore = Gtk2::Menu->new();
+            my $subMenu_backupRestore = Gtk3::Menu->new();
 
-            my $menuItem_backupData = Gtk2::MenuItem->new('_Backup all data files');
+            my $menuItem_backupData = Gtk3::MenuItem->new('_Backup all data files');
             $menuItem_backupData->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('backupdata', $mode);
             });
             $subMenu_backupRestore->append($menuItem_backupData);
 
-            my $menuItem_restoreData = Gtk2::MenuItem->new('_Restore from backup...');
+            my $menuItem_restoreData = Gtk3::MenuItem->new('_Restore from backup...');
             $menuItem_restoreData->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('restoredata', $mode);
             });
             $subMenu_backupRestore->append($menuItem_restoreData);
 
-        my $menuItem_backupRestore = Gtk2::MenuItem->new('_Backup data');
+        my $menuItem_backupRestore = Gtk3::MenuItem->new('_Backup data');
         $menuItem_backupRestore->set_submenu($subMenu_backupRestore);
         $menuColumn_file->append($menuItem_backupRestore);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'backup_restore_data', $menuItem_backupRestore);
 
-        $menuColumn_file->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_file->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_showFiles = Gtk2::ImageMenuItem->new('S_how file objects');
-        my $menuImg_showFiles = Gtk2::Image->new_from_stock('gtk-dialog-info', 'menu');
+        my $menuItem_showFiles = Gtk3::ImageMenuItem->new('S_how file objects');
+        my $menuImg_showFiles = Gtk3::Image->new_from_stock('gtk-dialog-info', 'menu');
         $menuItem_showFiles->set_image($menuImg_showFiles);
         $menuItem_showFiles->signal_connect('activate' => sub {
 
@@ -1564,8 +1553,8 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'show_files', $menuItem_showFiles);
 
-        my $menuItem_disableSaveWorld = Gtk2::ImageMenuItem->new('Disable wo_rld save');
-        my $menuImg_disableSaveWorld = Gtk2::Image->new_from_stock('gtk-dialog-warning', 'menu');
+        my $menuItem_disableSaveWorld = Gtk3::ImageMenuItem->new('Disable _world save');
+        my $menuImg_disableSaveWorld = Gtk3::Image->new_from_stock('gtk-dialog-warning', 'menu');
         $menuItem_disableSaveWorld->set_image($menuImg_disableSaveWorld);
         $menuItem_disableSaveWorld->signal_connect('activate' => sub {
 
@@ -1575,8 +1564,8 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'disable_world_save', $menuItem_disableSaveWorld);
 
-        my $menuItem_disableSaveLoad = Gtk2::ImageMenuItem->new('Disa_ble all saves/loads');
-        my $menuImg_disableSaveLoad = Gtk2::Image->new_from_stock('gtk-dialog-warning', 'menu');
+        my $menuItem_disableSaveLoad = Gtk3::ImageMenuItem->new('Disabl_e all saves/loads');
+        my $menuImg_disableSaveLoad = Gtk3::Image->new_from_stock('gtk-dialog-warning', 'menu');
         $menuItem_disableSaveLoad->set_image($menuImg_disableSaveLoad);
         $menuItem_disableSaveLoad->signal_connect('activate' => sub {
 
@@ -1600,7 +1589,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -1617,16 +1606,16 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_edit = Gtk2::Menu->new();
+        my $menuColumn_edit = Gtk3::Menu->new();
         if (! $menuColumn_edit) {
 
             return undef;
         }
 
-        my $menuItem_quickPrefs = Gtk2::ImageMenuItem->new(
+        my $menuItem_quickPrefs = Gtk3::ImageMenuItem->new(
             '_Quick preferences...',
         );
-        my $menuImg_quickPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
+        my $menuImg_quickPrefs = Gtk3::Image->new_from_stock('gtk-preferences', 'menu');
         $menuItem_quickPrefs->set_image($menuImg_quickPrefs);
         $menuItem_quickPrefs->signal_connect('activate' => sub {
 
@@ -1636,10 +1625,10 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'edit_quick_prefs', $menuItem_quickPrefs);
 
-        my $menuItem_clientPrefs = Gtk2::ImageMenuItem->new(
-            $axmud::SCRIPT . ' pr_eferences...',
+        my $menuItem_clientPrefs = Gtk3::ImageMenuItem->new(
+            $axmud::SCRIPT . ' _preferences...',
         );
-        my $menuImg_clientPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
+        my $menuImg_clientPrefs = Gtk3::Image->new_from_stock('gtk-preferences', 'menu');
         $menuItem_clientPrefs->set_image($menuImg_clientPrefs);
         $menuItem_clientPrefs->signal_connect('activate' => sub {
 
@@ -1649,8 +1638,8 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'edit_client_prefs', $menuItem_clientPrefs);
 
-        my $menuItem_sessionPrefs = Gtk2::ImageMenuItem->new('_Session preferences...');
-        my $menuImg_sessionPrefs = Gtk2::Image->new_from_stock('gtk-preferences', 'menu');
+        my $menuItem_sessionPrefs = Gtk3::ImageMenuItem->new('_Session preferences...');
+        my $menuImg_sessionPrefs = Gtk3::Image->new_from_stock('gtk-preferences', 'menu');
         $menuItem_sessionPrefs->set_image($menuImg_sessionPrefs);
         $menuItem_sessionPrefs->signal_connect('activate' => sub {
 
@@ -1660,10 +1649,10 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'edit_session_prefs', $menuItem_sessionPrefs);
 
-        $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_edit->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_editWorld = Gtk2::ImageMenuItem->new('Edit current _world...');
-        my $menuImg_editWorld = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        my $menuItem_editWorld = Gtk3::ImageMenuItem->new('Edit current _world...');
+        my $menuImg_editWorld = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
         $menuItem_editWorld->set_image($menuImg_editWorld);
         $menuItem_editWorld->signal_connect('activate' => sub {
 
@@ -1673,8 +1662,8 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'edit_current_world', $menuItem_editWorld);
 
-        my $menuItem_editGuild = Gtk2::ImageMenuItem->new('Edit current _guild...');
-        my $menuImg_editGuild = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        my $menuItem_editGuild = Gtk3::ImageMenuItem->new('Edit current _guild...');
+        my $menuImg_editGuild = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
         $menuItem_editGuild->set_image($menuImg_editGuild);
         $menuItem_editGuild->signal_connect('activate' => sub {
 
@@ -1685,8 +1674,8 @@
         #   ->currentGuild is defined
         $self->ivAdd('menuItemHash', 'edit_current_guild', $menuItem_editGuild);
 
-        my $menuItem_editRace = Gtk2::ImageMenuItem->new('Edit current _race...');
-        my $menuImg_editRace = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        my $menuItem_editRace = Gtk3::ImageMenuItem->new('Edit current _race...');
+        my $menuImg_editRace = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
         $menuItem_editRace->set_image($menuImg_editRace);
         $menuItem_editRace->signal_connect('activate' => sub {
 
@@ -1697,8 +1686,8 @@
         #   ->currentRace is defined
         $self->ivAdd('menuItemHash', 'edit_current_race', $menuItem_editRace);
 
-        my $menuItem_editChar = Gtk2::ImageMenuItem->new('Edit current _character...');
-        my $menuImg_editChar = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        my $menuItem_editChar = Gtk3::ImageMenuItem->new('Edit current _character...');
+        my $menuImg_editChar = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
         $menuItem_editChar->set_image($menuImg_editChar);
         $menuItem_editChar->signal_connect('activate' => sub {
 
@@ -1709,10 +1698,10 @@
         #   ->currentChar is defined
         $self->ivAdd('menuItemHash', 'edit_current_char', $menuItem_editChar);
 
-        $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_edit->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_locatorWiz = Gtk2::ImageMenuItem->new('Run Locator wi_zard...');
-        my $menuImg_locatorWiz = Gtk2::Image->new_from_stock('gtk-page-setup', 'menu');
+        my $menuItem_locatorWiz = Gtk3::ImageMenuItem->new('Run Locator w_izard...');
+        my $menuImg_locatorWiz = Gtk3::Image->new_from_stock('gtk-page-setup', 'menu');
         $menuItem_locatorWiz->set_image($menuImg_locatorWiz);
         $menuItem_locatorWiz->signal_connect('activate' => sub {
 
@@ -1723,8 +1712,8 @@
         #   corresponding menu item also appears in $self->drawTasksColumn)
         $self->ivAdd('menuItemHash', 'run_locator_wiz', $menuItem_locatorWiz);
 
-        my $menuItem_editWorldModel = Gtk2::ImageMenuItem->new('Edit _world model...');
-        my $menuImg_editWorldModel = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        my $menuItem_editWorldModel = Gtk3::ImageMenuItem->new('Edit world _model...');
+        my $menuImg_editWorldModel = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
         $menuItem_editWorldModel->set_image($menuImg_editWorldModel);
         $menuItem_editWorldModel->signal_connect('activate' => sub {
 
@@ -1734,8 +1723,8 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'edit_world_model', $menuItem_editWorldModel);
 
-        my $menuItem_editDict = Gtk2::ImageMenuItem->new('Edit _dictionary...');
-        my $menuImg_editDict = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        my $menuItem_editDict = Gtk3::ImageMenuItem->new('Edit _dictionary...');
+        my $menuImg_editDict = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
         $menuItem_editDict->set_image($menuImg_editDict);
         $menuItem_editDict->signal_connect('activate' => sub {
 
@@ -1745,12 +1734,12 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'edit_dictionary', $menuItem_editDict);
 
-        $menuColumn_edit->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_edit->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
             # 'Simulate' submenu
-            my $subMenu_simulate = Gtk2::Menu->new();
+            my $subMenu_simulate = Gtk3::Menu->new();
 
-            my $menuItem_simWorld = Gtk2::MenuItem->new('Simulate _world...');
+            my $menuItem_simWorld = Gtk3::MenuItem->new('Simulate _world...');
             $menuItem_simWorld->signal_connect('activate' => sub {
 
                 # Open a simulate world 'dialogue' window. The text entered is used in a
@@ -1759,7 +1748,7 @@
             });
             $subMenu_simulate->append($menuItem_simWorld);
 
-            my $menuItem_simPrompt = Gtk2::MenuItem->new('Simulate p_rompt...');
+            my $menuItem_simPrompt = Gtk3::MenuItem->new('Simulate _prompt...');
             $menuItem_simPrompt->signal_connect('activate' => sub {
 
                 # Open a simulate prompt 'dialogue' window. The text entered is used in a
@@ -1768,7 +1757,7 @@
             });
             $subMenu_simulate->append($menuItem_simPrompt);
 
-            my $menuItem_simCmd = Gtk2::MenuItem->new('Simulate _command...');
+            my $menuItem_simCmd = Gtk3::MenuItem->new('Simulate _command...');
             $menuItem_simCmd->signal_connect('activate' => sub {
 
                 # Prompt the user for a world command
@@ -1787,7 +1776,7 @@
             });
             $subMenu_simulate->append($menuItem_simCmd);
 
-            my $menuItem_simHook = Gtk2::MenuItem->new('Simulate _hook event...');
+            my $menuItem_simHook = Gtk3::MenuItem->new('Simulate _hook event...');
             $menuItem_simHook->signal_connect('activate' => sub {
 
                 my (
@@ -1803,7 +1792,6 @@
                 $choice = $self->winObj->showComboDialogue(
                     'Simulate hook event',
                     'Enter a hook event for ' . $axmud::SCRIPT . ' to simulate',
-                    FALSE,
                     \@eventList,
                 );
 
@@ -1864,13 +1852,13 @@
             });
             $subMenu_simulate->append($menuItem_simHook);
 
-        my $menuItem_simulate = Gtk2::MenuItem->new('Sim_ulate');
+        my $menuItem_simulate = Gtk3::MenuItem->new('Sim_ulate');
         $menuItem_simulate->set_submenu($subMenu_simulate);
         $menuColumn_edit->append($menuItem_simulate);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'simulate', $menuItem_simulate);
 
-        my $menuItem_patternTest = Gtk2::MenuItem->new('Test _patterns...');
+        my $menuItem_patternTest = Gtk3::MenuItem->new('_Test patterns...');
         $menuItem_patternTest->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('testpattern', $mode);
@@ -1891,7 +1879,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -1908,13 +1896,13 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_interfaces = Gtk2::Menu->new();
+        my $menuColumn_interfaces = Gtk3::Menu->new();
         if (! $menuColumn_interfaces) {
 
             return undef;
         }
 
-        my $menuItem_activeInterfaces = Gtk2::MenuItem->new('Acti_ve interfaces...');
+        my $menuItem_activeInterfaces = Gtk3::MenuItem->new('Acti_ve interfaces...');
         $menuItem_activeInterfaces->signal_connect('activate' => sub {
 
             # Open a session preference window on the notebook's second page, so the user can see
@@ -1925,12 +1913,12 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'active_interfaces', $menuItem_activeInterfaces);
 
-        $menuColumn_interfaces->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_interfaces->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
             # 'Triggers' submenu
-            my $subMenu_showTriggers = Gtk2::Menu->new();
+            my $subMenu_showTriggers = Gtk3::Menu->new();
 
-            my $menuItem_worldTriggers = Gtk2::MenuItem->new('_World triggers...');
+            my $menuItem_worldTriggers = Gtk3::MenuItem->new('_World triggers...');
             $menuItem_worldTriggers->signal_connect('activate' => sub {
 
                 # Open the cage window on the notebook's second page, so the user can see the list
@@ -1939,7 +1927,7 @@
             });
             $subMenu_showTriggers->append($menuItem_worldTriggers);
 
-            my $menuItem_guildTriggers = Gtk2::MenuItem->new('_Guild triggers...');
+            my $menuItem_guildTriggers = Gtk3::MenuItem->new('_Guild triggers...');
             $menuItem_guildTriggers->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -1952,7 +1940,7 @@
             #   guild)
             $self->ivAdd('menuItemHash', 'guild_triggers', $menuItem_guildTriggers);
 
-            my $menuItem_raceTriggers = Gtk2::MenuItem->new('_Race triggers...');
+            my $menuItem_raceTriggers = Gtk3::MenuItem->new('_Race triggers...');
             $menuItem_raceTriggers->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -1965,7 +1953,7 @@
             #   race)
             $self->ivAdd('menuItemHash', 'race_triggers', $menuItem_raceTriggers);
 
-            my $menuItem_charTriggers = Gtk2::MenuItem->new('_Character triggers...');
+            my $menuItem_charTriggers = Gtk3::MenuItem->new('_Character triggers...');
             $menuItem_charTriggers->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -1978,16 +1966,16 @@
             #   character)
             $self->ivAdd('menuItemHash', 'char_triggers', $menuItem_charTriggers);
 
-        my $menuItem_showTriggers = Gtk2::MenuItem->new('_Triggers');
+        my $menuItem_showTriggers = Gtk3::MenuItem->new('_Triggers');
         $menuItem_showTriggers->set_submenu($subMenu_showTriggers);
         $menuColumn_interfaces->append($menuItem_showTriggers);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'show_triggers', $menuItem_showTriggers);
 
             # 'Aliases' submenu
-            my $subMenu_showAliases = Gtk2::Menu->new();
+            my $subMenu_showAliases = Gtk3::Menu->new();
 
-            my $menuItem_worldAliases = Gtk2::MenuItem->new('World _aliases...');
+            my $menuItem_worldAliases = Gtk3::MenuItem->new('World _aliases...');
             $menuItem_worldAliases->signal_connect('activate' => sub {
 
                 # Open the cage window on the notebook's second page, so the user can see the list
@@ -1996,7 +1984,7 @@
             });
             $subMenu_showAliases->append($menuItem_worldAliases);
 
-            my $menuItem_guildAliases = Gtk2::MenuItem->new('_Guild aliases...');
+            my $menuItem_guildAliases = Gtk3::MenuItem->new('_Guild aliases...');
             $menuItem_guildAliases->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2009,7 +1997,7 @@
             #   guild)
             $self->ivAdd('menuItemHash', 'guild_aliases', $menuItem_guildAliases);
 
-            my $menuItem_raceAliases = Gtk2::MenuItem->new('_Race aliases...');
+            my $menuItem_raceAliases = Gtk3::MenuItem->new('_Race aliases...');
             $menuItem_raceAliases->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2022,7 +2010,7 @@
             #   race)
             $self->ivAdd('menuItemHash', 'race_aliases', $menuItem_raceAliases);
 
-            my $menuItem_charAliases = Gtk2::MenuItem->new('_Character aliases...');
+            my $menuItem_charAliases = Gtk3::MenuItem->new('_Character aliases...');
             $menuItem_charAliases->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2035,16 +2023,16 @@
             #   character)
             $self->ivAdd('menuItemHash', 'char_aliases', $menuItem_charAliases);
 
-        my $menuItem_showAliases = Gtk2::MenuItem->new('_Aliases');
+        my $menuItem_showAliases = Gtk3::MenuItem->new('_Aliases');
         $menuItem_showAliases->set_submenu($subMenu_showAliases);
         $menuColumn_interfaces->append($menuItem_showAliases);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'show_aliases', $menuItem_showAliases);
 
             # 'Macros' submenu
-            my $subMenu_showMacros = Gtk2::Menu->new();
+            my $subMenu_showMacros = Gtk3::Menu->new();
 
-            my $menuItem_worldMacros = Gtk2::MenuItem->new('World _macros...');
+            my $menuItem_worldMacros = Gtk3::MenuItem->new('_World macros...');
             $menuItem_worldMacros->signal_connect('activate' => sub {
 
                 # Open the cage window on the notebook's second page, so the user can see the list
@@ -2053,7 +2041,7 @@
             });
             $subMenu_showMacros->append($menuItem_worldMacros);
 
-            my $menuItem_guildMacros = Gtk2::MenuItem->new('_Guild macros...');
+            my $menuItem_guildMacros = Gtk3::MenuItem->new('_Guild macros...');
             $menuItem_guildMacros->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2066,7 +2054,7 @@
             #   guild)
             $self->ivAdd('menuItemHash', 'guild_macros', $menuItem_guildMacros);
 
-            my $menuItem_raceMacros = Gtk2::MenuItem->new('_Race macros...');
+            my $menuItem_raceMacros = Gtk3::MenuItem->new('_Race macros...');
             $menuItem_raceMacros->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2079,7 +2067,7 @@
             #   race)
             $self->ivAdd('menuItemHash', 'race_macros', $menuItem_raceMacros);
 
-            my $menuItem_charMacros = Gtk2::MenuItem->new('_Character macros...');
+            my $menuItem_charMacros = Gtk3::MenuItem->new('_Character macros...');
             $menuItem_charMacros->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2092,16 +2080,16 @@
             #   character)
             $self->ivAdd('menuItemHash', 'char_macros', $menuItem_charMacros);
 
-        my $menuItem_showMacros = Gtk2::MenuItem->new('_Macros');
+        my $menuItem_showMacros = Gtk3::MenuItem->new('_Macros');
         $menuItem_showMacros->set_submenu($subMenu_showMacros);
         $menuColumn_interfaces->append($menuItem_showMacros);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'show_macros', $menuItem_showMacros);
 
             # 'Timers' submenu
-            my $subMenu_showTimers = Gtk2::Menu->new();
+            my $subMenu_showTimers = Gtk3::Menu->new();
 
-            my $menuItem_worldTimers = Gtk2::MenuItem->new('World t_imers...');
+            my $menuItem_worldTimers = Gtk3::MenuItem->new('_World timers...');
             $menuItem_worldTimers->signal_connect('activate' => sub {
 
                 # Open the cage window on the notebook's second page, so the user can see the list
@@ -2110,7 +2098,7 @@
             });
             $subMenu_showTimers->append($menuItem_worldTimers);
 
-            my $menuItem_guildTimers = Gtk2::MenuItem->new('_Guild timers...');
+            my $menuItem_guildTimers = Gtk3::MenuItem->new('_Guild timers...');
             $menuItem_guildTimers->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2123,7 +2111,7 @@
             #   guild)
             $self->ivAdd('menuItemHash', 'guild_timers', $menuItem_guildTimers);
 
-            my $menuItem_raceTimers = Gtk2::MenuItem->new('_Race timers...');
+            my $menuItem_raceTimers = Gtk3::MenuItem->new('_Race timers...');
             $menuItem_raceTimers->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2136,7 +2124,7 @@
             #   race)
             $self->ivAdd('menuItemHash', 'race_timers', $menuItem_raceTimers);
 
-            my $menuItem_charTimers = Gtk2::MenuItem->new('_Character timers...');
+            my $menuItem_charTimers = Gtk3::MenuItem->new('_Character timers...');
             $menuItem_charTimers->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2149,16 +2137,16 @@
             #   character)
             $self->ivAdd('menuItemHash', 'char_timers', $menuItem_charTimers);
 
-        my $menuItem_showTimers = Gtk2::MenuItem->new('_Timers');
+        my $menuItem_showTimers = Gtk3::MenuItem->new('T_imers');
         $menuItem_showTimers->set_submenu($subMenu_showTimers);
         $menuColumn_interfaces->append($menuItem_showTimers);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'show_timers', $menuItem_showTimers);
 
             # 'Hooks' submenu
-            my $subMenu_showHooks = Gtk2::Menu->new();
+            my $subMenu_showHooks = Gtk3::Menu->new();
 
-            my $menuItem_worldHooks = Gtk2::MenuItem->new('World _hooks...');
+            my $menuItem_worldHooks = Gtk3::MenuItem->new('_World hooks...');
             $menuItem_worldHooks->signal_connect('activate' => sub {
 
                 # Open the cage window on the notebook's second page, so the user can see the list
@@ -2167,7 +2155,7 @@
             });
             $subMenu_showHooks->append($menuItem_worldHooks);
 
-            my $menuItem_guildHooks = Gtk2::MenuItem->new('_Guild hooks...');
+            my $menuItem_guildHooks = Gtk3::MenuItem->new('_Guild hooks...');
             $menuItem_guildHooks->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2180,7 +2168,7 @@
             #   guild)
             $self->ivAdd('menuItemHash', 'guild_hooks', $menuItem_guildHooks);
 
-            my $menuItem_raceHooks = Gtk2::MenuItem->new('_Race hooks...');
+            my $menuItem_raceHooks = Gtk3::MenuItem->new('_Race hooks...');
             $menuItem_raceHooks->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2193,7 +2181,7 @@
             #   race)
             $self->ivAdd('menuItemHash', 'race_hooks', $menuItem_raceHooks);
 
-            my $menuItem_charHooks = Gtk2::MenuItem->new('_Character hooks...');
+            my $menuItem_charHooks = Gtk3::MenuItem->new('_Character hooks...');
             $menuItem_charHooks->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2206,18 +2194,18 @@
             #   character)
             $self->ivAdd('menuItemHash', 'char_hooks', $menuItem_charHooks);
 
-        my $menuItem_showHooks = Gtk2::MenuItem->new('_Hooks');
+        my $menuItem_showHooks = Gtk3::MenuItem->new('_Hooks');
         $menuItem_showHooks->set_submenu($subMenu_showHooks);
         $menuColumn_interfaces->append($menuItem_showHooks);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'show_hooks', $menuItem_showHooks);
 
-        $menuColumn_interfaces->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_interfaces->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
             # 'Commands' submenu
-            my $subMenu_showCmds = Gtk2::Menu->new();
+            my $subMenu_showCmds = Gtk3::Menu->new();
 
-            my $menuItem_worldCmds = Gtk2::MenuItem->new('_World commands...');
+            my $menuItem_worldCmds = Gtk3::MenuItem->new('_World commands...');
             $menuItem_worldCmds->signal_connect('activate' => sub {
 
                 # Open the cage window on the notebook's second page, so the user can see the list
@@ -2226,7 +2214,7 @@
             });
             $subMenu_showCmds->append($menuItem_worldCmds);
 
-            my $menuItem_guildCmds = Gtk2::MenuItem->new('_Guild commands...');
+            my $menuItem_guildCmds = Gtk3::MenuItem->new('_Guild commands...');
             $menuItem_guildCmds->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2239,7 +2227,7 @@
             #   guild)
             $self->ivAdd('menuItemHash', 'guild_cmds', $menuItem_guildCmds);
 
-            my $menuItem_raceCmds = Gtk2::MenuItem->new('_Race commands...');
+            my $menuItem_raceCmds = Gtk3::MenuItem->new('_Race commands...');
             $menuItem_raceCmds->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2252,7 +2240,7 @@
             #   race)
             $self->ivAdd('menuItemHash', 'race_cmds', $menuItem_raceCmds);
 
-            my $menuItem_charCmds = Gtk2::MenuItem->new('_Character commands...');
+            my $menuItem_charCmds = Gtk3::MenuItem->new('_Character commands...');
             $menuItem_charCmds->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2265,16 +2253,16 @@
             #   character)
             $self->ivAdd('menuItemHash', 'char_cmds', $menuItem_charCmds);
 
-        my $menuItem_showCmds = Gtk2::MenuItem->new('_Commands');
+        my $menuItem_showCmds = Gtk3::MenuItem->new('_Commands');
         $menuItem_showCmds->set_submenu($subMenu_showCmds);
         $menuColumn_interfaces->append($menuItem_showCmds);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'show_cmds', $menuItem_showCmds);
 
             # 'Routes' submenu
-            my $subMenu_showRoutes = Gtk2::Menu->new();
+            my $subMenu_showRoutes = Gtk3::Menu->new();
 
-            my $menuItem_worldRoutes = Gtk2::MenuItem->new('_World routes...');
+            my $menuItem_worldRoutes = Gtk3::MenuItem->new('_World routes...');
             $menuItem_worldRoutes->signal_connect('activate' => sub {
 
                 # Open the cage window on the notebook's second page, so the user can see the list
@@ -2283,7 +2271,7 @@
             });
             $subMenu_showRoutes->append($menuItem_worldRoutes);
 
-            my $menuItem_guildRoutes = Gtk2::MenuItem->new('_Guild routes...');
+            my $menuItem_guildRoutes = Gtk3::MenuItem->new('_Guild routes...');
             $menuItem_guildRoutes->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2296,7 +2284,7 @@
             #   guild)
             $self->ivAdd('menuItemHash', 'guild_routes', $menuItem_guildRoutes);
 
-            my $menuItem_raceRoutes = Gtk2::MenuItem->new('_Race routes...');
+            my $menuItem_raceRoutes = Gtk3::MenuItem->new('_Race routes...');
             $menuItem_raceRoutes->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2309,7 +2297,7 @@
             #   race)
             $self->ivAdd('menuItemHash', 'race_routes', $menuItem_raceRoutes);
 
-            my $menuItem_charRoutes = Gtk2::MenuItem->new('_Character routes...');
+            my $menuItem_charRoutes = Gtk3::MenuItem->new('_Character routes...');
             $menuItem_charRoutes->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd(
@@ -2322,7 +2310,7 @@
             #   character)
             $self->ivAdd('menuItemHash', 'char_routes', $menuItem_charRoutes);
 
-        my $menuItem_showRoutes = Gtk2::MenuItem->new('_Routes');
+        my $menuItem_showRoutes = Gtk3::MenuItem->new('_Routes');
         $menuItem_showRoutes->set_submenu($subMenu_showRoutes);
         $menuColumn_interfaces->append($menuItem_showRoutes);
         # (Requires a visible session whose status is 'connected' or 'offline')
@@ -2342,7 +2330,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -2359,13 +2347,13 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_tasks = Gtk2::Menu->new();
+        my $menuColumn_tasks = Gtk3::Menu->new();
         if (! $menuColumn_tasks) {
 
             return undef;
         }
 
-        my $menuItem_freezeTasks = Gtk2::CheckMenuItem->new('_Freeze all tasks');
+        my $menuItem_freezeTasks = Gtk3::CheckMenuItem->new('_Freeze all tasks');
         $menuItem_freezeTasks->signal_connect('toggled' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('freezetask', $mode);
@@ -2374,12 +2362,12 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'freeze_tasks', $menuItem_freezeTasks);
 
-        $menuColumn_tasks->append(Gtk2::SeparatorMenuItem->new());  # Separator
+        $menuColumn_tasks->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
             # 'Channels task' submenu
-            my $subMenu_channelsTask = Gtk2::Menu->new();
+            my $subMenu_channelsTask = Gtk3::Menu->new();
 
-            my $menuItem_channelsTask_addPattern = Gtk2::MenuItem->new('Add _channel pattern...');
+            my $menuItem_channelsTask_addPattern = Gtk3::MenuItem->new('Add _channel pattern...');
             $menuItem_channelsTask_addPattern->signal_connect('activate' => sub {
 
                 my ($pattern, $channel);
@@ -2401,7 +2389,7 @@
             });
             $subMenu_channelsTask->append($menuItem_channelsTask_addPattern);
 
-            my $menuItem_channelsTask_addException = Gtk2::MenuItem->new(
+            my $menuItem_channelsTask_addException = Gtk3::MenuItem->new(
                 'Add _exception pattern...',
             );
             $menuItem_channelsTask_addException->signal_connect('activate' => sub {
@@ -2422,26 +2410,26 @@
             });
             $subMenu_channelsTask->append($menuItem_channelsTask_addException);
 
-            my $menuItem_channelsTask_listPattern = Gtk2::MenuItem->new('_List patterns');
+            my $menuItem_channelsTask_listPattern = Gtk3::MenuItem->new('_List patterns');
             $menuItem_channelsTask_listPattern->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('listchannelpattern', $mode);
             });
             $subMenu_channelsTask->append($menuItem_channelsTask_listPattern);
 
-            $subMenu_channelsTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_channelsTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_channelsTask_emptyWindow = Gtk2::MenuItem->new('_Empty Channels _window');
+            my $menuItem_channelsTask_emptyWindow = Gtk3::MenuItem->new('Empty Channels _window');
             $menuItem_channelsTask_emptyWindow->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('emptychannelswindow', $mode);
             });
             $subMenu_channelsTask->append($menuItem_channelsTask_emptyWindow);
 
-            $subMenu_channelsTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_channelsTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_channelsTask_editTask = Gtk2::ImageMenuItem->new('_Edit current task...');
-            my $menuImg_channelsTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuItem_channelsTask_editTask = Gtk3::ImageMenuItem->new('Edit current _task...');
+            my $menuImg_channelsTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_channelsTask_editTask->set_image($menuImg_channelsTask_editTask);
             $menuItem_channelsTask_editTask->signal_connect('activate' => sub {
 
@@ -2462,7 +2450,7 @@
             });
             $subMenu_channelsTask->append($menuItem_channelsTask_editTask);
 
-        my $menuItem_channelsTask = Gtk2::MenuItem->new('Channe_ls task');
+        my $menuItem_channelsTask = Gtk3::MenuItem->new('_Channels task');
         $menuItem_channelsTask->set_submenu($subMenu_channelsTask);
         $menuColumn_tasks->append($menuItem_channelsTask);
         # (Requires a visible session whose status is 'connected' or 'offline' and is running a
@@ -2470,25 +2458,25 @@
         $self->ivAdd('menuItemHash', 'channels_task', $menuItem_channelsTask);
 
             # 'Chat task' submenu
-            my $subMenu_chatTask = Gtk2::Menu->new();
+            my $subMenu_chatTask = Gtk3::Menu->new();
 
-            my $menuItem_chatTask_listen = Gtk2::MenuItem->new('_Listen for incoming calls');
+            my $menuItem_chatTask_listen = Gtk3::MenuItem->new('_Listen for incoming calls');
             $menuItem_chatTask_listen->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('chatlisten', $mode);
             });
             $subMenu_chatTask->append($menuItem_chatTask_listen);
 
-            my $menuItem_chatTask_ignore = Gtk2::MenuItem->new('_Ignore incoming calls');
+            my $menuItem_chatTask_ignore = Gtk3::MenuItem->new('_Ignore incoming calls');
             $menuItem_chatTask_ignore->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('chatignore', $mode);
             });
             $subMenu_chatTask->append($menuItem_chatTask_ignore);
 
-            $subMenu_chatTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_chatTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_chatTask_chatContact = Gtk2::MenuItem->new('_Chat with...');
+            my $menuItem_chatTask_chatContact = Gtk3::MenuItem->new('_Chat with...');
             $menuItem_chatTask_chatContact->signal_connect('activate' => sub {
 
                 my (
@@ -2513,7 +2501,6 @@
                     $choice = $self->winObj->showComboDialogue(
                         'Select chat contact',
                         'Select the chat contact to call',
-                        FALSE,
                         \@comboList,
                     );
 
@@ -2528,7 +2515,7 @@
             });
             $subMenu_chatTask->append($menuItem_chatTask_chatContact);
 
-            my $menuItem_chatTask_chatMM = Gtk2::MenuItem->new('Chat using _MudMaster...');
+            my $menuItem_chatTask_chatMM = Gtk3::MenuItem->new('Chat using _MudMaster...');
             $menuItem_chatTask_chatMM->signal_connect('activate' => sub {
 
                 my ($host, $port);
@@ -2558,7 +2545,7 @@
             });
             $subMenu_chatTask->append($menuItem_chatTask_chatMM);
 
-            my $menuItem_chatTask_chatZChat = Gtk2::MenuItem->new('Chat using _zChat...');
+            my $menuItem_chatTask_chatZChat = Gtk3::MenuItem->new('Chat using _zChat...');
             $menuItem_chatTask_chatZChat->signal_connect('activate' => sub {
 
                 my ($host, $port);
@@ -2588,35 +2575,35 @@
             });
             $subMenu_chatTask->append($menuItem_chatTask_chatZChat);
 
-            $subMenu_chatTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_chatTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_chatTask_allowSnoop = Gtk2::MenuItem->new('_Allow everyone to snoop');
+            my $menuItem_chatTask_allowSnoop = Gtk3::MenuItem->new('_Allow everyone to snoop');
             $menuItem_chatTask_allowSnoop->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('chatset -a', $mode);
             });
             $subMenu_chatTask->append($menuItem_chatTask_allowSnoop);
 
-            my $menuItem_chatTask_forbidSnoop = Gtk2::MenuItem->new('_Forbid all snooping');
+            my $menuItem_chatTask_forbidSnoop = Gtk3::MenuItem->new('_Forbid all snooping');
             $menuItem_chatTask_forbidSnoop->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('chatset -f', $mode);
             });
             $subMenu_chatTask->append($menuItem_chatTask_forbidSnoop);
 
-            $subMenu_chatTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_chatTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_chatTask_hangUpAll = Gtk2::MenuItem->new('_Hang up on everyone');
+            my $menuItem_chatTask_hangUpAll = Gtk3::MenuItem->new('_Hang up on everyone');
             $menuItem_chatTask_hangUpAll->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('chathangup', $mode);
             });
             $subMenu_chatTask->append($menuItem_chatTask_hangUpAll);
 
-            $subMenu_chatTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_chatTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_chatTask_editTask = Gtk2::ImageMenuItem->new('_Edit lead chat task...');
-            my $menuImg_chatTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuItem_chatTask_editTask = Gtk3::ImageMenuItem->new('Edit lead chat _task...');
+            my $menuImg_chatTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_chatTask_editTask->set_image($menuImg_chatTask_editTask);
             $menuItem_chatTask_editTask->signal_connect('activate' => sub {
 
@@ -2640,17 +2627,17 @@
             #   Chat task)
             $self->ivAdd('menuItemHash', 'edit_chat_task', $menuItem_chatTask_editTask);
 
-        my $menuItem_chatTask = Gtk2::MenuItem->new('_Chat task');
+        my $menuItem_chatTask = Gtk3::MenuItem->new('C_hat task');
         $menuItem_chatTask->set_submenu($subMenu_chatTask);
         $menuColumn_tasks->append($menuItem_chatTask);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'chat_task', $menuItem_chatTask);
 
             # 'Compass' submenu
-            my $subMenu_compassTask = Gtk2::Menu->new();
+            my $subMenu_compassTask = Gtk3::Menu->new();
 
             my $menuItem_compassTask_enableKeypad
-                = Gtk2::MenuItem->new('_Enable keypad world commands');
+                = Gtk3::MenuItem->new('_Enable keypad world commands');
             $menuItem_compassTask_enableKeypad->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('compass on', $mode);
@@ -2658,16 +2645,16 @@
             $subMenu_compassTask->append($menuItem_compassTask_enableKeypad);
 
             my $menuItem_compassTask_disableKeypad
-                = Gtk2::MenuItem->new('_Disable keypad world commands');
+                = Gtk3::MenuItem->new('_Disable keypad world commands');
             $menuItem_compassTask_disableKeypad->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('compass off', $mode);
             });
             $subMenu_compassTask->append($menuItem_compassTask_disableKeypad);
 
-            $subMenu_compassTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_compassTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_compassTask_addPattern = Gtk2::MenuItem->new('_Customise key...');
+            my $menuItem_compassTask_addPattern = Gtk3::MenuItem->new('_Customise key...');
             $menuItem_compassTask_addPattern->signal_connect('activate' => sub {
 
                 my (
@@ -2711,10 +2698,10 @@
             });
             $subMenu_compassTask->append($menuItem_compassTask_addPattern);
 
-            $subMenu_compassTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_compassTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_compassTask_editTask = Gtk2::ImageMenuItem->new('_Edit current task...');
-            my $menuImg_compassTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuItem_compassTask_editTask = Gtk3::ImageMenuItem->new('Edit current _task...');
+            my $menuImg_compassTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_compassTask_editTask->set_image($menuImg_compassTask_editTask);
             $menuItem_compassTask_editTask->signal_connect('activate' => sub {
 
@@ -2735,7 +2722,7 @@
             });
             $subMenu_compassTask->append($menuItem_compassTask_editTask);
 
-        my $menuItem_compassTask = Gtk2::MenuItem->new('C_ompass task');
+        my $menuItem_compassTask = Gtk3::MenuItem->new('C_ompass task');
         $menuItem_compassTask->set_submenu($subMenu_compassTask);
         $menuColumn_tasks->append($menuItem_compassTask);
         # (Requires a visible session whose status is 'connected' or 'offline' and is running a
@@ -2743,9 +2730,9 @@
         $self->ivAdd('menuItemHash', 'compass_task', $menuItem_compassTask);
 
             # 'Divert task' submenu
-            my $subMenu_divertTask = Gtk2::Menu->new();
+            my $subMenu_divertTask = Gtk3::Menu->new();
 
-            my $menuItem_divertTask_addPattern = Gtk2::MenuItem->new('Add _channel pattern...');
+            my $menuItem_divertTask_addPattern = Gtk3::MenuItem->new('Add _channel pattern...');
             $menuItem_divertTask_addPattern->signal_connect('activate' => sub {
 
                 my ($pattern, $channel);
@@ -2767,7 +2754,7 @@
             });
             $subMenu_divertTask->append($menuItem_divertTask_addPattern);
 
-            my $menuItem_divertTask_addException = Gtk2::MenuItem->new('Add _exception pattern...');
+            my $menuItem_divertTask_addException = Gtk3::MenuItem->new('Add _exception pattern...');
             $menuItem_divertTask_addException->signal_connect('activate' => sub {
 
                 # Prompt the user for a pattern
@@ -2786,26 +2773,26 @@
             });
             $subMenu_divertTask->append($menuItem_divertTask_addException);
 
-            my $menuItem_divertTask_listPattern = Gtk2::MenuItem->new('_List patterns');
+            my $menuItem_divertTask_listPattern = Gtk3::MenuItem->new('_List patterns');
             $menuItem_divertTask_listPattern->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('listchannelpattern', $mode);
             });
             $subMenu_divertTask->append($menuItem_divertTask_listPattern);
 
-            $subMenu_divertTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_divertTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_divertTask_emptyWindow = Gtk2::MenuItem->new('Empty divert _window');
+            my $menuItem_divertTask_emptyWindow = Gtk3::MenuItem->new('Empty divert _window');
             $menuItem_divertTask_emptyWindow->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('emptydivertwindow', $mode);
             });
             $subMenu_divertTask->append($menuItem_divertTask_emptyWindow);
 
-            $subMenu_divertTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_divertTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_divertTask_editTask = Gtk2::ImageMenuItem->new('_Edit current task...');
-            my $menuImg_divertTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuItem_divertTask_editTask = Gtk3::ImageMenuItem->new('Edit current _task...');
+            my $menuImg_divertTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_divertTask_editTask->set_image($menuImg_divertTask_editTask);
             $menuItem_divertTask_editTask->signal_connect('activate' => sub {
 
@@ -2826,7 +2813,7 @@
             });
             $subMenu_divertTask->append($menuItem_divertTask_editTask);
 
-        my $menuItem_divertTask = Gtk2::MenuItem->new('_Divert task');
+        my $menuItem_divertTask = Gtk3::MenuItem->new('_Divert task');
         $menuItem_divertTask->set_submenu($subMenu_divertTask);
         $menuColumn_tasks->append($menuItem_divertTask);
         # (Requires a visible session whose status is 'connected' or 'offline' and is running a
@@ -2834,44 +2821,44 @@
         $self->ivAdd('menuItemHash', 'divert_task', $menuItem_divertTask);
 
             # 'Inventory/Condition task' submenu
-            my $subMenu_inventoryTask = Gtk2::Menu->new();
+            my $subMenu_inventoryTask = Gtk3::Menu->new();
 
-            my $menuItem_inventoryTask_activateTask = Gtk2::MenuItem->new('_Activate task');
+            my $menuItem_inventoryTask_activateTask = Gtk3::MenuItem->new('_Activate task');
             $menuItem_inventoryTask_activateTask->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('activateinventory', $mode);
             });
             $subMenu_inventoryTask->append($menuItem_inventoryTask_activateTask);
 
-            my $menuItem_inventoryTask_disactivateTask = Gtk2::MenuItem->new('_Disactivate task');
+            my $menuItem_inventoryTask_disactivateTask = Gtk3::MenuItem->new('_Disactivate task');
             $menuItem_inventoryTask_disactivateTask->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('disactivateinventory', $mode);
             });
             $subMenu_inventoryTask->append($menuItem_inventoryTask_disactivateTask);
 
-            $subMenu_inventoryTask->append(Gtk2::SeparatorMenuItem->new()); # Separator
+            $subMenu_inventoryTask->append(Gtk3::SeparatorMenuItem->new()); # Separator
 
-            my $menuItem_inventoryTask_sellAll = Gtk2::MenuItem->new('_Sell all');
+            my $menuItem_inventoryTask_sellAll = Gtk3::MenuItem->new('_Sell all');
             $menuItem_inventoryTask_sellAll->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('sellall', $mode);
             });
             $subMenu_inventoryTask->append($menuItem_inventoryTask_sellAll);
 
-            my $menuItem_inventoryTask_dropAll = Gtk2::MenuItem->new('D_rop all');
+            my $menuItem_inventoryTask_dropAll = Gtk3::MenuItem->new('D_rop all');
             $menuItem_inventoryTask_dropAll->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('dropall', $mode);
             });
             $subMenu_inventoryTask->append($menuItem_inventoryTask_dropAll);
 
-            $subMenu_inventoryTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_inventoryTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_inventoryTask_editTask = Gtk2::ImageMenuItem->new(
+            my $menuItem_inventoryTask_editTask = Gtk3::ImageMenuItem->new(
                 'Edit current _Inventory task...',
             );
-            my $menuImg_inventoryTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuImg_inventoryTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_inventoryTask_editTask->set_image($menuImg_inventoryTask_editTask);
             $menuItem_inventoryTask_editTask->signal_connect('activate' => sub {
 
@@ -2892,10 +2879,10 @@
             });
             $subMenu_inventoryTask->append($menuItem_inventoryTask_editTask);
 
-            my $menuItem_conditionTask_editTask = Gtk2::ImageMenuItem->new(
+            my $menuItem_conditionTask_editTask = Gtk3::ImageMenuItem->new(
                 'Edit current _Condition task...',
             );
-            my $menuImg_conditionTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuImg_conditionTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_conditionTask_editTask->set_image($menuImg_conditionTask_editTask);
             $menuItem_conditionTask_editTask->signal_connect('activate' => sub {
 
@@ -2916,7 +2903,7 @@
             });
             $subMenu_inventoryTask->append($menuItem_conditionTask_editTask);
 
-        my $menuItem_inventoryTask = Gtk2::MenuItem->new('_Inventory/Condition tasks');
+        my $menuItem_inventoryTask = Gtk3::MenuItem->new('_Inventory/Condition tasks');
         $menuItem_inventoryTask->set_submenu($subMenu_inventoryTask);
         $menuColumn_tasks->append($menuItem_inventoryTask);
         # (Requires a visible session whose status is 'connected' or 'offline' and is running a
@@ -2924,16 +2911,16 @@
         $self->ivAdd('menuItemHash', 'inventory_task', $menuItem_inventoryTask);
 
             # 'Locator task' submenu
-            my $subMenu_locatorTask = Gtk2::Menu->new();
+            my $subMenu_locatorTask = Gtk3::Menu->new();
 
-            my $menuItem_locatorTask_resetTask = Gtk2::MenuItem->new('_Reset task');
+            my $menuItem_locatorTask_resetTask = Gtk3::MenuItem->new('_Reset task');
             $menuItem_locatorTask_resetTask->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('resetlocatortask', $mode);
             });
             $subMenu_locatorTask->append($menuItem_locatorTask_resetTask);
 
-            my $menuItem_locatorTask_toggleLocWin = Gtk2::MenuItem->new('Toggle task _window');
+            my $menuItem_locatorTask_toggleLocWin = Gtk3::MenuItem->new('Toggle task _window');
             $menuItem_locatorTask_toggleLocWin->signal_connect('activate' => sub {
 
                 if ($self->winObj->visibleSession->locatorTask->winObj) {
@@ -2947,10 +2934,10 @@
             });
             $subMenu_locatorTask->append($menuItem_locatorTask_toggleLocWin);
 
-            $subMenu_locatorTask->append(Gtk2::SeparatorMenuItem->new());   # Separator
+            $subMenu_locatorTask->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
             my $menuItem_locatorTask_toggleUnknown
-                = Gtk2::MenuItem->new('_Toggle unknown word collection');
+                = Gtk3::MenuItem->new('T_oggle unknown word collection');
             $menuItem_locatorTask_toggleUnknown->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('collectunknownwords', $mode);
@@ -2958,7 +2945,7 @@
             $subMenu_locatorTask->append($menuItem_locatorTask_toggleUnknown);
 
             my $menuItem_locatorTask_emptyUnknown
-                = Gtk2::MenuItem->new('Empty _unknown word list');
+                = Gtk3::MenuItem->new('_Empty unknown word list');
             $menuItem_locatorTask_emptyUnknown->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('emptyunknownwords', $mode);
@@ -2966,17 +2953,17 @@
             $subMenu_locatorTask->append($menuItem_locatorTask_emptyUnknown);
 
             my $menuItem_locatorTask_displayUnknown
-                = Gtk2::MenuItem->new('_Display unknown word list');
+                = Gtk3::MenuItem->new('_Display unknown word list');
             $menuItem_locatorTask_displayUnknown->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('listunknownwords', $mode);
             });
             $subMenu_locatorTask->append($menuItem_locatorTask_displayUnknown);
 
-            $subMenu_locatorTask->append(Gtk2::SeparatorMenuItem->new());   # Separator
+            $subMenu_locatorTask->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-            my $menuItem_locatorWiz = Gtk2::ImageMenuItem->new('Run Locator wi_zard...');
-            my $menuImg_locatorWiz = Gtk2::Image->new_from_stock('gtk-page-setup', 'menu');
+            my $menuItem_locatorWiz = Gtk3::ImageMenuItem->new('Run _Locator wizard...');
+            my $menuImg_locatorWiz = Gtk3::Image->new_from_stock('gtk-page-setup', 'menu');
             $menuItem_locatorWiz->set_image($menuImg_locatorWiz);
             $menuItem_locatorWiz->signal_connect('activate' => sub {
 
@@ -2987,10 +2974,10 @@
             #   corresponding menu item also appears in $self->drawEditColumn)
             $self->ivAdd('menuItemHash', 'run_locator_wiz_2', $menuItem_locatorWiz);
 
-            $subMenu_locatorTask->append(Gtk2::SeparatorMenuItem->new());   # Separator
+            $subMenu_locatorTask->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-            my $menuItem_locatorTask_editTask = Gtk2::ImageMenuItem->new('_Edit current task...');
-            my $menuImg_locatorTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuItem_locatorTask_editTask = Gtk3::ImageMenuItem->new('Edit current _task...');
+            my $menuImg_locatorTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_locatorTask_editTask->set_image($menuImg_locatorTask_editTask);
             $menuItem_locatorTask_editTask->signal_connect('activate' => sub {
 
@@ -3011,7 +2998,7 @@
             });
             $subMenu_locatorTask->append($menuItem_locatorTask_editTask);
 
-        my $menuItem_locatorTask = Gtk2::MenuItem->new('_Locator task');
+        my $menuItem_locatorTask = Gtk3::MenuItem->new('_Locator task');
         $menuItem_locatorTask->set_submenu($subMenu_locatorTask);
         $menuColumn_tasks->append($menuItem_locatorTask);
         # (Requires a visible session whose status is 'connected' or 'offline' and is running a
@@ -3019,35 +3006,35 @@
         $self->ivAdd('menuItemHash', 'locator_task', $menuItem_locatorTask);
 
             # 'Status task' submenu
-            my $subMenu_statusTask = Gtk2::Menu->new();
+            my $subMenu_statusTask = Gtk3::Menu->new();
 
-            my $menuItem_statusTask_activateTask = Gtk2::MenuItem->new('_Activate task');
+            my $menuItem_statusTask_activateTask = Gtk3::MenuItem->new('_Activate task');
             $menuItem_statusTask_activateTask->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('activatestatustask', $mode);
             });
             $subMenu_statusTask->append($menuItem_statusTask_activateTask);
 
-            my $menuItem_statusTask_disactivateTask = Gtk2::MenuItem->new('_Disactivate task');
+            my $menuItem_statusTask_disactivateTask = Gtk3::MenuItem->new('_Disactivate task');
             $menuItem_statusTask_disactivateTask->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('disactivatestatustask', $mode);
             });
             $subMenu_statusTask->append($menuItem_statusTask_disactivateTask);
 
-            my $menuItem_statusTask_resetCounters = Gtk2::MenuItem->new('_Reset all counters');
+            my $menuItem_statusTask_resetCounters = Gtk3::MenuItem->new('_Reset all counters');
             $menuItem_statusTask_resetCounters->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('resetcounter', $mode);
             });
             $subMenu_statusTask->append($menuItem_statusTask_resetCounters);
 
-            $subMenu_statusTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_statusTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
             # 'Gauges' submenu
-            my $subMenu_gauges = Gtk2::Menu->new();
+            my $subMenu_gauges = Gtk3::Menu->new();
 
-            my $menuItem_statusTask_toggleStatWin = Gtk2::MenuItem->new('Toggle task _window');
+            my $menuItem_statusTask_toggleStatWin = Gtk3::MenuItem->new('Toggle task _window');
             $menuItem_statusTask_toggleStatWin->signal_connect('activate' => sub {
 
                 if ($self->winObj->visibleSession->statusTask->winObj) {
@@ -3061,28 +3048,28 @@
             });
             $subMenu_gauges->append($menuItem_statusTask_toggleStatWin);
 
-            my $menuItem_statusTask_showGauge = Gtk2::MenuItem->new('Toggle _gauges');
+            my $menuItem_statusTask_showGauge = Gtk3::MenuItem->new('Toggle _gauges');
             $menuItem_statusTask_showGauge->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('showstatusgauge', $mode);
             });
             $subMenu_gauges->append($menuItem_statusTask_showGauge);
 
-            my $menuItem_statusTask_showGaugeLabel = Gtk2::MenuItem->new('Toggle gauge _labels');
+            my $menuItem_statusTask_showGaugeLabel = Gtk3::MenuItem->new('Toggle gauge _labels');
             $menuItem_statusTask_showGaugeLabel->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('showstatusgauge -l', $mode);
             });
             $subMenu_gauges->append($menuItem_statusTask_showGaugeLabel);
 
-            my $menuItem_gauges = Gtk2::MenuItem->new('D_isplay');
+            my $menuItem_gauges = Gtk3::MenuItem->new('D_isplay');
             $menuItem_gauges->set_submenu($subMenu_gauges);
             $subMenu_statusTask->append($menuItem_gauges);
 
-            $subMenu_statusTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_statusTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_statusTask_editTask = Gtk2::ImageMenuItem->new('_Edit current task...');
-            my $menuImg_statusTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuItem_statusTask_editTask = Gtk3::ImageMenuItem->new('Edit current _task...');
+            my $menuImg_statusTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_statusTask_editTask->set_image($menuImg_statusTask_editTask);
             $menuItem_statusTask_editTask->signal_connect('activate' => sub {
 
@@ -3103,7 +3090,7 @@
             });
             $subMenu_statusTask->append($menuItem_statusTask_editTask);
 
-        my $menuItem_statusTask = Gtk2::MenuItem->new('_Status task');
+        my $menuItem_statusTask = Gtk3::MenuItem->new('_Status task');
         $menuItem_statusTask->set_submenu($subMenu_statusTask);
         $menuColumn_tasks->append($menuItem_statusTask);
         # (Requires a visible session whose status is 'connected' or 'offline' and is running a
@@ -3111,19 +3098,19 @@
         $self->ivAdd('menuItemHash', 'status_task', $menuItem_statusTask);
 
             # 'Watch' submenu
-            my $subMenu_watchTask = Gtk2::Menu->new();
+            my $subMenu_watchTask = Gtk3::Menu->new();
 
-            my $menuItem_watchTask_emptyWindow = Gtk2::MenuItem->new('Empty _watch window');
+            my $menuItem_watchTask_emptyWindow = Gtk3::MenuItem->new('Empty watch _window');
             $menuItem_watchTask_emptyWindow->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('emptywatchwindow', $mode);
             });
             $subMenu_watchTask->append($menuItem_watchTask_emptyWindow);
 
-            $subMenu_watchTask->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_watchTask->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_watchTask_editTask = Gtk2::ImageMenuItem->new('_Edit current task...');
-            my $menuImg_watchTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuItem_watchTask_editTask = Gtk3::ImageMenuItem->new('Edit current _task...');
+            my $menuImg_watchTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_watchTask_editTask->set_image($menuImg_watchTask_editTask);
             $menuItem_watchTask_editTask->signal_connect('activate' => sub {
 
@@ -3144,22 +3131,22 @@
             });
             $subMenu_watchTask->append($menuItem_watchTask_editTask);
 
-        my $menuItem_watchTask = Gtk2::MenuItem->new('_Watch task');
+        my $menuItem_watchTask = Gtk3::MenuItem->new('_Watch task');
         $menuItem_watchTask->set_submenu($subMenu_watchTask);
         $menuColumn_tasks->append($menuItem_watchTask);
         # (Requires a visible session whose status is 'connected' or 'offline' and is running a
         #   Watch task)
         $self->ivAdd('menuItemHash', 'watch_task', $menuItem_watchTask);
 
-        $menuColumn_tasks->append(Gtk2::SeparatorMenuItem->new());  # Separator
+        $menuColumn_tasks->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
             # 'Other tasks' submenu
-            my $subMenu_otherTask = Gtk2::Menu->new();
+            my $subMenu_otherTask = Gtk3::Menu->new();
 
-            my $menuItem_advanceTask_editTask = Gtk2::ImageMenuItem->new(
+            my $menuItem_advanceTask_editTask = Gtk3::ImageMenuItem->new(
                 'Edit current Ad_vance task...',
             );
-            my $menuImg_advanceTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuImg_advanceTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_advanceTask_editTask->set_image($menuImg_advanceTask_editTask);
             $menuItem_advanceTask_editTask->signal_connect('activate' => sub {
 
@@ -3183,10 +3170,10 @@
             #   Advance task)
             $self->ivAdd('menuItemHash', 'edit_advance_task', $menuItem_advanceTask_editTask);
 
-            my $menuItem_attackTask_editTask = Gtk2::ImageMenuItem->new(
+            my $menuItem_attackTask_editTask = Gtk3::ImageMenuItem->new(
                 'Edit current _Attack task...',
             );
-            my $menuImg_attackTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuImg_attackTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_attackTask_editTask->set_image($menuImg_attackTask_editTask);
             $menuItem_attackTask_editTask->signal_connect('activate' => sub {
 
@@ -3210,10 +3197,10 @@
             #   Attack task)
             $self->ivAdd('menuItemHash', 'edit_attack_task', $menuItem_attackTask_editTask);
 
-            my $menuItem_connectTask_editTask = Gtk2::ImageMenuItem->new(
+            my $menuItem_connectTask_editTask = Gtk3::ImageMenuItem->new(
                 'Edit current _Connections task...',
             );
-            my $menuImg_connectTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuImg_connectTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_connectTask_editTask->set_image($menuImg_connectTask_editTask);
             $menuItem_connectTask_editTask->signal_connect('activate' => sub {
 
@@ -3237,10 +3224,10 @@
             #   Connections task)
             $self->ivAdd('menuItemHash', 'edit_connections_task', $menuItem_connectTask_editTask);
 
-            my $menuItem_rawTokenTask_editTask = Gtk2::ImageMenuItem->new(
+            my $menuItem_rawTokenTask_editTask = Gtk3::ImageMenuItem->new(
                 'Edit current Raw _Token task...',
             );
-            my $menuImg_rawTokenTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuImg_rawTokenTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_rawTokenTask_editTask->set_image($menuImg_rawTokenTask_editTask);
             $menuItem_rawTokenTask_editTask->signal_connect('activate' => sub {
 
@@ -3264,10 +3251,10 @@
             #   RawToken task)
             $self->ivAdd('menuItemHash', 'edit_raw_token_task', $menuItem_rawTokenTask_editTask);
 
-            my $menuItem_systemTask_editTask = Gtk2::ImageMenuItem->new(
-                'Edit current S_ystem task...',
+            my $menuItem_systemTask_editTask = Gtk3::ImageMenuItem->new(
+                'Edit current _System task...',
             );
-            my $menuImg_systemTask_editTask = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+            my $menuImg_systemTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
             $menuItem_systemTask_editTask->set_image($menuImg_systemTask_editTask);
             $menuItem_systemTask_editTask->signal_connect('activate' => sub {
 
@@ -3291,7 +3278,7 @@
             #   System task)
             $self->ivAdd('menuItemHash', 'edit_system_task', $menuItem_systemTask_editTask);
 
-        my $menuItem_otherTask = Gtk2::MenuItem->new('_Other built-in tasks');
+        my $menuItem_otherTask = Gtk3::MenuItem->new('Other _built-in tasks');
         $menuItem_otherTask->set_submenu($subMenu_otherTask);
         $menuColumn_tasks->append($menuItem_otherTask);
         # (Requires a visible session whose status is 'connected' or 'offline')
@@ -3311,7 +3298,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -3328,14 +3315,14 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_display = Gtk2::Menu->new();
+        my $menuColumn_display = Gtk3::Menu->new();
         if (! $menuColumn_display) {
 
             return undef;
         }
 
-        my $menuItem_openAutomapper = Gtk2::ImageMenuItem->new('Open auto_mapper');
-        my $menuImg_openAutomapper = Gtk2::Image->new_from_stock('gtk-jump-to', 'menu');
+        my $menuItem_openAutomapper = Gtk3::ImageMenuItem->new('Open _automapper');
+        my $menuImg_openAutomapper = Gtk3::Image->new_from_stock('gtk-jump-to', 'menu');
         $menuItem_openAutomapper->set_image($menuImg_openAutomapper);
         $menuItem_openAutomapper->signal_connect('activate' => sub {
 
@@ -3345,8 +3332,8 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'open_automapper', $menuItem_openAutomapper);
 
-        my $menuItem_openViewer = Gtk2::ImageMenuItem->new('Open _object viewer');
-        my $menuImg_openViewer = Gtk2::Image->new_from_stock('gtk-jump-to', 'menu');
+        my $menuItem_openViewer = Gtk3::ImageMenuItem->new('Open object _viewer');
+        my $menuImg_openViewer = Gtk3::Image->new_from_stock('gtk-jump-to', 'menu');
         $menuItem_openViewer->set_image($menuImg_openViewer);
         $menuItem_openViewer->signal_connect('activate' => sub {
 
@@ -3356,39 +3343,28 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'open_object_viewer', $menuItem_openViewer);
 
-        $menuColumn_display->append(Gtk2::SeparatorMenuItem->new());    # Separator
-
-        my $menuItem_sessionScreenshot = Gtk2::MenuItem->new('Take session _screenshot');
-        $menuItem_sessionScreenshot->signal_connect('activate' => sub {
-
-            $self->winObj->visibleSession->pseudoCmd('screenshot', $mode);
-        });
-        $menuColumn_display->append($menuItem_sessionScreenshot);
-        # (Requires a visible session)
-        $self->ivAdd('menuItemHash', 'session_screenshot', $menuItem_sessionScreenshot);
-
-        $menuColumn_display->append(Gtk2::SeparatorMenuItem->new());    # Separator
+        $menuColumn_display->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
             # 'Current layer' submenu
-            my $subMenu_currentLayer = Gtk2::Menu->new();
+            my $subMenu_currentLayer = Gtk3::Menu->new();
 
-            my $menuItem_currentLayer_moveUp = Gtk2::MenuItem->new('Move _up');
+            my $menuItem_currentLayer_moveUp = Gtk3::MenuItem->new('Move _up');
             $menuItem_currentLayer_moveUp->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('layerup', $mode);
             });
             $subMenu_currentLayer->append($menuItem_currentLayer_moveUp);
 
-            my $menuItem_currentLayer_moveDown = Gtk2::MenuItem->new('Move _down');
+            my $menuItem_currentLayer_moveDown = Gtk3::MenuItem->new('Move _down');
             $menuItem_currentLayer_moveDown->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('layerdown', $mode);
             });
             $subMenu_currentLayer->append($menuItem_currentLayer_moveDown);
 
-            $subMenu_currentLayer->append(Gtk2::SeparatorMenuItem->new());  # Separator
+            $subMenu_currentLayer->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
-            my $menuItem_currentLayer_moveTop = Gtk2::MenuItem->new('Move to _top');
+            my $menuItem_currentLayer_moveTop = Gtk3::MenuItem->new('Move to _top');
             $menuItem_currentLayer_moveTop->signal_connect('activate' => sub {
 
                 # Get the workspace grid object used by the visible session; can't rely on
@@ -3407,16 +3383,16 @@
             });
             $subMenu_currentLayer->append($menuItem_currentLayer_moveTop);
 
-            my $menuItem_currentLayer_moveBottom = Gtk2::MenuItem->new('Move to _bottom');
+            my $menuItem_currentLayer_moveBottom = Gtk3::MenuItem->new('Move to _bottom');
             $menuItem_currentLayer_moveBottom->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('setlayer 0', $mode);
             });
             $subMenu_currentLayer->append($menuItem_currentLayer_moveBottom);
 
-            $subMenu_currentLayer->append(Gtk2::SeparatorMenuItem->new());  # Separator
+            $subMenu_currentLayer->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
-            my $menuItem_currentLayer_setLayer = Gtk2::MenuItem->new('_Set layer...');
+            my $menuItem_currentLayer_setLayer = Gtk3::MenuItem->new('_Set layer...');
             $menuItem_currentLayer_setLayer->signal_connect('activate' => sub {
 
                 my ($gridObj, $result);
@@ -3440,48 +3416,48 @@
             });
             $subMenu_currentLayer->append($menuItem_currentLayer_setLayer);
 
-        my $menuItem_currentLayer = Gtk2::MenuItem->new('C_urrent layer');
+        my $menuItem_currentLayer = Gtk3::MenuItem->new('Current _layer');
         $menuItem_currentLayer->set_submenu($subMenu_currentLayer);
         $menuColumn_display->append($menuItem_currentLayer);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'current_layer', $menuItem_currentLayer);
 
             # 'Window storage' submenu
-            my $subMenu_windowStorage = Gtk2::Menu->new();
+            my $subMenu_windowStorage = Gtk3::Menu->new();
 
             my $menuItem_autoStore
-                = Gtk2::CheckMenuItem->new('Automatically store sizes/positions');
+                = Gtk3::CheckMenuItem->new('_Automatically store sizes/positions');
             $menuItem_autoStore->signal_connect('toggled' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('togglewindowstorage', $mode);
             });
             $subMenu_windowStorage->append($menuItem_autoStore);
 
-            my $menuItem_storeCurrent = Gtk2::MenuItem->new('Store current sizes/positions');
+            my $menuItem_storeCurrent = Gtk3::MenuItem->new('_Store current sizes/positions');
             $menuItem_storeCurrent->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('applywindowstorage', $mode);
             });
             $subMenu_windowStorage->append($menuItem_storeCurrent);
 
-            $subMenu_windowStorage->append(Gtk2::SeparatorMenuItem->new());    # Separator
+            $subMenu_windowStorage->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-            my $menuItem_resetStorage = Gtk2::MenuItem->new('_Clear stored sizes/positions');
+            my $menuItem_resetStorage = Gtk3::MenuItem->new('_Clear stored sizes/positions');
             $menuItem_resetStorage->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('clearwindowstorage', $mode);
             });
             $subMenu_windowStorage->append($menuItem_resetStorage);
 
-        my $menuItem_windowStorage = Gtk2::MenuItem->new('\'Grid\' _window storage');
+        my $menuItem_windowStorage = Gtk3::MenuItem->new('\'Grid\' _window storage');
         $menuItem_windowStorage->set_submenu($subMenu_windowStorage);
         $menuColumn_display->append($menuItem_windowStorage);
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'window_storage', $menuItem_windowStorage);
 
-        $menuColumn_display->append(Gtk2::SeparatorMenuItem->new());    # Separator
+        $menuColumn_display->append(Gtk3::SeparatorMenuItem->new());    # Separator
 
-        my $menuItem_testControls = Gtk2::MenuItem->new('_Test window controls');
+        my $menuItem_testControls = Gtk3::MenuItem->new('_Test window controls');
         $menuItem_testControls->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('testwindowcontrols', $mode);
@@ -3490,7 +3466,7 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'test_controls', $menuItem_testControls);
 
-        my $menuItem_testPanels = Gtk2::MenuItem->new('T_est panels');
+        my $menuItem_testPanels = Gtk3::MenuItem->new('T_est panels');
         $menuItem_testPanels->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('testpanel', $mode);
@@ -3513,7 +3489,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -3530,14 +3506,14 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_commands = Gtk2::Menu->new();
+        my $menuColumn_commands = Gtk3::Menu->new();
         if (! $menuColumn_commands) {
 
             return undef;
         }
 
-        my $menuItem_repeat = Gtk2::ImageMenuItem->new('_Repeat...');
-        my $menuImg_repeat = Gtk2::Image->new_from_stock('gtk-redo', 'menu');
+        my $menuItem_repeat = Gtk3::ImageMenuItem->new('_Repeat...');
+        my $menuImg_repeat = Gtk3::Image->new_from_stock('gtk-redo', 'menu');
         $menuItem_repeat->set_image($menuImg_repeat);
         $menuItem_repeat->signal_connect('activate' => sub {
 
@@ -3562,8 +3538,8 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'repeat_cmd', $menuItem_repeat);
 
-        my $menuItem_repeatSecond = Gtk2::ImageMenuItem->new('Repeat each _second...');
-        my $menuImg_repeatSecond = Gtk2::Image->new_from_stock('gtk-redo', 'menu');
+        my $menuItem_repeatSecond = Gtk3::ImageMenuItem->new('Repeat each _second...');
+        my $menuImg_repeatSecond = Gtk3::Image->new_from_stock('gtk-redo', 'menu');
         $menuItem_repeatSecond->set_image($menuImg_repeatSecond);
         $menuItem_repeatSecond->signal_connect('activate' => sub {
 
@@ -3591,8 +3567,8 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'repeat_second', $menuItem_repeatSecond);
 
-        my $menuItem_repeatInterval = Gtk2::ImageMenuItem->new('Repeat at _intervals...');
-        my $menuImg_repeatInterval = Gtk2::Image->new_from_stock('gtk-redo', 'menu');
+        my $menuItem_repeatInterval = Gtk3::ImageMenuItem->new('Repeat at _intervals...');
+        my $menuImg_repeatInterval = Gtk3::Image->new_from_stock('gtk-redo', 'menu');
         $menuItem_repeatInterval->set_image($menuImg_repeatInterval);
         $menuItem_repeatInterval->signal_connect('activate' => sub {
 
@@ -3629,10 +3605,10 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'repeat_interval', $menuItem_repeatInterval);
 
-        $menuColumn_commands->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_commands->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_cancelRepeat = Gtk2::ImageMenuItem->new('_Cancel repeating commands');
-        my $menuImg_cancelRepeat = Gtk2::Image->new_from_stock('gtk-cancel', 'menu');
+        my $menuItem_cancelRepeat = Gtk3::ImageMenuItem->new('_Cancel repeating commands');
+        my $menuImg_cancelRepeat = Gtk3::Image->new_from_stock('gtk-cancel', 'menu');
         $menuItem_cancelRepeat->set_image($menuImg_cancelRepeat);
         $menuItem_cancelRepeat->signal_connect('activate' => sub {
 
@@ -3656,7 +3632,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -3673,14 +3649,14 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_recordings = Gtk2::Menu->new();
+        my $menuColumn_recordings = Gtk3::Menu->new();
         if (! $menuColumn_recordings) {
 
             return undef;
         }
 
-        my $menuItem_startStop = Gtk2::ImageMenuItem->new('_Start/stop recording');
-        my $menuImg_startStop = Gtk2::Image->new_from_stock('gtk-media-record', 'menu');
+        my $menuItem_startStop = Gtk3::ImageMenuItem->new('_Start/stop recording');
+        my $menuImg_startStop = Gtk3::Image->new_from_stock('gtk-media-record', 'menu');
         $menuItem_startStop->set_image($menuImg_startStop);
         $menuItem_startStop->signal_connect('activate' => sub {
 
@@ -3691,8 +3667,8 @@
         #   GA::Session->recordingPausedFlag set to FALSE)
         $self->ivAdd('menuItemHash', 'start_stop_recording', $menuItem_startStop);
 
-        my $menuItem_pauseResume = Gtk2::ImageMenuItem->new('_Pause/resume recording');
-        my $menuImg_pauseResume = Gtk2::Image->new_from_stock('gtk-media-pause', 'menu');
+        my $menuItem_pauseResume = Gtk3::ImageMenuItem->new('_Pause/resume recording');
+        my $menuImg_pauseResume = Gtk3::Image->new_from_stock('gtk-media-pause', 'menu');
         $menuItem_pauseResume->set_image($menuImg_pauseResume);
         $menuItem_pauseResume->signal_connect('activate' => sub {
 
@@ -3703,12 +3679,12 @@
         #   GA::Session->recordingFlag set to TRUE)
         $self->ivAdd('menuItemHash', 'pause_recording', $menuItem_pauseResume);
 
-        $menuColumn_recordings->append(Gtk2::SeparatorMenuItem->new()); # Separator
+        $menuColumn_recordings->append(Gtk3::SeparatorMenuItem->new()); # Separator
 
             # 'Add line' submenu
-            my $subMenu_addLine = Gtk2::Menu->new();
+            my $subMenu_addLine = Gtk3::Menu->new();
 
-            my $menuItem_addWorldCmd = Gtk2::MenuItem->new('Add _world command...');
+            my $menuItem_addWorldCmd = Gtk3::MenuItem->new('Add _world command...');
             $menuItem_addWorldCmd->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose the command to add
@@ -3728,7 +3704,7 @@
             });
             $subMenu_addLine->append($menuItem_addWorldCmd);
 
-            my $menuItem_addClientCmd = Gtk2::MenuItem->new('Add _client command...');
+            my $menuItem_addClientCmd = Gtk3::MenuItem->new('Add _client command...');
             $menuItem_addClientCmd->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose the command to add
@@ -3748,7 +3724,7 @@
             });
             $subMenu_addLine->append($menuItem_addClientCmd);
 
-            my $menuItem_addComment = Gtk2::MenuItem->new('Add co_mment...');
+            my $menuItem_addComment = Gtk3::MenuItem->new('Add co_mment...');
             $menuItem_addComment->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose the comment to add
@@ -3768,7 +3744,7 @@
             });
             $subMenu_addLine->append($menuItem_addComment);
 
-        my $menuItem_addLine = Gtk2::MenuItem->new('Add _line');
+        my $menuItem_addLine = Gtk3::MenuItem->new('Add _line');
         $menuItem_addLine->set_submenu($subMenu_addLine);
         $menuColumn_recordings->append($menuItem_addLine);
         # (Requires a visible session whose status is 'connected' or 'offline' and a visible session
@@ -3776,16 +3752,16 @@
         $self->ivAdd('menuItemHash', 'recording_add_line', $menuItem_addLine);
 
             # 'Add break' submenu
-            my $subMenu_addBreak = Gtk2::Menu->new();
+            my $subMenu_addBreak = Gtk3::Menu->new();
 
-            my $menuItem_ordinaryBreak = Gtk2::MenuItem->new('Add _ordinary break');
+            my $menuItem_ordinaryBreak = Gtk3::MenuItem->new('Add _ordinary break');
             $menuItem_ordinaryBreak->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('break', $mode);
             });
             $subMenu_addBreak->append($menuItem_ordinaryBreak);
 
-            my $menuItem_triggerBreak = Gtk2::MenuItem->new('Add _trigger break...');
+            my $menuItem_triggerBreak = Gtk3::MenuItem->new('Add _trigger break...');
             $menuItem_triggerBreak->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose the trigger pattern to add
@@ -3802,7 +3778,7 @@
             });
             $subMenu_addBreak->append($menuItem_triggerBreak);
 
-            my $menuItem_pauseBreak = Gtk2::MenuItem->new('Add pause _break...');
+            my $menuItem_pauseBreak = Gtk3::MenuItem->new('Add _pause break...');
             $menuItem_pauseBreak->signal_connect('activate' => sub {
 
                 # Display a 'dialogue' window, so the user can choose the pause interval to add
@@ -3819,23 +3795,23 @@
             });
             $subMenu_addBreak->append($menuItem_pauseBreak);
 
-            my $menuItem_locatorBreak = Gtk2::MenuItem->new('Add _Locator task break');
+            my $menuItem_locatorBreak = Gtk3::MenuItem->new('Add _Locator task break');
             $menuItem_locatorBreak->signal_connect('activate' => sub {
 
                 $self->winObj->visibleSession->pseudoCmd('break -l', $mode);
             });
             $subMenu_addBreak->append($menuItem_locatorBreak);
 
-        my $menuItem_addBreak = Gtk2::MenuItem->new('Add _break');
+        my $menuItem_addBreak = Gtk3::MenuItem->new('Add _break');
         $menuItem_addBreak->set_submenu($subMenu_addBreak);
         $menuColumn_recordings->append($menuItem_addBreak);
         # (Requires a visible session whose status is 'connected' or 'offline' and a visible session
         #   whose ->recordingFlag set to TRUE)
         $self->ivAdd('menuItemHash', 'recording_add_break', $menuItem_addBreak);
 
-        $menuColumn_recordings->append(Gtk2::SeparatorMenuItem->new()); # Separator
+        $menuColumn_recordings->append(Gtk3::SeparatorMenuItem->new()); # Separator
 
-        my $menuItem_insertPoint = Gtk2::MenuItem->new('Set _insertion point...');
+        my $menuItem_insertPoint = Gtk3::MenuItem->new('Set _insertion point...');
         $menuItem_insertPoint->signal_connect('activate' => sub {
 
             # Display a 'dialogue' window, so the user can choose the insertion point
@@ -3855,7 +3831,7 @@
         #   whose ->recordingFlag set to TRUE)
         $self->ivAdd('menuItemHash', 'recording_set_insertion', $menuItem_insertPoint);
 
-        my $menuItem_cancelInsert = Gtk2::MenuItem->new('Ca_ncel insertion point');
+        my $menuItem_cancelInsert = Gtk3::MenuItem->new('_Cancel insertion point');
         $menuItem_cancelInsert->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('insertrecording', $mode);
@@ -3865,9 +3841,9 @@
         #   whose ->recordingFlag set to TRUE)
         $self->ivAdd('menuItemHash', 'recording_cancel_insertion', $menuItem_cancelInsert);
 
-        $menuColumn_recordings->append(Gtk2::SeparatorMenuItem->new()); # Separator
+        $menuColumn_recordings->append(Gtk3::SeparatorMenuItem->new()); # Separator
 
-        my $menuItem_deleteLine = Gtk2::MenuItem->new('_Delete line...');
+        my $menuItem_deleteLine = Gtk3::MenuItem->new('_Delete line...');
         $menuItem_deleteLine->signal_connect('activate' => sub {
 
             # Display a 'dialogue' window, so the user can choose the line to delete
@@ -3887,7 +3863,7 @@
         #   whose ->recordingFlag set to TRUE)
         $self->ivAdd('menuItemHash', 'recording_delete_line', $menuItem_deleteLine);
 
-        my $menuItem_deleteMulti = Gtk2::MenuItem->new('D_elete lines...');
+        my $menuItem_deleteMulti = Gtk3::MenuItem->new('D_elete lines...');
         $menuItem_deleteMulti->signal_connect('activate' => sub {
 
             # Display a 'dialogue' window, so the user can choose the lines to delete
@@ -3911,7 +3887,7 @@
         #   whose ->recordingFlag set to TRUE)
         $self->ivAdd('menuItemHash', 'recording_delete_multi', $menuItem_deleteMulti);
 
-        my $menuItem_deleteLast = Gtk2::MenuItem->new('Delete l_ast line');
+        my $menuItem_deleteLast = Gtk3::MenuItem->new('Delete l_ast line');
         $menuItem_deleteLast->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('deleterecording', $mode);
@@ -3922,9 +3898,9 @@
         #   whose ->recordingFlag set to TRUE)
         $self->ivAdd('menuItemHash', 'recording_delete_last', $menuItem_deleteLast);
 
-        $menuColumn_recordings->append(Gtk2::SeparatorMenuItem->new()); # Separator
+        $menuColumn_recordings->append(Gtk3::SeparatorMenuItem->new()); # Separator
 
-        my $menuItem_showRecording = Gtk2::MenuItem->new('S_how recording');
+        my $menuItem_showRecording = Gtk3::MenuItem->new('S_how recording');
         $menuItem_showRecording->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('listrecording', $mode);
@@ -3934,7 +3910,7 @@
         #   whose ->recordingFlag set to TRUE or whose ->recordingList is not empty)
         $self->ivAdd('menuItemHash', 'show_recording', $menuItem_showRecording);
 
-        my $menuItem_copyRecording = Gtk2::MenuItem->new('Copy _recording');
+        my $menuItem_copyRecording = Gtk3::MenuItem->new('C_opy recording');
         $menuItem_copyRecording->signal_connect('activate' => sub {
 
             $self->winObj->visibleSession->pseudoCmd('copyrecording', $mode);
@@ -3958,7 +3934,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -3975,14 +3951,14 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_basic = Gtk2::Menu->new();
+        my $menuColumn_basic = Gtk3::Menu->new();
         if (! $menuColumn_basic) {
 
             return undef;
         }
 
-        my $menuItem_runScript = Gtk2::ImageMenuItem->new('Run _script...');
-        my $menuImg_runScript = Gtk2::Image->new_from_stock('gtk-execute', 'menu');
+        my $menuItem_runScript = Gtk3::ImageMenuItem->new('_Run script...');
+        my $menuImg_runScript = Gtk3::Image->new_from_stock('gtk-execute', 'menu');
         $menuItem_runScript->set_image($menuImg_runScript);
         $menuItem_runScript->signal_connect('activate' => sub {
 
@@ -4002,8 +3978,8 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'run_script', $menuItem_runScript);
 
-        my $menuItem_runScriptTask = Gtk2::ImageMenuItem->new('Run script as _task...');
-        my $menuImg_runScriptTask = Gtk2::Image->new_from_stock('gtk-execute', 'menu');
+        my $menuItem_runScriptTask = Gtk3::ImageMenuItem->new('Run script as _task...');
+        my $menuImg_runScriptTask = Gtk3::Image->new_from_stock('gtk-execute', 'menu');
         $menuItem_runScriptTask->set_image($menuImg_runScriptTask);
         $menuItem_runScriptTask->signal_connect('activate' => sub {
 
@@ -4023,9 +3999,9 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'run_script_task', $menuItem_runScriptTask);
 
-        $menuColumn_basic->append(Gtk2::SeparatorMenuItem->new()); # Separator
+        $menuColumn_basic->append(Gtk3::SeparatorMenuItem->new()); # Separator
 
-        my $menuItem_checkScript = Gtk2::MenuItem->new('_Check script...');
+        my $menuItem_checkScript = Gtk3::MenuItem->new('_Check script...');
         $menuItem_checkScript->signal_connect('activate' => sub {
 
             # Display a 'dialogue' window, so the user can choose the script to check
@@ -4044,8 +4020,8 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'check_script', $menuItem_checkScript);
 
-        my $menuItem_editScript = Gtk2::ImageMenuItem->new('_Edit script...');
-        my $menuImg_editScript = Gtk2::Image->new_from_stock('gtk-edit', 'menu');
+        my $menuItem_editScript = Gtk3::ImageMenuItem->new('_Edit script...');
+        my $menuImg_editScript = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
         $menuItem_editScript->set_image($menuImg_editScript);
         $menuItem_editScript->signal_connect('activate' => sub {
 
@@ -4079,7 +4055,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -4096,14 +4072,14 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_plugins = Gtk2::Menu->new();
+        my $menuColumn_plugins = Gtk3::Menu->new();
         if (! $menuColumn_plugins) {
 
             return undef;
         }
 
-        my $menuItem_loadPlugin = Gtk2::ImageMenuItem->new('_Load plugin...');
-        my $menuImg_loadPlugin = Gtk2::Image->new_from_stock('gtk-open', 'menu');
+        my $menuItem_loadPlugin = Gtk3::ImageMenuItem->new('_Load plugin...');
+        my $menuImg_loadPlugin = Gtk3::Image->new_from_stock('gtk-open', 'menu');
         $menuItem_loadPlugin->set_image($menuImg_loadPlugin);
         $menuItem_loadPlugin->signal_connect('activate' => sub {
 
@@ -4114,7 +4090,7 @@
         # (Requires a visible session)
         $self->ivAdd('menuItemHash', 'load_plugin', $menuItem_loadPlugin);
 
-        my $menuItem_showPlugins = Gtk2::MenuItem->new('_Show plugins...');
+        my $menuItem_showPlugins = Gtk3::MenuItem->new('_Show plugins...');
         $menuItem_showPlugins->signal_connect('activate' => sub {
 
             # Open the client preference window at the right page
@@ -4148,7 +4124,7 @@
         #
         # Return values
         #   'undef' on improper arguments, or if the menu can't be created
-        #   Otherwise returns the Gtk2::Menu created
+        #   Otherwise returns the Gtk3::Menu created
 
         my ($self, $check) = @_;
 
@@ -4165,14 +4141,14 @@
         $mode = $self->winObj->pseudoCmdMode;
 
         # Set up column
-        my $menuColumn_help = Gtk2::Menu->new();
+        my $menuColumn_help = Gtk3::Menu->new();
         if (! $menuColumn_help) {
 
             return undef;
         }
 
-        my $menuItem_help = Gtk2::ImageMenuItem->new('_Help...');
-        my $menuImg_help = Gtk2::Image->new_from_stock('gtk-help', 'menu');
+        my $menuItem_help = Gtk3::ImageMenuItem->new('_Help...');
+        my $menuImg_help = Gtk3::Image->new_from_stock('gtk-help', 'menu');
         $menuItem_help->set_image($menuImg_help);
         $menuItem_help->signal_connect('activate' => sub {
 
@@ -4202,10 +4178,10 @@
         });
         $menuColumn_help->append($menuItem_help);
 
-        $menuColumn_help->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_help->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_about = Gtk2::ImageMenuItem->new('_About...');
-        my $menuImg_about = Gtk2::Image->new_from_stock('gtk-about', 'menu');
+        my $menuItem_about = Gtk3::ImageMenuItem->new('_About...');
+        my $menuImg_about = Gtk3::Image->new_from_stock('gtk-about', 'menu');
         $menuItem_about->set_image($menuImg_about);
         $menuItem_about->signal_connect('activate' => sub {
 
@@ -4236,7 +4212,7 @@
         });
         $menuColumn_help->append($menuItem_about);
 
-        my $menuItem_credits = Gtk2::MenuItem->new('_Credits...');
+        my $menuItem_credits = Gtk3::MenuItem->new('_Credits...');
         $menuItem_credits->signal_connect('activate' => sub {
 
             # Check that the About window isn't already open
@@ -4266,7 +4242,7 @@
         });
         $menuColumn_help->append($menuItem_credits);
 
-        my $menuItem_license = Gtk2::MenuItem->new('_Licenses...');
+        my $menuItem_license = Gtk3::MenuItem->new('_Licenses...');
         $menuItem_license->signal_connect('activate' => sub {
 
             # Check that the About window isn't already open
@@ -4296,9 +4272,9 @@
         });
         $menuColumn_help->append($menuItem_license);
 
-        $menuColumn_help->append(Gtk2::SeparatorMenuItem->new());   # Separator
+        $menuColumn_help->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
-        my $menuItem_website = Gtk2::MenuItem->new($axmud::SCRIPT . ' _website...');
+        my $menuItem_website = Gtk3::MenuItem->new($axmud::SCRIPT . ' _website...');
         $menuItem_website->signal_connect('activate' => sub {
 
             $axmud::CLIENT->openURL($axmud::URL);
@@ -4337,13 +4313,13 @@
         #   separator
         if (! $self->pluginHash) {
 
-            $self->pluginMenu->append(Gtk2::SeparatorMenuItem->new());
+            $self->pluginMenu->append(Gtk3::SeparatorMenuItem->new());
         }
 
         # Add a sub-menu
-        my $subMenu = Gtk2::Menu->new();
+        my $subMenu = Gtk3::Menu->new();
 
-        my $menuItem = Gtk2::MenuItem->new('_' . $plugin . ' plugin');
+        my $menuItem = Gtk3::MenuItem->new('_' . $plugin . ' plugin');
         $menuItem->set_submenu($subMenu);
         $self->pluginMenu->append($menuItem);
 
@@ -4357,7 +4333,7 @@
     sub sensitiseWidgets {
 
         # Can be called by anything, but usually called by GA::Win::Internal->restrictMenuBars
-        # Given a list of Gtk2 widgets (all of them menu bar items), sets them as sensitive
+        # Given a list of Gtk3 widgets (all of them menu bar items), sets them as sensitive
         #
         # Expected arguments
         #   (none besides $self)
@@ -4388,7 +4364,7 @@
     sub desensitiseWidgets {
 
         # Can be called by anything, but usually called by GA::Win::Internal->restrictMenuBars
-        # Given a list of Gtk2 widgets (all of them menu bar items), sets them as insensitive
+        # Given a list of Gtk3 widgets (all of them menu bar items), sets them as insensitive
         #
         # Expected arguments
         #   (none besides $self)
@@ -4705,7 +4681,7 @@
     sub new {
 
         # Called by GA::Win::Internal->drawWidgets or ->addStripObj
-        # Creates the GA::Strip::Toolbar - a non-compulsory strip object containing a Gtk2::Toolbar
+        # Creates the GA::Strip::Toolbar - a non-compulsory strip object containing a Gtk3::Toolbar
         #
         # Expected arguments
         #   $number     - The strip object's number within the parent window (matches
@@ -4793,7 +4769,7 @@
             # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
             #   allowed to accept the focus, FALSE if not. The restriction is applied during the
             #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
-            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   the container widget can be set to accept the focus (e.g. the Gtk3::Entry in
             #   GA::Strip::MenuBar)
             allowFocusFlag              => FALSE,
 
@@ -4811,24 +4787,24 @@
             #   to $self->objEnable()
             funcID                      => undef,
 
-            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
-            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
-            packingBox                  => undef,       # Gtk2::VBox
+            # The container widget for this strip object (usually a Gtk3::HBox or Gtk3::VBox). This
+            #   widget is the one added to the window's main Gtk3::HBox or Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::VBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            toolbar                     => undef,       # Gtk2::Toolbar
+            toolbar                     => undef,       # Gtk3::Toolbar
             toolbarWidgetList           => [],          # Various
 
             # Toolbar buttons which will be sensitised or desensitised, depending on whether the
             #   session is connected to a world (or if it's in 'offline' mode). Hash in the form
-            #       $requireConnectHash{'button_name'} = gtk2_widget
+            #       $requireConnectHash{'button_name'} = Gtk3_widget
             requireConnectHash          => {},
             # Toolbar buttons which will be sensitised or desensitised, depending on whether there
             #   is a visible session for this window. Hash in the form
-            #       $requireSessionHash{'button_name'} = gtk2_widget
+            #       $requireSessionHash{'button_name'} = Gtk3_widget
             requireSessionHash          => {},
         };
 
@@ -4865,11 +4841,11 @@
         }
 
         # Create a packing box
-        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        my $vBox = Gtk3::VBox->new(FALSE, 0);
         $vBox->set_border_width(0);
 
-        # Create a Gtk2::MenuBar
-        my $toolbar = Gtk2::Toolbar->new();
+        # Create a Gtk3::Toolbar
+        my $toolbar = Gtk3::Toolbar->new();
         $vBox->pack_start($toolbar, TRUE, TRUE, 0);
 
         # Update IVs
@@ -4950,11 +4926,22 @@
 
             if ($buttonName eq 'separator') {
 
-                # Add a separator to the toolbar
-                my $separator = Gtk2::SeparatorToolItem->new();
+#                # Add a separator to the toolbar
+#                my $separator = Gtk3::SeparatorToolItem->new();
+#
+#                $self->toolbar->insert($separator, -1);
+#                push (@widgetList, $separator);
 
-                $self->toolbar->insert($separator, -1);
-                push (@widgetList, $separator);
+                # DEBUG
+                # Temporary fix for Gtk problems: on MSWin, don't show separators
+                if ($^O ne 'MSWin32') {
+
+                    # Add a separator to the toolbar
+                    my $separator = Gtk3::SeparatorToolItem->new();
+
+                    $self->toolbar->insert($separator, -1);
+                    push (@widgetList, $separator);
+                }
 
             } else {
 
@@ -4975,14 +4962,14 @@
 
                 if ($axmud::CLIENT->toolbarLabelFlag) {
 
-                    # Otherwise, $label remains as 'undef', which is what Gtk2::ToolButton is
+                    # Otherwise, $label remains as 'undef', which is what Gtk3::ToolButton is
                     #   expecting
                     $label = $buttonObj->descrip;
                 }
 
                 # Create the toolbar button itself
-                my $toolButton_item = Gtk2::ToolButton->new(
-                    Gtk2::Image->new_from_file($path),
+                my $toolButton_item = Gtk3::ToolButton->new(
+                    Gtk3::Image->new_from_file($path),
                     $label,
                 );
                 $toolButton_item->set_tooltip_text($buttonObj->descrip);
@@ -5119,7 +5106,7 @@
     sub sensitiseWidgets {
 
         # Can be called by anything, but usually called by GA::Win::Internal->restrictMenuBars
-        # Given a list of Gtk2 widgets (all of them menu bar items), sets them as sensitive
+        # Given a list of Gtk3 widgets (all of them menu bar items), sets them as sensitive
         #
         # Expected arguments
         #   (none besides $self)
@@ -5157,7 +5144,7 @@
     sub desensitiseWidgets {
 
         # Can be called by anything, but usually called by GA::Win::Internal->restrictMenuBars
-        # Given a list of Gtk2 widgets (all of them menu bar items), sets them as insensitive
+        # Given a list of Gtk3 widgets (all of them menu bar items), sets them as insensitive
         #
         # Expected arguments
         #   (none besides $self)
@@ -5225,7 +5212,7 @@
     sub new {
 
         # Called by GA::Win::Internal->drawWidgets or ->addStripObj
-        # Creates the GA::Strip::Table - a compulsory strip object containing a Gtk2::Table, onto
+        # Creates the GA::Strip::Table - a compulsory strip object containing a Gtk3::Grid, onto
         #   which widgets can be drawn
         #
         # Expected arguments
@@ -5347,7 +5334,7 @@
             # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
             #   allowed to accept the focus, FALSE if not. The restriction is applied during the
             #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
-            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   the container widget can be set to accept the focus (e.g. the Gtk3::Entry in
             #   GA::Strip::MenuBar)
             allowFocusFlag              => FALSE,
 
@@ -5365,33 +5352,33 @@
             #   to $self->objEnable()
             funcID                      => undef,
 
-            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
-            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
-            packingBox                  => undef,       # Gtk2::ScrolledWindow
+            # The container widget for this strip object (usually a Gtk3::HBox or Gtk3::VBox). This
+            #   widget is the one added to the window's main Gtk3::HBox or Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::ScrolledWindow
 
             # Other IVs
             # ---------
 
-            # Gtk2 widgets to draw the table
-            vBox                        => undef,       # Gtk2::VBox
-            table                       => undef,       # Gtk2::Table
+            # Gtk3 widgets to draw the table
+            vBox                        => undef,       # Gtk3::VBox
+            table                       => undef,       # Gtk3::Grid
 
             # The table size actually used
             tableSize                   => undef,
 
             # Hash of tablezone objects (GA::Obj::Tablezone), each of which marks out an area of
-            #   Gtk2::Table for a single table object. Hash in the form
+            #   Gtk3::Grid for a single table object. Hash in the form
             #       $zoneHash{number} = blessed_reference_to_tablezone_object
             tablezoneHash               => {},
-            # Number of tablezones ever created for this Gtk2::Table (used to give every tablezone
-            #   object a number unique to the Gtk2::Table)
+            # Number of tablezones ever created for this Gtk3::Grid (used to give every tablezone
+            #   object a number unique to the Gtk3::Grid)
             tablezoneCount              => 0,
             # Hash of table objects (inheriting from GA::Generic::Table) which occupy the space
             #   marked out by a single tablezone. Hash in the form
             #       $tableObjHash{number} = blessed_reference_to_table_object
             tableObjHash                => {},
-            # Number of table objects ever created for this Gtk2::Table (used to give every table
-            #   object a number unique to the Gtk2::Table)
+            # Number of table objects ever created for this Gtk3::Grid (used to give every table
+            #   object a number unique to the Gtk3::Grid)
             tableObjCount               => 0,
         };
 
@@ -5444,20 +5431,20 @@
         }
 
         # Create a packing box (a scroller rather than a VBox/HBox, in this case)
-        my $scroller = Gtk2::ScrolledWindow->new();
+        my $scroller = Gtk3::ScrolledWindow->new();
         $scroller->set_policy('automatic', 'automatic');
 
-        # Create a Gtk2::Table whose columns and rows are equally-spaced
-        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        # Create a Gtk3::Grid whose columns and rows are equally-spaced
+        my $vBox = Gtk3::VBox->new(FALSE, 0);
         $vBox->set_border_width($self->ivShow('initHash', 'border'));
         $scroller->add_with_viewport($vBox);
 
-        my $table = Gtk2::Table->new($winmapObj->tableSize, $winmapObj->tableSize, FALSE);
+        my $table = Gtk3::Grid->new();
         $vBox->pack_start($table, TRUE, TRUE, 0),
         # To avoid unfortunate textview scrolling problems, the spacing specified in $self->initHash
         #   is only applied when there are two or more table objects in the table
-        $table->set_col_spacings(0);
-        $table->set_row_spacings(0);
+        $table->set_column_spacing(0);
+        $table->set_row_spacing(0);
 
         # Update IVs
         $self->ivPoke('packingBox', $scroller);
@@ -5571,7 +5558,7 @@
     sub addTableObj {
 
         # Called by GA::Win::Internal->drawWidgets or any other code
-        # Adds a table object (inheriting GA::Generic::Table) to this strip object's Gtk2::Table
+        # Adds a table object (inheriting GA::Generic::Table) to this strip object's Gtk3::Grid
         #
         # Expected arguments
         #   $packageName
@@ -5670,8 +5657,8 @@
             }
         }
 
-        # Create a tablezone, which marks out an area on the Gtk2::Table as being in use by a
-        #   single table object
+        # Create a tablezone, which marks out an area on the Gtk3::Grid as being in use by a single
+        #   table object
         $zoneObj = Games::Axmud::Obj::Tablezone->new(
             $self->tablezoneCount,
             $packageName,
@@ -5731,14 +5718,17 @@
             return undef;
         }
 
-        # Add the new table object to this strip's Gtk2::Table
-        $self->table->attach_defaults(
+        # Add the new table object to this strip's Gtk3::Grid
+        $tableObj->packingBox->set_hexpand(TRUE);
+        $tableObj->packingBox->set_vexpand(TRUE);
+
+        $self->table->attach(
             $tableObj->packingBox,
             $zoneObj->left,
-            # Axmud uses 59,59, but Gtk expects 60,60
-            ($zoneObj->right + 1),
             $zoneObj->top,
-            ($zoneObj->bottom + 1),
+            # Axmud uses 59,59, but Gtk expects 60,60
+            ($zoneObj->right - $zoneObj->left + 1),
+            ($zoneObj->bottom - $zoneObj->top + 1),
         );
 
         # Update IVs
@@ -5747,7 +5737,7 @@
         $self->ivAdd('tableObjHash', $tableObj->number, $tableObj);
         $self->ivIncrement('tableObjCount');
 
-        # To avoid unfortunate Gtk2 spacing issues, the spacing specified in $self->initHash is
+        # To avoid unfortunate Gtk3 spacing issues, the spacing specified in $self->initHash is
         #   only applied when there are two or more simple list/textview/pane objects in the table
         $count = 0;
         foreach my $otherObj ($self->ivValues('tableObjHash')) {
@@ -5763,13 +5753,13 @@
 
         if ($count <= 1) {
 
-            $self->table->set_col_spacings(0);
-            $self->table->set_row_spacings(0);
+            $self->table->set_column_spacing(0);
+            $self->table->set_row_spacing(0);
 
         } else {
 
-            $self->table->set_col_spacings($self->ivShow('initHash', 'spacing'));
-            $self->table->set_row_spacings($self->ivShow('initHash', 'spacing'));
+            $self->table->set_column_spacing($self->ivShow('initHash', 'spacing'));
+            $self->table->set_row_spacing($self->ivShow('initHash', 'spacing'));
         }
 
         # Notify all of this window's strip objects of the new table object's birth
@@ -5795,8 +5785,7 @@
     sub removeTableObj {
 
         # Can be called by anything
-        # Removes a table object (inheriting GA::Generic::Table) from this strip object's
-        #   Gtk2::Table
+        # Removes a table object (inheriting GA::Generic::Table) from this strip object's Gtk3::Grid
         #
         # Expected arguments
         #   $tableObj   - The table object to remove
@@ -5862,7 +5851,7 @@
         $self->ivDelete('tableObjHash', $tableObj->number);
         $self->ivDelete('tablezoneHash', $tableObj->zoneObj->number);
 
-        # To avoid unfortunate Gtk2 spacing issues, the spacing specified in $self->initHash is
+        # To avoid unfortunate Gtk3 spacing issues, the spacing specified in $self->initHash is
         #   only applied when there are two or more simple list/textview/pane objects in the table
         $count = 0;
         foreach my $otherObj ($self->ivValues('tableObjHash')) {
@@ -5878,13 +5867,13 @@
 
         if ($count <= 1) {
 
-            $self->table->set_col_spacings(0);
-            $self->table->set_row_spacings(0);
+            $self->table->set_column_spacing(0);
+            $self->table->set_row_spacing(0);
 
         } else {
 
-            $self->table->set_col_spacings($self->ivShow('initHash', 'spacing'));
-            $self->table->set_row_spacings($self->ivShow('initHash', 'spacing'));
+            $self->table->set_column_spacing($self->ivShow('initHash', 'spacing'));
+            $self->table->set_row_spacing($self->ivShow('initHash', 'spacing'));
         }
 
         # Notify all of this window's strip objects of the table object's demise
@@ -5911,7 +5900,7 @@
 
         # Can be called by anything
         # Removes all table objects (inheriting GA::Generic::Table) from this strip object's
-        #   Gtk2::Table
+        #   Gtk3::Grid
         #
         # Expected arguments
         #   (none besides $self)
@@ -5953,8 +5942,7 @@
     sub resizeTableObj {
 
         # Can be called by anything
-        # Resizes a table object (inheriting GA::Generic::Table) on this strip object's
-        #   Gtk2::Table
+        # Resizes a table object (inheriting GA::Generic::Table) on this strip object's Gtk3::Grid
         #
         # Expected arguments
         #   $tableObj   - The table object to resize
@@ -6097,13 +6085,16 @@
         # Resize the table object
         $axmud::CLIENT->desktopObj->removeWidget($self->table, $tableObj->packingBox);
 
-        $self->table->attach_defaults(
+        $tableObj->packingBox->set_hexpand(TRUE);
+        $tableObj->packingBox->set_vexpand(TRUE);
+
+        $self->table->attach(
             $tableObj->packingBox,
             $zoneObj->left,
-            # Axmud uses 59,59, but Gtk expects 60,60
-            ($zoneObj->right + 1),
             $zoneObj->top,
-            ($zoneObj->bottom + 1),
+            # Axmud uses 59,59, but Gtk expects 60,60
+            ($zoneObj->right - $zoneObj->left + 1),
+            ($zoneObj->bottom - $zoneObj->top + 1),
         );
 
         # Inform the table object that it's been resized
@@ -6470,7 +6461,7 @@
             # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
             #   allowed to accept the focus, FALSE if not. The restriction is applied during the
             #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
-            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   the container widget can be set to accept the focus (e.g. the Gtk3::Entry in
             #   GA::Strip::MenuBar)
             allowFocusFlag              => FALSE,
 
@@ -6488,29 +6479,37 @@
             #   to $self->objEnable()
             funcID                      => undef,
 
-            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
-            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
-            packingBox                  => undef,       # Gtk2::VBox
+            # The container widget for this strip object (usually a Gtk3::HBox or Gtk3::VBox). This
+            #   widget is the one added to the window's main Gtk3::HBox or Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::VBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            frame                       => undef,       # Gtk2::Frame
-            canvas                      => undef,       # Gnome2::Canvas
-            # A list of Gnome2::Canvas::Item objects drawn in the gauge box, which are destroyed
-            #   every time $self->drawGauges is called
-            gaugeCanvasList             => [],          # Gnome2::Canvas::Item
+            frame                       => undef,       # Gtk3::Frame
+            canvas                      => undef,       # GooCanvas2::Canvas
+            # A list of GooCanvas2::CanvasRect and GooCanvas2::CanvasText objects drawn in the gauge
+            #   box, which are destroyed every time $self->drawGauges is called
+            gaugeCanvasList             => [],          # GooCanvas2::CanvasRect/::CanvasText
 
-            # The size of the Gnome2::Canvas used to display gauges (width is the same as the
+            # The size of the available area inside the frame containing the canvas, set whenever
+            #   the frame's size-allocate signal is emitted (this is the only way to guarantee that
+            #   that the correct size is available to $self->drawGauges)
+            canvasFrameWidth            => 1,
+            canvasFrameHeight           => 1,
+
+            # The size of the GooCanvas2::Canvas used to display gauges (width is the same as the
             #   available space, so only height specified here)
             # The height (in pixels) of gauges. The total height of the gauge will be this value,
             #   plus the spacing above and below it. (Width is the same as the available space, so
             #   only height specified here)
-            gaugeHeight                 => 15,
+            gaugeHeight                 => 16,
+            # The size of the rounded corner (in pixels)
+            gaugeCorner                 => 5,
             # Spacing (padding) used between the gauges, and between the edges of the gauge box
-            gaugeSpacingX               => 5,
-            gaugeSpacingY               => 5,
+            gaugeSpacingX               => 8,
+            gaugeSpacingY               => 4,
             # The font and size to use for gauge labels. These default values produce a font that's
             #   about the right the size for a gauge of height $self->gaugeHeight
             gaugeLabelFont              => 'Monospace',
@@ -6622,10 +6621,10 @@
 
         if ($self->visibleFlag) {
 
-            # Only polite to ->destroy Gnome2::Canvas objects when they're no longer needed
+            # Only polite to destroy GooCanvas2 canvas objects when they're no longer needed
             foreach my $canvasObj ($self->gaugeCanvasList) {
 
-                $canvasObj->destroy();
+                $canvasObj->remove();
             }
         }
 
@@ -6643,7 +6642,7 @@
     sub drawGaugeBox {
 
         # Called by $self->objEnable and ->addGaugeLevel
-        # Draws a Gtk2::HBox to contain gauge levels
+        # Draws a Gtk3::HBox to contain gauge levels
         #
         # Expected arguments
         #   (none besides $self)
@@ -6671,7 +6670,7 @@
         if (! $self->packingBox) {
 
             # This function is being called for the first time
-            $packingBox = Gtk2::VBox->new(FALSE, 0);
+            $packingBox = Gtk3::VBox->new(FALSE, 0);
             $packingBox->set_border_width(0);
 
         } else {
@@ -6709,8 +6708,8 @@
             $levelCount = 1;
         }
 
-        # Add a Gnome2::Canvas
-        my $frame = Gtk2::Frame->new(undef);
+        # Add a frame
+        my $frame = Gtk3::Frame->new(undef);
         $frame->set_border_width(0);
         $frame->set_size_request(
             -1,
@@ -6723,7 +6722,26 @@
 
         $packingBox->pack_start($frame, TRUE, TRUE, 0);
 
-        my $canvas = Gnome2::Canvas->new();
+        # The only way to detect the frame's size reliably is to store the frame's size allocation
+        #   whenever it is set
+        $frame->signal_connect('size-allocate' => sub {
+
+            my ($widget, $hashRef) = @_;
+
+            $self->ivPoke('canvasFrameWidth', $$hashRef{width});
+            $self->ivPoke('canvasFrameHeight', $$hashRef{height});
+
+            if ($self->canvas) {
+
+                $self->updateGauges();
+
+                # The resized canvas won't be visible until a Gtk main loop occurs
+                $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->drawGaugeBox');
+            }
+        });
+
+        # Add a drawing canvas, inside the frame
+        my $canvas = GooCanvas2::Canvas->new();
         $frame->add($canvas);
 
         # Update IVs
@@ -6763,7 +6781,7 @@
             # Destroy canvas objects
             foreach my $canvasObj ($self->gaugeCanvasList) {
 
-                $canvasObj->destroy();
+                $canvasObj->remove();
             }
 
             # Update IVs
@@ -7346,7 +7364,7 @@
             my $gaugeLevelObj = $self->ivShow('gaugeLevelHash', $gaugeObj->level);
 
             # Remove the gauge from its gauge level
-            if ($gaugeLevelObj->ivExists('gaugeHash', $gaugeObj->number)) {
+            if ($gaugeLevelObj && $gaugeLevelObj->ivExists('gaugeHash', $gaugeObj->number)) {
 
                 $gaugeLevelObj->ivDelete('gaugeHash', $gaugeObj->number);
                 $removeCount++;
@@ -7551,7 +7569,7 @@
 
         # Local variables
         my (
-            $rect, $boxWidth, $count, $root, $visLevel,
+            $root, $visLevel, $count,
             @canvasObjList,
             %levelHash, %widthHash, %checkHash,
         );
@@ -7561,33 +7579,25 @@
         # Destroy any existing canvas objects
         foreach my $canvasObj ($self->gaugeCanvasList) {
 
-            $canvasObj->destroy;
+            $canvasObj->remove;
         }
 
         $self->ivEmpty('gaugeCanvasList');
 
         # If there are no gauges to be drawn, end here
-        if (! @drawList) {
+        # Also, don't try to draw gauges in a very small space
+        if (! @drawList || $self->canvasFrameWidth < 100) {
 
             return undef;
         }
 
-        # Get the current width of the gauge box
-        $rect = $self->canvas->allocation();
-        $self->canvas->set_scroll_region(
+        # Reset the size of the canvas
+        $self->canvas->set_bounds(
             0,
             0,
-            $rect->width,
-            $rect->height,
+            $self->canvasFrameWidth,
+            $self->canvasFrameHeight,
         );
-
-        ($boxWidth) = $self->canvas->get_size();
-
-        # Don't try to draw gauges in a very small space
-        if ($boxWidth < 100) {
-
-            return 1;
-        }
 
         # Sort the gauges first by level, and then by the order they were created, so they are
         #   always drawn in the same order, top to bottom and then left to right
@@ -7617,11 +7627,12 @@
         #   they appear equally-spaced
         foreach my $level (keys %levelHash) {
 
-            $widthHash{$level} = int(($boxWidth - $self->gaugeSpacingX) / ($levelHash{$level}));
+            $widthHash{$level}
+                = int(($self->canvasFrameWidth - $self->gaugeSpacingX) / ($levelHash{$level}));
         }
 
         # Draw each gauge in turn
-        $root = $self->canvas->root();
+        $root = $self->canvas->get_root_item();
         $visLevel = -1;
 
         foreach my $gaugeObj (@drawList) {
@@ -7694,10 +7705,10 @@
             $corrW = $w;
             $x4 = $w * ($count + 1);
             if (
-                $x4 < ($boxWidth - $self->gaugeSpacingX)
-                && $x4 >= ($boxWidth - $self->gaugeSpacingX - $count)
+                $x4 < ($self->canvasFrameWidth - $self->gaugeSpacingX)
+                && $x4 >= ($self->canvasFrameWidth - $self->gaugeSpacingX - $count)
             ) {
-                $corrW += $boxWidth - $self->gaugeSpacingX - ($w * ($count + 1));
+                $corrW += $self->canvasFrameWidth - $self->gaugeSpacingX - ($w * ($count + 1));
             }
 
             if (! $gaugeObj->textFlag) {
@@ -7707,7 +7718,7 @@
                 $e = $w - $f;
 
                 # Full gauge portion
-                $x1 = $self->gaugeSpacingX + ($count * $w);
+                $x1 = $self->gaugeSpacingX + ($count * $w) - 2;
                 $x2 = $x1 + $f;
                 # Empty gauge portion
                 $x3 = $x2;                  # By moving $x3 1 pixel left, we avoid double black line
@@ -7739,51 +7750,63 @@
 
                     # Draw a blank gauge, because one or more values are unspecified (the labels are
                     #   still drawn, though)
-                    $obj = Gnome2::Canvas::Item->new(
-                        $root,
-                        'Gnome2::Canvas::Rect',
-                        x1 => $x1,
-                        y1 => $y1,
-                        x2 => $x4,
-                        y2 => $y2,
-                        fill_color => $self->gaugeBlankColour,
-                        outline_color => $self->gaugeBorderColour,
+                    $obj = GooCanvas2::CanvasRect->new(
+                        'parent' => $root,
+                        'x' => $x1,
+                        'y' => $y1,
+                        'width' => ($x4 - $x1 + 1),
+                        'height' => ($y2 - $y1 + 1),
+                        'radius-x' => $self->gaugeCorner,
+                        'radius-y' => $self->gaugeCorner,
+                        'line-width' => 1,
+                        'stroke-color' => $self->gaugeBorderColour,
+                        'fill-color' => $self->gaugeBlankColour,
                     );
 
-                    $obj->raise_to_top();
+                    $obj->raise();
                     push (@canvasObjList, $obj);
 
                 } else {
 
-                    # Full gauge portion
-                    $obj = Gnome2::Canvas::Item->new(
-                        $root,
-                        'Gnome2::Canvas::Rect',
-                        x1 => $x1,
-                        y1 => $y1,
-                        x2 => $x2,
-                        y2 => $y2,
-                        fill_color => $gaugeObj->fullColour,
-                        outline_color => $self->gaugeBorderColour,
-                    );
+                    # Full gauge portion (don't draw, if empty)
+                    if (($x2 - $x1 + 1) > 1) {
 
-                    $obj->raise_to_top();
-                    push (@canvasObjList, $obj);
+                        $obj = GooCanvas2::CanvasRect->new(
+                            'parent' => $root,
+                            'x' => $x1,
+                            'y' => $y1,
+                            'width' => ($x2 - $x1 + 1),
+                            'height' => ($y2 - $y1 + 1),
+                            'radius-x' => $self->gaugeCorner,
+                            'radius-y' => $self->gaugeCorner,
+                            'line-width' => 1,
+                            'stroke-color' => $self->gaugeBorderColour,
+                            'fill-color' => $gaugeObj->fullColour,
+                        );
 
-                    # Empty gauge portion
-                    $obj = Gnome2::Canvas::Item->new(
-                        $root,
-                        'Gnome2::Canvas::Rect',
-                        x1 => $x3,
-                        y1 => $y1,
-                        x2 => $x4,
-                        y2 => $y2,
-                        fill_color => $gaugeObj->emptyColour,
-                        outline_color => $self->gaugeBorderColour,
-                    );
+                        $obj->raise();
+                        push (@canvasObjList, $obj);
+                    }
 
-                    $obj->raise_to_top();
-                    push (@canvasObjList, $obj);
+                    # Empty gauge portion (don't draw, if empty)
+                    if (($x4 - $x3 + 1) > 1) {
+
+                        $obj = GooCanvas2::CanvasRect->new(
+                            'parent' => $root,
+                            'x' => $x3,
+                            'y' => $y1,
+                            'width' => ($x4 - $x3 + 1),
+                            'height' => ($y2 - $y1 + 1),
+                            'radius-x' => $self->gaugeCorner,
+                            'radius-y' => $self->gaugeCorner,
+                            'line-width' => 1,
+                            'stroke-color' => $self->gaugeBorderColour,
+                            'fill-color' => $gaugeObj->emptyColour,
+                        );
+
+                        $obj->raise();
+                        push (@canvasObjList, $obj);
+                    }
                 }
 
                 # Draw a label over the gauge, if one is specified
@@ -7821,19 +7844,19 @@
                         $lCol = $gaugeObj->labelColour;
                     }
 
-                    $obj = Gnome2::Canvas::Item->new(
-                        $root,
-                        'Gnome2::Canvas::Text',
-                        x => $x1 + $self->gaugeSpacingX,
-                        y => $y1,
-                        fill_color => $lCol,
-                        font => $self->gaugeLabelFont,
-                        size_points => $self->gaugeLabelFontSize,
-                        anchor => 'GTK_ANCHOR_NW',
-                        text => $lText,
+                    $obj = GooCanvas2::CanvasText->new(
+                        'parent' => $root,
+#                       'anchor' => 'nw',
+                        'x' => $x1 + $self->gaugeSpacingX,
+                        'y' => $y1,
+                        'font' => $self->gaugeLabelFont . ' ' . $self->gaugeLabelFontSize,
+                        'use-markup' => FALSE,
+                        'text' => $lText,
+                        'width' => -1,
+                        'fill-color' => $lCol,
                     );
 
-                    $obj->raise_to_top();
+                    $obj->raise();
                     push (@canvasObjList, $obj);
                 }
 
@@ -7868,18 +7891,19 @@
                     $lText .= $gaugeObj->maxValue;
                 }
 
-                $obj = Gnome2::Canvas::Item->new(
-                    $root,
-                    'Gnome2::Canvas::Text',
-                    x => $x1,
-                    y => $y1,
-                    font => $self->gaugeLabelFont,
-                    size_points => $self->gaugeLabelFontSize,
-                    anchor => 'GTK_ANCHOR_NW',
-                    text => $lText,
+                $obj = GooCanvas2::CanvasText->new(
+                    'parent' => $root,
+#                    'anchor' => 'nw',
+                    'x' => $x1,
+                    'y' => $y1,
+                    'font' => $self->gaugeLabelFont . ' ' . $self->gaugeLabelFontSize,
+                    'use-markup' => FALSE,
+                    'text' => $lText,
+                    'width' => -1,
+#                    'fill-color' => $lCol,
                 );
 
-                $obj->raise_to_top();
+                $obj->raise();
                 push (@canvasObjList, $obj);
             }
         }
@@ -7905,8 +7929,15 @@
     sub gaugeCanvasList
         { my $self = shift; return @{$self->{gaugeCanvasList}}; }
 
+    sub canvasFrameWidth
+        { $_[0]->{canvasFrameWidth} }
+    sub canvasFrameHeight
+        { $_[0]->{canvasFrameHeight} }
+
     sub gaugeHeight
         { $_[0]->{gaugeHeight} }
+    sub gaugeCorner
+        { $_[0]->{gaugeCorner} }
     sub gaugeSpacingX
         { $_[0]->{gaugeSpacingX} }
     sub gaugeSpacingY
@@ -8052,7 +8083,7 @@
             # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
             #   allowed to accept the focus, FALSE if not. The restriction is applied during the
             #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
-            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   the container widget can be set to accept the focus (e.g. the Gtk3::Entry in
             #   GA::Strip::MenuBar)
             allowFocusFlag              => FALSE,
 
@@ -8070,21 +8101,21 @@
             #   to $self->objEnable()
             funcID                      => undef,
 
-            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
-            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
-            packingBox                  => undef,       # Gtk2::VBox
+            # The container widget for this strip object (usually a Gtk3::HBox or Gtk3::VBox). This
+            #   widget is the one added to the window's main Gtk3::HBox or Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::VBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            findEntry                   => undef,       # Gtk2::Entry
-            prevButton                  => undef,       # Gtk2::Button
-            nextButton                  => undef,       # Gtk2::Button
-            resetButton                 => undef,       # Gtk2::Button
-            caseButton                  => undef,       # Gtk2::ToggleButton
-            regexButton                 => undef,       # Gtk2::ToggleButton
-            splitButton                 => undef,       # Gtk2::ToggleButton
+            findEntry                   => undef,       # Gtk3::Entry
+            prevButton                  => undef,       # Gtk3::Button
+            nextButton                  => undef,       # Gtk3::Button
+            resetButton                 => undef,       # Gtk3::Button
+            caseButton                  => undef,       # Gtk3::ToggleButton
+            regexButton                 => undef,       # Gtk3::ToggleButton
+            splitButton                 => undef,       # Gtk3::ToggleButton
 
             # Flags set to TRUE when the 'Case senstive', 'Use regex' and 'Split screen' buttons are
             #   selected, FALSE when they are not selected
@@ -8148,7 +8179,7 @@
     sub drawSearchBox {
 
         # Called by $self->toggleBox
-        # Draws a Gtk2::HBox to contain various widgets
+        # Draws a Gtk3::HBox to contain various widgets
         #
         # Expected arguments
         #   (none besides $self)
@@ -8166,20 +8197,20 @@
         }
 
         # Create a packing box
-        my $packingBox = Gtk2::HBox->new(FALSE, 0);
+        my $packingBox = Gtk3::HBox->new(FALSE, 0);
         $packingBox->set_border_width(0);
 
         # Add some widgets for performing searches
-        my $findLabel = Gtk2::Label->new();
+        my $findLabel = Gtk3::Label->new();
         $packingBox->pack_start($findLabel, FALSE, FALSE, 5);
         $findLabel->set_markup('Find:');
 
-        my $findEntry = Gtk2::Entry->new();
+        my $findEntry = Gtk3::Entry->new();
         $packingBox->pack_start($findEntry, TRUE, TRUE, 5);
         # ->signal_connects appear below
 
-        my $prevButton = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file(
+        my $prevButton = Gtk3::ToolButton->new(
+            Gtk3::Image->new_from_file(
                 $axmud::SHARE_DIR . $axmud::CLIENT->constUpIconPath,
             ),
             'Previous match',
@@ -8192,8 +8223,8 @@
             $self->doSearch(FALSE);
         });
 
-        my $nextButton = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file(
+        my $nextButton = Gtk3::ToolButton->new(
+            Gtk3::Image->new_from_file(
                 $axmud::SHARE_DIR . $axmud::CLIENT->constDownIconPath,
             ),
             'Next match',
@@ -8206,11 +8237,11 @@
             $self->doSearch(TRUE);
         });
 
-        my $separator = Gtk2::SeparatorToolItem->new();
+        my $separator = Gtk3::SeparatorToolItem->new();
         $packingBox->pack_start($separator, FALSE, FALSE, 0);
 
-        my $resetButton = Gtk2::ToolButton->new(
-            Gtk2::Image->new_from_file(
+        my $resetButton = Gtk3::ToolButton->new(
+            Gtk3::Image->new_from_file(
                 $axmud::SHARE_DIR . $axmud::CLIENT->constResetIconPath,
             ),
             'Reset search box',
@@ -8223,13 +8254,13 @@
             $self->doReset();
         });
 
-        my $separator2 = Gtk2::SeparatorToolItem->new();
+        my $separator2 = Gtk3::SeparatorToolItem->new();
         $packingBox->pack_start($separator2, FALSE, FALSE, 0);
 
-        my $caseButton = Gtk2::ToggleButton->new();
+        my $caseButton = Gtk3::ToggleButton->new();
         $packingBox->pack_start($caseButton, FALSE, FALSE, 0);
         $caseButton->set_image(
-            Gtk2::Image->new_from_file(
+            Gtk3::Image->new_from_file(
                 $axmud::SHARE_DIR . $axmud::CLIENT->constCaseIconPath,
             )
         );
@@ -8247,10 +8278,10 @@
             }
         });
 
-        my $regexButton = Gtk2::ToggleButton->new();
+        my $regexButton = Gtk3::ToggleButton->new();
         $packingBox->pack_start($regexButton, FALSE, FALSE, 0);
         $regexButton->set_image(
-            Gtk2::Image->new_from_file(
+            Gtk3::Image->new_from_file(
                 $axmud::SHARE_DIR . $axmud::CLIENT->constRegexIconPath,
             )
         );
@@ -8268,10 +8299,10 @@
             }
         });
 
-        my $splitButton = Gtk2::ToggleButton->new();
+        my $splitButton = Gtk3::ToggleButton->new();
         $packingBox->pack_start($splitButton, FALSE, FALSE, 0);
         $splitButton->set_image(
-            Gtk2::Image->new_from_file(
+            Gtk3::Image->new_from_file(
                 $axmud::SHARE_DIR . $axmud::CLIENT->constDivideIconPath,
             )
         );
@@ -8635,7 +8666,7 @@
     sub new {
 
         # Called by GA::Win::Internal->drawWidgets or ->addStripObj
-        # Creates the GA::Strip::Entry - a non-compulsory strip object containing a Gtk2::Entry
+        # Creates the GA::Strip::Entry - a non-compulsory strip object containing a Gtk3::Entry
         #
         # Expected arguments
         #   $number     - The strip object's number within the parent window (matches
@@ -8792,7 +8823,7 @@
             # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
             #   allowed to accept the focus, FALSE if not. The restriction is applied during the
             #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
-            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   the container widget can be set to accept the focus (e.g. the Gtk3::Entry in
             #   GA::Strip::MenuBar)
             allowFocusFlag              => FALSE,
 
@@ -8810,26 +8841,26 @@
             #   to $self->objEnable()
             funcID                      => undef,
 
-            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
-            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
-            packingBox                  => undef,       # Gtk2::HBox
+            # The container widget for this strip object (usually a Gtk3::HBox or Gtk3::VBox). This
+            #   widget is the one added to the window's main Gtk3::HBox or Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::HBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            entry                       => undef,       # Gtk2::Entry
-            preEntry                    => undef,       # Gtk2::Entry
-            postEntry                   => undef,       # Gtk2::Entry
-            wipeButton                  => undef,       # Gtk2::ToolButton
-            addButton                   => undef,       # Gtk2::ToolButton
-            consoleButton               => undef,       # Gtk2::ToolButton
-            inputButton                 => undef,       # Gtk2::ToolButton
-            searchButton                => undef,       # Gtk2::ToolButton
-            cancelButton                => undef,       # Gtk2::ToolButton
-            switchButton                => undef,       # Gtk2::ToolButton
-            scrollButton                => undef,       # Gtk2::ToolButton
-            splitButton                 => undef,       # Gtk2::ToolButton
+            entry                       => undef,       # Gtk3::Entry
+            preEntry                    => undef,       # Gtk3::Entry
+            postEntry                   => undef,       # Gtk3::Entry
+            wipeButton                  => undef,       # Gtk3::ToolButton
+            addButton                   => undef,       # Gtk3::ToolButton
+            consoleButton               => undef,       # Gtk3::ToolButton
+            inputButton                 => undef,       # Gtk3::ToolButton
+            searchButton                => undef,       # Gtk3::ToolButton
+            cancelButton                => undef,       # Gtk3::ToolButton
+            switchButton                => undef,       # Gtk3::ToolButton
+            scrollButton                => undef,       # Gtk3::ToolButton
+            splitButton                 => undef,       # Gtk3::ToolButton
 
             # List of currently-existing pane objects. New pane objects are added to the end of the
             #   list. The first pane object in the list is the one to which the scroll and split
@@ -8955,7 +8986,7 @@
         if (! $self->packingBox) {
 
             # This function is being called for the first time
-            $packingBox = Gtk2::HBox->new(FALSE, 0);
+            $packingBox = Gtk3::HBox->new(FALSE, 0);
             $packingBox->set_border_width(0);
 
         } else {
@@ -8981,15 +9012,15 @@
             }
         }
 
-        # Draw a Gtk2::Entry box (compulsory) and any buttons specified by $self->initHash
+        # Draw a Gtk3::Entry box (compulsory) and any buttons specified by $self->initHash
         #   (->signal_connects for each appear later in the function)
 
         # Draw a 'wipe entry' icon as a toolbutton (optional)
         my $wipeButton;
         if ($self->ivShow('initHash', 'wipe_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $wipeButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constWipeIconPath),
+            $wipeButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constWipeIconPath),
                 'Clear command entry box',
             );
             $packingBox->pack_start($wipeButton, FALSE, FALSE, 0);
@@ -9000,8 +9031,8 @@
         my $addButton;
         if ($self->ivShow('initHash', 'add_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $addButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constAddIconPath),
+            $addButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constAddIconPath),
                 'Use additional entry boxes',
             );
             $packingBox->pack_start($addButton, FALSE, FALSE, 0);
@@ -9014,7 +9045,7 @@
         # Draw the prepending entry box, if allowed
         if ($self->entryBoxMode eq 'pre' || $self->entryBoxMode eq 'both') {
 
-            $preEntry = Gtk2::Entry->new();
+            $preEntry = Gtk3::Entry->new();
             $packingBox->pack_start($preEntry, FALSE, FALSE, 0);
             $preEntry->set_tooltip_text('Add to beginning of world commands');
             if (defined $preText && $preText ne '') {
@@ -9024,7 +9055,7 @@
         }
 
         # Draw the main entry box
-        $entry = Gtk2::Entry->new();
+        $entry = Gtk3::Entry->new();
         $packingBox->pack_start($entry, TRUE, TRUE, 0);
         $entry->set_tooltip_text('Command entry box');
         if (defined $mainText && $mainText ne '') {
@@ -9035,7 +9066,7 @@
         # Draw the appending entry box, if allowed
         if ($self->entryBoxMode eq 'post' || $self->entryBoxMode eq 'both') {
 
-            $postEntry = Gtk2::Entry->new();
+            $postEntry = Gtk3::Entry->new();
             $packingBox->pack_start($postEntry, FALSE, FALSE, 0);
             $postEntry->set_tooltip_text('Add to end of world commands');
             if (defined $postText && $postText ne '') {
@@ -9045,7 +9076,7 @@
         }
 
         # The main entry is the only 'internal' window widget which can accept focus
-        $entry->can_focus(TRUE);
+        $entry->set_can_focus(TRUE);
         # For 'main' windows, the entries start desensitised. Afterwards, they are sensitised or
         #   desensitised (as appropriate) by $self->setWidgetsIfSession. For other kinds of
         #   'internal' window, the entries start sensitised
@@ -9069,8 +9100,8 @@
         my $consoleButton;
         if ($self->ivShow('initHash', 'console_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $consoleButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file(
+            $consoleButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file(
                     $axmud::SHARE_DIR . $axmud::CLIENT->constEmptyIconPath,
                 ),
                 'Open Session Console window',
@@ -9087,8 +9118,8 @@
         my $inputButton;
         if ($self->ivShow('initHash', 'input_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $inputButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constMultiIconPath),
+            $inputButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constMultiIconPath),
                 'Open Quick Input window',
             );
             $packingBox->pack_start($inputButton, FALSE, FALSE, 0);
@@ -9100,8 +9131,8 @@
         my $searchButton;
         if ($self->ivShow('initHash', 'search_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $searchButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constSearchIconPath),
+            $searchButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constSearchIconPath),
                 'Open search box',
             );
             $packingBox->pack_start($searchButton, FALSE, FALSE, 0);
@@ -9113,8 +9144,8 @@
         my $cancelButton;
         if ($self->ivShow('initHash', 'cancel_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $cancelButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constCancelIconPath),
+            $cancelButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constCancelIconPath),
                 'Cancel repeating/excess commands',
             );
             $packingBox->pack_start($cancelButton, FALSE, FALSE, 0);
@@ -9126,8 +9157,8 @@
         my $switchButton;
         if ($self->ivShow('initHash', 'switch_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $switchButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constSwitchIconPath),
+            $switchButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constSwitchIconPath),
                 'Switch active pane',
             );
             $packingBox->pack_start($switchButton, FALSE, FALSE, 0);
@@ -9139,8 +9170,8 @@
         my $scrollButton;
         if ($self->ivShow('initHash', 'scroll_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $scrollButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constLockIconPath),
+            $scrollButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constLockIconPath),
                 'Apply/release scroll lock',
             );
             $packingBox->pack_start($scrollButton, FALSE, FALSE, 0);
@@ -9152,8 +9183,8 @@
         my $splitButton;
         if ($self->ivShow('initHash', 'split_flag') && ! $axmud::BLIND_MODE_FLAG) {
 
-            $splitButton = Gtk2::ToolButton->new(
-                Gtk2::Image->new_from_file(
+            $splitButton = Gtk3::ToolButton->new(
+                Gtk3::Image->new_from_file(
                     $axmud::SHARE_DIR . $axmud::CLIENT->constRestoreIconPath,
                 ),
                 'Split/restore screen',
@@ -9348,7 +9379,7 @@
             $self->scrollButton->set_sensitive($flag);
             # Restore default icon, too
             $self->scrollButton->set_icon_widget(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constLockIconPath),
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->constLockIconPath),
             );
         }
 
@@ -9357,7 +9388,7 @@
             $self->splitButton->set_sensitive($flag);
             # Restore default icon, too
             $self->splitButton->set_icon_widget(
-                Gtk2::Image->new_from_file(
+                Gtk3::Image->new_from_file(
                     $axmud::SHARE_DIR . $axmud::CLIENT->constRestoreIconPath,
                 ),
             );
@@ -9456,7 +9487,7 @@
                 $iv = 'const' . ucfirst($self->winObj->visibleSession->systemMsgMode) . 'IconPath';
 
                 $self->consoleButton->set_icon_widget(
-                    Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
+                    Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
                 );
 
                 $self->ivPoke('consoleIconType', $self->winObj->visibleSession->systemMsgMode);
@@ -9468,7 +9499,7 @@
                 if (! $textViewObj || $textViewObj->scrollLockFlag) {
 
                     $self->scrollButton->set_icon_widget(
-                        Gtk2::Image->new_from_file(
+                        Gtk3::Image->new_from_file(
                             $axmud::SHARE_DIR . $axmud::CLIENT->constLockIconPath
                         ),
                     );
@@ -9476,7 +9507,7 @@
                 } else {
 
                     $self->scrollButton->set_icon_widget(
-                        Gtk2::Image->new_from_file(
+                        Gtk3::Image->new_from_file(
                             $axmud::SHARE_DIR . $axmud::CLIENT->constScrollIconPath
                         ),
                     );
@@ -9488,7 +9519,7 @@
                 if (! $textViewObj || $textViewObj->splitScreenMode eq 'split') {
 
                     $self->splitButton->set_icon_widget(
-                        Gtk2::Image->new_from_file(
+                        Gtk3::Image->new_from_file(
                             $axmud::SHARE_DIR . $axmud::CLIENT->constRestoreIconPath,
                         ),
                     );
@@ -9496,7 +9527,7 @@
                 } else {
 
                     $self->splitButton->set_icon_widget(
-                        Gtk2::Image->new_from_file(
+                        Gtk3::Image->new_from_file(
                             $axmud::SHARE_DIR . $axmud::CLIENT->constSplitIconPath,
                         ),
                     );
@@ -10196,7 +10227,7 @@
 
     sub captureEntry {
 
-        # Can be called by any code which wants to make temporarily set the Gtk2::Entry as
+        # Can be called by any code which wants to make temporarily set the Gtk3::Entry as
         #   insensitive, and called again to restore its previous state (which might be
         #   sensitive, or not)
         #
@@ -10439,7 +10470,7 @@
             if (! $flag) {
 
                 $self->scrollButton->set_icon_widget(
-                    Gtk2::Image->new_from_file(
+                    Gtk3::Image->new_from_file(
                         $axmud::SHARE_DIR . $axmud::CLIENT->constScrollIconPath
                     ),
                 );
@@ -10448,7 +10479,7 @@
 
                 # (Default)
                 $self->scrollButton->set_icon_widget(
-                    Gtk2::Image->new_from_file(
+                    Gtk3::Image->new_from_file(
                         $axmud::SHARE_DIR . $axmud::CLIENT->constLockIconPath
                     ),
                 );
@@ -10522,7 +10553,7 @@
             if (! $flag) {
 
                 $self->splitButton->set_icon_widget(
-                    Gtk2::Image->new_from_file(
+                    Gtk3::Image->new_from_file(
                         $axmud::SHARE_DIR . $axmud::CLIENT->constRestoreIconPath
                     ),
                 );
@@ -10531,7 +10562,7 @@
 
                 # (Default)
                 $self->splitButton->set_icon_widget(
-                    Gtk2::Image->new_from_file(
+                    Gtk3::Image->new_from_file(
                         $axmud::SHARE_DIR . $axmud::CLIENT->constSplitIconPath
                     ),
                 );
@@ -10591,7 +10622,7 @@
             }
 
             $self->consoleButton->set_icon_widget(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
             );
 
             $self->ivPoke('consoleIconType', $type);
@@ -10610,7 +10641,7 @@
     sub notify_addTableObj {
 
         # Called by GA::Strip::Table->addTableObj whenever a table object is added to the window's
-        #   Gtk2::Table
+        #   Gtk3::Grid
 
         my ($self, $tableObj, $check) = @_;
 
@@ -10652,7 +10683,7 @@
             if ($self->consoleIconFlashFlag) {
 
                 $self->consoleButton->set_icon_widget(
-                    Gtk2::Image->new_from_file(
+                    Gtk3::Image->new_from_file(
                         $axmud::SHARE_DIR . $axmud::CLIENT->constEmptyIconPath,
                     ),
                 );
@@ -10664,7 +10695,7 @@
                 $iv = 'const' . ucfirst($self->consoleIconTempType) . 'IconPath';
 
                 $self->consoleButton->set_icon_widget(
-                    Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
+                    Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
                 );
 
                 $self->ivPoke('consoleIconFlashFlag', TRUE);
@@ -10696,7 +10727,7 @@
             $iv = 'const' . ucfirst($self->consoleIconType) . 'IconPath';
 
             $self->consoleButton->set_icon_widget(
-                Gtk2::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
+                Gtk3::Image->new_from_file($axmud::SHARE_DIR . $axmud::CLIENT->$iv),
             );
 
             $self->consoleButton->show_all();
@@ -10761,7 +10792,7 @@
     sub notify_removeTableObj {
 
         # Called by GA::Strip::Table->removeTableObj whenever a table object is removed from the
-        #   window's Gtk2::Table
+        #   window's Gtk3::Grid
 
         my ($self, $tableObj, $check) = @_;
 
@@ -10904,7 +10935,7 @@
 
         # Called by GA::Win::Internal->drawWidgets or ->addStripObj
         # Creates the GA::Strip::ConnectInfo - a non-compulsory strip object containing
-        #   Gtk2::Labels and blinkers
+        #   Gtk3::Labels and blinkers
         #
         # Expected arguments
         #   $number     - The strip object's number within the parent window (matches
@@ -10992,7 +11023,7 @@
             # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
             #   allowed to accept the focus, FALSE if not. The restriction is applied during the
             #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
-            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   the container widget can be set to accept the focus (e.g. the Gtk3::Entry in
             #   GA::Strip::MenuBar)
             allowFocusFlag              => FALSE,
 
@@ -11010,22 +11041,21 @@
             #   to $self->objEnable()
             funcID                      => undef,
 
-            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
-            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
-            packingBox                  => undef,       # Gtk2::HBox or Gtk2::VBox
+            # The container widget for this strip object (usually a Gtk3::HBox or Gtk3::VBox). This
+            #   widget is the one added to the window's main Gtk3::HBox or Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::HBox or Gtk3::VBox
 
             # Other IVs
             # ---------
 
             # Widgets
-            hostLabel                   => undef,       # Gtk2::Label
-            frame                       => undef,       # Gtk2::Frame
-            canvas                      => undef,       # Gnome2::Canvas
-            timeLabel                   => undef,       # Gtk2::Label
+            hostLabel                   => undef,       # Gtk3::Label
+            frame                       => undef,       # Gtk3::Frame
+            canvas                      => undef,       # GooCanvas2::Canvas
+            timeLabel                   => undef,       # Gtk3::Label
 
-            # The Gnome2::Canvas::Item objects that are drawn as blinkers - little blobs of colour
-            #   which are lit up (briefly) when data is sent to and forth from the world, drawn on a
-            #   Gnome2::Canvas
+            # The GooCanvas2::CanvasRect objects that are drawn as blinkers - little blobs of colour
+            #   which are lit up (briefly) when data is sent to and forth from the world
             # This version of Axmud implements the following blinker numbers:
             #   0   - blinker turned on when data is received from the world
             #   1   - blinker turned on when telnet option/protocol data (invisible to users) is
@@ -11039,9 +11069,9 @@
             blinkerHash                 => {},
             # Number of blinker objects created
             blinkerCount                => 3,
-            # The portion of the Gnome2::Canvas required for each blinker, in pixels
+            # The portion of the GooCanvas2::Canvas required for each blinker, in pixels
             blinkerWidth                => 20,
-            blinkerHeight               => 10,
+            blinkerHeight               => 15,
         };
 
         # Bless the object into existence
@@ -11077,36 +11107,33 @@
         }
 
         # Create a packing box
-        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        my $hBox = Gtk3::HBox->new(FALSE, 0);
         $hBox->set_border_width(0);
 
-        # Add two labels and a Gtk2::Canvas for drawing blinkers
-        my $hostLabel = Gtk2::Label->new();
+        # Add two labels and a Gtk3::Canvas for drawing blinkers
+        my $hostLabel = Gtk3::Label->new();
         $hBox->pack_start($hostLabel, FALSE, FALSE, 0);
         $hostLabel->set_markup($self->winObj->hostLabelText);
 
-        my $frame = Gtk2::Frame->new(undef);
+        my $frame = Gtk3::Frame->new(undef);
         $hBox->pack_end($frame, FALSE, FALSE, 0);
         $frame->set_border_width(0);
-        # (The frame is already a little higher than the canvas, but the width isn't, so we'll add
-        #   a few pixels)
-        $frame->set_size_request(
-            (($self->blinkerWidth * $self->blinkerCount) + 5),
+        $frame->set_tooltip_text("Command sent | Out-of-bounds data | Text received");
+
+        my $canvas = GooCanvas2::Canvas->new();
+        $frame->add($canvas);
+        $canvas->set_size_request(
+            ($self->blinkerCount * $self->blinkerWidth),
             $self->blinkerHeight,
         );
-
-        $frame->set_tooltip_text("Command sent | Text received\nOut-of-bounds data received");
-
-        my $canvas = Gnome2::Canvas->new();
-        $canvas->set_scroll_region(
+        $canvas->set_bounds(
             0,
             0,
             ($self->blinkerCount * $self->blinkerWidth),
             $self->blinkerHeight,
         );
-        $frame->add($canvas);
 
-        my $timeLabel = Gtk2::Label->new();
+        my $timeLabel = Gtk3::Label->new();
         $hBox->pack_end($timeLabel, FALSE, FALSE, 0);
         $timeLabel->set_markup($self->winObj->timeLabelText);
         $timeLabel->set_tooltip_text("Connected | delayed Quit\nWorld idle | User idle");
@@ -11114,7 +11141,7 @@
         # Update IVs
         $self->ivPoke('packingBox', $hBox);
         $self->ivPoke('hostLabel', $hostLabel);
-        $self->ivPoke('frame', $canvas);
+        $self->ivPoke('frame', $frame);
         $self->ivPoke('canvas', $canvas);
         $self->ivPoke('timeLabel', $timeLabel);
 
@@ -11151,14 +11178,14 @@
              return $axmud::CLIENT->writeImproper($self->_objClass . '->objDestroy', @_);
         }
 
-        # Only polite to ->destroy the Gnome2::Canvas and its items
+        # Only polite to destroy the GooCanvas2::Canvas and its items
         if ($self->canvas) {
 
             foreach my $blinkerObj ($self->ivValues('blinkerHash')) {
 
-                if (defined $blinkerObj->canvasItem) {
+                if (defined $blinkerObj->canvasObj) {
 
-                    $blinkerObj->canvasItem->destroy();
+                    $blinkerObj->canvasObj->remove();
                 }
             }
 
@@ -11256,7 +11283,7 @@
         # Draw each blinker in turn
         foreach my $number (@list) {
 
-            my ($blinkerObj, $colour, $canvasItem);
+            my ($blinkerObj, $colour, $canvasObj);
 
             # Draw this blinker
             $blinkerObj = $self->ivShow('blinkerHash', $number);
@@ -11270,26 +11297,27 @@
                 }
 
                 # Destroy the old canvas item, so it can be replaced
-                if ($blinkerObj->canvasItem) {
+                if ($blinkerObj->canvasObj) {
 
-                    $blinkerObj->canvasItem->destroy();
+                    $blinkerObj->canvasObj->remove();
                 }
 
-                $canvasItem = Gnome2::Canvas::Item->new(
-                    $self->canvas->root(),
-                    'Gnome2::Canvas::Rect',
-                    x1 => (($self->blinkerWidth * $number) + 2),        # 2 / 22 / 42...
-                    y1 => 1,                                            # 1
-                    x2 => (($self->blinkerWidth * ($number + 1) - 2)),  # 18 / 38 / 58...
-                    y2 => ($self->blinkerHeight - 1),                   # 9
-                    fill_color => $colour,
-                    outline_color => '#000000',
+                $canvasObj = GooCanvas2::CanvasRect->new(
+                    'parent' => $self->canvas->get_root_item(),
+                    'x' => (($self->blinkerWidth * $number) + 3),         # 2 / 22 / 42...
+                    'y' => 3,                                             # 2
+                    'width' => $self->blinkerWidth - 6,
+                    'height' => $self->blinkerHeight - 6,
+                    # line_width = 1 looks a little harsh - doing this improves the aesthetic a bit
+                    'line_width' => 0.8,
+                    'stroke-color' => '#000000',
+                    'fill-color' => $colour,
                 );
 
-                $canvasItem->raise_to_top();
+                $canvasObj->raise();
 
                 # Update IVs
-                $blinkerObj->ivPoke('canvasItem', $canvasItem);
+                $blinkerObj->ivPoke('canvasObj', $canvasObj);
                 if (! $onFlag) {
                     $blinkerObj->ivPoke('onFlag', FALSE);
                 } else {

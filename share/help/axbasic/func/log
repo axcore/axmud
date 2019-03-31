@@ -1,4 +1,4 @@
-LOG (x)
+Log (x)
 
    Synopsis:
       Returns the natural logarithm of x

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -1666,7 +1666,7 @@
             $session->mainWin->showMsgDialogue(
                 'Client command error',
                 'error',
-                "Bad or missing arguments in the client command:\n$inputString",
+                'Bad or missing arguments in the client command: ' . $inputString,
                 'ok',
             );
 
@@ -7191,7 +7191,7 @@
         ) = @_;
 
         # Local variables
-        my ($winType, $winName);
+        my ($winType, $winName, $winHeight);
 
         # Check for improper arguments
         if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
@@ -7217,6 +7217,16 @@
 
                 $title = 'Preference window';
             }
+        }
+
+        # For the benefit of MS Windows and its enormous buttons, increase the height of all
+        #   'config' windows a little (this removes scrollbars in almost all tabs)
+        $winHeight = $axmud::CLIENT->customFreeWinHeight;
+        if (
+            $^O eq 'MSWin32'
+            && $axmud::CLIENT->customFreeWinHeight eq $axmud::CLIENT->constFreeWinHeight
+        ) {
+            $winHeight += 30;
         }
 
         # Setup
@@ -7252,22 +7262,20 @@
             #   displayed in a 'dialogue' window)
             pseudoCmdMode               => 'win_error',
 
-            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
-            #   parent 'main' window's Gtk2::Window
+            # The window widget. For most window objects, the Gtk3::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk3::Window
             # The code should use this IV when it wants to do something to the window itself
             #   (minimise it, make it active, etc)
             winWidget                   => undef,
-            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            # The window container. For most window objects, the Gtk3::Window. For pseudo-windows,
             #   the parent GA::Table::PseudoWin table object
             # The code should use this IV when it wants to add, modify or remove widgets inside the
             #   window itself
             winBox                      => undef,
-            # The Gnome2::Wnck::Window, if known
-            wnckWin                     => undef,
             # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
             #   FALSE if not
             enabledFlag                 => FALSE,
-            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            # Flag set to TRUE if the Gtk3 window itself is visible (after a call to
             #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
             visibleFlag                 => TRUE,
             # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
@@ -7285,16 +7293,16 @@
             #       (sub_name, argument_list_ref, sub_name, argument_list_ref...)
             childDestroyHash            => {},
 
-            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
-            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            # The container widget into which all other widgets are packed (usually a Gtk3::VBox or
+            #   Gtk3::HBox, but any container widget can be used; takes up the whole window client
             #   area)
-            packingBox                  => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox
 
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
             widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
+            heightPixels                => $winHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -7309,13 +7317,12 @@
             # Standard IVs for 'config' windows
 
             # Widgets
-            notebook                    => undef,       # Gtk2::Notebook
-            hBox                        => undef,       # Gtk2::HBox
-            tooltips                    => undef,       # Gtk2::Tooltips
-            okButton                    => undef,       # Gtk2::Button
-            cancelButton                => undef,       # Gtk2::Button
-            resetButton                 => undef,       # Gtk2::Button
-            saveButton                  => undef,       # Gtk2::Button
+            notebook                    => undef,       # Gtk3::Notebook
+            hBox                        => undef,       # Gtk3::HBox
+            okButton                    => undef,       # Gtk3::Button
+            cancelButton                => undef,       # Gtk3::Button
+            resetButton                 => undef,       # Gtk3::Button
+            saveButton                  => undef,       # Gtk3::Button
 
             # The standard table size for the notebook (any 'edit'/'pref' window can use a different
             #   size, if it wants)
@@ -7365,7 +7372,7 @@
     sub winEnable {
 
         # Called by GA::Generic::Win->createFreeWin, after the call to $self->winSetup
-        # After the Gtk2::Window has been setup and moved into position, makes it visible
+        # After the Gtk3::Window has been setup and moved into position, makes it visible
         #
         # Expected arguments
         #   (none besides $self)
@@ -7423,31 +7430,27 @@
         }
 
         # Create a packing box
-        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        my $packingBox = Gtk3::VBox->new(FALSE, 0);
         $self->winBox->add($packingBox);
         $packingBox->set_border_width(0);
 
         # Add a notebook at the top
-        my $notebook = Gtk2::Notebook->new();
+        my $notebook = Gtk3::Notebook->new();
         $packingBox->pack_start($notebook, TRUE, TRUE, 0);
         $notebook->set_scrollable(TRUE);
+        $notebook->popup_enable();
 
         # Add a button strip at the bottom, in a horizontal packing box
-        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        my $hBox = Gtk3::HBox->new(FALSE, 0);
         $packingBox->pack_end($hBox, FALSE, FALSE, $self->spacingPixels);
 
-        # Create a Gtk2::Tooltips object, to be used by buttons on all tabs in this window
-        my $tooltips = Gtk2::Tooltips->new();
-
         # Create Reset/Save/Cancel/OK buttons
-        my ($okButton, $cancelButton, $resetButton, $saveButton)
-            = $self->enableButtons($hBox, $tooltips);
+        my ($okButton, $cancelButton, $resetButton, $saveButton) = $self->enableButtons($hBox);
 
         # Update IVs
         $self->ivPoke('packingBox', $packingBox);
         $self->ivPoke('notebook', $notebook);
         $self->ivPoke('hBox', $hBox);
-        $self->ivPoke('tooltips', $tooltips);
         $self->ivPoke('okButton', $okButton);
         $self->ivPoke('cancelButton', $cancelButton);
         $self->ivPoke('resetButton', $resetButton);
@@ -7485,7 +7488,7 @@
 
         $self->winBox->signal_connect('delete-event' => sub {
 
-            # Prevent Gtk2 from taking action directly. Instead redirect the request to
+            # Prevent Gtk3 from taking action directly. Instead redirect the request to
             #   $self->winDestroy
             return $self->winDestroy();
         });
@@ -7537,71 +7540,70 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the four Gtk::Button objects created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
         # Create the OK button, desensitised if $self->tempFlag is TRUE
-        my $okButton = Gtk2::Button->new('OK');
+        my $okButton = Gtk3::Button->new('OK');
         $hBox->pack_end($okButton, FALSE, FALSE, $self->borderPixels);
         $okButton->get_child->set_width_chars(10);
         $okButton->signal_connect('clicked' => sub {
 
             $self->buttonOK();
         });
-        $tooltips->set_tip($okButton, 'Accept changes');
+        $okButton->set_tooltip_text('Accept changes');
         if ($self->tempFlag) {
 
             $okButton->set_state('insensitive');
         }
 
         # Create the Cancel button (never desensitised)
-        my $cancelButton = Gtk2::Button->new('Cancel');
+        my $cancelButton = Gtk3::Button->new('Cancel');
         $hBox->pack_end($cancelButton, FALSE, FALSE, $self->spacingPixels);
         $cancelButton->get_child->set_width_chars(10);
         $cancelButton->signal_connect('clicked' => sub {
 
             $self->buttonCancel();
         });
-        $tooltips->set_tip($cancelButton, 'Cancel changes');
+        $cancelButton->set_tooltip_text('Cancel changes');
 
         # Create the Reset button, desensitised if $self->tempFlag is TRUE
-        my $resetButton = Gtk2::Button->new('Reset');
+        my $resetButton = Gtk3::Button->new('Reset');
         $hBox->pack_start($resetButton, FALSE, FALSE, $self->borderPixels);
         $resetButton->get_child->set_width_chars(10);
         $resetButton->signal_connect('clicked' => sub {
 
             $self->buttonReset();
         });
-        $tooltips->set_tip($resetButton, 'Reset changes without closing the window');
+        $resetButton->set_tooltip_text('Reset changes without closing the window');
         if ($self->tempFlag) {
 
             $resetButton->set_state('insensitive');
         }
 
         # Create the Save button, desensitised if $self->tempFlag is TRUE
-        my $saveButton = Gtk2::Button->new('Save');
+        my $saveButton = Gtk3::Button->new('Save');
         $hBox->pack_start($saveButton, FALSE, FALSE, $self->borderPixels);
         $saveButton->get_child->set_width_chars(10);
         $saveButton->signal_connect('clicked' => sub {
 
             $self->buttonSave();
         });
-        $tooltips->set_tip($saveButton, 'Save changes without closing the window');
+        $saveButton->set_tooltip_text('Save changes without closing the window');
         if ($self->tempFlag) {
 
             $saveButton->set_state('insensitive');
@@ -7618,33 +7620,32 @@
         #
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableSingleButton', @_);
             return @emptyList;
         }
 
         # Create the OK button
-        my $okButton = Gtk2::Button->new('OK');
-        $hBox->pack_end($okButton, 0, 0, $self->borderPixels);
+        my $okButton = Gtk3::Button->new('OK');
+        $hBox->pack_end($okButton, FALSE, FALSE, $self->borderPixels);
         $okButton->get_child->set_width_chars(10);
         $okButton->signal_connect('clicked' => sub {
 
             $self->buttonOK();
         });
-        $tooltips->set_tip($okButton, 'Close window');
+        $okButton->set_tooltip_text('Close window');
 
         # This object doesn't edit anything, so we don't need Cancel/Reset/Edit buttons
         return ($okButton);
@@ -7681,7 +7682,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -7771,25 +7772,19 @@
         #
         # Expected arguments
         #   $tabName    - A mnemonic string, e.g. 'N_ame'
-        #   $notebook   - The Gtk2::Notebook object to which this tab will be added
+        #   $notebook   - The Gtk3::Notebook object to which this tab will be added
         #
         # Optional arguments
-        #   $tableWidth, $tableHeight
-        #               - The size of the table. If either or both is set to 'undef', the default
-        #                   size is used (currently 12, stored in $self->tableSize)
         #   $columnSpaceWidth, $columnSpaceHeight
         #               - The spacing between columns/rows, in pixels. If either of both is set to
         #                   'undef', the default size is used ($self->spacingPixels)
         #
         # Return values
         #   An empty list on improper arguments
-        #   Otherwise a list containing two of the Gtk2 objects created:
-        #       (Gtk2::Vbox, Gtk2::Table)
+        #   Otherwise a list containing two of the Gtk3 objects created:
+        #       (Gtk3::Vbox, Gtk3::Grid)
 
-        my (
-            $self, $tabName, $notebook, $tableWidth, $tableHeight, $columnSpaceWidth,
-            $columnSpaceHeight, $check
-        ) = @_;
+        my ($self, $tabName, $notebook, $columnSpaceWidth, $columnSpaceHeight, $check) = @_;
 
         # Local variables
         my @emptyList;
@@ -7802,16 +7797,6 @@
         }
 
         # Set default sizes
-        if (! defined $tableWidth) {
-
-            $tableWidth = $self->tableSize;
-        }
-
-        if (! defined $tableHeight) {
-
-            $tableHeight = $self->tableSize;
-        }
-
         if (! defined $columnSpaceWidth) {
 
             $columnSpaceWidth = $self->spacingPixels;
@@ -7823,19 +7808,19 @@
         }
 
         # Tab setup
-        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        my $vBox = Gtk3::VBox->new(FALSE, 0);
         $vBox->set_border_width($self->borderPixels);
 
-        my $scroller = Gtk2::ScrolledWindow->new();
+        my $scroller = Gtk3::ScrolledWindow->new();
         $scroller->set_policy('automatic', 'automatic');
         $scroller->add_with_viewport($vBox);    # Need ->add_with_viewport, not ->add, here
 
-        my $tab = Gtk2::Label->new_with_mnemonic($tabName);
+        my $tab = Gtk3::Label->new_with_mnemonic($tabName);
         $notebook->append_page($scroller, $tab);
 
-        my $table = Gtk2::Table->new($tableHeight, $tableWidth, FALSE);
-        $table->set_col_spacings($columnSpaceWidth);
-        $table->set_row_spacings($columnSpaceHeight);
+        my $table = Gtk3::Grid->new();
+        $table->set_column_spacing($columnSpaceWidth);
+        $table->set_row_spacing($columnSpaceHeight);
 
         return ($vBox, $table);
     }
@@ -7847,12 +7832,12 @@
         #
         # Expected arguments
         #   $tabName    - A mnemonic string, e.g. 'N_ame'
-        #   $notebook   - The Gtk2::Notebook object to which this tab will be added
+        #   $notebook   - The Gtk3::Notebook object to which this tab will be added
         #
         # Return values
         #   An empty list on improper arguments
-        #   Otherwise a list containing two of the Gtk2 objects created:
-        #       (Gtk2::Vbox, Gtk2::Notebook)
+        #   Otherwise a list containing two of the Gtk3 objects created:
+        #       (Gtk3::Vbox, Gtk3::Notebook)
 
         my ($self, $tabName, $notebook, $check) = @_;
 
@@ -7867,14 +7852,15 @@
         }
 
         # Tab setup
-        my $vBox = Gtk2::VBox->new(FALSE, 0);
+        my $vBox = Gtk3::VBox->new(FALSE, 0);
         $vBox->set_border_width(0);
 
-        my $innerNotebook = Gtk2::Notebook->new();
+        my $innerNotebook = Gtk3::Notebook->new();
+        $vBox->pack_start($innerNotebook, TRUE, TRUE, 0);
         $innerNotebook->set_scrollable(TRUE);
-        $vBox->pack_start($innerNotebook, 1, 1, 0);
+        $innerNotebook->popup_enable();
 
-        my $tab = Gtk2::Label->new_with_mnemonic($tabName);
+        my $tab = Gtk3::Label->new_with_mnemonic($tabName);
         $notebook->append_page($vBox, $tab);
 
         # Tab complete
@@ -7883,7 +7869,7 @@
 
     sub addLabel {
 
-        # Adds a Gtk2::Label at the specified position in the tab's Gtk2::Table
+        # Adds a Gtk3::Label at the specified position in the tab's Gtk3::Grid
         #
         # Example calls:
         #   my $label = $self->addLabel($table, 'Some plain text',
@@ -7893,7 +7879,7 @@
         #       0, 0.5);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $text       - The text to display (plain text or pango markup text)
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #               - The position of the label in the table
@@ -7904,8 +7890,8 @@
         #               - If not specified, $alignLeft is set to 0, $alignRight to 0.5
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Label created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Label created
 
         my (
             $self, $table, $text, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $alignLeft,
@@ -7938,22 +7924,30 @@
         }
 
         # Create the label
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $label->set_markup($text);
 
         # Set its alignment
         $label->set_alignment($alignLeft, $alignRight);
 
-        # Add it to the table
-        $table->attach_defaults($label, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        # Add the label to the table
+        $label->set_hexpand(TRUE);
+        $label->set_vexpand(FALSE);
+        $table->attach(
+            $label,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $label;
     }
 
     sub addLabelFrame {
 
-        # Adds a Gtk2::Label within a Gtk2::Frame (giving the appearance of text in a box) at the
-        #   specified position in the tab's Gtk2::Table
+        # Adds a Gtk3::Label within a Gtk3::Frame (giving the appearance of text in a box) at the
+        #   specified position in the tab's Gtk3::Grid
         #
         # Example calls:
         #   my $label = $self->addLabel($table, 'Some plain text',
@@ -7963,7 +7957,7 @@
         #       0, 0.5);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $text       - The text to display (plain text or pango markup text)
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #               - The position of the label in the table
@@ -7974,7 +7968,7 @@
         #               - If not specified, $alignLeft is set to 0, $alignRight to 0.5
         #
         # Return values
-        #   An empty list of improper arguments or if the widget's position in the Gtk2::Table is
+        #   An empty list of improper arguments or if the widget's position in the Gtk3::Grid is
         #       invalid
         #   Otherwise, a list in the form
         #       (gtk_frame, gtk_label)
@@ -8014,11 +8008,11 @@
         }
 
         # Create the frame
-        my $frame = Gtk2::Frame->new(undef);
+        my $frame = Gtk3::Frame->new(undef);
         $frame->set_border_width($self->borderPixels);
 
         # Create the label
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $frame->add($label);
         $label->set_markup($text);
 
@@ -8026,14 +8020,22 @@
         $label->set_alignment($alignLeft, $alignRight);
 
         # Add the frame to the table
-        $table->attach_defaults($frame, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $frame->set_hexpand(TRUE);
+        $frame->set_vexpand(FALSE);
+        $table->attach(
+            $frame,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return ($frame, $label);
     }
 
     sub addButton {
 
-        # Adds a Gtk2::Button at the specified position in the tab's Gtk2::Table
+        # Adds a Gtk3::Button at the specified position in the tab's Gtk3::Grid
         #
         # Example calls:
         #   my $button = $self->addButton($table, 'button_name', 'tooltips', \&buttonClicked,
@@ -8047,7 +8049,7 @@
         #   ($self, button_widget)
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $name       - The name displayed on the button
         #   $tooltips   - Tooltips to use for the button; empty strings are not used
         #   $funcRef    - Reference to the function to call when the button is clicked. If 'undef',
@@ -8061,8 +8063,8 @@
         #                   easily be reversed (e.g. by clicking on the main 'Cancel' button)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Button created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Button created
 
         my (
             $self, $table, $name, $tooltips, $funcRef, $leftAttach, $rightAttach, $topAttach,
@@ -8095,7 +8097,7 @@
         }
 
         # Create the button
-        my $button = Gtk2::Button->new($name);
+        my $button = Gtk3::Button->new($name);
 
         # If a callback function was specified, use it
         if ($funcRef) {
@@ -8109,13 +8111,13 @@
         # Use tooltips, if any were specified
         if ($tooltips) {
 
-            $self->tooltips->set_tip($button, $tooltips);
+            $button->set_tooltip_text($tooltips);
         }
 
         # Use the 'irreversible' icon, if it was specified
         if ($flag && $axmud::CLIENT->irreversibleIconFlag) {
 
-            my $image = Gtk2::Image->new_from_file(
+            my $image = Gtk3::Image->new_from_file(
                 $axmud::SHARE_DIR . '/icons/system/irreversible.png',
             );
 
@@ -8123,23 +8125,34 @@
         }
 
         # Add the button to the table
-        $table->attach_defaults($button, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $button->set_hexpand(TRUE);
+        $button->set_vexpand(FALSE);
+        $table->attach(
+            $button,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $button;
     }
 
     sub addCheckButton {
 
-        # Adds a Gtk2::CheckButton at the specified position in the window's Gtk2::Table
+        # Adds a Gtk3::CheckButton with an accompanying label at the specified position in the
+        #   window's Gtk3::Grid
         #
         # Example calls:
-        #   my $checkButton = $self->addCheckButton($table, 'some_IV', TRUE,
+        #   my $checkButton = $self->addCheckButton($table, 'Click me', 'some_IV', TRUE,
         #       0, 6, 0, 1);
-        #   my $checkButton = $self->addCheckButton($table, 'some_IV', FALSE,
-        #       0, 6, 0, 1, 0, 0.5);
+        #   my $checkButton = $self->addCheckButton($table, undef, 'some_IV', TRUE,
+        #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
+        #   $name       - A 'name' for the checkbutton (displayed next to the button); if 'undef',
+        #                   no name is displayed
         #   $iv         - A string naming the IV set when the check button is toggled. If 'undef',
         #                   nothing happens when the user toggles the checkbutton; it's up to the
         #                   calling function to check the button's state
@@ -8148,18 +8161,13 @@
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #               - The position of the checkbutton in the table
         #
-        # Optional arguments
-        #   $alignX, $alignY
-        #               - Used in the call to ->set_alignment; two values in the range 0-1
-        #               - If not specified, $alignX is set to 0, $alignY to 0.5
-        #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::CheckButton created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::CheckButton created
 
         my (
-            $self, $table, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
-            $alignX, $alignY, $check
+            $self, $table, $name, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach,
+            $bottomAttach, $check
         ) = @_;
 
         # Check for improper arguments
@@ -8177,19 +8185,14 @@
             return undef;
         }
 
-        # Set default alignment, if none specified
-        if (! defined $alignX) {
-
-            $alignX = 0;
-        }
-
-        if (! defined $alignY) {
-
-            $alignY = 0.5;
-        }
-
         # Create the checkbutton
-        my $checkButton = Gtk2::CheckButton->new();
+        my $checkButton;
+        if (defined $name && $name ne '') {
+            $checkButton = Gtk3::CheckButton->new_with_label($name);
+        } else {
+            $checkButton = Gtk3::CheckButton->new();
+        }
+
         if ($iv) {
 
             # Display the existing value of the IV
@@ -8207,18 +8210,23 @@
             $checkButton->set_state('insensitive');
         }
 
-        # Set its alignment
-        $checkButton->set_alignment($alignX, $alignY);
-
         # Add the checkbutton to the table
-        $table->attach_defaults($checkButton, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $checkButton->set_hexpand(TRUE);
+        $checkButton->set_vexpand(FALSE);
+        $table->attach(
+            $checkButton,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $checkButton;
     }
 
     sub addRadioButton {
 
-        # Adds a Gtk2::RadioButton at the specified position in the tab's Gtk2::Table
+        # Adds a Gtk3::RadioButton at the specified position in the tab's Gtk3::Grid
         #
         # Example calls:
         #   my ($group, $button) = $self->addRadioButton(
@@ -8229,7 +8237,7 @@
         #       0, 6, 0, 1, 0, 0.5);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $group      - Reference to the radio button group created, when the first button in the
         #                   group was added (if set to 'undef', this is the first button, and a
         #                   group will be created for it)
@@ -8251,10 +8259,10 @@
         #               - If not specified, $alignLeft is set to 0, $alignRight to 0.5
         #
         # Return values
-        #   An empty list on improper arguments or if the widget's position in the Gtk2::Table is
+        #   An empty list on improper arguments or if the widget's position in the Gtk3::Grid is
         #       invalid
         #   Otherwise a list containing two elements: the radio button $group and the
-        #       Gtk2::RadioButton created
+        #       Gtk3::RadioButton created
 
         my (
             $self, $table, $group, $name, $iv, $value, $stateFlag, $leftAttach, $rightAttach,
@@ -8292,7 +8300,7 @@
         }
 
         # Create the radio button
-        my $radioButton = Gtk2::RadioButton->new();
+        my $radioButton = Gtk3::RadioButton->new();
         # Add it to the existing group, if one was specified
         if (defined $group) {
 
@@ -8337,14 +8345,22 @@
         $radioButton->set_alignment($alignLeft, $alignRight);
 
         # Add the radio button to the table
-        $table->attach_defaults($radioButton, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $radioButton->set_hexpand(FALSE);
+        $radioButton->set_vexpand(FALSE);
+        $table->attach(
+            $radioButton,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return ($radioButton->get_group(), $radioButton);
     }
 
     sub addEntry {
 
-        # Adds a Gtk2::Entry at the specified position in the tab's Gtk2::Table
+        # Adds a Gtk3::Entry at the specified position in the tab's Gtk3::Grid
         #
         # Example calls:
         #   my $entry = $self->addEntry($table, 'some_IV', TRUE,
@@ -8355,7 +8371,7 @@
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the text in the entry
         #                   box. If 'undef', nothing happens when the user modifies the text; it's
         #                   up to the calling function to check the entry box's state
@@ -8369,8 +8385,8 @@
         #   $maxChars   - The maximum no. chars allowed in the box ('undef' if maximum not needed)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Entry created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Entry created
 
         my (
             $self, $table, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
@@ -8393,12 +8409,12 @@
         }
 
         # Create the entry
-        my $entry = Gtk2::Entry->new();
+        my $entry = Gtk3::Entry->new();
 
         # Display the existing value of the IV
         if (defined $iv && defined $self->editObj->$iv) {
 
-            $entry->append_text($self->editObj->$iv);
+            $entry->set_text($self->editObj->$iv);
         }
 
         # Set the width, if specified
@@ -8431,14 +8447,21 @@
         }
 
         # Add the entry to the table
-        $table->attach_defaults($entry, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $entry->set_hexpand(TRUE);
+        $table->attach(
+            $entry,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $entry;
     }
 
     sub addEntryWithButton {
 
-        # Adds a Gtk2::Entry at the specified position in the tab's Gtk2::Table. The entry is
+        # Adds a Gtk3::Entry at the specified position in the tab's Gtk3::Grid. The entry is
         #   displayed alongside a button that simultaneously shows whether the IV's value is 'undef'
         #   and allows the user to set the IV to 'undef'
         #
@@ -8449,7 +8472,7 @@
         #       0, 6, 0, 1, 16, 16);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the text in the entry
         #                   box. Unlike most of these functions, the $iv must be specified
         #   $stateFlag  - Flag set to FALSE if the entry box's state should be 'insensitive', TRUE
@@ -8462,8 +8485,8 @@
         #   $maxChars   - The maximum no. chars allowed in the box ('undef' if maximum not needed)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Entry created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Entry created
 
         my (
             $self, $table, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
@@ -8495,29 +8518,29 @@
         # Set the contents of the entry
         if (defined $iv && defined $self->editObj->$iv) {
 
-            $entry->append_text($self->editObj->$iv);
+            $entry->set_text($self->editObj->$iv);
         }
 
         # Create a button
-        my $button = Gtk2::Button->new();
+        my $button = Gtk3::Button->new();
 
         # Set the icon to display on the button, depending on whether the IV is set to 'undef',
         #   or not
         my $image;
         if (defined $iv && defined $self->editObj->$iv) {
 
-            # Use the Gtk2 'clear' icon - clicking on the button sets the IV to undef
-            $image = Gtk2::Image->new_from_stock('gtk-clear', 'menu');
+            # Use the Gtk3 'clear' icon - clicking on the button sets the IV to undef
+            $image = Gtk3::Image->new_from_stock('gtk-clear', 'menu');
             # Give the button a tooltip
-            $self->tooltips->set_tip($button, 'Click to set this IV to \'undef\'');
+            $button->set_tooltip_text('Click to set this IV to \'undef\'');
 
         } else {
 
-            # Use the Gtk2 'remove' icon - IV is already 'undef'; clicking on the button does
+            # Use the Gtk3 'remove' icon - IV is already 'undef'; clicking on the button does
             #   nothing
-            $image = Gtk2::Image->new_from_stock('gtk-remove', 'menu');
+            $image = Gtk3::Image->new_from_stock('gtk-remove', 'menu');
             # Give the button a tooltip
-            $self->tooltips->set_tip($button, 'This IV is already set to \'undef\'');
+            $button->set_tooltip_text('This IV is already set to \'undef\'');
         }
 
         $button->set_image($image);
@@ -8532,10 +8555,10 @@
             $self->ivAdd('editHash', $iv, undef);
 
             # Change the button's image to mark this IV as being set to undef
-            my $image2 = Gtk2::Image->new_from_stock('gtk-remove', 'menu');
+            my $image2 = Gtk3::Image->new_from_stock('gtk-remove', 'menu');
             $button->set_image($image2);
             # Give the button a new tooltip
-            $self->tooltips->set_tip($button, 'This IV is already set to \'undef\'');
+            $button->set_tooltip_text('This IV is already set to \'undef\'');
         });
 
         # Respond when the user types something in the box
@@ -8545,16 +8568,22 @@
             $self->ivAdd('editHash', $iv, $text);
 
             # Contents of the entry can't possibly be 'undef' any more
-            my $image3 = Gtk2::Image->new_from_stock('gtk-clear', 'menu');
+            my $image3 = Gtk3::Image->new_from_stock('gtk-clear', 'menu');
             $button->set_image($image3);
             # Give the button a new tooltip
-            $self->tooltips->set_tip($button, 'Click to set this IV to \'undef\'');
+            $button->set_tooltip_text('Click to set this IV to \'undef\'');
         });
 
         # Add the button to the table (the entry has already been added)
-        $table->attach_defaults(
+        $button->set_hexpand(FALSE);
+        $button->set_vexpand(FALSE);
+        $leftAttach = $rightAttach - 1;
+        $table->attach(
             $button,
-            ($rightAttach - 1), $rightAttach, $topAttach, $bottomAttach,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
         );
 
         return $entry;
@@ -8562,7 +8591,7 @@
 
     sub addEntryWithIcon {
 
-        # Adds a Gtk2::Entry at the specified position in the tab's Gtk2::Table. The entry contains
+        # Adds a Gtk3::Entry at the specified position in the tab's Gtk3::Grid. The entry contains
         #   a stock icon to show whether the current contents of the entry is permissible
         # The stock icons used are 'gtk-yes' (for an acceptable value) and 'gtk-no' (for a
         #   forbidden value)
@@ -8587,7 +8616,7 @@
         #       0, 6, 0, 1, 16, 16);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the text in the entry
         #                   box. If 'undef', nothing happens when the user modifies the text (except
         #                   that the icon is updated); it's up to the calling function to check the
@@ -8617,8 +8646,8 @@
         #   $maxChars   - The maximum no. chars allowed in the box ('undef' if maximum not needed)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Entry created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Entry created
 
         my (
             $self, $table, $iv, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
@@ -8672,12 +8701,12 @@
         }
 
         # Create the entry
-        my $entry = Gtk2::Entry->new();
+        my $entry = Gtk3::Entry->new();
 
         # Display the existing value of the IV
         if (defined $iv && defined $self->editObj->$iv) {
 
-            $entry->append_text($self->editObj->$iv);
+            $entry->set_text($self->editObj->$iv);
 
             if (! $self->checkEntry($self->editObj->$iv, $mode, $min, $max)) {
                 $entry->set_icon_from_stock('secondary', 'gtk-no');
@@ -8747,7 +8776,15 @@
         }
 
         # Add the entry to the table
-        $table->attach_defaults($entry, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $entry->set_hexpand(TRUE);
+        $entry->set_vexpand(FALSE);
+        $table->attach(
+            $entry,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $entry;
     }
@@ -8759,7 +8796,7 @@
         # An IV value of 'undef' counts as acceptable, in addition to the usual conditions
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the text in the entry
         #                   box. Unlike most of these functions, the $iv must be specified
         #   $mode       - Set to 'int', 'odd', 'even', 'float', 'string' or a reference to a
@@ -8787,8 +8824,8 @@
         #   $maxChars   - The maximum no. chars allowed in the box ('undef' if maximum not needed)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Entry created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Entry created
 
         my (
             $self, $table, $iv, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
@@ -8824,7 +8861,7 @@
         # Set the contents of the entry
         if (defined $self->editObj->$iv) {
 
-            $entry->append_text($self->editObj->$iv);
+            $entry->set_text($self->editObj->$iv);
 
         } else {
 
@@ -8835,25 +8872,25 @@
         }
 
         # Create a button
-        my $button = Gtk2::Button->new();
+        my $button = Gtk3::Button->new();
 
         # Set the icon to display on the button, depending on whether the IV is set to 'undef',
         #   or not
         my $image;
         if (defined $iv && defined $self->editObj->$iv) {
 
-            # Use the Gtk2 'clear' icon - clicking on the button sets the IV to undef
-            $image = Gtk2::Image->new_from_stock('gtk-clear', 'menu');
+            # Use the Gtk3 'clear' icon - clicking on the button sets the IV to undef
+            $image = Gtk3::Image->new_from_stock('gtk-clear', 'menu');
             # Give the button a tooltip
-            $self->tooltips->set_tip($button, 'Click to set this IV to \'undef\'');
+            $button->set_tooltip_text('Click to set this IV to \'undef\'');
 
         } else {
 
-            # Use the Gtk2 'remove' icon - IV is already 'undef'; clicking on the button does
+            # Use the Gtk3 'remove' icon - IV is already 'undef'; clicking on the button does
             #   nothing
-            $image = Gtk2::Image->new_from_stock('gtk-remove', 'menu');
+            $image = Gtk3::Image->new_from_stock('gtk-remove', 'menu');
             # Give the button a tooltip
-            $self->tooltips->set_tip($button, 'This IV is already set to \'undef\'');
+            $button->set_tooltip_text('This IV is already set to \'undef\'');
         }
 
         $button->set_image($image);
@@ -8869,10 +8906,10 @@
             $entry->set_icon_from_stock('secondary', 'gtk-yes');
 
             # Change the button's image to mark this IV as being set to undef
-            my $image2 = Gtk2::Image->new_from_stock('gtk-remove', 'menu');
+            my $image2 = Gtk3::Image->new_from_stock('gtk-remove', 'menu');
             $button->set_image($image2);
             # Give the button a new tooltip
-            $self->tooltips->set_tip($button, 'This IV is already set to \'undef\'');
+            $button->set_tooltip_text('This IV is already set to \'undef\'');
         });
 
         # Respond when the user types something in the box
@@ -8888,16 +8925,22 @@
             }
 
             # Contents of the entry can't possibly be 'undef' any more
-            my $image3 = Gtk2::Image->new_from_stock('gtk-clear', 'menu');
+            my $image3 = Gtk3::Image->new_from_stock('gtk-clear', 'menu');
             $button->set_image($image3);
             # Give the button a new tooltip
-            $self->tooltips->set_tip($button, 'Click to set this IV to \'undef\'');
+            $button->set_tooltip_text('Click to set this IV to \'undef\'');
         });
 
         # Add the button to the table (the entry has already been added)
-        $table->attach_defaults(
+        $button->set_hexpand(FALSE);
+        $button->set_vexpand(FALSE);
+        $leftAttach = $rightAttach - 1;
+        $table->attach(
             $button,
-            ($rightAttach - 1), $rightAttach, $topAttach, $bottomAttach,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
         );
 
         return $entry;
@@ -8905,7 +8948,7 @@
 
     sub addComboBox {
 
-        # Adds a Gtk2::ComboBox at the specified position in the window's Gtk2::Table
+        # Adds a Gtk3::ComboBox at the specified position in the window's Gtk3::Grid
         #
         # Example calls:
         #   my $comboBox = $self->addComboBox($table, 'some_IV', \@comboList, 'some_title', TRUE,
@@ -8914,7 +8957,7 @@
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table          - The tab's Gtk2::Table object
+        #   $table          - The tab's Gtk3::Grid object
         #   $iv             - A string naming the IV set when the user chooses an item in the combo
         #                       box. If 'undef', nothing happens when the user chooses an item in
         #                       the box; it's up to the calling function to check the box's state
@@ -8931,8 +8974,8 @@
         # Optional arguments
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::ComboBox created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::ComboBox created
 
         my (
             $self, $table, $iv, $listRef, $title, $noUndefFlag, $leftAttach, $rightAttach,
@@ -8955,7 +8998,7 @@
         }
 
         # Create the combobox
-        my $comboBox = Gtk2::ComboBox->new_text();
+        my $comboBox = Gtk3::ComboBoxText->new();
 
         # Populate the combobox
         if ($title) {
@@ -9045,14 +9088,22 @@
         }
 
         # Add the combobox to the table
-        $table->attach_defaults($comboBox, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $comboBox->set_hexpand(TRUE);
+        $comboBox->set_vexpand(FALSE);
+        $table->attach(
+            $comboBox,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $comboBox;
     }
 
     sub addTextView {
 
-        # Adds a Gtk2::TextView at the specified position in the window's Gtk2::Table
+        # Adds a Gtk3::TextView at the specified position in the window's Gtk3::Grid
         #
         # Example calls:
         #   my $textView = $self->addTextView($table, 'some_IV', TRUE,
@@ -9063,7 +9114,7 @@
         #       -1, 120);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the contents of the
         #                   textview. If 'undef', nothing happens when the user modifies the
         #                   contents; it's up to the calling function to check the textview's state
@@ -9092,13 +9143,13 @@
         #   $width, $height
         #               - The width and height (in pixels) of the frame containing the list. If
         #                   specified, values of -1 mean 'don't set this value'. The default values
-        #                   are (-1, 120) - we use a fixed height, because Gtk2 on some operating
+        #                   are (-1, 120) - we use a fixed height, because Gtk3 on some operating
         #                   systems will draw a textview barely one line high (in a vertical
         #                   packing box)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::TextView created (inside a Gtk::ScrolledWindow)
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::TextView created (inside a Gtk::ScrolledWindow)
 
         my (
             $self, $table, $iv, $editableFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
@@ -9137,7 +9188,7 @@
 
         if (! defined $width) {
 
-            $width = -1;    # Let Gtk2 set the width
+            $width = -1;    # Let Gtk3 set the width
         }
 
         if (! defined $height) {
@@ -9145,23 +9196,25 @@
             $height = 120;
         }
 
-        # Creating a containing Gtk2::Frame and Gtk2::ScrolledWindow
-        my $scroll = Gtk2::ScrolledWindow->new(undef, undef);
+        # Creating a containing Gtk3::Frame and Gtk3::ScrolledWindow
+        my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
         $scroll->set_shadow_type('etched-out');
         $scroll->set_policy('automatic', 'automatic');
         $scroll->set_size_request($width, $height);
         $scroll->set_border_width($self->spacingPixels);
 
         # Create a textview with default colours/fonts
-        $axmud::CLIENT->desktopObj->getTextViewStyle($self->winType);
-        my $textView = Gtk2::TextView->new();
-        my $buffer = Gtk2::TextBuffer->new();
+        my $textView = Gtk3::TextView->new();
+        $scroll->add($textView);
+        my $buffer = Gtk3::TextBuffer->new();
         $textView->set_buffer($buffer);
         if ($noScrollFlag) {
 
             $textView->set_wrap_mode('word-char');  # Wrap words if possible, characters if not
             $textView->set_justification('left');
         }
+
+        $axmud::CLIENT->desktopObj->setTextViewStyle($self->winType, $textView);
 
         if ($iv) {
 
@@ -9223,30 +9276,36 @@
         # Make the textview editable or not editable
         $textView->set_editable($editableFlag);
 
-        # Add the textview to the table
-        $scroll->add($textView);
-        $table->attach_defaults($scroll, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        # Add the textview to the table (for textviews, calls to ->set_vexpand have no effect)
+        $scroll->set_hexpand(TRUE);
+        $table->attach(
+            $scroll,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $textView;
     }
 
     sub addSimpleList {
 
-        # Adds a GA::Obj::Simple::List at the specified position in the window's Gtk2::Table
+        # Adds a GA::Obj::SimpleList at the specified position in the window's Gtk3::Grid
         #
         # Example calls:
         #   my $slWidget = $self->addSimpleList($table, 'some_IV', \@columnList,
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table          - The tab's Gtk2::Table object
+        #   $table          - The tab's Gtk3::Grid object
         #   $iv             - The IV in $self->editObj containing the data being edited. If 'undef',
         #                       the list is not populated with data; it's up to the calling function
         #                       to do it
         #   $columnListRef  - Reference to a list of column headings and types, in the form
         #                       ('heading', 'column_type', 'heading', 'column_type'...)
         #                   - 'column_type' is one of the column types specified by
-        #                       GA::Obj::Simple::List, e.g. 'scalar', 'int'
+        #                       GA::Obj::SimpleList, e.g. 'scalar', 'int'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #                   - The position of the simple list in the table
         #
@@ -9257,7 +9316,7 @@
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise the GA::Obj::Simple::List created
+        #   Otherwise the GA::Obj::SimpleList created
 
         my (
             $self, $table, $iv, $columnListRef, $leftAttach, $rightAttach, $topAttach,
@@ -9288,7 +9347,7 @@
         # Set defaults
         if (! defined $width) {
 
-            $width = -1;    # Let Gtk2 set the width
+            $width = -1;    # Let Gtk3 set the width
         }
 
         if (! defined $height) {
@@ -9300,17 +9359,17 @@
         @columnList = @$columnListRef;
 
         # Add a simple list
-        my $frame = Gtk2::Frame->new(undef);
+        my $frame = Gtk3::Frame->new(undef);
         $frame->set_border_width(0);
 
-        my $scroller = Gtk2::ScrolledWindow->new();
+        my $scroller = Gtk3::ScrolledWindow->new();
         $frame->add($scroller);
         $scroller->set_shadow_type('none');
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(0);
         $scroller->set_size_request($width, $height);
 
-        my $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
+        my $slWidget = Games::Axmud::Obj::SimpleList->new(@columnList);
         $scroller->add($slWidget);
 
         # No interactive searches required
@@ -9345,21 +9404,28 @@
 
             if ($type eq 'bool') {
 
-                my ($cellRenderer) = $slWidget->get_column($count)->get_cell_renderers();
+                my ($cellRenderer) = $slWidget->get_column($count)->get_cells();
                 $cellRenderer->set(activatable => FALSE);
             }
 
         } until (! @columnList);
 
-        # Add the simple list to the table
-        $table->attach_defaults($frame, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        # Add the simple list to the table (for simple lists, calls to ->set_vexpand have no effect)
+        $frame->set_hexpand(TRUE);
+        $table->attach(
+            $frame,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $slWidget;
     }
 
     sub addRegexButton {
 
-        # Adds a Gtk2::Button at the specified position in the tab's Gtk2::Table. The button, when
+        # Adds a Gtk3::Button at the specified position in the tab's Gtk3::Grid. The button, when
         #   clicked, checks regexes in a list of IVs, and opens a dialogue window to display the
         #   result
         #
@@ -9368,7 +9434,7 @@
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $listRef    - Reference to a list in groups of 2, in the form (type, iv, type, iv...)
         #                   where 'type' is 'scalar' to test a pattern stored in a scalar IV, 'list'
         #                   to test the patterns stored in a list IV, 'keys' or 'values' to test
@@ -9381,8 +9447,8 @@
         #               - The position of the button in the table
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Button created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Button created
 
         my (
             $self, $table, $listRef, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $check,
@@ -9404,9 +9470,8 @@
         }
 
         # Create the button
-        my $button = Gtk2::Button->new('Check patterns');
-        $self->tooltips->set_tip(
-            $button,
+        my $button = Gtk3::Button->new('Check patterns');
+        $button->set_tooltip_text(
             'Check that the patterns on this page are valid regular expressions',
         );
 
@@ -9559,6 +9624,8 @@
                             'error',
                             $msg,
                             'ok',
+                            undef,
+                            TRUE,           # Preserve newline characters in $msg
                         );
                     }
                 }
@@ -9566,7 +9633,15 @@
         }
 
         # Add the button to the table
-        $table->attach_defaults($button, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $button->set_hexpand(TRUE);
+        $button->set_vexpand(FALSE);
+        $table->attach(
+            $button,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $button;
     }
@@ -9577,17 +9652,20 @@
     sub useCheckButton {
 
         # Adapted from $self->addCheckButton
-        # Adds a Gtk2::CheckButton at the specified position in the window's Gtk2::Table. Instead of
-        #   setting an IV in $self->editHash, sets a key-value pair in $self->attribHash
+        # Adds a Gtk3::CheckButton with an accompnaying label at the specified position in the
+        #   window's Gtk3::Grid. Instead of setting an IV in $self->editHash, sets a key-value pair
+        #   in $self->attribHash
         #
         # Example calls:
-        #   my $checkButton = $self->useCheckButton($table, 'some_attribute', TRUE,
+        #   my $checkButton = $self->useCheckButton($table, 'Click me', 'some_attribute', TRUE,
         #       0, 6, 0, 1);
-        #   my $checkButton = $self->useCheckButton($table, 'some_attribute', FALSE,
-        #       0, 6, 0, 1, 0, 0.5);
+        #   my $checkButton = $self->useCheckButton($table, undef, 'some_attribute', TRUE,
+        #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
+        #   $name       - A 'name' for the checkbutton (displayed next to the button); if 'undef',
+        #                   no name is displayed
         #   $attrib     - The name of the attribute set when the check button is toggled (matches
         #                   a key in $self->attribHash and GA::Interface::Trigger->attribHash)
         #   $stateFlag  - Flag set to FALSE if the checkbutton's state should be 'insensitive',
@@ -9601,12 +9679,12 @@
         #               - If not specified, $alignX is set to 0, $alignY to 0.5
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::CheckButton created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::CheckButton created
 
         my (
-            $self, $table, $attrib, $stateFlag, $leftAttach, $rightAttach, $topAttach,
-            $bottomAttach, $alignX, $alignY, $check
+            $self, $table, $name, $attrib, $stateFlag, $leftAttach, $rightAttach, $topAttach,
+            $bottomAttach, $check
         ) = @_;
 
         # Check for improper arguments
@@ -9624,19 +9702,14 @@
             return undef;
         }
 
-        # Set default alignment, if none specified
-        if (! defined $alignX) {
-
-            $alignX = 0;
-        }
-
-        if (! defined $alignY) {
-
-            $alignY = 0.5;
-        }
-
         # Create the checkbutton
-        my $checkButton = Gtk2::CheckButton->new();
+        my $checkButton;
+        if (defined $name && $name ne '') {
+            $checkButton = Gtk3::CheckButton->new_with_label($name);
+        } else {
+            $checkButton = Gtk3::CheckButton->new();
+        }
+
         $checkButton->set_active($self->editObj->ivShow('attribHash', $attrib));
         $checkButton->signal_connect('toggled' => sub {
 
@@ -9649,11 +9722,16 @@
             $checkButton->set_state('insensitive');
         }
 
-        # Set its alignment
-        $checkButton->set_alignment($alignX, $alignY);
-
         # Add the checkbutton to the table
-        $table->attach_defaults($checkButton, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $checkButton->set_hexpand(TRUE);
+        $checkButton->set_vexpand(FALSE);
+        $table->attach(
+            $checkButton,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $checkButton;
     }
@@ -9661,7 +9739,7 @@
     sub useRadioButton {
 
         # Adapted from $self->addRadioButton
-        # Adds a Gtk2::RadioButton at the specified position in the tab's Gtk2::Table. Instead of
+        # Adds a Gtk3::RadioButton at the specified position in the tab's Gtk3::Grid. Instead of
         #   setting an IV in $self->editHash, sets a key-value pair in $self->attribHash
         #
         # Example calls:
@@ -9673,7 +9751,7 @@
         #       0, 6, 0, 1, 0, 0.5);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $group      - Reference to the radio button group created, when the first button in the
         #                   group was added (if set to 'undef', this is the first button, and a
         #                   group will be created for it)
@@ -9693,10 +9771,10 @@
         #               - If not specified, $alignLeft is set to 0, $alignRight to 0.5
         #
         # Return values
-        #   An empty list on improper arguments or if the widget's position in the Gtk2::Table is
+        #   An empty list on improper arguments or if the widget's position in the Gtk3::Grid is
         #       invalid
         #   Otherwise a list containing two elements: the radio button $group and the
-        #       Gtk2::RadioButton created
+        #       Gtk3::RadioButton created
 
         my (
             $self, $table, $group, $name, $attrib, $value, $stateFlag, $leftAttach, $rightAttach,
@@ -9734,7 +9812,7 @@
         }
 
         # Create the radio button
-        my $radioButton = Gtk2::RadioButton->new();
+        my $radioButton = Gtk3::RadioButton->new();
         # Add it to the existing group, if one was specified
         if (defined $group) {
 
@@ -9773,7 +9851,15 @@
         $radioButton->set_alignment($alignLeft, $alignRight);
 
         # Add the radio button to the table
-        $table->attach_defaults($radioButton, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $radioButton->set_hexpand(FALSE);
+        $radioButton->set_vexpand(FALSE);
+        $table->attach(
+            $radioButton,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return ($radioButton->get_group(), $radioButton);
     }
@@ -9781,7 +9867,7 @@
     sub useEntryWithIcon {
 
         # Adapted from $self->addEntryWithIcon
-        # Adds a Gtk2::Entry at the specified position in the tab's Gtk2::Table. The entry contains
+        # Adds a Gtk3::Entry at the specified position in the tab's Gtk3::Grid. The entry contains
         #   a stock icon to show whether the current contents of the entry is permissible
         # The stock icons used are 'gtk-yes' (for an acceptable value) and 'gtk-no' (for a
         #   forbidden value)
@@ -9808,7 +9894,7 @@
         #       0, 6, 0, 1, 16, 16);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $attrib     - The name of the attribute set when the user modifies the text in the entry
         #                   box
         #   $mode       - Set to 'int', 'odd', 'even', 'float', 'string' or a reference to a
@@ -9836,8 +9922,8 @@
         #   $maxChars   - The maximum no. chars allowed in the box ('undef' if maximum not needed)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Entry created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Entry created
 
         my (
             $self, $table, $attrib, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
@@ -9886,13 +9972,13 @@
         }
 
         # Create the entry
-        my $entry = Gtk2::Entry->new();
+        my $entry = Gtk3::Entry->new();
 
         # Display the existing value of the attribute
         $current = $self->editObj->ivShow('attribHash', $attrib);
         if (defined $current) {
 
-            $entry->append_text($current);
+            $entry->set_text($current);
 
             if (! $self->checkEntry($current, $mode, $min, $max)) {
                 $entry->set_icon_from_stock('secondary', 'gtk-no');
@@ -9952,7 +10038,15 @@
         }
 
         # Add the entry to the table
-        $table->attach_defaults($entry, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $entry->set_hexpand(TRUE);
+        $entry->set_vexpand(FALSE);
+        $table->attach(
+            $entry,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $entry;
     }
@@ -9960,7 +10054,7 @@
     sub useComboBox {
 
         # Adapted from $self->addComboBoxs
-        # Adds a Gtk2::ComboBox at the specified position in the window's Gtk2::Table. Instead of
+        # Adds a Gtk3::ComboBox at the specified position in the window's Gtk3::Grid. Instead of
         #   setting an IV in $self->editHash, sets a key-value pair in $self->attribHash
         #
         # Example calls:
@@ -9970,7 +10064,7 @@
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
+        #   $table      - The tab's Gtk3::Grid object
         #   $attrib     - The name of the attribute set when the check button is toggled (matches
         #                   a key in $self->attribHash and GA::Interface::Trigger->attribHash)
         #   $listRef    - Reference to a list with initial values (can be an empty list)
@@ -9981,8 +10075,8 @@
         #               - The position of the combo box in the table
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::ComboBox created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::ComboBox created
 
         my (
             $self, $table, $attrib, $listRef, $title, $leftAttach, $rightAttach, $topAttach,
@@ -10008,7 +10102,7 @@
         }
 
         # Create the combobox
-        my $comboBox = Gtk2::ComboBox->new_text();
+        my $comboBox = Gtk3::ComboBoxText->new();
 
         # Populate the combobox
         if ($title) {
@@ -10060,7 +10154,15 @@
         });
 
         # Add the combobox to the table
-        $table->attach_defaults($comboBox, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $comboBox->set_hexpand(TRUE);
+        $comboBox->set_vexpand(FALSE);
+        $table->attach(
+            $comboBox,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $comboBox;
     }
@@ -10235,11 +10337,11 @@
         # Called by the same function that called $self->addEntryWithIcon
         # When it's time to do something with the data entered, instead of having to call
         #   $self->checkEntry for every entry box, we can just look at the icon
-        # This function checks a list of Gtk2::Entry boxes and returns 1 if they are all showing the
+        # This function checks a list of Gtk3::Entry boxes and returns 1 if they are all showing the
         #   'gtk-ok' icon (meaning the values entered are acceptable)
         #
         # Expected arguments
-        #   @list   - List of Gtk2::Entry boxes
+        #   @list   - List of Gtk3::Entry boxes
         #
         # Return values
         #   'undef' on improper arguments, or if any of the entry boxes are using the 'gtk-no' icon
@@ -10286,7 +10388,7 @@
         #   box to be an acceptable value, this function can take care of it
         #
         # Expected arguments
-        #   $entry      - The Gtk2::Entry whose icon should be modified
+        #   $entry      - The Gtk3::Entry whose icon should be modified
         #   $flag       - TRUE to use 'gtk-yes' (representing an acceptable value), FALSE to use
         #                   'gtk-no' (representing an unacceptable value)
         #
@@ -10313,14 +10415,14 @@
 
     sub resetEntryBoxes {
 
-        # Empties the contents of any entry boxes appearing in a list of Gtk2 widgets, ignoring any
+        # Empties the contents of any entry boxes appearing in a list of Gtk3 widgets, ignoring any
         #   other widgets
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Optional arguments
-        #   @list   - List of Gtk2 widgets (can be an empty list)
+        #   @list   - List of Gtk3 widgets (can be an empty list)
         #
         # Return values
         #   'undef' on improper arguments or if anything in @list is 'undef'
@@ -10341,7 +10443,7 @@
                     $self->_objClass . '->resetEntryBoxes',
                 );
 
-            } elsif ($widget->isa('Gtk2::Entry')) {
+            } elsif ($widget->isa('Gtk3::Entry')) {
 
                 $widget->set_text('');
             }
@@ -10352,7 +10454,7 @@
 
     sub addSimpleListButtons_listIV {
 
-        # Adds four standard buttons used with GA::Obj::Simple::List widgets, when they're
+        # Adds four standard buttons used with GA::Obj::SimpleList widgets, when they're
         #   displaying a list IV. The buttons are 'Add', 'Delete', 'Reset' and 'Clear'
         # NB The ->signal_connect method for the 'Add' button must be specified by the calling
         #   function
@@ -10361,8 +10463,8 @@
         #   my $addButton = $self->addSimpleListButtons_listIV($table, $slWidget, 'some_IV', 10);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
-        #   $slWidget   - The GA::Obj::Simple::List object on which the buttons will act
+        #   $table      - The tab's Gtk3::Grid object
+        #   $slWidget   - The GA::Obj::SimpleList object on which the buttons will act
         #   $iv         - The list IV in $self->editObj storing the data being edited
         #   $rowNumber  - On the current tab's table, the row on which the buttons are put
         #   $columns    - The number of columns. For a straightforward list, 1, but many IVs
@@ -10370,7 +10472,7 @@
         #                   three or more
         #
         # Optional arguments
-        #   @widgetList - List of Gtk2 widgets (entry boxes or combos) that are reset when the
+        #   @widgetList - List of Gtk3 widgets (entry boxes or combos) that are reset when the
         #                   'Delete', 'Reset' and 'Clear' buttons are used. If the list is empty, no
         #                   widgets are reset
         #
@@ -10393,9 +10495,9 @@
         }
 
         # 'Add' button
-        my $button = Gtk2::Button->new('Add');
-        $self->tooltips->set_tip($button, 'Add new value(s)');
-        $table->attach_defaults($button, 1, 3, $rowNumber, ($rowNumber + 1));
+        my $button = Gtk3::Button->new('Add');
+        $button->set_tooltip_text('Add new value(s)');
+        $table->attach($button, 1, $rowNumber, 2, 1);
 
         # NB The signal_connect method for the 'Add' button must be specified by the callling
         #   function. Here is some example code:
@@ -10427,7 +10529,7 @@
         #   });
 
         # 'Delete' button
-        my $button2 = Gtk2::Button->new('Delete');
+        my $button2 = Gtk3::Button->new('Delete');
         $button2->signal_connect('clicked' => sub {
 
             # Get the selected row
@@ -10442,11 +10544,11 @@
                 $self->resetEntryBoxes(@widgetList);
             }
         });
-        $self->tooltips->set_tip($button2, 'Delete the selected value(s)');
-        $table->attach_defaults($button2, 6, 8, $rowNumber, ($rowNumber + 1));
+        $button2->set_tooltip_text('Delete the selected value(s)');
+        $table->attach($button2, 6, $rowNumber, 2, 1);
 
         # 'Reset' button
-        my $button3 = Gtk2::Button->new('Reset');
+        my $button3 = Gtk3::Button->new('Reset');
         $button3->signal_connect('clicked' => sub {
 
             # Remove this IV from $self->editHash, so that the IV in $self->editObj takes over
@@ -10456,11 +10558,11 @@
             $self->refreshList_listIV($slWidget, $columns, $iv);
             $self->resetEntryBoxes(@widgetList);
         });
-        $self->tooltips->set_tip($button3, 'Reset the list');
-        $table->attach_defaults($button3, 8, 10, $rowNumber, ($rowNumber + 1));
+        $button3->set_tooltip_text('Reset the list');
+        $table->attach($button3, 8, $rowNumber, 2, 1);
 
         # 'Clear' button
-        my $button4 = Gtk2::Button->new('Clear');
+        my $button4 = Gtk3::Button->new('Clear');
         $button4->signal_connect('clicked' => sub {
 
             # Add an empty list to $self->editHash
@@ -10470,15 +10572,15 @@
             $self->refreshList_listIV($slWidget, $columns, $iv);
             $self->resetEntryBoxes(@widgetList);
         });
-        $self->tooltips->set_tip($button4, 'Clear the list of values');
-        $table->attach_defaults($button4, 10, 12, $rowNumber, ($rowNumber + 1));
+        $button4->set_tooltip_text('Clear the list of values');
+        $table->attach($button4, 10, $rowNumber, 2, 1);
 
         return $button;
     }
 
     sub addSimpleListButtons_hashIV {
 
-        # Adds four standard buttons used with GA::Obj::Simple::List widgets, when they're
+        # Adds four standard buttons used with GA::Obj::SimpleList widgets, when they're
         #   displaying a hash IV. The buttons are 'Add', 'Delete', 'Reset' and 'Clear'
         # NB The ->signal_connect method for the 'Add' button must be specified by the calling
         #   function
@@ -10487,13 +10589,13 @@
         #   my $addButton = $self->addSimpleListButton_hashIV($table, $slWidget, 'someIV', 10);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk2::Table object
-        #   $slWidget   - The GA::Obj::Simple::List object on which the buttons will act
+        #   $table      - The tab's Gtk3::Grid object
+        #   $slWidget   - The GA::Obj::SimpleList object on which the buttons will act
         #   $iv         - The hash IV in $self->editObj storing the data being edited
         #   $rowNumber  - On the current tab's table, the row on which the buttons are put
         #
         # Optional arguments
-        #   @widgetList - List of Gtk2 widgets (entry boxes or combos) that are reset when the
+        #   @widgetList - List of Gtk3 widgets (entry boxes or combos) that are reset when the
         #                   'Delete', 'Reset' and 'Clear' buttons are used. If the list is empty, no
         #                   widgets are reset
         #
@@ -10514,9 +10616,9 @@
         }
 
         # 'Add' button
-        my $button = Gtk2::Button->new('Add');
-        $self->tooltips->set_tip($button, 'Add a new key/value pair');
-        $table->attach_defaults($button, 1, 3, $rowNumber, ($rowNumber + 1));
+        my $button = Gtk3::Button->new('Add');
+        $button->set_tooltip_text('Add a new key/value pair');
+        $table->attach($button, 1, $rowNumber, 2, 1);
 
         # NB The signal_connect method for the 'Add' button must be specified by the callling
         #   function. Here is some example code:
@@ -10539,7 +10641,7 @@
         #   });
 
         # 'Delete' button
-        my $button2 = Gtk2::Button->new('Delete');
+        my $button2 = Gtk3::Button->new('Delete');
         $button2->signal_connect('clicked' => sub {
 
             my ($key) = $self->getSimpleListData($slWidget, 0);
@@ -10553,11 +10655,11 @@
                 $self->resetEntryBoxes(@widgetList);
             }
         });
-        $self->tooltips->set_tip($button2, 'Delete the selected key/value pair');
-        $table->attach_defaults($button2, 6, 8, $rowNumber, ($rowNumber + 1));
+        $button2->set_tooltip_text('Delete the selected key/value pair');
+        $table->attach($button2, 6, $rowNumber, 2, 1);
 
         # 'Reset' button
-        my $button3 = Gtk2::Button->new('Reset');
+        my $button3 = Gtk3::Button->new('Reset');
         $button3->signal_connect('clicked' => sub {
 
             # Remove this IV from $self->editHash, so that the IV in $self->editObj takes over
@@ -10567,11 +10669,11 @@
             $self->refreshList_hashIV($slWidget, 2, $iv);
             $self->resetEntryBoxes(@widgetList);
         });
-        $self->tooltips->set_tip($button3, 'Reset the hash of key/value pairs');
-        $table->attach_defaults($button3, 8, 10, $rowNumber, ($rowNumber + 1));
+        $button3->set_tooltip_text('Reset the hash of key/value pairs');
+        $table->attach($button3, 8, $rowNumber, 2, 1);
 
         # 'Clear' button
-        my $button4 = Gtk2::Button->new('Clear');
+        my $button4 = Gtk3::Button->new('Clear');
         $button4->signal_connect('clicked' => sub {
 
             # Add an empty hash to $self->editHash
@@ -10581,19 +10683,19 @@
             $self->refreshList_hashIV($slWidget, 2, $iv);
             $self->resetEntryBoxes(@widgetList);
         });
-        $self->tooltips->set_tip($button4, 'Clear the hash of key/value pairs');
-        $table->attach_defaults($button4, 10, 12, $rowNumber, ($rowNumber + 1));
+        $button4->set_tooltip_text('Clear the hash of key/value pairs');
+        $table->attach($button4, 10, $rowNumber, 2, 1);
 
         return $button;
     }
 
     sub refreshList_listIV {
 
-        # Standard function for refreshing (or initialising) GA::Obj::Simple::List widgets when they
+        # Standard function for refreshing (or initialising) GA::Obj::SimpleList widgets when they
         #   are displaying a list in two columns
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns. Should be 2; this argument is retained for
         #                   consistency with other functions
         #   $iv         - The IV being displayed in the simple list
@@ -10676,11 +10778,11 @@
 
     sub refreshList_hashIV {
 
-        # Standard function for refreshing (or initialising) GA::Obj::Simple::List widgets, when
+        # Standard function for refreshing (or initialising) GA::Obj::SimpleList widgets, when
         #   they're displaying a hash in two columns
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns. Should be 2; this argument is retained for
         #                   consistency with other functions
         #   $iv         - The IV being displayed in the simple list
@@ -10732,50 +10834,6 @@
         return 1;
     }
 
-    sub checkPosn {
-
-        # Called by functions like $self->addEntry, etc
-        # Checks the position of a widget in the tab's table, to make sure the coordinates make
-        #   sense (that the right coordinate isn't lower than the left coordinate, for example)
-        #
-        # Expected arguments
-        #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #       - The coordinates of the object in the tab's table
-        #
-        # Return values
-        #   'undef' on improper arguments or if the coordinates don't make sense
-        #   1 otherwise
-
-        my ($self, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $check) = @_;
-
-        # Check for improper arguments
-        if (
-            ! defined $leftAttach || ! defined $rightAttach || ! defined $topAttach
-            || ! defined $bottomAttach || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkPosn', @_);
-        }
-
-        # Check coordinates
-        if (
-            $leftAttach < 0 || $topAttach < 0
-            || $rightAttach <= $leftAttach || $bottomAttach <= $topAttach
-        ) {
-            return $self->writeWarning(
-                'Bad table coordinates in \'' . $self->winType . '\' window: '
-                . $leftAttach . ' '
-                . $rightAttach . ' '
-                . $topAttach . ' '
-                . $bottomAttach,
-                $self->_objClass . '->checkPosn',
-            );
-
-        } else {
-
-            return 1;
-        }
-    }
-
     sub resetComboBox {
 
         # Can be called by anything
@@ -10822,11 +10880,11 @@
 
     sub resetListData {
 
-        # Replaces the data stored in a GA::Obj::Simple::List with the data stored in the specified
+        # Replaces the data stored in a GA::Obj::SimpleList with the data stored in the specified
         #   list
         #
         # Expected arguments
-        #   $slWidget   - Reference to a GA::Obj::Simple::List
+        #   $slWidget   - Reference to a GA::Obj::SimpleList
         #   $listRef    - Reference to a list which contains the replacement data
         #   $number     - The list is split into groups (e.g. the elements of
         #                   GA::Profile::World->barPatternList are split into groups of 6); $number
@@ -10876,11 +10934,11 @@
 
     sub resetSortListData {
 
-        # Replaces the data stored in a GA::Obj::Simple::List with the data stored in the specified
+        # Replaces the data stored in a GA::Obj::SimpleList with the data stored in the specified
         #   list which we assume represents a hash in the form (key, value, key, value...)
         #
         # Expected arguments
-        #   $slWidget   - Reference to a GA::Obj::Simple::List
+        #   $slWidget   - Reference to a GA::Obj::SimpleList
         #   $listRef    - Reference to a list which contains the replacement data
         #
         # Return values
@@ -10929,7 +10987,7 @@
         # Get items of data from specified cells in the currently selected row of a simple list
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   @columnList - A list of column numbers on the simple list, e.g. the list (0, 2, 3)
         #                   represents the first, third and fourth columns.
         #
@@ -11273,7 +11331,7 @@
 
     sub updateListDataWithKey {
 
-        # Can be called by any tab function to update the data in a GA::Obj::Simple::List when it is
+        # Can be called by any tab function to update the data in a GA::Obj::SimpleList when it is
         #   storing data in two columns representing the contents of a hash
         # The first column is the key, the second column its corresponding value
         # If the key already exists in the list, it is replaced; otherwise a new key-value pair is
@@ -11281,7 +11339,7 @@
         # If the key is not defined or an empty string, it isn't added to the simple list
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List to modify
+        #   $slWidget   - The GA::Obj::SimpleList to modify
         #   $key        - The key to add to the list, which will eventually be stored as a hash
         #   $value      - Its corresponding value
         #
@@ -11309,7 +11367,7 @@
             return undef;
         }
 
-        # Convert the data stored in the GA::Obj::Simple::List into a hash
+        # Convert the data stored in the GA::Obj::SimpleList into a hash
         %hash = $self->convertListDataToHash($slWidget);
 
         # Add the key-value pair
@@ -11318,7 +11376,7 @@
         # Get a list of keys in the hash, so we can sort it alphabetically
         @list = sort {lc($a) cmp lc($b)} (keys %hash);
 
-        # Reset the GA::Obj::Simple::List
+        # Reset the GA::Obj::SimpleList
         @{$slWidget->{data}} = ();
 
         foreach my $sortedKey (@list) {
@@ -11331,13 +11389,13 @@
 
     sub findKeyInListData {
 
-        # Can be called by any tab function to check the data in a GA::Obj::Simple::List when it is
+        # Can be called by any tab function to check the data in a GA::Obj::SimpleList when it is
         #   storing data in two columns representing the contents of a hash
         # The first column is the key, the second column its corresponding value
         # Checks whether the specified key exists in list's data
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List to modify
+        #   $slWidget   - The GA::Obj::SimpleList to modify
         #   $key        - The key to add to the list's data
         #
         # Return values
@@ -11366,7 +11424,7 @@
             return undef;
         }
 
-        # Convert the data stored in the GA::Obj::Simple::List into a hash
+        # Convert the data stored in the GA::Obj::SimpleList into a hash
         %hash = $self->convertListDataToHash($slWidget);
 
         # See whether the key exists
@@ -11379,11 +11437,11 @@
 
     sub convertListDataToHash {
 
-        # Can be called by any tab function to convert the data in a GA::Obj::Simple::List (in which
+        # Can be called by any tab function to convert the data in a GA::Obj::SimpleList (in which
         #   data is stored in two columns) into a hash
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List to use
+        #   $slWidget   - The GA::Obj::SimpleList to use
         #
         # Return values
         #   An empty hash on improper arguments
@@ -11415,11 +11473,11 @@
 
     sub storeListData {
 
-        # Can be called by any tab function to store the data in a GA::Obj::Simple::List in
+        # Can be called by any tab function to store the data in a GA::Obj::SimpleList in
         #   $self->editHash
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List to use
+        #   $slWidget   - The GA::Obj::SimpleList to use
         #   $iv         - The name of the instance variable in $self->editHash where the list is
         #                   stored
         #
@@ -11452,10 +11510,10 @@
     sub storeListColumnInList {
 
         # Can be called by any tab function to store the data from a single column in a
-        #   GA::Obj::Simple::List as a list in $self->editHash
+        #   GA::Obj::SimpleList as a list in $self->editHash
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List to use
+        #   $slWidget   - The GA::Obj::SimpleList to use
         #   $iv         - The name of the instance variable in $self->editHash in which the column's
         #                   data is stored
         #   $column     - The number of the chosen column
@@ -11492,13 +11550,13 @@
 
     sub storeListDataInHash {
 
-        # Can be called by any tab function to store the data in a GA::Obj::Simple::List in
+        # Can be called by any tab function to store the data in a GA::Obj::SimpleList in
         #   $self->editHash
         # This is a companion function to $self->storeListData (which stores the data as a list);
         #   this function stores the data as a hash
         #
         # Expected arguments
-        #   $slWidget   - Reference to a GA::Obj::Simple::List
+        #   $slWidget   - Reference to a GA::Obj::SimpleList
         #   $iv         - The name of the instance variable in $self->editHash where the hash is
         #                   stored
         #
@@ -11568,7 +11626,7 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab($tabName, $self->notebook, 12, 10);
+        my ($vBox, $table) = $self->addTab($tabName, $self->notebook);
 
         # Private settings hash
         $self->addLabel($table, '<b>' . $titleLabel . '</b>',
@@ -11585,7 +11643,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);      # Fixed height
+            -1, 280);      # Fixed height
 
         # Initialise the simple list
         $self->privateDataTab_refreshList($slWidget, scalar (@columnList / 2), $hashIV);
@@ -11699,7 +11757,7 @@
         });
 
         # Add the standard editing button
-        my $button4 = Gtk2::Button->new('Edit');
+        my $button4 = Gtk3::Button->new('Edit');
         $button4->signal_connect('clicked' => sub {
 
             my (
@@ -11757,10 +11815,10 @@
                 }
             }
         });
-        $self->tooltips->set_tip($button4, 'Edit the selected key');
-        $table->attach_defaults($button4, 1, 4, 11, 12);
+        $button4->set_tooltip_text('Edit the selected key');
+        $table->attach($button4, 1, 11, 3, 1);
 
-        my $button5 = Gtk2::Button->new('Delete');
+        my $button5 = Gtk3::Button->new('Delete');
         $button5->signal_connect('clicked' => sub {
 
             my ($key) = $self->getSimpleListData($slWidget, 0);
@@ -11773,10 +11831,10 @@
                 $self->privateDataTab_refreshList($slWidget, scalar (@columnList / 2), $hashIV);
             }
         });
-        $self->tooltips->set_tip($button5, 'Delete the selected key');
-        $table->attach_defaults($button5, 6, 8, 11, 12);
+        $button5->set_tooltip_text('Delete the selected key');
+        $table->attach($button5, 6, 11, 2, 1);
 
-        my $button6 = Gtk2::Button->new('Reset');
+        my $button6 = Gtk3::Button->new('Reset');
         $button6->signal_connect('clicked' => sub {
 
             # Remove this IV from $self->editHash, so that the IV in $self->editObj takes over
@@ -11785,10 +11843,10 @@
             # Update the simple list
             $self->privateDataTab_refreshList($slWidget, scalar (@columnList / 2), $hashIV);
         });
-        $self->tooltips->set_tip($button6, 'Reset the list of keys');
-        $table->attach_defaults($button6, 8, 10, 11, 12);
+        $button6->set_tooltip_text('Reset the list of keys');
+        $table->attach($button6, 8, 11, 2, 1);
 
-        my $button7 = Gtk2::Button->new('Clear');
+        my $button7 = Gtk3::Button->new('Clear');
         $button7->signal_connect('clicked' => sub {
 
             # Add an empty hash to $self->editHash
@@ -11797,11 +11855,11 @@
             # Update the simple list
             $self->privateDataTab_refreshList($slWidget, scalar (@columnList / 2), $hashIV);
         });
-        $self->tooltips->set_tip($button7, 'Clear the list of keys');
-        $table->attach_defaults($button7, 10, 12, 11, 12);
+        $button7->set_tooltip_text('Clear the list of keys');
+        $table->attach($button7, 10, 11, 2, 1);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -11811,7 +11869,7 @@
         # Called by $self->privateDataTab to refresh the simple list
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns
         #   $hashIV         - The hash IV being edited
         #
@@ -11914,7 +11972,7 @@
         # Objects1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -11971,7 +12029,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 9,
-            -1, 200);       # Fixed height
+            -1, 220);       # Fixed height
 
         # Create a hash to link lines in the simple list to objects in the protected objects list,
         #   in the form
@@ -12170,17 +12228,17 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub objects1Tab_refreshList {
 
-        # Called by $self->objects1Tab to reset the GA::Obj::Simple::List
+        # Called by $self->objects1Tab to reset the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns in the list
         #
         # Optional arguments
@@ -12252,7 +12310,7 @@
         # Objects2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -12309,7 +12367,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 9,
-            -1, 200);       # Fixed height
+            -1, 220);       # Fixed height
 
         # Create a hash to link lines in the simple list to objects in the monitored objects list,
         #   in the form
@@ -12513,17 +12571,17 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub objects2Tab_refreshList {
 
-        # Called by $self->objects2Tab to reset the GA::Obj::Simple::List
+        # Called by $self->objects2Tab to reset the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Optional arguments
@@ -12675,7 +12733,7 @@
         # TriggerAttributes1Tab tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -12697,44 +12755,33 @@
             0, 12, 0, 1);
 
         # Left column
-        $self->addLabel($table, 'Ignore the trigger response (e.g. just apply a style)',
-            1, 5, 1, 2);
-        $self->useCheckButton($table, 'ignore_response', TRUE,
-            5, 6, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Ignore case',
-            1, 5, 2, 3);
-        $self->useCheckButton($table, 'ignore_case', TRUE,
-            5, 6, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Keep checking triggers after a match',
-            1, 5, 3, 4);
-        $self->useCheckButton($table, 'keep_checking', TRUE,
-            5, 6, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Splitter trigger',
-            1, 5, 4, 5);
-        $self->useCheckButton($table, 'splitter', TRUE,
-            5, 6, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Split after matching pattern, not before',
-            1, 5, 5, 6);
-        $self->useCheckButton($table, 'split_after', TRUE,
-            5, 6, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Split line multiple times, if multiple matches',
-            1, 5, 6, 7);
-        $self->useCheckButton($table, 'keep_splitting', TRUE,
-            5, 6, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Rewriter trigger',
-            1, 5, 7, 8);
-        $self->useCheckButton($table, 'rewriter', TRUE,
-            5, 6, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Rewrite every matching part of line',
-            1, 5, 8, 9);
-        $self->useCheckButton($table, 'rewrite_global', TRUE,
-            5, 6, 8, 9, 1, 0.5);
+        $self->useCheckButton(
+            $table,
+            'Ignore the trigger response (e.g. just apply a style)',
+            'ignore_response',
+            TRUE,
+            1, 6, 1, 2);
+        $self->useCheckButton($table, 'Ignore case', 'ignore_case', TRUE,
+            1, 6, 2, 3);
+        $self->useCheckButton($table, 'Keep checking triggers after a match', 'keep_checking', TRUE,
+            1, 6, 3, 4);
+        $self->useCheckButton($table, 'Splitter trigger', 'splitter', TRUE,
+            1, 6, 4, 5);
+        $self->useCheckButton(
+            $table, 'Split after matching pattern, not before', 'split_after', TRUE,
+            1, 6, 5, 6);
+        $self->useCheckButton(
+            $table, 'Split line multiple times, if multiple matches', 'keep_splitting', TRUE,
+            1, 6, 6, 7);
+        $self->useCheckButton($table, 'Rewriter trigger', 'rewriter', TRUE,
+            1, 6, 7, 8);
+        $self->useCheckButton($table, 'Rewrite every matching part of line', 'rewrite_global', TRUE,
+            1, 6, 8, 9);
 
         # Right column
-        $self->addLabel($table, 'Only fire in session\'s default pane',
-            7, 11, 1, 2);
-        my $checkButton = $self->useCheckButton($table, 'default_pane', TRUE,
-            11, 12, 1, 2, 1, 0.5);
+        my $checkButton = $self->useCheckButton(
+            $table, 'Only fire in session\'s default pane', 'default_pane', TRUE,
+            7, 12, 1, 2);
         $self->addLabel($table, 'Fire in named pane',
             7, 9, 2, 3);
         my $entry = $self->addEntry($table, undef, TRUE,
@@ -12765,26 +12812,16 @@
             }
         });
 
-        $self->addLabel($table, 'Require a prompt to fire',
-            7, 11, 3, 4);
-        $self->useCheckButton($table, 'need_prompt', TRUE,
-            11, 12, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Require a login to fire',
-            7, 11, 4, 5);
-        $self->useCheckButton($table, 'need_login', TRUE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Omit (gag) from output',
-            7, 11, 5, 6);
-        $self->useCheckButton($table, 'gag', TRUE,
-            11, 12, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Omit (gag) from logfile',
-            7, 11, 6, 7);
-        $self->useCheckButton($table, 'gag_log', TRUE,
-            11, 12, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Temporary trigger',
-            7, 11, 7, 8);
-        $self->useCheckButton($table, 'temporary', TRUE,
-            11, 12, 7, 8, 1, 0.5);
+        $self->useCheckButton($table, 'Require a prompt to fire', 'need_prompt', TRUE,
+            7, 12, 3, 4);
+        $self->useCheckButton($table, 'Require a login to fire', 'need_login', TRUE,
+            7, 12, 4, 5);
+        $self->useCheckButton($table, 'Omit (gag) from output', 'gag', TRUE,
+            7, 12, 5, 6);
+        $self->useCheckButton($table, 'Omit (gag) from logfile', 'gag_log', TRUE,
+            7, 12, 6, 7);
+        $self->useCheckButton($table, 'Temporary trigger', 'temporary', TRUE,
+            7, 12, 7, 8);
         $self->addLabel($table, 'Cooldown (in seconds)',
             7, 9, 8, 9);
         $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
@@ -12792,7 +12829,7 @@
             8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -12802,7 +12839,7 @@
         # TriggerAttributes2Tab tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -12823,8 +12860,8 @@
         my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
 
         # (Need just a little extra space to make everything fit)
-        $table->set_col_spacings($self->spacingPixels - 1);
-        $table->set_row_spacings($self->spacingPixels - 1);
+        $table->set_column_spacing($self->spacingPixels - 1);
+        $table->set_row_spacing($self->spacingPixels - 1);
 
         # Trigger styles
         $self->addLabel($table, '<b>Trigger attributes (cont.)</b>',
@@ -12915,15 +12952,15 @@
         );
 
         # Right column
-        $self->triggerAttributesTab_addRadioButtons($table, 'Italics', 'style_italics', 4);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Underline', 'style_underline', 5);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Slow blink', 'style_blink_slow', 6);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Fast blink', 'style_blink_fast', 7);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Strike-through', 'style_strike', 8);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Link', 'style_link', 9);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Italics:', 'style_italics', 4);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Underline:', 'style_underline', 5);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Slow blink:', 'style_blink_slow', 6);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Fast blink:', 'style_blink_fast', 7);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Strike-through:', 'style_strike', 8);
+        $self->triggerAttributesTab_addRadioButtons($table, 'Link:', 'style_link', 9);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -12933,11 +12970,11 @@
         # Called by $self->triggerAttributes2Tab to add radio buttons for setting a colour attribute
         #
         # Expected arguments
-        #   $table          - The Gtk2::Table
+        #   $table          - The Gtk3::Grid
         #   $labelText      - The label text to use (e.g. 'Text colour')
         #   $attrib         - The attibute to set (e.g. 'style_text')
         #   $comboListRef   - Reference to a list of standard colour tags to display in a combobox
-        #   $row            - The Gtk2::Table row on which the radio buttons are drawn
+        #   $row            - The Gtk3::Grid row on which the radio buttons are drawn
         #
         # Return values
         #   'undef' on improper arguments
@@ -13067,10 +13104,10 @@
 
     sub triggerAttributesTab_checkXTerm {
 
-        # Called by $self->triggerAttributes2Tab to check the text in the Gtk2::Entry
+        # Called by $self->triggerAttributes2Tab to check the text in the Gtk3::Entry
         #
         # Expected arguments
-        #   $text       - The contents of the Gtk2::Entry
+        #   $text       - The contents of the Gtk3::Entry
         #
         # Return values
         #   'undef' on improper arguments or if $text is invalid
@@ -13111,10 +13148,10 @@
 
     sub triggerAttributesTab_checkRGB {
 
-        # Called by $self->triggerAttributes2Tab to check the text in the Gtk2::Entry
+        # Called by $self->triggerAttributes2Tab to check the text in the Gtk3::Entry
         #
         # Expected arguments
-        #   $text       - The contents of the Gtk2::Entry
+        #   $text       - The contents of the Gtk3::Entry
         #
         # Return values
         #   'undef' on improper arguments or if $text is invalid
@@ -13153,10 +13190,10 @@
         # Called by $self->triggerAttributes2Tab to add radio buttons for setting an attribute
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table
+        #   $table      - The Gtk3::Grid
         #   $labelText  - The label text to use (e.g. 'Italics')
         #   $attrib     - The attibute to set (e.g. 'style_italics')
-        #   $row        - The Gtk2::Table row on which the radio buttons are drawn
+        #   $row        - The Gtk3::Grid row on which the radio buttons are drawn
         #
         # Return values
         #   'undef' on improper arguments
@@ -13223,20 +13260,14 @@
             0, 12, 0, 1);
 
         # Left column
-        $self->addLabel($table, 'Ignore case',
-            1, 5, 1, 2);
-        $self->useCheckButton($table, 'ignore_case', TRUE,
-            5, 6, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Keep checking aliases after a match',
-            1, 5, 2, 3);
-        $self->useCheckButton($table, 'keep_checking', TRUE,
-            5, 6, 2, 3, 1, 0.5);
+        $self->useCheckButton($table, 'Ignore case', 'ignore_case', TRUE,
+            1, 6, 1, 2);
+        $self->useCheckButton($table, 'Keep checking aliases after a match', 'keep_checking', TRUE,
+            1, 6, 2, 3);
 
         # Right column
-        $self->addLabel($table, 'Temporary alias',
-            7, 11, 1, 2);
-        $self->useCheckButton($table, 'temporary', TRUE,
-            11, 12, 1, 2, 1, 0.5);
+        $self->useCheckButton($table, 'Temporary alias', 'temporary', TRUE,
+            7, 12, 1, 2);
         $self->addLabel($table, 'Cooldown (in seconds)',
             7, 9, 2, 3);
         $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
@@ -13244,7 +13275,7 @@
             8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13276,10 +13307,8 @@
             0, 12, 0, 1);
 
         # Left column
-        $self->addLabel($table, 'Temporary macro',
-            1, 5, 1, 2);
-        $self->useCheckButton($table, 'temporary', TRUE,
-            5, 6, 1, 2, 1, 0.5);
+        $self->useCheckButton($table, 'Temporary macro', 'temporary', TRUE,
+            1, 6, 1, 2);
 
         # Right column
         $self->addLabel($table, 'Cooldown (in seconds)',
@@ -13289,7 +13318,7 @@
             8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13329,27 +13358,21 @@
             1, 4, 2, 3);
         $self->useEntryWithIcon($table, 'initial_delay', 'float', 0, undef,
             4, 6, 2, 3);
-        $self->addLabel($table, 'Random delays',
-            1, 5, 3, 4);
-        $self->useCheckButton($table, 'random_delay', TRUE,
-            5, 6, 3, 4, 1, 0.5);
+        $self->useCheckButton($table, 'Random delays', 'random_delay', TRUE,
+            1, 6, 3, 4);
 
         # Right column
         $self->addLabel($table, 'Minimum random delay',
             7, 10, 1, 2);
         $self->useEntryWithIcon($table, 'random_min', 'float', 0, undef,
             10, 12, 1, 2);
-        $self->addLabel($table, 'Start after login',
-            7, 11, 2, 3);
-        $self->useCheckButton($table, 'wait_login', TRUE,
-            11, 12, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Temporary timer',
-            7, 11, 3, 4);
-        $self->useCheckButton($table, 'temporary', TRUE,
-            11, 12, 3, 4, 1, 0.5);
+        $self->useCheckButton($table, 'Start after login', 'wait_login', TRUE,
+            7, 12, 2, 3);
+        $self->useCheckButton($table, 'Temporary timer', 'temporary', TRUE,
+            7, 12, 3, 4);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13381,10 +13404,8 @@
             0, 12, 0, 1);
 
         # Left column
-        $self->addLabel($table, 'Temporary hook',
-            1, 5, 1, 2);
-        $self->useCheckButton($table, 'temporary', TRUE,
-            5, 6, 1, 2, 1, 0.5);
+        $self->useCheckButton($table, 'Temporary hook', 'temporary', TRUE,
+            1, 6, 1, 2);
 
         # Right column
         $self->addLabel($table, 'Cooldown (in seconds)',
@@ -13394,7 +13415,7 @@
             8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13428,9 +13449,9 @@
         #               {some_hash} is stored as a scalar reference (only cage masks do this); FALSE
         #               (or 'undef') if it's stored as a simple scalar
         #   $slWidget
-        #           - In mode 1, 'undef'; in mode 2, 'undef' or the  Gt2::Ex::Simple::List in which
-        #               the IV's data is being displayed (if specified, the simple list is updated
-        #               when this window is closed)
+        #           - In mode 1, 'undef'; in mode 2, 'undef' or the GA::Obj::SimpleList in which the
+        #               IV's data is being displayed (if specified, the simple list is updated when
+        #               this window is closed)
         #   $readOnlyFlag
         #           - If set to TRUE, the scalar is read-only (so can't be edited); otherwise set
         #               to FALSE (or 'undef')
@@ -13472,7 +13493,7 @@
         my $dialogueWin;
         if (! $readOnlyFlag) {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -13482,7 +13503,7 @@
 
         } else {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -13491,7 +13512,7 @@
         }
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -13504,18 +13525,18 @@
         });
 
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
         # Create a label, which will shortly show which IV is being edited (a second label,
         #   $undefLabel, is sometimes used immediately below it)
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $label->set_alignment(0, 0.5);
 
         # Create an entry, in which the user supplies a new value
-        my $entry = Gtk2::Entry->new;
+        my $entry = Gtk3::Entry->new;
         if ($readOnlyFlag) {
 
             $entry->set_state('insensitive');
@@ -13533,7 +13554,7 @@
                 if (defined $self->editObj->{$iv}) {
 
                     # Put the current value in the entry box
-                    $entry->append_text($self->editObj->{$iv});
+                    $entry->set_text($self->editObj->{$iv});
 
                 } else {
 
@@ -13547,7 +13568,7 @@
                 # Use an edited value
                 if (defined $self->ivShow('editHash', $iv)) {
 
-                    $entry->append_text($self->ivShow('editHash', $iv));
+                    $entry->set_text($self->ivShow('editHash', $iv));
 
                 } else {
 
@@ -13583,12 +13604,12 @@
                     if ($deRefFlag) {
 
                         # Cage masks: $value is a scalar reference
-                        $entry->append_text($$value);
+                        $entry->set_text($$value);
 
                     } else {
 
                         # Everything else: $value is a normal scalar
-                        $entry->append_text($value);
+                        $entry->set_text($value);
                     }
 
                 } else {
@@ -13609,11 +13630,11 @@
         # Optionally add a button strip in the lower area, containing a single button
         if (! $readOnlyFlag) {
 
-            my $hBox = Gtk2::HBox->new(FALSE, 0);
+            my $hBox = Gtk3::HBox->new(FALSE, 0);
             $vBox2->pack_start($hBox, TRUE, TRUE, $self->spacingPixels);
 
             # Create the 'use undef' button
-            my $button3 = Gtk2::Button->new('Use \'undef\' value');
+            my $button3 = Gtk3::Button->new('Use \'undef\' value');
             $hBox->pack_end($button3, FALSE, FALSE, $self->spacingPixels);
 
             $button3->signal_connect('clicked' => sub {
@@ -13768,9 +13789,9 @@
         # Optional arguments
         #   $key    - In mode 1, 'undef'; in mode 2, a key in {some_hash}
         #   $slWidget
-        #           - In mode 1, 'undef'; in mode 2, 'undef' or the Gt2::Ex::Simple::List in which
-        #               the IV's data is being displayed (if specified, the simple list is updated
-        #               when this window is closed)
+        #           - In mode 1, 'undef'; in mode 2, 'undef' or the GA::Obj::SimpleList in which the
+        #               IV's data is being displayed (if specified, the simple list is updated when
+        #               this window is closed)
         #   $readOnlyFlag
         #           - If set to TRUE, the list is read-only (so can't be edited); otherwise set
         #               to FALSE (or 'undef')
@@ -13812,7 +13833,7 @@
         my $dialogueWin;
         if (! $readOnlyFlag) {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -13822,7 +13843,7 @@
 
         } else {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -13831,7 +13852,7 @@
         }
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -13844,18 +13865,18 @@
         });
 
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
         # Create a label, which will shortly show which IV is being edited
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $vBox2->pack_start($label, TRUE, TRUE, $self->spacingPixels);
         $label->set_alignment(0, 0.5);
 
         # Create a textview, in which the user supplies a list of values
-        my $scroll = Gtk2::ScrolledWindow->new(undef, undef);
+        my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
         $vBox2->pack_start($scroll, TRUE, TRUE, $self->spacingPixels);
         $scroll->set_shadow_type('etched-out');
         $scroll->set_policy('automatic', 'automatic');
@@ -13863,11 +13884,10 @@
         $scroll->set_border_width($self->spacingPixels);
 
         # Create a textview with default colours/fonts
-        $axmud::CLIENT->desktopObj->getTextViewStyle($self->winType);
-        my $textView = Gtk2::TextView->new();
+        my $textView = Gtk3::TextView->new();
         $scroll->add($textView);
 
-        my $buffer = Gtk2::TextBuffer->new();
+        my $buffer = Gtk3::TextBuffer->new();
         $textView->set_buffer($buffer);
 
         if ($readOnlyFlag) {
@@ -13875,6 +13895,8 @@
         } else {
             $textView->set_editable(TRUE);
         }
+
+        $axmud::CLIENT->desktopObj->setTextViewStyle($self->winType, $textView);
 
         # Set the contents of the label and the textview
         if (! defined $key) {
@@ -14019,9 +14041,9 @@
         # Optional arguments
         #   $key    - In mode 1, 'undef'; in mode 2, a key in {some_hash}
         #   $slWidget
-        #           - In mode 1, 'undef'; in mode 2, 'undef' or the Gt2::Ex::Simple::List in which
-        #               the IV's data is being displayed (if specified, the simple list is updated
-        #               when this window is closed)
+        #           - In mode 1, 'undef'; in mode 2, 'undef' or the GA::Obj::SimpleListin which the
+        #               IV's data is being displayed (if specified, the simple list is updated when
+        #               this window is closed)
         #   $readOnlyFlag
         #           - If set to TRUE, the scalar is read-only (so can't be edited); otherwise set to
         #               FALSE (or 'undef')
@@ -14063,7 +14085,7 @@
         my $dialogueWin;
         if (! $readOnlyFlag) {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -14073,7 +14095,7 @@
 
         } else {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -14082,7 +14104,7 @@
         }
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -14095,25 +14117,25 @@
         });
 
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
         # Create a label, which will shortly show which IV is being edited
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $vBox2->pack_start($label, TRUE, TRUE, $self->spacingPixels);
         $label->set_alignment(0, 0.5);
 
         # Create a scroller
-        my $scroller = Gtk2::ScrolledWindow->new;
+        my $scroller = Gtk3::ScrolledWindow->new;
         $vBox2->pack_start($scroller, TRUE, TRUE, $self->spacingPixels);
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_size_request(200, 150);          # Minimum size
 
         # Create a simple list with two columns representing a hash, for which the user
         #   supplies key-value pairs
-        my $slWidget2 = Games::Axmud::Obj::Simple::List->new(
+        my $slWidget2 = Games::Axmud::Obj::SimpleList->new(
             # Give the first column a minimum width; don't want the columns moving around too
             #   much when the user enter new key-value pairs
             'Key           ' => 'text',
@@ -14135,7 +14157,7 @@
 
             # Mode 2 - edit the hash stored in a key-value pair; the pair is in the hash
             #   stored as $self->editObj->$iv or $self->editHash->$iv
-            $label->set_markup('Hash stored in key \'' . $key . '\' in IV \'' . $iv . '\'');
+            $label->set_markup('Hash stored in key \'' . $key . "\'\nin IV \'" . $iv . "\'");
             %innerHash = $self->promptHash_displayDataMode2($slWidget2, $iv, $key);
             # Edit a copy, so that we can revert to the original copy if we want to
             %replaceHash = %innerHash;
@@ -14146,34 +14168,37 @@
 
             # Add a table containing entry boxes for new key-value pairs. The table ensures that
             #   the two entry boxes are aligned with each other
-            my $table = Gtk2::Table->new(2, 2, FALSE);
+            my $table = Gtk3::Grid->new();
             $vBox2->pack_start($table, TRUE, TRUE, $self->spacingPixels);
 
-            my $label2 = Gtk2::Label->new();
+            my $label2 = Gtk3::Label->new();
             $label2->set_alignment(0, 0.5);
             $label2->set_markup('Key');
-            $table->attach_defaults($label2, 0, 1, 0, 1);
+            $label2->set_hexpand(TRUE);
+            $table->attach($label2, 0, 0, 1, 1);
 
-            my $entry = Gtk2::Entry->new();
-            $table->attach_defaults($entry, 1, 2, 0, 1);
+            my $entry = Gtk3::Entry->new();
+            $entry->set_hexpand(TRUE);
+            $table->attach($entry, 1, 0, 1, 1);
 
-            my $label3 = Gtk2::Label->new();
+            my $label3 = Gtk3::Label->new();
             $label3->set_alignment(0, 0.5);
             $label3->set_markup('Value');
-            $table->attach_defaults($label3, 0, 1, 1, 2);
+            $label3->set_hexpand(TRUE);
+            $table->attach($label3, 0, 1, 1, 1);
 
-            my $entry2 = Gtk2::Entry->new();
-            $table->attach_defaults($entry2, 1, 2, 1, 2);
+            my $entry2 = Gtk3::Entry->new();
+            $entry2->set_hexpand(TRUE);
+            $table->attach($entry2, 1, 1, 1, 1);
 
             # Add a button strip containing editing buttons
-            my $tooltips = Gtk2::Tooltips->new();
-            my $hBox = Gtk2::HBox->new(FALSE, 0);
+            my $hBox = Gtk3::HBox->new(FALSE, 0);
             $vBox2->pack_start($hBox, TRUE, TRUE, $self->spacingPixels);
 
             # 'Add' button
-            my $button = Gtk2::Button->new('Add');
+            my $button = Gtk3::Button->new('Add');
             $hBox->pack_start($button, FALSE, FALSE, $self->spacingPixels);
-            $tooltips->set_tip($button, 'Add a key-value pair');
+            $button->set_tooltip_text('Add a key-value pair');
             $button->signal_connect('clicked' => sub {
 
                 my ($thisKey, $thisValue);
@@ -14191,9 +14216,9 @@
             });
 
             # 'Undef' button
-            my $button2 = Gtk2::Button->new('Undef');
+            my $button2 = Gtk3::Button->new('Add with \'undef\' value');
             $hBox->pack_start($button2, FALSE, FALSE, $self->spacingPixels);
-            $tooltips->set_tip($button2, 'Add a key-value pair, with the value set to \'undef\'');
+            $button2->set_tooltip_text('Add a key-value pair, with the value set to \'undef\'');
             $button2->signal_connect('clicked' => sub {
 
                 my $thisKey = $entry->get_text();
@@ -14207,10 +14232,14 @@
                 $self->resetEntryBoxes($entry, $entry2);
             });
 
+            # Add a second button strip containing editing buttons
+            my $hBox2 = Gtk3::HBox->new(FALSE, 0);
+            $vBox2->pack_start($hBox2, TRUE, TRUE, $self->spacingPixels);
+
             # 'Delete' button
-            my $button3 = Gtk2::Button->new('Delete');
-            $hBox->pack_start($button3, FALSE, FALSE, $self->spacingPixels);
-            $tooltips->set_tip($button3, 'Delete the selected key-value pair');
+            my $button3 = Gtk3::Button->new('Delete');
+            $hBox2->pack_start($button3, FALSE, FALSE, $self->spacingPixels);
+            $button3->set_tooltip_text('Delete the selected key-value pair');
             $button3->signal_connect('clicked' => sub {
 
                 my (
@@ -14231,9 +14260,9 @@
             });
 
             # 'Reset' button
-            my $button4 = Gtk2::Button->new('Reset');
-            $hBox->pack_start($button4, FALSE, FALSE, $self->spacingPixels);
-            $tooltips->set_tip($button4, 'Undo changes to the hash');
+            my $button4 = Gtk3::Button->new('Reset');
+            $hBox2->pack_start($button4, FALSE, FALSE, $self->spacingPixels);
+            $button4->set_tooltip_text('Undo changes to the hash');
             $button4->signal_connect('clicked' => sub {
 
                 # Update the hash we're editing...
@@ -14261,9 +14290,9 @@
             });
 
             # 'Clear' button
-            my $button5 = Gtk2::Button->new('Clear');
-            $hBox->pack_start($button5, FALSE, FALSE, $self->spacingPixels);
-            $tooltips->set_tip($button5, 'Clear the hash');
+            my $button5 = Gtk3::Button->new('Clear');
+            $hBox2->pack_start($button5, FALSE, FALSE, $self->spacingPixels);
+            $button5->set_tooltip_text('Clear the hash');
             $button5->signal_connect('clicked' => sub {
 
                 # Update the hash we're editing...
@@ -14350,11 +14379,11 @@
 
         # Called by $self->promptHash when we want to edit a hash IV in $self->editObj or
         #   $self->editHash
-        # The calling function had created a GA::Obj::Simple::List; this function's job is to fill
+        # The calling function had created a GA::Obj::SimpleList; this function's job is to fill
         #   it with data
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List where the IV's data is displayed
+        #   $slWidget   - The GA::Obj::SimpleList where the IV's data is displayed
         #   $iv         - The IV being edited
         #
         # Return values
@@ -14393,7 +14422,7 @@
             %dataHash = %$hashRef;
         }
 
-        # Update the GA::Obj::Simple::List (which currently stores no data)
+        # Update the GA::Obj::SimpleList (which currently stores no data)
         foreach my $key (sort {lc($a) cmp lc($b)} (keys %dataHash)) {
 
             push (
@@ -14416,11 +14445,11 @@
         #               iv3     => hash_reference_to_edit,
         #       }
         #
-        # The calling function had created a GA::Obj::Simple::List to display
+        # The calling function had created a GA::Obj::SimpleList to display
         #   hash_reference_to_edit; this function's job is to fill it with data
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List where the IV's data is displayed
+        #   $slWidget   - The GA::Obj::SimpleList where the IV's data is displayed
         #   $iv         - The IV being edited ('myHash' in the example above)
         #   $key        - The IV is a hash. $key is a key in that hash; $key's corresponding value
         #                   is the reference to the hash which we display in the simple list ('iv3'
@@ -14462,7 +14491,7 @@
             %hash = %$hashRef;
         }
 
-        # Update the GA::Obj::Simple::List (which currently stores no data)
+        # Update the GA::Obj::SimpleList (which currently stores no data)
         if (exists $hash{$key} && defined $hash{$key}) {
 
             $dataHashRef = $hash{$key};
@@ -14484,7 +14513,7 @@
 
     sub sensitiseWidgets {
 
-        # Sensitises a list of Gtk2 widgets
+        # Sensitises a list of Gtk3 widgets
         #
         # Expected arguments
         #   @list   - The list of widgets to sensitise
@@ -14511,7 +14540,7 @@
 
     sub desensitiseWidgets {
 
-        # Desensitises a list of Gtk2 widgets
+        # Desensitises a list of Gtk3 widgets
         #
         # Expected arguments
         #   @list   - The list of widgets to desensitise
@@ -14691,8 +14720,6 @@
         { $_[0]->{notebook} }
     sub hBox
         { $_[0]->{hBox} }
-    sub tooltips
-        { $_[0]->{tooltips} }
     sub okButton
         { $_[0]->{okButton} }
     sub cancelButton
@@ -14871,22 +14898,20 @@
             #   displayed in a 'dialogue' window)
             pseudoCmdMode               => 'win_error',
 
-            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
-            #   parent 'main' window's Gtk2::Window
+            # The window widget. For most window objects, the Gtk3::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk3::Window
             # The code should use this IV when it wants to do something to the window itself
             #   (minimise it, make it active, etc)
             winWidget                   => undef,
-            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            # The window container. For most window objects, the Gtk3::Window. For pseudo-windows,
             #   the parent GA::Table::PseudoWin table object
             # The code should use this IV when it wants to add, modify or remove widgets inside the
             #   window itself
             winBox                      => undef,
-            # The Gnome2::Wnck::Window, if known
-            wnckWin                     => undef,
             # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
             #   FALSE if not
             enabledFlag                 => FALSE,
-            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            # Flag set to TRUE if the Gtk3 window itself is visible (after a call to
             #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
             visibleFlag                 => TRUE,
             # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
@@ -14904,8 +14929,8 @@
             #       (sub_name, argument_list_ref, sub_name, argument_list_ref...)
             childDestroyHash            => {},
 
-            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
-            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            # The container widget into which all other widgets are packed (usually a Gtk3::VBox or
+            #   Gtk3::HBox, but any container widget can be used; takes up the whole window client
             #   area)
             packingBox                  => undef,
 
@@ -14988,7 +15013,7 @@
     sub winSetup {
 
         # Called by GA::Generic::Win->createFreeWin, after the call to $self->new
-        # Creates the Gtk2::Window itself
+        # Creates the Gtk3::Window itself
         #
         # Expected arguments
         #   (none besides $self)
@@ -15008,8 +15033,8 @@
              return $axmud::CLIENT->writeImproper($self->_objClass . '->winSetup', @_);
         }
 
-        # Create the Gtk2::Window
-        my $winWidget = Gtk2::Window->new('toplevel');
+        # Create the Gtk3::Window
+        my $winWidget = Gtk3::Window->new('toplevel');
         if (! $winWidget) {
 
             return undef;
@@ -15034,7 +15059,7 @@
 
         # Set the icon list for this window
         $iv = $self->winType . 'WinIconList';
-        $winWidget->set_icon_list($axmud::CLIENT->desktopObj->$iv);
+        $winWidget->set_icon_list($axmud::CLIENT->desktopObj->{$iv});
 
         # Draw the widgets used by this window
         if (! $self->drawWidgets()) {
@@ -15049,7 +15074,7 @@
     sub winEnable {
 
         # Called by GA::Generic::Win->createFreeWin, after the call to $self->winSetup
-        # After the Gtk2::Window has been setup and moved into position, makes it visible
+        # After the Gtk3::Window has been setup and moved into position, makes it visible
         #
         # Expected arguments
         #   (none besides $self)
@@ -15130,7 +15155,7 @@
             $winObj->winDestroy();
         }
 
-        # Destroy the Gtk2::Window
+        # Destroy the Gtk3::Window
         eval { $self->winBox->destroy(); };
         if ($@) {
 
@@ -15183,7 +15208,7 @@
 
         $self->winBox->signal_connect('delete-event' => sub {
 
-            # Prevent Gtk2 from taking action directly. Instead redirect the request to
+            # Prevent Gtk3 from taking action directly. Instead redirect the request to
             #   $self->winDestroy
             return $self->winDestroy();
         });
@@ -15239,7 +15264,7 @@
     sub winSetup {
 
         # Called by GA::Obj::Workspace->createGridWin or ->createSimpleGridWin
-        # This generic function merely creates a Gtk2::Window
+        # This generic function merely creates a Gtk3::Window
         # Your own window object code should either create a function based on
         #   GA::Win::Internal->winSetup, or your code should inherit that function directly
         #
@@ -15248,7 +15273,7 @@
         #
         # Optional arguments
         #   $title      - The window title or 'undef'. Ignored in this generic function
-        #   $listRef    - Reference to a list of functions to call, just after the Gtk2::Window is
+        #   $listRef    - Reference to a list of functions to call, just after the Gtk3::Window is
         #                   created (can be used to set up further ->signal_connects, if this
         #                   window needs them)
         #
@@ -15273,8 +15298,8 @@
             return undef;
         }
 
-        # Create the Gtk2::Window
-        my $winWidget = Gtk2::Window->new('toplevel');
+        # Create the Gtk3::Window
+        my $winWidget = Gtk3::Window->new('toplevel');
         if (! $winWidget) {
 
             return undef;
@@ -15297,7 +15322,7 @@
 
         # Set the icon list for this window
         $iv = $self->winType . 'WinIconList';
-        $winWidget->set_icon_list($axmud::CLIENT->desktopObj->$iv);
+        $winWidget->set_icon_list($axmud::CLIENT->desktopObj->{$iv});
 
         # Draw the widgets used by this window
         if (! $self->drawWidgets($winWidget)) {
@@ -15313,7 +15338,7 @@
     sub winEnable {
 
         # Called by GA::Obj::Workspace->createGridWin or ->createSimpleGridWin
-        # This generic function merely makes the Gtk2::Window visible
+        # This generic function merely makes the Gtk3::Window visible
         # Your own window object code should either create a function based on
         #   GA::Win::Internal->winEnable, or your code should inherit that function directly
         #
@@ -15321,7 +15346,7 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $listRef    - Reference to a list of functions to call, just after the Gtk2::Window is
+        #   $listRef    - Reference to a list of functions to call, just after the Gtk3::Window is
         #                   created (can be used to set up further ->signal_connects, if this
         #                   window needs them)
         #
@@ -15346,7 +15371,7 @@
         #   and position
         if ($self->workspaceGridObj && $self->winWidget eq $self->winBox) {
 
-            $self->winWidget->iconify();
+            $self->minimise();
         }
 
         # Set up ->signal_connects specified by the calling function, if any
@@ -16843,6 +16868,8 @@
     sub new {
 
         # Prepare a new instance of the generic model object (which is never blessed into existence)
+        # NB Room model objects do inherit from this object, but don't call this function; they
+        #   initialise all of their own IVs
         # NB Exit model objects don't inherit from this object
         #
         # Expected arguments
@@ -16852,7 +16879,8 @@
         #                   stored. For everything else, ->noun is also set to ->name
         #               - (NB If $name is longer than 32 characters, it is shortened)
         #   $category   - 'region', 'room', 'weapon', 'armour', 'garment', 'char', 'minion',
-        #                   'sentient', 'creature', 'portable', 'decoration' or 'custom'
+        #                   'sentient', 'creature', 'portable', 'decoration' or 'custom' (but room
+        #                   model objects don't call this function)
         #
         # Return values
         #   'undef' on improper arguments
@@ -17286,22 +17314,20 @@
             #   displayed in a 'dialogue' window)
             pseudoCmdMode               => 'win_error',
 
-            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
-            #   parent 'main' window's Gtk2::Window
+            # The window widget. For most window objects, the Gtk3::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk3::Window
             # The code should use this IV when it wants to do something to the window itself
             #   (minimise it, make it active, etc)
             winWidget                   => undef,
-            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            # The window container. For most window objects, the Gtk3::Window. For pseudo-windows,
             #   the parent GA::Table::PseudoWin table object
             # The code should use this IV when it wants to add, modify or remove widgets inside the
             #   window itself
             winBox                      => undef,
-            # The Gnome2::Wnck::Window, if known
-            wnckWin                     => undef,
             # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
             #   FALSE if not
             enabledFlag                 => FALSE,
-            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            # Flag set to TRUE if the Gtk3 window itself is visible (after a call to
             #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
             visibleFlag                 => TRUE,
             # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
@@ -17319,8 +17345,8 @@
             #       (sub_name, argument_list_ref, sub_name, argument_list_ref...)
             childDestroyHash            => {},
 
-            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
-            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            # The container widget into which all other widgets are packed (usually a Gtk3::VBox or
+            #   Gtk3::HBox, but any container widget can be used; takes up the whole window client
             #   area)
             packingBox                  => undef,
 
@@ -17640,7 +17666,7 @@
             # Flag set to TRUE if the main container widget, stored in $self->packingBox, should be
             #   allowed to accept the focus, FALSE if not. The restriction is applied during the
             #   call to GA::Win::Internal->drawWidgets and ->addStripObj. Even if FALSE, widgets in
-            #   the container widget can be set to accept the focus (e.g. the Gtk2::Entry in
+            #   the container widget can be set to accept the focus (e.g. the Gtk3::Entry in
             #   GA::Strip::MenuBar)
             allowFocusFlag              => FALSE,
 
@@ -17658,15 +17684,15 @@
             #   to $self->objEnable()
             funcID                      => undef,
 
-            # The container widget for this strip object (usually a Gtk2::HBox or Gtk2::VBox). This
-            #   widget is the one added to the window's main Gtk2::HBox or Gtk2::VBox
+            # The container widget for this strip object (usually a Gtk3::HBox or Gtk3::VBox). This
+            #   widget is the one added to the window's main Gtk3::HBox or Gtk3::VBox
             packingBox                  => undef,
 
             # Other IVs
             # ---------
 
             # Widgets
-#           button                      => undef,       # Gtk2::Button
+#           button                      => undef,       # Gtk3::Button
 
             # Everything else
 
@@ -17707,12 +17733,12 @@
              return $axmud::CLIENT->writeImproper($self->_objClass . '->objEnable', @_);
         }
 
-        # Create a Gtk2::VBox (or a Gtk2::HBox) to contain one or more Gtk2 widgets
-        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        # Create a Gtk3::VBox (or a Gtk3::HBox) to contain one or more Gtk3 widgets
+        my $packingBox = Gtk3::VBox->new(FALSE, 0);
         $packingBox->set_border_width(0);
 
         # Add a widget
-#        my $button = Gtk2::Button->new($name);
+#        my $button = Gtk3::Button->new($name);
 #        $packingBox->pack_start($button, FALSE, FALSE, 0);
 
         # Update IVs
@@ -17853,7 +17879,7 @@
     sub notify_addTableObj {
 
         # Called by GA::Strip::Table->addTableObj whenever a table object is added to the window's
-        #   Gtk2::Table
+        #   Gtk3::Grid
 
         my ($self, $tableObj, $check) = @_;
 
@@ -17871,7 +17897,7 @@
     sub notify_removeTableObj {
 
         # Called by GA::Strip::Table->removeTableObj whenever a table object is removed from the
-        #   window's Gtk2::Table
+        #   window's Gtk3::Grid
 
         my ($self, $tableObj, $check) = @_;
 
@@ -18005,7 +18031,7 @@
         #   $stripObj   - The parent strip object (GA::Strip::Table). 'temp' for temporary strip
         #                   objects
         #   $zoneObj    - The tablezone object (GA::Obj::Tablezone) which marks out an area of the
-        #                   parent strip object's Gtk2::Table for use exclusively by this table
+        #                   parent strip object's Gtk3::Grid for use exclusively by this table
         #                   object. 'temp' for temporary strip objects
         #
         # Optional arguments
@@ -18092,15 +18118,15 @@
             #   temporary table objects
             winObj                      => $stripObj->winObj,
             # The tablezone object (GA::Obj::Tablezone) which marks out an area of the parent strip
-            #   object's Gtk2::Table for use exclusively by this table object. 'temp' for temporary
+            #   object's Gtk3::Grid for use exclusively by this table object. 'temp' for temporary
             #   table objects
             zoneObj                     => $zoneObj,
 
-            # Flag set to TRUE if this table object can be deleted from the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be deleted from the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be deleted (except in a few circumstances, such as
             #   when a connection to a world terminates)
             allowRemoveFlag             => TRUE,
-            # Flag set to TRUE if this table object can be resized on the Gtk2::Table, once it is
+            # Flag set to TRUE if this table object can be resized on the Gtk3::Grid, once it is
             #   created. Set to FALSE if it can't be resized
             allowResizeFlag             => TRUE,
             # Initialisation settings stored as a hash (see the comments above)
@@ -18119,19 +18145,19 @@
 
             # The container widget(s) for this table object
             # If a frame title is not required, both IVs are set to the same container widget
-            #   (usually a Gtk2::HBox or Gtk2::VBox)
-            # If a frame title is required, ->packingBox is set to a Gtk2::Frame, ->packingBox2 is
-            #   set to a different container widget (a Gtk2::HBox, etc). ->packingBox is packed into
-            #   the parent strip object's Gtk2::Table. ->packingBox2 contains all the other widgets
+            #   (usually a Gtk3::HBox or Gtk3::VBox)
+            # If a frame title is required, ->packingBox is set to a Gtk3::Frame, ->packingBox2 is
+            #   set to a different container widget (a Gtk3::HBox, etc). ->packingBox is packed into
+            #   the parent strip object's Gtk3::Grid. ->packingBox2 contains all the other widgets
             #   for this table object. ->packingBox2 is packed inside ->packingBox
-            packingBox                  => undef,       # Gtk2::HBox (etc) or Gtk2::Frame
-            packingBox2                 => undef,       # Gtk2::HBox (etc)
+            packingBox                  => undef,       # Gtk3::HBox (etc) or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::HBox (etc)
 
             # Other IVs
             # ---------
 
             # Widgets
-#           button                      => undef,       # Gtk2::Button
+#           button                      => undef,       # Gtk3::Button
 
             # Everything else
 
@@ -18171,12 +18197,12 @@
              return $axmud::CLIENT->writeImproper($self->_objClass . '->objEnable', @_);
         }
 
-        # Create a packing box; it is this object which is placed onto the Gtk2::Table
-        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        # Create a packing box; it is this object which is placed onto the Gtk3::Grid
+        my $packingBox = Gtk3::VBox->new(FALSE, 0);
         $packingBox->set_border_width(0);
 
         # Add a widget
-#        my $button = Gtk2::Button->new($name);
+#        my $button = Gtk3::Button->new($name);
 #        $packingBox->pack_start($button, FALSE, FALSE, 0);
 
         # Update IVs
@@ -18274,7 +18300,7 @@
 
         # Called by GA::Strip::Table->resizeTableObj
         # Allows this table object to update its widgets whenever the table object is resized on its
-        #   Gtk2::Table
+        #   Gtk3::Grid
         #
         # Expected arguments
         #   $left, $right, $top, $bottom
@@ -18308,15 +18334,15 @@
 
         # Called by $self->objEnable
         # If a frame title is required, we need two packing boxes, rather than the usual one. The
-        #   Gtk2::Frame (stored in $self->packingBox) is added to the parent strip object's
-        #   Gtk2::Table, but this object's widgets are packed into the usual container widget
+        #   Gtk3::Frame (stored in $self->packingBox) is added to the parent strip object's
+        #   Gtk3::Grid, but this object's widgets are packed into the usual container widget
         #   (stored in $self->packingBox2)
         # If a frame title is not required, $self->packingBox and ->packingBox2 refer to the same
         #   widget - the one passed to this function as an argument
         #
         # Expected arguments
         #   $container  - The container widget created by the calling function (usually a
-        #                   Gtk2::HBox or Gtk2::VBox)
+        #                   Gtk3::HBox or Gtk3::VBox)
         #
         # Return values
         #   An empty list on improper arguments
@@ -18340,7 +18366,7 @@
 
         if ($self->ivShow('initHash', 'frame_title')) {
 
-            $packingBox = Gtk2::Frame->new($self->ivShow('initHash', 'frame_title'));
+            $packingBox = Gtk3::Frame->new($self->ivShow('initHash', 'frame_title'));
             $packingBox->set_border_width(0);
 
             $packingBox2 = $container;
@@ -18396,7 +18422,7 @@
     sub testJustify {
 
         # Can be called by anything
-        # Converts a value into a Gtk2::Justification. The specified value is case-insensitive.
+        # Converts a value into a Gtk3::Justification. The specified value is case-insensitive.
         #   If no value is specified, converts the specified default value. If neither a value
         #   nor a default value are specified, returns 'GTK_JUSTIFY_LEFT'. If the value (or default
         #   value, if required) is not valid, returns 'GTK_JUSTIFY_LEFT'
@@ -18413,12 +18439,12 @@
         #
         # Optional arguments
         #   $value          - One of the values described above, or 'undef'
-        #   $defaultValue   - The default value to use, should be either a Gtk2::Justification or
+        #   $defaultValue   - The default value to use, should be either a Gtk3::Justification or
         #                       'undef'
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns a Gtk2::Justification
+        #   Otherwise returns a Gtk3::Justification
 
         my ($self, $value, $defaultValue, $check) = @_;
 
@@ -18455,7 +18481,7 @@
     sub testAlign {
 
         # Can be called by anything
-        # Converts a value into an alignment used by several Gtk2 widgets, a fractional value in the
+        # Converts a value into an alignment used by several Gtk3 widgets, a fractional value in the
         #   range 0-1. If no value is specified, converts the specified default value. If neither a
         #   value nor a default value are specified, returns 0. If the value (or default value, if
         #   required) is not valid, returns 0
@@ -18499,19 +18525,19 @@
     sub testStock {
 
         # Can be called by anything
-        # Checks a Gtk2::Stock like 'gtk-yes' or 'gtk-save' (case-insensitive). If it's valid,
+        # Checks a Gtk3::Stock like 'gtk-yes' or 'gtk-save' (case-insensitive). If it's valid,
         #   returns it (converted to all lower-case); if it's not valid, returns 'undef'. If no
-        #   Gtk2::Stock is specified, returns 'undef'
+        #   Gtk3::Stock is specified, returns 'undef'
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Optional arguments
-        #   $stock          - A Gtk2::Stock, or 'undef'
+        #   $stock          - A Gtk3::Stock, or 'undef'
         #
         # Return values
         #   'undef' on improper arguments, if $stock is invalid or if $stock is 'undef'
-        #   Otherwise returns a Gtk2::Stock
+        #   Otherwise returns a Gtk3::Stock
 
         my ($self, $stock, $check) = @_;
 
@@ -18529,7 +18555,7 @@
             return undef;
         }
 
-        @list = Gtk2::Stock->list_ids();
+        @list = Gtk3::Stock->list_ids();
         foreach my $item (@list) {
 
             if (lc($stock) eq $item) {
@@ -18585,7 +18611,7 @@
     sub testIconValue {
 
         # Can be called by anything, but probably called by GA::Table::Entry->objEnable to set the
-        #   Gtk2::Entry icon
+        #   Gtk3::Entry icon
         # Checks whether some value is an acceptable value, given a specified value type, value
         #   minimum and/or value maximum
         #
@@ -18723,7 +18749,7 @@
     sub notify_addTableObj {
 
         # Called by GA::Strip::Table->addTableObj whenever a table object is added to the window's
-        #   Gtk2::Table
+        #   Gtk3::Grid
 
         my ($self, $tableObj, $check) = @_;
 
@@ -18741,7 +18767,7 @@
     sub notify_removeTableObj {
 
         # Called by GA::Strip::Table->removeTableObj whenever a table object is removed from the
-        #   window's Gtk2::Table
+        #   window's Gtk3::Grid
 
         my ($self, $tableObj, $check) = @_;
 
@@ -18828,7 +18854,7 @@
             $text = '';
         }
 
-        if ($self->packingBox->isa('Gtk2::Frame')) {
+        if ($self->packingBox->isa('Gtk3::Frame')) {
 
             $self->packingBox->set_label($text);
         }
@@ -21206,17 +21232,17 @@
 
         # Usually called by a ->signal_connect in GA::Strip::Entry->setEntrySignals or in
         #   GA::Table::Entry->setActivateEvent, when the user types something in the strip/table
-        #   object's Gtk2::Entry and presses RETURN
+        #   object's Gtk3::Entry and presses RETURN
         # This generic function just displays the typed text in the task window's default tab;
         #   other tasks can write their own ->entryCallback as required
         #
         # Expected arguments
-        #   $obj        - The strip or table object whose Gtk2::Entry was used
-        #   $entry      - The Gtk2::Entry itself
+        #   $obj        - The strip or table object whose Gtk3::Entry was used
+        #   $entry      - The Gtk3::Entry itself
         #
         # Optional arguments
         #   $id         - A value passed to the table object that identifies the particular
-        #                   Gtk2::Entry used (in case the table object uses multiple entries). By
+        #                   Gtk3::Entry used (in case the table object uses multiple entries). By
         #                   default, $self->openWin sets $id to the same as $self->uniqueName;
         #                   could be an 'undef' value otherwise
         #   $text       - The text typed in the entry by the user (should not be 'undef')
@@ -22382,7 +22408,7 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $flag   - If set to TRUE, this window's urgency hint is only set, if Gtk2 reports that
+        #   $flag   - If set to TRUE, this window's urgency hint is only set, if Gtk3 reports that
         #               it is not currently set. If set to FALSE (or 'undef'), this function sets
         #               the window's urgency hint regardless
         #
@@ -22421,7 +22447,7 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $flag   - If set to TRUE, this window's urgency hint is only reset, if Gtk2 reports that
+        #   $flag   - If set to TRUE, this window's urgency hint is only reset, if Gtk3 reports that
         #               it is currently set. If set to FALSE (or 'undef'), this function resets
         #               the window's urgency hint regardless
         #
@@ -22463,7 +22489,7 @@
 
         # Can be called by any function (often after creating a 'dialogue' window or after
         #   re-stacking 'grid' windows)
-        # Activates this window object's Gtk2::Window, if it is known. For 'internal' windows,
+        # Activates this window object's Gtk3::Window, if it is known. For 'internal' windows,
         #   returns the focus to the entry box in the 'Games::Axmud::Strip::Entry' strip object, if
         #   there is one
         #
@@ -22485,27 +22511,39 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->restoreFocus', @_);
         }
 
-        # Activate the Gtk2::Window, if it is known (for pseudo-windows, activate the parent window)
-        if (! $self->winWidget) {
+        # Activate the Gtk3::Window, if it is known (for pseudo-windows, activate the parent window)
+        if ($self->winType eq 'external') {
 
-            return undef;
+            # Activate the window
+            $axmud::CLIENT->desktopObj->wmCtrlObj->wmctrl(
+                '-a',
+                $self->internalID,
+                '-i',
+            );
 
         } else {
 
-            $self->winWidget->present();
-        }
+            if (! $self->winWidget) {
 
-        # For 'internal' windows, returns the focus to the entry box in the
-        #   'Games::Axmud::Strip::Entry' strip object, if there is one
-        if (
-            $self->winType eq 'main'
-            || $self->winType eq 'protocol'
-            || $self->winType eq 'custom'
-        ) {
-            $stripObj = $self->ivShow('firstStripHash', 'Games::Axmud::Strip::Entry');
-            if ($stripObj) {
+                return undef;
 
-                $stripObj->entry->grab_focus();
+            } else {
+
+                $self->winWidget->present();
+            }
+
+            # For 'internal' windows, returns the focus to the entry box in the
+            #   'Games::Axmud::Strip::Entry' strip object, if there is one
+            if (
+                $self->winType eq 'main'
+                || $self->winType eq 'protocol'
+                || $self->winType eq 'custom'
+            ) {
+                $stripObj = $self->ivShow('firstStripHash', 'Games::Axmud::Strip::Entry');
+                if ($stripObj) {
+
+                    $stripObj->entry->grab_focus();
+                }
             }
         }
 
@@ -22515,7 +22553,7 @@
     sub setVisible {
 
         # Can be called by any function
-        # Makes the Gtk2::Window itself visible, and sets a flag so that calls to $self->winShowAll
+        # Makes the Gtk3::Window itself visible, and sets a flag so that calls to $self->winShowAll
         #   are carried out
         #
         # Expected arguments
@@ -22549,7 +22587,7 @@
     sub setInvisible {
 
         # Can be called by any function
-        # Makes the Gtk2::Window itself invisible, and sets a flag so that calls to
+        # Makes the Gtk3::Window itself invisible, and sets a flag so that calls to
         #   $self->winShowAll are ignored until the window is made visible again (via a call to
         #   $self->setVisible)
         #
@@ -22578,6 +22616,71 @@
             $self->ivPoke('visibleFlag', FALSE);
 
             return 1;
+        }
+    }
+
+    sub minimise {
+
+        # Can be called by anything
+        # Minimises the window
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the window can't be minimised
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->minimise', @_);
+        }
+
+        if (! $self->winWidget) {
+
+            return undef;
+
+        } else {
+
+            $self->winWidget->iconify();
+            return 1
+        }
+    }
+
+    sub unminimise {
+
+        # Can be called by anything
+        # Minimises the window
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the window can't be unminimised
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->unminimise', @_);
+        }
+
+        if (! $self->winWidget) {
+
+            return undef;
+
+        } else {
+
+            $self->winWidget->deiconify();
+            # (On Linux, un-minimising the window doesn't work reliably without this line)
+            $self->winWidget->present();
+
+            return 1
         }
     }
 
@@ -22839,24 +22942,27 @@
 
     sub addDialogueIcon {
 
-        # Called by many of the following functions that open some kind of Gtk2::Dialogue
-        # Takes the 'dialogue' window's main Gtk2::VBox, and splits it (using a Gtk2::HBox) into
-        #   two, with a standard icon on the left, and a new Gtk2::VBox on the right
+        # Called by many of the following functions that open some kind of Gtk3::Dialogue
+        # Takes the 'dialogue' window's main Gtk3::VBox, and splits it (using a Gtk3::HBox) into
+        #   two, with a standard icon on the left, and a new Gtk3::VBox on the right
         # Makes a simple 'dialogue' window look a lot nicer (see $self->showEntryDialogue for an
         #   example of how it works)
         #
         # Expected arguments
-        #   $vBox   - The 'dialogue' window's main Gtk2::VBox
+        #   $vBox           - The 'dialogue' window's main Gtk3::VBox
         #
         # Optional arguments
-        #   $path   - Full filepath to an image file to use; if 'undef' or the file doesn't exist,
-        #               the standard icon is used
+        #   $path           - Full filepath to an image file to use; if 'undef' or the file doesn't
+        #                       exist, the standard icon is used
+        #   $noFrameFlag    - TRUE if the image should be drawn without an enclosing frame, FALSE
+        #                       (or 'undef') otherwise. (Set to TRUE when called by
+        #                       $self->showMsgDialogue)
         #
         # Return values
         #   'undef' on improper arguments
         #   Otherwise returns the new VBox, contained within the existing main one
 
-        my ($self, $vBox, $path, $check) = @_;
+        my ($self, $vBox, $path, $noFrameFlag, $check) = @_;
 
         # Local variables
         my $spacing;
@@ -22871,27 +22977,39 @@
         $spacing = $axmud::CLIENT->constFreeSpacingPixels;
 
         # Draw widgets
-        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        my $hBox = Gtk3::HBox->new(FALSE, 0);
         $vBox->pack_start($hBox, TRUE, TRUE, 0);
 
-        my $vBox2 = Gtk2::VBox->new(FALSE, 0);
+        my $vBox2 = Gtk3::VBox->new(FALSE, 0);
         $hBox->pack_start($vBox2, TRUE, TRUE, $spacing);
 
-        my $vBox3 = Gtk2::VBox->new(FALSE, 0);
+        my $vBox3 = Gtk3::VBox->new(FALSE, 0);
         $hBox->pack_start($vBox3, TRUE, TRUE, $spacing);
 
-        my $frame = Gtk2::Frame->new(undef);
-        $vBox2->pack_start($frame, FALSE, FALSE, $spacing);
-        $frame->set_size_request(64, 64);
-        $frame->set_shadow_type('etched-in');
+        if (! $noFrameFlag) {
 
-        if (! $path || ! -e $path) {
+            # (This code block is designed for Axmud icons, sized 64x64 and above)
+            my $frame = Gtk3::Frame->new(undef);
+            $vBox2->pack_start($frame, FALSE, FALSE, $spacing);
+            $frame->set_size_request(64, 64);
+            $frame->set_shadow_type('etched-in');
 
-            $path = $axmud::CLIENT->getDialogueIcon();
+            if (! $path || ! -e $path) {
+
+                $path = $axmud::CLIENT->getDialogueIcon();
+            }
+
+            my $image = Gtk3::Image->new_from_file($path);
+            $frame->add($image);
+
+        } else {
+
+            # (This code block is designed for the Gtk dialogue icon replacements, sized 32x32)
+            $vBox2->set_size_request(48, 48);
+
+            my $image = Gtk3::Image->new_from_file($path);
+            $vBox2->pack_start($image, FALSE, FALSE, $spacing);
         }
-
-        my $image = Gtk2::Image->new_from_file($path);
-        $frame->add($image);
 
         return $vBox3;
     }
@@ -22899,7 +23017,7 @@
     sub showMsgDialogue {
 
         # Can be called by any function
-        # Creates a standard Gtk2::MessageDialog and returns the response (if any)
+        # Creates a standard Gtk3::MessageDialog and returns the response (if any)
         #
         # Expected arguments
         #   $title          - The title to display, e.g. 'File Save'
@@ -22910,6 +23028,10 @@
         # Optional arguments
         #   $defaultResponse
         #                   - If defined, the default button ('yes', 'no', etc)
+        #   $noSplitFlag    - If TRUE, the message $text is not automatically split into shorter
+        #                       lines (because the calling function has already added newline
+        #                       characters as it requires). If FALSE (or 'undef'), the message
+        #                       $text is split into lines of no more than 40 characters
         #
         # Return values
         #   'undef' on improper arguments, or if unrecognised values for $icon and/or $buttonType
@@ -22917,12 +23039,12 @@
         #   Otherwise returns the user response (e.g. returns 'yes' if the user clicks on the 'yes'
         #       button)
 
-        my ($self, $title, $icon, $text, $buttonType, $defaultResponse, $check) = @_;
+        my ($self, $title, $icon, $text, $buttonType, $defaultResponse, $noSplitFlag, $check) = @_;
 
         # Local variables
         my (
-            $response,
-            @list,
+            $spacing, $response,
+            @argList, @list,
             %buttonHash,
         );
 
@@ -22941,6 +23063,9 @@
             $self->closeDialogueWin($axmud::CLIENT->busyWin);
         }
 
+        # Set the correct spacing size for 'dialogue' windows
+        $spacing = $axmud::CLIENT->constFreeSpacingPixels;
+
         # Check that $icon and $buttonType are valid values
         if (
             $icon ne 'info' && $icon ne 'warning' && $icon ne 'error' && $icon ne 'question'
@@ -22949,11 +23074,21 @@
                 'Unrecognised value \'' . $icon . '\' for icon argument',
                 $self->_objClass . '->showMsgDialogue',
             );
+        }
 
-        } elsif (
-            $buttonType ne 'none' && $buttonType ne 'ok' && $buttonType ne 'close'
-            && $buttonType ne 'cancel' && $buttonType ne 'yes-no' && $buttonType ne 'ok-cancel'
-        ) {
+        # Convert $buttonType into an argument list
+        if ($buttonType eq 'ok') {
+            @argList = ('gtk-ok', 'ok');
+        } elsif ($buttonType eq 'close') {
+            @argList = ('gtk-close', 'close');
+        } elsif ($buttonType eq 'cancel') {
+            @argList = ('gtk-cancel', 'cancel');
+        } elsif ($buttonType eq 'yes-no') {
+            @argList = ('gtk-no', 'no', 'gtk-yes', 'yes');
+        } elsif ($buttonType eq 'ok-cancel') {
+            @argList = ('gtk-cancel', 'cancel', 'gtk-ok', 'ok');
+        } elsif ($buttonType ne 'none') {
+
             return $axmud::CLIENT->writeError(
                 'Unrecognised value \'' . $icon . '\' for button type argument',
                 $self->_objClass . '->showMsgDialogue',
@@ -22961,29 +23096,15 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::MessageDialog->new_with_markup(
+        my $dialogueWin = Gtk3::Dialog->new(
+            $title,
             $self->winWidget,
-            [qw/destroy-with-parent/],
-            $icon,
-            $buttonType,
-            Glib::Markup::escape_text($text),   # In case $text contains < or > characters, etc
+            [qw/modal destroy-with-parent/],
+            @argList,
         );
 
-        # For the benefit of visually-impaired users who are using the 'tab' key to switch buttons,
-        #   don't allow the label to receive focus
-        foreach my $label ($dialogueWin->get_message_area->get_children()) {
-
-            $label->can_focus(FALSE);
-        }
-
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_title($title);
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
-
-        if (defined $defaultResponse) {
-
-            $dialogueWin->set_default_response($defaultResponse);
-        }
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -22995,6 +23116,54 @@
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showMsgDialogue');
         });
 
+        # Set the default response, if specified
+        if (defined $defaultResponse) {
+
+            $dialogueWin->set_default_response($defaultResponse);
+        }
+
+        # Add widgets to the 'dialogue' window
+        my $vBox = $dialogueWin->get_content_area();
+        # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
+        #   Gtk3::VBox on the right, into which we put everything
+        my $vBox2 = $self->addDialogueIcon(
+            $vBox,
+            $axmud::SHARE_DIR . '/icons/replace/dialogue_replace_' . $icon . '.png',
+            TRUE,               # Don't draw the image inside a frame
+        );
+
+        my $label = Gtk3::Label->new();
+        $vBox2->pack_start($label, FALSE, FALSE, $spacing);
+        $label->set_alignment(0, 0);
+
+        # If $text is long, it produces a wider window than was produced in earlier version of Gtk.
+        #   This doesn't look very nice, so split $text into lines with a maximum length
+        # At the same time, we need to escape any < or > characters, or we'll get a Pango error)
+        if (! $noSplitFlag) {
+
+            $label->set_markup(
+                Glib::Markup::escape_text(
+                    $axmud::CLIENT->splitText(
+                        $text,
+                        0,                  # No maximum rows
+                        $axmud::CLIENT->constDialogueLabelSize,
+                                            # Maximum characters per line
+                        FALSE,              # No ellipsis required
+                        TRUE,               # Don't use hyphens when splitting words
+                    )
+                ),
+            );
+
+        } else {
+
+            # Calling function has already added newline characters, so no split required
+            $label->set_markup(Glib::Markup::escape_text($text));
+        }
+
+        # For the benefit of visually-impaired users who are using the 'tab' key to switch buttons,
+        #   don't allow the label to receive focus
+        $label->set_can_focus(FALSE);
+
         # Display the 'dialogue' window. Without this combination of Gtk calls, the window is not
         #   consistently active (don't know why this works; it just does)
         $dialogueWin->show_all();
@@ -23002,7 +23171,7 @@
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showComboDialogue');
 
         # Prepare text-to-speech (TTS) code. Get a hash of possible response buttons, in the form
-        #   $buttonHash{'response'} = Gtk2::Button (if the button is used), or 'undef' (if not)
+        #   $buttonHash{'response'} = Gtk3::Button (if the button is used), or 'undef' (if not)
         %buttonHash = (
             'ok', $dialogueWin->get_widget_for_response('ok'),
             'close', $dialogueWin->get_widget_for_response('close'),
@@ -23094,7 +23263,7 @@
     sub showFileChooser {
 
         # Can be called by any function
-        # Creates a standard Gtk2::FileChooserDialog and returns the response (if any)
+        # Creates a standard Gtk3::FileChooserDialog and returns the response (if any)
         #
         # Expected arguments
         #   $title          - The title of the window, e.g. 'Select file to load'
@@ -23141,7 +23310,7 @@
         }
 
         # Open the file chooser window
-        my $dialogueWin = Gtk2::FileChooserDialog->new(
+        my $dialogueWin = Gtk3::FileChooserDialog->new(
             $title,
             $self->winWidget,
             $type,
@@ -23155,7 +23324,7 @@
         }
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -23233,12 +23402,10 @@
         #   $entryText      - The initial text to put in the entry box (if 'undef', no initial text)
         #   $obscureMode    - If set to TRUE, text in the entry box is obscured. If set to FALSE (or
         #                       'undef'), text is visible
-        #   $bareFlag       - The value of $text is normally modified to remove any '<' and '>'
-        #                       characters which might cause a pango error. If this flag is set to
-        #                       TRUE, they are not removed, on the understanding that the calling
-        #                       function wants to display bold/italics tags (<b> and </i>, etc). If
-        #                       set to FALSE (or 'undef'), the '<' and '>' characters are removed as
-        #                       normal
+        #   $noSplitFlag    - If TRUE, the message $text is not automatically split into shorter
+        #                       lines (because the calling function has already added newline
+        #                       characters as it requires). If FALSE (or 'undef'), the message
+        #                       $text is split into lines of no more than 40 characters
         #   $singleFlag     - Set when called by GA::CLIENT->connectBlind (or by any other code that
         #                       might want to remove the 'Cancel' button). If TRUE, only an 'OK'
         #                       button is used. If FALSE (or 'undef'), both an 'OK' and 'Cancel'
@@ -23249,8 +23416,8 @@
         #   Otherwise returns the user response (the contents of the entry box)
 
         my (
-            $self, $title, $text, $maxChars, $entryText, $obscureMode, $bareFlag,
-            $singleFlag, $check,
+            $self, $title, $text, $maxChars, $entryText, $obscureMode, $noSplitFlag, $singleFlag,
+            $check
         ) = @_;
 
         # Local variables
@@ -23279,7 +23446,7 @@
         my $dialogueWin;
         if ($singleFlag) {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -23288,7 +23455,7 @@
 
         } else {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -23298,7 +23465,7 @@
         }
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -23310,32 +23477,41 @@
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showEntryDialogue');
         });
 
-        # For the benefit of Pango, replace any diamond bracket (< or >) characters with normal
-        #   brackets
-        if (! $bareFlag) {
-
-            $text =~ s/\</(/g;
-            $text =~ s/\>/)/g;
-        }
-
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $vBox2->pack_start($label, FALSE, FALSE, $spacing);
         $label->set_alignment(0, 0);
-        $label->set_markup($text);
+        if (! $noSplitFlag) {
 
-        my $entry;
-        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
-            $entry = Gtk2::Entry->new_with_max_length($maxChars);
+            $label->set_markup(
+                Glib::Markup::escape_text(
+                    $axmud::CLIENT->splitText(
+                        $text,
+                        0,                  # No maximum rows
+                        $axmud::CLIENT->constDialogueLabelSize,
+                                            # Maximum characters per line
+                        FALSE,              # No ellipsis required
+                        TRUE,               # Don't use hyphens when splitting words
+                    )
+                ),
+            );
+
         } else {
-            $entry = Gtk2::Entry->new();
+
+            $label->set_markup(Glib::Markup::escape_text($text));
         }
+
+        my $entry = Gtk3::Entry->new();
         $vBox2->pack_start($entry, FALSE, FALSE, $spacing);
+        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
+
+            $entry->set_max_length($maxChars);
+        }
 
         if ($obscureMode) {
 
@@ -23404,7 +23580,7 @@
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showEntryDialogue');
 
         # Prepare text-to-speech (TTS) code. Get a hash of the response buttons, in the form
-        #   $buttonHash{'response'} = Gtk2::Button
+        #   $buttonHash{'response'} = Gtk3::Button
         $buttonHash{'ok'} =  $dialogueWin->get_widget_for_response('accept');
         if (! $singleFlag) {
 
@@ -23550,12 +23726,10 @@
         #                       - 'first'                - first box is obscured
         #                       - 'second'               - second box is obscured
         #                       - 'both'                 - both boxes are obscured
-        #   $bareFlag       - The contents of $labelText, $labelText2 and $labelText3 are normally
-        #                       modified to remove any '<' and '>' characters which might cause a
-        #                       pango error. If this flag is set to TRUE, they are not removed, on
-        #                       the understanding that the calling function wants to display bold/
-        #                       italics tags (<b> and </i>, etc). If set to FALSE (or 'undef'),
-        #                       the '<' and '>' characters are removed as normal
+        #   $noSplitFlag    - If TRUE, the message $text is not automatically split into shorter
+        #                       lines (because the calling function has already added newline
+        #                       characters as it requires). If FALSE (or 'undef'), the message
+        #                       $text is split into lines of no more than 40 characters
         #
         # Return values
         #   An empty list on improper arguments or if the user doesn't enter some text in either
@@ -23563,8 +23737,7 @@
         #   Otherwise a list of two elements, containing the text in both entry boxes
 
         my (
-            $self, $title, $labelText, $labelText2, $maxChars, $obscureMode,
-            $bareFlag, $check,
+            $self, $title, $labelText, $labelText2, $maxChars, $obscureMode, $noSplitFlag, $check
         ) = @_;
 
         # Local variables
@@ -23591,7 +23764,7 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::Dialog->new(
+        my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
             [qw/modal destroy-with-parent/],
@@ -23600,7 +23773,7 @@
         );
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -23610,56 +23783,77 @@
             return @emptyList;
         });
 
-        # For the benefit of Pango, replace any diamond bracket (< or >) characters with normal
-        #   brackets
-        if (! $bareFlag) {
-
-            $labelText =~ s/\</(/g;
-            $labelText =~ s/\>/)/g;
-
-            if ($labelText2) {
-
-                $labelText2 =~ s/\</(/g;
-                $labelText2 =~ s/\>/)/g;
-            }
-        }
-
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
         # First label and entry
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $vBox2->pack_start($label, FALSE, FALSE, $spacing);
         $label->set_alignment(0, 0);
-        $label->set_markup($labelText);
+        if (! $noSplitFlag) {
 
-        my $entry;
-        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
-            $entry = Gtk2::Entry->new_with_max_length($maxChars);
+            $label->set_markup(
+                Glib::Markup::escape_text(
+                    $axmud::CLIENT->splitText(
+                        $labelText,
+                        0,                  # No maximum rows
+                        $axmud::CLIENT->constDialogueLabelSize,
+                                            # Maximum characters per line
+                        FALSE,              # No ellipsis required
+                        TRUE,               # Don't use hyphens when splitting words
+                    )
+                ),
+            );
+
         } else {
-            $entry = Gtk2::Entry->new();
+
+            $label->set_markup(Glib::Markup::escape_text($labelText));
         }
+
+        my $entry = Gtk3::Entry->new();
         $vBox2->pack_start($entry, FALSE, FALSE, $spacing);
+        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
+
+            $entry->set_max_length($maxChars);
+        }
 
         # Second label and entry
         if ($labelText2) {
 
-            my $label2 = Gtk2::Label->new();
+            my $label2 = Gtk3::Label->new();
             $vBox2->pack_start($label2, FALSE, FALSE, $spacing);
             $label2->set_alignment(0, 0);
-            $label2->set_markup($labelText2);
+
+            if (! $noSplitFlag) {
+
+                $label2->set_markup(
+                    Glib::Markup::escape_text(
+                        $axmud::CLIENT->splitText(
+                            $labelText2,
+                            0,                  # No maximum rows
+                            $axmud::CLIENT->constDialogueLabelSize,
+                                                # Maximum characters per line
+                            FALSE,              # No ellipsis required
+                            TRUE,               # Don't use hyphens when splitting words
+                        )
+                    ),
+                );
+
+            } else {
+
+                $label2->set_markup(Glib::Markup::escape_text($labelText2));
+            }
         }
 
-        my $entry2;
-        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
-            $entry2 = Gtk2::Entry->new_with_max_length($maxChars);
-        } else {
-            $entry2 = Gtk2::Entry->new();
-        }
+        my $entry2 = Gtk3::Entry->new();
         $vBox2->pack_start($entry2, FALSE, FALSE, $spacing);
+        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
+
+            $entry2->set_max_length($maxChars);
+        }
 
         # Obscure text in the entry boxes, if necessary
         if ($obscureMode && $obscureMode ne 'default') {
@@ -23734,12 +23928,10 @@
         #                       - 5                 - first/third boxes are obscured (101)
         #                       - 6                 - second/third boxes are obscured (110)
         #                       - 7                 - all boxes are obscured (111)
-        #   $bareFlag       - The contents of $labelText, $labelText2 and $labelText3 are normally
-        #                       modified to remove any '<' and '>' characters which might cause a
-        #                       pango error. If this flag is set to TRUE, they are not removed, on
-        #                       the understanding that the calling function wants to display bold/
-        #                       italics tags (<b> and </i>, etc). If set to FALSE (or 'undef'),
-        #                       the '<' and '>' characters are removed as normal
+        #   $noSplitFlag    - If TRUE, the message $text is not automatically split into shorter
+        #                       lines (because the calling function has already added newline
+        #                       characters as it requires). If FALSE (or 'undef'), the message
+        #                       $text is split into lines of no more than 40 characters
         #
         # Return values
         #   An empty list on improper arguments or if the user doesn't enter some text in either
@@ -23747,8 +23939,8 @@
         #   Otherwise a list of three elements, containing the text in both entry boxes
 
         my (
-            $self, $title, $labelText, $labelText2, $labelText3, $maxChars, $obscureMode, $bareFlag,
-            $check,
+            $self, $title, $labelText, $labelText2, $labelText3, $maxChars, $obscureMode,
+            $noSplitFlag, $check,
         ) = @_;
 
         # Local variables
@@ -23775,7 +23967,7 @@
         $spacing = $axmud::CLIENT->constFreeSpacingPixels;
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::Dialog->new(
+        my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
             [qw/modal destroy-with-parent/],
@@ -23784,7 +23976,7 @@
         );
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -23794,79 +23986,112 @@
             return @emptyList;
         });
 
-        # For the benefit of Pango, replace any diamond bracket (< or >) characters with normal
-        #   brackets
-        if (! $bareFlag) {
-
-            $labelText =~ s/\</(/g;
-            $labelText =~ s/\>/)/g;
-
-            if ($labelText2) {
-
-                $labelText2 =~ s/\</(/g;
-                $labelText2 =~ s/\>/)/g;
-            }
-
-            if ($labelText3) {
-
-                $labelText3 =~ s/\</(/g;
-                $labelText3 =~ s/\>/)/g;
-            }
-        }
-
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
         # First label and entry
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $vBox2->pack_start($label, FALSE, FALSE, $spacing);
         $label->set_alignment(0, 0);
-        $label->set_markup($labelText);
+        if (! $noSplitFlag) {
 
-        my $entry;
-        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
-            $entry = Gtk2::Entry->new_with_max_length($maxChars);
+            $label->set_markup(
+                Glib::Markup::escape_text(
+                    $axmud::CLIENT->splitText(
+                        $labelText,
+                        0,                  # No maximum rows
+                        $axmud::CLIENT->constDialogueLabelSize,
+                                            # Maximum characters per line
+                        FALSE,              # No ellipsis required
+                        TRUE,               # Don't use hyphens when splitting words
+                    )
+                ),
+            );
+
         } else {
-            $entry = Gtk2::Entry->new();
+
+            $label->set_markup(Glib::Markup::escape_text($labelText));
         }
+
+        my $entry = Gtk3::Entry->new();
         $vBox2->pack_start($entry, FALSE, FALSE, $spacing);
+        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
+
+            $entry->set_max_length($maxChars);
+        }
 
         # Second label and entry
         if ($labelText2) {
 
-            my $label2 = Gtk2::Label->new();
+            my $label2 = Gtk3::Label->new();
             $vBox2->pack_start($label2, FALSE, FALSE, $spacing);
             $label2->set_alignment(0, 0);
-            $label2->set_markup($labelText2);
+
+            if (! $noSplitFlag) {
+
+                $label2->set_markup(
+                    Glib::Markup::escape_text(
+                        $axmud::CLIENT->splitText(
+                            $labelText2,
+                            0,                  # No maximum rows
+                            $axmud::CLIENT->constDialogueLabelSize,
+                                                # Maximum characters per line
+                            FALSE,              # No ellipsis required
+                            TRUE,               # Don't use hyphens when splitting words
+                        )
+                    ),
+                );
+
+            } else {
+
+                $label2->set_markup(Glib::Markup::escape_text($labelText2));
+            }
         }
 
-        my $entry2;
-        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
-            $entry2 = Gtk2::Entry->new_with_max_length($maxChars);
-        } else {
-            $entry2 = Gtk2::Entry->new();
-        }
+        my $entry2 = Gtk3::Entry->new();
         $vBox2->pack_start($entry2, FALSE, FALSE, $spacing);
+        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
+
+            $entry2->set_max_length($maxChars);
+        }
 
         # Third label and entry
         if ($labelText3) {
 
-            my $label3 = Gtk2::Label->new();
+            my $label3 = Gtk3::Label->new();
             $vBox2->pack_start($label3, FALSE, FALSE, $spacing);
             $label3->set_alignment(0, 0);
-            $label3->set_markup($labelText3);
+
+            if (! $noSplitFlag) {
+
+                $label3->set_markup(
+                    Glib::Markup::escape_text(
+                        $axmud::CLIENT->splitText(
+                            $labelText3,
+                            0,                  # No maximum rows
+                            $axmud::CLIENT->constDialogueLabelSize,
+                                                # Maximum characters per line
+                            FALSE,              # No ellipsis required
+                            TRUE,               # Don't use hyphens when splitting words
+                        )
+                    ),
+                );
+
+            } else {
+
+                $label3->set_markup(Glib::Markup::escape_text($labelText3));
+            }
         }
 
-        my $entry3;
-        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
-            $entry3 = Gtk2::Entry->new_with_max_length($maxChars);
-        } else {
-            $entry3 = Gtk2::Entry->new();
-        }
+        my $entry3 = Gtk3::Entry->new();
         $vBox2->pack_start($entry3, FALSE, FALSE, $spacing);
+        if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
+
+            $entry3->set_max_length($maxChars);
+        }
 
         # Obscure text in the entry boxes, if necessary
         if ($obscureMode) {
@@ -23933,19 +24158,23 @@
         #   $text           - The message to display. Can be pango markup text, or just plain text
         #
         # Optional arguments
+        #   $listRef        - Reference to a list of scalars to be used in the combo box. If
+        #                       'undef', the combo box will be empty
         #   $singleFlag     - Set when called by GA::CLIENT->connectBlind (or by any other code that
         #                       might want to remove the 'Cancel' button). If TRUE, only an 'OK'
         #                       button is used. If FALSE (or 'undef'), both an 'OK' and 'Cancel'
         #                       buttons are used
-        #   $listRef        - Reference to a list of scalars to be used in the combo box. If
-        #                       'undef', the combo box will be empty
+        #   $noSplitFlag    - If TRUE, the message $text is not automatically split into shorter
+        #                       lines (because the calling function has already added newline
+        #                       characters as it requires). If FALSE (or 'undef'), the message
+        #                       $text is split into lines of no more than 40 characters
         #
         # Return values
         #   'undef' on improper arguments, if the user doesn't choose a line or if @lineList is
         #       empty
         #   Otherwise returns the user response (the text of the selected line)
 
-        my ($self, $title, $text, $singleFlag, $listRef, $check) = @_;
+        my ($self, $title, $text, $listRef, $singleFlag, $noSplitFlag, $check) = @_;
 
         # Local variables
         my (
@@ -23979,7 +24208,7 @@
         my $dialogueWin;
         if (! @$listRef || $singleFlag) {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -23988,7 +24217,7 @@
 
         } else {
 
-            $dialogueWin = Gtk2::Dialog->new(
+            $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
                 [qw/modal destroy-with-parent/],
@@ -23998,7 +24227,7 @@
         }
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -24010,23 +24239,37 @@
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showComboDialogue');
         });
 
-        # For the benefit of Pango, replace any diamond bracket (< or >) characters with normal
-        #   brackets
-        $text =~ s/\</(/g;
-        $text =~ s/\>/)/g;
-
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $vBox2->pack_start($label, FALSE, FALSE, $spacing);
         $label->set_alignment(0, 0);
-        $label->set_markup($text);
 
-        my $comboBox = Gtk2::ComboBox->new_text();
+        if (! $noSplitFlag) {
+
+            $label->set_markup(
+                Glib::Markup::escape_text(
+                    $axmud::CLIENT->splitText(
+                        $text,
+                        0,                  # No maximum rows
+                        $axmud::CLIENT->constDialogueLabelSize,
+                                            # Maximum characters per line
+                        FALSE,              # No ellipsis required
+                        TRUE,               # Don't use hyphens when splitting words
+                    )
+                ),
+            );
+
+        } else {
+
+            $label->set_markup(Glib::Markup::escape_text($text));
+        }
+
+        my $comboBox = Gtk3::ComboBoxText->new();
         $vBox2->pack_start($comboBox, FALSE, FALSE, $spacing);
         # Fill the combobox with the specified lines, and display the first line
         foreach my $line (@$listRef) {
@@ -24042,7 +24285,7 @@
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showComboDialogue');
 
         # Prepare text-to-speech (TTS) code. Get a hash of the response buttons, in the form
-        #   $buttonHash{'response'} = Gtk2::Button
+        #   $buttonHash{'response'} = Gtk3::Button
         $buttonHash{'ok'} = $dialogueWin->get_widget_for_response('accept');
         if (@$listRef && ! $singleFlag) {
 
@@ -24206,12 +24449,16 @@
         #                       'undef', the first combo box will be empty
         #   $listRef2       - Reference to a list of scalars to be used in the second combo box. If
         #                       'undef', the second combo box will be empty
+        #   $noSplitFlag    - If TRUE, the message $text is not automatically split into shorter
+        #                       lines (because the calling function has already added newline
+        #                       characters as it requires). If FALSE (or 'undef'), the message
+        #                       $text is split into lines of no more than 40 characters
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise a list of two elements, containing the contents of the two combo boxes
 
-        my ($self, $title, $labelText, $labelText2, $listRef, $listRef2, $check) = @_;
+        my ($self, $title, $labelText, $labelText2, $listRef, $listRef2, $noSplitFlag, $check) = @_;
 
         # Local variables
         my (
@@ -24248,7 +24495,7 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::Dialog->new(
+        my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
             [qw/modal destroy-with-parent/],
@@ -24257,7 +24504,7 @@
         );
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -24267,38 +24514,43 @@
             return @emptyList;
         });
 
-        # For the benefit of Pango, replace any diamond bracket (< or >) characters with normal
-        #   brackets
-        if ($labelText) {
-
-            $labelText =~ s/\</(/g;
-            $labelText =~ s/\>/)/g;
-        }
-
-        if ($labelText2) {
-
-            $labelText =~ s/\</(/g;
-            $labelText =~ s/\>/)/g;
-        }
-
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
         # First label (optional) and combo (not optional)
         my $label;
         if ($labelText) {
 
-            $label = Gtk2::Label->new();
+            $label = Gtk3::Label->new();
             $label->set_alignment(0, 0);
-            $label->set_markup($labelText);
+
+            if (! $noSplitFlag) {
+
+                $label->set_markup(
+                    Glib::Markup::escape_text(
+                        $axmud::CLIENT->splitText(
+                            $labelText,
+                            0,                  # No maximum rows
+                            $axmud::CLIENT->constDialogueLabelSize,
+                                                # Maximum characters per line
+                            FALSE,              # No ellipsis required
+                            TRUE,               # Don't use hyphens when splitting words
+                        )
+                    ),
+                );
+
+            } else {
+
+                $label->set_markup(Glib::Markup::escape_text($labelText));
+            }
 
             $vBox2->pack_start($label, FALSE, FALSE, $spacing);
         }
 
-        my $combo = Gtk2::ComboBox->new_text();
+        my $combo = Gtk3::ComboBoxText->new();
         $vBox2->pack_start($combo, FALSE, FALSE, $spacing);
 
         # Fill the combo box with the specified lines, and display the first line
@@ -24316,14 +24568,33 @@
         my $label2;
         if ($labelText2) {
 
-            $label2 = Gtk2::Label->new();
+            $label2 = Gtk3::Label->new();
             $label2->set_alignment(0, 0);
-            $label2->set_markup($labelText2);
+
+            if (! $noSplitFlag) {
+
+                $label2->set_markup(
+                    Glib::Markup::escape_text(
+                        $axmud::CLIENT->splitText(
+                            $labelText2,
+                            0,                  # No maximum rows
+                            $axmud::CLIENT->constDialogueLabelSize,
+                                                # Maximum characters per line
+                            FALSE,              # No ellipsis required
+                            TRUE,               # Don't use hyphens when splitting words
+                        )
+                    ),
+                );
+
+            } else {
+
+                $label2->set_markup(Glib::Markup::escape_text($labelText2));
+            }
 
             $vBox2->pack_start($label2, FALSE, FALSE, $spacing);
         }
 
-        my $combo2 = Gtk2::ComboBox->new_text();
+        my $combo2 = Gtk3::ComboBoxText->new();
         $vBox2->pack_start($combo2, FALSE, FALSE, $spacing);
 
         # Fill the combo box with the specified lines, and display the first line
@@ -24393,6 +24664,11 @@
         #   $quickFlag      - If set to TRUE, pressing the ENTER key while the cursor is in the
         #                       entry box closes the window; FALSE or 'undef' if the user must
         #                       actually click the 'OK' or 'Cancel' buttons
+        #                       buttons are used
+        #   $noSplitFlag    - If TRUE, the message $text is not automatically split into shorter
+        #                       lines (because the calling function has already added newline
+        #                       characters as it requires). If FALSE (or 'undef'), the message
+        #                       $text is split into lines of no more than 40 characters
         #
         # Return values
         #   An empty list on improper arguments or if the user doesn't enter some text in the entry
@@ -24402,7 +24678,7 @@
 
         my (
             $self, $title, $labelText, $labelText2, $listRef, $maxChars, $reverseFlag, $quickFlag,
-            $check,
+            $noSplitFlag, $check,
         ) = @_;
 
         # Local variables
@@ -24435,7 +24711,7 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::Dialog->new(
+        my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
             [qw/modal destroy-with-parent/],
@@ -24444,7 +24720,7 @@
         );
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -24454,52 +24730,76 @@
             return @emptyList;
         });
 
-        # For the benefit of Pango, replace any diamond bracket (< or >) characters with normal
-        #   brackets
-        if ($labelText) {
-
-            $labelText =~ s/\</(/g;
-            $labelText =~ s/\>/)/g;
-        }
-
-        if ($labelText2) {
-
-            $labelText =~ s/\</(/g;
-            $labelText =~ s/\>/)/g;
-        }
-
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
         # First label (optional) and entry (not optional)
         my $label;
         if ($labelText) {
 
-            $label = Gtk2::Label->new();
+            $label = Gtk3::Label->new();
             $label->set_alignment(0, 0);
-            $label->set_markup($labelText);
+
+            if (! $noSplitFlag) {
+
+                $label->set_markup(
+                    Glib::Markup::escape_text(
+                        $axmud::CLIENT->splitText(
+                            $labelText,
+                            0,                  # No maximum rows
+                            $axmud::CLIENT->constDialogueLabelSize,
+                                                # Maximum characters per line
+                            FALSE,              # No ellipsis required
+                            TRUE,               # Don't use hyphens when splitting words
+                        )
+                    ),
+                );
+
+            } else {
+
+                $label->set_markup(Glib::Markup::escape_text($labelText));
+            }
+
         }
 
-        my $entry;
+        my $entry = Gtk3::Entry->new();
         if (defined $maxChars && $axmud::CLIENT->intCheck($maxChars, 1)) {
-            $entry = Gtk2::Entry->new_with_max_length($maxChars);
-        } else {
-            $entry = Gtk2::Entry->new();
+
+            $entry->set_max_length($maxChars);
         }
 
         # Second label (optional) and combo (not optional)
         my $label2;
         if ($labelText2) {
 
-            $label2 = Gtk2::Label->new();
+            $label2 = Gtk3::Label->new();
             $label2->set_alignment(0, 0);
-            $label2->set_markup($labelText2);
+
+            if (! $noSplitFlag) {
+
+                $label2->set_markup(
+                    Glib::Markup::escape_text(
+                        $axmud::CLIENT->splitText(
+                            $labelText2,
+                            0,                  # No maximum rows
+                            $axmud::CLIENT->constDialogueLabelSize,
+                                                # Maximum characters per line
+                            FALSE,              # No ellipsis required
+                            TRUE,               # Don't use hyphens when splitting words
+                        )
+                    ),
+                );
+
+            } else {
+
+                $label2->set_markup(Glib::Markup::escape_text($labelText2));
+            }
         }
 
-        my $combo = Gtk2::ComboBox->new_text();
+        my $combo = Gtk3::ComboBoxText->new();
         # Fill the combo box with the specified lines, and display the first line
         if (@$listRef) {
 
@@ -24603,7 +24903,7 @@
     sub showColourSelectionDialogue {
 
         # Can be called by any function
-        # Creates a standard Gtk2::ColorSelectionDialog and returns the response (if any)
+        # Creates a standard Gtk3::ColorSelectionDialog and returns the response (if any)
         #
         # Expected arguments
         #   $title          - The title to display, e.g. 'Select colour'
@@ -24639,10 +24939,11 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::ColorSelectionDialog->new($title);
+        my $dialogueWin = Gtk3::ColorSelectionDialog->new($title);
+        $dialogueWin->set_transient_for($self->winWidget);
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $colorSelectionObj = $dialogueWin->get_color_selection();
 
@@ -24650,14 +24951,14 @@
 
             # Split a string like '#FFFFFF' into three seperate colours (red, green and blue),
             #   convert them to decimals (in the range 0-255), and then convert that to a range of
-            #   0-65535 - which is what Gtk2::Gdk::Color expects
+            #   0-65535 - which is what Gtk3::Gdk::Color expects
             $red = hex(substr($initialColour, 1, 2)) * 257;
             $green = hex(substr($initialColour, 3, 2)) * 257;
             $blue = hex(substr($initialColour, 5, 2)) * 257;
 
-            $colorObj = Gtk2::Gdk::Color->new($red, $green, $blue, 0);
+            $colorObj = Gtk3::Gdk::Color->new($red, $green, $blue, 0);
 
-            # Tell the Gtk2::ColorSelectionDialog to use this colour, initially
+            # Tell the Gtk3::ColorSelectionDialog to use this colour, initially
             $colorSelectionObj->set_current_color($colorObj);
         }
 
@@ -24684,7 +24985,7 @@
     sub showFontSelectionDialogue {
 
         # Can be called by any function
-        # Creates a standard Gtk2::FontSelectionDialog and returns the response (if any)
+        # Creates a standard Gtk3::FontSelectionDialog and returns the response (if any)
         #
         # Expected arguments
         #   $title          - The title to display, e.g. 'Select font'
@@ -24719,9 +25020,9 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::FontSelectionDialog->new($title);
+        my $dialogueWin = Gtk3::FontSelectionDialog->new($title);
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         if ($initialFont) {
 
@@ -24774,7 +25075,7 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::Dialog->new(
+        my $dialogueWin = Gtk3::Dialog->new(
             'Add custom room flag',
             $self->winWidget,
             [qw/modal destroy-with-parent/],
@@ -24783,7 +25084,7 @@
         );
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -24794,53 +25095,53 @@
         });
 
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
         # Need a table as it's the quicket way to draw the room flag colour
-        my $table = Gtk2::Table->new(3, 7, FALSE);
+        my $table = Gtk3::Grid->new();
         $vBox2->pack_start($table, TRUE, TRUE, $axmud::CLIENT->constFreeSpacingPixels);
-        $table->set_row_spacings($axmud::CLIENT->constFreeSpacingPixels);
-        $table->set_col_spacings($axmud::CLIENT->constFreeSpacingPixels);
+        $table->set_column_spacing($axmud::CLIENT->constFreeSpacingPixels);
+        $table->set_row_spacing($axmud::CLIENT->constFreeSpacingPixels);
 
         # Name
-        my $label = Gtk2::Label->new();
-        $table->attach_defaults($label, 0, 3, 0, 1);
+        my $label = Gtk3::Label->new();
+        $table->attach($label, 0, 0, 3, 1);
         $label->set_alignment(0, 0);
         $label->set_markup('Room flag name (max 16 chars)');
 
-        my $entry = Gtk2::Entry->new();
-        $table->attach_defaults($entry, 0, 3, 1, 2);
+        my $entry = Gtk3::Entry->new();
+        $table->attach($entry, 0, 1, 3, 1);
         $entry->set_width_chars(16);
         $entry->set_max_length(16);
 
         # Short name
-        my $label2 = Gtk2::Label->new();
-        $table->attach_defaults($label2, 0, 3, 2, 3);
+        my $label2 = Gtk3::Label->new();
+        $table->attach($label2, 0, 2, 3, 1);
         $label2->set_alignment(0, 0);
         $label2->set_markup('Short name (max 2 chars)');
 
-        my $entry2 = Gtk2::Entry->new();
-        $table->attach_defaults($entry2, 0, 3, 3, 4);
+        my $entry2 = Gtk3::Entry->new();
+        $table->attach($entry2, 0, 3, 3, 1);
         $entry2->set_width_chars(2);
         $entry2->set_max_length(2);
 
         # Description
-        my $label3 = Gtk2::Label->new();
-        $table->attach_defaults($label3, 0, 3, 4, 5);
+        my $label3 = Gtk3::Label->new();
+        $table->attach($label3, 0, 4, 3, 1);
         $label3->set_alignment(0, 0);
         $label3->set_markup('Description');
 
-        my $entry3 = Gtk2::Entry->new();
-        $table->attach_defaults($entry3, 0, 3, 5, 6);
+        my $entry3 = Gtk3::Entry->new();
+        $table->attach($entry3, 0, 5, 3, 1);
 
         # Colour
         $colour = '#FFFFFF';            # Default new colour is white
 
-        my $label4 = Gtk2::Label->new();
-        $table->attach_defaults($label4, 0, 1, 6, 7);
+        my $label4 = Gtk3::Label->new();
+        $table->attach($label4, 0, 6, 1, 1);
         $label4->set_markup('Use colour');
         $label4->set_alignment(0, 0.5);
 
@@ -24850,8 +25151,8 @@
             1, 2, 6, 7,
         );
 
-        my $button = Gtk2::Button->new('Set');
-        $table->attach_defaults($button, 2, 3, 6, 7);
+        my $button = Gtk3::Button->new('Set');
+        $table->attach($button, 2, 6, 1, 1);
         $button->signal_connect('clicked' => sub {
 
             my $choice = $self->showColourSelectionDialogue(
@@ -24921,7 +25222,7 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk2::Dialog->new(
+        my $dialogueWin = Gtk3::Dialog->new(
             'Irreversible icon test',
             $self->winWidget,
             [qw/modal destroy-with-parent/],
@@ -24929,7 +25230,7 @@
         );
 
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         $dialogueWin->signal_connect('delete-event' => sub {
 
@@ -24940,12 +25241,12 @@
         });
 
         # Add widgets to the 'dialogue' window
-        my $vBox = $dialogueWin->vbox;
+        my $vBox = $dialogueWin->get_content_area();
         # The call to ->addDialogueIcon splits $vBox in two, with an icon on the left, and a new
-        #   Gtk2::VBox on the right, into which we put everything
+        #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $vBox2->pack_start($label, FALSE, FALSE, $axmud::CLIENT->constFreeSpacingPixels);
         $label->set_alignment(0, 0);
         $label->set_markup(
@@ -24953,16 +25254,16 @@
             . " icon and some text</i>"
         );
 
-        my $button = Gtk2::Button->new('Hello world!');
+        my $button = Gtk3::Button->new('Hello world!');
         $vBox2->pack_start($button, FALSE, FALSE, $axmud::CLIENT->constFreeSpacingPixels);
 
-        my $image = Gtk2::Image->new_from_file(
+        my $image = Gtk3::Image->new_from_file(
             $axmud::SHARE_DIR . '/icons/system/irreversible.png',
         );
 
         $button->set_image($image);
 
-        my $label2 = Gtk2::Label->new();
+        my $label2 = Gtk3::Label->new();
         $vBox2->pack_start($label2, FALSE, FALSE, $axmud::CLIENT->constFreeSpacingPixels);
         $label2->set_alignment(0, 0);
         $label2->set_markup(
@@ -25038,9 +25339,9 @@
         }
 
         # Show the window widget
-        my $dialogueWin = Gtk2::Window->new('popup');
+        my $dialogueWin = Gtk3::Window->new('popup');
         $dialogueWin->set_position('center-always');
-        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
         $dialogueWin->set_title($axmud::SCRIPT);
         $dialogueWin->set_border_width(0);
         $dialogueWin->set_transient_for($self->winWidget);
@@ -25052,17 +25353,17 @@
         });
 
         # Add widgets to the 'dialogue' window
-        my $frame = Gtk2::Frame->new();
+        my $frame = Gtk3::Frame->new();
         $dialogueWin->add($frame);
 
-        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        my $hBox = Gtk3::HBox->new(FALSE, 0);
         $frame->add($hBox);
         $hBox->set_border_width(10);
 
-        my $image = Gtk2::Image->new_from_file($path);
+        my $image = Gtk3::Image->new_from_file($path);
         $hBox->pack_start($image, FALSE, FALSE, 5);
 
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $hBox->pack_start($label, FALSE, FALSE, 5);
         $label->set_markup('<i><big>' . $caption . '</big></i>');
         $label->set_alignment(0.5, 0.5);
@@ -25072,7 +25373,7 @@
         # For some reason, during certain operations the icon and text are not shown in the
         #   window; the following lines make them appear
         $dialogueWin->present();
-        # Update Gtk2's events queue
+        # Update Gtk3's events queue
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showBusyWin');
         # Update the Client IV
         $axmud::CLIENT->set_busyWin($dialogueWin);
@@ -25080,11 +25381,11 @@
         return $dialogueWin;
     }
 
-    # Functions to add widgets to a Gtk2::Table
+    # Functions to add widgets to a Gtk3::Grid
 
     sub addLabel {
 
-        # Adds a Gtk2::Label at the specified position in a Gtk2::Table
+        # Adds a Gtk3::Label at the specified position in a Gtk3::Grid
         #
         # Example calls:
         #   my $label = $self->addLabel($table, 'Some plain text',
@@ -25094,7 +25395,7 @@
         #       0, 0.5);
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table itself
+        #   $table      - The Gtk3::Grid itself
         #   $text       - The text to display (plain text or pango markup text)
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #               - The position of the label in the table
@@ -25105,8 +25406,8 @@
         #               - If not specified, $alignLeft is set to 0, $alignRight to 0.5
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Label created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Label created
 
         my (
             $self, $table, $text, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $alignLeft,
@@ -25139,21 +25440,29 @@
         }
 
         # Create the label
-        my $label = Gtk2::Label->new();
+        my $label = Gtk3::Label->new();
         $label->set_markup($text);
 
         # Set its alignment
         $label->set_alignment($alignLeft, $alignRight);
 
         # Add the label to the table
-        $table->attach_defaults($label, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $label->set_hexpand(TRUE);
+        $label->set_vexpand(FALSE);
+        $table->attach(
+            $label,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $label;
     }
 
     sub addButton {
 
-        # Adds a Gtk2::Button at the specified position in a Gtk2::Table
+        # Adds a Gtk3::Button at the specified position in a Gtk3::Grid
         # NB This function does not contain a ->signal_connect method - the calling function must
         #   specify its own one
         #
@@ -25169,7 +25478,7 @@
         #   ($self, button_widget)
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table itself
+        #   $table      - The Gtk3::Grid itself
         #   $funcRef    - Reference to the function to call when the button is clicked. If 'undef',
         #                   it's up to the calling function to create a ->signal_connect method
         #   $label      - The label text displayed on the button
@@ -25178,8 +25487,8 @@
         #               - The position of the button in the table
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Button created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Button created
 
         my (
             $self, $table, $funcRef, $label, $tooltips, $leftAttach, $rightAttach, $topAttach,
@@ -25205,12 +25514,12 @@
         }
 
         # Create the button
-        my $button = Gtk2::Button->new($label);
+        my $button = Gtk3::Button->new($label);
 
         # Use tooltips, if any were specified
         if ($tooltips) {
 
-            $self->tooltips->set_tip($button, $tooltips);
+            $button->set_tooltip_text($tooltips);
         }
 
         # If a callback function was specified, apply it
@@ -25223,12 +25532,14 @@
         }
 
         # Add the button to the table
-        $table->attach_defaults(
+        $button->set_hexpand(TRUE);
+        $button->set_vexpand(FALSE);
+        $table->attach(
             $button,
             $leftAttach,
-            $rightAttach,
             $topAttach,
-            $bottomAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
         );
 
         return $button;
@@ -25236,21 +25547,24 @@
 
     sub addCheckButton {
 
-        # Adds a Gtk2::CheckButton at the specified position in a Gtk2::Table
+        # Adds a Gtk3::CheckButton with an accompanying label at the specified position in a
+        #   Gtk3::Grid
         # NB This function does not contain a ->signal_connect method - the calling function must
         #   specify its own one
         #
         # Example calls:
-        #   my $checkButton = $self->addCheckButton($table, \&buttonClicked, TRUE, TRUE,
+        #   my $checkButton = $self->addCheckButton($table, 'Click me', \&buttonClicked, TRUE, TRUE,
         #       0, 6, 0, 1);
-        #   my $checkButton = $self->addCheckButton($table, undef, FALSE, TRUE,
-        #       0, 6, 0, 1, 0, 0.5);
+        #   my $checkButton = $self->addCheckButton($table, undef, \&buttonClicked, TRUE, TRUE,
+        #       0, 6, 0, 1);
         #
         # The referenced function (if specified) receives an argument list in the form:
         #   ($self, button_widget, button_selected_flag)
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table itself
+        #   $table      - The Gtk3::Grid itself
+        #   $name       - A 'name' for the checkbutton (displayed next to the button); if 'undef',
+        #                   no name is displayed
         #   $funcRef    - Reference to the function to call when the button is toggled. If 'undef',
         #                   it's up to the calling function to create a ->signal_connect method
         #   $selectFlag - Flag set to FALSE if the checkbutton shouldn't be selected initially, TRUE
@@ -25260,18 +25574,13 @@
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #               - The position of the checkbutton in the table
         #
-        # Optional arguments
-        #   $alignX, $alignY
-        #               - Used in the call to ->set_alignment; two values in the range 0-1
-        #               - If not specified, $alignX is set to 0, $alignY to 0.5
-        #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::CheckButton created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::CheckButton created
 
         my (
-            $self, $table, $funcRef, $selectFlag, $stateFlag, $leftAttach, $rightAttach, $topAttach,
-            $bottomAttach, $alignX, $alignY, $check,
+            $self, $table, $name, $funcRef, $selectFlag, $stateFlag, $leftAttach, $rightAttach,
+            $topAttach, $bottomAttach, $check,
         ) = @_;
 
         # Check for improper arguments
@@ -25289,19 +25598,13 @@
             return undef;
         }
 
-        # Set default alignment, if none specified
-        if (! defined $alignX) {
-
-            $alignX = 0;
-        }
-
-        if (! defined $alignY) {
-
-            $alignY = 0.5;
-        }
-
         # Create the check button
-        my $checkButton = Gtk2::CheckButton->new();
+        my $checkButton;
+        if (defined $name && $name ne '') {
+            $checkButton = Gtk3::CheckButton->new_with_label($name);
+        } else {
+            $checkButton = Gtk3::CheckButton->new();
+        }
 
         # Set the checkbutton's initial value
         $checkButton->set_active($selectFlag);
@@ -25312,9 +25615,6 @@
             $checkButton->set_state('insensitive');
         }
 
-        # Set its alignment
-        $checkButton->set_alignment($alignX, $alignY);
-
         # If a callback function was specified, apply it
         if ($funcRef) {
 
@@ -25324,13 +25624,15 @@
             });
         }
 
-        # Add it to the table
-        $table->attach_defaults(
+        # Add the check button to the table
+        $checkButton->set_hexpand(TRUE);
+        $checkButton->set_vexpand(FALSE);
+        $table->attach(
             $checkButton,
             $leftAttach,
-            $rightAttach,
             $topAttach,
-            $bottomAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
         );
 
         return $checkButton;
@@ -25338,7 +25640,7 @@
 
     sub addRadioButton {
 
-        # Adds a Gtk2::RadioButton at the specified position in a Gtk2::Table
+        # Adds a Gtk3::RadioButton at the specified position in a Gtk3::Grid
         # NB This function does not contain a ->signal_connect method - the calling function must
         #   specify its own one
         #
@@ -25356,7 +25658,7 @@
         #   ($self, button_widget)
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table itself
+        #   $table      - The Gtk3::Grid itself
         #   $funcRef    - Reference to the function to call when the button becomes active
         #                   (selected). If 'undef', it's up to the calling function to create a
         #                   ->signal_connect method
@@ -25378,10 +25680,10 @@
         #               - If not specified, $alignLeft is set to 0, $alignRight to 0.5
         #
         # Return values
-        #   An empty list on improper arguments or if the widget's position in the Gtk2::Table is
+        #   An empty list on improper arguments or if the widget's position in the Gtk3::Grid is
         #       invalid
         #   Otherwise a list containing two elements: the radio button $group and the
-        #       Gtk2::RadioButton created
+        #       Gtk3::RadioButton created
 
         my (
             $self, $table, $funcRef, $group, $name, $selectFlag, $stateFlag, $leftAttach,
@@ -25418,7 +25720,7 @@
         }
 
         # Create the radio button
-        my $radioButton = Gtk2::RadioButton->new();
+        my $radioButton = Gtk3::RadioButton->new();
         # Add it to the existing group, if one was specified
         if (defined $group) {
 
@@ -25456,13 +25758,15 @@
             });
         }
 
-        # Add it to the table
-        $table->attach_defaults(
+        # Add the radio button to the table
+        $radioButton->set_hexpand(FALSE);
+        $radioButton->set_vexpand(FALSE);
+        $table->attach(
             $radioButton,
             $leftAttach,
-            $rightAttach,
             $topAttach,
-            $bottomAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
         );
 
         return ($radioButton->get_group(), $radioButton);
@@ -25470,7 +25774,7 @@
 
     sub addEntry {
 
-        # Adds a Gtk2::Entry at the specified position in a Gtk2::Table
+        # Adds a Gtk3::Entry at the specified position in a Gtk3::Grid
         # NB This function does not contain a ->signal_connect method - the calling function must
         #   specify its own one
         #
@@ -25484,7 +25788,7 @@
         #   ($self, entry_widget, entry_text)
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table itself
+        #   $table      - The Gtk3::Grid itself
         #   $funcRef    - Reference to the function to call when the user types something in the
         #                   entry and presses 'return'. If 'undef', it's up to the calling function
         #                   to create a ->signal_connect method
@@ -25500,8 +25804,8 @@
         #   $maxChars   - The maximum no. chars allowed in the box ('undef' if maximum not needed)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::Entry created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::Entry created
 
         my (
             $self, $table, $funcRef, $value, $stateFlag, $leftAttach, $rightAttach, $topAttach,
@@ -25524,7 +25828,7 @@
         }
 
         # Create the entry
-        my $entry = Gtk2::Entry->new();
+        my $entry = Gtk3::Entry->new();
 
         # Set the entry's value
         if ($value) {
@@ -25560,14 +25864,22 @@
         }
 
         # Add the entry to the table
-        $table->attach_defaults($entry, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $entry->set_hexpand(TRUE);
+        $entry->set_vexpand(FALSE);
+        $table->attach(
+            $entry,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $entry;
     }
 
     sub addComboBox {
 
-        # Adds a Gtk2::ComboBox at the specified position in a Gtk2::Table
+        # Adds a Gtk3::ComboBox at the specified position in a Gtk3::Grid
         # NB This function does not contain a ->signal_connect method - the calling function must
         #   specify its own one
         #
@@ -25583,7 +25895,7 @@
         #   ($self, combo_box_widget, selected_text)
         #
         # Expected arguments
-        #   $table          - The Gtk2::Table itself
+        #   $table          - The Gtk3::Grid itself
         #   $funcRef        - Reference to the function to call when the user selects something in
         #                       the combobox. If 'undef', it's up to the calling function to create
         #                       a ->signal_connect method
@@ -25595,8 +25907,8 @@
         #                   - The position of the combo box in the table
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::ComboBox created
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::ComboBox created
 
         my (
             $self, $table, $funcRef, $listRef, $title, $leftAttach, $rightAttach, $topAttach,
@@ -25619,7 +25931,7 @@
         }
 
         # Create the combobox
-        my $comboBox = Gtk2::ComboBox->new_text();
+        my $comboBox = Gtk3::ComboBoxText->new();
 
         # Populate the combobox
         if (defined $title) {
@@ -25651,12 +25963,14 @@
         }
 
         # Add the combobox to the table
-        $table->attach_defaults(
+        $comboBox->set_hexpand(TRUE);
+        $comboBox->set_vexpand(FALSE);
+        $table->attach(
             $comboBox,
             $leftAttach,
-            $rightAttach,
             $topAttach,
-            $bottomAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
         );
 
         return $comboBox;
@@ -25664,7 +25978,7 @@
 
     sub addTextView {
 
-        # Adds a Gtk2::TextView at the specified position in a Gtk2::Table
+        # Adds a Gtk3::TextView at the specified position in a Gtk3::Grid
         # NB This function does not contain a ->signal_connect method - the calling function must
         #   specify its own one
         #
@@ -25681,7 +25995,7 @@
         #   characters
         #
         # Expected arguments
-        #   $table          - The Gtk2::Table itself
+        #   $table          - The Gtk3::Grid itself
         #   $colourScheme   - The name of the colour scheme to use (matches a key in
         #                       GA::Client->colourSchemeHash; you should normally use the window
         #                       type, as in the example above). If 'undef', the system's
@@ -25702,13 +26016,13 @@
         #   $width, $height
         #               - The width and height (in pixels) of the frame containing the list. If
         #                   specified, values of -1 mean 'don't set this value'. The default values
-        #                   are (-1, 120) - we use a fixed height, because Gtk2 on some operating
+        #                   are (-1, 120) - we use a fixed height, because Gtk3 on some operating
         #                   systems will draw a textview barely one line high (in a vertical
         #                   packing box)
         #
         # Return values
-        #   'undef' on improper arguments or if the widget's position in the Gtk2::Table is invalid
-        #   Otherwise the Gtk2::TextView created (inside a Gtk::ScrolledWindow)
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the Gtk3::TextView created (inside a Gtk::ScrolledWindow)
 
         my (
             $self, $table, $colourScheme, $funcRef, $string, $editableFlag, $leftAttach,
@@ -25733,7 +26047,7 @@
         # Set defaults
         if (! defined $width) {
 
-            $width = -1;    # Let Gtk2 set the width
+            $width = -1;    # Let Gtk3 set the width
         }
 
         if (! defined $height) {
@@ -25741,34 +26055,17 @@
             $height = 120;
         }
 
-        # Creating a containing Gtk2::ScrolledWindow
-        my $scroll = Gtk2::ScrolledWindow->new(undef, undef);
+        # Creating a containing Gtk3::ScrolledWindow
+        my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
         $scroll->set_shadow_type('etched-out');
         $scroll->set_policy('automatic', 'automatic');
         $scroll->set_size_request($width, $height);
         $scroll->set_border_width($self->spacingPixels);
 
-        # Create a textview
-        my $textView;
-        if (defined $colourScheme) {
-
-            # Use colours/fonts specified by an Axmud colour scheme
-            if ($axmud::CLIENT->ivExists('colourSchemeHash', $colourScheme)) {
-                $axmud::CLIENT->desktopObj->getTextViewStyle($colourScheme);
-            } else {
-                $axmud::CLIENT->desktopObj->getTextViewStyle($self->winType);
-            }
-
-            $textView = Gtk2::TextView->new();
-
-        } else {
-
-            # Using the sub-class preserves the system's preferred colours/fonts
-            $textView = Games::Axmud::Widget::TextView::Gtk2->new();
-        }
-
+        # Create a textview and apply a CSS style
+        my $textView = Gtk3::TextView->new();
         $scroll->add($textView);
-        my $buffer = Gtk2::TextBuffer->new();
+        my $buffer = Gtk3::TextBuffer->new();
         $textView->set_buffer($buffer);
         $textView->set_cursor_visible(FALSE);
 
@@ -25779,6 +26076,13 @@
 
         # Make the textview editable or not editable
         $textView->set_editable($editableFlag);
+
+        # Apply a CSS style to the textview
+        if (defined $colourScheme && $axmud::CLIENT->ivExists('colourSchemeHash', $colourScheme)) {
+            $axmud::CLIENT->desktopObj->setTextViewStyle($colourScheme, $textView);
+        } else {
+            $axmud::CLIENT->desktopObj->setTextViewStyle($self->winType, $textView);
+        }
 
         # If a callback function was specified, apply it
         if ($funcRef) {
@@ -25794,13 +26098,14 @@
             });
         }
 
-        # Add the textview to the table
-        $table->attach_defaults(
+        # Add the textview to the table (for textviews, calls to ->set_vexpand have no effect)
+        $scroll->set_hexpand(TRUE);
+        $table->attach(
             $scroll,
             $leftAttach,
-            $rightAttach,
             $topAttach,
-            $bottomAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
         );
 
         return $textView;
@@ -25808,8 +26113,8 @@
 
     sub addImage {
 
-        # Adds a Gtk2::Image from a specified file, inside a frame (optionally using scrollbars) at
-        #   the specified position in a Gtk2::Table
+        # Adds a Gtk3::Image from a specified file, inside a frame (optionally using scrollbars) at
+        #   the specified position in a Gtk3::Grid
         #
         # Example calls:
         #   my ($image, $frame, $viewPort) = $self->addImage($table, $filePath, $pixBuffer, TRUE,
@@ -25820,10 +26125,10 @@
         #       0, 12, 1, 12);
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table itself
+        #   $table      - The Gtk3::Grid itself
         #   $filePath       - Full path to the file containing the image to be displayed (or 'undef'
         #                       if not using a file)
-        #   $pixBuffer      - A Gtk2::Gdk::Pixbuf  containing the image to be displayed (or 'undef'
+        #   $pixBuffer      - A Gtk3::Gdk::Pixbuf  containing the image to be displayed (or 'undef'
         #                       if not using a pixbuf)
         #   $scrollFlag     - Flag set to TRUE if the image's viewport should use scrollbars,
         #                       FALSE if not
@@ -25834,10 +26139,10 @@
         # Return values
         #   An empty list on improper arguments or if a $filePath is specified which doesn't exist
         #   Otherwise returns a list in the form
-        #       (gtk2_image, gtk2_frame, gtk2_viewport)
-        #   NB If neither $filePath nor $pixBuffer are specified, or if the Gtk2::Image can't be
-        #       created, the 'gtk2_image' return value will be set to 'undef'
-        #   NB If $scrollFlag is FALSE, the 'gtk2_viewport' return value will be set to 'undef'
+        #       (Gtk3_image, Gtk3_frame, Gtk3_viewport)
+        #   NB If neither $filePath nor $pixBuffer are specified, or if the Gtk3::Image can't be
+        #       created, the 'Gtk3_image' return value will be set to 'undef'
+        #   NB If $scrollFlag is FALSE, the 'Gtk3_viewport' return value will be set to 'undef'
 
         my (
             $self, $table, $filePath, $pixBuffer, $scrollFlag, $width, $height, $leftAttach,
@@ -25866,29 +26171,29 @@
         }
 
         # Create a frame
-        my $frame = Gtk2::Frame->new(undef);
+        my $frame = Gtk3::Frame->new(undef);
         $frame->set_border_width(3);
         $frame->set_size_request($width, $height);
 
-        # Create the Gtk2::Image
+        # Create the Gtk3::Image
         my $image;
         if ($filePath) {
-            $image = Gtk2::Image->new_from_file($filePath);
+            $image = Gtk3::Image->new_from_file($filePath);
         } elsif ($pixBuffer) {
-            $image = Gtk2::Image->new_from_pixbuf($pixBuffer);
+            $image = Gtk3::Image->new_from_pixbuf($pixBuffer);
         }
 
         my $viewPort;
         if ($scrollFlag) {
 
             # Create a scrolled window
-            my $scroller = Gtk2::ScrolledWindow->new();
+            my $scroller = Gtk3::ScrolledWindow->new();
             $scroller->set_border_width(3);
 
             # Create a viewport
-            my $viewPort = Gtk2::Viewport->new(undef, undef);
+            my $viewPort = Gtk3::Viewport->new(undef, undef);
 
-            # If a Gtk2::Image was created, add it to the viewport
+            # If a Gtk3::Image was created, add it to the viewport
             if ($image) {
 
                 $viewPort->add($image);
@@ -25901,20 +26206,22 @@
 
         } else {
 
-            # If a Gtk2::Image was created, add it to the frame
+            # If a Gtk3::Image was created, add it to the frame
             if ($image) {
 
                 $frame->add($image);
             }
         }
 
-        # Add the frame to the table (even if a Gtk2::Image wasn't created)
-        $table->attach_defaults(
+        # Add the frame to the table (even if a Gtk3::Image wasn't created)
+        $frame->set_hexpand(FALSE);
+        $frame->set_vexpand(FALSE);
+        $table->attach(
             $frame,
             $leftAttach,
-            $rightAttach,
             $topAttach,
-            $bottomAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
         );
 
         return ($image, $frame, $viewPort);
@@ -25928,21 +26235,21 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $viewPort   - The Gtk2::Viewport which contains the image ('undef' if no scrolling
+        #   $viewPort   - The Gtk3::Viewport which contains the image ('undef' if no scrolling
         #                   viewport was used)
-        #   $frame      - The Gtk2::Frame which contains the image ('undef' if a scrolling
+        #   $frame      - The Gtk3::Frame which contains the image ('undef' if a scrolling
         #                   viewport was used; ignored if $viewPort is defined)
-        #   $oldImage   - The Gtk2::Image it currently contains. If it contains no image, set to
+        #   $oldImage   - The Gtk3::Image it currently contains. If it contains no image, set to
         #                   'undef'
         #   $filePath   - Full path to the file containing the image to be displayed (or 'undef' if
         #                   not using a file)
-        #   $pixBuffer  - A Gtk2::Gdk::Pixbuf  containing the image to be displayed (or 'undef'
+        #   $pixBuffer  - A Gtk3::Gdk::Pixbuf  containing the image to be displayed (or 'undef'
         #                   if not using a pixbuf)
         #
         # Return values
-        #   'undef' on improper arguments, if the specified file doesn't exist or if a Gtk2::Image
+        #   'undef' on improper arguments, if the specified file doesn't exist or if a Gtk3::Image
         #       can't be created
-        #   Otherwise returns the Gtk2::Image created, or 'undef' if none is created
+        #   Otherwise returns the Gtk3::Image created, or 'undef' if none is created
 
         my ($self, $viewPort, $frame, $oldImage, $filePath, $pixBuffer, $check) = @_;
 
@@ -25952,12 +26259,12 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->changeImage', @_);
         }
 
-        # Create a new Gtk2::Image
+        # Create a new Gtk3::Image
         my $newImage;
         if ($filePath) {
-            $newImage = Gtk2::Image->new_from_file($filePath);
+            $newImage = Gtk3::Image->new_from_file($filePath);
         } elsif ($pixBuffer) {
-            $newImage = Gtk2::Image->new_from_pixbuf($pixBuffer);
+            $newImage = Gtk3::Image->new_from_pixbuf($pixBuffer);
         }
 
         if ($viewPort) {
@@ -25997,7 +26304,7 @@
 
     sub addSimpleImage {
 
-        # Adds a Gtk2::Image from a specified file at the specified position in a Gtk2::Table (but
+        # Adds a Gtk3::Image from a specified file at the specified position in a Gtk3::Grid (but
         #   not inside a frame: call ->addImage to do that)
         #
         # Example calls:
@@ -26007,17 +26314,17 @@
         #       0, 12, 1, 12);
         #
         # Expected arguments
-        #   $table          - The Gtk2::Table itself
+        #   $table          - The Gtk3::Grid itself
         #   $filePath       - Full path to the file containing the image to be displayed (or 'undef'
         #                       if not using a file)
-        #   $pixBuffer      - A Gtk2::Gdk::Pixbuf  containing the image to be displayed (or 'undef'
+        #   $pixBuffer      - A Gtk3::Gdk::Pixbuf  containing the image to be displayed (or 'undef'
         #                       if not using a pixbuf)
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #                   - The position of the frame in the table
         #
         # Return values
         #   'undef' on improper arguments or if a $filePath is specified which doesn't exist
-        #   Otherwise the Gtk2::Image created
+        #   Otherwise the Gtk3::Image created
 
         my (
             $self, $table, $filePath, $pixBuffer, $leftAttach, $rightAttach, $topAttach,
@@ -26040,283 +26347,36 @@
             return undef;
         }
 
-        # Create the Gtk2::Image
+        # Create the Gtk3::Image
         my $image;
         if ($filePath) {
-            $image = Gtk2::Image->new_from_file($filePath);
+            $image = Gtk3::Image->new_from_file($filePath);
         } elsif ($pixBuffer) {
-            $image = Gtk2::Image->new_from_pixbuf($pixBuffer);
+            $image = Gtk3::Image->new_from_pixbuf($pixBuffer);
         }
 
         if ($image) {
 
             # Add the image to the table
-            $table->attach_defaults(
+            $image->set_hexpand(FALSE);
+            $image->set_vexpand(FALSE);
+            $table->attach(
                 $image,
                 $leftAttach,
-                $rightAttach,
                 $topAttach,
-                $bottomAttach,
+                ($rightAttach - $leftAttach),
+                ($bottomAttach - $topAttach),
             );
         }
 
         return $image;
     }
 
-    sub addDrawingArea {
-
-        # Creates a GA::Obj::DrawingArea to handle a Gtk2::DrawingArea of a specified size for
-        #   drawing
-        #
-        # Example calls:
-        #   $self->addDrawingArea($table, '',
-        #       undef, undef, undef,
-        #       FALSE, FALSE,,
-        #       0, 12, 1, 12);
-        #   $self->addDrawingArea($table, 'black_gc',
-        #       'configureFunc', 'motionFunc', 'clickFunc',
-        #       TRUE, TRUE,
-        #       0, 12, 1, 12,
-        #       300, 200);
-        #
-        # Expected arguments
-        #   $table          - The tab's Gtk2::Table object
-        #   $colour         - Background colour - 'white_gc', 'black_gc', etc (if an empty string,
-        #                       'white_gc' is used)
-        #   $initialFunc    - A function to call during setup, in order to do any initial drawing.
-        #                       If 'undef', no function is called
-        #   $clickFunc      - A function to call whenever the user clicks on the drawing area (which
-        #                       emits the 'button-press-event' signal). If 'undef', the signal is
-        #                       ignored
-        #   $motionFunc     - A function to call whenever mouse motion over the drawing area is
-        #                       detected (due to the motion-notify-event signal). If 'undef', the
-        #                       signal is ignored
-        #   $scrollHorizFlag, $scrollVertFlag
-        #                   - Flags set to TRUE if the scolled window, in which the drawing area
-        #                       appears, scrolls; set to FALSE otherwise
-        #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #                   - The position of the entry in the table
-        #
-        # Optional arguments
-        #   $width, $height - The width and height of the pixmap, in pixels. If not specified, a
-        #                       default size of 300x200 is used
-        #
-        # Return values
-        #   'undef' on improper arguments, or if a GA::Obj::DrawingArea can't be created
-        #   Otherwise returns the GA::Obj::DrawingArea created
-
-        my (
-            $self, $table, $colour, $initialFunc, $clickFunc, $motionFunc, $scrollHorizFlag,
-            $scrollVertFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $width, $height,
-            $check
-        ) = @_;
-
-        # Local variables
-        my $drawingAreaObj;
-
-        # Check for improper arguments
-        if (
-            ! defined $table || ! defined $colour || ! defined $scrollHorizFlag
-            || ! defined $scrollVertFlag || ! defined $leftAttach || ! defined $rightAttach
-            || ! defined $topAttach || ! defined $bottomAttach || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->addDrawingArea', @_);
-        }
-
-        # Check that the position in the table makes sense
-        if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
-
-            return undef;
-        }
-
-        # Create a GA::Obj::DrawingArea to store all the values needed by the various drawing
-        #   functions supplied by GA::Generic::EditWin
-        $drawingAreaObj = Games::Axmud::Obj::DrawingArea->new();
-        if (! $drawingAreaObj) {
-
-            return undef;
-        }
-
-        # Set default width/height, if necessary
-        if (! defined $width) {
-
-            $width = 300;
-        }
-
-        if (! defined $height) {
-
-            $height = 200;
-        }
-
-        # Set the default background colour, if not specified
-        if (! $colour) {
-
-            $colour = 'white_gc';
-        }
-
-        # Create a scrolled window
-        my $scrolledWin = Gtk2::ScrolledWindow->new();
-        $scrolledWin->set_size_request($width, $height);
-        my $hAdjustment = $scrolledWin->get_hadjustment();
-        $scrolledWin->set_border_width(3);
-
-        # Set the scrolling policy
-        if ($scrollHorizFlag && $scrollVertFlag) {
-            $scrolledWin->set_policy('always','always');
-        } elsif ($scrollHorizFlag) {
-            $scrolledWin->set_policy('always', 'never');
-        } elsif ($scrollVertFlag) {
-            $scrolledWin->set_policy('never', 'always');
-        } else {
-            $scrolledWin->set_policy('never', 'never');
-        }
-
-        # Create a viewport
-        my $viewPort = Gtk2::Viewport->new(undef,undef);
-        # Add the viewport to the scrolled window
-        $scrolledWin->add($viewPort);
-        # Add the scrolled window to the table
-        $table->attach_defaults($scrolledWin, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
-
-        # Create the drawing area
-        my $drawingArea = Gtk2::DrawingArea->new();
-
-        # Add an event box for detecting the user's mouse
-        my $eventBox = Gtk2::EventBox->new();
-        $eventBox->add($drawingArea);
-        $eventBox->add_events(['pointer-motion-mask', 'pointer-motion-hint-mask']);
-
-        # Detect mouse clicks over the drawing area
-        $eventBox->signal_connect ('button-press-event' => sub {
-
-            my ($widget, $event) = @_;
-
-            if (! $clickFunc) {
-
-                return undef;
-
-            } else {
-
-                # Inform the specified function of the co-ords of the mouse above the drawing area
-                return $self->$clickFunc($drawingAreaObj, $event->x, $event->y);
-            }
-        });
-
-        # Detect mouse motion over the drawing area
-        $eventBox->signal_connect ('motion-notify-event' => sub {
-
-            my ($widget, $event) = @_;
-
-            if (! $motionFunc) {
-
-                return undef;
-
-            } else {
-
-                # Inform the specified function of the co-ords of the mouse above the drawing area
-                return $self->$motionFunc($drawingAreaObj, $event->x, $event->y);
-            }
-        });
-
-        # Add the event box, containing the drawing area, to the viewport
-        $viewPort->add($eventBox);
-
-        # Set IVs in the Games::Axmud::Obj::DrawingArea
-        $drawingAreaObj->ivPoke('width', $width);
-        $drawingAreaObj->ivPoke('height', $height);
-        $drawingAreaObj->ivPoke('scrolledWin', $scrolledWin);
-        $drawingAreaObj->ivPoke('hAdjustment', $hAdjustment);
-        $drawingAreaObj->ivPoke('viewPort', $viewPort);
-        $drawingAreaObj->ivPoke('drawingArea', $drawingArea);
-        $drawingAreaObj->ivPoke('eventBox', $eventBox);
-
-        # Set events for the drawing area
-        $drawingArea->set_events ([
-            'exposure-mask',
-            'leave-notify-mask',
-            'button-press-mask',
-            'pointer-motion-mask',
-            'pointer-motion-hint-mask',
-        ]);
-
-        # Two signals used to handle the backing pixmap
-        $drawingArea->signal_connect('expose_event' => sub {
-
-            # Redraw the screen from the backing pixmap
-
-            my $widget = shift;    # GtkWidget      *widget
-            my $event  = shift;    # GdkEventExpose *event
-
-            $widget->window->draw_drawable(
-                $widget->style->fg_gc($widget->state),
-                $drawingAreaObj->pixmap,
-                $event->area->x,
-                    $event->area->y,
-                $event->area->x,
-                    $event->area->y,
-                $event->area->width,
-                    $event->area->height,
-            );
-
-            return FALSE;
-        });
-
-        $drawingArea->signal_connect('configure_event' => sub {
-
-            # Create a new backing pixmap of the appropriate size
-
-            my $widget = shift;    # GtkWidget         *widget
-            my $event  = shift;    # GdkEventConfigure *event
-
-            # Local variables
-            my ($pixmap, $graphicsContext, $colourMap);
-
-            # Create a pixmap
-            $pixmap = Gtk2::Gdk::Pixmap->new(
-                $widget->window,
-                $widget->allocation->width,
-                $widget->allocation->height,
-                -1,
-            );
-
-            $pixmap->draw_rectangle(
-                $widget->style->$colour,
-                TRUE,
-                0, 0,
-                $widget->allocation->width,
-                $widget->allocation->height,
-            );
-
-            # Create a GDK graphics context
-            $graphicsContext = Gtk2::Gdk::GC->new($pixmap);
-
-            # Create a colour map
-            $colourMap = $pixmap->get_colormap();
-
-            # Store these objects
-            $drawingAreaObj->ivPoke('pixmap', $pixmap);
-            $drawingAreaObj->ivPoke('graphicsContext', $graphicsContext);
-            $drawingAreaObj->ivPoke('colourMap', $colourMap);
-
-            # Set a default foreground colour
-            $graphicsContext->set_foreground($drawingAreaObj->getColour('black'));
-
-            # Now draw something!
-            if ($initialFunc) {
-
-                $self->$initialFunc($drawingAreaObj);
-            }
-
-            return TRUE;
-        });
-
-        return $drawingAreaObj;
-    }
-
     sub addSimpleCanvas {
 
-        # Adds a Gnome2::Canvas to the table which is coloured in, using a single colour
-        # (Call $self->fillSimpleCanvas to change the colour)
+        # Adds a GooCanvas2::Canvas to the table which is painted using a single colour
+        # Call $self->fillSimpleCanvas to change the colour. Use ->addDrawingCanvas for more
+        #   complex drawing operations
         #
         # Example calls:
         #   my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($table, '#FF0000', '#FFFFFF',
@@ -26326,7 +26386,7 @@
         #       6, 7, 6, 7);
         #
         # Expected arguments
-        #   $table          - The Gtk2::Table displayed in the current tab
+        #   $table          - The Gtk3::Grid displayed in the current tab
         #   $colour         - The initial colour of the canvas. Can be any valid Axmud colour tag
         #                       (e.g. 'red', 'x255', '#FF0000')
         #   $noColour       - If $colour is not specified or if it is invalid, this colour is used.
@@ -26337,12 +26397,13 @@
         #
         # Optional arguments
         #   $width, $height - The size, in pixels, of the canvas. If not specified, a default size
-        #                       of 30x30 is used
+        #                       is applied that should fill the containing frame (assuming a
+        #                       Gtk3::Grid using horizontal rows)
         #
         # Return values
         #   An empty list on improper arguments or if the table coordinates don't make sense
         #   Otherwise, a list in the form
-        #       (Gtk2::Frame, Gnome2::Canvas, Gnome2::Canvas::Rect)
+        #       (Gtk3::Frame, GooCanvas2::Canvas, GooCanvas2::CanvasRect)
         #   ...where the last value will be 'undef' if no colour was drawn
 
         my (
@@ -26404,35 +26465,43 @@
         }
 
         # Use default width/height, if values not specified
-        if (! $width) {
+        if (! defined $width) {
 
             $width = 30;
         }
 
-        if (! $height) {
+        if (! defined $height) {
 
             $height = 30;
         }
 
         # Create a frame
-        my $frame = Gtk2::Frame->new(undef);
+        my $frame = Gtk3::Frame->new(undef);
         $frame->set_border_width(0);
         $frame->set_size_request($width, $height);
 
         # Create the canvas
-        my $canvas = Gnome2::Canvas->new();
-        # Set the canvas size
-        $canvas->set_scroll_region(0, 0, $width, $height);
-        # Add the canvas to the frame
+        my $canvas = GooCanvas2::Canvas->new();
         $frame->add($canvas);
+        $canvas->set_size_request($width, $height);
+        $canvas->set_bounds(0, 0, $width, $height);
 
         # Add the frame to the table
-        $table->attach_defaults($frame, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $frame->set_hexpand(FALSE);
+        $frame->set_vexpand(FALSE);
+        $table->attach(
+            $frame,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         # Fill the canvas with colour (if a colour was specified)
         if ($colour) {
 
-            $canvasObj = $self->fillSimpleCanvas($canvas, undef, $colour, $width, $height);
+            $canvasObj
+                = $self->fillSimpleCanvas($canvas, undef, $colour, $noColour, $width, $height);
         }
 
         return ($frame, $canvas, $canvasObj);
@@ -26444,11 +26513,11 @@
         #   $self->addSimpleCanvas
         #
         # Expected arguments
-        #   $canvas         - The existing Gnome2::Canvas
+        #   $canvas         - The existing GooCanvas2::Canvas
         #
         # Optional arguments
-        #   $oldObj         - The existing Gnome2::Canvas::Rect, if there is one. Set to 'undef' if
-        #                       this function is being called by $self->addSimpleCanvas, or if no
+        #   $oldObj         - The existing GooCanvas2::CanvasRect, if there is one. Set to 'undef'
+        #                       if this function is being called by $self->addSimpleCanvas, or if no
         #                       colour was drawn on the earlier call to ->addSimpleCanvas
         #   $colour         - The colour to draw on the canvas. Can be any valid Axmud colour tag
         #                       (e.g. 'red', 'x255', '#FF0000')
@@ -26458,11 +26527,12 @@
         #
         # Optional arguments
         #   $width, $height - The size, in pixels, of the canvas. If not specified, a default size
-        #                       of 30x30 is used
+        #                       is applied that should fill the containing frame (assuming a
+        #                       Gtk3::Grid using horizontal rows)
         #
         # Return values
         #   'undef' on improper arguments
-        #   The replacement Gnome2::Canvas::Rect otherwise
+        #   The replacement GooCanvas2::CanvasRect otherwise
 
         my ($self, $canvas, $oldObj, $colour, $noColour, $width, $height, $check) = @_;
 
@@ -26508,12 +26578,12 @@
         }
 
         # Use default width/height, if values not specified
-        if (! $width) {
+        if (! defined $width) {
 
             $width = 30;
         }
 
-        if (! $height) {
+        if (! defined $height) {
 
             $height = 30;
         }
@@ -26521,36 +26591,175 @@
         # Destroy the old background rectangle, if there is one
         if ($oldObj) {
 
-            $oldObj->destroy();
+            $oldObj->remove();
         }
 
         # Draw the canvas object (if a colour was specified)
         if ($colour) {
 
-            # The actual size and position is a little smaller, so that the whole of the canvas is
-            #   visible, without the frame getting in the way
-            # v1.0.694 - not possible to use the same trick as we used with 'main' window gauges, to
-            #   get the canvas object lined up perfectly in the middle. These x/y coordinates
-            #   produce something reasonable close
-            $partX = int($width / 10);
-            $partY = int($height / 10);
-
-            $canvasObj = Gnome2::Canvas::Item->new(
-                $canvas->root(),
-                'Gnome2::Canvas::Rect',
-                x1 => $partX,
-                y1 => $partY,
-                x2 => ($width - $partX),
-                y2 => ($height - ($partY * 2)),
-                fill_color => $colour,
-                outline_color => '#000000',     # Black
+            $canvasObj = GooCanvas2::CanvasRect->new(
+                'parent' => $canvas->get_root_item(),
+                'x' => 0,
+                'y' => 0,
+                'width' => $width,
+                'height' => $height,
+#                'line-width' => 2,
+                'stroke-color' => $colour,
+                'fill-color' => $colour,
             );
 
-            $canvasObj->lower_to_bottom();
+            $canvasObj->lower();
         }
 
         # Drawing complete
         return $canvasObj;
+    }
+
+    sub addDrawingCanvas {
+
+        # Adds a GooCanvas2::Canvas to the table for general drawing operations. For painting a
+        #   canvas as a single colour, use $self->addSimpleCanvas instead
+        #
+        # Example calls:
+        #   $self->addDrawingCanvas($table,
+        #       undef, undef,
+        #       FALSE, FALSE,
+        #       0, 12, 1, 12);
+        #   $self->addDrawingCanvas($table,
+        #       'motionFunc', 'clickFunc',
+        #       TRUE, TRUE,
+        #       0, 12, 1, 12,
+        #       500, 500);
+        #
+        # Expected arguments
+        #   $table          - The tab's Gtk3::Grid object
+        #   $clickFunc      - A function to call whenever the user clicks on the canvas (which emits
+        #                       the 'button-press-event' signal). If 'undef', the signal is ignored
+        #                       ignored
+        #   $motionFunc     - A function to call whenever mouse motion over the canvas is detected
+        #                       which emits the 'motion-notify-event' signal). If 'undef', the
+        #                       signal is ignored
+        #   $scrollHorizFlag, $scrollVertFlag
+        #                   - Flags set to TRUE if the scolled window, in which the canvas appears,
+        #                       scrolls; set to FALSE (or 'undef') otherwise
+        #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
+        #                   - The position of the canvas in the table
+        #
+        # Optional arguments
+        #   $width, $height - The width and height of the canvas, in pixels. If not specified,
+        #                       a default size of 300x200 is used
+        #
+        # Return values
+        #   'undef' on improper arguments, or if a drawing canvas can't be created
+        #   Otherwise returns the GooCanvas2::Canvas created
+
+        my (
+            $self, $table, $clickFunc, $motionFunc, $scrollHorizFlag, $scrollVertFlag, $leftAttach,
+            $rightAttach, $topAttach, $bottomAttach, $width, $height, $check
+        ) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $table || ! defined $leftAttach || ! defined $rightAttach
+            || ! defined $topAttach || ! defined $bottomAttach || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addDrawingCanvas', @_);
+        }
+
+        # Check that the position in the table makes sense
+        if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
+
+            return undef;
+        }
+
+        # Set default width/height, if necessary
+        if (! defined $width) {
+
+            $width = 300;
+        }
+
+        if (! defined $height) {
+
+            $height = 200;
+        }
+
+        # Create a frame containing a scrolled window
+        my $frame = Gtk3::Frame->new(undef);
+        $frame->set_shadow_type('etched-in');
+
+        my $scrolledWin = Gtk3::ScrolledWindow->new();
+        $frame->add($scrolledWin);
+        $scrolledWin->set_size_request($width, $height);
+        $scrolledWin->set_border_width(3);
+
+        my $viewPort = Gtk3::Viewport->new(undef,undef);
+        $scrolledWin->add($viewPort);
+
+        # Set its scrolling policy
+        if ($scrollHorizFlag && $scrollVertFlag) {
+            $scrolledWin->set_policy('always','always');
+        } elsif ($scrollHorizFlag) {
+            $scrolledWin->set_policy('always', 'never');
+        } elsif ($scrollVertFlag) {
+            $scrolledWin->set_policy('never', 'always');
+        } else {
+            $scrolledWin->set_policy('never', 'never');
+        }
+
+        # Add the frame to the table
+        $frame->set_hexpand(FALSE);
+        $frame->set_vexpand(FALSE);
+        $table->attach(
+            $frame,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
+
+        # Create the GooCanvas2 inside an event box (to detect the user's mouse)
+        my $eventBox = Gtk3::EventBox->new();
+        $viewPort->add($eventBox);
+        $eventBox->add_events(['pointer-motion-mask', 'pointer-motion-hint-mask']);
+
+        my $canvasWidget = GooCanvas2::Canvas->new();
+        $eventBox->add($canvasWidget);
+        $canvasWidget->set_size_request($width, $height);
+        $canvasWidget->set_bounds(0, 0, $width, $height);
+
+        # Detect mouse clicks over the drawing area
+        $eventBox->signal_connect ('button-press-event' => sub {
+
+            my ($widget, $event) = @_;
+
+            if (! $clickFunc) {
+
+                return undef;
+
+            } else {
+
+                # Inform the specified function of the co-ords of the mouse above the canvas
+                return $self->$clickFunc($event->x, $event->y);
+            }
+        });
+
+        # Detect mouse motion over the drawing area
+        $eventBox->signal_connect ('motion-notify-event' => sub {
+
+            my ($widget, $event) = @_;
+
+            if (! $motionFunc) {
+
+                return undef;
+
+            } else {
+
+                # Inform the specified function of the co-ords of the mouse above the canvas
+                return $self->$motionFunc($event->x, $event->y);
+            }
+        });
+
+        return $canvasWidget;
     }
 
     # Support functions for adding widgets
@@ -26558,7 +26767,7 @@
     sub checkPosn {
 
         # Called by $self->addLabel, etc
-        # Checks the position of a widget in the Gtk2::Table, to make sure the coordinates make
+        # Checks the position of a widget in the Gtk3::Grid, to make sure the coordinates make
         #   sense (that the right coordinate isn't lower than the left coordinate, for example)
         #
         # Expected arguments
@@ -26571,9 +26780,6 @@
 
         my ($self, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $check) = @_;
 
-        # Local variables
-        my ($tableWidth, $tableHeight);
-
         # Check for improper arguments
         if (
             ! defined $leftAttach || ! defined $rightAttach || ! defined $topAttach
@@ -26582,25 +26788,9 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->checkPosn', @_);
         }
 
-        # In case this window doesn't have ->tableWidth and ->tableHeight IVs (I'm looking at you,
-        #   GA::Win::Map!), use some failsafe values
-        if (! exists $self->{tableWidth}) {
-
-            # A 12x13 table, with a spare cell around every border)
-            $tableWidth = 13;
-            $tableHeight = 14;
-
-        } else {
-
-            $tableWidth = $self->{tableWidth};
-            $tableHeight = $self->{tableHeight};
-        }
-
         # Check coordinates
         if (
             $leftAttach < 0 || $topAttach < 0
-            || $rightAttach > $tableWidth
-            || $bottomAttach > $tableHeight
             || $rightAttach < $leftAttach || $bottomAttach < $topAttach
         ) {
             return $self->writeWarning(
@@ -26804,21 +26994,6 @@
         return 1;
     }
 
-    sub set_wnckWin {
-
-        my ($self, $wnckWin, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_wnckWin', @_);
-        }
-
-        $self->ivPoke('wnckWin', $wnckWin);
-
-        return 1;
-    }
-
     sub set_workspaceObj {
 
         my ($self, $workspaceObj, $check) = @_;
@@ -26873,8 +27048,6 @@
         { $_[0]->{winWidget} }
     sub winBox
         { $_[0]->{winBox} }
-    sub wnckWin
-        { $_[0]->{wnckWin} }
     sub enabledFlag
         { $_[0]->{enabledFlag} }
     sub visibleFlag
@@ -26987,22 +27160,20 @@
             #   displayed in a 'dialogue' window)
             pseudoCmdMode               => 'win_error',
 
-            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
-            #   parent 'main' window's Gtk2::Window
+            # The window widget. For most window objects, the Gtk3::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk3::Window
             # The code should use this IV when it wants to do something to the window itself
             #   (minimise it, make it active, etc)
             winWidget                   => undef,
-            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            # The window container. For most window objects, the Gtk3::Window. For pseudo-windows,
             #   the parent GA::Table::PseudoWin table object
             # The code should use this IV when it wants to add, modify or remove widgets inside the
             #   window itself
             winBox                      => undef,
-            # The Gnome2::Wnck::Window, if known
-            wnckWin                     => undef,
             # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
             #   FALSE if not
             enabledFlag                 => FALSE,
-            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            # Flag set to TRUE if the Gtk3 window itself is visible (after a call to
             #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
             visibleFlag                 => TRUE,
             # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
@@ -27020,10 +27191,10 @@
             #       (sub_name, argument_list_ref, sub_name, argument_list_ref...)
             childDestroyHash            => {},
 
-            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
-            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            # The container widget into which all other widgets are packed (usually a Gtk3::VBox or
+            #   Gtk3::HBox, but any container widget can be used; takes up the whole window client
             #   area)
-            packingBox                  => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox
 
             # Standard IVs for 'free' windows
 
@@ -27044,19 +27215,14 @@
             # Standard IVs for 'wiz' windows
 
             # Widgets
-            scroller                    => undef,       # Gtk2::ScrolledWindow
-            hAdjustment                 => undef,       # Gtk2::Adjustment
-            vAdjustment                 => undef,       # Gtk2::Adjustment
-            table                       => undef,       # Gtk2::Table
-            hBox                        => undef,       # Gtk2::HBox
-            tooltips                    => undef,       # Gtk2::Tooltips
-            nextButton                  => undef,       # Gtk2::Button
-            previousButton              => undef,       # Gtk2::Button
-            cancelButton                => undef,       # Gtk2::Button
-
-            # The default size of the table on each page
-            tableWidth                  => 12,
-            tableHeight                 => 32,
+            scroller                    => undef,       # Gtk3::ScrolledWindow
+            hAdjustment                 => undef,       # Gtk3::Adjustment
+            vAdjustment                 => undef,       # Gtk3::Adjustment
+            table                       => undef,       # Gtk3::Grid
+            hBox                        => undef,       # Gtk3::HBox
+            nextButton                  => undef,       # Gtk3::Button
+            previousButton              => undef,       # Gtk3::Button
+            cancelButton                => undef,       # Gtk3::Button
 
             # Three flags that can be set by any page, to prevent one of three buttons from being
             #   made sensitive (temporarily)
@@ -27100,7 +27266,7 @@
     sub winEnable {
 
         # Called by GA::Generic::Win->createFreeWin, after the call to $self->winSetup
-        # After the Gtk2::Window has been setup and moved into position, makes it visible
+        # After the Gtk3::Window has been setup and moved into position, makes it visible
         #
         # Expected arguments
         #   (none besides $self)
@@ -27168,7 +27334,7 @@
             $winObj->winDestroy();
         }
 
-        # Destroy the Gtk2::Window
+        # Destroy the Gtk3::Window
         eval { $self->winBox->destroy(); };
         if ($@) {
 
@@ -27223,31 +27389,32 @@
         }
 
         # Create a packing box
-        my $packingBox = Gtk2::VBox->new(FALSE, 0);
+        my $packingBox = Gtk3::VBox->new(FALSE, 0);
         $self->winBox->add($packingBox);
         $packingBox->set_border_width(0);
 
         # Add a table (inside a scrolled window) in the higher area
-        my $scroller = Gtk2::ScrolledWindow->new(undef, undef);
-        $packingBox->pack_start($scroller, TRUE, TRUE, 0);
-        $scroller->set_policy('automatic', 'automatic');
-        $scroller->set_border_width(5);
+        my $frame = Gtk3::Frame->new(undef);
+        $packingBox->pack_start($frame, TRUE, TRUE, 0);
+        $frame->set_border_width($self->spacingPixels);
 
-        my $table = Gtk2::Table->new($self->tableHeight, $self->tableWidth, FALSE);
+        my $scroller = Gtk3::ScrolledWindow->new(undef, undef);
+        $frame->add($scroller);
+        $scroller->set_policy('automatic', 'automatic');
+        $scroller->set_border_width(0);
+
+        my $table = Gtk3::Grid->new();
         $scroller->add_with_viewport($table);
-        $table->set_col_spacings($self->spacingPixels);
-        $table->set_row_spacings($self->spacingPixels);
+        $table->set_column_spacing($self->spacingPixels);
+        $table->set_row_spacing($self->spacingPixels);
         $table->set_border_width($self->borderPixels);
 
         # Add a button strip at the bottom, in a horizontal packing box
-        my $hBox = Gtk2::HBox->new(FALSE, 0);
+        my $hBox = Gtk3::HBox->new(FALSE, 0);
         $packingBox->pack_end($hBox, FALSE, FALSE, 5);
 
-        # Create a Gtk2::Tooltips object, to be used by buttons on all tabs in this window
-        my $tooltips = Gtk2::Tooltips->new();
-
         # Create 'Next'/'Previous'/'Cancel' buttons
-        my ($nextButton, $previousButton, $cancelButton) = $self->enableButtons($hBox, $tooltips);
+        my ($nextButton, $previousButton, $cancelButton) = $self->enableButtons($hBox);
 
         # Update IVs
         $self->ivPoke('packingBox', $packingBox);
@@ -27256,7 +27423,6 @@
         $self->ivPoke('vAdjustment', $scroller->get_vadjustment());
         $self->ivPoke('table', $table);
         $self->ivPoke('hBox', $hBox);
-        $self->ivPoke('tooltips', $tooltips);
         $self->ivPoke('nextButton', $nextButton);
         $self->ivPoke('previousButton', $previousButton);
         $self->ivPoke('cancelButton', $cancelButton);
@@ -27284,19 +27450,18 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the three Gtk::Button objects created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
@@ -27304,37 +27469,37 @@
 
         # Create the Next button - which also acts as a 'Finish' button once the user has
         #   finished making changes
-        my $nextButton = Gtk2::Button->new('Next');
-        $hBox->pack_end($nextButton, 0, 0, $self->borderPixels);
+        my $nextButton = Gtk3::Button->new('Next');
+        $hBox->pack_end($nextButton, FALSE, FALSE, $self->borderPixels);
         $nextButton->get_child->set_width_chars(10);
         $nextButton->signal_connect('clicked' => sub {
 
             $self->buttonNext();
         });
-        $tooltips->set_tip($nextButton, 'Move on to the next page');
+        $nextButton->set_tooltip_text('Move on to the next page');
 
         # Create the Previous button
-        my $previousButton = Gtk2::Button->new('Previous');
-        $hBox->pack_end($previousButton, 0, 0, $self->spacingPixels);
-        $previousButton->get_child->set_width_chars(10);
-        $previousButton->signal_connect('clicked' => sub {
+        my $prevButton = Gtk3::Button->new('Previous');
+        $hBox->pack_end($prevButton, FALSE, FALSE, $self->spacingPixels);
+        $prevButton->get_child->set_width_chars(10);
+        $prevButton->signal_connect('clicked' => sub {
 
             $self->buttonPrevious();
         });
-        $tooltips->set_tip($previousButton, 'Go back to the previous page');
-        $previousButton->set_sensitive(FALSE);    # Because 1st page is showing, starts desensitised
+        $prevButton->set_tooltip_text('Go back to the previous page');
+        $prevButton->set_sensitive(FALSE);    # Because 1st page is showing, starts desensitised
 
         # Create the Cancel button
-        my $cancelButton = Gtk2::Button->new('Cancel');
-        $hBox->pack_start($cancelButton, 0, 0, $self->borderPixels);
+        my $cancelButton = Gtk3::Button->new('Cancel');
+        $hBox->pack_start($cancelButton, FALSE, FALSE, $self->borderPixels);
         $cancelButton->get_child->set_width_chars(10);
         $cancelButton->signal_connect('clicked' => sub {
 
             $self->buttonCancel();
         });
-        $tooltips->set_tip($cancelButton, 'Cancel changes and close this window');
+        $cancelButton->set_tooltip_text('Cancel changes and close this window');
 
-        return ($nextButton, $previousButton, $cancelButton);
+        return ($nextButton, $prevButton, $cancelButton);
     }
 
     sub setupTable {
@@ -27367,16 +27532,10 @@
         # Call the function
         $rows = $self->$func();
 
-        if (defined $rows) {
-
-            # Resize the table, using the default width, but only as many rows as we actually need
-            $self->table->resize($rows, $self->tableWidth);
-        }
-
         return 1;
     }
 
-    sub expandTable {
+    sub updateTable {
 
         # Called by $self->buttonPrevious and ->buttonNext
         # Changes the page currently visible in the 'wiz' window
@@ -27396,7 +27555,7 @@
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandTable', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateTable', @_);
         }
 
         # Empty the table used for the existing page
@@ -27409,12 +27568,6 @@
         $func = $self->ivIndex('pageList', $self->currentPage) . 'Page';
         # Call the function
         $rows = $self->$func();
-
-        if (defined $rows) {
-
-            # Resize the table, using the default width, but only as many rows as we actually need
-            $self->table->resize($rows, $self->tableWidth);
-        }
 
         # Set button sensititives ($self->disableNextButtonFlag, etc, override the usual rules, if
         #   they are set)
@@ -27477,7 +27630,7 @@
         $self->vAdjustment->set_value(0);
 
         # Make the page visible
-        $self->winShowAll($self->_objClass . '->expandTable');
+        $self->winShowAll($self->_objClass . '->updateTable');
 
         return 1;
     }
@@ -27603,7 +27756,7 @@
         $self->ivEmpty('specialPreviousButtonHash');
 
         # Display the page
-        $self->expandTable();
+        $self->updateTable();
 
         return 1;
     }
@@ -27659,7 +27812,7 @@
             $self->ivEmpty('specialPreviousButtonHash');
 
             # Display the page
-            $self->expandTable();
+            $self->updateTable();
         }
 
         return 1;
@@ -27681,19 +27834,12 @@
         { $_[0]->{table} }
     sub hBox
         { $_[0]->{hBox} }
-    sub tooltips
-        { $_[0]->{tooltips} }
     sub nextButton
         { $_[0]->{nextButton} }
     sub previousButton
         { $_[0]->{previousButton} }
     sub cancelButton
         { $_[0]->{cancelButton} }
-
-    sub tableWidth
-        { $_[0]->{tableWidth} }
-    sub tableHeight
-        { $_[0]->{tableHeight} }
 
     sub disableNextButtonFlag
         { $_[0]->{disableNextButtonFlag} }

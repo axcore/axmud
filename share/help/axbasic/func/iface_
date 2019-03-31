@@ -1,4 +1,4 @@
-IFACE$ ()
+Iface$ ()
 
    Synopsis:
       Returns the name of the active interface created as a result of the most

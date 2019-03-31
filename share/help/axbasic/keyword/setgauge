@@ -19,15 +19,15 @@ SETGAUGE expression , expression , expression
          required) to be constant, at least in the short term.
 
    Examples:
-      REM Character's health points are at 50%
+      ! Character's health points are at 50%
       ADDGAUGE 1, "HP", "RED", "red", "WHITE"
       SETGAUGE 1, 50, 100
 
-      REM Character's energy points are very low
+      ! Character's energy points are very low
       ADDGAUGE 2, "EP", "GREEN", "green", "black"
       SETGAUGE 2, 0.017, 1
 
-      REM Show a gauge where the two numbers are added
-      REM Character has 900xp, and needs 100 more to level up
+      ! Show a gauge where the two numbers are added
+      ! Character has 900xp, and needs 100 more to level up
       ADDCONGAUGE 3, "XP", "MAGENTA", "magenta", "WHITE"
       SETGAUGE 3, 900, 100

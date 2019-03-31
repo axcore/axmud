@@ -9,13 +9,13 @@ ERROR expression
 
    Examples:
       ! Get a number between 1 and 6
-      LET number = int (rnd (6) + 1)
+      LET number = Int (Rnd (6) + 1)
 
       ! The subroutine will never be called
-      IF number = 0 THEN CALL terminate()
+      IF number = 0 THEN CALL Terminate()
       END
 
-      SUB STRING terminate ()
+      SUB STRING Terminate ()
          ERROR "This subroutine should not have been called!"
          STOP
       END SUB

@@ -1,7 +1,7 @@
 REVPATH variable-name
 
    Synopsis:
-      Attempts to reverse a list of direction
+      Attempts to reverse a list of directions
 
    Notes:
       The variable should be an array containing the series of commands to be 

@@ -1,10 +1,11 @@
-IFACETYPE$ ()
+Ifacetype$ ()
 
    Synopsis:
-      Returns the type of the current interface notification.
+      Returns the type of the current interface notification
 
    Notes:
       The interface notification list contains all the notifications received,
          and not yet processed, as the result of an earlier SETTRIG statement.
-      Returns one of the strings "trigger", "alias", "macro", "timer" or "hook".
-         If there is no current notification, returns an empty string.
+      At present, only triggers produce interface notifications, so only the
+         string "trigger" is returned. If there is no current notification,
+         returns an empty string.

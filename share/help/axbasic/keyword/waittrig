@@ -20,4 +20,4 @@ WAITTRIG expression [ , expression ]
 
    Examples:
       WAITTRIG "The orc kills you"
-      WAITTRIG "You kill the orc", 100
+      WAITTRIG "You kill the orc", 60

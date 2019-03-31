@@ -5,9 +5,9 @@ ADDCONGAUGE expression , expression [ , expression ] [ , expression ]
       Adds a 'main' window gauge
     
    Notes:
-      Adds a gauge to the 'main' window. This gauge displays two numerical 
-         values, such as your character's current XP and the amount of XP 
-         required to reach the next level. 
+      Adds a gauge to the 'main' window. This gauge displays two numeric values,
+         such as your character's current XP and the amount of XP required to
+         reach the next level. 
       It's expected (but not required) that the sum of these two values is
          constant, at least in the short term. In other words, when one value
          falls by some amount, the other value is expected to rise by the same
@@ -30,10 +30,10 @@ ADDCONGAUGE expression , expression [ , expression ] [ , expression ]
          "#000000" or "#FFFFFF"). Any invalid colour tags are ignored and
          default colours are used instead.
 
-      An ADDGAUGE statement is usually followed by a SETGAUGE statement, which
-         sets the numerical values displayed by the gauge. A DELGAUGE statement
-         removes the gauge entirely. Gauges are automatically removed when the
-         script terminates.
+      An ADDCONGAUGE statement is usually followed by a SETGAUGE statement,
+         which sets the numeric values displayed by the gauge. A DELGAUGE
+         statement removes the gauge entirely. Gauges are automatically removed
+         when the script terminates.
       Often, these statements are used in some kind of loop, which updates the
          gauges periodically. See the code below for an example.
 

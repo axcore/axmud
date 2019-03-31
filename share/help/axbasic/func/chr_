@@ -1,4 +1,4 @@
-CHR$ (number)
+Chr$ (number)
 
    Synopsis:
       Returns the character with the specified ASCII value

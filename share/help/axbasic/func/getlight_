@@ -1,4 +1,4 @@
-GETLIGHT$ ()
+Getlight$ ()
 
    Synopsis:
       Returns the world model's light status
@@ -8,4 +8,4 @@ GETLIGHT$ ()
          corresponding to a different light level (the default 'light status'
          strings are "day", "night" and "dark".)
       This function gets the current light status. To set the current light
-         status, see the SETLIGHT function.
+         status, see the Setlight () function.

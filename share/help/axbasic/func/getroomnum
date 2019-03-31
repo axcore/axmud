@@ -1,4 +1,4 @@
-GETROOMNUM ()
+Getroomnum ()
  
    Synopsis:
       Returns the world model number of the automapper's current room

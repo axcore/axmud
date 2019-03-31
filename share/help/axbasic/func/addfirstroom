@@ -1,4 +1,4 @@
-ADDFIRSTROOM ()
+Addfirstroom ()
         
    Synopsis:
       Adds the first room to the automapper window's current region
@@ -13,4 +13,4 @@ ADDFIRSTROOM ()
          returned. If the automapper window isn't open, if there is no current
          region, if the current region isn't empty or if the operation fails, 0
          is returned.
-      See also the ADDROOM function.
+      See also the Addroom () function.

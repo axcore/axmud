@@ -39,5 +39,8 @@ gwn / grabwindow              Grabs an 'external' window onto a workspace grid
          the same workspace grid used by this session's 'main' window. A list of
          workspace numbers can be obtained with the ';listworkspace' command.
 
+      Note that this command only works on X11-based window managers (so it
+         definitely will not work on MS Windows).
+
    User commands:
       gwn / grabwin / grabwindow

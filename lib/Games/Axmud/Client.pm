@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -377,14 +377,6 @@
             #   using the ';backupdata' command
             autoBackupAppendFlag        => FALSE,       # [config]
             #
-            # GA::Session->setupProfiles can optionally create a 'Loading...' popup window by
-            #   calling GA::Generic::Win->showBusyWin, if the file(s) it's loading are above a
-            #   certain size. It's up to the calling function to close the popup window when all
-            #   load operations are complete
-            # The standard file size above which a 'Loading...' popup can be shown, if some part of
-            #   the Axmud code wants it
-            constLargeFileSize          => 1_000_000,   # (roughly 1MB)
-            #
             # Axmud retains information about the config and data files it has loaded/saved since
             #   the script started. Each file that can be loaded or saved is handled by a
             #   GA::Obj::File
@@ -436,6 +428,31 @@
             #   profile). This list will become obsolete as soon as profiles are created/destroyed/
             #   loaded, so it shouldn't be used for any other purpose
             configWorldProfList         => [],
+
+            # GA::Session->setupProfiles can optionally create a 'Loading...' popup window by
+            #   calling GA::Generic::Win->showBusyWin, if the file(s) it's loading are above a
+            #   certain size. It's up to the calling function to close the popup window when all
+            #   load operations are complete
+            # The standard file size above which a 'Loading...' popup can be shown, if some part of
+            #   the Axmud code wants it
+            constLargeFileSize          => 5_000_000,   # (roughly 5MB)
+
+            # Large world models can cause 'out of memory' errors on low-spec machines. The
+            #   problem is not that the world model takes up too much memory, but that the Perl
+            #   Storable module struggles to load very large files into memory
+            # Since v1.1.529, the world model is saved either as a monolithic file (as previously),
+            #   or as multiple files, all of which are handled by a single file object
+            # Flag set to TRUE if we should allow large world models to be saved as multiple files,
+            #   FALSE if world models should always be saved as a single monolithic file
+            allowModelSplitFlag         => TRUE,        # [config]
+            # If multiple files are allowed, this value sets the maximum size of the world model
+            #   for which a monolithic file is still used. It also sets the size of multiple files,
+            #   when they are used. The value corresponds to a number of model objects (regions,
+            #   rooms etc) or exit model objects
+            # The constant (default) value
+            constModelSplitSize         => 5000,
+            # The value actually used (must be an integer, minimum value is 1000)
+            modelSplitSize              => 5000,
 
             # Plugins
             # -------
@@ -503,7 +520,7 @@
             #   plugin. Hash in the form
             #   $pluginMenuFuncHash{plugin_name} = func_ref
             #   ...where 'func_ref' is a reference to a function within a plugin that creates menu
-            #   items, when passed an existing Gtk2::Menu widget
+            #   items, when passed an existing Gtk3::Menu widget
             pluginMenuFuncHash          => {},
             # For MXP file filters that must be passed to a plugin, a registry hash of the plugin
             #   functions to call when the filter is applied to a file. Hash in the form
@@ -655,11 +672,11 @@
             # Flag set to TRUE if the tab label (if it's visible) should use the world's long name,
             #   FALSE if the tab label should use the profile name
             longTabLabelFlag            => TRUE,        # [config]
-            # Flag set to TRUE if a so-called 'simple tab' (a standalone Gtk2::TextView, rather than
-            #   a tab in a Gtk2::Notebook) should be displayed when only a single session is open
-            #   in a 'main' window (it's replaced with a Gtk2::Notebook when a second session is
+            # Flag set to TRUE if a so-called 'simple tab' (a standalone Gtk3::TextView, rather than
+            #   a tab in a Gtk3::Notebook) should be displayed when only a single session is open
+            #   in a 'main' window (it's replaced with a Gtk3::Notebook when a second session is
             #   opened in the same 'main' window)
-            # Flag set to FALSE if a Gtk2::Notebook should always be used
+            # Flag set to FALSE if a Gtk3::Notebook should always be used
             # NB This IV only applies to pane objects used for sessions' default tabs
             simpleTabFlag               => FALSE,       # [config]
             # Flag set to TRUE if the user should be prompted for a confirmation if they try to
@@ -732,7 +749,6 @@
                     'ToggleInstruction', 'ToggleSigil', 'CommandSeparator',
                     'Echo', 'Perl', 'Multi', 'SpeedWalk', 'SlowWalk', 'Crawl', 'Bypass',
                     'AddUserCommand', 'DeleteUserCommand', 'ListUserCommand', 'ResetUserCommand',
-                    'Screenshot',
                     'DisplayBuffer', 'SetDisplayBuffer', 'EditDisplayBuffer', 'DumpDisplayBuffer',
                     'InstructionBuffer', 'SetInstructionBuffer', 'EditInstructionBuffer',
                         'DumpInstructionBuffer',
@@ -923,7 +939,8 @@
                     'AddRegion', 'AddRoom', 'AddModelObject', 'SetModelParent', 'EditModelObject',
                         'EditRegionmap', 'EmptyRegion', 'DeleteRegion', 'DeleteTemporaryRegion',
                         'DeleteRoom', 'DeleteModelObject', 'ListModel', 'ListOrphan', 'DumpModel',
-                        'EditModel', 'MergeModel', 'UpdateModel', 'ModelReport', 'ListSourceCode',
+                        'SplitModel', 'EditModel', 'MergeModel', 'UpdateModel', 'CompressModel',
+                        'ModelReport', 'ListSourceCode',
                     'AddLabelStyle', 'EditLabelStyle', 'RenameLabelStyle', 'DeleteLabelStyle',
                         'ListLabelStyle',
                     'QuickLabelDelete',
@@ -1047,7 +1064,7 @@
             #   from the command line
             #
             #   e.g. ;help
-            #       - Sisplays Axmud help
+            #       - Displays Axmud help
             #
             # The ,, (two commas) sequence indicates a 'forced world command'. Everything following
             #   the commas is executed as a world command, even if the rest of the command starts
@@ -1338,7 +1355,7 @@
                                                   #     / localhost 6666
                 'dsprime'           => '1.0.0',   # Dead Souls game mud / dead-souls.net 6666
                 'dswords'           => '1.1.270', # Dragon Swords / dragonswordsmud.com 1234
-                'dunemud'           => '1.1.0',   # DuneMUD / dune.servint.com 6789
+                'dunemud'           => '1.1.0',   # DuneMUD / dunemud.net 6789
                 'duris'             => '1.0.0',   # Duris: Land of BloodLust / mud.durismud.com 7777
                 'edmud'             => '1.1.138', # Eternal Darkness / edmud.net 9700
                 'elephantmud'       => '1.1.0',   # Elephant MUD / elephant.org 23
@@ -1357,7 +1374,7 @@
                 'icesus'            => '1.1.0',   # Icesus / icesus.org 23
                 'ifmud'             => '1.0.275', # ifMUD / ifmud.port4000.com 4000
                 'imperian'          => '1.0.376', # Imperian: Sundered Heavens / imperian.com 23
-                'islands'           => '1.1.0',   # Islands / islands.genesismuds.com 3000
+                'islands'           => '1.1.0',   # Islands / play.islands-game.live 3000
                 'kallisti'          => '1.1.0',   # Legends of Kallisti / legendsofkallisti.com 4000
                 'lambda'            => '1.1.0',   # LambdaMOO / lambda.moo.mud.org 8888
                 'legendmud'         => '1.0.275', # LegendMUD / mud.legendmud.org 9999
@@ -1410,7 +1427,8 @@
                 'zombiemud'         => '1.1.0',   # ZombieMUD / zombiemud.org 23
                 # Pre-configured worlds from earlier releases => '1.1.0', now defunct
 #               'midkemia'          => '1.0.376', # Midkemia Online / closed 2016
-                # New release
+                # Worlds ready for the next Axmud release
+                #   ...
             },
             # Constant registry hash of pre-configured world profiles that must be patched (because
             #   of serious problems, or because the IP/DNS/port has changed), and the most recent
@@ -1422,6 +1440,8 @@
                 'dsdev'             => '1.1.270',
                 'dslocal'           => '1.1.270',
                 'dsprime'           => '1.1.270',
+                'dunemud'           => '1.2.0',
+                'islands'           => '1.2.0',
                 'luminari'          => '1.1.270',
                 'mud1'              => '1.1.270',
                 'mud2'              => '1.1.270',
@@ -1431,7 +1451,7 @@
                 'swmud'             => '1.1.012',
                 'threekingdoms'     => '1.1.270',
                 'threescapes'       => '1.1.270',
-                'twotowers'         => '1.1.405',
+                'twotowers'         => '1.2.0',
             },
             # Constant registry list of pre-configured world profiles; all the keys in
             #   $self->constWorldList, sorted alphabetically
@@ -1490,6 +1510,23 @@
                 'guilds',
                 'quests',
                 'attacks',
+            ],
+            # Parallel list of room filters with keyboard shortcuts, for use in the automapper
+            #   window menu ('R' is not available, and items must be in the same order as the list
+            #   above)
+            constRoomFilterKeyList         => [
+                '_markers',
+                '_custom',
+                '_navigation',
+                'c_ommercial',
+                '_buildings',
+                '_structures',
+                '_terrain',
+                'ob_jects',
+                'l_ight',
+                '_guilds',
+                '_quests',
+                '_attacks',
             ],
             # Constant registry list of values used to initialise room flags in world models
             constRoomFlagList           => [
@@ -2996,8 +3033,8 @@
                 'WHITE'                 => 'black',
             },
 
-            # A constant list of 32 rgb colour tags, roughly in rainbow order, for use with the zone
-            #   model GUI tab only (these values never change)
+            # A constant list of 32 rgb colour tags, roughly in rainbow order, for use with the
+            #   winmap/zonemap 'edit' windows (these values never change)
             constRainbowColourList      => [
                 '#FF0000',  # reds
                 '#FF7F00',  # oranges
@@ -3573,18 +3610,18 @@
             useCharSetFlag              => TRUE,        # [config]
 
             # MUD protocols
-            # Use MSDP (Mud Server Data Protocol - http://tintin.sourceforge.net/msdp/)
+            # Use MSDP (Mud Server Data Protocol - http://tintin.sourceforge.io/msdp/)
             useMsdpFlag                 => TRUE,        # [config]
-            # Use MSSP (Mud Server Status Protocol - http://tintin.sourceforge.net/mssp/)
+            # Use MSSP (Mud Server Status Protocol - http://tintin.sourceforge.io/mssp/)
             useMsspFlag                 => TRUE,        # [config]
-            # Use MCCP (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/). Both
+            # Use MCCP (Mud Client Compression Protocol - http://tintin.sourceforge.io/mccp/). Both
             #   MCCP1 and MCCP2 are supported
             useMccpFlag                 => TRUE,        # [config]
             # Use MSP (Mud Sound Protocol - http://www.zuggsoft.com/zmud/msp.htm)
             useMspFlag                  => TRUE,        # [config]
             # Use MXP (Mud Xtension Protocol - http://www.zuggsoft.com/zmud/mxp.htm)
             useMxpFlag                  => TRUE,        # [config]
-            # Use Pueblo - http://pueblo.sourceforge.net/doc/manual/html_standard_elements.html
+            # Use Pueblo - http://pueblo.sourceforge.io/doc/manual/html_standard_elements.html
             # (NB In line with other major MUD clients, Axmud offers only partial Pueblo support)
             usePuebloFlag               => TRUE,        # [config]
             # Use ZMP (Zenith Mud Protocol
@@ -3599,7 +3636,7 @@
             useAtcpFlag                 => TRUE,        # [config]
             # Use GMCP (Generic MUD Communication Protocol) - https://www.gammon.com.au/gmcp
             useGmcpFlag                 => TRUE,        # [config]
-            # Use MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.net/mtts/)
+            # Use MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
             useMttsFlag                 => TRUE,        # [config]
             # Use MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/). Only MCP version 2.1 is
             #   supported. Axmud provides the MCP packages 'mcp-negotiate', 'mcp-cord' and
@@ -4034,6 +4071,10 @@
             #   and to use those exclusively from then on; set to FALSE if the Locator task should
             #   ignore those MXP tag flags and look for anchor lines as normal
             allowMxpRoomFlag            => TRUE,        # [config]
+            # Flag set to TRUE if Axmud should recognise some illegal MXP keywords (for example,
+            #   those using hyphens instead of underlines); FALSE if it should only allow legal
+            #   MXP keywords
+            allowMxpFlexibleFlag        => FALSE,       # [config]
             # Flag temporarily set to TRUE when modifying the flags above, if
             #   $self->set_allowMxpFlag should not issue a new MXP <SUPPORTS> tag, as it normally
             #   would; usually set to FALSE
@@ -4041,7 +4082,7 @@
 
             # Hash of all official Pueblo tags (including those not implemented by Axmud)
             constPuebloOfficialHash     => {
-                # http://pueblo.sourceforge.net/doc/manual/html_standard_elements.html
+                # http://pueblo.sourceforge.io/doc/manual/html_standard_elements.html
                 # Document Structure Elements
                 'BODY'                  => undef,       # partially implemented
                 'HEAD'                  => undef,       # NOT implemented
@@ -4104,7 +4145,7 @@
                 'NEXTID'                => undef,       # NOT implemented
                 'TABLE'                 => undef,       # NOT implemented
                 'VAR'                   => undef,       # NOT implemented
-                # http://pueblo.sourceforge.net/doc/manual/html_pueblo_extensions.html
+                # http://pueblo.sourceforge.io/doc/manual/html_pueblo_extensions.html
                 # Basic extensions to HTML
 #                'EVENT'                => undef,       # an <IMG> attribute, NOT implemented
 #               'XCH_HINT'              => undef,       # an <A> attribute, implemented
@@ -4124,7 +4165,7 @@
                 'XCH_VOLUME'            => undef,       # NOT implemented
                 'XCH_ALERT'             => undef,       # implemented
                 'XCH_DEVICE'            => undef,       # NOT implemented
-                # http://pueblo.sourceforge.net/doc/manual/vrml_pueblo_extensions.html
+                # http://pueblo.sourceforge.io/doc/manual/vrml_pueblo_extensions.html
                 'XCH_CMD_INFO'          => undef,       # NOT implemented
                 # http://www.gammon.com.au/forum/?id=281
                 'COLOR'                 => undef,       # implemented, but not in Pueblo 2.50 spec
@@ -4397,7 +4438,7 @@
             # There are two modes for handling windows in multiple sessions, according to the
             #   setting of this flag:
             #       TRUE (traditional) : All sessions share a single 'main' window. The 'main'
-            #           window's Gtk2::Table contains one table object, a pane object
+            #           window's Gtk3::Grid contains one table object, a pane object
             #           (GA::Table::Pane) which displays text received from each session's world
             #           in a separate tab. No other widgets are allowed on the table. Other
             #           'internal' windows may be visible; on each workspace, they are arranged on
@@ -4406,7 +4447,7 @@
             #           is visible; only its 'internal' windows are visible; 'internal' windows
             #           controlled by other sessions are not visible (usually minimised)
             #       FALSE: All sessions have their own 'main' window. The 'main' window's
-            #           Gtk2::Table contains at least one pane object, but can also contain other
+            #           Gtk3::Grid contains at least one pane object, but can also contain other
             #           table widgets (including other pane objects). Other 'internal' windows are
             #           arranged on a workspace grid shared by all sessions (one workspace grid for
             #           every workspace in use). When the current session changes, no windows are
@@ -4426,11 +4467,11 @@
             #   workspace grids if this flag and GA::Obj::Desktop->gridPermitFlag are both TRUE
             activateGridFlag            => TRUE,            # [config]
             # When workspace grids are not available, Axmud can try to remember the size and
-            #   position of its 'grid' windows. Users (especially MS Windows users) can adjust the
-            #   size/positions manually, and have those settings applied in future sessions
-            # Flag set to TRUE if Axmud should try to the size and position of 'grid' windows, FALSE
-            #   if not (can be TRUE even if workspace grids are available)
-            storeGridPosnFlag           => undef,           # [config] Set below
+            #   position of its 'grid' windows. Users can adjust the size/positions manually, and
+            #   have those settings applied in future sessions
+            # Flag set to TRUE if Axmud should try to remember the size and position of 'grid'
+            #   windows, FALSE if not (can be TRUE even if workspace grids are available)
+            storeGridPosnFlag           => FALSE,           # [config]
             # When ->storeGridPosnFlag is TRUE, Axmud uses this hash to store the size/position of
             #   each 'grid' window with a unique ->winName (e.g. 'main', 'status_task', 'map').
             #   When it's FALSE, this hash is not updated at all
@@ -4508,40 +4549,40 @@
             #   in an 'internal' window is called a winmap, and is handled by a GA::Obj::Winmap
             #   object
             # The winmap divides the window's client area into horizontal (by default) or vertical
-            #   strips (conceptually, not using a specific Gtk2 widget)
+            #   strips (conceptually, not using a specific Gtk3 widget)
             # The winmap only affects the window when it is first created (or when it is reset).
             #   The Axmud code is then free to add/remove strips, or add/remove/resizes widgets
-            #   within the Gtk2::Table, whenever it pleases
+            #   within the Gtk3::Grid, whenever it pleases
             # Axmud has several standard winmaps, which can't be modified by the user (but which
             #   can be cloned, and the clones are modifiable)
             #   'main_wait' - The winmap used in the spare 'main' window visible when Axmud starts,
             #       before the first session is created. From top to bottom, the window will contain
-            #       a menu bar, toolbar, Gtk2::Table and an entry box. The Gtk2::Table contains no
+            #       a menu bar, toolbar, Gtk3::Grid and an entry box. The Gtk3::Grid contains no
             #       table objects
             #   'internal_wait' - The equivalent of 'main_wait' for 'internal' windows other than
             #       'main' windows. It's probably not required by anything, but is available
             #       nonetheless. The window contains only one strip object, the compulsory
             #       GA::Strip::Table; it contains no table objects
             #   'main_fill' - The default winmap for 'main' windows. From top to bottom, the window
-            #       will contain a menu bar, toolbar, Gtk2::Table, a gauge box, an entry box and an
-            #       info box. The Gtk2::Table contains a single pane object (GA::Table::Pane, which
-            #       consists of one or two Gtk2::TextViews sharing a single Gtk2::TextBuffer)
+            #       will contain a menu bar, toolbar, Gtk3::Grid, a gauge box, an entry box and an
+            #       info box. The Gtk3::Grid contains a single pane object (GA::Table::Pane, which
+            #       consists of one or two Gtk3::TextViews sharing a single Gtk3::TextBuffer)
             #       filling the whole table
             #   'main_part' - The same as 'main_fill', but the single pane object fills two-thirds
             #       of the left-hand side of the table, leaving the remaining third empty for other
             #       widgets
-            #   'main_empty' - The same as 'main_fill', but the Gtk2::Table is empty
+            #   'main_empty' - The same as 'main_fill', but the Gtk3::Grid is empty
             #   'basic_fill' - The default winmap for 'internal' windows besides 'main' windows.
-            #       Contains only a Gtk2::Table. The Gtk2::Table contains a single pane object
+            #       Contains only a Gtk3::Grid. The Gtk3::Grid contains a single pane object
             #       filling the whole table
             #   'basic_part' - The same as 'basic_fill', but the single pane object fills only the
             #       lower quarter of the table, leaving plenty of room for other widgets
-            #   'basic_empty' - The same as 'basic_fill', but the Gtk2::Table is empty
-            #   'entry_fill' - From top to bottom, contains a Gtk2::Table and an entry box. The
-            #       Gtk2::Table contains a single pane object filling the whole table
+            #   'basic_empty' - The same as 'basic_fill', but the Gtk3::Grid is empty
+            #   'entry_fill' - From top to bottom, contains a Gtk3::Grid and an entry box. The
+            #       Gtk3::Grid contains a single pane object filling the whole table
             #   'entry_part' - The same as 'entry_fill', but the single pane object fills only the
             #       lower quarter of the table, leaving plenty of room for other widgets
-            #   'entry_empty' - The same as 'entry_fill', but the Gtk2::Table is empty
+            #   'entry_empty' - The same as 'entry_fill', but the Gtk3::Grid is empty
             # Constant registry hash of standard winmap names, in the form
             #   $constWinmapNameHash->{name} = undef
             constWinmapNameHash         => {
@@ -4785,6 +4826,10 @@
             # Constant default spacing values for 'free' windows (in pixels)
             constFreeBorderPixels       => 5,
             constFreeSpacingPixels      => 5,
+            # Unfortunately, when we display labels in Axmud 'dialogue' windows, we usually have to
+            #   break up the text into separate lines (as Gtk+ no longer handles that)
+            # The maximum number of characters per line, when that is done
+            constDialogueLabelSize      => 50,
             #
             # The edges of the workspace may not be available to windows because of panels (called
             #   'taskbars' in MS Windows). These IVs hold the sizes, in pixels, of the area
@@ -4833,7 +4878,7 @@
             customControlsBottomSize    => undef,           # [config]
             #
             # Constant default colour scheme for the pane objects (GA::Table::Pane), each of which
-            #   displays a Gtk2::TextView in an 'internal' windows
+            #   displays a Gtk3::TextView in an 'internal' windows
             # (These values never change; each value MUST be a standard colour tag, not an Xterm or
             #   RGB colour tag)
             constTextColour             => 'white',
@@ -4842,7 +4887,7 @@
             constFont                   => 'monospace',
             constFontSize               => 10,
             # Registry hash of colour scheme objects, each of which defines a colour scheme that can
-            #   be used in a Gtk2::TextView
+            #   be used in a Gtk3::TextView
             # Colour schemes with the same name as a type of window are used as the default colour
             #   scheme for that type of window. Those colour scheme objects can be modified, but not
             #   deleted from the hash. Other colour scheme objects can be added, deleted and
@@ -4872,7 +4917,7 @@
             #   'black' becomes 'BLACK', and 'BLACK' becomes 'black'
             convertInvisibleFlag        => FALSE,           # [config]
             # Constant default size for the textviews, corresponding to the number of lines that can
-            #   be stored in any textview object's Gtk2::TextBuffer (when it's full, the earliest
+            #   be stored in any textview object's Gtk3::TextBuffer (when it's full, the earliest
             #   line is removed to make way for a new line)
             # NB If required, text buffers can be set to be of unlimited size; these IVs only apply
             #   if a maximum size is needed
@@ -4880,23 +4925,23 @@
             #   IVs for Axmud's display, instruction and world command buffers, ->constMaxBufferSize
             #   and ->constMinBufferSize
             constTextBufferSize         => 10000,
-            # Default maximum number of lines that can be shown in a Gtk2::TextView
+            # Default maximum number of lines that can be shown in a Gtk3::TextView
             customTextBufferSize        => undef,           # [config] Set below
 
-            # A set of Gtk2::Gdk::Cursors, one for when the mouse is hovering over a normal part of
+            # A set of Gtk3::Gdk::Cursors, one for when the mouse is hovering over a normal part of
             #   a textview, and others when it is hovering over various kinds of clickable link
-            constNormalCursor           => Gtk2::Gdk::Cursor->new('xterm'),
-            constWWWCursor              => Gtk2::Gdk::Cursor->new('hand1'),
-            constPromptCursor           => Gtk2::Gdk::Cursor->new('sb_down_arrow'),
-            constPopupCursor            => Gtk2::Gdk::Cursor->new('target'),
-            constCmdCursor              => Gtk2::Gdk::Cursor->new('mouse'),
-            constMailCursor             => Gtk2::Gdk::Cursor->new('pencil'),
-            constTelnetCursor           => Gtk2::Gdk::Cursor->new('trek'),
-            # Another set of Gtk2::Gdk::Cursors for the automapper window's free click mode
-            constMapCursor              => Gtk2::Gdk::Cursor->new('arrow'),
-            constMapAddCursor           => Gtk2::Gdk::Cursor->new('plus'),
-            constMapConnectCursor       => Gtk2::Gdk::Cursor->new('crosshair'),
-            constMapMergeCursor         => Gtk2::Gdk::Cursor->new('target'),
+            constNormalCursor           => Gtk3::Gdk::Cursor->new('xterm'),
+            constWWWCursor              => Gtk3::Gdk::Cursor->new('hand1'),
+            constPromptCursor           => Gtk3::Gdk::Cursor->new('sb_down_arrow'),
+            constPopupCursor            => Gtk3::Gdk::Cursor->new('target'),
+            constCmdCursor              => Gtk3::Gdk::Cursor->new('mouse'),
+            constMailCursor             => Gtk3::Gdk::Cursor->new('pencil'),
+            constTelnetCursor           => Gtk3::Gdk::Cursor->new('trek'),
+            # Another set of Gtk3::Gdk::Cursors for the automapper window's free click mode
+            constMapCursor              => Gtk3::Gdk::Cursor->new('arrow'),
+            constMapAddCursor           => Gtk3::Gdk::Cursor->new('plus'),
+            constMapConnectCursor       => Gtk3::Gdk::Cursor->new('crosshair'),
+            constMapMergeCursor         => Gtk3::Gdk::Cursor->new('target'),
 
             # Icon file paths (relative to the main directory) for the 'internal' window strip
             #   object, GA::Strip::SearchBox
@@ -5122,12 +5167,6 @@
                     TRUE,                       # Requires connection to world
                 # separator
                 'separator',
-                'screenshot',
-                    'Take screenshot of session',
-                    'camera_black.png',
-                    ';screenshot',
-                    TRUE,                       # Requires current session
-                    FALSE,                      # Doesn't require connection to world
                 'speech',
                     'Turn on text-to-speech',
                     'ear_listen.png',
@@ -5644,7 +5683,7 @@
             startClockString            => undef,
             startDateString             => undef,
 
-            # Axmud usually terminates via a call to Gtk2->main_quit in GA::Client->stop. Doing
+            # Axmud usually terminates via a call to Gtk3->main_quit in GA::Client->stop. Doing
             #   this, rather than using the standard Perl exit, prevents a segfault
             # However, in certain situations, we may need to use exit after all (e.g. when
             #   GA::Obj::Workspace->stop closes a spare 'main' window). In those cases, the code can
@@ -5865,12 +5904,6 @@
         }
 
         $self->{constMsspVarHash}       = \%msspHash;
-
-        if ($^O eq 'MSWin32') {
-            $self->{storeGridPosnFlag} = TRUE;
-        } else {
-            $self->{storeGridPosnFlag} = FALSE;
-        }
 
         $self->{defaultEnabledWinmap}   = $self->constDefaultEnabledWinmap;
         $self->{defaultDisabledWinmap}  = $self->constDefaultDisabledWinmap;
@@ -6306,7 +6339,7 @@
 
         # Local variables
         my (
-            $warningFlag, $tempDir, $desktopObj, $host, $port, $world, $profObj, $taskObj,
+            $warningFlag, $roomObj, $exitObj, $desktopObj, $host, $port, $world, $profObj, $taskObj,
             $offlineFlag,
             @list,
         );
@@ -6439,9 +6472,25 @@
         $self->createSupportedMcpPackages();
         # Set up keycodes for the current system
         $self->setupKeycodes();
-
         # Create default TTS objects
         $self->ttsCreateStandard();
+
+        # Create a room object and an exit object with default values for their IVs, used to supply
+        #   default values for all other room/exit objects
+        $roomObj = Games::Axmud::ModelObj::Room->new($self, 'default', 'global');
+        $exitObj = Games::Axmud::Obj::Exit->new($self, 'default', 'global');
+        if (! $roomObj || ! $exitObj) {
+
+            return $self->writeError(
+                'Could not initialise the default room and exit objects',
+                $self->_objClass . '->start',
+            );
+
+        } else {
+
+            $axmud::DEFAULT_ROOM = $roomObj;
+            $axmud::DEFAULT_EXIT = $exitObj;
+        }
 
         # Load (or create) the config file (if allowed)
         if (! $self->configFileObj->setupConfigFile()) {
@@ -6989,12 +7038,12 @@
         }
 
         # Because of a Gtk issue, using 'exit' will cause a segfault. However, in certain (rare)
-        #   situations, we do actually need to use 'exit' or we'll get a Gtk2-CRITICAL error
+        #   situations, we do actually need to use 'exit' or we'll get a Gtk3-CRITICAL error
         if (
             ! $self->forceExitFlag
             || (! $axmud::BLIND_MODE_FLAG && ! $self->sessionCount)
         ) {
-            Gtk2->main_quit();
+            Gtk3->main_quit();
         } else {
             exit;
         }
@@ -8279,7 +8328,7 @@
                 if (! File::Copy::copy($filePath, $newDir . $file . '.axm')) {
 
                     # Give up importing this pre-configured world; destroy its data sub-directory
-                    unlink $newDir;
+                    File::Path::remove_tree($newDir);
 
                     $self->writeWarning(
                         'General error importing pre-configured worlds (could not copy files)',
@@ -8741,8 +8790,7 @@
                 $choice = $self->mainWin->showMsgDialogue(
                     'Emergency save',
                     'warning',
-                    "File access is about to be disabled. Would\nyou like to do an emergency"
-                    . " save?",
+                    'File access is about to be disabled. Would you like to do an emergency save?',
                     'yes-no',
                 );
 
@@ -8813,8 +8861,8 @@
 
         if (! mkdir ($dir, 0755)) {
 
-            $msg = "Could not create an emergency save directory (folder). You"
-                    . "\ncan try again using the ';emergencysave' command.";
+            $msg = 'Could not create an emergency save directory (folder); you can try again using'
+                        . ' the \';emergencysave\' command';
 
             if ($self->mainWin) {
 
@@ -8836,8 +8884,8 @@
         # Create a further sub-directory for world-specific files
         if (! mkdir ($dir . '/worlds', 0755)) {
 
-            $msg = "Could not create an emergency save directory (folder). You"
-                . "\ncan try again using the ';emergencysave' command.";
+            $msg = 'Could not create an emergency save directory (folder); you can try again using'
+                        . ' the \';emergencysave\' command.';
 
             if ($self->mainWin) {
 
@@ -9277,10 +9325,10 @@
 
         $choice = $self->mainWin->showComboDialogue(
             $title,
-            "Please use your cursor keys to select a world,\n"
-            . "and your tab and enter keys to click OK",
-            TRUE,                       # Show only a single OK button
+            'Please use your cursor keys to select a world, and your tab and enter keys to click'
+            . ' OK',
             \@comboList,
+            TRUE,                       # Show only a single OK button
         );
 
         if (! $choice) {
@@ -9300,8 +9348,8 @@
 
             $connectWorld = $self->mainWin->showEntryDialogue(
                 'New world',
-                "Enter a name for the new world and press RETURN\n"
-                . "(Maximum 16 characters and no spaces)",
+                'Enter a name for the new world and press RETURN (maximum 16 characters and no'
+                . ' spaces)',
                 16,
                 undef, undef, undef,
                 TRUE,                   # Show only a single OK button
@@ -9319,8 +9367,7 @@
 
                 $connectHost = $self->mainWin->showEntryDialogue(
                     'Host',
-                    "Enter the DNS or IP address for\n"
-                    . "the world and press RETURN",
+                    'Enter the DNS or IP address for the world and press RETURN',
                     256,
                     undef, undef, undef,
                     TRUE,                   # Show only a single OK button
@@ -9333,7 +9380,7 @@
 
                 $connectPort = $self->mainWin->showEntryDialogue(
                     'Port',
-                    "Enter the port and press RETURN",
+                    'Enter the port and press RETURN',
                     256,
                     undef, undef, undef,
                     TRUE,                   # Show only a single OK button
@@ -9360,11 +9407,11 @@
                 );
 
                 $choice = $self->mainWin->showComboDialogue(
-                    "Automatic login mode",
-                    "What kind of login does this world use? (If \n"
-                    . "you're not sure, select 'no automatic login')",
-                    TRUE,                       # Show only a single OK button
+                    'Automatic login mode',
+                    'What kind of login does this world use? (If you\'re not sure, select \'no'
+                    . ' automatic login\')',
                     \@comboList3,
+                    TRUE,                       # Show only a single OK button
                 );
 
                 if (! $choice) {
@@ -9376,7 +9423,7 @@
                 # (Characters are optional)
                 $connectChar = $self->mainWin->showEntryDialogue(
                     'Character',
-                    "Enter a character name and press RETURN",
+                    'Enter a character name and press RETURN',
                     16,
                     undef, undef, undef,
                     TRUE,                   # Show only a single OK button
@@ -9387,7 +9434,7 @@
                     # (Passwords are optional)
                     $connectPwd = $self->mainWin->showEntryDialogue(
                         'Password',
-                        "Enter a password and press RETURN",
+                        'Enter a password and press RETURN',
                         16,
                         undef, undef, undef,
                         TRUE,                   # Show only a single OK button
@@ -9422,11 +9469,11 @@
                 push (@comboList2, $newCharString);
 
                 $choice = $self->mainWin->showComboDialogue(
-                    "Select character",
-                    "Use your cursor keys to select a character,\n"
-                    . "and your tab and enter keys to click OK",
-                    TRUE,                       # Show only a single OK button
+                    'Select character',
+                    'Use your cursor keys to select a character, and your tab and enter keys to'
+                    . ' click OK',
                     \@comboList2,
+                    TRUE,                       # Show only a single OK button
                 );
 
                 if (! $choice) {
@@ -9447,7 +9494,7 @@
                 # (Characters are optional)
                 $connectChar = $self->mainWin->showEntryDialogue(
                     'Character',
-                    "Enter a character name and press RETURN",
+                    'Enter a character name and press RETURN',
                     16,
                     undef, undef, undef,
                     TRUE,                   # Show only a single OK button
@@ -9458,7 +9505,7 @@
                     # (Passwords are optional)
                     $connectPwd = $self->mainWin->showEntryDialogue(
                         'Password',
-                        "Enter a password and press RETURN",
+                        'Enter a password and press RETURN',
                         16,
                         undef, undef, undef,
                         TRUE,                   # Show only a single OK button
@@ -9656,7 +9703,7 @@
 
         # Called by $self->clientLoopObj->spinLoop when the client loop spins
         # Updates 'internal' windows and some of their strip objects. Makes blinking text in
-        #   Gtk2::Textviews blink on or off. Checks file objects and, if any need to be saved,
+        #   Gtk3::Textviews blink on or off. Checks file objects and, if any need to be saved,
         #   updates the title of 'main' windows
         #
         # Expected arguments
@@ -9894,6 +9941,9 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my @list;
+
         # Check for improper arguments
         if (defined $check) {
 
@@ -9909,38 +9959,39 @@
             $session->stopSessionLoop();
         }
 
-        $self->writeText(' ');
-        $self->writeText(
-            'Because of the Perl error, ' . $axmud::SCRIPT . ' internal processes have been'
+        @list = (
+            ' ',
+            'Because of a Perl error, ' . $axmud::SCRIPT . ' internal processes have been'
             . ' suspended across all sessions. (This will prevent you from seeing the same'
             . ' error message again and again, and will perhaps protect your stored data'
-            . ' from getting corrupted.)',
-        );
-        $self->writeText(' ');
-        $self->writeText(
+            . ' from getting corrupted. If there are several sessions open, the error is'
+            . ' sometimes visible only in one session.)',
+            ' ',
             'Most errors of this kind are caused by invalid patterns (regular expressions)'
             . ' in your interfaces (triggers, aliases, macros, timers and hooks). You can'
             . ' often correct them by opening an \'edit\' window and by replacing the'
             . ' invalid pattern with a valid one or by deleting it altogether.',
-        );
-        $self->writeText(' ');
-        $self->writeText(
+            ' ',
             'If the error was caused by a faulty plugin, the plugin can be disabled with'
             . ' the \';disableplugin\' command. Errors with the ' . $axmud::SCRIPT . ' code'
             . ' itself should be reported to the authors.',
-        );
-        $self->writeText(' ');
-        $self->writeText(
+            ' ',
             'When you are ready, you can use the \';restart\' command to return '
             . $axmud::SCRIPT . ' to a more-or-less functional state.',
-        );
-        $self->writeText(' ');
-        $self->writeText('---');
-        $self->writeText(' ');
-        $self->writeText(
+            ' ',
+            '---',
+            ' ',
             'Too long, didn\'t read? Just type:   ;restart',
+            ' ',
         );
-        $self->writeText(' ');
+
+        foreach my $session ($self->ivValues('sessionHash')) {
+
+            foreach my $line (@list) {
+
+                $session->writeText($line);
+            }
+        }
 
         return 1;
     }
@@ -10301,7 +10352,8 @@
                     'Bad temporary world',
                     'error',
                     'Attempted to create a temporary world profile, but a world profile called \''
-                    . $world . '\' already exists, and Axmud could not find an alternative name',
+                    . $world . '\' already exists, and ' . $axmud::SCRIPT . ' could not find an'
+                    . ' alternative name',
                     'ok',
                 );
 
@@ -12385,8 +12437,8 @@
         #
         # Optional arguments
         #   $funcRef    - Reference to a function which contain the code to add menu items to a
-        #                   Gtk2::Menu widget, pre-existing or created by this function. The
-        #                   referenced function must accept the strip object and Gtk2::Menu as
+        #                   Gtk3::Menu widget, pre-existing or created by this function. The
+        #                   referenced function must accept the strip object and Gtk3::Menu as
         #                   arguments, and return 'undef' on failure or 1 on success
         #
         # Return values
@@ -12720,7 +12772,8 @@
         ) {
             # Can't call $self->showImproper, or we'll get an infinite loop, so write something to
             #   the terminal
-            print "IMPROPER ARGS: " . $self->_objClass . "->writeLog() " . join (" ", @_) . "\n";
+            print "IMPROPER ARGUMENTSS: " . $self->_objClass . "->writeLog() " . join (" ", @_)
+                        . "\n";
             return undef;
         }
 
@@ -12877,6 +12930,10 @@
                 # Could not open file
                 next OUTER;
             }
+
+            # This line prevents any nasty 'Wide character in print' errors when (for example)
+            #   receiving UTF8 characters from the world
+            binmode $fileHandle, ':utf8';
 
             # If the file didn't already exist, write a header
             if ($newFileFlag) {
@@ -13363,6 +13420,48 @@
             # Invalid colour tag. Use the (global) default text colour instead
             return $defaultText;
         }
+    }
+
+    sub returnCairoColour {
+
+        # Can be called by anything (but is not currently called by anything)
+        # Translates any Axmud colour tag (including standard, xterm and RGB tags) into a format
+        #   used for Cairo drawing - a reference to a list containing three values in the range 0-1,
+        #   corresponding to the RGB values Cairo is expecting
+        #
+        # Expected arguments
+        #   $tag    - the Axmud colour tag to translate
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the list reference described above
+
+        my ($self, $tag, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (! defined $tag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->returnCairoColour', @_);
+        }
+
+        # Convert the colour tag to an RGB tag, in the form '#ABCDEF'
+        $tag = $self->returnRGBColour($tag);
+        if (! $tag) {
+
+            return undef;
+        }
+
+        # Convert the 'AB', 'CD' and 'EF' portions to values in the range 0-1, and return them
+        @list = (
+            (hex (substr($tag, -6, 2)) / 255),
+            (hex (substr($tag, -4, 2)) / 255),
+            (hex (substr($tag, -2, 2)) / 255),
+        );
+
+        return \@list;
     }
 
     sub swapColours {
@@ -16069,6 +16168,123 @@
         return $string;
     }
 
+    sub splitText {
+
+        # Splits a line of text into a specified number of rows separated by line break characters
+        # Each line will be no longer than a specified number of characters, but words are not
+        #   split (unless they're longer than the line)
+        # Discards any extra text and optionally appends an ellipsis if doing so
+        #
+        # Expected arguments
+        #   $line           - The line of text to split
+        #   $rows           - The maximum number of rows. If 0, there is no maximum (and no text is
+        #                       discarded)
+        #   $columns        - The maximum number of columns per line (minimum 10)
+        #
+        # Optional arguments
+        #   $ellipsisFlag   - If set to TRUE, an ellipsis is appended if any text is discarded.
+        #                       If set to FALSE (or 'undef'), no ellipsis is appended
+        #   $noHyphenFlag   - If set to TRUE, no hyphen is added at the end of a word which has
+        #                       been split. If FALSE (or 'undef'), no hyphens are ever added
+        #
+        # Return values
+        #   The unmodified value of $text on improper arguments, or if $rows and/or $columns are
+        #       invalid values
+        #   Otherwise, returns the modified string
+
+        my ($self, $line, $rows, $columns, $ellipsisFlag, $hyphenFlag, $check) = @_;
+
+        # Local variables
+        my (
+            $hyphen, $keep, $newLine,
+            @array,
+        );
+
+        # Check for improper arguments
+        if (! defined $line || ! defined $rows || ! defined $columns || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->splitText', @_);
+            return $line;
+        }
+
+        # Check for valid values of $rows and $columns
+        if (! $self->intCheck($rows, 0) || ! $self->intCheck($columns, 10)) {
+
+            return $line;
+        }
+
+        # Use a hyphen, or not
+        if (! $hyphenFlag) {
+            $hyphen = '';
+        } else {
+            $hyphen = '-';
+        }
+
+        # Replace any existing newline characters with spaces
+        $line =~ s/\n+/ /g;
+
+        # Split the text into distinct lines
+        do {
+
+            my ($i, $gap);
+
+            $i = 0;         # Search the text, character by character
+            $keep = 0;      # If splitting on a forward slash, preserve it
+
+            if (length($line) <= $columns) {
+
+                # No need to split anything (and this is the final iteration)
+                push(@array, $line);
+                $line = '';
+
+            } else {
+
+                # The line is going to be split near character number $columns. Find the space (or
+                #   tab, or forward slash) nearest to the end of the line
+                OUTER: for ($i = $columns; $i > 0; $i--) {
+
+                    my $char = substr($line, $i, 1);
+
+                    if ($char eq " " || $char eq "\t") {
+
+                        last OUTER;
+
+                    } elsif ($char eq "/") {
+
+                        $keep = 1;
+                        last OUTER;
+                    }
+                }
+
+                # A space (or tab or forward slash) was found. Split the line there
+                if ($i > 1) {
+
+                    push (@array, substr($line, 0, ($i + $keep)));
+                    $line = substr($line, ($i + 1));
+
+                # There is no space at which the line can be split. Split a word (using a hyphen, if
+                #   allowed)
+                } else {
+
+                    push (@array, substr($line, 0, ($columns)) . $hyphen);
+                    $line = substr($line, $columns);
+                }
+            }
+
+        } until ($line eq '' || ($rows && (scalar @array) >= $rows));
+
+        # Join the distinct lines together as a single string, with the lines separated by newline
+        #   characters
+        $newLine = join("\n", @array);
+        # If we're discarding extra text, append an ellipsis (if allowed)
+        if ($line && $ellipsisFlag) {
+
+            $newLine .= '...';
+        }
+
+        return $newLine;
+    }
+
     sub encodeJson {
 
         # Uses the JSON module to convert a Perl data structure to a UTF-8 encoded binary string
@@ -16365,6 +16581,31 @@
         return 1;
     }
 
+    sub set_allowModelSplitFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_allowModelSplitFlag',
+                @_,
+            );
+        }
+
+        if ($flag) {
+            $self->ivPoke('allowModelSplitFlag', TRUE);
+        } else {
+            $self->ivPoke('allowModelSplitFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_allowModelSplitFlag');
+
+        return 1;
+    }
+
     sub set_allowMxpFlag {
 
         my ($self, $type, $flag, $check) = @_;
@@ -16403,6 +16644,8 @@
             $self->ivPoke('allowMxpCrosslinkFlag', $flag);
         } elsif ($type eq 'room') {
             $self->ivPoke('allowMxpRoomFlag', $flag);
+        } elsif ($type eq 'flexible') {
+            $self->ivPoke('allowMxpFlexibleFlag', $flag);
         }
 
         # The data stored in this IV is saved in the 'config' file
@@ -18919,6 +19162,25 @@
         return 1;
     }
 
+    sub set_modelSplitSize {
+
+        my ($self, $size, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $size || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_modelSplitSize', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('modelSplitSize', $size);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_modelSplitSize');
+
+        return 1;
+    }
+
     sub toggle_mspFlag {
 
         # $flag is not specified when called by ;msp, but is specified when called by
@@ -20584,15 +20846,22 @@
     sub autoBackupAppendFlag
         { $_[0]->{autoBackupAppendFlag} }
 
-    sub constLargeFileSize
-        { $_[0]->{constLargeFileSize} }
-
     sub fileObjHash
         { my $self = shift; return %{$self->{fileObjHash}}; }
     sub configFileObj
         { $_[0]->{configFileObj} }
     sub configWorldProfList
         { my $self = shift; return @{$self->{configWorldProfList}}; }
+
+    sub constLargeFileSize
+        { $_[0]->{constLargeFileSize} }
+
+    sub allowModelSplitFlag
+        { $_[0]->{allowModelSplitFlag} }
+    sub constModelSplitSize
+        { $_[0]->{constModelSplitSize} }
+    sub modelSplitSize
+        { $_[0]->{modelSplitSize} }
 
     sub initPluginList
         { my $self = shift; return @{$self->{initPluginList}}; }
@@ -20846,6 +21115,8 @@
 
     sub constRoomFilterList
         { my $self = shift; return @{$self->{constRoomFilterList}}; }
+    sub constRoomFilterKeyList
+        { my $self = shift; return @{$self->{constRoomFilterKeyList}}; }
     sub constRoomFlagList
         { my $self = shift; return @{$self->{constRoomFlagList}}; }
     sub constRoomHazardHash
@@ -21170,6 +21441,8 @@
         { $_[0]->{allowMxpCrosslinkFlag} }
     sub allowMxpRoomFlag
         { $_[0]->{allowMxpRoomFlag} }
+    sub allowMxpFlexibleFlag
+        { $_[0]->{allowMxpFlexibleFlag} }
     sub mxpPreventSupportFlag
         { $_[0]->{mxpPreventSupportFlag} }
 
@@ -21358,6 +21631,8 @@
         { $_[0]->{constFreeBorderPixels} }
     sub constFreeSpacingPixels
         { $_[0]->{constFreeSpacingPixels} }
+    sub constDialogueLabelSize
+        { $_[0]->{constDialogueLabelSize} }
 
     sub constPanelSize
         { $_[0]->{constPanelSize} }

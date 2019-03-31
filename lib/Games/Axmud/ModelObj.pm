@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -832,10 +832,14 @@
         #
         # Expected arguments
         #   $session        - The parent GA::Session (not stored as an IV)
-        #   $descrip        - A string to describe the room - the same as its room title, if
-        #                       that's available; if not, a shortened version of the verbose
-        #                       description.
-        #   $modelFlag      - TRUE if this is a model object, FALSE if it's a non-model object
+        #   $descrip        - A string to describe the room - the same as its room title, if that's
+        #                       available; if not, a shortened version of the verbose description
+        #                       (NB as of v1.1.408, the $descrip is no longer stored anywhere)
+        #   $mode           - 'model' for an room model object (stored in
+        #                       GA::Obj::WorldModel->modelHash), 'non_model' for non-model room
+        #                       object, for example one used by the Locator task, or 'global' for
+        #                       the room object stored in the global variable $DEFAULT_ROOM (and
+        #                       which provides default values for all room object IVs)
         #
         # Optional arguments
         #   $parentRegion   - World model number of the region to which this room belongs ('undef'
@@ -845,297 +849,475 @@
         #   'undef' on improper arguments
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $session, $descrip, $modelFlag, $parentRegion, $check) = @_;
-
-        # Local variables
-        my ($parentFile, $parentProf);
+        my ($class, $session, $descrip, $mode, $parentRegion, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $class || ! defined $session || ! defined $descrip || ! defined $modelFlag
+            ! defined $class || ! defined $session || ! defined $descrip || ! defined $mode
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        if ($modelFlag) {
+        # For very large world models (10,000+ rooms), some computers tend to run out of memory
+        #   which produces a Perl error and a crash
+        # In response, we try to reduce the size of the world model as much as possible. Most of the
+        #   memory used is for room objects and exit objects (GA::Obj::Exit). Most of the memory
+        #   used by each of those objects is for IVs with default values
+        # Therefore, we remove most of the IVs altogether, restoring them only if some part of the
+        #   Axmud code sets the IV to a non-default value. Default values for each IV are obtained
+        #   from a room object stored in a global variable, $DEFAULT_ROOM, instead of from the room
+        #   object itself
+        my $self;
 
-            $parentFile = 'worldmodel';
-            $parentProf = $session->currentWorld->name;
+        if ($mode eq 'global') {
+
+            # This object is to be stored in the global variable, $DEFAULT_ROOM. Therefore it has
+            #   default values for all IVs
+
+            # Set standard IVs
+            $self->{_objName}               = 'room';
+            $self->{_objClass}              = $class;
+            $self->{_parentFile}            = undef;
+            $self->{_parentWorld}           = undef;
+            $self->{_privFlag}              = FALSE,            # All IVs are public
+
+            # Set group 1 IVs
+            $self->{name}                   = 'room';
+            $self->{category}               = 'room';
+            $self->{modelFlag}              = FALSE;
+            $self->{number}                 = undef;
+            $self->{parent}                 = $parentRegion;
+            $self->{childHash}              = {};
+
+            $self->{concreteFlag}           = FALSE;
+            $self->{aliveFlag}              = FALSE;
+            $self->{sentientFlag}           = FALSE;
+            $self->{portableFlag}           = FALSE;
+            $self->{saleableFlag}           = FALSE;
+
+            $self->{privateHash}            = {};
+
+            $self->{sourceCodePath}         = undef;
+            $self->{notesList}              = [];
+
+            # No group 2 IVs for rooms
+            # No group 3 IVs for rooms
+            # No group 4 IVs for rooms
+
+            # Set group 5 IVs
+            # The room's position in the map - specifically, its coordinates on the regionmap grid
+            #   tied to this room's parent region
+            $self->{xPosBlocks}             = undef;
+            $self->{yPosBlocks}             = undef;
+            $self->{zPosBlocks}             = undef;
+            # The room's tag, if it has been given one. Maximum 16 characters, and cannot contain
+            #   the sequence '@@@', which is needed for route objects
+            $self->{roomTag}                = undef;
+            # The offset (in pixels) where the room tag is drawn on the map. (0, 0) means draw the
+            #   tag at the standard position; (10, -10) means draw it 10 pixels to the right, 10
+            #   pixels higher
+            $self->{roomTagXOffset}         = 0;
+            $self->{roomTagYOffset}         = 0;
+            # The name of the guild, if this is a guild room ('undef' if all guilds can advance
+            #   skills here)
+            $self->{roomGuild}              = undef;
+            # The offset (in pixels) where the guild name is drawn on the map
+            $self->{roomGuildXOffset}       = 0;
+            $self->{roomGuildYOffset}       = 0;
+
+            # When we move north from room A to a new room B, and when room B has an exit in the
+            #   opposite direction, room A's departure exit is drawn as an 'uncertain' exit - we can
+            #   definitely move north from A to B, and probably move south from B to A
+            # Until this is confirmed - at which point room A's departure exit becomes a one-way
+            #   exit or a two-way exit - room B doesn't know that it has been set as the room A's
+            #   departure exit's ->destinationRoom
+            # This is a problem because, if room B is deleted, room A's departure exit still points
+            #   to the deleted room
+            # This room object is room B, and this hash IV contains a list of room A departure
+            #   exits - uncertain exits - which lead here. The hash is in the form
+            #       $uncertainExitHash{room_A_exit_number} = room_B_opposite_exit_number
+            # When an uncertain exit is created, the exit's destination room - this object - is told
+            #   to update the hash
+            # When an uncertain exit becomes a two-way exit, the entry is deleted
+            $self->{uncertainExitHash}      = {};
+            # We have the same issue with one-way exits. If we move north from room A to a new room
+            #   B, when room B doesn't have an exit in the opposite direction, room A's departure
+            #   exit is drawn as a '1-way' exit
+            # If room B is deleted, the one-way exit still points to it; if room B is moved to a new
+            #   place in the same region, the automapper will still try to draw a one-way exit
+            #   between them
+            # This room object is room B, and this hash IV contains a list of room A departure exits
+            #   - one-way exits - which lead here. The hash is in the form
+            #       $oneWayExitHash{room_A_exit_number} = undef
+            # When an one-way exit is created, the exit's destination room - this object - is told
+            #   to update the hash
+            $self->{oneWayExitHash}         = {};
+            # Also the same issue with involuntary/repulse exits patterns which have a defined
+            #   destination room which is this room. When a pattern with a destination room is
+            #   added, it is stored here. Hash in the form
+            #       $invRepExitHash{departure_room_number} = undef
+            $self->{invRepExitHash}         = {};
+            # Also the same issue with random exits which lead to a defined list of rooms, one of
+            #   which which is this room. When a random exit adds this room to its list, it is
+            #   stored here. Hash in the form
+            #       $randomExitHash{exit_number} = undef
+            $self->{randomExitHash}         = {};
+            # Some worlds have invisible exits hidden around the game for the user to discover. This
+            #   hash stores 'checked directions' - primary and secondary directions which the user
+            #   has tried, while the character was in this room (and while collection of checked
+            #   directions was turned on), and which generated a failed exit message
+            # If an exit in the same direction is subsequently created, or if an unallocated exit is
+            #   allocated to the same direction, the entry in this hash is automatically deleted
+            # Hash in the form
+            #   $checkedDirHash{custom_primary_direction} = number_of_failed_attempts;
+            $self->{checkedDirHash}        = {};
+            # Wilderness mode. Many worlds have 'wilderness' areas where exits aren't explicitly
+            #   stated, but are assumed to exist between adjacent rooms
+            # There are three settings for this mode:
+            #   'normal'   - All of this room's exits have a GA::Obj::Exit, and the automapper
+            #       window draws each of those exits
+            #   'wild'      - None of this room's exits have a GA::Obj::Exit, and the automapper
+            #       window does not draw the room with any exits. Axmud assumes that movement
+            #       between this room and any adjacent room (and back again) is possible
+            #   'border'    - Like 'wild', except that Axmud assumes that movement between this room
+            #       and any adjacent room is possible, but only if the adjacent room's ->wildMode is
+            #       set to 'wild' or 'border'. If the adjacent room's ->wildMode is set to 'normal',
+            #       Axmud assumes that no exit exists between the two rooms unless it has been
+            #       explicitly added to the model with a GA::Obj::Exit
+            $self->{wildMode}               = 'normal';
+
+            # List of titles (i.e. brief descriptions) for this room
+            $self->{titleList}              = [];
+            # Hash of known descriptions (i.e. verbose descriptions) for this room
+            #   $self->descripHash{status} = description;
+            # 'status' is the current value of the world model's ->lightStatus, which is usually one
+            #   of 'day', 'night' or 'darkness'
+            # When this object is created, ->descripHash contains a single key-value pair - the
+            #   current light status and description. More pairs can be added later
+            $self->{descripHash}            = {};
+            # GA::Profile::World->unspecifiedRoomPatternList provides a list of patterns that match
+            #   a line in 'unspecified' rooms (those that don't use a recognisable room statement;
+            #   typically a room whose exit list is completely obscured)
+            # If this room is an unspecified room, a list of patterns that match a line telling us
+            #   that the character has arrived in the room. The world profile's unspecified patterns
+            #   are checked after these ones; patterns in this list should match lines that are only
+            #   used with this room
+            $self->{unspecifiedPatternList} = [];
+            # For non-model room objects, flag set to TRUE if the room has an unspecified room
+            #   statement (e.g. 'You emerge from the bushes covered in thorns' - the character is in
+            #   a new room, but we don't know which one, or anything about its description, contents
+            #   and exits)
+            $self->{unspecifiedFlag}        = FALSE;
+            # For non-model room objects, set to TRUE if the room is dark (right now), so that we
+            #   don't know its description, contents or exits; set to FALSE otherwise
+            $self->{currentlyDarkFlag}      = FALSE;
+
+            # List of named exits, listed in the same order that standard exits use
+            #   e.g. ('north', 'northeast', 'east'...)
+            # For non-model rooms, it won't include hidden exits
+            $self->{sortedExitList}         = [];
+            # List of exit objects in the format
+            #   $exitNumHash{direction} = exit_number_in_exit_model (model rooms)
+            #   $exitNumHash{direction} = exit_object (non-model rooms)
+            #       ('direction' matches an element in $self->sortedExitList)
+            # For non-model rooms, this hash won't include hidden exits
+            $self->{exitNumHash}            = {};
+
+            # List of failed exit patterns for this room, which tells the Locator task that a
+            #   movement command has failed (but that the exit used was blocked only temporarily,
+            #   for example when a guard is sometimes present, and sometimes not)
+            $self->{failExitPatternList}
+                                            = [];
+            # A list of strings which match the text sent by the world, when we leave this room and
+            #   arrive at the destination room, but when the world doesn't send a room statement for
+            #   the destination room (called a 'faller' in LPmuds)
+            $self->{specialDepartPatternList}
+                                            = [];
+            # Hash of involuntary exit patterns for this room, which tells the Locator task that an
+            #   involuntary move has taken place (for example, when dragged by a river from one room
+            #   to another)
+            # The keys in the hash are patterns matching a line of received text
+            # The corresponding values can be 'undef' if the destination room is unknown. Otherwise,
+            #   it can be any of these (checked in this order):
+            #       1. The destination room's number
+            #       2. A direction matching which matches an exit object's nominal direction, >dir
+            #       3. A standard primary direction which matches an exit object's drawn map
+            #           direction, ->mapDir
+            #       4. Any other value (including if no matching exits exist) is treated like an
+            #           unknown destination room
+            $self->{involuntaryExitPatternHash}
+                                            = {};
+            # Hash of repulsed exit patterns for this room, which tells the Locator that not only
+            #   did an attempted move fail, but that the character has been moved to a new
+            #   (different) room - often in the opposite direction
+            # The keys in the hash are patterns matching a line of received text
+            # The corresponding values can be 'undef' if the destination room is unknown. Otherwise,
+            #   it can be any of these (checked in this order):
+            #       1. The destination room's number
+            #       2. A direction matching which matches an exit object's nominal direction, >dir
+            #       3. A standard primary direction which matches an exit object's drawn map
+            #           direction, ->mapDir
+            #       4. Any other value (including if no matching exits exist) is treated like an
+            #           unknown destination room
+            $self->{repulseExitPatternHash} = {};
+
+            # For worlds that provide a list of commands available in the room (typically instead of
+            #   an exit list, but not necessarily), a list of those commands
+            $self->{roomCmdList}            = [];
+            # A temporary list of room commands. Set whenever $self->roomCmdList is set. Thereafter,
+            #   when the user types ';roomcommand', the first command is removed from the list,
+            #   executed as a world command, and added to the end of the list
+            $self->{tempRoomCmdList}        = [];
+
+            # Records the number of visits to this room for each character. Hash in the form
+            #   $visitHash{character_name} = number_of_visits
+            $self->{visitHash}              = {};
+            # Flag set to TRUE if this room can only be entered by certain guilds, races or indeed
+            #   named characters
+            $self->{exclusiveFlag}          = FALSE;
+            # A hash of guilds, races, named chars etc allowed in this room (shouldn't include world
+            #   profiles), in the form
+            #   $exclusiveHash{profile_name} = undef
+            $self->{exclusiveHash}          = {};
+
+            # Room flag hash - a hash of room properties. If the key exists in a hash, the 'flag' is
+            #   'set to TRUE'; if a key doesn't exist in the hash, the 'flag' is 'set to FALSE'.
+            #   (The key's corresponding value is always 'undef'.)
+            # If this hash is empty, all the flags are 'set to FALSE'.
+            # GA::Obj::WorldModel has an equivalent hash containing all of the keys below. The key's
+            #   value is the colour the room should be painted, if the flag is set. When more than
+            #   one flag is set, GA::Obj::WorldModel works out for itself which should take priority
+            $self->{roomFlagHash}           = {};
+            # On the last occasion that the room was drawn, the room flag that was used to draw the
+            #   room's interior (i.e. the highest priority room flag - so we only have to look it up
+            #   once per drawing cycle). Set to 'undef' if no room flags are set for this room
+            $self->{lastRoomFlag}           = undef;
+
+            # GA::Generic::ModelObj defines ->sourceCodePath, the path to the object's source code
+            #   on the world (if known)
+            # If the room is in a virtual area, this should be set to something like
+            #   '/filepath/forest/24,3' - the 'path' that the world gives for this individual room.
+            #   The following IV should be set to the file path for the virtual area itself, e.g.
+            #   '/filepath/forest'. If set to 'undef', the room isn't in a virtual area
+            $self->{virtualAreaPath}        = undef;
+
+            # Data from this room supplied by various MUD protocols. At the moment, MSDP and MXP
+            #   data is supported
+            # Note that MSDP is not used by the Locator task/automapper, as it often received after
+            #   the room statement (and after the automapper needs it)
+            #
+            # Hash storing data about the room. When MSDP supplies data, the following key-value
+            #   pairs are added:
+            #   'vnum'          => some_value,
+            #   'name'          => some_value,
+            #   'area'          => some_value,
+            #   'xpos'          => some_value,
+            #   'ypos'          => some_value,
+            #   'zpos'          => some_value,
+            #   'terrain'       => some_value,
+            # When MXP supplies data, the following key-value pair is added:
+            #   'vnum'          => some_value,
+            $self->{protocolRoomHash}       = {};
+            # Hash storing data about the room's exits. When MSDP supplies data, the following
+            #   key-value pair(s) are added:
+            #   'abbrev_exit'   => destination_room_vnum,
+            $self->{protocolExitHash}       = {};
+
+            # List of blessed references to objects currently in this room (including player
+            #   characters). This IV is used for non-model rooms created by the Locator task; it
+            #   contains non-model objects for the contents of the Locator's current room
+            $self->{tempObjList}            = [];
+            # Hash of hidden objects, in the form
+            #   $hiddenObjHash{number_of_hidden_object} = 'commands_to_obtain_it'
+            # The keys of ->hiddenObjHash are a subset of the keys in $self->childHash.
+            $self->{hiddenObjHash}          = {};
+            # Hash of things that can be 'searched' (or 'examined'), and the response in the form
+            #   $searchHash{string} = response
+            #   e.g. $searchHash{fireplace} = 'It's an empty fireplace'
+            # Decorations which can be interacted with get their own model object,
+            #   GA::ModelObj::Decoration, and are stored in $self->childHash; this hash is used to
+            #   store things that only exist in response to 'search' or 'examine' commands
+            $self->{searchHash}             = {};
+
+            # List of recognised nouns that appear in the verbose description (set by the
+            #   automapper, when the user allows it)
+            $self->{nounList}               = [];
+            # List of recognised adjectives that appear in the verbose description (set by the
+            #   automapper, when the user allows it)
+            $self->{adjList}                = [];
+
+            # List of Axbasic scripts to run, when the character arrives in this room (if the
+            #   automapper knows the current location). Only non-task based scripts are suitable for
+            #   this list
+            $self->{arriveScriptList}       = [];
+
+        } elsif ($mode eq 'model') {
+
+            # This object is stored in the world model, i.e. in GA::Obj::WorldModel->modelHash
+
+            # Set standard IVs
+#            $self->{_objName}               = 'room';
+#            $self->{_objClass}              = $class;
+            $self->{_parentFile}            = 'worldmodel';
+            $self->{_parentWorld}           = $session->currentWorld->name;
+#            $self->{_privFlag}              = FALSE,            # All IVs are public
+
+            # Set group 1 IVs
+#            $self->{category}               = 'room';
+            $self->{modelFlag}              = TRUE;
+            $self->{number}                 = undef;            # Set later
+            $self->{parent}                 = $parentRegion;
+
+            # Set group 5 IVs
+            $self->{xPosBlocks}             = undef;
+            $self->{yPosBlocks}             = undef;
+            $self->{zPosBlocks}             = undef;
+
+        } elsif ($mode eq 'non_model') {
+
+            # This object is not stored in the world model (e.g. room objects used by the Locator
+            #   task)
+
+            # Set standard IVs
+#            $self->{_objName}               = 'room';
+#            $self->{_objClass}              = $class;
+            $self->{_parentFile}            = undef;
+            $self->{_parentWorld}           = undef;
+#            $self->{_privFlag}              = FALSE,            # All IVs are public
+
+            # Set group 1 IVs
+#            $self->{category}               = 'room';
+            $self->{modelFlag}              = FALSE;
+            $self->{number}                 = undef;            # Set later
+            $self->{parent}                 = undef;
+
+            # Set group 5 IVs
+            $self->{xPosBlocks}             = undef;
+            $self->{yPosBlocks}             = undef;
+            $self->{zPosBlocks}             = undef;
         }
-
-        # Setup
-        my $self = Games::Axmud::Generic::ModelObj->new($session, $descrip, 'room');
-
-        # Set standard IVs
-        $self->{_objName}               = 'room';
-        $self->{_objClass}              = $class;
-        $self->{_parentFile}            = $parentFile;      # May be 'undef'
-        $self->{_parentWorld}           = $parentProf;      # May be 'undef'
-        $self->{_privFlag}              = FALSE,            # All IVs are public
-
-        # Set group 1 IVs
-        $self->{parent}                 = $parentRegion;
-        $self->{childHash}              = {};
-        $self->{concreteFlag}           = FALSE;
-        $self->{aliveFlag}              = FALSE;
-        $self->{sentientFlag}           = FALSE;
-        $self->{portableFlag}           = FALSE;
-        $self->{saleableFlag}           = FALSE;
-        $self->{privateHash}            = {};
-
-        # No group 2 IVs for rooms
-        # No group 3 IVs for rooms
-        # No group 4 IVs for rooms
-
-        # Set group 5 IVs
-        # The room's position in the map - specifically, its coordinates on the regionmap grid tied
-        #   to this room's parent region
-        $self->{xPosBlocks}             = undef;
-        $self->{yPosBlocks}             = undef;
-        $self->{zPosBlocks}             = undef;
-        # The room's tag, if it has been given one. Maximum 16 characters, and cannot contain the
-        #   sequence '@@@', which is needed for route objects
-        $self->{roomTag}                = undef;
-        # The offset (in pixels) where the room tag is drawn on the map. (0, 0) means draw the tag
-        #   at the standard position; (10, -10) means draw it 10 pixels to the right, 10 pixels
-        #   higher
-        $self->{roomTagXOffset}         = 0;
-        $self->{roomTagYOffset}         = 0;
-        # The name of the guild, if this is a guild room ('undef' if all guilds can advance skills
-        #   here)
-        $self->{roomGuild}              = undef;
-        # The offset (in pixels) where the guild name is drawn on the map
-        $self->{roomGuildXOffset}       = 0;
-        $self->{roomGuildYOffset}       = 0;
-
-        # When we move north from room A to a new room B, and when room B has an exit in the
-        #   opposite direction, room A's departure exit is drawn as an 'uncertain' exit - we can
-        #   definitely move north from A to B, and probably move south from B to A
-        # Until this is confirmed - at which point room A's departure exit becomes a one-way exit or
-        #   a two-way exit - room B doesn't know that it has been set as the room A's departure
-        #   exit's ->destinationRoom
-        # This is a problem because, if room B is deleted, room A's departure exit still points to
-        #   the deleted room
-        # This room object is room B, and this hash IV contains a list of room A departure
-        #   exits - uncertain exits - which lead here. The hash is in the form
-        #       $uncertainExitHash{room_A_exit_number} = room_B_opposite_exit_number
-        # When an uncertain exit is created, the exit's destination room - this object - is told to
-        #   update the hash
-        # When an uncertain exit becomes a two-way exit, the entry is deleted
-        $self->{uncertainExitHash}      = {};
-        # We have the same issue with one-way exits. If we move north from room A to a new room B,
-        #   when room B doesn't have an exit in the opposite direction, room A's departure exit is
-        #   drawn as a '1-way' exit
-        # If room B is deleted, the one-way exit still points to it; if room B is moved to a new
-        #   place in the same region, the automapper will still try to draw a one-way exit between
-        #   them
-        # This room object is room B, and this hash IV contains a list of room A departure exits
-        #   - one-way exits - which lead here. The hash is in the form
-        #       $oneWayExitHash{room_A_exit_number} = undef
-        # When an one-way exit is created, the exit's destination room - this object - is told to
-        #   update the hash
-        $self->{oneWayExitHash}         = {};
-        # Also the same issue with involuntary/repulse exits patterns which have a defined
-        #   destination room which is this room. When a pattern with a destination room is added, it
-        #   is stored here. Hash in the form
-        #       $invRepExitHash{departure_room_number} = undef
-        $self->{invRepExitHash}         = {};
-        # Also the same issue with random exits which lead to a defined list of rooms, one of which
-        #   which is this room. When a random exit adds this room to its list, it is stored here.
-        #   Hash in the form
-        #       $randomExitHash{exit_number} = undef
-        $self->{randomExitHash}         = {};
-        # Some worlds have invisible exits hidden around the game for the user to discover. This
-        #   hash stores 'checked directions' - primary and secondary directions which the user has
-        #   tried, while the character was in this room (and while collection of checked directions
-        #   was turned on), and which generated a failed exit message
-        # If an exit in the same direction is subsequently created, or if an unallocated exit is
-        #   allocated to the same direction, the entry in this hash is automatically deleted
-        # Hash in the form
-        #   $checkedDirHash{custom_primary_direction} = number_of_failed_attempts;
-        $self->{checkedDirHash}        = {};
-        # Wilderness mode. Many worlds have 'wilderness' areas where exits aren't explicitly stated,
-        #   but are assumed to exist between adjacent rooms
-        # There are three settings for this mode:
-        #   'normal'   - All of this room's exits have a GA::Obj::Exit, and the automapper window
-        #       draws each of those exits
-        #   'wild'      - None of this room's exits have a GA::Obj::Exit, and the automapper window
-        #       does not draw the room with any exits. Axmud assumes that movement between this room
-        #       and any adjacent room (and back again) is possible
-        #   'border'    - Like 'wild', except that Axmud assumes that movement between this room
-        #       and any adjacent room is possible, but only if the adjacent room's ->wildMode is set
-        #       to 'wild' or 'border'. If the adjacent room's ->wildMode is set to 'normal', Axmud
-        #       assumes that no exit exists between the two rooms unless it has been explicitly
-        #       added to the model with a GA::Obj::Exit
-        $self->{wildMode}               = 'normal';
-
-        # List of titles (i.e. brief descriptions) for this room
-        $self->{titleList}              = [];
-        # Hash of known descriptions (i.e. verbose descriptions) for this room
-        #   $self->descripHash{status} = description;
-        # 'status' is the current value of the world model's ->lightStatus, which is usually one of
-        #   'day', 'night' or 'darkness'
-        # When this object is created, ->descripHash contains a single key-value pair - the current
-        #   light status and description. More pairs can be added later
-        $self->{descripHash}            = {};
-        # GA::Profile::World->unspecifiedRoomPatternList provides a list of patterns that match
-        #   a line in 'unspecified' rooms (those that don't use a recognisable room statement;
-        #   typically a room whose exit list is completely obscured)
-        # If this room is an unspecified room, a list of patterns that match a line telling us that
-        #   the character has arrived in the room. The world profile's unspecified patterns are
-        #   checked after these ones; patterns in this list should match lines that are only used
-        #   with this room
-        $self->{unspecifiedPatternList} = [];
-        # For non-model room objects, flag set to TRUE if the room has an unspecified room statement
-        #   (e.g. 'You emerge from the bushes covered in thorns' - the character is in a new room,
-        #   but we don't know which one, or anything about its description, contents and exits)
-        $self->{unspecifiedFlag}        = FALSE;
-        # For non-model room objects, set to TRUE if the room is dark (right now), so that we don't
-        #   know its description, contents or exits; set to FALSE otherwise
-        $self->{currentlyDarkFlag}      = FALSE;
-
-        # List of named exits, listed in the same order that standard exits use
-        #   e.g. ('north', 'northeast', 'east'...)
-        # For non-model rooms, it won't include hidden exits
-        $self->{sortedExitList}         = [];
-        # List of exit objects in the format
-        #   $exitNumHash{direction} = exit_number_in_exit_model (model rooms)
-        #   $exitNumHash{direction} = exit_object (non-model rooms)
-        #       ('direction' matches an element in $self->sortedExitList)
-        # For non-model rooms, this hash won't include hidden exits
-        $self->{exitNumHash}            = {};
-
-        # List of failed exit patterns for this room, which tells the Locator task that a movement
-        #   command has failed (but that the exit used was blocked only temporarily, for example
-        #   when a guard is sometimes present, and sometimes not)
-        $self->{failExitPatternList}
-                                        = [];
-        # A list of strings which match the text sent by the world, when we leave this room and
-        #   arrive at the destination room, but when the world doesn't send a room statement for the
-        #   destination room (called a 'faller' in LPmuds)
-        $self->{specialDepartPatternList}
-                                        = [];
-        # Hash of involuntary exit patterns for this room, which tells the Locator task that an
-        #   involuntary move has taken place (for example, when dragged by a river from one room to
-        #   another)
-        # The keys in the hash are patterns matching a line of received text
-        # The corresponding values can be 'undef' if the destination room is unknown. Otherwise, it
-        #   can be any of these (checked in this order):
-        #       1. The destination room's number
-        #       2. A direction matching which matches an exit object's nominal direction, >dir
-        #       3. A standard primary direction which matches an exit object's drawn map direction,
-        #           ->mapDir
-        #       4. Any other value (including if no matching exits exist) is treated like an unknown
-        #           destination room
-        $self->{involuntaryExitPatternHash}
-                                        = {};
-        # Hash of repulsed exit patterns for this room, which tells the Locator that not only did
-        #   an attempted move fail, but that the character has been moved to a new (different)
-        #   room - often in the opposite direction
-        # The keys in the hash are patterns matching a line of received text
-        # The corresponding values can be 'undef' if the destination room is unknown. Otherwise, it
-        #   can be any of these (checked in this order):
-        #       1. The destination room's number
-        #       2. A direction matching which matches an exit object's nominal direction, >dir
-        #       3. A standard primary direction which matches an exit object's drawn map direction,
-        #           ->mapDir
-        #       4. Any other value (including if no matching exits exist) is treated like an unknown
-        #           destination room
-        $self->{repulseExitPatternHash} = {};
-
-        # For worlds that provide a list of commands available in the room (typically instead of an
-        #   exit list, but not necessarily), a list of those commands
-        $self->{roomCmdList}            = [];
-        # A temporary list of room commands. Set whenever $self->roomCmdList is set. Thereafter,
-        #   when the user types ';roomcommand', the first command is removed from the list,
-        #   executed as a world command, and added to the end of the list
-        $self->{tempRoomCmdList}        = [];
-
-        # Records the number of visits to this room for each character. Hash in the form
-        #   $visitHash{character_name} = number_of_visits
-        $self->{visitHash}              = {};
-        # Flag set to TRUE if this room can only be entered by certain guilds, races or indeed named
-        #   characters
-        $self->{exclusiveFlag}          = FALSE;
-        # A hash of guilds, races, named chars etc allowed in this room (shouldn't include world
-        #   profiles), in the form
-        #   $exclusiveHash{profile_name} = undef
-        $self->{exclusiveHash}          = {};
-
-        # Room flag hash - a hash of room properties. If the key exists in a hash, the 'flag' is
-        #   'set to TRUE'; if a key doesn't exist in the hash, the 'flag' is 'set to FALSE'. (The
-        #   key's corresponding value is always 'undef'.)
-        # If this hash is empty, all the flags are 'set to FALSE'.
-        # GA::Obj::WorldModel has an equivalent hash containing all of the keys below. The key's
-        #   value is the colour the room should be painted, if the flag is set. When more than one
-        #   flag is set, GA::Obj::WorldModel works out for itself which should take priority
-        $self->{roomFlagHash}           = {};
-        # On the last occasion that the room was drawn, the flag that was used to draw the room's
-        #   interior (i.e. the highest priority flag - so we only have to look it up once per
-        #   drawing cycle). Set to 'undef' if none of them are set
-        $self->{lastRoomFlag}           = undef;
-
-        # GA::Generic::ModelObj defines ->sourceCodePath, the path to the object's source code on
-        #   the world (if known)
-        # If the room is in a virtual area, this should be set to something like
-        #   '/filepath/forest/24,3' - the 'path' that the world gives for this individual room. The
-        #   following IV should be set to the file path for the virtual area itself, e.g.
-        #   '/filepath/forest'. If set to 'undef', the room isn't in a virtual area
-        $self->{virtualAreaPath}        = undef;
-
-        # Data from this room supplied by various MUD protocols. At the moment, MSDP and MXP data
-        #   is supported
-        # Note that MSDP is not used by the Locator task/automapper, as it often received after the
-        #   room statement (and after the automapper needs it)
-        #
-        # Hash storing data about the room. When MSDP supplies data, the following key-value pairs
-        #   are added:
-        #   'vnum'          => some_value,
-        #   'name'          => some_value,
-        #   'area'          => some_value,
-        #   'xpos'          => some_value,
-        #   'ypos'          => some_value,
-        #   'zpos'          => some_value,
-        #   'terrain'       => some_value,
-        # When MXP supplies data, the following key-value pair is added:
-        #   'vnum'          => some_value,
-        $self->{protocolRoomHash}       = {};
-        # Hash storing data about the room's exits. When MSDP supplies data, the following key-value
-        #   pair(s) are added:
-        #   'abbrev_exit'   => destination_room_vnum,
-        $self->{protocolExitHash}       = {};
-
-        # List of blessed references to objects currently in this room (including player
-        #   characters). This IV is used for non-model rooms created by the Locator task; it
-        #   contains non-model objects for the contents of the Locator's current room
-        $self->{tempObjList}            = [];
-        # Hash of hidden objects, in the form
-        #   $hiddenObjHash{number_of_hidden_object} = 'commands_to_obtain_it'
-        # The keys of ->hiddenObjHash are a subset of the keys in $self->childHash.
-        $self->{hiddenObjHash}          = {};
-        # Hash of things that can be 'searched' (or 'examined'), and the response in the form
-        #   $searchHash{string} = response
-        #   e.g. $searchHash{fireplace} = 'It's an empty fireplace'
-        # Decorations which can be interacted with get their own model object,
-        #   GA::ModelObj::Decoration, and are stored in $self->childHash; this hash is used to
-        #   store things that only exist in response to 'search' or 'examine' commands
-        $self->{searchHash}             = {};
-
-        # List of recognised nouns that appear in the verbose description (set by the automapper,
-        #   when the user allows it)
-        $self->{nounList}               = [];
-        # List of recognised adjectives that appear in the verbose description (set by the
-        #   automapper, when the user allows it)
-        $self->{adjList}                = [];
-
-        # List of Axbasic scripts to run, when the character arrives in this room (if the automapper
-        #   knows the current location). Only non-task based scripts are suitable for this list
-        $self->{arriveScriptList}       = [];
 
         # Bless the object into existence
         bless $self, $class;
         return $self;
+    }
+
+    sub compress {
+
+        # Called by GA::Obj::File->updateExtractedData and GA::Cmd::CompressModel->do
+        # Drastically reduce the amount of memory used by each exit object by completely removing
+        #   IVs whose values are the default values for an exit object (the code obtains the
+        #   default values from the exit object stored in the global variable $DEFAULT_EXIT,
+        #   instead)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my %hash;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->compress', @_);
+        }
+
+        # Deal with universal IVs
+        foreach my $iv ( qw (_objName _objClass _privFlag) ) {
+
+            delete $self->{$iv};
+        }
+
+        # Deal with flag scalars which are FALSE by default
+        foreach my $iv (
+            qw (
+                concreteFlag aliveFlag sentientFlag portableFlag saleableFlag unspecifiedFlag
+                currentlyDarkFlag exclusiveFlag
+            )
+        ) {
+            if (exists $self->{$iv} && ! $self->{$iv}) {
+
+                delete $self->{$iv};
+            }
+        }
+
+        # Deal with non-flag scalars which are undefined by default
+        foreach my $iv (
+            qw (
+                sourceCodePath roomTag roomGuild lastRoomFlag virtualAreaPath
+            )
+        ) {
+            if (exists $self->{$iv} && ! defined $self->{$iv}) {
+
+                delete $self->{$iv};
+            }
+        }
+
+        # Deal with non-flag scalars which have a defined value by default
+        %hash = (
+            'name'              => 'room',
+            'category'          => 'room',
+            'roomTagXOffset'    => 0,
+            'roomTagYOffset'    => 0,
+            'roomGuildXOffset'  => 0,
+            'roomGuildYOffset'  => 0,
+            'wildMode'          => 'normal',
+        );
+
+        foreach my $iv (keys %hash) {
+
+            if (exists $self->{$iv} && $self->{$iv} eq $hash{$iv}) {
+
+                delete $self->{$iv};
+            }
+        }
+
+        # Deal with lists which are empty by default
+        foreach my $iv (
+            qw (
+                notesList titleList unspecifiedPatternList sortedExitList failExitPatternList
+                specialDepartPatternList roomCmdList tempRoomCmdList tempObjList nounList adjList
+                arriveScriptList
+            )
+        ) {
+            if (exists $self->{$iv}) {
+
+                my $listRef = $self->{$iv};
+                if (! @$listRef) {
+
+                    delete $self->{$iv};
+                }
+            }
+        }
+
+        # Deal with hashes which are empty by default
+        foreach my $iv (
+            qw (
+                childHash privateHash uncertainExitHash oneWayExitHash invRepExitHash randomExitHash
+                checkedDirHash descripHash exitNumHash involuntaryExitPatternHash
+                repulseExitPatternHash visitHash exclusiveHash roomFlagHash protocolRoomHash
+                protocolExitHash hiddenObjHash searchHash
+            )
+        ) {
+            if (exists $self->{$iv}) {
+
+                my $hashRef = $self->{$iv};
+                if (! %$hashRef) {
+
+                    delete $self->{$iv};
+                }
+            }
+        }
+
+        # Operation complete
+        return 1;
     }
 
     ##################
@@ -1147,6 +1329,90 @@
     ##################
     # Accessors - get
 
+    # To conserve memory, IVs with default values don't exist in the blessed reference; instead, we
+    #   obtain them from a default room object stored in the global variable $DEFAULT_ROOM
+
+    sub _objName {
+        if ( ! exists $_[0]->{_objName} )
+            { $axmud::DEFAULT_ROOM->{_objName} } else { $_[0]->{_objName} }
+    }
+    sub _objClass {
+        if ( ! exists $_[0]->{_objClass} )
+            { $axmud::DEFAULT_ROOM->{_objClass} } else { $_[0]->{_objClass} }
+    }
+    sub _parentFile
+        { $_[0]->{_parentFile} }
+    sub _parentWorld
+        { $_[0]->{_parentWorld} }
+    sub _privFlag {
+        if ( ! exists $_[0]->{_privFlag} )
+            { $axmud::DEFAULT_ROOM->{_privFlag} } else { $_[0]->{_privFlag} }
+    }
+
+    # Group 1 IVs
+    sub name {
+        if ( ! exists $_[0]->{name} )
+            { $axmud::DEFAULT_ROOM->{name} } else { $_[0]->{name} }
+    }
+    sub category {
+        if ( ! exists $_[0]->{category} )
+            { $axmud::DEFAULT_ROOM->{category} } else { $_[0]->{category} }
+    }
+    sub modelFlag
+        { $_[0]->{modelFlag} }
+    sub number
+        { $_[0]->{number} }
+    sub parent
+        { $_[0]->{parent} }
+    sub childHash {
+        my $self = shift;
+        if ( ! exists $self->{childHash} )
+            { return %{$axmud::DEFAULT_ROOM->{childHash}}; }
+        else
+            { return %{$self->{childHash}}; }
+    }
+
+    sub concreteFlag {
+        if ( ! exists $_[0]->{concreteFlag} )
+            { $axmud::DEFAULT_ROOM->{concreteFlag} } else { $_[0]->{concreteFlag} }
+    }
+    sub aliveFlag {
+        if ( ! exists $_[0]->{aliveFlag} )
+            { $axmud::DEFAULT_ROOM->{aliveFlag} } else { $_[0]->{aliveFlag} }
+    }
+    sub sentientFlag {
+        if ( ! exists $_[0]->{sentientFlag} )
+            { $axmud::DEFAULT_ROOM->{sentientFlag} } else { $_[0]->{sentientFlag} }
+    }
+    sub portableFlag {
+        if ( ! exists $_[0]->{portableFlag} )
+            { $axmud::DEFAULT_ROOM->{portableFlag} } else { $_[0]->{portableFlag} }
+    }
+    sub saleableFlag {
+        if ( ! exists $_[0]->{saleableFlag} )
+            { $axmud::DEFAULT_ROOM->{saleableFlag} } else { $_[0]->{saleableFlag} }
+    }
+
+    sub privateHash {
+        my $self = shift;
+        if ( ! exists $self->{privateHash} )
+            { return %{$axmud::DEFAULT_ROOM->{privateHash}}; }
+        else
+            { return %{$self->{privateHash}}; }
+    }
+
+    sub sourceCodePath {
+        if ( ! exists $_[0]->{sourceCodePath} )
+            { $axmud::DEFAULT_ROOM->{sourceCodePath} } else { $_[0]->{sourceCodePath} }
+    }
+    sub notesList {
+        my $self = shift;
+        if ( ! exists $self->{notesList} )
+            { return @{$axmud::DEFAULT_ROOM->{notesList}}; }
+        else
+            { return @{$self->{notesList}}; }
+    }
+
     # Group 5 IVs
     sub xPosBlocks
         { $_[0]->{xPosBlocks} }
@@ -1154,95 +1420,254 @@
         { $_[0]->{yPosBlocks} }
     sub zPosBlocks
         { $_[0]->{zPosBlocks} }
-    sub roomTag
-        { $_[0]->{roomTag} }
-    sub roomTagXOffset
-        { $_[0]->{roomTagXOffset} }
-    sub roomTagYOffset
-        { $_[0]->{roomTagYOffset} }
-    sub roomGuild
-        { $_[0]->{roomGuild} }
-    sub roomGuildXOffset
-        { $_[0]->{roomGuildXOffset} }
-    sub roomGuildYOffset
-        { $_[0]->{roomGuildYOffset} }
+    sub roomTag {
+        if ( ! exists $_[0]->{roomTag} )
+            { $axmud::DEFAULT_ROOM->{roomTag} } else { $_[0]->{roomTag} }
+    }
+    sub roomTagXOffset {
+        if ( ! exists $_[0]->{roomTagXOffset} )
+            { $axmud::DEFAULT_ROOM->{roomTagXOffset} } else { $_[0]->{roomTagXOffset} }
+    }
+    sub roomTagYOffset {
+        if ( ! exists $_[0]->{roomTagYOffset} )
+            { $axmud::DEFAULT_ROOM->{roomTagYOffset} } else { $_[0]->{roomTagYOffset} }
+    }
+    sub roomGuild {
+        if ( ! exists $_[0]->{roomGuild} )
+            { $axmud::DEFAULT_ROOM->{roomGuild} } else { $_[0]->{roomGuild} }
+    }
+    sub roomGuildXOffset {
+        if ( ! exists $_[0]->{roomGuildXOffset} )
+            { $axmud::DEFAULT_ROOM->{roomGuildXOffset} } else { $_[0]->{roomGuildXOffset} }
+    }
+    sub roomGuildYOffset {
+        if ( ! exists $_[0]->{roomGuildYOffset} )
+            { $axmud::DEFAULT_ROOM->{roomGuildYOffset} } else { $_[0]->{roomGuildYOffset} }
+    }
 
-    sub uncertainExitHash
-        { my $self = shift; return %{$self->{uncertainExitHash}}; }
-    sub oneWayExitHash
-        { my $self = shift; return %{$self->{oneWayExitHash}}; }
-    sub invRepExitHash
-        { my $self = shift; return %{$self->{invRepExitHash}}; }
-    sub randomExitHash
-        { my $self = shift; return %{$self->{randomExitHash}}; }
-    sub checkedDirHash
-        { my $self = shift; return %{$self->{checkedDirHash}}; }
-    sub wildMode
-        { $_[0]->{wildMode} }
+    sub uncertainExitHash {
+        my $self = shift;
+        if ( ! exists $self->{uncertainExitHash} )
+            { return %{$axmud::DEFAULT_ROOM->{uncertainExitHash}}; }
+        else
+            { return %{$self->{uncertainExitHash}}; }
+    }
+    sub oneWayExitHash {
+        my $self = shift;
+        if ( ! exists $self->{oneWayExitHash} )
+            { return %{$axmud::DEFAULT_ROOM->{oneWayExitHash}}; }
+        else
+            { return %{$self->{oneWayExitHash}}; }
+    }
+    sub invRepExitHash {
+        my $self = shift;
+        if ( ! exists $self->{invRepExitHash} )
+            { return %{$axmud::DEFAULT_ROOM->{invRepExitHash}}; }
+        else
+            { return %{$self->{invRepExitHash}}; }
+    }
+    sub randomExitHash {
+        my $self = shift;
+        if ( ! exists $self->{randomExitHash} )
+            { return %{$axmud::DEFAULT_ROOM->{randomExitHash}}; }
+        else
+            { return %{$self->{randomExitHash}}; }
+    }
+    sub checkedDirHash {
+        my $self = shift;
+        if ( ! exists $self->{checkedDirHash} )
+            { return %{$axmud::DEFAULT_ROOM->{checkedDirHash}}; }
+        else
+            { return %{$self->{checkedDirHash}}; }
+    }
+    sub wildMode {
+        if ( ! exists $_[0]->{wildMode} )
+            { $axmud::DEFAULT_ROOM->{wildMode} } else { $_[0]->{wildMode} }
+    }
 
-    sub titleList
-        { my $self = shift; return @{$self->{titleList}}; }
-    sub descripHash
-        { my $self = shift; return %{$self->{descripHash}}; }
-    sub unspecifiedPatternList
-        { my $self = shift; return @{$self->{unspecifiedPatternList}}; }
-    sub unspecifiedFlag
-        { $_[0]->{unspecifiedFlag} }
-    sub currentlyDarkFlag
-        { $_[0]->{currentlyDarkFlag} }
+    sub titleList {
+        my $self = shift;
+        if ( ! exists $self->{titleList} )
+            { return @{$axmud::DEFAULT_ROOM->{titleList}}; }
+        else
+            { return @{$self->{titleList}}; }
+    }
+    sub descripHash {
+        my $self = shift;
+        if ( ! exists $self->{descripHash} )
+            { return %{$axmud::DEFAULT_ROOM->{descripHash}}; }
+        else
+            { return %{$self->{descripHash}}; }
+    }
+    sub unspecifiedPatternList {
+        my $self = shift;
+        if ( ! exists $self->{unspecifiedPatternList} )
+            { return @{$axmud::DEFAULT_ROOM->{unspecifiedPatternList}}; }
+        else
+            { return @{$self->{unspecifiedPatternList}}; }
+    }
+    sub unspecifiedFlag {
+        if ( ! exists $_[0]->{unspecifiedFlag} )
+            { $axmud::DEFAULT_ROOM->{unspecifiedFlag} } else { $_[0]->{unspecifiedFlag} }
+    }
+    sub currentlyDarkFlag {
+        if ( ! exists $_[0]->{currentlyDarkFlag} )
+            { $axmud::DEFAULT_ROOM->{currentlyDarkFlag} } else { $_[0]->{currentlyDarkFlag} }
+    }
 
-    sub sortedExitList
-        { my $self = shift; return @{$self->{sortedExitList}}; }
-    sub exitNumHash
-        { my $self = shift; return %{$self->{exitNumHash}}; }
-    sub failExitPatternList
-        { my $self = shift; return @{$self->{failExitPatternList}}; }
-    sub specialDepartPatternList
-        { my $self = shift; return @{$self->{specialDepartPatternList}}; }
-    sub involuntaryExitPatternHash
-        { my $self = shift; return %{$self->{involuntaryExitPatternHash}}; }
-    sub repulseExitPatternHash
-        { my $self = shift; return %{$self->{repulseExitPatternHash}}; }
+    sub sortedExitList {
+        my $self = shift;
+        if ( ! exists $self->{sortedExitList} )
+            { return @{$axmud::DEFAULT_ROOM->{sortedExitList}}; }
+        else
+            { return @{$self->{sortedExitList}}; }
+    }
+    sub exitNumHash {
+        my $self = shift;
+        if ( ! exists $self->{exitNumHash} )
+            { return %{$axmud::DEFAULT_ROOM->{exitNumHash}}; }
+        else
+            { return %{$self->{exitNumHash}}; }
+    }
+    sub failExitPatternList {
+        my $self = shift;
+        if ( ! exists $self->{failExitPatternList} )
+            { return @{$axmud::DEFAULT_ROOM->{failExitPatternList}}; }
+        else
+            { return @{$self->{failExitPatternList}}; }
+    }
+    sub specialDepartPatternList {
+        my $self = shift;
+        if ( ! exists $self->{specialDepartPatternList} )
+            { return @{$axmud::DEFAULT_ROOM->{specialDepartPatternList}}; }
+        else
+            { return @{$self->{specialDepartPatternList}}; }
+    }
+    sub involuntaryExitPatternHash {
+        my $self = shift;
+        if ( ! exists $self->{involuntaryExitPatternHash} )
+            { return %{$axmud::DEFAULT_ROOM->{involuntaryExitPatternHash}}; }
+        else
+            { return %{$self->{involuntaryExitPatternHash}}; }
+    }
+    sub repulseExitPatternHash {
+        my $self = shift;
+        if ( ! exists $self->{repulseExitPatternHash} )
+            { return %{$axmud::DEFAULT_ROOM->{repulseExitPatternHash}}; }
+        else
+            { return %{$self->{repulseExitPatternHash}}; }
+    }
 
-    sub roomCmdList
-        { my $self = shift; return @{$self->{roomCmdList}}; }
-    sub tempRoomCmdList
-        { my $self = shift; return @{$self->{tempRoomCmdList}}; }
+    sub roomCmdList {
+        my $self = shift;
+        if ( ! exists $self->{roomCmdList} )
+            { return @{$axmud::DEFAULT_ROOM->{roomCmdList}}; }
+        else
+            { return @{$self->{roomCmdList}}; }
+    }
+    sub tempRoomCmdList {
+        my $self = shift;
+        if ( ! exists $self->{tempRoomCmdList} )
+            { return @{$axmud::DEFAULT_ROOM->{tempRoomCmdList}}; }
+        else
+            { return @{$self->{tempRoomCmdList}}; }
+    }
 
-    sub visitHash
-        { my $self = shift; return %{$self->{visitHash}}; }
-    sub exclusiveFlag
-        { $_[0]->{exclusiveFlag} }
-    sub exclusiveHash
-        { my $self = shift; return %{$self->{exclusiveHash}}; }
+    sub visitHash {
+        my $self = shift;
+        if ( ! exists $self->{visitHash} )
+            { return %{$axmud::DEFAULT_ROOM->{visitHash}}; }
+        else
+            { return %{$self->{visitHash}}; }
+    }
+    sub exclusiveFlag {
+        if ( ! exists $_[0]->{exclusiveFlag} )
+            { $axmud::DEFAULT_ROOM->{exclusiveFlag} } else { $_[0]->{exclusiveFlag} }
+    }
+    sub exclusiveHash {
+        my $self = shift;
+        if ( ! exists $self->{exclusiveHash} )
+            { return %{$axmud::DEFAULT_ROOM->{exclusiveHash}}; }
+        else
+            { return %{$self->{exclusiveHash}}; }
+    }
 
-    sub roomFlagHash
-        { my $self = shift; return %{$self->{roomFlagHash}}; }
-    sub lastRoomFlag
-        { $_[0]->{lastRoomFlag} }
+    sub roomFlagHash {
+        my $self = shift;
+        if ( ! exists $self->{roomFlagHash} )
+            { return %{$axmud::DEFAULT_ROOM->{roomFlagHash}}; }
+        else
+            { return %{$self->{roomFlagHash}}; }
+    }
+    sub lastRoomFlag {
+        if ( ! exists $_[0]->{lastRoomFlag} )
+            { $axmud::DEFAULT_ROOM->{lastRoomFlag} } else { $_[0]->{lastRoomFlag} }
+    }
 
-    sub virtualAreaPath
-        { $_[0]->{virtualAreaPath} }
+    sub virtualAreaPath {
+        if ( ! exists $_[0]->{virtualAreaPath} )
+            { $axmud::DEFAULT_ROOM->{virtualAreaPath} } else { $_[0]->{virtualAreaPath} }
+    }
 
-    sub protocolRoomHash
-        { my $self = shift; return %{$self->{protocolRoomHash}}; }
-    sub protocolExitHash
-        { my $self = shift; return %{$self->{protocolExitHash}}; }
+    sub protocolRoomHash {
+        my $self = shift;
+        if ( ! exists $self->{protocolRoomHash} )
+            { return %{$axmud::DEFAULT_ROOM->{protocolRoomHash}}; }
+        else
+            { return %{$self->{protocolRoomHash}}; }
+    }
+    sub protocolExitHash {
+        my $self = shift;
+        if ( ! exists $self->{protocolExitHash} )
+            { return %{$axmud::DEFAULT_ROOM->{protocolExitHash}}; }
+        else
+            { return %{$self->{protocolExitHash}}; }
+    }
 
-    sub tempObjList
-        { my $self = shift; return @{$self->{tempObjList}}; }
-    sub hiddenObjHash
-        { my $self = shift; return %{$self->{hiddenObjHash}}; }
-    sub searchHash
-        { my $self = shift; return %{$self->{searchHash}}; }
+    sub tempObjList {
+        my $self = shift;
+        if ( ! exists $self->{tempObjList} )
+            { return @{$axmud::DEFAULT_ROOM->{tempObjList}}; }
+        else
+            { return @{$self->{tempObjList}}; }
+    }
+    sub hiddenObjHash {
+        my $self = shift;
+        if ( ! exists $self->{hiddenObjHash} )
+            { return %{$axmud::DEFAULT_ROOM->{hiddenObjHash}}; }
+        else
+            { return %{$self->{hiddenObjHash}}; }
+    }
+    sub searchHash {
+        my $self = shift;
+        if ( ! exists $self->{searchHash} )
+            { return %{$axmud::DEFAULT_ROOM->{searchHash}}; }
+        else
+            { return %{$self->{searchHash}}; }
+    }
 
-    sub nounList
-        { my $self = shift; return @{$self->{nounList}}; }
-    sub adjList
-        { my $self = shift; return @{$self->{adjList}}; }
+    sub nounList {
+        my $self = shift;
+        if ( ! exists $self->{nounList} )
+            { return @{$axmud::DEFAULT_ROOM->{nounList}}; }
+        else
+            { return @{$self->{nounList}}; }
+    }
+    sub adjList {
+        my $self = shift;
+        if ( ! exists $self->{adjList} )
+            { return @{$axmud::DEFAULT_ROOM->{adjList}}; }
+        else
+            { return @{$self->{adjList}}; }
+    }
 
-    sub arriveScriptList
-        { my $self = shift; return @{$self->{arriveScriptList}}; }
+    sub arriveScriptList {
+        my $self = shift;
+        if ( ! exists $self->{arriveScriptList} )
+            { return @{$axmud::DEFAULT_ROOM->{arriveScriptList}}; }
+        else
+            { return @{$self->{arriveScriptList}}; }
+    }
 }
 
 { package Games::Axmud::ModelObj::Weapon;

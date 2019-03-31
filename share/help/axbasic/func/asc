@@ -1,4 +1,4 @@
-ASC (string)
+Asc (string)
 
    Synopsis:
       Returns the ASCII value of the first character in the specified string

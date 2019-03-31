@@ -1,4 +1,4 @@
-ISSCRIPT (string)
+Isscript (string)
 
    Synopsis:
       Tests whether a script is being executed by any current Script task

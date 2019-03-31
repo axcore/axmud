@@ -1,4 +1,4 @@
-GETEXITTYPE$ (number)
+Getexittype$ (number)
         
    Synopsis:
       Returns the type of an exit in the automapper's current room
@@ -11,6 +11,6 @@ GETEXITTYPE$ (number)
          or "mystery". 
       If there is no current room or if the numbered exit doesn't exist, 
          returns an empty string.
-      To get the number of exits in the current room, see the GETROOMEXITS
-         function. The GETEXITSTATUS$ function also provides information about 
-         how the exit is drawn on the map.
+      To get the number of exits in the current room, see the Getroomexits ()
+         function. The Getexitstatus$ () function also provides information
+         about how the exit is drawn on the map.

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -33,14 +33,14 @@
         # Called by GA::Client->createStandardWinmaps or GA::Cmd::AddWinmap->new
         # Creates a new winmap, which is a plan for arranging widgets in any 'internal' window
         # The winmap divides the window's client area into horizontal (by default) or vertical
-        #   strips (conceptually, not using a specific Gtk2 widget)
-        # One (and only one) of the strips is occupied by a Gtk2::Table, onto which any
-        #   widget can be positioned. The other strips are placed above or below that strip, and
-        #   typically contain things like a menu bar, a toolbar with clickable items or a
-        #   Gtk2::Entry box. Besides the strips that Axmud provides, users can write their own
-        #   strips and insert them via a plugin
+        #   strips (conceptually, not using a specific Gtk3 widget)
+        # One (and only one) of the strips is occupied by a Gtk3::Grid, onto which any widget can be
+        #   positioned. The other strips are placed above or below that strip, and typically contain
+        #   things like a menu bar, a toolbar with clickable items or a Gtk3::Entry box. Besides the
+        #   strips that Axmud provides, users can write their own strips and insert them via a
+        #   plugin
         # The winmap only affects the window, when it is first created (or when it is reset). The
-        #   Axmud code is then free to add/remove strips, or add/remove widgets to the Gtk2::Table,
+        #   Axmud code is then free to add/remove strips, or add/remove widgets to the Gtk3::Grid,
         #   whenever it pleases
         #
         # Expected arguments
@@ -120,15 +120,15 @@
             #   interpret one or more of the key-value pairs in the hash, if there are any
             # For strip objects that are 'jealous', only the first one of its kind is added;
             #   subsequent ones are ignored
-            # Must contain at least the strip object which implements the Gtk2::Table,
+            # Must contain at least the strip object which implements the Gtk3::Grid,
             #   GA::Strip::Table; if not, when the window is created that strip object is added
             #   anyway, all the others have been added
             stripInitList               => [],
 
-            # The size of the Gtk2::Table (cannot be changed)
+            # The size of the Gtk3::Grid (cannot be changed)
             tableSize                   => 60,
             # The winzone objects (GA::Obj::Winzone), each of which marks out an area of the
-            #   Gtk2::Table for a single widget. Hash in the form
+            #   Gtk3::Grid for a single widget. Hash in the form
             #       $zoneHash{number} = blessed_reference_to_winzone_object
             # NB 'main' windows must have at last one pane object (GA::Table::Pane). The pane
             #   object with the lowest 'number' is used as the session's default pane object
@@ -144,7 +144,7 @@
             # A suggested size for new winzones, used when table objects are added after the window
             #   is created (for example, used in 'main' windows when tasks want to create their own
             #   pane objects (GA::Table::Pane) instead of using a task window)
-            # These sizes should fit neatly onto the 60x60 Gtk2::Table; for example, 15x15, or
+            # These sizes should fit neatly onto the 60x60 Gtk3::Grid; for example, 15x15, or
             #   30x15, or 20x15, or 20x60.
             # The process of choosing a size and position for 'grid' windows is quite flexible, and
             #   is capable of customising window sizes to suit local conditions and to fill small
@@ -306,7 +306,7 @@
         # Set up $self->stripInitList
         if ($self->name eq 'main_wait') {
 
-            # From top to bottom, the window will contain a menu bar, toolbar, Gtk2::Table and an
+            # From top to bottom, the window will contain a menu bar, toolbar, Gtk3::Grid and an
             #   entry box
             $self->ivPush(
                 'stripInitList',
@@ -322,7 +322,7 @@
 
         } elsif ($self->name eq 'internal_wait') {
 
-            # Contains only the Gtk2::Table
+            # Contains only the Gtk3::Grid
             $self->ivPush(
                 'stripInitList',
                     'Games::Axmud::Strip::Table',
@@ -334,7 +334,7 @@
             || $self->name eq 'main_part'
             || $self->name eq 'main_empty'
         ) {
-            # From top to bottom, the window will contain a menu bar, toolbar, Gtk2::Table, a gauge
+            # From top to bottom, the window will contain a menu bar, toolbar, Gtk3::Grid, a gauge
             #   box, an entry box and an info box
             $self->ivPush(
                 'stripInitList',
@@ -369,7 +369,7 @@
             || $self->name eq 'basic_part'
             || $self->name eq 'basic_empty'
         ) {
-            # Contains only a Gtk2::Table
+            # Contains only a Gtk3::Grid
             $self->ivPush(
                 'stripInitList',
                     'Games::Axmud::Strip::Table',
@@ -381,7 +381,7 @@
             || $self->name eq 'entry_part'
             || $self->name eq 'entry_empty'
         ) {
-            # From top to bottom, contains a Gtk2::Table and an entry box
+            # From top to bottom, contains a Gtk3::Grid and an entry box
             $self->ivPush(
                 'stripInitList',
                     'Games::Axmud::Strip::Table',
@@ -610,7 +610,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addWinzone', @_);
         }
 
-        # Check that the winzone isn't bigger than the winmap's Gtk2::Table
+        # Check that the winzone isn't bigger than the winmap's Gtk3::Grid
         if (
             $zoneObj->left < 0 || $zoneObj->right > ($self->tableSize - 1)
             || $zoneObj->top < 0 || $zoneObj->bottom > ($self->tableSize - 1)

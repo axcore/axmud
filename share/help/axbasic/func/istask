@@ -1,4 +1,4 @@
-ISTASK ()
+Istask ()
 
    Synopsis:
       Tests whether the script is running from within an Axmud task

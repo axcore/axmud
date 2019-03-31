@@ -1,4 +1,4 @@
-GETLOSTROOM ()
+Getlostroom ()
 
    Synopsis:
       Returns the world model number of the 'lost' room

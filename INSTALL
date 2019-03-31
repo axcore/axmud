@@ -9,7 +9,7 @@ install Axmud on macOS, but the authors have not been able to confirm this yet.
 
 The most recent release is available from the Axmud website:
 
-    https://axmud.sourceforge.net
+    https://axmud.sourceforge.io
 
 The source code can also be obtained from using git:
 
@@ -29,12 +29,15 @@ system can install Axmud manually using the following methods.
 
 3.1 INSTALLATION ON MS WINDOWS USING STRAWBERRY PERL
 
-Axmud requires the 32-bit edition of Strawberry Perl, even on a 64-bit computer.
-If you have the 64-bit edition of Strawberry Perl installed on your system,
-either replace it with the 32-bit edition, or use the installer described above
-(which contains a copy of the portable 32-bit edition).
+Axmud v1.2.0 (and all later versions) is known to work with both 32-bit and
+64-bit editions of Strawberry Perl.
 
-First, open a command prompt and get some modules from CPAN:
+After installing Strawberry Perl on your system, open a command prompt. From the
+Windows Start menu, you can click:
+
+    'All Programs > Strawberry Perl > Perl (command line)'
+
+Next, get some modules from CPAN:
 
     cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
 
@@ -48,19 +51,39 @@ If the line above generates an error, try this line instead:
 
 Now we need some modules from the Sisyphusion repo.
 
-(If you reading this document some time in the distant future and find the repo
-is no longer available, you can either search around for a replacement, or you
-can use the installer.)
+(If you are reading this document some time in the distant future and find the
+repo is no longer available, you can either search around for a replacement, or
+you can use the installer.)
 
     ppm set repository sisyphusion http://sisyphusion.tk/ppm
     ppm set save
-    ppm install Cairo Glib Pango Gtk2 Gnome2::Canvas
+    ppm install Glib Gtk3 GooCanvas2
+
+Before continuing, you should remove the following folder. When asked 'Are you
+sure (Y/N)?', type 'y'.
+
+    rmdir /s C:\Strawberry\perl\site\lib\sisyphusion_gtk2_themes_temp
+
+Now type this the following command. At the time of writing, it produces a
+'cannot remove directory - permission denied' error. This is expected and does
+not affect Axmud installation.
+
+    ppm install http://www.sisyphusion.tk/ppm/PPM-Sisyphusion-Gtk2_theme.ppd
+
+Now we need to copy a .dll file from one location to another:
+
+    copy C:\Strawberry\perl\site\lib\auto\Cairo\s1sfontconfig-1.dll C:\Strawberry\perl\bin\s1sfontconfig-1.dll
 
 Download the Axmud source code file (ending .tar.gz), and extract it in a
-convenient location (e.g. in your Downloads folder).
+convenient location (e.g. your Downloads folder). If you don't have anything
+capable of extracting a .tar.gz archive, you can use 7-Zip.
 
-Open a command prompt and navigate into the extracted folder. From there,
-installation is standard.
+From the same command prompt window as earlier, change to that directory, for
+example:
+
+    cd C:\Users\YOURNAME\Downloads\Games-Axmud-1.2.345
+
+From this point, installation is standard.
 
     perl Makefile.PL
     gmake
@@ -71,25 +94,33 @@ installation is standard.
 
 Axmud is known to work with both 32-bit and 64-bit editions of ActivePerl.
 
-First, open a command prompt and get some modules from CPAN:
+First, open a command prompt. From the Windows Start menu, type 'cmd' inside the
+'Search programs and files' box.
+
+Then we can get some modules from CPAN:
 
     ppm install dmake
-    ppm install Archive::Extract File::ShareDir::Install IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6 
+    ppm install Archive::Extract File::ShareDir::Install IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
 
 Now we need some modules from the Sisyphusion repo.
 
-(If you reading this document some time in the distant future and find the repo
-is no longer available, you can either search around for a replacement, or you
-can use the installer.)
+(If you are reading this document some time in the distant future and find the
+repo is no longer available, you can either search around for a replacement, or
+you can use the installer.)
 
     ppm repo add http://www.sisyphusion.tk/ppm
-    ppm install Glib Gtk2 Cairo Pango Gnome2::Canvas
+    ppm install Glib Gtk3 GooCanvas2 -- force
 
 Download the Axmud source code file (ending .tar.gz), and extract it in a
-convenient location (e.g. in your Downloads folder).
+convenient location (e.g. your Downloads folder). If you don't have anything
+capable of extracting a .tar.gz archive, you can use 7-Zip.
 
-Open a command prompt and navigate into the extracted folder. From there,
-installation is standard.
+From the same command prompt window as earlier, change to that directory, for
+example:
+
+    cd C:\Users\YOURNAME\Downloads\Games-Axmud-1.2.345
+
+From this point, installation is standard.
 
     perl Makefile.PL
     dmake
@@ -164,8 +195,13 @@ distros:
 - Debian-based systems (such as Debian, Ubuntu and Linux Mint)
 - Fedora
 - Manjaro
-- OpenSUSE
+- openSUSE (see below)
 - Red Hat Enterprise Linux and CentOS
+
+Axmud v1.2.0 (and later versions) cannot easily be easily installed on openSUSE,
+as the required graphics library (Gtk3) is not yet available through openSUSE's
+software repositories. We suggest that you continue using Axmud v1.1.405 for the
+time being.
 
 4.3.1 INSTALLATION ON ARCH-BASED SYSTEMS
 
@@ -193,10 +229,10 @@ for example:
 
 Make sure you have the right dependencies:
 
-    sudo pacman -S gtk2 libgnomecanvas libwnck
+    sudo pacman -S gtk3 perl-gtk3 goocanvas wmctrl
     sudo pacman -S perl-cpanplus-dist-arch
     setupdistarch
-    sudo cpanp i Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
+    sudo cpanp i Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk3 GooCanvas2 IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6 X11::WMCtrl
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -232,8 +268,8 @@ Decompress the .tar.gz file:
 Make sure you have the right dependencies:
 
     sudo apt-get update
-    sudo apt-get install build-essential libcanberra-gtk-module libgnomecanvas2-dev libwnck-dev
-    sudo cpan install Archive::Extract File::HomeDir File::ShareDir File::ShareDir::Install Gnome2::Canvas Gnome2::Wnck JSON Net::OpenSSH Path::Tiny
+    sudo apt-get install build-essential libgtk3-perl libgoocanvas-2.0-dev wmctrl
+    sudo cpan install Archive::Extract File::HomeDir File::ShareDir File::ShareDir::Install GooCanvas2 JSON Net::OpenSSH Path::Tiny Regexp::IPv6 X11::WMCtrl
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -275,7 +311,8 @@ Make sure you have the right dependencies:
     sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
     sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
     sudo dnf install cpan
-    sudo dnf install 'perl(Archive::Extract)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk2)' 'perl(Gnome2::Canvas)' 'perl(Gnome2::Wnck)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
+    sudo dnf install 'perl(Archive::Extract)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk3)' 'perl(GooCanvas2)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
+    sudo cpan install X11::WMCtrl
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -293,7 +330,11 @@ When installation is complete, start Axmud by typing:
 
 4.3.4. INSTALLATION ON MANJARO
 
-Manjaro's rolling release version is affected by a recurring issue (Perl modules are not updated when the Perl itself is updated, meaning that any Perl applications will immediately stop working). If you're using the rolling release version, consider installing via Perl homebrew instead (see https://perlbrew.pl/ )
+Manjaro's rolling release version is affected by a recurring issue (Perl modules
+are not updated when the Perl itself is updated, meaning that any Perl
+applications will immediately stop working). If you're using the rolling release
+version, consider installing via Perl homebrew instead (see
+https://perlbrew.pl/ )
 
 These instructions work on both the stable and rolling releases of Manjaro.
 
@@ -318,8 +359,8 @@ for example:
 
 Make sure you have the right dependencies:
 
-    sudo pacman -S base-devel gtk2 libgnomecanvas libwnck cpanminus
-    sudo cpanm Archive::Extract File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
+    sudo pacman -S base-devel gtk3 goocanvas perl-gtk3 perl-goocanvas2 wmctrl cpanminus
+    sudo cpanm Archive::Extract File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
     sudo cpanm Archive::Zip --force
 
 If you want to use sound effects and/or text-to-speech, you should also type:
@@ -337,6 +378,13 @@ When installation is complete, start Axmud by typing:
     axmud.pl
 
 4.3.5 INSTALLATION ON OPENSUSE
+
+Axmud v1.2.0 (and later versions) cannot easily be easily installed on openSUSE,
+as the required graphics library (Gtk3) is not yet available through openSUSE's
+software repositories. We suggest that you continue using Axmud v1.1.405 for the
+time being.
+
+4.3.6 INSTALLATION ON RED HAT ENTERPRISE LINUX / CENTOS
 
 First, download the source code from the Axmud website (the most recent file
 ending .tar.gz).
@@ -357,41 +405,6 @@ for example:
     tar -pzxvf Games-Axmud-1.2.345.tar.gz
     cd Games-Axmud-1.2.345
 
-Make sure you have the right dependencies:
-
-    sudo zypper install --type pattern devel_basis
-    sudo zypper install perl-Glib perl-Gtk2 perl-Gnome2-Canvas perl-Gnome2-Wnck
-    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
-
-If you want to use sound effects and/or text-to-speech, you should also type:
-
-    sudo zypper install sox timidity
-
-Then install Axmud itself:
-
-    perl Makefile.PL
-    make
-    sudo make install
-
-When installation is complete, start Axmud by typing:
-
-    axmud.pl
-
-4.3.6 INSTALLATION ON RED HAT ENTERPRISE LINUX / CENTOS
-
-First, download the source code from the Axmud website (the most recent file
-ending .tar.gz).
-
-Open a terminal window and navigate to the directory containing the downloaded
-file, for example:
-
-    cd Downloads
-
-Decompress the .tar.gz file:
-
-    tar -pzxvf Games-Axmud-X.Y.ZZZ.tar.gz
-    cd Games-Axmud-X.Y.ZZZ
-
 Now we need to add an extra repository. First get the key:
 
     sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
@@ -407,12 +420,13 @@ On CentOS/RHEL 7, do this:
 Now make sure you have the right dependencies:
 
     sudo yum groupinstall 'Development Tools'
-    sudo yum install epel-release lignomecanvas libwnck
-    sudo yum install 'perl(Archive::Extract)' 'perl(Archive::Tar)' 'perl(Archive::Zip)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk2)' 'perl(Gnome2::Canvas)' 'perl(Gnome2::Wnck)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
+    sudo yum install epel-release cpan goocanvas2 wmctrl
+    sudo yum install 'perl(Archive::Extract)' 'perl(Archive::Tar)' 'perl(Archive::Zip)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk3)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
+    sudo cpan install GooCanvas2 X11::WMCtrl
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
-    sudo yum install sox timidity++
+    sudo yum install sox libtimidity
 
 Then install Axmud itself:
 
@@ -427,7 +441,7 @@ When installation is complete, start Axmud by typing:
 5 INSTALLATION ON *BSD
 
 Manual installation using the source code is quite simple on *BSD. (At the time
-of writing, no packages are available).
+of writing, no installer is available).
 
 5.1 INSTALLATION ON GHOSTBSD
 
@@ -445,10 +459,16 @@ Decompress the .tar.gz file:
     tar -pzxvf Games-Axmud-X.Y.ZZZ.tar.gz
     cd Games-Axmud-X.Y.ZZZ
 
+You must replace the X.Y.ZZZ with the actual version number you've downloaded,
+for example:
+
+    tar -pzxvf Games-Axmud-1.2.345.tar.gz
+    cd Games-Axmud-1.2.345
+
 Make sure you have the right dependencies:
 
-    sudo pkg install libgnomecanvas libwnck
-    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk2 Gnome2::Canvas Gnome2::Wnck IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
+    sudo pkg install goocanvas2 wmctrl
+    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk3 GooCanvas2 IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6 X11::WMCtrl
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 

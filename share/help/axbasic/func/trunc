@@ -1,5 +1,5 @@
-TRUNC (x)
-TRUNC (x, n)
+Trunc (x)
+Trunc (x, n)
 
    Synopsis:
       Returns the value of x truncated to n decimal places

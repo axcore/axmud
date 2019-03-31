@@ -1,10 +1,10 @@
-POPUP$ (type, text, button)
+Popup$ (type, text, button)
 
    Synopsis:
       Opens a dialogue window and returns the user's response
 
    Notes: 
-      The POPUP$() function pauses execution to display a dialogue window, and
+      The Popup$ () function pauses execution to display a dialogue window, and
          resumes execution once the user clicks one of the window's buttons or
          closes the window manually.
 
@@ -26,6 +26,6 @@ POPUP$ (type, text, button)
 
    Examples:
       ! Ask a question
-      LET choice$ = POPUP$("question", "Are you ready?", "yes-no")
+      LET choice$ = Popup$ ("question", "Are you ready?", "yes-no")
       PRINT choice$
       END

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -108,7 +108,7 @@
             # The LA::Expression::Arglist with which the subroutine was declared
             argListObj                  => undef,
             # If the subroutine is called from a statement like 'LET a$ = CALL...', the variable (a$
-            #   in this example) to which the subroutine's return value is assigned.
+            #   in this example) to which the subroutine's return value is assigned
             # (In a straight 'CALL...' statement, this is set to 'undef')
             returnVar                   => undef,
             # The return value type - 'string' or 'numeric'
@@ -412,7 +412,7 @@
         my ($self, $value, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $value || defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->set_returnVar', @_);
         }

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -131,7 +131,7 @@
     use diagnostics;
 
     # (This variable exists for the benefit of Kwalitee, and is never referenced by the code)
-    our $VERSION = '1.1.405';
+    our $VERSION = '1.2.0';
 
     use Glib qw(TRUE FALSE);
 
@@ -158,13 +158,11 @@
     use Games::Axmud::Strip;
     use Games::Axmud::Table;
     use Games::Axmud::Task;
-    use Games::Axmud::Widget;
     use Games::Axmud::WizWin;
 
     use Games::Axmud::Obj::Area;
     use Games::Axmud::Obj::Atcp;
     use Games::Axmud::Obj::BasicWorld;
-    use Games::Axmud::Obj::Heap;
     use Games::Axmud::Obj::Blinker;
     use Games::Axmud::Obj::ChatContact;
     use Games::Axmud::Obj::ColourScheme;
@@ -172,13 +170,13 @@
     use Games::Axmud::Obj::ConnectHistory;
     use Games::Axmud::Obj::Desktop;
     use Games::Axmud::Obj::Dict;
-    use Games::Axmud::Obj::DrawingArea;
     use Games::Axmud::Obj::Exit;
     use Games::Axmud::Obj::File;
     use Games::Axmud::Obj::Gauge;
     use Games::Axmud::Obj::GaugeLevel;
     use Games::Axmud::Obj::Gmcp;
     use Games::Axmud::Obj::GridColour;
+    use Games::Axmud::Obj::Heap;
     use Games::Axmud::Obj::Link;
     use Games::Axmud::Obj::Loop;
     use Games::Axmud::Obj::Map;
@@ -207,6 +205,7 @@
     use Games::Axmud::Obj::Tts;
     use Games::Axmud::Obj::Winmap;
     use Games::Axmud::Obj::Winzone;
+    use Games::Axmud::Obj::WMCtrl;
     use Games::Axmud::Obj::Workspace;
     use Games::Axmud::Obj::WorkspaceGrid;
     use Games::Axmud::Obj::WorldModel;
@@ -380,18 +379,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivSet', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivSet'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivSet',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -445,18 +453,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivUndef', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivUndef'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivUndef',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -510,18 +527,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivTrue', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivTrue'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivTrue',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -575,18 +601,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivFalse', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivFalse'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivFalse',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -638,18 +673,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivGet', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivGet'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivGet',
+                    );
+                }
+
+                return undef;
+            }
         }
 
         # According to Axmud's coding conventions, if ref() doesn't return 'ARRAY' or 'HASH', it's
@@ -692,18 +737,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivIncrement', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivIncrement'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivIncrement',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -755,18 +809,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivDecrement', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivDecrement'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivDecrement',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -819,18 +882,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivPlus', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivPlus'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivPlus',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -884,18 +956,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivMinus', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivMinus'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivMinus',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -950,18 +1031,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivMultiply', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivMultiply'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivMultiply',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1016,18 +1106,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivDivide', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivDivide'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivDivide',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1081,18 +1180,27 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivInt', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $self->{$iv} = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivInt'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivInt',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1139,7 +1247,7 @@
         my ($self, $iv, @list) = @_;
 
         # Local variables
-        my $refType;
+        my ($varRef, $refType);
 
         # Check for improper arguments
         if (! defined $iv) {
@@ -1147,18 +1255,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivPush', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivPush'
-                );
+                push (@$varRef, @{$axmud::DEFAULT_ROOM->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                push (@$varRef, @{$axmud::DEFAULT_EXIT->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivPush',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1202,7 +1325,7 @@
         my ($self, $iv, $check) = @_;
 
         # Local variables
-        my ($refType, $returnValue);
+        my ($varRef, $refType, $returnValue);
 
         # Check for improper arguments
         if (! defined $iv || defined $check) {
@@ -1210,18 +1333,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivPop', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivPop'
-                );
+                push (@$varRef, @{$axmud::DEFAULT_ROOM->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                push (@$varRef, @{$axmud::DEFAULT_EXIT->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivPop',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1266,7 +1404,7 @@
         my ($self, $iv, @list) = @_;
 
         # Local variables
-        my $refType;
+        my ($varRef, $refType);
 
         # Check for improper arguments
         if (! defined $iv) {
@@ -1274,18 +1412,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivUnshift', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivUnshift'
-                );
+                push (@$varRef, @{$axmud::DEFAULT_ROOM->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                push (@$varRef, @{$axmud::DEFAULT_EXIT->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivUnshift',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1327,7 +1480,7 @@
         my ($self, $iv, $check) = @_;
 
         # Local variables
-        my ($refType, $returnValue);
+        my ($varRef, $refType, $returnValue);
 
         # Check for improper arguments
         if (! defined $iv || defined $check) {
@@ -1335,18 +1488,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivSet', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivUnshift'
-                );
+                push (@$varRef, @{$axmud::DEFAULT_ROOM->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                push (@$varRef, @{$axmud::DEFAULT_EXIT->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivShift',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1394,18 +1562,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivNumber', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivNumber'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivNumber'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -1446,7 +1624,7 @@
 
         # Local variables
         my (
-            $refType,
+            $varRef, $refType,
             @emptyList, @returnArray,
         );
 
@@ -1457,18 +1635,33 @@
             return @emptyList;
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivSplice'
-                );
+                push (@$varRef, @{$axmud::DEFAULT_ROOM->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                push (@$varRef, @{$axmud::DEFAULT_EXIT->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivSplice',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1525,18 +1718,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivIndex', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivIndex'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivIndex'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -1577,18 +1780,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivFirst', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivFirst'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivFirst'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -1629,18 +1842,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivLast', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivLast'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivLast'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -1677,7 +1900,7 @@
         my ($self, $iv, $index, $scalar, $check) = @_;
 
         # Local variables
-        my $refType;
+        my ($varRef, $refType);
 
         # Check for improper arguments
         if (! defined $iv || ! defined $index || defined $check) {
@@ -1685,18 +1908,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivReplace', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivReplace'
-                );
+                push (@$varRef, @{$axmud::DEFAULT_ROOM->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                push (@$varRef, @{$axmud::DEFAULT_EXIT->{$iv}});
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivREplace',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -1748,18 +1986,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivFind', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivFind'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivFind'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -1823,18 +2071,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivMatch', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivMatch'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivMatch'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -1918,18 +2176,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivEquals', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivEquals'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivEquals'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -1981,7 +2249,7 @@
         my ($self, $iv, $key, $value, $check) = @_;
 
         # Local variables
-        my $refType;
+        my ($varRef, $refType);
 
         # Check for improper arguments
         if (! defined $iv || ! defined $key || defined $check) {
@@ -1989,18 +2257,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivAdd', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivAdd'
-                );
+                %$varRef = %{$axmud::DEFAULT_ROOM->{$iv}};
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                %$varRef = %{$axmud::DEFAULT_EXIT->{$iv}};
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivAdd',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -2046,7 +2329,7 @@
         my ($self, $iv, $key, $check) = @_;
 
         # Local variables
-        my ($refType, $value);
+        my ($varRef, $refType, $value);
 
         # Check for improper arguments
         if (! defined $iv || ! defined $key || defined $check) {
@@ -2054,18 +2337,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivIncHash', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivIncHash'
-                );
+                %$varRef = %{$axmud::DEFAULT_ROOM->{$iv}};
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                %$varRef = %{$axmud::DEFAULT_EXIT->{$iv}};
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivAdd',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -2122,7 +2420,7 @@
         my ($self, $iv, $key, $check) = @_;
 
         # Local variables
-        my ($refType, $value);
+        my ($varRef, $refType, $value);
 
         # Check for improper arguments
         if (! defined $iv || ! defined $key || defined $check) {
@@ -2130,18 +2428,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivDecHash', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivDecHash'
-                );
+                %$varRef = %{$axmud::DEFAULT_ROOM->{$iv}};
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                %$varRef = %{$axmud::DEFAULT_EXIT->{$iv}};
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivAdd',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -2202,18 +2515,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivShow', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivShow'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivShow'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -2247,7 +2570,7 @@
         my ($self, $iv, $key, $check) = @_;
 
         # Local variables
-        my $refType;
+        my ($varRef, $refType);
 
         # Check for improper arguments
         if (! defined $iv || ! defined $key || defined $check) {
@@ -2255,18 +2578,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivDelete', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivDelete'
-                );
+                %$varRef = %{$axmud::DEFAULT_ROOM->{$iv}};
+                $self->{$iv} = $varRef;
+
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+
+                %$varRef = %{$axmud::DEFAULT_EXIT->{$iv}};
+                $self->{$iv} = $varRef;
+
+            } else {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivAdd',
+                    );
+                }
+
+                return undef;
             }
-
-            return undef;
         }
 
         # Check that modifying the instance variable is allowed
@@ -2322,18 +2660,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivExists', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivExists'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivExists'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -2380,18 +2728,28 @@
             return @emptyList;
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivKeys'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivKeys'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -2434,18 +2792,28 @@
             return @emptyList;
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivValues'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivValues'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -2484,18 +2852,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivPairs', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivPairs'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivPairs'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         $refType = ref $self->{$iv};
@@ -2534,6 +2912,14 @@
             return @emptyList;
         }
 
+        # (For room and exit objects, the full list of IVs is only obtainable from the default
+        #   object stored in a global variable)
+        if ($self->isa('Games::Axmud::ModelObj::Room')) {
+            $self = $axmud::DEFAULT_ROOM;
+        } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+            $self = $axmud::DEFAULT_EXIT;
+        }
+
         return keys (%{$self});
     }
 
@@ -2555,7 +2941,7 @@
         my ($self, $iv, $check) = @_;
 
         # Local variables
-        my $refType;
+        my ($varRef, $refType);
 
         # Check for improper arguments
         if (! defined $iv || defined $check) {
@@ -2563,18 +2949,33 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivEmpty', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $varRef = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $varRef = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivEmpty'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivEmpty',
+                    );
+                }
+
+                return undef;
             }
 
-            return undef;
+        } else {
+
+            $varRef = $self->{$iv};
         }
 
         # Check that modifying the instance variable is allowed
@@ -2585,7 +2986,7 @@
 
         # According to Axmud's coding conventions, if ref() doesn't return 'ARRAY' or 'HASH', it's
         #   a scalar instance variable; so treat it as a scalar
-        $refType = ref $self->{$iv};
+        $refType = ref $varRef;
         if ($refType eq '' || $refType eq 'ARRAY' || $refType eq 'HASH') {
 
             # This is a scalar, array or hash. Set the parent file object's 'data modified' flag
@@ -2642,18 +3043,28 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivType', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivType'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivType'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         # According to Axmud's coding conventions, if ref() doesn't return 'ARRAY' or 'HASH', it's
@@ -2701,18 +3112,28 @@
             return @emptyList;
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, get a default value from the default object stored in a global variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
-
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivPeek'
-                );
+            if ($self->isa('Games::Axmud::ModelObj::Room')) {
+                $self = $axmud::DEFAULT_ROOM;
+            } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+                $self = $axmud::DEFAULT_EXIT;
             }
 
-            return undef;
+            if (! exists $self->{$iv}) {
+
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivPeek'
+                    );
+                }
+
+                return undef;
+            }
         }
 
         # According to Axmud's coding conventions, if ref() doesn't return 'ARRAY' or 'HASH', it's
@@ -2774,7 +3195,7 @@
 
         # Local variables
         my (
-            $refType, $debugFlag,
+            $varRef, $refType, $debugFlag,
             %hash,
         );
 
@@ -2784,18 +3205,31 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivPoke', @_);
         }
 
-        # Check the instance variable exists at all
+        # Check the instance variable exists at all (but for room and exit objects, if it doesn't
+        #   exist, initialise it using a default value from the default object stored in a global
+        #   variable)
         if (! exists $self->{$iv}) {
 
-            if ($axmud::CLIENT->debugCheckIVFlag) {
+            if ($self->isa('Games::Axmud::ModelObj::Room') && exists $axmud::DEFAULT_ROOM->{$iv}) {
+                $varRef = $axmud::DEFAULT_ROOM->{$iv};
+            } elsif ($self->isa('Games::Axmud::Obj::Exit') && exists $axmud::DEFAULT_EXIT->{$iv}) {
+                $varRef = $axmud::DEFAULT_EXIT->{$iv};
+            } else {
 
-                $self->writeDebug(
-                    'Code accessed non-existent IV \'' . $iv . '\'',
-                    $self->_objClass . '->ivPoke'
-                );
+                if ($axmud::CLIENT->debugCheckIVFlag) {
+
+                    $self->writeDebug(
+                        'Code accessed non-existent IV \'' . $iv . '\'',
+                        $self->_objClass . '->ivPoke',
+                    );
+                }
+
+                return undef;
             }
 
-            return undef;
+        } else {
+
+            $varRef = $self->{$iv};
         }
 
         # Check that modifying the instance variable is allowed
@@ -2809,7 +3243,7 @@
 
         # According to Axmud's coding conventions, if ref() doesn't return 'ARRAY' or 'HASH', it's
         #   saved in one of the scalar IVs (might be a scalar value or a blessed reference)
-        $refType = ref $self->{$iv};
+        $refType = ref $varRef;
         if ($refType eq 'ARRAY') {
 
             # It's a list. Set the list
@@ -2856,6 +3290,14 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivMember', @_);
         }
 
+        # (For room and exit objects, the full list of IVs is only obtainable from the default
+        #   object stored in a global variable)
+        if ($self->isa('Games::Axmud::ModelObj::Room')) {
+            $self = $axmud::DEFAULT_ROOM;
+        } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+            $self = $axmud::DEFAULT_EXIT;
+        }
+
         # Check the instance variable exists at all
         if (! exists $self->{$iv}) {
 
@@ -2887,6 +3329,9 @@
 
         my ($self, $iv, $type, $check) = @_;
 
+        # Local variables
+        my $defaultObj;
+
         # Check for improper arguments
         if (
             ! defined $iv || ! defined $type
@@ -2896,8 +3341,18 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ivCreate', @_);
         }
 
+        # (For room and exit objects, the full list of IVs is only obtainable from the default
+        #   object stored in a global variable)
+        if ($self->isa('Games::Axmud::ModelObj::Room')) {
+            $defaultObj = $axmud::DEFAULT_ROOM;
+        } elsif ($self->isa('Games::Axmud::Obj::Exit')) {
+            $defaultObj = $axmud::DEFAULT_EXIT;
+        } else {
+            $defaultObj = $self;
+        }
+
         # Check the variable doesn't already exist
-        if (exists $self->{$iv}) {
+        if (exists $defaultObj->{$iv}) {
 
             return undef;
         }
@@ -3620,7 +4075,7 @@
 =head1 NAME
 
 Games::Axmud - Axmud, a modern Multi-User Dungeon (MUD) client written in Perl5
-/ GTK2
+/ Gtk3
 
 =head1 SYNOPSIS
 
@@ -3670,7 +4125,7 @@ A S Lewis <aslewis@cpan.org>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2011-2018 A S Lewis
+Copyright (C) 2011-2019 A S Lewis
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software

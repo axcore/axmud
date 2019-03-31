@@ -1,14 +1,17 @@
-MID$ (string, offset)
-MID$ (string, offset, length)
+Mid$ (string, offset)
+Mid$ (string, offset, length)
 
    Synopsis:
       Returns a string within a string
 
-   Examples:
-      To return everything in the string from the 10th character onwards:
-      
-         MID$ ("To be or not to be", 10)     >> "not to be"
+   Notes:
+      If length is 0, an empty string is returned. If offset plus length is
+         beyond the end of string, or if length is omitted, the remaining length
+         of the string is used. If offset is less than 1, or if length is less
+         than 0, an error is generated.
          
-      To return 5 characters in a string, starting from the 10th character:
-      
-         MID$ ("To be or not to be", 10, 5)  >> "not t"
+   Examples:
+      ! Return everything in the string from the 6th character onwards
+      Mid$ ("Read my lips", 6)   
+      ! Return 2 characters in a string, starting from the 6th character     
+      Mid$ ("Read my lips", 6, 2) 

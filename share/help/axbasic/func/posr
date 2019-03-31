@@ -1,5 +1,5 @@
-POSR (string, substring)
-POSR (string, substring, n)
+Posr (string, substring)
+Posr (string, substring, n)
 
    Synopsis:
       Returns the position in the string of the last occurence of the whole
@@ -13,9 +13,9 @@ POSR (string, substring, n)
          substring is specified, 1 is returned. If the string is empty but the
          substring is not empty, 0 is returned.
       If the third argument is specified, the search begins at the nth character
-         in the string and proceeds to the left. POSR(string, substring) is 
-         interchangeable with POSR(string, substring, length), where 'length' is
-         the length of the string. If the substring is null, the starting
+         in the string and proceeds to the left. Posr (string, substring) is 
+         interchangeable with Posr (string, substring, length), where 'length'
+         is the length of the string. If the substring is null, the starting
          position is returned.
       If n is not an integer, it is rounded off. An error occurs if n is zero or
          a negative number.

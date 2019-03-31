@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -82,8 +82,8 @@
             #   (GA::Strip::ConnectInfo)
             number                      => $number,
 
-            # The Gnome2::Canvas item (Gnome2::Canvas::Item) that actually draws the blinker
-            canvasItem                  => undef,
+            # The GooCanvas2 object (GooCanvas2::CanvasRect) that actually draws the blinker
+            canvasObj                   => undef,
 
             # Flag set to TRUE if the blinker is currently ON, FALSE if it is currently OFF
             onFlag                      => FALSE,
@@ -110,8 +110,8 @@
     sub number
         { $_[0]->{number} }
 
-    sub canvasItem
-        { $_[0]->{canvasItem} }
+    sub canvasObj
+        { $_[0]->{canvasObj} }
 
     sub onFlag
         { $_[0]->{onFlag} }

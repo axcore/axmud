@@ -19,9 +19,15 @@ bwn / banishwindow            Removes an 'external' window from a workspace grid
          convenient to place an 'external' window on one of Axmud's workspace
          grids so that it doesn't overlap Axmud windows (as far as possible).
          Use the ';grabwindow' command to do that, and use this command to 
-         remove it from the workspace grids and restore it to its original size
-         (for convenience, the window is also minimised).
+         remove it from the workspace grids (for your convenience, the
+         window is minimised).
       A window's <number> can be obtained with the ';listwindow' command.
- 
+
+      Note that this command only works on X11-based window managers (so it
+         definitely will not work on MS Windows).
+      Note that on other operating systems, at the time of writing, the window
+         is not minimised. This is not issue with the wmctrl library, not with
+         Axmud itself.
+         
    User commands:
       bwn / banwin / banishwin / banishwindow

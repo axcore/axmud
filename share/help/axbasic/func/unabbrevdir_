@@ -1,4 +1,4 @@
-UNABBREVDIR$ (string)
+Unabbrevdir$ (string)
         
    Synopsis:
       Returns the unabbreviated form of a direction

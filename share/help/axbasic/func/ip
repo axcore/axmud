@@ -1,11 +1,12 @@
-IP (x)
+Ip (x)
 
    Synopsis:
       Returns the integer part of x
 
    Notes:
-      It is always true that IP(x) + FP(x) = x.
+      It is always true that Ip (x) + Fp (x) = x.
+      Note that the Ip$ () function is not related to Ip ().
       
    Examples:
-      IP (4.3)   >> 4
-      IP (-7.2)  >> 7
+      Ip (4.3)   >> 4
+      Ip (-7.2)  >> -7

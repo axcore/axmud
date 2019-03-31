@@ -1,5 +1,5 @@
-SETROOMTAGGED ()
-SETROOMTAGGED (string)
+Setroomtagged ()
+Setroomtagged (string)
         
    Synopsis:
       Sets the tagged room as the automapper's current room
@@ -11,4 +11,4 @@ SETROOMTAGGED (string)
          current room is unset when no tagged room is specified. Returns 0 if 
          'string' isn't a recognised room tag or if the set/unset operation 
          fails.
-      See also the SETROOMNUM function.
+      See also the Setroomnum () function.

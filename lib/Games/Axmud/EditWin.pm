@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -92,25 +92,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -146,7 +145,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -187,7 +186,7 @@
         # Line tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -226,10 +225,9 @@
             1, 3, 3, 4);
         $self->addEntry($table, 'number', FALSE,
             3, 6, 3, 4, 8, 8);
-        $self->addLabel($table, 'Ends with newline character',
-            1, 5, 4, 5);
-        my $checkButton = $self->addCheckButton($table, 'newLineFlag', FALSE,
-            5, 6, 4, 5, 1, 0.5);
+        my $checkButton = $self->addCheckButton(
+            $table, 'Ends with newline character', 'newLineFlag', FALSE,
+            1, 6, 4, 5);
 
         # Right column
         $self->addLabel($table, 'Time received',
@@ -241,10 +239,8 @@
         my $entry3 = $self->addEntry($table, undef, FALSE,
             9, 12, 2, 3);
         $entry3->set_text($self->editObj->ivNumber('partList'));
-        $self->addLabel($table, 'Empty line',
-            7, 11, 4, 5);
-        my $checkButton2 = $self->addCheckButton($table, 'emptyFlag', FALSE,
-            11, 12, 4, 5, 1, 0.5);
+        my $checkButton2 = $self->addCheckButton($table, 'Empty line', 'emptyFlag', FALSE,
+            7, 12, 4, 5);
 
         # Bottom section
         # (The entry boxes are sensitive, but not editable, so the user can scroll along to see text
@@ -365,7 +361,7 @@
         my $textView = $self->addTextView($table, undef, FALSE,
             7, 12, 2, 4,
             TRUE, TRUE, TRUE, FALSE,
-            -1, 80);       # Fixed height
+            -1, 85);       # Fixed height
 
         $self->addLabel(
             $table,
@@ -374,7 +370,7 @@
         my $textView2 = $self->addTextView($table, undef, FALSE,
             7, 12, 5, 7,
             TRUE, TRUE, TRUE, FALSE,
-            -1, 80);       # Fixed height
+            -1, 85);       # Fixed height
 
         $self->addLabel(
             $table,
@@ -383,7 +379,7 @@
         my $textView3 = $self->addTextView($table, undef, FALSE,
             7, 12, 8, 10,
             TRUE, TRUE, TRUE, FALSE,
-            -1, 80);       # Fixed height
+            -1, 85);       # Fixed height
 
         # Initialise the simple list and textview
         $self->tagsTab_refreshList(
@@ -431,21 +427,21 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub tagsTab_refreshList {
 
-        # Called by $self->tagsTab to refresh the GA::Obj::Simple::List and Gtk2::TextView
+        # Called by $self->tagsTab to refresh the GA::Obj::SimpleList and Gtk3::TextView
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #   $textView, $textView2, $textView3
-        #               - The Gtk2::TextViews used
-        #   $entry      - The Gtk2::Entry used
+        #               - The Gtk3::TextViews used
+        #   $entry      - The Gtk3::Entry used
         #
         # Return values
         #   'undef' on improper arguments
@@ -540,7 +536,7 @@
         my $textView = $self->addTextView($table, 'partList', FALSE,
             1, 12, 4, 10,
             TRUE, TRUE, TRUE, FALSE,
-            -1, 300);       # Fixed height
+            -1, 310);       # Fixed height
         my $button = $self->addButton(
             $table,
             'Refresh list',
@@ -560,7 +556,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -607,7 +603,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);      # Fixed height
+            -1, 310);      # Fixed height
 
         # Initialise the list
         $self->mxpTab_refreshList($slWidget, (scalar @columnList / 2));
@@ -632,17 +628,17 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub mxpTab_refreshList {
 
-        # Called by $self->mxpTab to refresh the GA::Obj::Simple::List
+        # Called by $self->mxpTab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - Number of columns in the simple list
         #
         # Return values
@@ -781,25 +777,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -835,7 +830,7 @@
 #        $self->expandNotebook();       # (No more tabs to set up)
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -851,7 +846,7 @@
         # Item tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -997,25 +992,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -1051,7 +1045,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -1092,7 +1086,7 @@
         # Item tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -1175,30 +1169,18 @@
         # Move settings
         $self->addLabel($table, '<b>Move settings</b>',
             0, 12, 0, 1);
-        $self->addLabel($table, 'Is a \'look\' command',
-            1, 5, 1, 2);
-        $self->addCheckButton($table, 'lookFlag', FALSE,
-            5, 6, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Is a \'glance\' command',
-            1, 5, 2, 3);
-        $self->addCheckButton($table, 'glanceFlag', FALSE,
-            5, 6, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Is a movement command',
-            1, 5, 3, 4);
-        $self->addCheckButton($table, 'moveFlag', FALSE,
-            5, 6, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Is a redirect mode command',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'redirectFlag', FALSE,
-            5, 6, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Is an assisted move',
-            1, 5, 6, 7);
-        $self->addCheckButton($table, 'assistedFlag', FALSE,
-            5, 6, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Is a teleport',
-            1, 5, 9, 10);
-        $self->addCheckButton($table, 'teleportFlag', FALSE,
-            5, 6, 9, 10, 1, 0.5);
+        $self->addCheckButton($table, 'Is a \'look\' command', 'lookFlag', FALSE,
+            1, 6, 1, 2);
+        $self->addCheckButton($table, 'Is a \'glance\' command', 'glanceFlag', FALSE,
+            1, 6, 2, 3);
+        $self->addCheckButton($table, 'Is a movement command', 'moveFlag', FALSE,
+            1, 6, 3, 4);
+        $self->addCheckButton($table, 'Is a redirect mode command', 'redirectFlag', FALSE,
+            1, 6, 5, 6);
+        $self->addCheckButton($table, 'Is an assisted move', 'assistedFlag', FALSE,
+            1, 6, 6, 7);
+        $self->addCheckButton($table, 'Is a teleport', 'teleportFlag', FALSE,
+            1, 6, 9, 10);
 
         # Right column
         $self->addLabel($table, 'Move direction',
@@ -1239,7 +1221,7 @@
             9, 12, 9, 10);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -1364,7 +1346,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -1419,10 +1401,8 @@
             5, 7, 6, 7, 16, 16);
 
         # Right column
-        $self->addLabel($table, 'Standard cage?',
-            8, 10, 3, 4);
-        $self->addCheckButton($table, 'standardFlag', FALSE,
-            10, 12, 3, 4);
+        $self->addCheckButton($table, 'Standard cage', 'standardFlag', FALSE,
+            8, 12, 3, 4);
 
         $self->addLabel($table, 'Profile category',
             8, 10, 6, 7);
@@ -1430,7 +1410,7 @@
             10, 12, 6, 7);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -1601,7 +1581,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);     # Fixed height
+            -1, 320);     # Fixed height
 
         # Initialise the list
         $self->refreshList($slWidget, (scalar @columnList / 2), 'cmdHash');
@@ -1615,7 +1595,7 @@
         $self->addCageButtons($table, $slWidget, $entry, 'cmdHash', (scalar @columnList / 2));
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -1673,7 +1653,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);     # Fixed height
+            -1, 320);     # Fixed height
 
         # Initialise the list
         $self->refreshList($slWidget, (scalar @columnList / 2), 'wordHash');
@@ -1687,7 +1667,7 @@
         $self->addCageButtons($table, $slWidget, $entry, 'wordHash', (scalar @columnList / 2));
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -1695,12 +1675,12 @@
     sub addCageButtons {
 
         # Called by $self->commandsTab and $self->wordsTab to create the editing buttons
-        #   beneath the GA::Obj::Simple::List
+        #   beneath the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $table      - The current Gtk2::Table displayed in the notebook
-        #   $slWidget   - The GA::Obj::Simple::List
-        #   $entry      - A Gtk2::Entry needed by one of the buttons
+        #   $table      - The current Gtk3::Grid displayed in the notebook
+        #   $slWidget   - The GA::Obj::SimpleList
+        #   $entry      - A Gtk3::Entry needed by one of the buttons
         #   $iv         - The IV being edited in this tab - 'cmdHash' or 'wordHash'
         #   $columns    - The number of columns
         #
@@ -1794,10 +1774,10 @@
     sub refreshList {
 
         # Called by $self->commandsTab and $self->wordsTab to reset the
-        #   GA::Obj::Simple::List
+        #   GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #   $iv         - The IV being edited in this tab - 'cmdHash' or 'wordHash'
         #
@@ -1957,7 +1937,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -1996,7 +1976,7 @@
         # Interfaces1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -2034,7 +2014,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 170);      # Fixed height
+            -1, 190);      # Fixed height
 
         # Unusual step - save the list reference in an IV
         $self->ivPoke('slWidget2', $slWidget);
@@ -2046,14 +2026,14 @@
         $self->interfacesTab_addButtons($table, $slWidget, (scalar @columnList / 2));
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub interfaces1Tab_refreshList {
 
-        # Called by $self->interfaces1Tab (etc) to reset the GA::Obj::Simple::List
+        # Called by $self->interfaces1Tab (etc) to reset the GA::Obj::SimpleList
         #
         # Expected arguments
         #   (none besides $self)
@@ -2102,7 +2082,7 @@
         # Interfaces2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -2149,7 +2129,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 170);      # Fixed height
+            -1, 190);      # Fixed height
 
         # Unusual step - save the list reference in an IV
         $self->ivPoke('slWidget1', $slWidget);
@@ -2161,14 +2141,14 @@
         $self->interfacesTab_addButtons($table, $slWidget, (scalar @columnList / 2));
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub interfaces2Tab_refreshList {
 
-        # Called by $self->interfaces2Tab (etc) to reset the GA::Obj::Simple::List
+        # Called by $self->interfaces2Tab (etc) to reset the GA::Obj::SimpleList
         #
         # Expected arguments
         #   (none besides $self)
@@ -2228,11 +2208,11 @@
     sub interfacesTab_addButtons {
 
         # Called by $self->interfaces1Tab and $self->interfaces2Tab to create the editing buttons
-        #   beneath the GA::Obj::Simple::List
+        #   beneath the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $table      - The current Gtk2::Table displayed in the notebook
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $table      - The current Gtk3::Grid displayed in the notebook
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -2304,22 +2284,14 @@
             $entry3 = $self->addEntryWithIcon($table, undef, 'string', undef, undef,
                 3, 4, 10, 11);
 
-            $self->addLabel($table, 'Starts enabled',
-                4, 5, 10, 11);
-            $checkButton = $self->addCheckButton($table, undef, TRUE,
-                5, 6, 10, 11, 1, 0.5);
-            $self->addLabel($table, 'Splitter',
-                6, 7, 10, 11);
-            $checkButton2 = $self->addCheckButton($table, undef, TRUE,
-                7, 8, 10, 11, 1, 0.5);
-            $self->addLabel($table, 'Rewriter',
-                8, 9, 10, 11);
-            $checkButton3 = $self->addCheckButton($table, undef, TRUE,
-                9, 10, 10, 11, 1, 0.5);
-            $self->addLabel($table, 'Temp',
-                10, 11, 10, 11);
-            $checkButton4 = $self->addCheckButton($table, undef, TRUE,
-                11, 12, 10, 11, 1, 0.5);
+            $checkButton = $self->addCheckButton($table, 'Starts enabled', undef, TRUE,
+                4, 6, 10, 11);
+            $checkButton2 = $self->addCheckButton($table, 'Splitter', undef, TRUE,
+                6, 8, 10, 11);
+            $checkButton3 = $self->addCheckButton($table, 'Rewriter', undef, TRUE,
+                8, 10, 10, 11);
+            $checkButton4 = $self->addCheckButton($table, 'Temp', undef, TRUE,
+                10, 12, 10, 11);
 
             $checkButton2->signal_connect('toggled' => sub {
 
@@ -2356,15 +2328,11 @@
             $entry3 = $self->addEntryWithIcon($table, undef, 'string', undef, undef,
                 3, 6, 10, 11);
 
-            $self->addLabel($table, 'Starts enabled',
-                6, 8, 10, 11);
-            $checkButton = $self->addCheckButton($table, undef, TRUE,
-                8, 9, 10, 11, 1, 0.5);
+            $checkButton = $self->addCheckButton($table, 'Starts enabled', undef, TRUE,
+                6, 9, 10, 11);
 
-            $self->addLabel($table, 'Temporary',
-                9, 11, 10, 11);
-            $checkButton4 = $self->addCheckButton($table, undef, TRUE,
-                11, 12, 10, 11, 1, 0.5);
+            $checkButton4 = $self->addCheckButton($table, 'Temporary', undef, TRUE,
+                9, 12, 10, 11);
         }
         # New interfaces should be enabled by default
         $checkButton->set_active(TRUE);
@@ -3494,7 +3462,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -3563,7 +3531,7 @@
         # Routes1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -3604,7 +3572,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 13, 2, 8,
-            -1, 170);      # Fixed height
+            -1, 190);      # Fixed height
 
         # Unusual step - save the list reference in an IV
         $self->ivPoke('slWidget2', $slWidget);
@@ -3616,14 +3584,14 @@
         $self->routesTab_addEditButtons($table, $slWidget, (scalar @columnList / 2));
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub routes1Tab_refreshList {
 
-        # Called by $self->routes1Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->routes1Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
         #   (none besides $self)
@@ -3680,7 +3648,7 @@
         # Routes2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -3726,7 +3694,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 13, 2, 8,
-            -1, 170);      # Fixed height
+            -1, 190);      # Fixed height
 
         # Unusual step - save the list reference in an IV
         $self->ivPoke('slWidget1', $slWidget);
@@ -3738,14 +3706,14 @@
         $self->routesTab_addEditButtons($table, $slWidget, (scalar @columnList / 2));
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub routes2Tab_refreshList {
 
-        # Called by $self->routes2Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->routes2Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
         #   (none besides $self)
@@ -3798,11 +3766,11 @@
     sub routesTab_addEditButtons {
 
         # Called by $self->routes1Tab and $self->routes2Tab to create the editing buttons beneath
-        #   the GA::Obj::Simple::List
+        #   the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $table      - The current Gtk2::Table displayed in the notebook
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $table      - The current Gtk3::Grid displayed in the notebook
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -3831,10 +3799,8 @@
             TRUE,               # No 'undef' value used
             4, 5, 8, 9);
 
-        $self->addLabel($table, 'Hoppable',
-            5, 6, 8, 9);
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            6, 7, 8, 9, 1, 0.5);
+        my $checkButton = $self->addCheckButton($table, 'Hoppable', undef, TRUE,
+            5, 7, 8, 9);
         # New routes should be hoppable by default
         $checkButton->set_active(TRUE);
 
@@ -4222,7 +4188,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -4288,7 +4254,7 @@
             7, 12, 1, 5);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -4462,7 +4428,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -4486,10 +4452,8 @@
             1, 3, 1, 2);
         $self->addEntry($table, 'name', 0,
             3, 6, 1, 2);
-        $self->addLabel($table, 'Standard colour scheme',
-            7, 11, 1, 2);
-        my $checkButton = $self->addCheckButton($table, undef, FALSE,
-            11, 12, 1, 2, 1, 0.5);
+        my $checkButton = $self->addCheckButton($table, 'Standard colour scheme', undef, FALSE,
+            7, 12, 1, 2);
         if (
             $axmud::CLIENT->ivExists('constGridWinTypeHash', $self->editObj->name)
             || $axmud::CLIENT->ivExists('constFreeWinTypeHash', $self->editObj->name)
@@ -4498,7 +4462,7 @@
         }
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -4554,7 +4518,7 @@
                 $axmud::CLIENT->swapColours($background),
             );
 
-            # Click the hidden button to redraw the Gnome2::Canvas/Gtk2::Entry objects
+            # Click the hidden button to redraw the GooCanvas2::Canvas/Gtk3::Entry objects
             $hiddenButton2->clicked();
         });
 
@@ -4579,14 +4543,14 @@
                 $self->ivAdd('editHash', 'underlayColour', $axmud::CLIENT->swapColours($text));
             }
 
-            # Click the hidden buttons to redraw the Gnome2::Canvas/Gtk2::Entry objects
+            # Click the hidden buttons to redraw the GooCanvas2::Canvas/Gtk3::Entry objects
             $hiddenButton->clicked();
             $hiddenButton2->clicked();
             $hiddenButton3->clicked();
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -4598,14 +4562,14 @@
         #   colour setting
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table for this tab
+        #   $table      - The Gtk3::Grid for this tab
         #   $iv         - The IV to use, e.g. 'textColour'
         #   $text       - The label to use, e.g. 'Text colour'
-        #   $row        - The number of the row in the Gtk2::Table displayed in this tab
+        #   $row        - The number of the row in the Gtk3::Grid displayed in this tab
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns a Gtk2::Button which isn't visible in the tab, but which can be
+        #   Otherwise returns a Gtk3::Button which isn't visible in the tab, but which can be
         #       'clicked' by the calling function, and thereby change the displayed colour
 
         my ($self, $table, $iv, $text, $row, $check) = @_;
@@ -4737,9 +4701,9 @@
             $self->ivAdd('editHash', $iv, $default);
         });
 
-        # Create a Gtk2::Button which isn't visible in the tab, but which can be 'clicked' by the
+        # Create a Gtk3::Button which isn't visible in the tab, but which can be 'clicked' by the
         #   calling function, and thereby change the displayed colour
-        my $hiddenButton = Gtk2::Button->new('Hidden');
+        my $hiddenButton = Gtk3::Button->new('Hidden');
         $hiddenButton->signal_connect('clicked' => sub {
 
             $rgbColour = $self->getEditHash_scalarIV($iv);
@@ -4786,13 +4750,12 @@
             '<i>List of ' . $axmud::SCRIPT . ' colour tags which should be ignored or replaced when'
             . ' text is displayed using this colour scheme</i>',
             1, 12, 1, 2);
-        my $checkButton = $self->addCheckButton($table, 'overrideAllFlag', TRUE,
-            1, 12, 2, 3);
-        $checkButton->set_label(
-#            'Ignore all colour tags except the textview\'s default text, underlay and background'
-#            . ' colours',
+        my $checkButton = $self->addCheckButton(
+            $table,
             'Ignore all colour tags except the normal text and background colours',
-        );
+            'overrideAllFlag',
+            TRUE,
+            1, 12, 2, 3);
 
         # Add a simple list
         @columnList = (
@@ -4858,17 +4821,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub overrideTab_refreshList {
 
-        # Called by $self->overrideTab to refresh the GA::Obj::Simple::List
+        # Called by $self->overrideTab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -4914,7 +4877,7 @@
     sub overrideTab_checkEntry {
 
         # Callback from $self->overrideTab
-        # Checks the contents of the Gtk2::Entry, returning FALSE or TRUE
+        # Checks the contents of the Gtk3::Entry, returning FALSE or TRUE
         # Set up additional tabs for the notebook
         #
         # Expected arguments
@@ -4946,7 +4909,7 @@
     sub overrideTab_checkEntry2 {
 
         # Callback from $self->overrideTab
-        # Checks the contents of the Gtk2::Entry, returning FALSE or TRUE
+        # Checks the contents of the Gtk3::Entry, returning FALSE or TRUE
         # Set up additional tabs for the notebook
         #
         # Expected arguments
@@ -5108,7 +5071,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -5330,7 +5293,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -   The Gtk2::Table
+        #   $table  -   The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -5436,7 +5399,7 @@
         }
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -5478,29 +5441,33 @@
             . ' component</i>',
             1, 13, 1, 2);
 
-        $self->addLabel($table, 'Locator doesn\'t use normal/bold colour tags interchangeably',
-            1, 12, 2, 3);
-        $self->addCheckButton($table, 'boldSensitiveFlag', TRUE,
-            12, 13, 2, 3, 1, 0.5);
+        $self->addCheckButton(
+            $table,
+            'Locator doesn\'t use normal/bold colour tags interchangeably',
+            'boldSensitiveFlag',
+            TRUE,
+            1, 13, 2, 3);
 
-        $self->addLabel(
+        my $checkButton = $self->addCheckButton(
             $table,
             'Locator only considers colours/styles that applied at the beginning of the line',
-            1, 12, 3, 4);
-        my $checkButton = $self->addCheckButton($table, 'useInitialTagsFlag', TRUE,
-            12, 13, 3, 4, 1, 0.5);
+            'useInitialTagsFlag',
+            TRUE,
+            1, 13, 3, 4);
 
-        $self->addLabel(
+        my $checkButton2 = $self->addCheckButton(
             $table,
             'Locator only considers colours/styles that were explicity specified on this line',
-            1, 12, 4, 5);
-        my $checkButton2 = $self->addCheckButton($table, 'useExplicitTagsFlag', TRUE,
-            12, 13, 4, 5, 1, 0.5);
+            'useExplicitTagsFlag',
+            TRUE,
+            1, 13, 4, 5);
 
-        $self->addLabel($table, 'Locator treats this component as if it were a single line',
-            1, 12, 5, 6);
-        $self->addCheckButton($table, 'combineLinesFlag', TRUE,
-            12, 13, 5, 6, 1, 0.5);
+        $self->addCheckButton(
+            $table,
+            'Locator treats this component as if it were a single line',
+            'combineLinesFlag',
+            TRUE,
+            1, 13, 5, 6);
 
         $self->addLabel($table, '<b>Locator task ignore options</b>',
             0, 13, 6, 7);
@@ -5588,7 +5555,7 @@
             1, 13, 12, 13);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -5636,7 +5603,7 @@
             -1, 150);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -5769,15 +5736,15 @@
         #
         # Expected arguments
         #   $innerNotebook
-        #       - The Gtk2::Notebook object inside $self->notebook
+        #       - The Gtk3::Notebook object inside $self->notebook
         #   $tabName
         #       - e.g. 'Page _1'
         #   $patternListIV, $tagListIV, $flagIV, $modeIV
         #       - The names of the IVs being set (e.g. 'startPatternList', 'startTagList',
         #               'startAllFlag', 'startTagMode'
         #   @stringList
-        #       - List containing five strings. The first is used for the main Gtk2::Label at the
-        #           top of the tab; two out of the remaining four are used in the other Gtk2::Labels
+        #       - List containing five strings. The first is used for the main Gtk3::Label at the
+        #           top of the tab; two out of the remaining four are used in the other Gtk3::Labels
         #
         # Return values
         #   'undef' on improper arguments
@@ -5853,7 +5820,7 @@
         my $textView = $self->addTextView($table, $patternListIV, TRUE,
             1, 10, 2, 6,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 100);                  # Fixed height
+            -1, 120);                  # Fixed height
         $self->addRegexButton($table,
             [
                 'list', $patternListIV,
@@ -6186,17 +6153,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub patternsTags1Tab_checkEntry {
 
-        # Called by $self->patternsTags1Tab to check the text in the first Gtk2::Entry
+        # Called by $self->patternsTags1Tab to check the text in the first Gtk3::Entry
         #
         # Expected arguments
-        #   $text       - The contents of the Gtk2::Entry
+        #   $text       - The contents of the Gtk3::Entry
         #
         # Return values
         #   'undef' on improper arguments or if $text is invalid
@@ -6232,10 +6199,10 @@
 
     sub patternsTags1Tab_checkEntry2 {
 
-        # Called by $self->patternsTags1Tab to check the text in the second Gtk2::Entry
+        # Called by $self->patternsTags1Tab to check the text in the second Gtk3::Entry
         #
         # Expected arguments
-        #   $text       - The contents of the Gtk2::Entry
+        #   $text       - The contents of the Gtk3::Entry
         #
         # Return values
         #   'undef' on improper arguments or if $text is invalid
@@ -6263,19 +6230,19 @@
 
     sub patternsTags1Tab_addButton {
 
-        # Called by $self->patternsTags1Tab to add a Gtk2::Button next to a combobox
+        # Called by $self->patternsTags1Tab to add a Gtk3::Button next to a combobox
         #
         # Expected arguments
-        #   $table          - The Gtk2::Table
+        #   $table          - The Gtk3::Grid for this tab
         #   $row            - The position in the table of the buttons
         #   $iv             - The IV being edited (e.g. 'startTagList')
-        #   $buffer         - The buffer of the Gtk2::TextView used to display the IV
-        #   $comboBox       - The Gtk2::ComboBox used alongside the Gtk2::Button
+        #   $buffer         - The buffer of the Gtk3::TextView used to display the IV
+        #   $comboBox       - The Gtk3::ComboBox used alongside the Gtk3::Button
         #   $title          - The title used at the top of the combobox
         #
         # Return values
         #   'undef' on improper arguments
-        #   The Gtk2::Button created, otherwise
+        #   The Gtk3::Button created, otherwise
 
         my ($self, $table, $row, $iv, $buffer, $comboBox, $title, $check) = @_;
 
@@ -6324,19 +6291,19 @@
 
     sub patternsTags1Tab_addBoldButton {
 
-        # Called by $self->patternsTags1Tab to add another Gtk2::Button next to a combobox
+        # Called by $self->patternsTags1Tab to add another Gtk3::Button next to a combobox
         #
         # Expected arguments
-        #   $table          - The Gtk2::Table
+        #   $table          - The Gtk3::Grid for this tab
         #   $row            - The position in the table of the buttons
         #   $iv             - The IV being edited (e.g. 'startTagList')
-        #   $buffer         - The buffer of the Gtk2::TextView used to display the IV
-        #   $comboBox       - The Gtk2::ComboBox used alongside the Gtk2::Button
+        #   $buffer         - The buffer of the Gtk3::TextView used to display the IV
+        #   $comboBox       - The Gtk3::ComboBox used alongside the Gtk3::Button
         #   $title          - The title used at the top of the combobox
         #
         # Return values
         #   'undef' on improper arguments
-        #   The Gtk2::Button created, otherwise
+        #   The Gtk3::Button created, otherwise
 
         my ($self, $table, $row, $iv, $buffer, $comboBox, $title, $check) = @_;
 
@@ -6385,7 +6352,7 @@
 
     sub patternsTags1Tab_setSensitive {
 
-        # Called by $self->patternsTags1Tab to check the text in the Gtk2::Entry
+        # Called by $self->patternsTags1Tab to check the text in the Gtk3::Entry
         #
         # Expected arguments
         #   $mode       - Matches a setting for $self->editObj->startTagMode, ->stopAtTagMode, etc
@@ -6461,7 +6428,7 @@
         # PatternsTags7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -6552,7 +6519,7 @@
         );
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -6562,7 +6529,7 @@
         # PatternsTags8 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -6595,7 +6562,7 @@
             8, 12, 2, 3);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -6605,7 +6572,7 @@
         # PatternsTags9 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -6700,7 +6667,7 @@
             4, 12, 8, 9);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -6710,7 +6677,7 @@
         # PatternsTags10 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -6791,7 +6758,7 @@
             4, 12, 8, 9);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -6986,7 +6953,7 @@
         $self->nameTab($table);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -7131,7 +7098,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -7158,13 +7125,13 @@
         $self->addLabel($table, '<b>Current dictionary</b>',
             7, 12, 0, 1);
 
-        my $checkbutton = Gtk2::CheckButton->new();
+        my $checkButton = Gtk3::CheckButton->new();
         if ($self->session->currentDict eq $self->editObj) {
 
-            $checkbutton->set_active(TRUE);
+            $checkButton->set_active(TRUE);
         }
-        $checkbutton->set_sensitive(FALSE);
-        $table->attach_defaults($checkbutton, 8, 9, 1, 2);
+        $checkButton->set_sensitive(FALSE);
+        $table->attach($checkButton, 8, 1, 1, 1);
 
         # Language
         $self->addLabel($table, '<b>Language</b>',
@@ -7202,9 +7169,9 @@
             $choice = $self->showMsgDialogue(
                 'Switch language',
                 'question',
-                "Are you sure you want to switch to " . ucfirst($pbObj->name) . "?\n\n(This action"
-                . " will save any changes you\'ve already made, and then replace the dictionary\'s"
-                . " primary directions, articles, conjunctions and some number words)",
+                'Are you sure you want to switch to ' . ucfirst($pbObj->name) . '?\ (This action'
+                . ' will save any changes you\'ve already made, and then replace the dictionary\'s'
+                . ' primary directions, articles, conjunctions and some number words)',
                 'yes-no',
             );
 
@@ -7240,7 +7207,7 @@
             10, 12, 5, 6);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -7276,7 +7243,9 @@
         $self->addLabel($table, '<i>Words for \'the\' in the dictionary\'s language</i>',
             1, 6, 2, 4);
         $self->addTextView($table, 'definiteList', TRUE,
-            1, 6, 4, 6);
+            1, 6, 4, 6,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         # Indefinite articles
         $self->addLabel($table, '<b>Indefinite articles</b>',
@@ -7284,10 +7253,12 @@
         $self->addLabel($table, '<i>Words for \'a\' / \'an\' in the dictionary\'s language</i>',
             1, 6, 8, 10);
         $self->addTextView($table, 'indefiniteList', TRUE,
-            1, 6, 10, 12);
+            1, 6, 10, 12,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -7315,7 +7286,7 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('_Conjunctions', $self->notebook);
+        my ($vBox, $table) = $self->addTab('Con_junctions', $self->notebook);
 
         # Conjunctions
         $self->addLabel($table, '<b>Conjunctions</b>',
@@ -7323,15 +7294,19 @@
         $self->addLabel($table, '<i>Words for \'and\' in the dictionary\'s language</i>',
             1, 6, 2, 4);
         $self->addTextView($table, 'andList', TRUE,
-            1, 6, 4, 6);
+            1, 6, 4, 6,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 160);                   # Fixed height
 
         $self->addLabel($table, '<i>Words for \'or\' in the dictionary\'s language</i>',
             1, 6, 8, 10);
         $self->addTextView($table, 'orList', TRUE,
-            1, 6, 10, 12);
+            1, 6, 10, 12,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 160);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -7376,7 +7351,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 260);      # Fixed height
+            -1, 280);      # Fixed height
 
         # Initialise the list
         $self->numbersTab_refreshList($slWidget, (scalar @columnList / 2), 'numberHash');
@@ -7456,19 +7431,19 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub numbersTab_refreshList {
 
-        # Called by $self->numbersTab to refresh the GA::Obj::Simple::List, ordering the data by
+        # Called by $self->numbersTab to refresh the GA::Obj::SimpleList, ordering the data by
         #   each key-value pair's value (instead of ordering it by key, as usual)
         # Also called by $self->clock1Tab, ->clock2Tab and ->clock3Tab to do the same job
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #   $iv         - The IV being edited
         #
@@ -7561,7 +7536,7 @@
         # Time1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -7665,14 +7640,14 @@
             8, 12, 10, 11);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub time1Tab_addEntryWithIcon {
 
-        # Adds a Gtk2::Entry at the specified position on the tab, containing a stock icon to show
+        # Adds a Gtk3::Entry at the specified position on the tab, containing a stock icon to show
         #   whether the current contents of the entry is allowed
         # The stock icons used are 'gtk-yes' (for an acceptable value) and 'gtk-no' (for a forbidden
         #   value)
@@ -7680,7 +7655,7 @@
         #   GA::Generic::EditWin
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table object in which the entry boxes are placed
+        #   $table      - The Gtk3::Grid object in which the entry boxes are placed
         #   $iv         - A string naming the hash IV set (either 'timeHash' or 'timePluralHash')
         #   $key        - The key being set in the hash IV
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
@@ -7688,7 +7663,7 @@
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the Gtk2::Entry created
+        #   Otherwise returns the Gtk3::Entry created
 
         my (
             $self, $table, $iv, $key, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $check
@@ -7713,12 +7688,12 @@
         %ivHash = $self->getEditHash_hashIV($iv);
 
         # Create the entry
-        my $entry = Gtk2::Entry->new();
+        my $entry = Gtk3::Entry->new();
 
         # Display the existing value of the IV
         if (defined $self->editObj->$iv) {
 
-            $entry->append_text($ivHash{$key});
+            $entry->set_text($ivHash{$key});
 
             if ($ivHash{$key}) {
                 $entry->set_icon_from_stock('secondary', 'gtk-yes');
@@ -7747,7 +7722,13 @@
         });
 
         # Add the entry to the table
-        $table->attach_defaults($entry, $leftAttach, $rightAttach, $topAttach, $bottomAttach);
+        $table->attach(
+            $entry,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
 
         return $entry;
     }
@@ -7757,7 +7738,7 @@
         # Time2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -7791,7 +7772,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->numbersTab_refreshList($slWidget, (scalar @columnList / 2), 'clockDayHash');
@@ -7884,7 +7865,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -7894,7 +7875,7 @@
         # Time3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -7927,7 +7908,8 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 8, -1, 220);      # Fixed height
+            1, 12, 2, 8,
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->numbersTab_refreshList($slWidget, (scalar @columnList / 2), 'clockHourHash');
@@ -8018,7 +8000,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8028,7 +8010,7 @@
         # Time4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8062,7 +8044,8 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 8, -1, 220);      # Fixed height
+            1, 12, 2, 8,
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->numbersTab_refreshList($slWidget, (scalar @columnList / 2), 'clockMinuteHash');
@@ -8154,7 +8137,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8202,7 +8185,7 @@
         # Nouns1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8235,7 +8218,8 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 8, -1, 220);      # Fixed height
+            1, 12, 2, 8,
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'sentientHash');
@@ -8279,7 +8263,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8289,7 +8273,7 @@
         # Nouns2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8322,7 +8306,8 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 8, -1, 220);      # Fixed height
+            1, 12, 2, 8,
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'creatureHash');
@@ -8366,7 +8351,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8376,7 +8361,7 @@
         # Nouns3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8401,10 +8386,10 @@
         my $textView = $self->addTextView($table, 'portableTypeList', TRUE,
             1, 12, 2, 5,
             TRUE, TRUE, TRUE, FALSE,  # Treat as list, remove empty lines, do remove whitespace
-            -1, 130);
+            -1, 140);
         my $buffer = $textView->get_buffer();
 
-        my $button = Gtk2::Button->new('Use default list');
+        my $button = Gtk3::Button->new('Use default list');
         $button->signal_connect('clicked' => sub {
 
             my @list = $self->editObj->constPortableTypeList;
@@ -8412,8 +8397,8 @@
             $self->ivAdd('editHash', \@list);
             $buffer->set_text(join("\n", $self->editObj->ivPeek('constPortableTypeList')));
         });
-        $self->tooltips->set_tip($button, 'Use the default list of Portable types');
-        $table->attach_defaults($button, 10, 12, 0, 2);
+        $button->set_tooltip_text('Use the default list of Portable types');
+        $table->attach($button, 10, 0, 2, 2);
 
         # Decoration types
         $self->addLabel($table, '<b>Decoration types</b>',
@@ -8423,10 +8408,10 @@
         my $textView2 = $self->addTextView($table, 'decorationTypeList', TRUE,
             1, 12, 7, 10,
             TRUE, TRUE, TRUE, FALSE,  # Treat as list, remove empty lines, do remove whitespace
-            -1, 130);
+            -1, 140);
         my $buffer2 = $textView2->get_buffer();
 
-        my $button2 = Gtk2::Button->new('Use default list');
+        my $button2 = Gtk3::Button->new('Use default list');
         $button2->signal_connect('clicked' => sub {
 
             my @list = $self->editObj->constDecorationTypeList;
@@ -8434,11 +8419,11 @@
             $self->ivAdd('editHash', \@list);
             $buffer2->set_text(join("\n", $self->editObj->ivPeek('constDecorationTypeList')));
         });
-        $self->tooltips->set_tip($button2, 'Use the default list of Decoration types');
-        $table->attach_defaults($button2, 10, 12, 5, 7);
+        $button2->set_tooltip_text('Use the default list of Decoration types');
+        $table->attach($button2, 10, 5, 2, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8448,7 +8433,7 @@
         # Nouns4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8483,7 +8468,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'portableTypeHash');
@@ -8536,7 +8521,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8546,7 +8531,7 @@
         # Nouns5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8581,7 +8566,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'decorationTypeHash');
@@ -8634,7 +8619,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8644,7 +8629,7 @@
         # Nouns6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8678,7 +8663,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);          # Fixed height
+            -1, 250);          # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'guildHash');
@@ -8722,7 +8707,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8732,7 +8717,7 @@
         # Nouns7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8766,7 +8751,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'raceHash');
@@ -8810,7 +8795,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8820,7 +8805,7 @@
         # Nouns8 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8854,7 +8839,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'weaponHash');
@@ -8898,7 +8883,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8908,7 +8893,7 @@
         # Nouns9 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -8942,7 +8927,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'armourHash');
@@ -8986,7 +8971,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -8996,7 +8981,7 @@
         # Nouns10 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9030,7 +9015,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'garmentHash');
@@ -9074,7 +9059,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9115,7 +9100,7 @@
         # Plurals1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9149,7 +9134,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'pluralEndingHash');
@@ -9192,7 +9177,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9202,7 +9187,7 @@
         # Plurals2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9236,7 +9221,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'reversePluralEndingHash');
@@ -9284,7 +9269,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9294,7 +9279,7 @@
         # Plurals3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9327,8 +9312,8 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 13, 2, 8,
-            -1, 220);      # Fixed height
+            1, 12, 2, 8,
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'pluralNounHash');
@@ -9342,7 +9327,7 @@
         $self->addLabel($table, 'Plural noun',
             7, 10, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-            10, 13, 8, 9);
+            10, 12, 8, 9);
 
         # Add standard editing buttons to the simple list
         my $button = $self->addSimpleListButtons_hashIV(
@@ -9373,7 +9358,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9415,7 +9400,7 @@
         # Adjectives1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9449,7 +9434,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'adjHash');
@@ -9493,7 +9478,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9503,7 +9488,7 @@
         # Adjectives2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9538,7 +9523,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'adjEndingHash');
@@ -9581,7 +9566,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9591,7 +9576,7 @@
         # Adjectives3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9626,7 +9611,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'reverseAdjEndingHash');
@@ -9674,7 +9659,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9684,7 +9669,7 @@
         # Adjectives4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9718,8 +9703,8 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 13, 2, 8,
-            -1, 220);      # Fixed height
+            1, 12, 2, 8,
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'declinedAdjHash');
@@ -9733,7 +9718,7 @@
         $self->addLabel($table, 'Declined form',
             7, 10, 8, 9);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-            10, 13, 8, 9);
+            10, 12, 8, 9);
 
         # Add standard editing buttons to the simple list
         my $button = $self->addSimpleListButtons_hashIV(
@@ -9768,7 +9753,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9809,7 +9794,7 @@
         # Pseudo1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9843,7 +9828,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'pseudoNounHash');
@@ -9886,7 +9871,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9896,7 +9881,7 @@
         # Pseudo2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -9930,7 +9915,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'pseudoObjHash');
@@ -9973,7 +9958,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -9983,7 +9968,7 @@
         # Pseudo3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -10017,7 +10002,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'pseudoAdjHash');
@@ -10060,7 +10045,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -10101,7 +10086,7 @@
         # Contents1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -10129,7 +10114,7 @@
         my ($textView) = $self->addTextView($table, undef, TRUE,
             1, 6, 4, 6,
             TRUE, TRUE, TRUE, FALSE,  # Treat as list, remove empty lines, do remove whitespace
-            -1, 125);
+            -1, 140);
         my $buffer = $textView->get_buffer();
         $buffer->set_text(join("\n", $self->editObj->ivKeys('deathWordHash')));
         $buffer->signal_connect('changed' => sub {
@@ -10178,7 +10163,7 @@
         my $textView2 = $self->addTextView($table, undef, TRUE,
             1, 6, 10, 12,
             TRUE, TRUE, TRUE, FALSE,  # Treat as list, remove empty lines, do remove whitespace
-            -1, 125);
+            -1, 140);
         my $buffer2 = $textView2->get_buffer();
         $buffer2->set_text(join("\n", $self->editObj->ivKeys('ignoreWordHash')));
         $buffer2->signal_connect('changed' => sub {
@@ -10219,7 +10204,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -10229,7 +10214,7 @@
         # Contents2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -10261,20 +10246,20 @@
             . ' button before editing other other tabs)</b></i>',
             1, 12, 1, 2);
 
-        # Add a simple list
-        @columnList = (
-            'Unknown word', 'text',
-        );
+        # Add a simple list, and make it scrollable
+        my $frame = Gtk3::Frame->new(undef);
+        $frame->set_border_width(0);
+        $table->attach($frame, 1, 2, 5, 12);
 
-        my $slWidget = Games::Axmud::Obj::Simple::List->new(@columnList);
-        $slWidget->get_selection->set_mode('multiple');
-
-        # Make the simple list scrollable
-        my $scroller = Gtk2::ScrolledWindow->new;
+        my $scroller = Gtk3::ScrolledWindow->new;
+        $frame->add($scroller);
         $scroller->set_policy('automatic', 'automatic');
-        $scroller->set_size_request(-1, 200);
+        $scroller->set_size_request(-1, 320);
+
+        @columnList = ('Unknown word', 'text');
+        my $slWidget = Games::Axmud::Obj::SimpleList->new(@columnList);
         $scroller->add($slWidget);
-        $table->attach_defaults($scroller, 1, 6, 2, 8);
+        $slWidget->get_selection->set_mode('multiple');
 
         # Initialise the list. Import the IV
         %ivHash = $self->getEditHash_hashIV('unknownWordHash');
@@ -10360,7 +10345,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -10369,11 +10354,11 @@
 
         # Called by $self->words2Tab
         # Adds a single button that, when clicked, runs the client command ';addword' on the
-        #   selected item(s) in the GA::Obj::Simple::List displayed in this tab
+        #   selected item(s) in the GA::Obj::SimpleList displayed in this tab
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table for the tab
-        #   $slWidget   - The GA::Obj::Simple::List displayed
+        #   $table      - The Gtk3::Grid for the tab
+        #   $slWidget   - The GA::Obj::SimpleList displayed
         #   $title      - The button's title
         #   $tooltips   - Tooltips for the button
         #   $cmd        - The text of the command to send, e.g. 'addword -r' to which the selected
@@ -10385,7 +10370,7 @@
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise the Gtk2::Button created created
+        #   Otherwise the Gtk3::Button created created
 
         my (
             $self, $table, $slWidget, $title, $tooltips, $cmd, $widget, $leftAttach, $rightAttach,
@@ -10466,7 +10451,7 @@
         # Contents3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -10505,41 +10490,32 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 180);      # Fixed height
+            -1, 190);      # Fixed height
 
         # Initialise the list
         $self->contents3Tab_refreshList($slWidget, (scalar @columnList / 2));
 
-        # Add entries/comboboxes for adding new patterns
+        # Add editing widgets
+        my $button = $self->addButton($table,
+            'Use selected', 'Copy the selected contents line into the entry box below', undef,
+            1, 3, 8, 9);
+        my $button2 = $self->addButton($table,
+            'Delete selected', 'Delete the selected contents line', undef,
+            8, 10, 8, 9);
+        my $button3 = $self->addButton($table,
+            'Delete all', 'Empty the hash which stores contents lines', undef,
+            10, 12, 8, 9);
+
         $self->addLabel($table, 'Pattern',
             1, 3, 9, 10);
         my $entry = $self->addEntryWithIcon($table, undef, 'regex', 1, undef,
             3, 12, 9, 10);
-
         $self->addLabel($table, 'Replacement',
             1, 3, 10, 11);
         my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
             3, 6, 10, 11);
 
-        # Add a checkbutton right at the bottom
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            6, 7, 11, 12);
-        $unknownFlag = FALSE;       # Button starts deselected
-        $checkButton->signal_connect('toggled' => sub {
-
-            if ($checkButton->get_active()) {
-                $unknownFlag = TRUE;
-            } else {
-                $unknownFlag = FALSE;
-            }
-        });
-        $self->addLabel($table, 'Also add the replacement as unknown word(s)',
-            7, 12, 11, 12);
-
-        # Add buttons
-        my $button = $self->addButton($table,
-            'Use selected', 'Copy the selected contents line into the entry box below', undef,
-            1, 3, 8, 9);
+        # ->signal_connects from above
         $button->signal_connect('clicked' => sub {
 
             my ($key) = $self->getSimpleListData($slWidget, 0);
@@ -10550,9 +10526,6 @@
             }
         });
 
-        my $button2 = $self->addButton($table,
-            'Delete selected', 'Delete the selected contents line', undef,
-            8, 10, 8, 9);
         $button2->signal_connect('clicked' => sub {
 
             my ($key) = $self->getSimpleListData($slWidget, 0);
@@ -10567,9 +10540,6 @@
             }
         });
 
-        my $button3 = $self->addButton($table,
-            'Delete all', 'Empty the hash which stores contents lines', undef,
-            10, 12, 8, 9);
         $button3->signal_connect('clicked' => sub {
 
             # Add an empty hash to $self->editHash
@@ -10580,9 +10550,10 @@
             $self->resetEntryBoxes($entry, $entry2);
         });
 
+        # More editing widgets
         my $button4 = $self->addButton($table,
             'Add pseudo-noun', 'Add the pattern and replacement as a pseudo-noun', undef,
-            6, 8, 10, 11,
+            6, 9, 10, 11,
             TRUE,               # Irreversible
         );
         $button4->signal_connect('clicked' => sub {
@@ -10614,7 +10585,7 @@
 
         my $button5 = $self->addButton($table,
             'Add pseudo-obj', 'Add the pattern and replacement as a pseudo-object', undef,
-            8, 10, 10, 11,
+            9, 12, 10, 11,
             TRUE,               # Irreversible
         );
         $button5->signal_connect('clicked' => sub {
@@ -10644,9 +10615,22 @@
             }
         });
 
+        my $checkButton = $self->addCheckButton(
+            $table, 'Also add the replacement as unknown word(s)', undef, TRUE,
+            1, 6, 11, 12);
+        $unknownFlag = FALSE;       # Button starts deselected
+        $checkButton->signal_connect('toggled' => sub {
+
+            if ($checkButton->get_active()) {
+                $unknownFlag = TRUE;
+            } else {
+                $unknownFlag = FALSE;
+            }
+        });
+
         my $button6 = $self->addButton($table,
             'Add pseudo-adj', 'Add the pattern and replacement as a pseudo-adjective', undef,
-            10, 12, 10, 11,
+            6, 9, 11, 12,
             TRUE,               # Irreversible
         );
         $button6->signal_connect('clicked' => sub {
@@ -10677,17 +10661,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub contents3Tab_refreshList {
 
-        # Called by $self->contentsTab to refresh the GA::Obj::Simple::List, displaying only keys
+        # Called by $self->contentsTab to refresh the GA::Obj::SimpleList, displaying only keys
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -10761,7 +10745,7 @@
         # Directions1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -10791,11 +10775,10 @@
             '<i>List of the standard compass directions, plus up/down</i>',
             1, 6, 1, 2);
 
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            6, 7, 1, 2);
+        my $checkButton = $self->addCheckButton(
+            $table, 'Show all intercardinal directions', undef, TRUE,
+            6, 12, 1, 2);
         # (->signal_connect appears below)
-        $self->addLabel($table, '<i>Show all intercardinal directions</i>',
-            7, 12, 1, 2);
 
         # Create the simple list
         @columnList = (
@@ -10808,7 +10791,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 7,
-            -1, 160);      # Fixed height
+            -1, 180);      # Fixed height
 
         # Initialise the list
         $self->directions1Tab_refreshList($slWidget, (scalar @columnList / 2), $showAllFlag);
@@ -11067,17 +11050,17 @@
         $self->desensitiseWidgets($entry, $entry2, $entry3, $entry4, $entry5);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub directions1Tab_refreshList {
 
-        # Called by $self->directions1Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->directions1Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns in the list
         #
         # Optional arguments
@@ -11158,7 +11141,7 @@
         # Directions2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -11199,7 +11182,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 160);      # Fixed height
+            -1, 180);      # Fixed height
 
         # Initialise the list
         $self->directions2Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -11251,7 +11234,7 @@
 
         # 'Add/Edit direction' button
         my $button2 = $self->addButton($table,
-            'Add/Edit direction', 'Add a new direction or edit the selected one', undef,
+            'Add/Edit dir', 'Add a new direction or edit the selected one', undef,
             2, 4, 8, 9);
         $button2->signal_connect('clicked' => sub {
 
@@ -11310,7 +11293,7 @@
 
         # 'Delete direction' button
         my $button3 = $self->addButton($table,
-            'Delete direction', 'Delete the selected direction', undef,
+            'Delete dir', 'Delete the selected direction', undef,
             4, 6, 8, 9);
         $button3->signal_connect('clicked' => sub {
 
@@ -11803,17 +11786,17 @@
         $self->desensitiseWidgets($entry, $entry2, $entry3, $entry4, $combo);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub directions2Tab_refreshList {
 
-        # Called by $self->directions2Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->directions2Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -11892,7 +11875,7 @@
         # Directions3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -11931,7 +11914,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->directions3Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -12169,17 +12152,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub directions3Tab_refreshList {
 
-        # Called by $self->directions3Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->directions3Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -12228,7 +12211,7 @@
         # Directions4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -12262,7 +12245,8 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 10, -1, 220);      # Fixed height
+            1, 12, 2, 10,
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'speedDirHash');
@@ -12310,17 +12294,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub directions4Tab_checkEntry {
 
-        # Called by $self->directions4Tab to check the text in the Gtk2::Entry
+        # Called by $self->directions4Tab to check the text in the Gtk3::Entry
         #
         # Expected arguments
-        #   $text       - The contents of the Gtk2::Entry
+        #   $text       - The contents of the Gtk3::Entry
         #
         # Return values
         #   'undef' on improper arguments or if $text is invalid
@@ -12349,7 +12333,7 @@
         # Directions5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -12391,7 +12375,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'speedModifierHash');
@@ -12475,7 +12459,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -12793,7 +12777,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -12866,39 +12850,27 @@
             3, 6, 11, 12);
 
 
-        # Right column
-        $self->addLabel($table, 'Broken exit flag',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'brokenFlag', FALSE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Bent broken exit flag',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'bentFlag', FALSE,
-            11, 12, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Region exit flag',
-            7, 11, 3, 4);
-        $self->addCheckButton($table, 'regionFlag', FALSE,
-            11, 12, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Region super-exit flag',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'superFlag', FALSE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'One-way exit flag',
-            7, 11, 5, 6);
-        $self->addCheckButton($table, 'oneWayFlag', FALSE,
-            11, 12, 5, 6, 1, 0.5);
+        # Right column (add empty label for spacing)
+        $self->addLabel($table, '',
+            6, 7, 1, 2);
+        $self->addCheckButton($table, 'Broken exit flag', 'brokenFlag', FALSE,
+            7, 12, 1, 2);
+        $self->addCheckButton($table, 'Bent broken exit flag', 'bentFlag', FALSE,
+            7, 12, 2, 3);
+        $self->addCheckButton($table, 'Region exit flag', 'regionFlag', FALSE,
+            7, 12, 3, 4);
+        $self->addCheckButton($table, 'Region super-exit flag', 'superFlag', FALSE,
+            7, 12, 4, 5);
+        $self->addCheckButton($table, 'One-way exit flag', 'oneWayFlag', FALSE,
+            7, 12, 5, 6);
         $self->addLabel($table, 'Incoming 1-way dir',
-            7, 11, 6, 7);
+            7, 9, 6, 7);
         $self->addEntry($table, 'oneWayDir', FALSE,
             9, 12, 6, 7);
-        $self->addLabel($table, 'Retracing exit flag',
-            7, 11, 7, 8);
-        $self->addCheckButton($table, 'retraceFlag', FALSE,
-            11, 12, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Hidden exit flag',
-            7, 11, 8, 9);
-        $self->addCheckButton($table, 'hiddenFlag', FALSE,
-            11, 12, 8, 9);
+        $self->addCheckButton($table, 'Retracing exit flag', 'retraceFlag', FALSE,
+            7, 12, 7, 8);
+        $self->addCheckButton($table, 'Hidden exit flag', 'hiddenFlag', FALSE,
+            7, 12, 8, 9);
         $self->addLabel($table, 'Exit tag',
             7, 9, 9, 10);
         $self->addEntry($table, 'exitTag', FALSE,
@@ -12956,7 +12928,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'assistedHash');
@@ -13013,7 +12985,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13058,7 +13030,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'doorHash');
@@ -13103,7 +13075,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13170,13 +13142,13 @@
         $self->addTextView($table, 'randomDestList', TRUE,
             9, 12, 5, 11,
             undef, undef, undef, undef,
-            -1, 220);               # Fixed width/height
+            -1, 240);               # Fixed width/height
 
         $self->addLabel($table, '<i>(Add a list of room numbers, one per line)</i>',
             9, 12, 11, 12);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13201,36 +13173,24 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Orna_ments', $self->notebook);
+        my ($vBox, $table) = $self->addTab('_Ornaments', $self->notebook);
 
         # Left column
         $self->addLabel($table, '<b>Exit ornaments</b>',
             0, 6, 0, 1);
 
-        $self->addLabel($table, 'Breakable door',
-            1, 5, 1, 2);
-        my $button = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 1, 2);
-        $self->addLabel($table, 'Pickable lock',
-            1, 5, 2, 3);
-        my $button2 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 2, 3);
-        $self->addLabel($table, 'Lockable door',
-            1, 5, 3, 4);
-        my $button3 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 3, 4);
-        $self->addLabel($table, 'Openable door',
-            1, 5, 4, 5);
-        my $button4 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 4, 5);
-        $self->addLabel($table, 'Exit impassable',
-            1, 5, 5, 6);
-        my $button5 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 5, 6);
-        $self->addLabel($table, 'Mystery exit',
-            1, 5, 6, 7);
-        my $button6 = $self->addCheckButton($table, undef, FALSE,
-            5, 6, 6, 7);
+        my $button = $self->addCheckButton($table, 'Breakable door', undef, FALSE,
+            1, 6, 1, 2);
+        my $button2 = $self->addCheckButton($table, 'Pickable lock', undef, FALSE,
+            1, 6, 2, 3);
+        my $button3 = $self->addCheckButton($table, 'Lockable door', undef, FALSE,
+            1, 6, 3, 4);
+        my $button4 = $self->addCheckButton($table, 'Openable door', undef, FALSE,
+            1, 6, 4, 5);
+        my $button5 = $self->addCheckButton($table, 'Exit impassable', undef, FALSE,
+            1, 6, 5, 6);
+        my $button6 = $self->addCheckButton($table, 'Mystery exit', undef, FALSE,
+            1, 6, 6, 7);
 
         if ($self->editObj->exitOrnament eq 'break') {
             $button->set_active(TRUE);
@@ -13342,7 +13302,7 @@
             9, 12, 13, 14);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13445,7 +13405,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13587,7 +13547,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -   The Gtk2::Table
+        #   $table  -   The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -13620,15 +13580,13 @@
             1, 3, 1, 2);
         $self->addEntry($table, 'name', FALSE,
             3, 6, 1, 2);
+        $self->addCheckButton($table, 'Enabled', 'enabledFlag', TRUE,
+            7, 12, 1, 2);
+
         $self->addLabel($table, 'Category',
             1, 3, 2, 3);
         $self->addEntry($table, 'category', FALSE,
             3, 6, 2, 3);
-
-        $self->addLabel($table, 'Enabled',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'enabledFlag', TRUE,
-            11, 12, 1, 2);
 
         $self->addLabel($table, 'Stimulus <i>(' . $interfaceModelObj->stimulusName . ')</i>',
             1, 3, 3, 4);
@@ -13674,7 +13632,7 @@
         }
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -13776,22 +13734,22 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub beforeAfterTab_addTextView {
 
-        # Called by $self->beforeAfterTab to create a Gtk2::TextView whose contents are treated as
+        # Called by $self->beforeAfterTab to create a Gtk3::TextView whose contents are treated as
         #   lists, and saved in $self->beforeList or $self->afterList
         # (We don't use the standard GA::Generic::EditWin->addTextView because we need these
         #   textviews to create lists, which are saved as hashes in $self->editObj)
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table
+        #   $table      - The Gtk3::Grid for this tab
         #   $type       - 'before' or 'after'
-        #   $row        - The Gtk2::Table row where the textview is drawn
+        #   $row        - The Gtk3::Grid row where the textview is drawn
         #
         # Return values
         #   'undef' on improper arguments
@@ -13982,7 +13940,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -14111,7 +14069,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
@@ -14205,10 +14163,8 @@
             1, 3, 6, 7);
         $self->addEntryWithIcon($table, 'response', 'string', 1, undef,
             3, 12, 6, 7);
-        $self->addLabel($table, 'Enabled',
-            1, 11, 7, 8);
-        $self->addCheckButton($table, 'enabledFlag', TRUE,
-            11, 12, 7, 8);
+        $self->addCheckButton($table, 'Enabled', 'enabledFlag', TRUE,
+            1, 12, 7, 8);
 
         # Independent interface IVs
         $self->addLabel($table, '<b>Independent interface IVs</b>',
@@ -14243,7 +14199,7 @@
             9, 12, 11, 12);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -14307,7 +14263,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -14371,7 +14327,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -14497,7 +14453,6 @@
 }
 
 { package Games::Axmud::EditWin::Interface::Alias;
-
     use strict;
     use warnings;
     use diagnostics;
@@ -15011,25 +14966,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -15065,7 +15019,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -15104,7 +15058,7 @@
         # Category tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -15162,7 +15116,7 @@
         }
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -15204,7 +15158,7 @@
         # Attributes1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -15239,13 +15193,13 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);     # Fixed height
+            -1, 320);     # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'attribTypeHash');
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -15255,7 +15209,7 @@
         # Attributes2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -15290,13 +15244,13 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);     # Fixed height
+            -1, 320);     # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'optionalAttribHash');
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -15306,7 +15260,7 @@
         # Attributes3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -15341,13 +15295,13 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);     # Fixed height
+            -1, 320);     # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'compulsorySwitchHash');
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -15357,7 +15311,7 @@
         # Attributes4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -15392,13 +15346,13 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);     # Fixed height
+            -1, 320);     # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'optionalSwitchHash');
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -15544,7 +15498,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);      # Fixed height
+            -1, 320);      # Fixed height
 
         # Initialise the list
         $self->maskTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -15734,17 +15688,17 @@
         });
 
         # Tab complete
-        $vbox->pack_start($table, 0, 0, 0);
+        $vbox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub maskTab_refreshList {
 
-        # Called by $self->maskTab to reset the GA::Obj::Simple::List
+        # Called by $self->maskTab to reset the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns in the list
         #
         # Return values
@@ -15997,7 +15951,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -16007,9 +15961,9 @@
 
         # Local variables
         my (
-            $count, $index,
+            $count, $index, $angleFlag,
             @list, @comboList,
-            %descripHash,
+            %descripHash, %revDescripHash,
         );
 
         # Check for improper arguments
@@ -16036,12 +15990,12 @@
         my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($table,
             $self->editObj->textColour,
             undef,                          # No neutral colour
-            4, 6, 2, 3);
+            4, 5, 2, 3);
         my $entry = $self->addEntry($table, 'textColour', FALSE,
-            6, 8, 2, 3,
+            5, 6, 2, 3,
             7, 7);
         my $button = $self->addButton($table, 'Set', 'Set this colour', undef,
-            8, 10, 2, 3);
+            6, 7, 2, 3);
         $button->signal_connect('clicked' => sub {
 
             # Prompt the user to select a new colour, using the existing colour as an initial value
@@ -16060,7 +16014,7 @@
             }
         });
         my $button2 = $self->addButton($table, 'Reset', 'Reset this colour', undef,
-            10, 12, 2, 3);
+            7, 8, 2, 3);
         $button2->signal_connect('clicked' => sub {
 
             $canvasObj = $self->fillSimpleCanvas($canvas, $canvasObj);
@@ -16075,12 +16029,12 @@
         my ($frame2, $canvas2, $canvasObj2) = $self->addSimpleCanvas($table,
             $self->editObj->underlayColour,
             undef,                          # No neutral colour
-            4, 6, 3, 4);
+            4, 5, 3, 4);
         my $entry2 = $self->addEntry($table, 'underlayColour', FALSE,
-            6, 8, 3, 4,
+            5, 6, 3, 4,
             7, 7);
         my $button3 = $self->addButton($table, 'Set', 'Set this colour', undef,
-            8, 10, 3, 4);
+            6, 7, 3, 4);
         $button3->signal_connect('clicked' => sub {
 
             # Prompt the user to select a new colour, using the existing colour as an initial value
@@ -16099,7 +16053,7 @@
             }
         });
         my $button4 = $self->addButton($table, 'Reset', 'Reset this colour', undef,
-            10, 12, 3, 4);
+            7, 8, 3, 4);
         $button4->signal_connect('clicked' => sub {
 
             $canvasObj2 = $self->fillSimpleCanvas($canvas2, $canvasObj2);
@@ -16112,71 +16066,95 @@
         $self->addLabel($table, 'Relative size (0.5 - 10)',
             1, 4, 4, 5);
         $self->addEntryWithIcon($table, 'relSize', 'float', 0.5, 10,
-            4, 8, 4, 5,
+            4, 6, 4, 5,
             8, 8);
 
-        my $checkButton = $self->addCheckButton($table, 'italicsFlag', TRUE,
-            1, 3, 5, 6,
-            0, 0.5);
-        $checkButton->set_label('Italics');
-        my $checkButton2 = $self->addCheckButton($table, 'boldFlag', TRUE,
-            3, 5, 5, 6,
-            0, 0.5);
-        $checkButton2->set_label('Bold');
-        my $checkButton3 = $self->addCheckButton($table, 'underlineFlag', TRUE,
-            5, 7, 5, 6,
-            0, 0.5);
-        $checkButton3->set_label('Underline');
-        my $checkButton4 = $self->addCheckButton($table, 'strikeFlag', TRUE,
-            7, 9, 5, 6,
-            0, 0.5);
-        $checkButton4->set_label('Strikethrough');
-        my $checkButton5 = $self->addCheckButton($table, 'boxFlag', TRUE,
-            9, 12, 5, 6,
-            0, 0.5);
-        $checkButton5->set_label('Draw box around label');
+        # Orientation
+        $self->addLabel($table, 'Orientation',
+            1, 4, 5, 6);
 
-#        $self->addLabel($table, 'Orientation',
-#            1, 4, 6, 7);
-#
-#        $count = -1;
-#        @list = (
-#            'south' => 'Normal',
-#            'north' => 'Rotated 180 degrees',
-#            'west'  => 'Rotated 90 degrees clockwise',
-#            'east'  => 'Rotated 90 degrees anti-clockwise',
-#        );
-#
-#        do {
-#
-#            my $gravity = shift @list;
-#            my $descrip = shift @list;
-#
-#            push (@comboList, $descrip);
-#            $descripHash{$descrip} = $gravity;
-#
-#            $count++;
-#            if ($gravity eq $self->editObj->gravity) {
-#
-#                $index = $count;
-#            }
-#
-#        } until (! @list);
-#
-#        my $combo = $self->addComboBox($table, undef, \@comboList, '',
-#            TRUE,               # No 'undef' value used
-#            4, 8, 6, 7,
-#        );
-#        $combo->set_active($index),
-#        $combo->signal_connect('changed' => sub {
-#
-#            my $descrip = $combo->get_active_text();
-#
-#            $self->ivAdd('editHash', 'gravity', $descripHash{$combo->get_active_text});
-#        });
+        $count = -1;
+        @list = (
+            0 => 'Normal orientation',
+            180 => 'Rotated 180 degrees',
+            90  => 'Rotated 90 degrees clockwise',
+            270  => 'Rotated 90 degrees anti-clockwise',
+            -1 => 'Custom orientation (set below)',
+        );
+
+        do {
+
+            my $angle = shift @list;
+            my $descrip = shift @list;
+
+            push (@comboList, $descrip);
+            $descripHash{$descrip} = $angle;
+            $revDescripHash{$angle} = $descrip;
+
+            $count++;
+            if ($angle == $self->editObj->rotateAngle) {
+
+                $index = $count;
+                $angleFlag = TRUE;
+            }
+
+        } until (! @list);
+
+        my $combo = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,               # No 'undef' value used
+            4, 8, 5, 6,
+        );
+        # ->signal_connect appears below
+
+        $self->addLabel($table, 'Angle (0-359)',
+            1, 4, 6, 7);
+
+        my $entry3 = $self->addEntryWithIcon($table, 'rotateAngle', 'int', 0, 359,
+            4, 6, 6, 7,
+            3, 3);
+
+        if ($angleFlag) {
+
+            $combo->set_active($index);
+            $entry3->set_sensitive(FALSE);
+
+        } else {
+
+            $combo->set_active($count);
+            $entry3->set_sensitive(TRUE);
+        }
+
+        # ->signal_connect from above
+        $combo->signal_connect('changed' => sub {
+
+            my $descrip = $combo->get_active_text();
+
+            if ($descrip eq $revDescripHash{-1}) {
+
+                $entry3->set_sensitive(TRUE);
+                $entry3->set_text(0);
+
+            } else {
+
+                $entry3->set_sensitive(FALSE);
+                $entry3->set_text($descripHash{$descrip});
+            }
+        });
+
+        # Right column
+        $self->addCheckButton($table, 'Italics', 'italicsFlag', TRUE,
+            9, 12, 1, 2);
+        $self->addCheckButton($table, 'Bold', 'boldFlag', TRUE,
+            9, 12, 2, 3);
+        $self->addCheckButton($table, 'Underline', 'underlineFlag', TRUE,
+            9, 12, 3, 4);
+        $self->addCheckButton($table, 'Strikethrough', 'strikeFlag', TRUE,
+            9, 12, 4, 5);
+        $self->addCheckButton($table, 'Draw box around label', 'boxFlag', TRUE,
+            9, 12, 5, 6);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -16296,7 +16274,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -16326,7 +16304,7 @@
             4, 12, 2, 3);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -16362,7 +16340,7 @@
         $self->addTextView($table, 'missionList', TRUE,
             1, 12, 4, 8,
             TRUE, FALSE, FALSE, FALSE,   # Treat as a list, don't remove empty lines or whitespace
-            -1, 250);                    # Fixed height
+            -1, 270);                    # Fixed height
 
         $self->addLabel($table, '<b>Commands:</b> ',
             1, 4, 8, 9);
@@ -16396,7 +16374,7 @@
             4, 12, 11, 12);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -16574,7 +16552,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -16602,10 +16580,8 @@
             1, 3, 2, 3);
         $self->addEntry($table, 'category', FALSE,
             3, 6, 2, 3);
-        $self->addLabel($table, 'In world model',
-            1, 5, 3, 4);
-        $self->addCheckButton($table, 'modelFlag', FALSE,
-            5, 6, 3, 4, 1, 0.5);
+        $self->addCheckButton($table, 'In world model', 'modelFlag', FALSE,
+            1, 6, 3, 4);
         $self->addLabel($table, 'World model #',
             1, 3, 4, 5);
         $self->addEntry($table, 'number', FALSE,
@@ -16635,7 +16611,7 @@
             'View',
             'View this file',
             undef,
-            9, 11, 9, 10);
+            1, 3, 9, 10);
         $button->signal_connect('clicked' => sub {
 
             my $flag;
@@ -16660,7 +16636,7 @@
             'Edit',
             'Edit this file',
             undef,
-            11, 12, 9, 10);
+            3, 5, 9, 10);
         $button2->signal_connect('clicked' => sub {
 
             my ($cmd, $file);
@@ -16765,29 +16741,19 @@
         }
 
         # Right column
-        $self->addLabel($table, 'Concrete (not abstract) object',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'concreteFlag', FALSE,
-            11, 12, 1, 2);
-        $self->addLabel($table, 'Alive',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'aliveFlag', FALSE,
-            11, 12, 2, 3);
-        $self->addLabel($table, 'Sentient',
-            7, 11, 3, 4);
-        $self->addCheckButton($table, 'sentientFlag', FALSE,
-            11, 12, 3, 4);
-        $self->addLabel($table, 'Portable (can be carried)',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'portableFlag', FALSE,
-            11, 12, 4, 5);
-        $self->addLabel($table, 'Saleable (can be sold)',
-            7, 11, 5, 6);
-        $self->addCheckButton($table, 'saleableFlag', FALSE,
-            11, 12, 5, 6);
+        $self->addCheckButton($table, 'Concrete (not abstract) object', 'concreteFlag', FALSE,
+            7, 12, 1, 2);
+        $self->addCheckButton($table, 'Alive', 'aliveFlag', FALSE,
+            7, 12, 2, 3);
+        $self->addCheckButton($table, 'Sentient', 'sentientFlag', FALSE,
+            7, 12, 3, 4);
+        $self->addCheckButton($table, 'Portable (can be carried)', 'portableFlag', FALSE,
+            7, 12, 4, 5);
+        $self->addCheckButton($table, 'Saleable (can be sold)', 'saleableFlag', FALSE,
+            7, 12, 5, 6);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -16827,7 +16793,7 @@
         # Family1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -16993,7 +16959,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17003,7 +16969,7 @@
         # Family2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -17039,7 +17005,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 220);     # Fixed height
+            -1, 260);     # Fixed height
 
         # Initialise the list
         $self->family2Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -17235,17 +17201,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub family1Tab_refreshList {
 
-        # Called by $self->family1Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->family1Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -17291,10 +17257,10 @@
 
     sub family2Tab_refreshList {
 
-        # Called by $self->family2Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->family2Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -17372,7 +17338,7 @@
         my $textView = $self->addTextView($table, 'notesList', TRUE,
             1, 12, 2, 10,
             TRUE, FALSE, FALSE, FALSE,  # Treat as list, don't remove empty lines or whitespace
-            -1, 300);                   # Fixed height
+            -1, 320);                   # Fixed height
         my $buffer = $textView->get_buffer();
 
         # Add a button to clear the list
@@ -17388,7 +17354,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17432,7 +17398,7 @@
         # Words1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -17488,7 +17454,7 @@
             9, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17498,7 +17464,7 @@
         # Words2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -17522,7 +17488,9 @@
             '<i>Other words for this object which are known to be nouns (besides the main one)</i>',
             1, 12, 2, 4);
         $self->addTextView($table, 'otherNounList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 140);                # Fixed height
 
         # Adjectives
         $self->addLabel($table, '<b>Adjectives</b>',
@@ -17530,10 +17498,12 @@
         $self->addLabel($table, '<i>Words for this object that are known to be adjectives</i>',
             1, 12, 8, 10);
         $self->addTextView($table, 'adjList', TRUE,
-            1, 12, 10, 12);
+            1, 12, 10, 12,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 140);                # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17543,7 +17513,7 @@
         # Words3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -17568,7 +17538,9 @@
             . ' \'big-looking\')</i>',
             1, 12, 2, 4);
         $self->addTextView($table, 'pseudoAdjList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 140);                # Fixed height
 
         # Root adjectives
         $self->addLabel($table, '<b>Root adjectives</b>',
@@ -17576,10 +17548,12 @@
         $self->addLabel($table, '<i>Root forms of declined adjectives (not found in English)</i>',
             1, 12, 8, 10);
         $self->addTextView($table, 'rootAdjList', TRUE,
-            1, 12, 10, 12);
+            1, 12, 10, 12,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 140);                # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17589,7 +17563,7 @@
         # Words4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -17613,10 +17587,12 @@
             '<i>Other words for this object which aren\'t known nouns or adjectives</i>',
             1, 12, 2, 4);
         $self->addTextView($table, 'unknownWordList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 140);                # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17666,17 +17642,16 @@
             3, 6, 4, 5);
 
         # Right column
-        $self->addLabel($table, 'Already attacked',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'alreadyAttackedFlag', FALSE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Explicit in description',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'explicitFlag', TRUE,
-            11, 12, 2, 3, 1, 0.5);
+        # Add empty label for spacing
+        $self->addLabel($table, '',
+            6, 7, 1, 2);
+        $self->addCheckButton($table, 'Already attacked', 'alreadyAttackedFlag', FALSE,
+            7, 12, 1, 2);
+        $self->addCheckButton($table, 'Explicit in description', 'explicitFlag', TRUE,
+            7, 12, 2, 3);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17704,7 +17679,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('_Physical', $self->notebook);
+        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('P_hysical', $self->notebook);
 
         # Add tabs to the inner notebook
         $self->physical1Tab($innerNotebook);
@@ -17718,7 +17693,7 @@
         # Physical1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -17738,10 +17713,8 @@
         # Left column
         $self->addLabel($table, '<b>Physical properties</b>',
             0, 12, 0, 1);
-        $self->addLabel($table, 'Explicitly in description',
-            1, 5, 1, 2);
-        $self->addCheckButton($table, 'explicitFlag', TRUE,
-            5, 6, 1, 2, 1, 0.5);
+        $self->addCheckButton($table, 'Explicitly in description', 'explicitFlag', TRUE,
+            1, 6, 1, 2);
         $self->addLabel($table, 'Weight (if known)',
             1, 3, 2, 3);
         $self->addEntryWithButton($table, 'weight', TRUE,
@@ -17750,20 +17723,14 @@
             1, 3, 3, 4);
         $self->addEntryWithIcon($table, 'condition', 'int', 0, 100,
             3, 6, 3, 4, 4, 4);
-        $self->addLabel($table, 'Condition change flag',
-            1, 5, 4, 5);
-        $self->addCheckButton($table, 'conditionChangeFlag', FALSE,
-            5, 6, 4, 5, 1, 0.5);
+        $self->addCheckButton($table, 'Condition change flag', 'conditionChangeFlag', FALSE,
+            1, 6, 4, 5);
 
         # Right column
-        $self->addLabel($table, 'Fixable',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'fixableFlag', TRUE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Sellable',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'sellableFlag', TRUE,
-            11, 12, 2, 3, 1, 0.5);
+        $self->addCheckButton($table, 'Fixable', 'fixableFlag', TRUE,
+            7, 12, 1, 2);
+        $self->addCheckButton($table, 'Sellable', 'sellableFlag', TRUE,
+            7, 12, 2, 3);
         $self->addLabel($table, 'Value (when bought)',
             7, 9, 3, 4);
         $self->addEntryWithButton($table, 'buyValue', TRUE,
@@ -17774,7 +17741,7 @@
             9, 12, 4, 5);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17784,7 +17751,7 @@
         # Physical2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -17818,7 +17785,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'bonusHash');
@@ -17861,7 +17828,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17894,11 +17861,12 @@
         # Exclusive profiles
         $self->addLabel($table, '<b>Exclusive profiles</b>',
             0, 6, 0, 1);
-        $self->addLabel($table,
+        $self->addCheckButton(
+            $table,
             'Only exclusive profiles (characters, races, guilds, etc) can use this object?',
-            1, 11, 1, 2);
-        $self->addCheckButton($table, 'exclusiveFlag', TRUE,
-            11, 12, 1, 2, 1, 0.5);
+            'exclusiveFlag',
+            TRUE,
+            1, 12, 1, 2);
 
         # Add a simple list
         @columnList = (
@@ -17907,7 +17875,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 280);     # Fixed height
+            -1, 310);     # Fixed height
 
         # Initialise the list
         $self->exclusiveTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -17972,7 +17940,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -17982,7 +17950,7 @@
         # Resets the simple list displayed by $self->exclusiveTab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -18025,7 +17993,7 @@
         # Sentient1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -18079,7 +18047,7 @@
             10, 12, 3, 4, 8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -18089,7 +18057,7 @@
         # Sentient2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -18117,10 +18085,10 @@
         $self->addTextView($table, 'inventoryList', TRUE,
             1, 12, 2, 12,
             TRUE, TRUE, TRUE, FALSE,    # Treat as list, remove empty lines, do remove whitespace
-            -1, 300);                   # Fixed height
+            -1, 320);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -18130,7 +18098,7 @@
         # Sentient3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -18165,7 +18133,7 @@
 
         my $slWidget = $self->addSimpleList($table, 'cashList', \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Add a button
         my $button = $self->addButton($table, 'Clear list', 'Clear the list of cash amounts', undef,
@@ -18180,7 +18148,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -18190,7 +18158,7 @@
         # Sentient4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -18215,10 +18183,8 @@
             '<b>Properties of ' . $self->editObj->category . ' model objects (continued)</b>',
             0, 12, 0, 1);
 
-        $self->addLabel($table, 'Ever initiated combat (unfriendly)',
-            1, 5, 1, 2);
-        $self->addCheckButton($table, 'unfriendlyFlag', TRUE,
-            5, 6, 1, 2, 1, 0.5);
+        $self->addCheckButton($table, 'Ever initiated combat (unfriendly)', 'unfriendlyFlag', TRUE,
+            1, 6, 1, 2);
 
         $self->addLabel($table, 'Morality',
             1, 5, 2, 3);
@@ -18235,29 +18201,19 @@
             3, 6, 3, 4);
 
         # Right column
-        $self->addLabel($table, 'Tends to wander around',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'wanderFlag', TRUE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Ever fleed combat',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'fleeFlag', TRUE,
-            11, 12, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Tends to flee combat quickly',
-            7, 11, 3, 4);
-        $self->addCheckButton($table, 'quickFleeFlag', TRUE,
-            11, 12, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Should <b>NEVER</b> be attacked',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'noAttackFlag', TRUE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Mercies opponents (doesn\'t kill)',
-            7, 11, 5, 6);
-        $self->addCheckButton($table, 'mercyFlag', TRUE,
-            11, 12, 5, 6, 1, 0.5);
+        $self->addCheckButton($table, 'Tends to wander around', 'wanderFlag', TRUE,
+            7, 12, 1, 2);
+        $self->addCheckButton($table, 'Ever fleed combat', 'fleeFlag', TRUE,
+            7, 12, 2, 3);
+        $self->addCheckButton($table, 'Tends to flee combat quickly', 'quickFleeFlag', TRUE,
+            7, 12, 3, 4);
+        $self->addCheckButton($table, 'Should NEVER be attacked', 'noAttackFlag', TRUE,
+            7, 12, 4, 5);
+        $self->addCheckButton($table, 'Mercies opponents (doesn\'t kill)', 'mercyFlag', TRUE,
+            7, 12, 5, 6);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -18267,7 +18223,7 @@
         # Sentient5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -18287,12 +18243,12 @@
         # Action properties
         $self->addLabel($table, '<b>Action properties</b>',
             0, 12, 0, 1);
-        $self->addLabel($table,
-            '<i>Flag to be set if the ' . $self->editObj->category
-            . ' has ever performed an action</i>',
-            1, 10, 1, 2);
-        $self->addCheckButton($table, 'actionFlag', TRUE,
-            10, 12, 1, 2, 1, 0.5);
+        $self->addCheckButton(
+            $table,
+            'Flag to be set if the ' . $self->editObj->category . ' has ever performed an action',
+            'actionFlag',
+            TRUE,
+            1, 12, 1, 2);
 
         $self->addLabel($table,
             '<i>List of strings received when the ' . $self->editObj->category
@@ -18301,10 +18257,10 @@
         $self->addTextView($table, 'actionList', TRUE,
             1, 12, 3, 12,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 250);                   # Fixed height
+            -1, 290);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -18314,7 +18270,7 @@
         # Sentient6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -18335,12 +18291,12 @@
         $self->addLabel($table, '<b>Conversation properties</b>',
             0, 12, 0, 1);
 
-        $self->addLabel($table,
-            '<i>Flag to be set if the ' . $self->editObj->category
-            . ' has ever said anything</i>',
-            1, 10, 1, 2);
-        $self->addCheckButton($table, 'talkativeFlag', TRUE,
-            10, 12, 1, 2, 1, 0.5);
+        $self->addCheckButton(
+            $table,
+            'Flag to be set if the ' . $self->editObj->category . ' has ever said anything',
+            'talkativeFlag',
+            TRUE,
+            1, 12, 1, 2);
 
         $self->addLabel($table,
             '<i>List of things spoken by the ' . $self->editObj->category . ':</i>',
@@ -18348,10 +18304,10 @@
         $self->addTextView($table, 'talkList', TRUE,
             1, 12, 3, 12,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 250);                   # Fixed height
+            -1, 290);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -18361,7 +18317,7 @@
         # Character1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -18403,10 +18359,8 @@
         if ($self->editObj->category eq 'char') {
 
             # Characters
-            $self->addLabel($table, 'Own character',
-                1, 5, 3, 4);
-            $self->addCheckButton($table, 'ownCharFlag', TRUE,
-                5, 6, 3, 4, 1, 0.5);
+            $self->addCheckButton($table, 'Own character', 'ownCharFlag', TRUE,
+                1, 6, 3, 4);
             $self->addLabel($table, 'Owner',
                 1, 3, 4, 5);
             $self->addEntryWithButton($table, 'owner', TRUE,
@@ -18426,14 +18380,11 @@
                 TRUE,               # No 'undef' value used
                 3, 6, 6, 7);
 
-            $self->addLabel($table, 'Ever attacked you',
-                1, 5, 7, 8);
-            $self->addCheckButton($table, 'grudgeFlag', TRUE,
-                5, 6, 7, 8, 1, 0.5);
-            $self->addLabel($table, 'Fight back if attacked by this',
-                1, 5, 8, 9);
-            $self->addCheckButton($table, 'fightBackFlag', TRUE,
-                5, 6, 8, 9, 1, 0.5);
+            $self->addCheckButton($table, 'Ever attacked you', 'grudgeFlag', TRUE,
+                1, 6, 7, 8);
+            $self->addCheckButton(
+                $table, 'Fight back if attacked by this character', 'fightBackFlag', TRUE,
+                1, 6, 8, 9);
 
         } elsif ($self->editObj->category eq 'minion') {
 
@@ -18442,10 +18393,8 @@
                 1, 3, 3, 4);
             $self->addEntryWithIcon($table, 'value', 'string', 0, undef,
                 3, 6, 3, 4);
-            $self->addLabel($table, 'Own minion',
-                1, 5, 4, 5);
-            $self->addCheckButton($table, 'ownMinionFlag', TRUE,
-                5, 6, 4, 5, 1, 0.5);
+            $self->addCheckButton($table, 'Own minion', 'ownMinionFlag', TRUE,
+                1, 6, 4, 5);
         }
 
         # Right column
@@ -18475,7 +18424,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -18629,13 +18578,11 @@
             0, 6, 0, 1);
 
         # Temporary region
-        $self->addLabel($table, 'Temporary region',
-            1, 11, 1, 2);
-        $self->addCheckButton($table, 'tempRegionFlag', FALSE,
-            11, 12, 1, 2, 1, 0.5);
+        $self->addCheckButton($table, 'Temporary region', 'tempRegionFlag', FALSE,
+            1, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -18900,7 +18847,7 @@
         # Room1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -18952,14 +18899,10 @@
         $self->addEntry($table, 'roomGuildYOffset', FALSE,
             5, 6, 4, 5, 6, 6);
 
-        $self->addLabel($table, 'Unspecified room description',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'unspecifiedFlag', FALSE,
-            5, 6, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Currently dark',
-            1, 5, 6, 7);
-        $self->addCheckButton($table, 'currentlyDarkFlag', FALSE,
-            5, 6, 6, 7, 1, 0.5);
+        $self->addCheckButton($table, 'Unspecified room description', 'unspecifiedFlag', FALSE,
+            1, 6, 5, 6);
+        $self->addCheckButton($table, 'Currently dark', 'currentlyDarkFlag', FALSE,
+            1, 6, 6, 7);
 
         $self->addLabel($table, '<b>Wilderness mode</b>',
             0, 6, 7, 8);
@@ -18972,6 +18915,14 @@
         } elsif ($self->editObj->wildMode eq 'wild') {
             $entry->set_text('\'wild\' - assume exits exist between all adjacent rooms');
         }
+
+        # Empty labels for spacing
+        $self->addLabel($table, '',
+            1, 6, 9, 10);
+        $self->addLabel($table, '',
+            1, 6, 10, 11);
+        $self->addLabel($table, '',
+            1, 6, 11, 12);
 
         # Right column
         $self->addLabel($table, '<b>Regionmap grid position</b>',
@@ -18997,10 +18948,12 @@
             '<i>List of ' . $axmud::BASIC_NAME . ' scripts run when the room is entered</i>',
             8, 13, 5, 6);
         $self->addTextView($table, 'arriveScriptList', TRUE,
-            8, 13, 6, 12);
+            8, 13, 6, 12,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 180);                # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -19010,7 +18963,7 @@
         # Room2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Optional arguments
         #   $tabTitle   - When inherited by GA::EditWin::Painter, the tab's page number (a string)
@@ -19025,6 +18978,7 @@
         my (
             $wmObj, $roomFlag, $roomFlagObj, $colour, $noUpdateFlag,
             @columnList, @comboList, @comboList2,
+            %showHash,
         );
 
         # Check for improper arguments
@@ -19035,6 +18989,15 @@
 
         # Import the world model (for convenience)
         $wmObj = $self->session->worldModelObj;
+        # Work out which room flags should be visible, and which hidden, depending on the current
+        #   value of GA::Obj::WorldModel->roomFlagShowMode. Those which should be shown are added to
+        #   this hash
+        %showHash = $wmObj->getVisibleRoomFlags();
+        # Add to this hash any room flags which are already used by the room
+        foreach my $roomFlag ($self->editObj->ivKeys('roomFlagHash')) {
+
+            $showHash{$roomFlag} = $wmObj->ivShow('roomFlagHash', $roomFlag);
+        }
 
         # Tab setup
         if (! $tabTitle) {
@@ -19060,24 +19023,43 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);     # Fixed height
+            -1, 250);     # Fixed height
 
         # Initialise the list
-        $self->room2Tab_refreshList($slWidget, scalar (@columnList / 2));
+        $self->room2Tab_refreshList($slWidget, scalar (@columnList / 2), \%showHash);
 
         # Add editing widgets
         $self->addLabel($table, 'Room flag category (filter)',
             1, 4, 10, 11);
-        @comboList = $axmud::CLIENT->constRoomFilterList;
-        my $combo = $self->addComboBox($table, undef, \@comboList, '',
-            TRUE,              # 'undef' value not used
-            4, 6, 10, 11);
-        # ->signal_connect appears below
-
         $self->addLabel($table, 'Room flag',
             6, 7, 10, 11);
-        @comboList2
-            = $self->session->worldModelObj->getRoomFlagsInFilter($combo->get_active_text());
+
+        my $combo;
+        if ($self->session->worldModelObj->roomFlagShowMode eq 'default') {
+
+            @comboList = $axmud::CLIENT->constRoomFilterList;
+            $combo = $self->addComboBox($table, undef, \@comboList, '',
+                TRUE,              # 'undef' value not used
+                4, 6, 10, 11);
+            # ->signal_connect appears below
+
+            @comboList2
+                = $self->session->worldModelObj->getRoomFlagsInFilter($combo->get_active_text());
+
+        } else {
+
+            @comboList = ('n/a');
+            $combo = $self->addComboBox($table, undef, \@comboList, '',
+                TRUE,              # 'undef' value not used
+                4, 6, 10, 11);
+            $combo->set_sensitive(FALSE);
+            # ->signal_connect appears below
+
+            foreach my $roomFlagObj (sort {$a->priority <=> $b->priority} (values %showHash)) {
+
+                push (@comboList2, $roomFlagObj->name);
+            }
+        }
 
         my $combo2 = $self->addComboBox($table, undef, \@comboList2, '',
             TRUE,              # 'undef' value not used
@@ -19165,7 +19147,7 @@
                 $self->modifyEditHash_hashIV('roomFlagHash', $flag, undef);
 
                 # Refresh the simple list
-                $self->room2Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->room2Tab_refreshList($slWidget, scalar (@columnList / 2), \%showHash);
             }
         });
 
@@ -19181,7 +19163,7 @@
                 $self->modifyEditHash_hashIV('roomFlagHash', $flag, undef, TRUE);
 
                 # Refresh the simple list
-                $self->room2Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->room2Tab_refreshList($slWidget, scalar (@columnList / 2), \%showHash);
             }
         });
 
@@ -19193,28 +19175,33 @@
             $self->ivAdd('editHash', 'roomFlagHash', {});
 
             # Refresh the simple list
-            $self->room2Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->room2Tab_refreshList($slWidget, scalar (@columnList / 2), \%showHash);
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub room2Tab_refreshList {
 
-        # Called by $self->room2Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->room2Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
+        #   $hashRef    - Reference to a hash of room flags that should be visible, depending on the
+        #                   current value of GA::Obj::WorldModel->roomFlagShowMode, and including
+        #                   any room flags already used by this room (might be an empty hash). Hash
+        #                   in the form
+        #                       $$hashRef{room_flag_name} = room_flag_object
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $slWidget, $columns, $check) = @_;
+        my ($self, $slWidget, $columns, $hashRef, $check) = @_;
 
         # Local variables
         my (
@@ -19224,7 +19211,7 @@
         );
 
         # Check for improper arguments
-        if (! defined $slWidget || ! defined $columns || defined $check) {
+        if (! defined $slWidget || ! defined $columns || ! defined $hashRef|| defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->room2Tab_refreshList', @_);
         }
@@ -19247,11 +19234,14 @@
         # Compile the simple list data
         foreach my $roomFlagObj (@sortedList) {
 
-            push (@dataList,
-                $roomFlagObj->name,
-                $roomFlagObj->descrip,
-                $roomFlagObj->priority,
-            );
+            if (exists $$hashRef{$roomFlagObj->name}) {
+
+                push (@dataList,
+                    $roomFlagObj->name,
+                    $roomFlagObj->descrip,
+                    $roomFlagObj->priority,
+                );
+            }
         }
 
         # Reset the simple list
@@ -19265,7 +19255,7 @@
         # Room3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -19296,7 +19286,9 @@
         $self->addLabel($table, '<i>List of commands available in this room</i>',
             7, 12, 2, 4);
         $self->addTextView($table, 'roomCmdList', TRUE,
-            7, 12, 4, 6);
+            7, 12, 4, 6,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Unspecified room patterns
         $self->addLabel($table, '<b>Unspecified room patterns</b>',
@@ -19307,10 +19299,12 @@
             . ' statement</i>',
             1, 12, 8, 10);
         $self->addTextView($table, 'unspecifiedPatternList', TRUE,
-            1, 12, 10, 12);
+            1, 12, 10, 12,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -19320,7 +19314,7 @@
         # Room4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Optional arguments
         #   $tabTitle       - When inherited by GA::EditWin::Painter, the tab's page number (a
@@ -19363,7 +19357,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'descripHash');
@@ -19408,7 +19402,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -19418,7 +19412,7 @@
         # Room5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Optional arguments
         #   $tabTitle       - When inherited by painter object (a non-model GA::ModelObj::Room),
@@ -19451,7 +19445,9 @@
             '<i>List of recognised nouns that appear in this room and its contents</i>',
             1, 12, 2, 4);
         $self->addTextView($table, 'nounList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 140);                # Fixed height
 
         # Adjective list
         $self->addLabel($table, '<b>Adjective list</b>',
@@ -19460,10 +19456,12 @@
             '<i>List of recognised adjectives that appear in this room and its contents</i>',
             1, 12, 8, 10);
         $self->addTextView($table, 'adjList', TRUE,
-            1, 12, 10, 12);
+            1, 12, 10, 12,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 140);                # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -19473,7 +19471,7 @@
         # Room6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -19508,7 +19506,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 260);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'visitHash');
@@ -19574,7 +19572,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -19584,7 +19582,7 @@
         # Room7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Optional arguments
         #   $tabTitle       - When inherited by GA::EditWin::Painter, the tab's page number (a
@@ -19616,11 +19614,12 @@
         # Exclusive profiles
         $self->addLabel($table, '<b>Exclusive profiles</b>',
             0, 6, 0, 1);
-        $self->addLabel($table,
+        $self->addCheckButton(
+            $table,
             'Only exclusive profiles (characters, races, guilds, etc) can enter this room?',
-            1, 11, 1, 2);
-        $self->addCheckButton($table, 'exclusiveFlag', TRUE,
-            11, 12, 1, 2, 1, 0.5);
+            'exclusiveFlag',
+            TRUE,
+            1, 12, 1, 2);
 
         # Add a simple list
         @columnList = (
@@ -19629,7 +19628,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 250);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the list (the function is inherited from GA::EditWin::Generic::ModelObj)
         $self->exclusiveTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -19703,7 +19702,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -19750,7 +19749,7 @@
         # Exits1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -19784,7 +19783,7 @@
         $self->addTextView($table, 'failExitPatternList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 130);                   # Fixed height
+            -1, 140);                   # Fixed height
 
         # Special departure patterns
         $self->addLabel($table, '<b>Special departure patterns</b>',
@@ -19798,10 +19797,10 @@
         $self->addTextView($table, 'specialDepartPatternList', TRUE,
             1, 12, 10, 12,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 130);                   # Fixed height
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -19811,7 +19810,7 @@
         # Exits2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -19847,7 +19846,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 240);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV(
@@ -19904,7 +19903,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -19914,7 +19913,7 @@
         # Exits3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -19951,7 +19950,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 240);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV(
@@ -20008,7 +20007,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -20018,7 +20017,7 @@
         # Exits4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -20053,7 +20052,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);     # Fixed height
+            -1, 250);     # Fixed height
 
         # Initialise the list
         $self->exits4Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -20209,17 +20208,17 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub exits4Tab_refreshList {
 
-        # Called by $self->exits3Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->exits3Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -20296,7 +20295,7 @@
         # Exits5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -20334,7 +20333,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the list
         $self->exits5Tab_refreshList($slWidget, scalar (@columnList / 2), 'uncertainExitHash');
@@ -20358,7 +20357,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -20366,10 +20365,10 @@
     sub exits5Tab_refreshList {
 
         # Called by $self->exits4Tab, ->exits5Tab and ->exits6Tab to refresh the
-        #   GA::Obj::Simple::List
+        #   GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #   $iv         - The IV to show
         #
@@ -20420,7 +20419,7 @@
         # Exits6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -20458,7 +20457,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the list
         $self->exits5Tab_refreshList($slWidget, scalar (@columnList / 2), 'oneWayExitHash');
@@ -20478,7 +20477,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -20488,7 +20487,7 @@
         # Exits7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -20523,7 +20522,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the list
         $self->exits7Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -20543,17 +20542,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub exits7Tab_refreshList {
 
-        # Called by $self->exits6Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->exits6Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -20585,7 +20584,7 @@
         # Exits8 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -20623,7 +20622,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the list
         $self->exits5Tab_refreshList($slWidget, scalar (@columnList / 2), 'randomExitHash');
@@ -20647,7 +20646,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -20657,7 +20656,7 @@
         # Exits9 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -20693,7 +20692,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'checkedDirHash');
@@ -20713,7 +20712,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -20739,7 +20738,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('C_ontents', $self->notebook);
+        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('_Contents', $self->notebook);
 
         # Add tabs to the inner notebook
         $self->contents1Tab($innerNotebook);
@@ -20754,7 +20753,7 @@
         # Contents1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -20789,7 +20788,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the simple list
         $self->contents1Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -20797,7 +20796,7 @@
         # Add editing buttons
         my $button = $self->addButton(
             $table,
-            'View',
+            'View...',
             'View the selected temporary object',
             undef,
             1, 3, 10, 11,
@@ -20867,17 +20866,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub contents1Tab_refreshList {
 
-        # Called by $self->contents1Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->contents1Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -20928,7 +20927,7 @@
         # Contents2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -20963,7 +20962,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'hiddenObjHash');
@@ -21021,7 +21020,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -21031,7 +21030,7 @@
         # Contents3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Optional arguments
         #   $tabTitle       - When inherited by GA::EditWin::Painter, the tab's page number (a
@@ -21075,7 +21074,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'searchHash');
@@ -21118,7 +21117,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -21158,7 +21157,7 @@
         # Protocols1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Optional arguments
         #   $tabTitle       - When inherited by GA::EditWin::Painter, the tab's page number (a
@@ -21201,13 +21200,13 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);      # Fixed height
+            -1, 320);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'protocolRoomHash');
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -21217,7 +21216,7 @@
         # Protocols2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Optional arguments
         #   $tabTitle       - When inherited by GA::EditWin::Painter, the tab's page number (a
@@ -21262,13 +21261,13 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);      # Fixed height
+            -1, 320);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'protocolExitHash');
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -22456,7 +22455,7 @@
             8, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -22624,7 +22623,7 @@
             8, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -22867,7 +22866,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -22989,7 +22988,7 @@
         # OwnRoom1Tab tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -23059,7 +23058,7 @@
             4, 12, 6, 7);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -23069,7 +23068,7 @@
         # OwnRoom2Tab tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -23117,7 +23116,7 @@
             1, 6, 8, 10);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -23324,7 +23323,7 @@
         $self->nameTab($table);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -23472,7 +23471,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -23505,18 +23504,18 @@
         $self->addLabel($table, '<b>Current profile</b>',
             7, 13, 3, 4);
 
-        my $checkbutton = Gtk2::CheckButton->new();
+        my $checkButton = Gtk3::CheckButton->new();
         if (
             $self->session->ivExists('currentProfHash', $self->editObj->category)
             && $self->session->ivShow('currentProfHash', $self->editObj->category) eq $self->editObj
         ) {
-            $checkbutton->set_active(TRUE);
+            $checkButton->set_active(TRUE);
         }
-        $checkbutton->set_sensitive(FALSE);
-        $table->attach_defaults($checkbutton, 7, 13, 4, 5);
+        $checkButton->set_sensitive(FALSE);
+        $table->attach($checkButton, 8, 4, 5, 1);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -23554,10 +23553,10 @@
         $self->addTextView($table, 'cmdList', TRUE,
             1, 12, 4, 6,
             undef, undef, undef, undef,
-            -1, 300);
+            -1, 350);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -23601,7 +23600,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 270);
+            -1, 280);
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'fightMsgList');
@@ -23645,7 +23644,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -23689,7 +23688,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 270);       # Fixed height
+            -1, 280);       # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'interactionMsgList');
@@ -23743,7 +23742,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -23784,7 +23783,7 @@
         # Initial1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -23822,7 +23821,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);     # Fixed height
+            -1, 250);     # Fixed height
 
         # Initialise the list
         $self->initial1Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -24114,17 +24113,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub initial1Tab_refreshList {
 
-        # Called by $self->initial1Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->initial1Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - Number of columns in the simple list
         #
         # Return values
@@ -24164,7 +24163,7 @@
 
     sub initial1Tab_refreshCombo {
 
-        # Called by $self->initial1Tab to refresh the Gtk2::Combo
+        # Called by $self->initial1Tab to refresh the Gtk3::Combo
         #
         # Expected arguments
         #   $combo      - The combo box to refresh
@@ -24218,7 +24217,7 @@
         # Initial2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -24243,10 +24242,10 @@
 
         # Initial tasks
         $self->addLabel($table, '<b>Initial scripts</b>',
-            0, 12, 0, 1);
+            0, 13, 0, 1);
         $self->addLabel($table,
             '<i>List of initial scripts that start when this profile becomes current</i>',
-            1, 12, 1, 2);
+            1, 13, 1, 2);
 
         # Add a simple list
         @columnList = (
@@ -24256,7 +24255,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 13, 2, 8,
-            -1, 200);     # Fixed height
+            -1, 220);     # Fixed height
 
         # Initialise the list
         $self->initial2Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -24335,7 +24334,7 @@
             'Edit',
             'Open the selected script in a text editor',
             undef,
-            3, 5, 9, 10,
+            3, 6, 9, 10,
             TRUE,           # Irreversible
         );
         $button2->signal_connect('clicked' => sub {
@@ -24356,7 +24355,7 @@
             'Delete',
             'Delete the selected script',
             undef,
-            9, 11, 9, 10,
+            6, 8, 9, 10,
             TRUE,           # Irreversible
         );
         $button3->signal_connect('clicked' => sub {
@@ -24377,7 +24376,7 @@
 
         my $button4 = $self->addButton($table,
             'Move up', 'Move the selected script up the list', undef,
-            5, 7, 9, 10,
+            9, 11, 9, 10,
             TRUE);      # Irreversible
         $button4->signal_connect('clicked' => sub {
 
@@ -24429,7 +24428,7 @@
 
         my $button5 = $self->addButton($table,
             'Move down', 'Move the selected script down the list', undef,
-            7, 9, 9, 10,
+            11, 13, 9, 10,
             TRUE);          # Irreversible
         $button5->signal_connect('clicked' => sub {
 
@@ -24484,7 +24483,7 @@
             'Refresh list',
             'Refresh the list of initial scripts',
             undef,
-            11, 13, 9, 10);
+            9, 11, 10, 11);
         $button6->signal_connect('clicked' => sub {
 
             # Reset the simple list
@@ -24496,8 +24495,7 @@
             'Dump',
             'Display this profile\'s list of initial tasks in the \'main\' window',
             undef,
-            11, 13, 10, 11,
-        );
+            11, 13, 10, 11);
         $button7->signal_connect('clicked' => sub {
 
             # Display initial scripts
@@ -24511,17 +24509,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub initial2Tab_refreshList {
 
-        # Called by $self->initial2Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->initial2Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - Number of columns in the simple list
         #
         # Return values
@@ -24562,7 +24560,7 @@
         # Initial3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -24602,22 +24600,19 @@
             0, 11, 4, 5);
         $self->addLabel($table,
             '<i>List of commands executed when a session begins with this as a current'
-            . ' profile</i>',
+            . ' profile (N.B. current profiles</i>',
             1, 11, 5, 6);
         $self->addLabel($table,
-            '<i>(N.B. Current profiles are checked in priority order; commands are sent from all'
-            . ' profiles</i>',
+            '<i>are checked in priority order; commands are sent from all'
+            . ' profiles but no duplicate commands are sent</i>',
             1, 11, 6, 7);
-        $self->addLabel($table,
-            '<i>but no duplicate commands are sent)</i>',
-            2, 11, 7, 8);
         $self->addTextView($table, 'initCmdList', TRUE,
-            1, 12, 8, 12,
+            1, 12, 7, 12,
             TRUE, TRUE, FALSE, FALSE,
-            -1, 160);           # Fixed height
+            -1, 200);           # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -24658,7 +24653,7 @@
         my $textView = $self->addTextView($table, 'notepadList', TRUE,
             1, 12, 2, 11,
             TRUE, FALSE, FALSE, FALSE,     # Treat as a list, don't remove empty lines or whitespace
-            -1, 300);                      # Fixed height
+            -1, 320);                      # Fixed height
         my $button = $self->addButton($table,
             'Clear notes', 'Empty the persistent notes for this profile', undef,
             10, 12, 11, 12);
@@ -24668,7 +24663,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -24948,7 +24943,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -   The Gtk2::Table
+        #   $table  -   The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -24984,18 +24979,18 @@
         $self->addLabel($table, '<b>Current profile</b>',
             7, 13, 3, 4);
 
-        my $checkbutton = Gtk2::CheckButton->new();
+        my $checkButton = Gtk3::CheckButton->new();
         if (
             $self->session->ivExists('currentProfHash', $self->editObj->category)
             && $self->session->ivShow('currentProfHash', $self->editObj->category) eq $self->editObj
         ) {
-            $checkbutton->set_active(TRUE);
+            $checkButton->set_active(TRUE);
         }
-        $checkbutton->set_sensitive(FALSE);
-        $table->attach_defaults($checkbutton, 7, 13, 4, 5);
+        $checkButton->set_sensitive(FALSE);
+        $table->attach($checkButton, 8, 4, 5, 1);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -25045,7 +25040,7 @@
         # Settings1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -25100,10 +25095,8 @@
             1, 3, 8, 9);
         $self->addEntryWithIcon($table, 'sshPassword', 'string', undef, undef,
             3, 6, 8, 9);
-        $self->addLabel($table, 'Specify port in SSH connections',
-            1, 5, 9, 10);
-        $self->addCheckButton($table, 'sshPortFlag', TRUE,
-            5, 6, 9, 10, 1, 0.5);
+        $self->addCheckButton($table, 'Specify port in SSH connections', 'sshPortFlag', TRUE,
+            1, 6, 9, 10);
 
         # Previous connections
         $self->addLabel($table, '<b>Previous connections</b>',
@@ -25128,21 +25121,16 @@
         # General settings
         $self->addLabel($table, '<b>General settings</b>',
             7, 12, 5, 6);
-        $self->addLabel($table, 'Ever a current profile?',
-            7, 11, 6, 7);
-        $self->addCheckButton($table, 'setupCompleteFlag', FALSE,
-            11, 12, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'World can\'t be saved (during this session)',
-            7, 11, 7, 8);
-        $self->addCheckButton($table, 'noSaveFlag', FALSE,
-            11, 12, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Life status override',
-            7, 11, 8, 9);
-        $self->addCheckButton($table, 'lifeStatusOverrideFlag', TRUE,
-            11, 12, 8, 9);
+        $self->addCheckButton($table, 'Ever a current profile?', 'setupCompleteFlag', FALSE,
+            7, 12, 6, 7);
+        $self->addCheckButton(
+            $table, 'World can\'t be saved (during this session)', 'noSaveFlag', FALSE,
+            7, 12, 7, 8);
+        $self->addCheckButton($table, 'Life status override', 'lifeStatusOverrideFlag', TRUE,
+            7, 12, 8, 9);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -25152,7 +25140,7 @@
         # Settings2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -25194,7 +25182,7 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 10, -1, 270);
+            1, 12, 2, 10, -1, 290);
 
         # Initialise the list, which starts in reverse order
         $reverseFlag = TRUE;
@@ -25319,7 +25307,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -25329,7 +25317,7 @@
         # Resets the simple list displayed by $self->settings2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns
         #   $reverseFlag    - If TRUE, the most recent connection is shown first. If FALSE, the
         #                       earliest connection is shown first
@@ -25446,7 +25434,7 @@
         # Settings3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -25519,7 +25507,7 @@
         $self->addTextView($table, 'worldDescrip', TRUE,
             3, 12, 4, 10,
             FALSE, undef, undef, TRUE,      # Treat as a scalar, not a list/forbid horizontal scroll
-            -1, 200);                       # Fixed height
+            -1, 220);                       # Fixed height
 
         $self->addLabel($table, 'World hint',
             1, 3, 10, 11);
@@ -25527,7 +25515,7 @@
             3, 12, 10, 11);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -25537,7 +25525,7 @@
         # Settings4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -25631,7 +25619,7 @@
             4, 12, 10, 11);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -25641,7 +25629,7 @@
         # Settings5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -25683,14 +25671,14 @@
         $self->addTextView($table, 'loginConnectPatternList', TRUE,
             1, 8, 4, 6,
             undef, undef, undef, undef,
-            -1, 110);           # Fixed height
+            -1, 120);           # Fixed height
 
         $self->addLabel($table, 'Mode \'world_cmd\': List of world commands to send',
             8, 12, 3, 4);
         $self->addTextView($table, 'loginCmdList', TRUE,
             8, 12, 4, 6,
             undef, undef, undef, undef,
-            -1, 110);           # Fixed height
+            -1, 120);           # Fixed height
 
         $self->addLabel(
             $table,
@@ -25699,7 +25687,7 @@
         $self->addTextView($table, 'loginSuccessPatternList', TRUE,
             1, 8, 8, 12,
             TRUE, TRUE, FALSE, FALSE, # Treat as a list, remove empty lines, don't remove whitespace
-            -1, 110);           # Fixed height
+            -1, 120);           # Fixed height
 
         $self->addLabel($table, 'Task/script/mission modes: task/script/mission to start',
             8, 12, 7, 8);
@@ -25752,7 +25740,7 @@
             8, 12, 11, 12);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -25762,7 +25750,7 @@
         # Settings6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -25805,7 +25793,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 9,
-            -1, 180);       # Fixed height
+            -1, 200);       # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'loginSpecialList');
@@ -25863,7 +25851,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -25873,7 +25861,7 @@
         # Settings7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -25946,9 +25934,10 @@
         $self->addLabel($table, 'Mode \'world_cmd\': List of world commands to send',
             1, 6, 5, 6);
         $self->addTextView($table, 'autoQuitCmdList', TRUE,
-            1, 6, 6, 12,
+            # (Use an abnormally large grid to get the widget spacing right)
+            1, 6, 6, 24,
             undef, undef, undef, undef,
-            -1, 200);           # Fixed height
+            -1, 220);           # Fixed height
 
         $self->addLabel($table, 'Other modes: task, script or mission to start',
             7, 12, 5, 6);
@@ -25995,17 +25984,8 @@
             }
         });
 
-        $self->addLabel($table, '',     # Get table spacing right using empty labels
-            7, 12, 8, 9);
-        $self->addLabel($table, '',
-            7, 12, 9, 10);
-        $self->addLabel($table, '',
-            7, 12, 10, 11);
-        $self->addLabel($table, '',
-            7, 12, 11, 12);
-
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -26015,7 +25995,7 @@
         # Settings8 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -26047,15 +26027,12 @@
             . ' automatic login process)</i>',
             1, 12, 1, 2);
 
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            1, 2, 2, 3);
+        my $checkButton = $self->addCheckButton($table, 'Obscure passwords', undef, TRUE,
+            1, 6, 2, 3);
         # Passwords are initially obscured
         $obscureFlag = TRUE;
         $checkButton->set_active($obscureFlag);
-        # (Signal connect follows)
-
-        $self->addLabel($table, 'Obscure passwords',
-            2, 6, 2, 3);
+        # (->signal_connect appears below)
 
         my ($group, $radioButton) = $self->addRadioButton(
             $table, undef, '\'unknown\'', 'loginAccountMode',
@@ -26085,12 +26062,12 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 5, 11, -1, 190);      # Fixed height
+            1, 12, 5, 11, -1, 210);      # Fixed height
 
         # Initialise the list
         $self->settings8Tab_refreshList($slWidget, (scalar @columnList / 2), $obscureFlag);
 
-        # signal_connect for earlier checkbutton
+        # ->signal_connect from above
         $checkButton->signal_connect('toggled' => sub {
 
             $obscureFlag = $checkButton->get_active();
@@ -26214,7 +26191,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -26224,7 +26201,7 @@
         # Resets the simple list displayed by $self->settings8Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns
         #   $obscureFlag    - Flag set to TRUE if passwords should be obscured, FALSE otherwise
         #
@@ -26289,7 +26266,7 @@
         # Settings9 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -26323,7 +26300,7 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 10, -1, 270);      # Fixed height
+            1, 12, 2, 10, -1, 290);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'profHash');
@@ -26338,7 +26315,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -26348,7 +26325,7 @@
         # Settings10 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -26430,7 +26407,7 @@
         });
 
         my $button2 = $self->addButton($table, 'New...', 'Add new dictionary', undef,
-            1, 3, 3, 4,
+            1, 4, 3, 4,
             TRUE);          # Irreversible
         $button2->signal_connect('clicked' => sub {
 
@@ -26465,7 +26442,7 @@
 
         my $button3 = $self->addButton(
             $table, 'Refresh list', 'Refresh the list of dictionaries', undef,
-            3, 6, 3, 4);
+            4, 6, 3, 4);
         $button3->signal_connect('clicked' => sub {
 
             # Refresh the combo
@@ -26475,10 +26452,8 @@
         # Multiples
         $self->addLabel($table, '<b>Multiples</b>',
             0, 12, 4, 5);
-        $self->addLabel($table, 'Add numbers to similar objects',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'numberedObjFlag', TRUE,
-            5, 6, 5, 6);
+        $self->addCheckButton($table, 'Add numbers to similar objects', 'numberedObjFlag', TRUE,
+            1, 6, 5, 6);
         $self->addLabel($table, 'Multiple object pattern',
             1, 4, 6, 7);
         $self->addEntryWithIconButton($table, 'multiplePattern', 'regex', undef, undef,
@@ -26491,18 +26466,16 @@
             8, 11, 1, 2);
         $self->addEntryWithIcon($table, 'suppressEmptyLineCount', 'int', 0, undef,
             11, 13, 1, 2, 8, 8);
-        $self->addLabel($table, 'Suppress empty lines before login',
-            8, 12, 2, 3);
-        $self->addCheckButton($table, 'suppressBeforeLoginFlag', TRUE,
-            12, 13, 2, 3);
+        $self->addCheckButton(
+            $table, 'Suppress empty lines before login', 'suppressBeforeLoginFlag', TRUE,
+            8, 13, 2, 3);
 
         # Command separator
         $self->addLabel($table, '<b>Command separator \'' . $axmud::CLIENT->cmdSep . '\'</b>',
             7, 12, 3, 4);
-        $self->addLabel($table, 'Auto-separate commands in this world',
-            8, 12, 4, 5);
-        $self->addCheckButton($table, 'autoSeparateCmdFlag', TRUE,
-            12, 13, 4, 5);
+        $self->addCheckButton(
+            $table, 'Auto-separate commands in this world', 'autoSeparateCmdFlag', TRUE,
+            8, 13, 4, 5);
 
         # Slowwalking
         $self->addLabel($table, '<b>Slowwalking</b>',
@@ -26517,7 +26490,7 @@
             11, 13, 7, 8, 6, 4);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -26527,7 +26500,7 @@
         # Resets the combobox displayed by $self->settings10Tab
         #
         # Expected arguments
-        #   $combo          - The Gtk2::Combo
+        #   $combo          - The Gtk3::Combo
         #
         # Return values
         #   'undef' on improper arguments
@@ -26590,7 +26563,7 @@
         # Settings11 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -26644,10 +26617,10 @@
         $self->addTextView($table, 'cmdPromptPatternList', TRUE,
             1, 12, 8, 12,
             TRUE, TRUE, FALSE, FALSE, # Treat as a list, remove empty lines, don't remove whitespace
-            -1, 150);                 # Fixed height
+            -1, 160);                 # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -26657,7 +26630,7 @@
         # Settings12 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -26693,7 +26666,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);      # Fixed height
+            -1, 290);      # Fixed height
 
         # Initialise the list
         $self->settings12Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -26728,7 +26701,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -26738,7 +26711,7 @@
         # Resets the simple list displayed by $self->settings12Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -26802,7 +26775,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('_Override', $self->notebook);
+        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('Overri_de', $self->notebook);
 
         # Add tabs to the inner notebook
         $self->override1Tab($innerNotebook);
@@ -26819,7 +26792,7 @@
         # Override1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -26828,7 +26801,10 @@
         my ($self, $innerNotebook, $check) = @_;
 
         # Local variables
-        my (@comboList, @comboList2);
+        my (
+            $defaultTtype, $currentTtype, $defaultCharSet, $currentCharSet,
+            @comboList, @comboList2,
+        );
 
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
@@ -26844,19 +26820,81 @@
             0, 6, 0, 1);
         $self->addLabel($table, 'Own termtype',
             1, 3, 1, 2);
-        @comboList = $axmud::CLIENT->constTermTypeList;
-        $self->addComboBox($table, 'termType', \@comboList, '',
-            FALSE,              # 'undef' value allowed
+
+        $defaultTtype = '<default terminal type>';
+        $currentTtype = $self->editObj->termType;
+        if (defined $currentTtype) {
+
+            push (@comboList, $currentTtype, $defaultTtype);
+            foreach my $item ($axmud::CLIENT->constTermTypeList) {
+
+                if ($item ne $currentTtype) {
+
+                    push (@comboList, $item);
+                }
+            }
+
+        } else {
+
+            push (@comboList, $defaultTtype, $axmud::CLIENT->constTermTypeList);
+        }
+
+        my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,              # 'undef' value not allowed
             3, 6, 1, 2);
+        $comboBox->signal_connect('changed' => sub {
+
+            my $text = $comboBox->get_active_text();
+
+            if ($text eq $defaultTtype) {
+
+                $self->ivAdd('editHash', 'termType', undef);
+
+            } else {
+
+                $self->ivAdd('editHash', 'termType', $text);
+            }
+        });
 
         $self->addLabel($table, '<b>Override ' . $axmud::SCRIPT . ' character set</b>',
             0, 6, 2, 3);
         $self->addLabel($table, 'Own charset',
             1, 3, 3, 4);
-        @comboList2 = $axmud::CLIENT->charSetList;
-        $self->addComboBox($table, 'worldCharSet', \@comboList2, '',
-            FALSE,              # 'undef' value allowed
+
+        $defaultCharSet = '<default character set>';
+        $currentCharSet = $self->editObj->worldCharSet;
+        if (defined $currentCharSet) {
+
+            push (@comboList2, $currentCharSet, $defaultCharSet);
+            foreach my $item ($axmud::CLIENT->charSetList) {
+
+                if ($item ne $currentCharSet) {
+
+                    push (@comboList2, $item);
+                }
+            }
+
+        } else {
+
+            push (@comboList2, $defaultCharSet, $axmud::CLIENT->charSetList);
+        }
+
+        my $comboBox2 = $self->addComboBox($table, undef, \@comboList2, '',
+            TRUE,              # 'undef' value not allowed
             3, 6, 3, 4);
+        $comboBox2->signal_connect('changed' => sub {
+
+            my $text = $comboBox2->get_active_text();
+
+            if ($text eq $defaultCharSet) {
+
+                $self->ivAdd('editHash', 'worldCharSet', undef);
+
+            } else {
+
+                $self->ivAdd('editHash', 'worldCharSet', $text);
+            }
+        });
 
         # Right column
         $self->addLabel($table, '<b>Override real terminal size (disables NAWS)</b>',
@@ -26869,13 +26907,11 @@
             8, 10, 2, 3);
         $self->addEntryWithIcon($table, 'rows', 'int', 0, undef,
             10, 13, 2, 3);
-        $self->addLabel($table, 'Send size after login',
-            8, 12, 3, 4);
-        $self->addCheckButton($table, 'sendSizeInfoFlag', TRUE,
-            12, 13, 3, 4, 1, 0.5);
+        $self->addCheckButton($table, 'Send size after login', 'sendSizeInfoFlag', TRUE,
+            8, 13, 3, 4);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -26885,7 +26921,7 @@
         # Override2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -26920,7 +26956,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 10,
-            -1, 230);       # Fixed height
+            -1, 260);       # Fixed height
 
         # Initialise the list
         $self->override2Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -27013,7 +27049,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -27023,7 +27059,7 @@
         # Resets the simple list displayed by $self->override2Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -27064,7 +27100,7 @@
         # Override3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -27103,7 +27139,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 10,
-            -1, 230);       # Fixed height
+            -1, 260);       # Fixed height
 
         # Initialise the list
         $self->override3Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -27114,6 +27150,7 @@
 
         @setupList = (
             'room'      => 'Use MXP room data',
+            'flexible'  => 'Allow (some) illegal MXP keywords',
         );
 
         do {
@@ -27130,14 +27167,14 @@
 
         my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,                       # No 'undef' value used
-            3, 5, 10, 11);
+            3, 6, 10, 11);
 
         my $button = $self->addButton(
             $table,
             'Enable for this world',
             'Enable this setting in this world\'s sessions',
             undef,
-            5, 7, 10, 11);
+            6, 9, 10, 11);
         $button->signal_connect('clicked' => sub {
 
             my (
@@ -27159,7 +27196,7 @@
             'Disable for this world',
             'Disable this setting in this world\'s sessions',
             undef,
-            7, 9, 10, 11);
+            9, 12, 10, 11);
         $button2->signal_connect('clicked' => sub {
 
             my (
@@ -27181,7 +27218,7 @@
             'Use global settings',
             'Enable/disable this setting according to global settings',
             undef,
-            9, 12, 10, 11);
+            6, 8, 11, 12);
         $button3->signal_connect('clicked' => sub {
 
             my (
@@ -27229,7 +27266,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -27239,7 +27276,7 @@
         # Resets the simple list displayed by $self->override3Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -27288,7 +27325,7 @@
         # Override4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -27327,7 +27364,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 7,
-            -1, 140);       # Fixed height
+            -1, 150);       # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'termOverrideHash');
@@ -27621,7 +27658,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -27631,7 +27668,7 @@
         # Override5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -27671,7 +27708,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 10,
-            -1, 230);       # Fixed height
+            -1, 250);       # Fixed height
 
         # Initialise the list
         $self->override5Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -27698,14 +27735,14 @@
 
         my $comboBox = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,                       # No 'undef' value used
-            3, 5, 10, 11);
+            3, 6, 10, 11);
 
         my $button = $self->addButton(
             $table,
             'Enable for this world',
             'Enable the sigil in this world\'s sessions',
             undef,
-            5, 7, 10, 11);
+            6, 9, 10, 11);
         $button->signal_connect('clicked' => sub {
 
             my (
@@ -27727,7 +27764,7 @@
             'Disable for this world',
             'Disable the sigil in this world\'s sessions',
             undef,
-            7, 9, 10, 11);
+            9, 12, 10, 11);
         $button2->signal_connect('clicked' => sub {
 
             my (
@@ -27749,7 +27786,7 @@
             'Use global settings',
             'Enable/disable this sigil according to global settings',
             undef,
-            9, 12, 10, 11);
+            6, 8, 11, 12);
         $button3->signal_connect('clicked' => sub {
 
             my (
@@ -27797,7 +27834,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -27807,7 +27844,7 @@
         # Resets the simple list displayed by $self->override5Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -27906,7 +27943,7 @@
         # Rooms1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -27944,7 +27981,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->rooms1Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -28191,7 +28228,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -28201,7 +28238,7 @@
         # Resets the simple list displayed by $self->rooms1Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -28360,7 +28397,7 @@
         # Rooms2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #   $iv             - The IV to edit - one of 'verboseComponentList', 'shortComponentList'
         #                       and 'briefComponentList'
         #
@@ -28424,7 +28461,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);     # Fixed height
+            -1, 250);     # Fixed height
 
         # Initialise the simple list
         $self->rooms2Tab_refreshList($slWidget, scalar (@columnList / 2), $iv);
@@ -28657,7 +28694,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -28667,7 +28704,7 @@
         # Resets the simple list displayed by $self->rooms2Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #   $iv         - The IV to display - one of 'verboseComponentList', 'shortComponentList'
         #                   and 'briefComponentList'
@@ -28732,7 +28769,7 @@
         # Rooms1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #   $listIV         - The list IV to edit - one of 'verboseAnchorPatternList',
         #                       'shortAnchorPatternList' and 'briefAnchorPatternList'
         #   $offsetIV       - The accompanying scalar IV to edit - one of 'verboseAnchorOffset',
@@ -28798,7 +28835,7 @@
         $self->addTextView($table, $listIV, TRUE,
             1, 12, 2, 6,
             TRUE, TRUE, FALSE, FALSE, # Treat as a list, remove empty lines, don't remove whitespace
-            -1, 200);                 # Fixed height
+            -1, 220);                 # Fixed height
 
         $self->addLabel($table,
             '<i>Anchor line\'s relationship with other components in the component list</i>',
@@ -28825,7 +28862,7 @@
             4, 12, 9, 10);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -28835,7 +28872,7 @@
         # Rooms4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #   $iv             - The IV to edit - one of 'verboseAnchorCheckList',
         #                       'shortAnchorCheckList' and 'briefAnchorCheckList'
         #
@@ -28899,7 +28936,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);     # Fixed height
+            -1, 250);     # Fixed height
 
         # Initialise the simple list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), $iv);
@@ -28941,7 +28978,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -28951,7 +28988,7 @@
         # Rooms11 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -28981,20 +29018,21 @@
             10, 12, 0, 1);
 
         my ($group, $radioButton) = $self->addRadioButton(
-            $table, undef, 'OFF', 'basicMappingFlag',
+            $table, undef,
+            'OFF - Basic mapping mode not required (suitable for most worlds)',
+            'basicMappingFlag',
             FALSE,         # IV set to this value when toggled
             TRUE,       # Sensitive widget
-            1, 3, 1, 2);
-        $self->addLabel($table, 'Basic mapping mode not required <i>(suitable for most worlds)</i>',
-            3, 12, 1, 2);
+            1, 12, 1, 2);
 
         ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, 'ON', 'basicMappingFlag', TRUE, TRUE,
-            1, 3, 2, 3);
-        $self->addLabel($table,
-            'Use basic mapping <i>(room statements don\'t contain matchable text: usually, no list'
-            . ' of exits)</i>',
-            3, 12, 2, 3);
+            $table, $group,
+            'ON - Use basic mapping (room statements don\'t contain matchable text: usually, no'
+            . ' list of exits)',
+            'basicMappingFlag',
+            TRUE,
+            TRUE,
+            1, 12, 2, 3);
 
         # (Not anchor patterns)
         $self->addLabel($table,
@@ -29027,7 +29065,7 @@
             4, 12, 11, 12);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29037,7 +29075,7 @@
         # Rooms12 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29065,34 +29103,41 @@
             ],
             10, 12, 0, 1);
 
-        my $checkButton = $self->addCheckButton($table, 'verboseExitSplitCharFlag', TRUE,
+        my $checkButton = $self->addCheckButton(
+            $table,
+            'Split exits into single characters, e.g. for NSEW',
+            'verboseExitSplitCharFlag',
+            TRUE,
             1, 12, 1, 2);
-        $checkButton->set_label('Split exits into single characters, e.g. for NSEW');
 
         $self->addLabel($table, '<i>Delimiters (<b>not</b> patterns/regular expressions)</i>',
             1, 6, 2, 3);
         $self->addTextView($table, 'verboseExitDelimiterList', TRUE,
             1, 6, 3, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
         $self->addLabel($table, '<i>Non-delimiters (<b>not</b> patterns/regular expressions)</i>',
             7, 12, 2, 3);
         $self->addTextView($table, 'verboseExitNonDelimiterList', TRUE,
             7, 12, 3, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
 
         $self->addLabel($table, '<i>Left-side marker patterns</i>',
             1, 6, 6, 7);
         $self->addTextView($table, 'verboseExitLeftMarkerList', TRUE,
             1, 6, 7, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
         $self->addLabel($table, '<i>Right-side marker patterns</i>',
             7, 12, 6, 7);
         $self->addTextView($table, 'verboseExitRightMarkerList', TRUE,
             7, 12, 7, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29102,7 +29147,7 @@
         # Rooms13 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29130,34 +29175,41 @@
             ],
             10, 12, 0, 1);
 
-        my $checkButton = $self->addCheckButton($table, 'briefExitSplitCharFlag', TRUE,
+        my $checkButton = $self->addCheckButton(
+            $table,
+            'Split exits into single characters, e.g. for NSEW',
+            'briefExitSplitCharFlag',
+            TRUE,
             1, 12, 1, 2);
-        $checkButton->set_label('Split exits into single characters, e.g. for NSEW');
 
         $self->addLabel($table, '<i>Delimiters (<b>not</b> patterns/regular expressions)</i>',
             1, 6, 2, 3);
         $self->addTextView($table, 'briefExitDelimiterList', TRUE,
             1, 6, 3, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
         $self->addLabel($table, '<i>Non-delimiters (<b>not</b> patterns/regular expressions)</i>',
             7, 12, 2, 3);
         $self->addTextView($table, 'briefExitNonDelimiterList', TRUE,
             7, 12, 3, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
 
         $self->addLabel($table, '<i>Left-side marker patterns</i>',
             1, 6, 6, 7);
         $self->addTextView($table, 'briefExitLeftMarkerList', TRUE,
             1, 6, 7, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
         $self->addLabel($table, '<i>Right-side marker patterns</i>',
             7, 12, 6, 7);
         $self->addTextView($table, 'briefExitRightMarkerList', TRUE,
             7, 12, 7, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29167,7 +29219,7 @@
         # Rooms14 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29339,7 +29391,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29349,7 +29401,7 @@
         # Resets the simple list displayed by $self->rooms14Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -29383,7 +29435,7 @@
         # Rooms15 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29419,7 +29471,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 9,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'exitStateTagHash');
@@ -29493,17 +29545,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub rooms15Tab_checkEntry {
 
-        # Called by $self->rooms15Tab to check the text in the Gtk2::Entry
+        # Called by $self->rooms15Tab to check the text in the Gtk3::Entry
         #
         # Expected arguments
-        #   $text       - The contents of the Gtk2::Entry
+        #   $text       - The contents of the Gtk3::Entry
         #
         # Return values
         #   'undef' on improper arguments or if $text is invalid
@@ -29541,7 +29593,7 @@
         # Rooms16 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29580,7 +29632,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 8,
-            -1, 210);      # Fixed height
+            -1, 230);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'exitAliasHash');
@@ -29623,17 +29675,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
-    sub rooms17Tab {     # split
+    sub rooms17Tab {
 
         # Rooms17 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29682,7 +29734,7 @@
             64, 64);                    # Use high max characters for layout reasons
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29692,7 +29744,7 @@
         # Rooms18 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29740,7 +29792,7 @@
             -1, 140);                  # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29750,7 +29802,7 @@
         # Rooms19 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29782,10 +29834,10 @@
         $self->addTextView($table, 'contentPatternList', TRUE,
             1, 12, 4, 12,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 300);                  # Fixed height
+            -1, 320);                  # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29795,7 +29847,7 @@
         # Rooms20 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29830,7 +29882,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'specialPatternHash');
@@ -29878,7 +29930,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29888,7 +29940,7 @@
         # Rooms21 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -29920,35 +29972,43 @@
             1, 4, 1, 2);
         $self->addTextView($table, 'roomCmdDelimiterList', TRUE,
             1, 4, 2, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
         $self->addLabel($table, '<i>Non-delimiters (<b>not</b> patterns)</i>',
             4, 8, 1, 2);
         $self->addTextView($table, 'roomCmdNonDelimiterList', TRUE,
             4, 8, 2, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
         $self->addLabel($table, '<i>Ignorable commands (<b>not</b> patterns)</i>',
             8, 12, 1, 2);
         $self->addTextView($table, 'roomCmdIgnoreList', TRUE,
             8, 12, 2, 11,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
 
         $self->addLabel($table, '<i>Left-side marker patterns</i>',
             1, 4, 6, 7);
         $self->addTextView($table, 'roomCmdLeftMarkerList', TRUE,
             1, 4, 7, 11,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
         $self->addLabel($table, '<i>Right-side marker patterns</i>',
             4, 8, 6, 7);
         $self->addTextView($table, 'roomCmdRightMarkerList', TRUE,
             4, 8, 7, 11,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
 
-        my $checkButton = $self->addCheckButton($table, 'roomCmdSplitCharFlag', TRUE,
+        my $checkButton = $self->addCheckButton(
+            $table,
+            'Split room commands into singl-character commands',
+            'roomCmdSplitCharFlag',
+            TRUE,
             1, 12, 11, 12);
-        $checkButton->set_label('Split room commands into singl-character commands');
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -29992,7 +30052,7 @@
         # Moves1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -30023,7 +30083,8 @@
 
         $self->addTextView($table, 'failExitPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Dark room patterns
         $self->addLabel($table, '<b>Dark room patterns</b>',
@@ -30033,10 +30094,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'darkRoomPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -30046,7 +30108,7 @@
         # Moves2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -30076,7 +30138,8 @@
             10, 12, 0, 4);
         $self->addTextView($table, 'doorPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Locked door patterns
         $self->addLabel($table, '<b>Locked door patterns</b>',
@@ -30085,10 +30148,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'lockedPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -30098,7 +30162,7 @@
         # Moves3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -30128,7 +30192,8 @@
             10, 12, 0, 4);
         $self->addTextView($table, 'involuntaryExitPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Unspecified room patterns
         $self->addLabel($table, '<b>Unspecified room patterns</b>',
@@ -30139,10 +30204,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'unspecifiedRoomPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -30152,7 +30218,7 @@
         # Moves4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -30189,7 +30255,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'transientExitPatternList');
@@ -30244,7 +30310,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -30254,7 +30320,7 @@
         # Moves5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -30291,7 +30357,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'followPatternList');
@@ -30342,7 +30408,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -30352,7 +30418,7 @@
         # Moves6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -30389,7 +30455,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'followAnchorPatternList');
@@ -30440,7 +30506,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -30498,7 +30564,7 @@
         # Status1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -30538,7 +30604,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 8,
-            -1, 220);      # Fixed height
+            -1, 240);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'statusCmdHash');
@@ -30581,7 +30647,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -30591,7 +30657,7 @@
         # Status2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #   $taskObj        - A temporary Status task object
         #
         # Return values
@@ -30623,7 +30689,7 @@
         my $textView = $self->addTextView($table, 'statusFormatList', TRUE,
             1, 11, 2, 11,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 270);                  # Fixed height
+            -1, 290);                  # Fixed height
 
         # Add a combo box displaying the list of Status task display variables
         @comboList = sort {lc($a) cmp lc($b)} (
@@ -30642,7 +30708,7 @@
         # Create some customised buttons for this tab
         # Add a button to insert the currently selected display variable into the textview, wherever
         #   the cursor is now
-        my $button = Gtk2::Button->new('Insert');
+        my $button = Gtk3::Button->new('Insert');
         $button->signal_connect('clicked' => sub {
 
             my ($text, $buffer);
@@ -30651,41 +30717,41 @@
             $buffer = $textView->get_buffer();
             $buffer->insert_at_cursor('@' . $text . '@');
         });
-        $self->tooltips->set_tip($button, 'Insert the selected variable at the cursor');
-        $table->attach_defaults($button, 3, 5, 11, 12);
+        $button->set_tooltip_text('Insert the selected variable at the cursor');
+        $table->attach($button, 3, 11, 2, 1);
 
         # Add a button to reset the contents of the textview to that stored by the profile
-        my $button2 = Gtk2::Button->new('Reset');
+        my $button2 = Gtk3::Button->new('Reset');
         $button2->signal_connect('clicked' => sub {
 
             my $buffer = $textView->get_buffer();
             $buffer->set_text(join("\n", $self->editObj->statusFormatList));
         });
-        $self->tooltips->set_tip($button2, 'Reset the Status task display');
-        $table->attach_defaults($button2, 5, 7, 11, 12);
+        $button2->set_tooltip_text('Reset the Status task display');
+        $table->attach($button2, 5, 11, 2, 1);
 
         # Add a button to use the Status task's default display format list
-        my $button3 = Gtk2::Button->new('Default');
+        my $button3 = Gtk3::Button->new('Default');
         $button3->signal_connect('clicked' => sub {
 
             my $buffer = $textView->get_buffer();
             $buffer->set_text(join("\n", $taskObj->defaultFormatList));
         });
-        $self->tooltips->set_tip($button3, 'Use the default Status task display');
-        $table->attach_defaults($button3, 7, 9, 11, 12);
+        $button3->set_tooltip_text('Use the default Status task display');
+        $table->attach($button3, 7, 11, 2, 1);
 
         # Add a button to empty the textview
-        my $button4 = Gtk2::Button->new('Clear');
+        my $button4 = Gtk3::Button->new('Clear');
         $button4->signal_connect('clicked' => sub {
 
             my $buffer = $textView->get_buffer();
             $buffer->set_text('');
         });
-        $self->tooltips->set_tip($button4, 'Clear the Status task display');
-        $table->attach_defaults($button4, 9, 11, 11, 12);
+        $button4->set_tooltip_text('Clear the Status task display');
+        $table->attach($button4, 9, 11, 2, 1);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -30695,7 +30761,7 @@
         # Status3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #   $taskObj        - A temporary Status task object
         #
         # Return values
@@ -30735,7 +30801,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 1, 6,
-            -1, 120);      # Fixed height
+            -1, 140);      # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -30770,9 +30836,8 @@
         my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
             7, 9, 7, 8);
 
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
+        my $checkButton = $self->addCheckButton($table, 'Not maximum', undef, TRUE,
             9, 12, 7, 8);
-        $checkButton->set_label('Not maximum');
 
         @colourList = ($axmud::CLIENT->constColourTagList, $axmud::CLIENT->constBoldColourTagList);
         $self->addLabel($table, 'Full colour:',
@@ -30881,17 +30946,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub status3Tab_checkEntry {
 
-        # Called by $self->status3Tab to check the text in the Gtk2::Entry
+        # Called by $self->status3Tab to check the text in the Gtk3::Entry
         #
         # Expected arguments
-        #   $text       - The contents of the Gtk2::Entry
+        #   $text       - The contents of the Gtk3::Entry
         #
         # Return values
         #   'undef' on improper arguments or if $text is invalid
@@ -30935,7 +31000,7 @@
         # Status4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -30970,7 +31035,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 240);      # Fixed height
+            -1, 260);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'msdpStatusVarHash');
@@ -31018,7 +31083,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31028,7 +31093,7 @@
         # Status5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31064,7 +31129,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 240);      # Fixed height
+            -1, 260);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'mxpStatusVarHash');
@@ -31112,7 +31177,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31122,7 +31187,7 @@
         # Status6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #   $taskObj        - A temporary Status task object
         #
         # Return values
@@ -31165,7 +31230,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 170);      # Fixed height
+            -1, 190);      # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -31262,7 +31327,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31272,7 +31337,7 @@
         # Status7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31310,7 +31375,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 210);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'barPatternList');
@@ -31389,7 +31454,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31399,7 +31464,7 @@
         # Status8 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31436,7 +31501,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 210);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'affectPatternList');
@@ -31494,7 +31559,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31504,7 +31569,7 @@
         # Status9 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31540,7 +31605,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 210);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'statPatternList');
@@ -31612,7 +31677,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31622,7 +31687,7 @@
         # Status10 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31653,7 +31718,8 @@
 
         $self->addTextView($table, 'statusIgnorePatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Quest complete patterns
         $self->addLabel($table, '<b>Quest complete patterns</b>',
@@ -31662,10 +31728,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'questCompletePatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31675,7 +31742,7 @@
         # Status11 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31706,7 +31773,8 @@
 
         $self->addTextView($table, 'agePatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Status task time patterns
         $self->addLabel($table, '<b>Status task time patterns</b>',
@@ -31715,10 +31783,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'timePatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31728,7 +31797,7 @@
         # Status12 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31759,16 +31828,18 @@
 
         $self->addTextView($table, 'deathPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         $self->addLabel($table, '<i>Patterns seen when the character is resurrected</i>',
             1, 12, 6, 8);
         $self->addTextView($table, 'resurrectPatternList', TRUE,
             1, 12, 8, 10,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31778,7 +31849,7 @@
         # Status13 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31809,16 +31880,18 @@
 
         $self->addTextView($table, 'passedOutPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         $self->addLabel($table, '<i>Patterns seen when the character comes around</i>',
             1, 12, 6, 8);
         $self->addTextView($table, 'comeAroundPatternList', TRUE,
             1, 12, 8, 10,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31828,7 +31901,7 @@
         # Status14 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31859,16 +31932,18 @@
 
         $self->addTextView($table, 'fallAsleepPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         $self->addLabel($table, '<i>Patterns seen when the character wakes up</i>',
             1, 12, 6, 8);
         $self->addTextView($table, 'wakeUpPatternList', TRUE,
             1, 12, 8, 10,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31913,7 +31988,7 @@
         # Inventory1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -31976,7 +32051,7 @@
             2, 12, 9, 10);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -31986,7 +32061,7 @@
         # Inventory2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32023,7 +32098,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);
+            -1, 220);
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'inventoryPatternList');
@@ -32105,7 +32180,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32115,7 +32190,7 @@
         # Inventory3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32149,7 +32224,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -32206,7 +32281,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32216,7 +32291,7 @@
         # Inventory4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32252,7 +32327,7 @@
         $self->addTextView($table, 'inventoryDiscardPatternList', TRUE,
             1, 12, 2, 6,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 130);                   # Fixed height
+            -1, 140);                   # Fixed height
 
         # Inventory split patterns
         $self->addLabel($table, '<b>Inventory split patterns</b>',
@@ -32264,10 +32339,10 @@
         $self->addTextView($table, 'inventorySplitPatternList', TRUE,
             1, 12, 8, 12,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 130);                   # Fixed height
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32277,7 +32352,7 @@
         # Inventory5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32314,7 +32389,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);
+            -1, 220);
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'conditionPatternList');
@@ -32379,7 +32454,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32389,7 +32464,7 @@
         # Inventory6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32420,10 +32495,10 @@
         $self->addTextView($table, 'conditionIgnorePatternList', TRUE,
             1, 12, 2, 12,
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
-            -1, 300);                   # Fixed height
+            -1, 330);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32433,7 +32508,7 @@
         # Inventory7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32473,7 +32548,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 8,
-            -1, 220);      # Fixed height
+            -1, 240);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'inventoryCmdHash');
@@ -32516,7 +32591,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32556,7 +32631,7 @@
         # Channels1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32609,10 +32684,8 @@
             2, 6, 10, 11,
             16, 16);
 
-        $self->addLabel($table, 'Only in task window?',
-            6, 11, 10, 11);
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 10, 11);
+        my $checkButton = $self->addCheckButton($table, 'Only in task window?', undef, TRUE,
+            7, 12, 10, 11);
 
         # Add standard editing buttons to the simple list
         my $button = $self->addSimpleListButtons_listIV(
@@ -32705,7 +32778,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32715,7 +32788,7 @@
         # Channels2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32750,10 +32823,11 @@
 
         $self->addTextView($table, 'noChannelList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE); # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32795,7 +32869,7 @@
         # Attack1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32830,7 +32904,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);
+            -1, 220);
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'targetLeavesPatternList');
@@ -32887,7 +32961,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -32897,7 +32971,7 @@
         # Attack2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -32933,7 +33007,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);
+            -1, 220);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -32994,7 +33068,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33004,7 +33078,7 @@
         # Attack3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33036,7 +33110,8 @@
 
         $self->addTextView($table, 'noTargetLeavesPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Target arrives patterns
         $self->addLabel($table, '<b>Target arrives ignore patterns</b>',
@@ -33046,10 +33121,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'noTargetArrivesPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33059,7 +33135,7 @@
         # Attack4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33092,7 +33168,8 @@
 
         $self->addTextView($table, 'noFightsRoomPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # No interactions room patterns
         $self->addLabel($table, '<b>No interactions room patterns</b>',
@@ -33103,10 +33180,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'noInteractionsRoomPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33153,7 +33231,7 @@
         # WorldFight1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33187,7 +33265,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'fightStartedPatternList');
@@ -33238,7 +33316,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33248,7 +33326,7 @@
         # WorldFight2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33283,7 +33361,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -33339,7 +33417,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33349,7 +33427,7 @@
         # WorldFight3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33380,7 +33458,8 @@
 
         $self->addTextView($table, 'noFightStartedPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Target not found ignore patterns
         $self->addLabel($table, '<b>Target not found ignore patterns</b>',
@@ -33390,10 +33469,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'noCannotFindTargetPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33403,7 +33483,7 @@
         # WorldFight4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33438,7 +33518,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -33494,7 +33574,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33504,7 +33584,7 @@
         # WorldFight5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33538,7 +33618,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'targetKilledPatternList');
@@ -33590,7 +33670,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33600,7 +33680,7 @@
         # WorldFight6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33631,7 +33711,8 @@
 
         $self->addTextView($table, 'noTargetAlreadyDeadPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Target killed ignore patterns
         $self->addLabel($table, '<b>Target killed ignore patterns</b>',
@@ -33640,10 +33721,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'noTargetKilledPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33653,7 +33735,7 @@
         # WorldFight7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33689,7 +33771,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -33745,7 +33827,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33755,7 +33837,7 @@
         # WorldFight8 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33791,7 +33873,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV($slWidget, scalar (@columnList / 2), 'wimpyEngagedPatternList');
@@ -33843,7 +33925,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33853,7 +33935,7 @@
         # WorldFight9 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33884,7 +33966,8 @@
 
         $self->addTextView($table, 'noFightDefeatPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Remote wimpy engaged ignore patterns
         $self->addLabel($table, '<b>Remote wimpy engaged ignore patterns</b>',
@@ -33893,10 +33976,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'noWimpyEngagedPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -33943,7 +34027,7 @@
         # WorldInteraction1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -33977,7 +34061,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -34032,7 +34116,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34042,7 +34126,7 @@
         # WorldInteraction2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34077,7 +34161,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -34133,7 +34217,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34143,7 +34227,7 @@
         # WorldInteraction3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34175,7 +34259,8 @@
 
         $self->addTextView($table, 'noInteractionStartedPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Cannot interact ignore patterns
         $self->addLabel($table, '<b>Cannot interact ignore patterns</b>',
@@ -34185,10 +34270,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'noCannotInteractPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34198,7 +34284,7 @@
         # WorldInteraction4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34232,7 +34318,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -34288,7 +34374,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34298,7 +34384,7 @@
         # WorldInteraction5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34332,7 +34418,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -34387,7 +34473,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34397,7 +34483,7 @@
         # WorldInteraction6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34429,7 +34515,8 @@
 
         $self->addTextView($table, 'noInteractionSuccessPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Interaction fail ignore patterns
         $self->addLabel($table, '<b>Interaction fail ignore patterns</b>',
@@ -34439,10 +34526,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'noInteractionFailPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34452,7 +34540,7 @@
         # WorldInteraction7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34486,7 +34574,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -34542,7 +34630,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34552,7 +34640,7 @@
         # WorldInteraction8 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34587,7 +34675,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 250);
 
         # Initialise the list
         $self->refreshList_listIV(
@@ -34643,7 +34731,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34653,7 +34741,7 @@
         # WorldInteraction9 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34685,7 +34773,8 @@
 
         $self->addTextView($table, 'noInteractionFightPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Interaction disaster ignore patterns
         $self->addLabel($table, '<b>Interaction disaster ignore patterns</b>',
@@ -34695,10 +34784,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'noInteractionDisasterPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34742,7 +34832,7 @@
         # WorldCommands1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34774,7 +34864,8 @@
 
         $self->addTextView($table, 'getSuccessPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Get heavy patterns
         $self->addLabel($table, '<b>Get heavy patterns</b>',
@@ -34785,10 +34876,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'getHeavyPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34798,7 +34890,7 @@
         # WorldCommands2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34831,7 +34923,8 @@
 
         $self->addTextView($table, 'getFailPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Drop success patterns
         $self->addLabel($table, '<b>Drop success patterns</b>',
@@ -34841,10 +34934,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'dropSuccessPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34854,7 +34948,7 @@
         # WorldCommands3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34887,7 +34981,8 @@
 
         $self->addTextView($table, 'dropForbidPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Drop fail patterns
         $self->addLabel($table, '<b>Drop fail patterns</b>',
@@ -34898,10 +34993,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'dropFailPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34911,7 +35007,7 @@
         # WorldCommands4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -34943,7 +35039,8 @@
 
         $self->addTextView($table, 'buySuccessPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Buy partial success patterns
         $self->addLabel($table, '<b>Buy partial success patterns</b>',
@@ -34954,10 +35051,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'buyPartialPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -34967,7 +35065,7 @@
         # WorldCommands5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -35000,7 +35098,8 @@
 
         $self->addTextView($table, 'buyFailPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Sell success patterns
         $self->addLabel($table, '<b>Sell success patterns</b>',
@@ -35010,10 +35109,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'sellSuccessPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -35023,7 +35123,7 @@
         # WorldCommands6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -35056,7 +35156,8 @@
 
         $self->addTextView($table, 'sellPartialPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Sell fail patterns
         $self->addLabel($table, '<b>Sell fail patterns</b>',
@@ -35067,10 +35168,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'sellFailPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -35111,7 +35213,8 @@
 
         $self->addTextView($table, 'advanceSuccessPatternList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         # Advance fail patterns
         $self->addLabel($table, '<b>Advance fail patterns</b>',
@@ -35121,10 +35224,11 @@
             1, 12, 8, 10);
         $self->addTextView($table, 'advanceFailPatternList', TRUE,
             1, 12, 10, 12,
-            TRUE, TRUE, FALSE, FALSE);  # Treat as list, remove empty lines, don't remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 150);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -35222,7 +35326,7 @@
             9, 12, 10, 11);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -35268,7 +35372,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 9,
-            -1, 270);      # Fixed height
+            -1, 280);      # Fixed height
 
         # Initialise the list
         $self->missionsTab_refreshList($slWidget, (scalar @columnList / 2));
@@ -35454,7 +35558,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -35464,7 +35568,7 @@
         # Resets the simple list displayed by $self->missionsTab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -35564,7 +35668,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 10,
-            -1, 230);     # Fixed height
+            -1, 240);     # Fixed height
         # Initialise the list
         $self->questsTab_refreshList($slWidget, (scalar @columnList / 2));
 
@@ -35734,7 +35838,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -35744,7 +35848,7 @@
         # Resets the simple list displayed by $self->questsTab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -35795,7 +35899,7 @@
 
     sub questsTab_refreshEntries {
 
-        # Refreshes the values displayed in the Gtk2::Entry boxes displayed by $self->questsTab
+        # Refreshes the values displayed in the Gtk3::Entry boxes displayed by $self->questsTab
         #
         # Expected arguments
         #   $entry, $entry2, $entry3, $entry4
@@ -35863,7 +35967,7 @@
         # Stats1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -35898,7 +36002,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'statHash');
@@ -35941,7 +36045,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -35951,7 +36055,7 @@
         # Stats2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -35980,9 +36084,10 @@
             1, 12, 2, 4);
         $self->addTextView($table, 'statOrderList', TRUE,
             1, 12, 4, 6,
-            TRUE, TRUE, TRUE, FALSE); # Treat as list, remove empty lines, remove whitespace
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -36204,7 +36309,7 @@
         # Skills1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -36245,7 +36350,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);
+            -1, 240);
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'skillMaxLevelHash');
@@ -36262,7 +36367,7 @@
             9, 12, 8, 9);
 
         # Add buttons at various positions
-        my $button2 = Gtk2::Button->new('Add');
+        my $button2 = Gtk3::Button->new('Add');
         $button2->signal_connect('clicked' => sub {
 
             my ($skill, $maxLevel);
@@ -36284,10 +36389,10 @@
                 $self->resetEntryBoxes($entry, $entry2);
             }
         });
-        $self->tooltips->set_tip($button, 'Add a new pattern with the above settings');
-        $table->attach_defaults($button2, 1, 3, 9, 10);
+        $button->set_tooltip_text('Add a new pattern with the above settings');
+        $table->attach($button2, 1, 9, 2, 1);
 
-        my $button3 = Gtk2::Button->new('Delete');
+        my $button3 = Gtk3::Button->new('Delete');
         $button3->signal_connect('clicked' => sub {
 
             my ($key) = $self->getSimpleListData($slWidget, 0);
@@ -36305,10 +36410,10 @@
                 $self->resetEntryBoxes($entry, $entry2);
             }
         });
-        $self->tooltips->set_tip($button3, 'Delete the selected pattern');
-        $table->attach_defaults($button3, 6, 8, 9, 10);
+        $button3->set_tooltip_text('Delete the selected pattern');
+        $table->attach($button3, 6, 9, 2, 1);
 
-        my $button4 = Gtk2::Button->new('Reset');
+        my $button4 = Gtk3::Button->new('Reset');
         $button4->signal_connect('clicked' => sub {
 
             # Remove this IV from $self->editHash, so that the IV in $self->editObj takes over
@@ -36321,10 +36426,10 @@
             $self->refreshList_hashIV($slWidget, 2, 'skillMaxLevelHash');
             $self->resetEntryBoxes($entry, $entry2);
         });
-        $self->tooltips->set_tip($button4, 'Reset the list of patterns');
-        $table->attach_defaults($button4, 8, 10, 9, 10);
+        $button4->set_tooltip_text('Reset the list of patterns');
+        $table->attach($button4, 8, 9, 2, 1);
 
-        my $button5 = Gtk2::Button->new('Clear');
+        my $button5 = Gtk3::Button->new('Clear');
         $button5->signal_connect('clicked' => sub {
 
             # Add an empty hash to $self->editHash
@@ -36337,8 +36442,8 @@
             $self->refreshList_hashIV($slWidget, 2, 'skillMaxLevelHash');
             $self->resetEntryBoxes($entry, $entry2);
         });
-        $self->tooltips->set_tip($button5, 'Clear the list of patterns');
-        $table->attach_defaults($button5, 10, 12, 9, 10);
+        $button5->set_tooltip_text('Clear the list of patterns');
+        $table->attach($button5, 10, 9, 2, 1);
 
         # 'Dump' button can't be manipulated when this isn't a current profile
         if (! $self->currentFlag) {
@@ -36347,7 +36452,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -36357,7 +36462,7 @@
         # Skills2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -36383,7 +36488,9 @@
         $self->addLabel($table, '<i>Pre-determined list of skills to advance</i>',
             1, 6, 2, 4);
         $self->addTextView($table, 'advanceOrderList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
 
         # Skills advance cycle
         $self->addLabel($table, '<b>Skills advance cycle</b>',
@@ -36391,7 +36498,9 @@
         $self->addLabel($table, '<i>Pre-determined cycle of skills to advance</i>',
             1, 12, 8, 10);
         $self->addTextView($table, 'advanceCycleList', TRUE,
-            1, 12, 10, 12);
+            1, 12, 10, 12,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 130);                   # Fixed height
 
         $self->addLabel($table, '<b>Default advance method</b>',
             6, 12, 0, 2);
@@ -36401,7 +36510,7 @@
             7, 12, 2, 4);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -36895,7 +37004,7 @@
         # Settings1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -36980,7 +37089,7 @@
             9, 12, 5, 6);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -36990,7 +37099,7 @@
         # Settings2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -37058,7 +37167,7 @@
             9, 12, 4, 5);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -37068,7 +37177,7 @@
         # Settings3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -37133,7 +37242,7 @@
             9, 12, 6, 7);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -37143,7 +37252,7 @@
         # Settings4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -37192,7 +37301,7 @@
             9, 12, 2, 3);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -37202,7 +37311,7 @@
         # Settings5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -37237,7 +37346,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the list
         $self->settings5Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -37257,7 +37366,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -37267,7 +37376,7 @@
         # Resets the simple list displayed by $self->settings5Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -37529,7 +37638,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -37575,7 +37684,7 @@
         #   $self->questsTab_resetSolvedList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -37611,7 +37720,7 @@
         #   $self->questsTab_resetSolvedList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #   $worldObj   - Blessed reference of the parent world profile
         #
@@ -37697,7 +37806,7 @@
         # Skills1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -37757,7 +37866,7 @@
         );
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 210);     # Fixed height
+            -1, 230);     # Fixed height
 
         # Initialise the list
         $self->skills1Tab_refreshList($slWidget, (scalar @columnList / 2));
@@ -37855,7 +37964,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -37865,7 +37974,7 @@
         # Resets the simple list displayed by $self->skills1Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -37919,7 +38028,7 @@
         # Skills2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -37958,7 +38067,7 @@
         );
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the list - each skill advancement is stored in a single GA::Obj::SkillHistory
         @objList = $self->editObj->skillHistoryList;
@@ -37996,7 +38105,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38006,7 +38115,7 @@
         # Skills3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -38038,7 +38147,9 @@
             '<i>Pre-determined list of skills to advance (empty if not used)</i>',
             1, 10, 2, 4);
         my $textView = $self->addTextView($table, 'advanceOrderList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
         my $buffer = $textView->get_buffer();
 
         $self->addLabel($table,
@@ -38051,7 +38162,9 @@
         );
 
         my $textView2 = $self->addTextView($table, 'currentAdvanceOrderList', TRUE,
-            1, 12, 10, 12);
+            1, 12, 10, 12,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
         my $buffer2 = $textView2->get_buffer();
         $button2->signal_connect('clicked' => sub {
 
@@ -38072,7 +38185,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38082,7 +38195,7 @@
         # Skills4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -38114,7 +38227,9 @@
             '<i>Pre-determined list of skills to advance (empty if not used)</i>',
             1, 12, 2, 4);
         my $textView = $self->addTextView($table, 'advanceCycleList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
         my $buffer = $textView->get_buffer();
 
         $self->addLabel($table,
@@ -38127,7 +38242,9 @@
         );
 
         my $textView2 = $self->addTextView($table, 'currentAdvanceCycleList', TRUE,
-            1, 12, 10, 12);
+            1, 12, 10, 12,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
         my $buffer2 = $textView2->get_buffer();
         $button2->signal_connect('clicked' => sub {
 
@@ -38148,7 +38265,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38191,7 +38308,7 @@
         # Attacks1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -38265,7 +38382,7 @@
             9, 12, 5, 6);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38275,7 +38392,7 @@
         # Attacks2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -38310,7 +38427,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'fightVictimHash');
@@ -38353,7 +38470,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38363,7 +38480,7 @@
         # Attacks3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -38398,7 +38515,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'fightVictimStringHash');
@@ -38446,7 +38563,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38456,7 +38573,7 @@
         # Attacks4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -38492,7 +38609,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'interactionVictimHash');
@@ -38540,7 +38657,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38550,7 +38667,7 @@
         # Attacks5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -38585,7 +38702,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 230);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV(
@@ -38640,7 +38757,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38684,7 +38801,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 270);      # Fixed height
+            -1, 280);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'affectHash');
@@ -38727,7 +38844,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38771,7 +38888,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 270);      # Fixed height
+            -1, 280);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'statHash');
@@ -38814,7 +38931,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38850,10 +38967,12 @@
         $self->addLabel($table,
             '<i>List of commands sent to the world to update the Status task\'s variables</i>',
             1, 12, 1, 2);
-        $self->addCheckButton($table, 'statusCmdFlag', TRUE,
-            1, 2, 2, 3);
-        $self->addLabel($table, 'Send commands as soon as the Status task is initialised',
-            2, 12, 2, 3);
+        $self->addCheckButton(
+            $table,
+            'Send commands as soon as the Status task is initialised',
+            'statusCmdFlag',
+            TRUE,
+            1, 12, 2, 3);
 
         # Add a simple list
         @columnList = (
@@ -38863,7 +38982,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 10,
-            -1, 250);      # Fixed height
+            -1, 260);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'statusCmdHash');
@@ -38906,7 +39025,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -38951,7 +39070,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);      # Fixed height
+            -1, 280);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'inventoryCmdHash');
@@ -38998,7 +39117,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -39252,7 +39371,7 @@
         $self->categoryTab($table);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -39405,7 +39524,7 @@
         # Category tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -39426,16 +39545,16 @@
         $self->addLabel($table, '<b>Fixed? (No more changes permitted)</b>',
             7, 13, 0, 1);
 
-        my $checkbutton = Gtk2::CheckButton->new();
+        my $checkButton = Gtk3::CheckButton->new();
         if ($self->editObj->constFixedFlag) {
 
-            $checkbutton->set_active(TRUE);
+            $checkButton->set_active(TRUE);
         }
-        $checkbutton->set_sensitive(FALSE);
-        $table->attach_defaults($checkbutton, 7, 13, 1, 2);
+        $checkButton->set_sensitive(FALSE);
+        $table->attach($checkButton, 8, 1, 5, 1);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -39481,7 +39600,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 220);      # Fixed height
+            -1, 290);      # Fixed height
 
         # Copy all existing properties of $self->editObj into $self->editHash...
         $self->propertiesTab_setup();
@@ -39615,7 +39734,7 @@
         });
 
         # Add the usual editing buttons
-        my $button4 = Gtk2::Button->new('Edit');
+        my $button4 = Gtk3::Button->new('Edit');
         $button4->signal_connect('clicked' => sub {
 
             my ($property, $type);
@@ -39665,10 +39784,10 @@
                 }
             }
         });
-        $self->tooltips->set_tip($button4, 'Edit the selected propery');
-        $table->attach_defaults($button4, 1, 4, 9, 10);
+        $button4->set_tooltip_text('Edit the selected propery');
+        $table->attach($button4, 1, 9, 3, 1);
 
-        my $button5 = Gtk2::Button->new('Delete');
+        my $button5 = Gtk3::Button->new('Delete');
         $button5->signal_connect('clicked' => sub {
 
             my ($property) = $self->getSimpleListData($slWidget, 0);
@@ -39680,10 +39799,10 @@
                 $self->propertiesTab_refreshList($slWidget, scalar (@columnList / 2));
             }
         });
-        $self->tooltips->set_tip($button5, 'Delete the selected property');
-        $table->attach_defaults($button5, 6, 8, 9, 10);
+        $button5->set_tooltip_text('Delete the selected property');
+        $table->attach($button5, 6, 9, 2, 1);
 
-        my $button6 = Gtk2::Button->new('Reset');
+        my $button6 = Gtk3::Button->new('Reset');
         $button6->signal_connect('clicked' => sub {
 
             # Copy all existing properties of $self->editObj into $self->editHash, replacing its
@@ -39692,10 +39811,10 @@
             # ...then update the simple list
             $self->propertiesTab_refreshList($slWidget, scalar (@columnList / 2));
         });
-        $self->tooltips->set_tip($button6, 'Reset the list of properties');
-        $table->attach_defaults($button6, 8, 10, 9, 10);
+        $button6->set_tooltip_text('Reset the list of properties');
+        $table->attach($button6, 8, 9, 2, 1);
 
-        my $button7 = Gtk2::Button->new('Clear');
+        my $button7 = Gtk3::Button->new('Clear');
         $button7->signal_connect('clicked' => sub {
 
             $self->ivEmpty('editHash');
@@ -39703,11 +39822,11 @@
             # Update the simple list
             $self->propertiesTab_refreshList($slWidget, scalar (@columnList / 2));
         });
-        $self->tooltips->set_tip($button7, 'Clear the list of properties');
-        $table->attach_defaults($button7, 10, 12, 9, 10);
+        $button7->set_tooltip_text('Clear the list of properties');
+        $table->attach($button7, 10, 9, 2, 1);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -39774,11 +39893,11 @@
     sub propertiesTab_refreshList {
 
         # Called by $self->propertiesTab
-        # Populates the GA::Obj::Simple::List displayed in this window with all the properties (IVs)
+        # Populates the GA::Obj::SimpleList displayed in this window with all the properties (IVs)
         #   stored in the template, except the standard ones which can't be edited in this tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns
         #
         # Return values
@@ -40019,7 +40138,7 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('P_roperties', $self->notebook);
+        my ($vBox, $table) = $self->addTab('_Properties', $self->notebook);
 
         # Custom properties
         $self->addLabel($table, '<b>Custom properties</b>',
@@ -40036,7 +40155,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 220);      # Fixed height
+            -1, 310);      # Fixed height
 
         # Copy all existing properties of $self->editObj into $self->editHash...
         $self->propertiesTab_setup();
@@ -40045,7 +40164,7 @@
 
         # Add editing buttons, numbered to correspond with those used in
         #   GA::EditWin::Profile::Template->propertiesTab
-        my $button4 = Gtk2::Button->new('Edit');
+        my $button4 = Gtk3::Button->new('Edit');
         $button4->signal_connect('clicked' => sub {
 
             my ($property, $type);
@@ -40095,10 +40214,10 @@
                 }
             }
         });
-        $self->tooltips->set_tip($button4, 'Edit the selected propery');
-        $table->attach_defaults($button4, 1, 4, 10, 11);
+        $button4->set_tooltip_text('Edit the selected propery');
+        $table->attach($button4, 1, 10, 2, 1);
 
-        my $button6 = Gtk2::Button->new('Reset');
+        my $button6 = Gtk3::Button->new('Reset');
         $button6->signal_connect('clicked' => sub {
 
             # Copy all existing properties of $self->editObj into $self->editHash, replacing its
@@ -40107,11 +40226,11 @@
             # ...then update the simple list
             $self->propertiesTab_refreshList($slWidget, scalar (@columnList / 2));
         });
-        $self->tooltips->set_tip($button6, 'Reset the list of properties');
-        $table->attach_defaults($button6, 8, 12, 10, 11);
+        $button6->set_tooltip_text('Reset the list of properties');
+        $table->attach($button6, 10, 10, 2, 1);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -40153,11 +40272,11 @@
     sub propertiesTab_refreshList {
 
         # Called by $self->propertiesTab
-        # Populates the GA::Obj::Simple::List displayed in this window with all the properties (IVs)
+        # Populates the GA::Obj::SimpleList displayed in this window with all the properties (IVs)
         #   stored in the template, except the standard ones which can't be edited in this tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns
         #
         # Return values
@@ -40361,7 +40480,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -40401,7 +40520,7 @@
         # Nouns tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -40434,7 +40553,7 @@
         $self->addTextView($table, 'otherNounList', TRUE,
             1, 12, 3, 6,
             undef, undef, undef, undef,
-            -1, 110);            # Fixed height
+            -1, 120);            # Fixed height
 
         # Categories
         $self->addLabel($table, '<b>Categories</b>',
@@ -40446,7 +40565,7 @@
         my $textView = $self->addTextView($table, 'categoryList', FALSE,
             1, 12, 8, 11,
             undef, undef, undef, undef,
-            -1, 110);            # Fixed height
+            -1, 120);            # Fixed height
 
         @comboList = (
             'region', 'room',
@@ -40530,7 +40649,7 @@
         });
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -40564,15 +40683,19 @@
         $self->addLabel($table, '<i>List of normal adjectives</i>',
             1, 12, 2, 4);
         $self->addTextView($table, 'adjList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 160);                # Fixed height
 
         $self->addLabel($table, '<i>List of pseudo-adjectives</i>',
             1, 12, 6, 8);
         $self->addTextView($table, 'pseudoAdjList', TRUE,
-            1, 12, 8, 10);
+            1, 12, 8, 10,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 160);                # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -40606,14 +40729,15 @@
         $self->addLabel($table, '<i>List of unrecognised words</i>',
             1, 12, 2, 4);
         $self->addTextView($table, 'unknownWordList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
+            -1, 160);                # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
-
 
     ##################
     # Accessors - set
@@ -40720,7 +40844,7 @@
         $self->commentsTab();
         $self->privateDataTab(       # Inherited from GA::Generic::EditWin
             'privateHash',
-            'Private _data',
+            '_Private data',
             'Private data hash',
             'Additional data associated with this quest can be stored here',
         );
@@ -40787,7 +40911,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -40838,7 +40962,7 @@
             9, 12, 3, 4);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -40874,10 +40998,10 @@
         $self->addTextView($table, 'solutionList', TRUE,
             1, 12, 4, 10,
             TRUE, FALSE, FALSE, FALSE,   # Treat as a list, don't remove empty lines or whitespace
-            -1, 330);                    # Fixed height
+            -1, 350);                    # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -40912,10 +41036,10 @@
         $self->addTextView($table, 'commentList', TRUE,
             1, 12, 4, 10,
             TRUE, FALSE, FALSE, FALSE,    # Treat as a list, don't remove empty lines or whitespace
-            -1, 330);                     # Fixed height
+            -1, 350);                     # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -41208,7 +41332,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -   The Gtk2::Table
+        #   $table  -   The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -41264,21 +41388,17 @@
             7, 9, 3, 4);
         $self->addEntry($table, 'scrollYPos', FALSE,
             9, 12, 3, 4);
-        $self->addLabel($table, 'Maximum zoom out X',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'maxZoomOutXFlag', FALSE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Maximum zoom out Y',
-            7, 11, 5, 6);
-        $self->addCheckButton($table, 'maxZoomOutYFlag', FALSE,
-            11, 12, 5, 6, 1, 0.5);
+        $self->addCheckButton($table, 'Maximum zoom out X', 'maxZoomOutXFlag', FALSE,
+            7, 12, 4, 5);
+        $self->addCheckButton($table, 'Maximum zoom out Y', 'maxZoomOutYFlag', FALSE,
+            7, 12, 5, 6);
         $self->addLabel($table, 'Exit drawing mode',
             7, 9, 6, 7);
         $self->addEntry($table, 'drawExitMode', FALSE,
             9, 12, 6, 7);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -41450,7 +41570,7 @@
             9, 12, 11, 12);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -41494,7 +41614,7 @@
         # Objects1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -41535,7 +41655,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);
+            -1, 290);
 
         # Initialise the list
         $self->objects1Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -41588,17 +41708,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub objects1Tab_refreshList {
 
-        # Called by $self->objects1Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->objects1Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41654,7 +41774,7 @@
         # Objects2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -41687,7 +41807,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Initialise the list
         $self->objects2Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -41702,17 +41822,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub objects2Tab_refreshList {
 
-        # Called by $self->objects2Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->objects2Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41774,7 +41894,7 @@
         # Objects3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -41807,7 +41927,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Initialise the list
         $self->objects3Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -41822,17 +41942,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub objects3Tab_refreshList {
 
-        # Called by $self->objects3Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->objects3Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -41894,7 +42014,7 @@
         # Objects4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -41936,7 +42056,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);
+            -1, 290);
 
         # Initialise the list
         $self->objects4Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -41992,17 +42112,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub objects4Tab_refreshList {
 
-        # Called by $self->objects4Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->objects4Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -42067,7 +42187,7 @@
         # Objects5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -42101,7 +42221,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            1, 270);        # Fixed height
+            1, 290);        # Fixed height
 
         # Initialise the list
         $self->objects5Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -42116,17 +42236,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub objects5Tab_refreshList {
 
-        # Called by $self->objects5Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->objects5Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -42181,7 +42301,7 @@
         # Objects6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -42218,7 +42338,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Initialise the list
         $self->objects6Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -42233,17 +42353,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub objects6Tab_refreshList {
 
-        # Called by $self->objects6Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->objects6Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -42337,7 +42457,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);       # Fixed height
+            -1, 320);       # Fixed height
 
         # Initialise the list
         $self->countsTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -42352,17 +42472,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub countsTab_refreshList {
 
-        # Called by $self->countsTab to refresh the GA::Obj::Simple::List
+        # Called by $self->countsTab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -42446,7 +42566,7 @@
         # Boundaries1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -42485,7 +42605,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);       # Fixed height
+            -1, 250);       # Fixed height
 
         # Initialise the simple list
         $self->boundaries1Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -42494,7 +42614,7 @@
         $self->boundaries1Tab_addButtons($table, $slWidget, scalar (@columnList / 2));
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -42502,11 +42622,11 @@
     sub boundaries1Tab_addButtons {
 
         # Called by $self->boundaries1Tab and ->boundaries2Tab to add editing buttons below the
-        #   GA::Obj::Simple::List
+        #   GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $table          - The Gtk2::Table
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $table          - The Gtk3::Grid for this tab
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns in the simple list
         #
         # Optional arguments
@@ -42569,7 +42689,7 @@
             'Recalculate region paths for exit',
             'Recalculate region paths to/from the selected exit',
             undef,
-            3, 6, 10, 11,
+            3, 8, 10, 11,
             TRUE);          # Irreversible
         $button2->signal_connect('clicked' => sub {
 
@@ -42619,25 +42739,12 @@
 
         my $button3 = $self->addButton(
             $table,
-            'Refresh list',
-            'Refresh the list of exit model objects',
-            undef,
-            10, 12, 10, 11,
-        );
-        $button3->signal_connect('clicked' => sub {
-
-            # Refresh the simple list
-            $self->boundaries1Tab_refreshList($slWidget, $columns, $superFlag);
-        });
-
-        my $button4 = $self->addButton(
-            $table,
             'Mark as super-region exit',
             'Make the selected exit a super-region exit',
             undef,
-            1, 4, 11, 12,
+            8, 12, 10, 11,
             TRUE);          # Irreversible
-        $button4->signal_connect('clicked' => sub {
+        $button3->signal_connect('clicked' => sub {
 
             my ($exitNum, $exitObj);
 
@@ -42664,14 +42771,14 @@
             }
         });
 
-        my $button5 = $self->addButton(
+        my $button4 = $self->addButton(
             $table,
             'Mark as exclusive super-region exit',
             'Make the selected exit an exclusive super-region exit',
             undef,
-            4, 8, 11, 12,
+            1, 4, 11, 12,
             TRUE);          # Irreversible
-        $button5->signal_connect('clicked' => sub {
+        $button4->signal_connect('clicked' => sub {
 
             my ($exitNum, $exitObj);
 
@@ -42698,14 +42805,14 @@
             }
         });
 
-        my $button6 = $self->addButton(
+        my $button5 = $self->addButton(
             $table,
             'Mark as normal region exit',
             'Make the selected exit a normal region exit',
             undef,
-            8, 12, 11, 12,
+            4, 8, 11, 12,
             TRUE);              # Irreversible
-        $button6->signal_connect('clicked' => sub {
+        $button5->signal_connect('clicked' => sub {
 
             my ($exitNum, $exitObj);
 
@@ -42730,16 +42837,29 @@
             }
         });
 
+        my $button6 = $self->addButton(
+            $table,
+            'Refresh list',
+            'Refresh the list of exit model objects',
+            undef,
+            8, 12, 11, 12
+        );
+        $button6->signal_connect('clicked' => sub {
+
+            # Refresh the simple list
+            $self->boundaries1Tab_refreshList($slWidget, $columns, $superFlag);
+        });
+
         return 1;
     }
 
     sub boundaries1Tab_refreshList {
 
         # Called by $self->boundaries1Tab, >boundaries2Tab and ->boundaries1Tab_addButtons refresh
-        #   the GA::Obj::Simple::List
+        #   the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Optional arguments
@@ -42803,7 +42923,7 @@
         # Boundaries2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -42843,7 +42963,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);       # Fixed height
+            -1, 250);       # Fixed height
 
         # Initialise the simple list. The TRUE argument means the calling function is this function,
         #   not $self->boundaries1Tab
@@ -42853,7 +42973,7 @@
         $self->boundaries1Tab_addButtons($table, $slWidget, scalar (@columnList / 2), TRUE);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -42863,7 +42983,7 @@
         # Boundaries3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -42899,7 +43019,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Initialise the list
         $self->boundaries3Tab_refreshList($slWidget, scalar (@columnList / 2), 'regionPathHash');
@@ -42961,7 +43081,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -42969,10 +43089,10 @@
     sub boundaries3Tab_refreshList {
 
         # Called by both $self->boundaries3Tab and $self->boundaries4Tab to refresh their
-        #   GA::Obj::Simple::List
+        #   GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #   $iv         - The IV being accessed - 'regionPathHash' or 'safeRegionPathHash'
         #
@@ -43057,7 +43177,7 @@
         # Boundaries4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -43096,7 +43216,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Initialise the list
         $self->boundaries3Tab_refreshList(
@@ -43162,7 +43282,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -43385,7 +43505,7 @@
 #        $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -43481,10 +43601,8 @@
         }
 
         # Right column
-        $self->addLabel($table, 'Hoppable',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'hopFlag', TRUE,
-            11, 12, 1, 2);
+        $self->addCheckButton($table, 'Hoppable', 'hopFlag', TRUE,
+            7, 12, 1, 2);
 
         $entry->signal_connect('changed' => sub {
 
@@ -43524,7 +43642,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -43613,25 +43731,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -43667,7 +43784,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -43746,36 +43863,27 @@
             3, 6, 3, 4);
         $entry->set_text($self->editObj->winObj->number);
 
-        $self->addLabel($table, 'Visible',
-            1, 5, 4, 5);
-        my $checkButton = $self->addCheckButton($table, 'visibleFlag', FALSE,
-            5, 6, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Jealous',
-            1, 5, 5, 6);
-        my $checkButton2 = $self->addCheckButton($table, 'jealousyFlag', FALSE,
-            5, 6, 5, 6, 1, 0.5);
+        my $checkButton = $self->addCheckButton($table, 'Visible', 'visibleFlag', FALSE,
+            1, 6, 4, 5);
+        my $checkButton2 = $self->addCheckButton($table, 'Jealous', 'jealousyFlag', FALSE,
+            1, 6, 5, 6);
 
         # Right column
-        $self->addLabel($table, 'Expand (use share of empty space)',
-            7, 11, 1, 2);
-        my $checkButton3 = $self->addCheckButton($table, 'expandFlag', FALSE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Fill (empty space used, not as padding)',
-            7, 11, 2, 3);
-        my $checkButton4 = $self->addCheckButton($table, 'fillFlag', FALSE,
-            11, 12, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Spacing (use gap between adjacent strips)',
-            7, 11, 3, 4);
-        my $checkButton5 = $self->addCheckButton($table, 'spacingFlag', FALSE,
-            11, 12, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Strip available in blind mode',
-            7, 11, 4, 5);
-        my $checkButton6 = $self->addCheckButton($table, 'blindFlag', FALSE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Strip can receive focus',
-            7, 11, 5, 6);
-        my $checkButton7 = $self->addCheckButton($table, 'allowFocusFlag', FALSE,
-            11, 12, 5, 6, 1, 0.5);
+        my $checkButton3 = $self->addCheckButton(
+            $table, 'Expand (use share of empty space)', 'expandFlag', FALSE,
+            7, 12, 1, 2);
+        my $checkButton4 = $self->addCheckButton(
+            $table, 'Fill (empty space used, not as padding)', 'fillFlag', FALSE,
+            7, 12, 2, 3);
+        my $checkButton5 = $self->addCheckButton(
+            $table, 'Spacing (use gap between adjacent strips)', 'spacingFlag', FALSE,
+            7, 12, 3, 4);
+        my $checkButton6 = $self->addCheckButton(
+        $table, 'Strip available in blind mode', 'blindFlag', FALSE,
+            7, 12, 4, 5);
+        my $checkButton7 = $self->addCheckButton(
+        $table, 'Strip can receive focus', 'allowFocusFlag', FALSE,
+            7, 12, 5, 6);
 
         # Add a button
         my $button = $self->addButton($table, 'Update', 'Update the displayed settings', undef,
@@ -43792,7 +43900,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -43837,10 +43945,10 @@
 
         my $slWidget = $self->addSimpleList($table, 'initHash', \@columnList,
             1, 12, 2, 12,
-            -1, 330);     # Fixed height
+            -1, 350);     # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -43929,25 +44037,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -43983,7 +44090,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -44059,14 +44166,12 @@
             1, 3, 3, 4);
         $self->addEntry($table, 'name', FALSE,
             3, 6, 3, 4);
-        $self->addLabel($table, 'Can be removed from table',
-            1, 5, 4, 5);
-        my $checkButton = $self->addCheckButton($table, 'allowRemoveFlag', FALSE,
-            5, 6, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Can be resized on table',
-            1, 5, 5, 6);
-        my $checkButton2 = $self->addCheckButton($table, 'allowResizeFlag', FALSE,
-            5, 6, 5, 6, 1, 0.5);
+        my $checkButton = $self->addCheckButton(
+            $table, 'Can be removed from table', 'allowRemoveFlag', FALSE,
+            1, 6, 4, 5);
+        my $checkButton2 = $self->addCheckButton(
+            $table, 'Can be resized on table', 'allowResizeFlag', FALSE,
+            1, 6, 5, 6);
 
         # Right column
         $self->addLabel($table, 'Tablezone number',
@@ -44114,7 +44219,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -44159,10 +44264,10 @@
 
         my $slWidget = $self->addSimpleList($table, 'initHash', \@columnList,
             1, 12, 2, 12,
-            -1, 330);     # Fixed height
+            -1, 350);     # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -44373,7 +44478,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  - The Gtk2::Table
+        #   $table  - The Gtk3::Grid for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -44453,7 +44558,7 @@
         $buffer->set_text(join("\n", @list));
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -44496,7 +44601,7 @@
         # Settings1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -44653,7 +44758,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -44663,7 +44768,7 @@
         # Settings2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -44692,46 +44797,29 @@
         # Flags
         $self->addLabel($table, '<b>Flags</b>',
             0, 6, 0, 1);
-        $self->addLabel($table, 'Jealous (only 1 copy can run)',
-            1, 5, 1, 2);
-        $self->addCheckButton($table, 'jealousyFlag', FALSE,
-            5, 6, 1, 2);
-        $self->addLabel($table, 'Can be used as initial/custom task)',
-            1, 5, 2, 3);
-        $self->addCheckButton($table, 'storableFlag', FALSE,
-            5, 6, 2, 3);
-        $self->addLabel($table, 'Requires Locator task',
-            1, 5, 3, 4);
-        $self->addCheckButton($table, 'requireLocatorFlag', FALSE,
-            5, 6, 3, 4);
-        $self->addLabel($table, 'Resets when profiles change',
-            1, 5, 4, 5);
-        $self->addCheckButton($table, 'profSensitivityFlag', FALSE,
-            5, 6, 4, 5);
-        $self->addLabel($table, 'Active mode on',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'activeFlag', FALSE,
-            5, 6, 5, 6);
-        $self->addLabel($table, 'Due to shut down (gracefully)',
-            1, 5, 6, 7);
-        $self->addCheckButton($table, 'shutdownFlag', FALSE,
-            5, 6, 6, 7);
+        $self->addCheckButton($table, 'Jealous (only 1 copy can run)', 'jealousyFlag', FALSE,
+            1, 6, 1, 2);
+        $self->addCheckButton($table, 'Can be used as initial/custom task)', 'storableFlag', FALSE,
+            1, 6, 2, 3);
+        $self->addCheckButton($table, 'Requires Locator task', 'requireLocatorFlag', FALSE,
+            1, 6, 3, 4);
+        $self->addCheckButton($table, 'Resets when profiles change', 'profSensitivityFlag', FALSE,
+            1, 6, 4, 5);
+        $self->addCheckButton($table, 'Active mode on', 'activeFlag', FALSE,
+            1, 6, 5, 6);
+        $self->addCheckButton($table, 'Due to shut down (gracefully)', 'shutdownFlag', FALSE,
+            1, 6, 6, 7);
 
         # Window settings - startup
         $self->addLabel($table, '<b>Window settings - startup</b>',
             0, 6, 7, 8);
-        $self->addLabel($table, 'Task window is allowed',
-            1, 5, 8, 9);
-        $self->addCheckButton($table, 'allowWinFlag', FALSE,
-            5, 6, 8, 9);
-        $self->addLabel($table, 'Task window is required',
-            1, 5, 9, 10);
-        $self->addCheckButton($table, 'requireWinFlag', FALSE,
-            5, 6, 9, 10);
-        $self->addLabel($table, 'Window opens when task starts',
-            1, 5, 10, 11);
-        my $button = $self->addCheckButton($table, 'startWithWinFlag', FALSE,
-            5, 6, 10, 11);
+        $self->addCheckButton($table, 'Task window is allowed', 'allowWinFlag', FALSE,
+            1, 6, 8, 9);
+        $self->addCheckButton($table, 'Task window is required', 'requireWinFlag', FALSE,
+            1, 6, 9, 10);
+        my $button = $self->addCheckButton(
+            $table, 'Window opens when task starts', 'startWithWinFlag', FALSE,
+            1, 6, 10, 11);
         if ($self->editObj->allowWinFlag && ! $self->editObj->requireWinFlag) {
 
             $button->set_sensitive(TRUE);
@@ -44758,10 +44846,8 @@
             $entry2->set_text('(not open)');
         }
 
-        $self->addLabel($table, 'Task window uses an entry box',
-            8, 11, 3, 4);
-        $self->addCheckButton($table, 'taskWinEntryFlag', FALSE,
-            11, 12, 3, 4);
+        $self->addCheckButton($table, 'Task window uses an entry box', 'taskWinEntryFlag', FALSE,
+            8, 12, 3, 4);
         $self->addLabel($table, 'Winmap used by window',
             8, 10, 4, 5);
         $self->addEntry($table, 'winmap', FALSE,
@@ -44774,10 +44860,8 @@
             8, 10, 6, 7);
         $self->addEntry($table, 'tabMode', FALSE,
             10, 12, 6, 7);
-        $self->addLabel($table, 'Window does not scroll to bottom',
-            8, 10, 7, 8);
-        $self->addCheckButton($table, 'noScrollFlag', FALSE,
-            11, 12, 7, 8);
+        $self->addCheckButton($table, 'Window does not scroll to bottom', 'noScrollFlag', FALSE,
+            8, 12, 7, 8);
 
         # Window settings - colour
         $self->addLabel($table, '<b>Window settings - colour</b>',
@@ -44788,13 +44872,11 @@
         $self->addComboBox($table, 'colourScheme', \@comboList, '',
             FALSE,               # 'undef' value used
             10, 12, 9, 10);
-        $self->addLabel($table, 'Window is monochrome',
-            8, 11, 10, 11);
-        $self->addCheckButton($table, 'monochromeFlag', FALSE,
-            11, 12, 10, 11);
+        $self->addCheckButton($table, 'Window is monochrome', 'monochromeFlag', FALSE,
+            8, 12, 10, 11);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -44804,7 +44886,7 @@
         # Settings3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -44840,7 +44922,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 13, 2, 10,
-            -1, 270);      # Fixed size
+            -1, 290);      # Fixed size
 
         # Initialise the simple list
         $self->settings3Tab_refreshList($slWidget, scalar (@columnList / 2), 'ttsAttribHash');
@@ -44939,7 +45021,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -44947,10 +45029,10 @@
     sub settings3Tab_refreshList {
 
         # Called by $self->settings3Tab, ->settings4Tab and ->settings5 Tab to refresh the
-        #   GA::Obj::Simple::List
+        #   GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #   $iv         - 'ttsAttribHash', 'ttsFlagAttribHash' or 'ttsAlertAttribHash'
         #
@@ -44998,7 +45080,7 @@
         # Settings4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45035,7 +45117,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 13, 2, 10,
-            -1, 270);      # Fixed size
+            -1, 290);      # Fixed size
 
         # Initialise the simple list
         $self->settings3Tab_refreshList($slWidget, scalar (@columnList / 2), 'ttsFlagAttribHash');
@@ -45104,7 +45186,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45114,7 +45196,7 @@
         # Settings5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45150,7 +45232,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 13, 2, 10,
-            -1, 270);      # Fixed size
+            -1, 320);      # Fixed size
 
         # Initialise the simple list
         $self->settings3Tab_refreshList(
@@ -45253,7 +45335,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45351,7 +45433,7 @@
         # Parameters Default1 tab (used by tasks that have no actions)
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45375,7 +45457,7 @@
             1, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45385,7 +45467,7 @@
         # Parameters Attack1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45410,7 +45492,9 @@
             . ' interpolated)</i>',
             1, 12, 2, 4);
         $self->addTextView($table, 'fightCmdList', TRUE,
-            1, 12, 4, 6);
+            1, 12, 4, 6,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Locked door patterns
         $self->addLabel($table, '<b>Interaction success commands</b>',
@@ -45420,10 +45504,12 @@
             . ' interpolated)</i>',
             1, 12, 8, 10);
         $self->addTextView($table, 'interactCmdList', TRUE,
-            1, 12, 10, 12);
+            1, 12, 10, 12,
+            TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
+            -1, 140);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45433,7 +45519,7 @@
         # Parameters Attack2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45454,13 +45540,15 @@
         $self->addLabel($table, '<b>Announcements</b>',
             0, 12, 0, 1);
 
-        $self->addLabel($table, 'Announce kills/completed interactions in \'main\' window',
-            1, 11, 1, 2);
-        $self->addCheckButton($table, 'announceFlag', TRUE,
-            11, 12, 1, 2);
+        $self->addCheckButton(
+            $table,
+            'Announce kills/completed interactions in \'main\' window',
+            'announceFlag',
+            TRUE,
+            1, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45470,7 +45558,7 @@
         # Parameters Channels1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45525,24 +45613,25 @@
         $self->addLabel($table, '<b>Display options</b>',
             0, 12, 5, 6);
 
-        my $checkButton = $self->addCheckButton($table, 'tabCloseButtonFlag', TRUE,
+        my $checkButton = $self->addCheckButton(
+            $table, 'Tabs in the task window have a close button', 'tabCloseButtonFlag', TRUE,
             1, 12, 6, 7);
-        $checkButton->set_label('Tabs in the task window have a close button');
-        my $checkButton2 = $self->addCheckButton($table, 'capitaliseFlag', TRUE,
+        my $checkButton2 = $self->addCheckButton(
+            $table, 'Channels names should be capitalised', 'capitaliseFlag', TRUE,
             1, 12, 7, 8);
-        $checkButton2->set_label('Channels names should be capitalised');
-        my $checkButton3 = $self->addCheckButton($table, 'useColourStyleFlag', TRUE,
-            1, 12, 8, 9);
-        $checkButton3->set_label(
+        my $checkButton3 = $self->addCheckButton(
+            $table,
             'The line\'s original colour/style tags are preserved in the task window',
-        );
+            'useColourStyleFlag',
+            TRUE,
+            1, 12, 8, 9);
 
         $self->addLabel($table,
             '<i>NB Changes to the values on this page are applied when task is restarted/reset</i>',
             1, 12, 9, 10);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45552,7 +45641,7 @@
         # Parameters Channels2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45579,7 +45668,7 @@
         $self->addTextView($table, 'initChannelList', TRUE,
             1, 12, 4, 6,
             TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
-            -1, 130);                # Fixed height
+            -1, 140);                # Fixed height
 
         # Ignore channel list
         $self->addLabel($table, '<b>Ignore channel list</b>',
@@ -45591,10 +45680,10 @@
         $self->addTextView($table, 'ignoreChannelList', TRUE,
             1, 12, 10, 12,
             TRUE, TRUE, TRUE, FALSE, # Treat as list, remove empty lines, remove whitespace
-            -1, 130);                # Fixed height
+            -1, 140);                # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45604,7 +45693,7 @@
         # Parameters Channels3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45626,11 +45715,11 @@
 
         # Sound effects
         $self->addLabel($table, '<b>Sound effects</b>',
-            0, 12, 0, 2);
+            0, 12, 0, 1);
         $self->addLabel($table,
             '<i>List of sound effects that should be played when text is redirected into a'
             . ' channel</i>',
-            1, 12, 2, 4);
+            1, 12, 1, 2);
 
         # Add a simple list
         @columnList = (
@@ -45640,7 +45729,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);      # Fixed height
+            -1, 260);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'soundEffectHash');
@@ -45688,7 +45777,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45698,7 +45787,7 @@
         # Parameters Channels4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45720,11 +45809,11 @@
 
         # Urgency hints
         $self->addLabel($table, '<b>Urgency hints</b>',
-            0, 12, 0, 2);
+            0, 12, 0, 1);
         $self->addLabel($table,
             '<i>List of channels for which the task window\'s urgency hint should be set (to make'
             . ' the window flash)</i>',
-            1, 12, 2, 4);
+            1, 12, 1, 2);
 
         # Add a simple list
         @columnList = (
@@ -45734,7 +45823,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);      # Fixed height
+            -1, 260);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'urgencyHash');
@@ -45746,10 +45835,9 @@
             3, 6, 10, 11,
             16, 16);
 
-        $self->addLabel($table, 'Use urgency hint when text redirected',
-            6, 11, 10, 11);
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 10, 11);
+        my $checkButton = $self->addCheckButton(
+            $table, 'Use urgency hint when text redirected', undef, TRUE,
+            6, 12, 10, 11);
 
         # Add standard editing buttons to the simple list
         my $button = $self->addSimpleListButtons_hashIV(
@@ -45789,7 +45877,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45799,7 +45887,7 @@
         # Parameters Compass1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45826,11 +45914,9 @@
             '<i>List of customisable keypad commands</i>',
             1, 6, 1, 2);
 
-        $self->addLabel($table,
-            'Compass task is (or starts) enabled',
-            7, 11, 1, 2);
-        my $checkButton = $self->addCheckButton($table, 'enabledFlag', FALSE,
-            11, 12, 1, 2);
+        my $checkButton = $self->addCheckButton(
+            $table, 'Compass task is (or starts) enabled', 'enabledFlag', FALSE,
+            7, 12, 1, 2);
 
         # Add a simple list
         @columnList = (
@@ -45840,7 +45926,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 10,
-            -1, 220);      # Fixed height
+            -1, 290);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'keypadCmdHash');
@@ -45914,7 +46000,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -45924,7 +46010,7 @@
         # Parameters Condition1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -45968,10 +46054,9 @@
         $self->addLabel($table, '<b>Check parameters</b>',
             0, 12, 5, 6);
 
-        $self->addLabel($table, 'Condition check performed only once',
-            1, 11, 6, 7);
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 6, 7);
+        my $checkButton = $self->addCheckButton(
+            $table, 'Condition check performed only once', undef, TRUE,
+            1, 12, 6, 7);
 
         $self->addLabel($table, 'Seconds to wait before first check',
             1, 9, 7, 8);
@@ -46000,7 +46085,7 @@
         $checkButton->set_active($self->editObj->checkOnceFlag);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -46010,7 +46095,7 @@
         # Parameters Connections1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -46040,16 +46125,19 @@
         $self->addLabel($table, '<b>Task parameters</b>',
             0, 12, 0, 1);
 
-        $self->addLabel(
+        $self->addCheckButton(
             $table,
             'Show additional connection information (requires a larger task window)',
-            1, 11, 1, 2);
-        $self->addCheckButton($table, 'showInfoFlag', TRUE,
-            11, 12, 1, 2);
-        $self->addLabel($table,'This task create its own macros to switch between sessions',
-            1, 11, 2, 3);
-        $self->addCheckButton($table, 'useMacrosFlag', TRUE,
-            11, 12, 2, 3);
+            'showInfoFlag',
+            TRUE,
+            1, 12, 1, 2);
+        $self->addCheckButton(
+            $table,
+            'This task create its own macros to switch between sessions',
+            'useMacrosFlag',
+            TRUE,
+            1, 12, 2, 3);
+
         $self->addLabel($table,'If macros are created, which keycodes to use',
             1, 6, 3, 4);
 
@@ -46084,7 +46172,570 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
+
+        return 1;
+    }
+
+    sub parametersDivert1Tab {
+
+        # Parameters Divert1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my (@comboList, @comboList2);
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersDivert1Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+
+        # Import a list of standard colour tags, putting bold colours first
+        @comboList = ($axmud::CLIENT->constBoldColourTagList, $axmud::CLIENT->constColourTagList);
+        # Import a sorted list of sound effects
+        @comboList2 = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('customSoundHash'));
+
+        # Background colour parameters (1/2)
+        $self->addLabel($table, '<b>Background colour parameters (1/2)</b>',
+            0, 13, 0, 1);
+
+        $self->addLabel($table, 'Default colour',
+            1, 3, 1, 2);
+        $self->addComboBox($table, 'defaultColour', \@comboList, '',
+            FALSE,              # 'undef' value allowed
+            3, 5, 1, 2);
+        $self->addLabel($table, '<i>(Leave empty to use the normal background colour)</i>',
+            5, 12, 1, 2);
+
+        $self->addLabel($table, '<u>\'tell\'</u> channel colour',
+            1, 3, 2, 3);
+        $self->addComboBox($table, 'tellAlertColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 5, 2, 3);
+        $self->addLabel($table, 'Interval (seconds)',
+            5, 7, 2, 3);
+        $self->addEntryWithIcon($table, 'tellAlertInterval', 'int', 1, undef,
+            7, 9, 2, 3,
+            8, 8);      # Max width
+        $self->addLabel($table, 'Sound',
+            9, 11, 2, 3);
+        $self->addComboBox($table, 'tellAlertSound', \@comboList2, '',
+            FALSE,              # 'undef' value allowed
+            11, 13, 2, 3);
+
+        $self->addLabel($table, 'Char limit <i>(0 - whole line)</i>',
+            1, 3, 3, 4);
+        $self->addEntryWithIcon($table, 'tellCharLimit', 'int', 0, undef,
+            3, 5, 3, 4,
+            8, 8);              # Max width
+        $self->addCheckButton($table, 'Show room number', 'tellRoomFlag', TRUE,
+            5, 9, 3, 4);
+        $self->addCheckButton($table, 'Show urgency hint', 'tellUrgencyFlag', TRUE,
+            9, 13, 3, 4);
+
+        $self->addLabel($table, '<u>\'social\' channel colour</u>',
+            1, 3, 4, 5);
+        $self->addComboBox($table, 'socialAlertColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 5, 4, 5);
+        $self->addLabel($table, 'Interval (seconds)',
+            5, 7, 4, 5);
+        $self->addEntryWithIcon($table, 'socialAlertInterval', 'int', 1, undef,
+            7, 9, 4, 5,
+            8, 8);              # Max width
+        $self->addLabel($table, 'Sound',
+            9, 11, 4, 5);
+        $self->addComboBox($table, 'socialAlertSound', \@comboList2, '',
+            FALSE,              # 'undef' value allowed
+            11, 13, 4, 5);
+
+        $self->addLabel($table, 'Character limit',
+            1, 3, 5, 6);
+        $self->addEntryWithIcon($table, 'socialCharLimit', 'int', 0, undef,
+            3, 5, 5, 6,
+            8, 8);              # Max width
+        $self->addCheckButton($table, 'Show room number', 'socialRoomFlag', TRUE,
+            5, 9, 5, 6);
+        $self->addCheckButton($table, 'Show urgency hint', 'socialUrgencyFlag', TRUE,
+            9, 13, 5, 6);
+
+        $self->addLabel($table, '<u>\'custom\' channel colour</u>',
+            1, 3, 6, 7);
+        $self->addComboBox($table, 'customAlertColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 5, 6, 7);
+        $self->addLabel($table, 'Interval (seconds)',
+            5, 7, 6, 7);
+        $self->addEntryWithIcon($table, 'customAlertInterval', 'int', 1, undef,
+            7, 9, 6, 7,
+            8, 8);              # Max width
+        $self->addLabel($table, 'Sound',
+            9, 11, 6, 7);
+        $self->addComboBox($table, 'customAlertSound', \@comboList2, '',
+            FALSE,              # 'undef' value allowed
+            11, 13, 6, 7);
+
+        $self->addLabel($table, 'Character limit',
+            1, 3, 7, 8);
+        $self->addEntryWithIcon($table, 'customCharLimit', 'int', 0, undef,
+            3, 5, 7, 8,
+            8, 8);              # Max width
+        $self->addCheckButton($table, 'Show room number', 'customRoomFlag', TRUE,
+            5, 9, 7, 8);
+        $self->addCheckButton($table, 'Show urgency hint', 'customUrgencyFlag', TRUE,
+            9, 13, 7, 8);
+
+        $self->addLabel($table, '<u>\'warning\' channel colour</u>',
+            1, 3, 8, 9);
+        $self->addComboBox($table, 'warningAlertColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 5, 8, 9);
+        $self->addLabel($table, 'Interval (seconds)',
+            5, 7, 8, 9);
+        $self->addEntryWithIcon($table, 'warningAlertInterval', 'int', 1, undef,
+            7, 9, 8, 9,
+            8, 8);              # Max width
+        $self->addLabel($table, 'Sound',
+            9, 11, 8, 9);
+        $self->addComboBox($table, 'warningAlertSound', \@comboList2, '',
+            FALSE,              # 'undef' value allowed
+            11, 13, 8, 9);
+
+        $self->addLabel($table, 'Character limit',
+            1, 3, 9, 10);
+        $self->addEntryWithIcon($table, 'warningCharLimit', 'int', 0, undef,
+            3, 5, 9, 10,
+            8, 8);              # Max width
+        $self->addCheckButton($table, 'Show room number', 'warningRoomFlag', TRUE,
+            5, 9, 9, 10);
+        $self->addCheckButton($table, 'Show urgency hint', 'warningUrgencyFlag', TRUE,
+            9, 13, 9, 10);
+
+        # Tab complete
+        $vBox->pack_start($table, FALSE, FALSE, 0);
+
+        return 1;
+    }
+
+    sub parametersDivert2Tab {
+
+        # Parameters Divert2 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my (@comboList, @comboList2);
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersDivert2Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
+
+        # Import a list of standard colour tags, putting bold colours first
+        @comboList = ($axmud::CLIENT->constBoldColourTagList, $axmud::CLIENT->constColourTagList);
+        # Import a sorted list of sound effects
+        @comboList2 = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('customSoundHash'));
+
+        # Background colour parameters (2/2)
+        $self->addLabel($table, '<b>Background colour parameters (2/2)</b>',
+            0, 13, 0, 1);
+
+        $self->addLabel($table, '<u>All other channels</u>',
+            1, 3, 1, 2);
+        $self->addComboBox($table, 'otherAlertColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 5, 1, 2);
+        $self->addLabel($table, 'Interval (seconds)',
+            5, 7, 1, 2);
+        $self->addEntryWithIcon($table, 'otherAlertInterval', 'int', 1, undef,
+            7, 9, 1, 2,
+            8, 8);              # Max width
+        $self->addLabel($table, 'Sound',
+            9, 11, 1, 2);
+        $self->addComboBox($table, 'otherAlertSound', \@comboList2, '',
+            FALSE,              # 'undef' value allowed
+            11, 13, 1, 2);
+
+        $self->addLabel($table, 'Character limit',
+            1, 3, 2, 3);
+        $self->addEntryWithIcon($table, 'otherCharLimit', 'int', 0, undef,
+            3, 5, 2, 3,
+            8, 8);              # Max width
+        $self->addCheckButton($table, 'Show room number', 'otherRoomFlag', TRUE,
+            5, 9, 2, 3);
+        $self->addCheckButton($table, 'Show urgency hint', 'otherUrgencyFlag', TRUE,
+            9, 13, 2, 3);
+
+        # Tab complete
+        $vBox->pack_start($table, FALSE, FALSE, 0);
+
+        return 1;
+    }
+
+    sub parametersInventory1Tab {
+
+        # Parameters Inventory1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->parametersInventory1Tab',
+                @_,
+            );
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+
+        # Object sensitivity
+        $self->addLabel($table, '<b>Object sensitivity</b>',
+            0, 12, 0, 1);
+
+        $self->addLabel(
+            $table, 'How closely model objects much match, when compared (0-100)',
+            1, 9, 1, 2);
+        $self->addEntryWithIcon($table, 'sensitivity', 'int', 0, 100,
+            9, 12, 1, 2);
+
+        $self->addLabel(
+            $table, '<i>0 - any objects match, 100 - only identical objects match,</i>',
+            2, 12, 2, 3);
+        $self->addLabel(
+            $table, '<i>70 - objects must be fairly similar to match</i>',
+            2, 12, 3, 4);
+        $self->addLabel(
+            $table, '<i>90 - objects must be very similar to match</i>',
+            2, 12, 4, 5);
+
+        # Tab complete
+        $vBox->pack_start($table, FALSE, FALSE, 0);
+
+        return 1;
+    }
+
+    sub parametersLocator1Tab {
+
+        # Parameters Locator1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersLocator1Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+
+        # Task window
+        $self->addLabel($table, '<b>Task window</b>',
+            0, 12, 0, 1);
+
+        $self->addLabel(
+            $table, 'Description max characters (leave empty to display whole description)',
+            1, 9, 1, 2);
+        $self->addEntryWithIcon($table, 'winDescripLimit', 'int', 0, undef,
+            9, 12, 1, 2,
+            8, 8);
+
+        $self->addCheckButton(
+            $table, 'Show multiple corpses on single line', 'combineCorpseFlag', TRUE,
+            1, 12, 2, 3);
+        $self->addCheckButton(
+            $table, 'Show multiple body parts on single line', 'combineBodyPartFlag', TRUE,
+            1, 12, 3, 4);
+        $self->addCheckButton(
+            $table, 'When listing objects, show nouns first', 'showParsedFlag', TRUE,
+            1, 12, 4, 5);
+
+        $self->addLabel($table, '<b>Manual resets</b>',
+            0, 12, 5, 6);
+
+        my ($group, $radioButton) = $self->addRadioButton(
+            $table, undef, '\'do_nothing\'', 'autoLookMode',
+            'do_nothing',   # IV set to this value when toggled
+            TRUE,           # Sensitive widget
+            1, 3, 6, 7);
+        $self->addLabel(
+            $table,
+            'Look for room statements only in lines received after the manual reset',
+            3, 12, 6, 7);
+
+        ($group, $radioButton) = $self->addRadioButton(
+            $table, $group, '\'search_back\'', 'autoLookMode', 'search_back', TRUE,
+            1, 3, 7, 8);
+        $self->addLabel(
+            $table,
+            'After a manual reset, look for most recently-received room statement',
+            3, 12, 7, 8);
+
+        ($group, $radioButton) = $self->addRadioButton(
+            $table, $group, '\'send_look\'', 'autoLookMode', 'send_look', TRUE,
+            1, 3, 8, 9);
+        $self->addLabel(
+            $table,
+            'After a manual reset, send a \'look\' command and use the response',
+            3, 12, 8, 9);
+
+        # Tab complete
+        $vBox->pack_start($table, FALSE, FALSE, 0);
+
+        return 1;
+    }
+
+    sub parametersRawToken1Tab {
+
+        # Parameters RawToken1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersRawToken1Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+
+        # Task window
+        $self->addLabel($table, '<b>Task window</b>',
+            0, 12, 0, 1);
+
+        # Left column
+        $self->addCheckButton($table, 'Split lines, with one line per token', 'splitLineFlag', TRUE,
+            1, 6, 1, 2);
+        $self->addCheckButton($table, 'Show token types', 'showTypeFlag', TRUE,
+            1, 6, 2, 3);
+
+        # Right column
+        $self->addCheckButton($table, 'Show packet numbers', 'countPacketFlag', TRUE,
+            7, 12, 1, 2);
+
+        # Tab complete
+        $vBox->pack_start($table, FALSE, FALSE, 0);
+
+        return 1;
+    }
+
+    sub parametersStatus1Tab {
+
+        # Parameters Status1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @comboList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersStatus1Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+
+        # (Import a list of standard colour tags, putting bold colours first)
+        @comboList = ($axmud::CLIENT->constColourTagList, $axmud::CLIENT->constBoldColourTagList);
+
+        # Background colour parameters
+        $self->addLabel($table, '<b>Background colour parameters</b>',
+            0, 12, 0, 1);
+
+        $self->addCheckButton($table, 'Allow background colour changes', 'allowColourFlag', TRUE,
+            1, 6, 1, 2);
+        $self->addLabel($table, 'Character alive',
+            1, 3, 2, 3);
+        $self->addComboBox($table, 'aliveColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 6, 2, 3);
+        $self->addLabel($table, 'Alive, health below 50%',
+            1, 3, 3, 4);
+        $self->addComboBox($table, 'alive50Colour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 6, 3, 4);
+        $self->addLabel($table, 'Alive, health below 30%',
+            1, 3, 4, 5);
+        $self->addComboBox($table, 'alive30Colour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 6, 4, 5);
+        $self->addLabel($table, 'Alive, health below 10%',
+            1, 3, 5, 6);
+        $self->addComboBox($table, 'alive10Colour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            3, 6, 5, 6);
+
+        # (right column)
+        $self->addLabel($table, 'Character asleep',
+            7, 9, 2, 3);
+        $self->addComboBox($table, 'asleepColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            9, 12, 2, 3);
+        $self->addLabel($table, 'Character passed out',
+            7, 9, 3, 4);
+        $self->addComboBox($table, 'passedOutColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            9, 12, 3, 4);
+        $self->addLabel($table, 'Character dead',
+            7, 9, 4, 5);
+        $self->addComboBox($table, 'deadColour', \@comboList, '',
+            TRUE,               # No 'undef' value used
+            9, 12, 4, 5);
+
+        # Data display
+        $self->addLabel($table, '<b>Data display</b>',
+            0, 12, 6, 7);
+        $self->addCheckButton(
+            $table, 'Show information in \'main\' window gauges', 'gaugeFlag', TRUE,
+            1, 6, 7, 8);
+        $self->addCheckButton($table, 'Also show explicit gauge labels', 'gaugeValueFlag', TRUE,
+            1, 6, 8, 9);
+
+        # Tab complete
+        $vBox->pack_start($table, FALSE, FALSE, 0);
+
+        return 1;
+    }
+
+    sub parametersStatus2Tab {
+
+        # Parameters Status2 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersStatus2Tab', @_);
+        }
+
+        # Tab setup
+        my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
+
+        # Status task commands
+        $self->addLabel($table, '<b>Status task commands</b>',
+            0, 12, 0, 1);
+        $self->addLabel($table, '<i>List of world commands sent by the task periodically</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Command', 'text',
+            'Interval (secs)', 'int',
+        );
+
+        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
+            1, 12, 2, 8,
+            -1, 260);
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'cmdHash');
+
+        # Add entries/comboboxes for adding new commands
+        $self->addLabel($table, 'Command',
+            1, 2, 8, 9);
+        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+            2, 8, 8, 9);
+
+        $self->addLabel($table, 'Interval',
+            8, 9, 8, 9);
+        my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
+            9, 12, 8, 9, 4, 4);
+
+        # Add standard editing buttons to the simple list
+        my $button = $self->addSimpleListButtons_hashIV(
+            $table,
+            $slWidget,
+            'cmdHash',
+            9,
+            $entry, $entry2,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            my ($cmd, $value);
+
+            if ($self->checkEntryIcon($entry, $entry2)) {
+
+                $cmd = $entry->get_text();
+                $value = $entry2->get_text();
+
+                # Add a new key-value pair
+                $self->modifyEditHash_hashIV('cmdHash', $cmd, $value);
+
+                # Refresh the simple list and reset entry boxes
+                $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'cmdHash');
+                $self->resetEntryBoxes($entry, $entry2);
+            }
+        });
+
+        # Tab complete
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -46094,7 +46745,7 @@
         # Parameters System1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -46235,7 +46886,7 @@
             9, 12, 12, 13);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -46245,7 +46896,7 @@
         # Parameters System2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -46266,627 +46917,11 @@
         $self->addLabel($table, '<b>System message colours</b>',
             0, 12, 0, 1);
 
-        $self->addCheckButton($table, 'colourFlag', TRUE,
-            0, 1, 1, 2,
-            0, 0.5);
-        $self->addLabel($table, 'Preserve colour in task window',
+        $self->addCheckButton($table, 'Preserve colour in task window', 'colourFlag', TRUE,
             1, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub parametersDivert1Tab {
-
-        # Parameters Divert1 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my (@comboList, @comboList2);
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersDivert1Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
-
-        # Import a list of standard colour tags, putting bold colours first
-        @comboList = ($axmud::CLIENT->constBoldColourTagList, $axmud::CLIENT->constColourTagList);
-        # Import a sorted list of sound effects
-        @comboList2 = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('customSoundHash'));
-
-        # Background colour parameters (1/2)
-        $self->addLabel($table, '<b>Background colour parameters (1/2)</b>',
-            0, 13, 0, 1);
-
-        $self->addLabel($table, 'Default colour',
-            1, 3, 1, 2);
-        $self->addComboBox($table, 'defaultColour', \@comboList, '',
-            FALSE,              # 'undef' value allowed
-            3, 5, 1, 2);
-        $self->addLabel($table, '<i>(Leave empty to use the normal background colour)</i>',
-            5, 12, 1, 2);
-
-        $self->addLabel($table, '<u>\'tell\'</u> channel colour',
-            1, 3, 2, 3);
-        $self->addComboBox($table, 'tellAlertColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 5, 2, 3);
-        $self->addLabel($table, 'Interval (seconds)',
-            5, 7, 2, 3);
-        $self->addEntryWithIcon($table, 'tellAlertInterval', 'int', 1, undef,
-            7, 9, 2, 3,
-            8, 8);      # Max width
-        $self->addLabel($table, 'Sound',
-            9, 11, 2, 3);
-        $self->addComboBox($table, 'tellAlertSound', \@comboList2, '',
-            FALSE,              # 'undef' value allowed
-            11, 13, 2, 3);
-
-        $self->addLabel($table, 'Char limit <i>(0 - whole line)</i>',
-            1, 3, 3, 4);
-        $self->addEntryWithIcon($table, 'tellCharLimit', 'int', 0, undef,
-            3, 5, 3, 4,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Show room number',
-            5, 8, 3, 4);
-        $self->addCheckButton($table, 'tellRoomFlag', TRUE,
-            8, 9, 3, 4,
-            1, 0.5);
-        $self->addLabel($table, 'Show urgency hint',
-            9, 12, 3, 4);
-        $self->addCheckButton($table, 'tellUrgencyFlag', TRUE,
-            12, 13, 3, 4,
-            1, 0.5);
-
-        $self->addLabel($table, '<u>\'social\' channel colour</u>',
-            1, 3, 4, 5);
-        $self->addComboBox($table, 'socialAlertColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 5, 4, 5);
-        $self->addLabel($table, 'Interval (seconds)',
-            5, 7, 4, 5);
-        $self->addEntryWithIcon($table, 'socialAlertInterval', 'int', 1, undef,
-            7, 9, 4, 5,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Sound',
-            9, 11, 4, 5);
-        $self->addComboBox($table, 'socialAlertSound', \@comboList2, '',
-            FALSE,              # 'undef' value allowed
-            11, 13, 4, 5);
-
-        $self->addLabel($table, 'Character limit',
-            1, 3, 5, 6);
-        $self->addEntryWithIcon($table, 'socialCharLimit', 'int', 0, undef,
-            3, 5, 5, 6,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Show room number',
-            5, 8, 5, 6);
-        $self->addCheckButton($table, 'socialRoomFlag', TRUE,
-            8, 9, 5, 6,
-            1, 0.5);
-        $self->addLabel($table, 'Show urgency hint',
-            9, 12, 5, 6);
-        $self->addCheckButton($table, 'socialUrgencyFlag', TRUE,
-            12, 13, 5, 6,
-            1, 0.5);
-
-        $self->addLabel($table, '<u>\'custom\' channel colour</u>',
-            1, 3, 6, 7);
-        $self->addComboBox($table, 'customAlertColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 5, 6, 7);
-        $self->addLabel($table, 'Interval (seconds)',
-            5, 7, 6, 7);
-        $self->addEntryWithIcon($table, 'customAlertInterval', 'int', 1, undef,
-            7, 9, 6, 7,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Sound',
-            9, 11, 6, 7);
-        $self->addComboBox($table, 'customAlertSound', \@comboList2, '',
-            FALSE,              # 'undef' value allowed
-            11, 13, 6, 7);
-
-        $self->addLabel($table, 'Character limit',
-            1, 3, 7, 8);
-        $self->addEntryWithIcon($table, 'customCharLimit', 'int', 0, undef,
-            3, 5, 7, 8,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Show room number',
-            5, 8, 7, 8);
-        $self->addCheckButton($table, 'customRoomFlag', TRUE,
-            8, 9, 7, 8,
-            1, 0.5);
-        $self->addLabel($table, 'Show urgency hint',
-            9, 12, 7, 8);
-        $self->addCheckButton($table, 'customUrgencyFlag', TRUE,
-            12, 13, 7, 8,
-            1, 0.5);
-
-        $self->addLabel($table, '<u>\'warning\' channel colour</u>',
-            1, 3, 8, 9);
-        $self->addComboBox($table, 'warningAlertColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 5, 8, 9);
-        $self->addLabel($table, 'Interval (seconds)',
-            5, 7, 8, 9);
-        $self->addEntryWithIcon($table, 'warningAlertInterval', 'int', 1, undef,
-            7, 9, 8, 9,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Sound',
-            9, 11, 8, 9);
-        $self->addComboBox($table, 'warningAlertSound', \@comboList2, '',
-            FALSE,              # 'undef' value allowed
-            11, 13, 8, 9);
-
-        $self->addLabel($table, 'Character limit',
-            1, 3, 9, 10);
-        $self->addEntryWithIcon($table, 'warningCharLimit', 'int', 0, undef,
-            3, 5, 9, 10,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Show room number',
-            5, 8, 9, 10);
-        $self->addCheckButton($table, 'warningRoomFlag', TRUE,
-            8, 9, 9, 10,
-            1, 0.5);
-        $self->addLabel($table, 'Show urgency hint',
-            9, 12, 9, 10);
-        $self->addCheckButton($table, 'warningUrgencyFlag', TRUE,
-            12, 13, 9, 10,
-            1, 0.5);
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub parametersDivert2Tab {
-
-        # Parameters Divert2 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my (@comboList, @comboList2);
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersDivert2Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
-
-        # Import a list of standard colour tags, putting bold colours first
-        @comboList = ($axmud::CLIENT->constBoldColourTagList, $axmud::CLIENT->constColourTagList);
-        # Import a sorted list of sound effects
-        @comboList2 = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('customSoundHash'));
-
-        # Background colour parameters (2/2)
-        $self->addLabel($table, '<b>Background colour parameters (2/2)</b>',
-            0, 13, 0, 1);
-
-        $self->addLabel($table, '<u>All other channels</u>',
-            1, 3, 1, 2);
-        $self->addComboBox($table, 'otherAlertColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 5, 1, 2);
-        $self->addLabel($table, 'Interval (seconds)',
-            5, 7, 1, 2);
-        $self->addEntryWithIcon($table, 'otherAlertInterval', 'int', 1, undef,
-            7, 9, 1, 2,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Sound',
-            9, 11, 1, 2);
-        $self->addComboBox($table, 'otherAlertSound', \@comboList2, '',
-            FALSE,              # 'undef' value allowed
-            11, 13, 1, 2);
-
-        $self->addLabel($table, 'Character limit',
-            1, 3, 2, 3);
-        $self->addEntryWithIcon($table, 'otherCharLimit', 'int', 0, undef,
-            3, 5, 2, 3,
-            8, 8);              # Max width
-        $self->addLabel($table, 'Show room number',
-            5, 8, 2, 3);
-        $self->addCheckButton($table, 'otherRoomFlag', TRUE,
-            8, 9, 2, 3,
-            1, 0.5);
-        $self->addLabel($table, 'Show urgency hint',
-            9, 12, 2, 3);
-        $self->addCheckButton($table, 'otherUrgencyFlag', TRUE,
-            12, 13, 2, 3,
-            1, 0.5);
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub parametersInventory1Tab {
-
-        # Parameters Inventory1 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->parametersInventory1Tab',
-                @_,
-            );
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
-
-        # Object sensitivity
-        $self->addLabel($table, '<b>Object sensitivity</b>',
-            0, 12, 0, 1);
-
-        $self->addLabel(
-            $table, 'How closely model objects much match, when compared (0-100)',
-            1, 9, 1, 2);
-        $self->addEntryWithIcon($table, 'sensitivity', 'int', 0, 100,
-            9, 12, 1, 2);
-
-        $self->addLabel(
-            $table, '<i>0 - any objects match, 100 - only identical objects match,</i>',
-            2, 12, 2, 3);
-        $self->addLabel(
-            $table, '<i>70 - objects must be fairly similar to match</i>',
-            2, 12, 3, 4);
-        $self->addLabel(
-            $table, '<i>90 - objects must be very similar to match</i>',
-            2, 12, 4, 5);
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub parametersLocator1Tab {
-
-        # Parameters Locator1 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersLocator1Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
-
-        # Task window
-        $self->addLabel($table, '<b>Task window</b>',
-            0, 12, 0, 1);
-
-        $self->addLabel(
-            $table, 'Description max characters',
-            1, 9, 1, 2);
-        $self->addEntryWithIcon($table, 'winDescripLimit', 'int', 0, undef,
-            9, 12, 1, 2,
-            8, 8);
-
-        $self->addLabel(
-            $table, '<i>(leave empty to display the whole description)</i>',
-            9, 12, 2, 3);
-        $self->addLabel($table, 'Show multiple corpses on single line',
-            1, 11, 2, 3);
-        $self->addCheckButton($table, 'combineCorpseFlag', TRUE,
-            11, 12, 3, 4);
-        $self->addLabel($table, 'Show multiple body parts on single line',
-            1, 11, 4, 5);
-        $self->addCheckButton($table, 'combineBodyPartFlag', TRUE,
-            11, 12, 4, 5);
-        $self->addLabel($table, 'When listing objects, show nouns first',
-            1, 11, 5, 6);
-        $self->addCheckButton($table, 'showParsedFlag', TRUE,
-            11, 12, 5, 6);
-
-        $self->addLabel($table, '<b>Manual resets</b>',
-            0, 12, 6, 7);
-
-        my ($group, $radioButton) = $self->addRadioButton(
-            $table, undef, '\'do_nothing\'', 'autoLookMode',
-            'do_nothing',   # IV set to this value when toggled
-            TRUE,           # Sensitive widget
-            1, 3, 7, 8);
-        $self->addLabel(
-            $table,
-            'Look for room statements only in lines received after the manual reset',
-            3, 12, 7, 8);
-
-        ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'search_back\'', 'autoLookMode', 'search_back', TRUE,
-            1, 3, 8, 9);
-        $self->addLabel(
-            $table,
-            'After a manual reset, look for most recently-received room statement',
-            3, 12, 8, 9);
-
-        ($group, $radioButton) = $self->addRadioButton(
-            $table, $group, '\'send_look\'', 'autoLookMode', 'send_look', TRUE,
-            1, 3, 9, 10);
-        $self->addLabel(
-            $table,
-            'After a manual reset, send a \'look\' command and use the response',
-            3, 12, 9, 10);
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub parametersRawToken1Tab {
-
-        # Parameters RawToken1 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersRawToken1Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
-
-        # Task window
-        $self->addLabel($table, '<b>Task window</b>',
-            0, 12, 0, 1);
-
-        # Left column
-        $self->addLabel(
-            $table, 'Split lines, with one line per token',
-            1, 5, 1, 2);
-        $self->addCheckButton($table, 'splitLineFlag', TRUE,
-            5, 6, 1, 2);
-        $self->addLabel(
-            $table, 'Show token types',
-            1, 5, 2, 3);
-        $self->addCheckButton($table, 'showTypeFlag', TRUE,
-            5, 6, 2, 3);
-
-        # Right column
-        $self->addLabel(
-            $table, 'Show packet numbers',
-            6, 11, 1, 2);
-        $self->addCheckButton($table, 'countPacketFlag', TRUE,
-            11, 12, 1, 2);
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub parametersStatus1Tab {
-
-        # Parameters Status1 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @comboList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersStatus1Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
-
-        # (Import a list of standard colour tags, putting bold colours first)
-        @comboList = ($axmud::CLIENT->constColourTagList, $axmud::CLIENT->constBoldColourTagList);
-
-        # Background colour parameters
-        $self->addLabel($table, '<b>Background colour parameters</b>',
-            0, 12, 0, 1);
-
-        $self->addLabel($table, 'Allow background colour changes',
-            1, 5, 1, 2);
-        $self->addCheckButton($table, 'allowColourFlag', TRUE,
-            5, 6, 1, 2);
-        $self->addLabel($table, 'Character alive',
-            1, 3, 2, 3);
-        $self->addComboBox($table, 'aliveColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 6, 2, 3);
-        $self->addLabel($table, 'Alive, health below 50%',
-            1, 3, 3, 4);
-        $self->addComboBox($table, 'alive50Colour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 6, 3, 4);
-        $self->addLabel($table, 'Alive, health below 30%',
-            1, 3, 4, 5);
-        $self->addComboBox($table, 'alive30Colour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 6, 4, 5);
-        $self->addLabel($table, 'Alive, health below 10%',
-            1, 3, 5, 6);
-        $self->addComboBox($table, 'alive10Colour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            3, 6, 5, 6);
-
-        # (right column)
-        $self->addLabel($table, 'Character asleep',
-            7, 9, 2, 3);
-        $self->addComboBox($table, 'asleepColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            9, 12, 2, 3);
-        $self->addLabel($table, 'Character passed out',
-            7, 9, 3, 4);
-        $self->addComboBox($table, 'passedOutColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            9, 12, 3, 4);
-        $self->addLabel($table, 'Character dead',
-            7, 9, 4, 5);
-        $self->addComboBox($table, 'deadColour', \@comboList, '',
-            TRUE,               # No 'undef' value used
-            9, 12, 4, 5);
-
-        # Data display
-        $self->addLabel($table, '<b>Data display</b>',
-            0, 12, 6, 7);
-        $self->addLabel($table, 'Show information in \'main\' window gauges',
-            1, 5, 7, 8);
-        $self->addCheckButton($table, 'gaugeFlag', TRUE,
-            5, 6, 7, 8);
-        $self->addLabel($table, 'Also show explicit gauge labels',
-            1, 5, 8, 9);
-        $self->addCheckButton($table, 'gaugeValueFlag', TRUE,
-            5, 6, 8, 9);
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
-
-        return 1;
-    }
-
-    sub parametersStatus2Tab {
-
-        # Parameters Status2 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parametersStatus2Tab', @_);
-        }
-
-        # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
-
-        # Status task commands
-        $self->addLabel($table, '<b>Status task commands</b>',
-            0, 12, 0, 1);
-        $self->addLabel($table, '<i>List of world commands sent by the task periodically</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Command', 'text',
-            'Interval (secs)', 'int',
-        );
-
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 8,
-            -1, 230);
-
-        # Initialise the list
-        $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'cmdHash');
-
-        # Add entries/comboboxes for adding new commands
-        $self->addLabel($table, 'Command',
-            1, 2, 8, 9);
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
-            2, 8, 8, 9);
-
-        $self->addLabel($table, 'Interval',
-            8, 9, 8, 9);
-        my $entry2 = $self->addEntryWithIcon($table, undef, 'int', 1, undef,
-            9, 12, 8, 9, 4, 4);
-
-        # Add standard editing buttons to the simple list
-        my $button = $self->addSimpleListButtons_hashIV(
-            $table,
-            $slWidget,
-            'cmdHash',
-            9,
-            $entry, $entry2,
-        );
-        $button->signal_connect('clicked' => sub {
-
-            my ($cmd, $value);
-
-            if ($self->checkEntryIcon($entry, $entry2)) {
-
-                $cmd = $entry->get_text();
-                $value = $entry2->get_text();
-
-                # Add a new key-value pair
-                $self->modifyEditHash_hashIV('cmdHash', $cmd, $value);
-
-                # Refresh the simple list and reset entry boxes
-                $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'cmdHash');
-                $self->resetEntryBoxes($entry, $entry2);
-            }
-        });
-
-        # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -46896,7 +46931,7 @@
         # Parameters Watch1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -46962,7 +46997,7 @@
             9, 12, 5, 6);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -47039,7 +47074,7 @@
         # Actions Default1 tab (used by tasks that have no actions)
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -47063,7 +47098,7 @@
             1, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -47073,7 +47108,7 @@
         # Actions Channels1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -47123,7 +47158,7 @@
             6, 12, 2, 3);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -47133,7 +47168,7 @@
         # Actions Compass1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -47282,7 +47317,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -47292,7 +47327,7 @@
         # Actions Divert1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -47342,7 +47377,7 @@
             6, 12, 2, 3);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -47352,7 +47387,7 @@
         # Actions Inventory1 tab (also used with Condition task)
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -47451,7 +47486,7 @@
             2, 12, 9, 10);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -47461,7 +47496,7 @@
         # Actions Inventory2 tab (also used with Condition task)
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -47505,7 +47540,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 9,
-            -1, 200);       # Fixed height
+            -1, 220);       # Fixed height
 
         # Create a hash to link lines in the simple list to objects in the inventory, in the form:
         #   $objHash{line_number} = blessed_reference_to_model_object
@@ -47656,7 +47691,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -47726,10 +47761,10 @@
 
     sub actionsInventory2Tab_refreshList {
 
-        # Called by $self->actionsInventory2Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->actionsInventory2Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -47798,7 +47833,7 @@
         # Actions Locator1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -47896,7 +47931,7 @@
             6, 12, 7, 8);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -47906,7 +47941,7 @@
         # Actions Locator2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -47999,7 +48034,7 @@
             6, 12, 8, 9);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -48009,7 +48044,7 @@
         # Actions Status1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -48158,7 +48193,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -48168,7 +48203,7 @@
         # Actions Watch1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -48201,7 +48236,7 @@
             6, 12, 1, 2);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -48298,7 +48333,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -48318,7 +48353,7 @@
 #       # Tab setup (already created by the calling function)
 #       my ($vBox, $table) = $self->addTab('_Name', $self->notebook);
 
-        # Left column
+        # Toolbar button properties
         $self->addLabel($table, '<b>Toolbar button properties</b>',
             0, 12, 0, 1);
 
@@ -48385,20 +48420,13 @@
             }
         });
 
-        $self->addLabel($table, 'Require a current session',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'requireSessionFlag', FALSE,
-            5, 6, 5, 6, 1, 0.5);
-
-        # Right column
-        $self->addLabel($table, 'Custom toolbar button',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'customFlag', FALSE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Require connection to a world',
-            7, 11, 5, 6);
-        my $checkButton = $self->addCheckButton($table, 'requireConnectFlag', TRUE,
-            11, 12, 5, 6, 1, 0.5);
+        $self->addCheckButton($table, 'Custom toolbar button', 'customFlag', FALSE,
+            1, 4, 5, 6);
+        $self->addCheckButton($table, 'Require a current session', 'requireSessionFlag', FALSE,
+            4, 8, 5, 6);
+        my $checkButton = $self->addCheckButton(
+            $table, 'Require connection to a world', 'requireConnectFlag', TRUE,
+            8, 12, 5, 6);
         # (Checkbutton desensitised if this isn't a custom toolbar button)
         if (! $self->editObj->customFlag) {
 
@@ -48406,7 +48434,7 @@
         }
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -48526,7 +48554,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -48554,14 +48582,10 @@
             1, 6, 1, 2);
         my $entry = $self->addEntry($table, 'name', FALSE,
             6, 12, 1, 2);
-        $self->addLabel($table, 'Modifiable',
-            6, 8, 2, 3);
-        my $checkButton = $self->addCheckButton($table, undef, FALSE,
-            8, 9, 2, 3);
-        $self->addLabel($table, 'Deletable',
-            9, 11, 2, 3);
-        my $checkButton2 = $self->addCheckButton($table, undef, FALSE,
-            11, 12, 2, 3);
+        my $checkButton = $self->addCheckButton($table, 'Modifiable', undef, FALSE,
+            6, 9, 2, 3);
+        my $checkButton2 = $self->addCheckButton($table, 'Deletable', undef, FALSE,
+            9, 12, 2, 3);
         if ($axmud::CLIENT->ivExists('constTtsFixedObjHash', $self->editObj->name)) {
 
             $checkButton->set_active(FALSE);    # Not modifiable
@@ -48817,7 +48841,7 @@
         }
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -48829,11 +48853,11 @@
         # Expected arguments
         #   $engine                     - The TTS engine displayed
         #   $label2, $label3, $label4, $label5, $label6
-        #                               - Five Gtk2::Labels to set/reset
+        #                               - Five Gtk3::Labels to set/reset
         #   $entry2, $entry3, $entry4, $entry5, $entry6
-        #                               - Five Gtk2::Entry boxes to set/reset
+        #                               - Five Gtk3::Entry boxes to set/reset
         #   $button2, $button3, $button4, $button5, $button6
-        #                               - Five Gtk2::Buttons to set/reset
+        #                               - Five Gtk3::Buttons to set/reset
         #
         # Return values
         #   'undef' on improper arguments
@@ -49055,7 +49079,7 @@
         $self->addTextView($table, 'exclusiveList', $flag,
             1, 12, 2, 6,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 150);                  # Fixed height
+            -1, 160);                  # Fixed height
 
         $self->addLabel(
             $table,
@@ -49065,10 +49089,10 @@
         $self->addTextView($table, 'excludedList', $flag,
             1, 12, 7, 12,
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
-            -1, 150);                  # Fixed height
+            -1, 160);                  # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -49157,25 +49181,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -49211,7 +49234,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -49338,44 +49361,31 @@
         $entry4->set_text($self->editObj->ivPairs('childFreeWinHash'));
 
         # Right column
-        $self->addLabel($table, 'Window enabled (actually created)',
-            7, 11, 1, 2);
-        $self->addCheckButton($table, 'enabledFlag', FALSE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Window visible on workspace',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'visibleFlag', FALSE,
-            11, 12, 2, 3, 1, 0.5);
+        # Add an empty label to separate the two columns
+        $self->addLabel($table, '',
+            6, 7, 1, 2);
 
-        $self->addLabel($table, 'Gtk2 window set',
-            7, 11, 3, 4);
-        my $checkButton = $self->addCheckButton($table, undef, FALSE,
-            11, 12, 3, 4, 1, 0.5);
+        $self->addCheckButton($table, 'Window enabled (actually created)', 'enabledFlag', FALSE,
+            7, 12, 1, 2);
+        $self->addCheckButton($table, 'Window visible on workspace', 'visibleFlag', FALSE,
+            7, 12, 2, 3);
+
+        my $checkButton = $self->addCheckButton($table, 'Gtk3 window set', undef, FALSE,
+            7, 12, 3, 4);
         if ($self->editObj->winWidget) {
 
             $checkButton->set_active(TRUE);
         }
 
-        $self->addLabel($table, 'Wnck window set',
-            7, 11, 4, 5);
-        my $checkButton2 = $self->addCheckButton($table, undef, FALSE,
-            11, 12, 4, 5, 1, 0.5);
-        if ($self->editObj->wnckWin) {
+        my $checkButton2 = $self->addCheckButton($table, 'Packing box set', undef, FALSE,
+            7, 12, 4, 5);
+        if ($self->editObj->packingBox) {
 
             $checkButton2->set_active(TRUE);
         }
 
-        $self->addLabel($table, 'Packing box set',
-            7, 11, 5, 6);
-        my $checkButton3 = $self->addCheckButton($table, undef, FALSE,
-            11, 12, 5, 6, 1, 0.5);
-        if ($self->editObj->packingBox) {
-
-            $checkButton3->set_active(TRUE);
-        }
-
        # Tab complete
-       $vBox->pack_start($table, 0, 0, 0);
+       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -49491,7 +49501,7 @@
             7, 9, 1, 2);
         my $entry10 = $self->addEntry($table, 'winmap', FALSE,
             9, 12, 1, 2);
-        my $button = $self->addButton($table, 'Edit winmap', 'Edit this winmap', undef,
+        my $button = $self->addButton($table, 'Edit winmap...', 'Edit this winmap', undef,
             9, 12, 2, 3);
         $button->signal_connect('clicked' => sub {
 
@@ -49546,7 +49556,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -49612,7 +49622,7 @@
             9, 12, 2, 3, 8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -49652,7 +49662,7 @@
         # Internal1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -49689,13 +49699,13 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 4, 10,
-            -1, 250);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the simple list
         $self->internal1Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add some buttons
-        my $button = $self->addButton($table, 'View', 'View the selected strip object', undef,
+        my $button = $self->addButton($table, 'View...', 'View the selected strip object', undef,
             8, 10, 10, 11);
         $button->signal_connect('clicked' => sub {
 
@@ -49729,7 +49739,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -49739,7 +49749,7 @@
         # Resets the simple list displayed by $self->internal1Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -49792,7 +49802,7 @@
         # Internal2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -49835,13 +49845,13 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 4, 10,
-            -1, 250);     # Fixed height
+            -1, 290);     # Fixed height
 
         # Initialise the simple list
         $self->internal2Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add some buttons
-        my $button = $self->addButton($table, 'View', 'View the selected table object', undef,
+        my $button = $self->addButton($table, 'View...', 'View the selected table object', undef,
             8, 10, 10, 11);
         $button->signal_connect('clicked' => sub {
 
@@ -49875,7 +49885,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -49885,7 +49895,7 @@
         # Resets the simple list displayed by $self->internal2Tab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -50047,6 +50057,13 @@
         $self->{cellHeight} = undef;
         $self->{clickMode} = undef;
 
+        $self->{canvasWidget} = undef;
+        $self->{bgCanvasObj} = undef;
+        $self->{gridCanvasObj} = undef;
+        $self->{gridCanvasObj2} = undef;
+        $self->{selectCanvasObj} = undef;
+        $self->{drawnObjList} = [];
+
         $self->{entryStartX} = undef;
         $self->{entryStartY} = undef;
         $self->{entryStopX} = undef;
@@ -50062,7 +50079,11 @@
 
         $self->{entryCurrentZone} = undef;
         $self->{entryCurrentTable} = undef;
-        $self->{drawingArea2} = undef;
+        $self->{frame} = undef;
+        $self->{simpleCanvasWidget} = undef;
+        $self->{simpleCanvasObj} = undef;
+        $self->{simpleCanvasSize} = 30;
+        $self->{frame} = undef;
         $self->{editButton} = undef;
         $self->{deleteButton} = undef;
 
@@ -50073,7 +50094,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -50113,7 +50134,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -50154,7 +50175,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 3, 10,
-            -1, 270);
+            -1, 290);
 
         # Initialise the list
         $self->nameTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -50229,17 +50250,17 @@
         });
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub nameTab_refreshList {
 
-        # Called by $self->nameTab to refresh the GA::Obj::Simple::List
+        # Called by $self->nameTab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -50364,7 +50385,7 @@
         # (Intentionally leave 2 rows empty)
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 4,
-            -1, 160);
+            -1, 180);
 
         # Initialise the list
         $self->stripsTab_refreshList($slWidget, scalar (@columnList / 2), %tempObjHash);
@@ -50948,17 +50969,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub stripsTab_refreshList {
 
-        # Called by $self->stripsTab to refresh the GA::Obj::Simple::List
+        # Called by $self->stripsTab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns in the list
         #   %tempObjHash    - A hash of temporary strip objects, one for each package name, so we
         #                       can access their IVs
@@ -51432,7 +51453,7 @@
         # Winzones1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -51459,37 +51480,93 @@
         # Import IVs (for convenience)
         %packageHash = reverse ($axmud::CLIENT->customTableHash);
 
-        # We're going to draw a grid full of pretty colours, using a pixmap and a Gtk2::DrawingArea
-        #   object
+        # We're going to use a GooCanvas2::Canvas to draw a grid containing squares in various
+        #   colours
 
         ########
-        # Part 1 - draw the grid
+        # Part 1 - set up the canvas, and draw an empty grid
 
         # Unusual step - we have to save a number of variables as IVs, so that this object's methods
         #   can access them, without passing a million arguments back and forth
-        $self->ivPoke('borderX', 10);           # Size of area around the grid (pixels)
+        $self->ivPoke('borderX', 10);           # Size of area outside the grid (pixels)
         $self->ivPoke('borderY', 10);           #
         $self->ivPoke('gridSize', 60);          # Grid is 60x60 gridblocks
         $self->ivPoke('cellWidth', 6);          # Size of each gridblock (pixels)
         $self->ivPoke('cellHeight', 5);         #
 
-        # Add a drawing area, containing the main grid - a 60x60 grid containing zones
-        #   $self->winzones1Tab_refreshGrid    - Draws the grid
-        #   $self->winzones1Tab_getMouseClick  - Responds to mouse clicks on the area
-        #   $self->winzones1Tab_getMouseMotion - Responds to mouse motion over the are
-        $widthRequest = $self->borderX + ($self->gridSize * $self->cellWidth) + 30;
-        $heightRequest = $self->borderY + ($self->gridSize * $self->cellHeight) + 50;
+        # Add a drawing canvas, displaying a 60x60 grid containing any number of zones
+        #   $self->winzones1Tab_getMouseClick  - Responds to mouse clicks on the canvas
+        #   $self->winzones1Tab_getMouseMotion - Responds to mouse motion over the canvas
+        $widthRequest = ($self->borderX * 2) + ($self->gridSize * $self->cellWidth);
+        $heightRequest = ($self->borderY * 2) + ($self->gridSize * $self->cellHeight);
 
-        my $drawingAreaObj = $self->addDrawingArea(
+        my $canvasWidget = $self->addDrawingCanvas(
             $table,
-            '',
-            'winzones1Tab_refreshGrid',
             'winzones1Tab_getMouseClick',
             'winzones1Tab_getMouseMotion',
             FALSE, FALSE,                       # No scrolling
-            0, 8, 0, 12,                        # Position in table
+            0, 7, 0, 12,                        # Position in table
             $widthRequest, $heightRequest,      # Requested size of viewport
         );
+
+        # Draw the canvas background (in white)
+        my $canvasObj = GooCanvas2::CanvasRect->new(
+            'parent' => $canvasWidget->get_root_item(),
+            x => 0,
+            y => 0,
+            width => $widthRequest,
+            height => $heightRequest,
+#            'line-width' => 2,
+            'stroke-color' => '#FFFFFF',
+            'fill-color' => '#FFFFFF',
+        );
+
+        $canvasObj->lower();
+
+        # Draw a 60x60 grid on the canvas
+        my $canvasObj2 = GooCanvas2::CanvasGrid->new(
+            'parent' => $canvasWidget->get_root_item(),
+            x => $self->borderX,
+            y => $self->borderY,
+            width => ($self->gridSize * $self->cellWidth),
+            height => ($self->gridSize * $self->cellHeight),
+            x_step => $self->cellWidth,
+            y_step => $self->cellHeight,
+            x_offset => 0,
+            y_offset => 0,
+            'horz-grid-line-width' => 1,
+            'horz-grid-line-color' => '#808080',
+            'vert-grid-line-width' => 1,
+            'vert-grid-line-color' => '#808080',
+        );
+
+        # Overlay that with a 12x12 grid in a stronger colour, to clearly show the subvidisions
+        my $canvasObj3 = GooCanvas2::CanvasGrid->new(
+            'parent' => $canvasWidget->get_root_item(),
+            x => $self->borderX,
+            y => $self->borderY,
+            width => ($self->gridSize * $self->cellWidth),
+            height => ($self->gridSize * $self->cellHeight),
+            x_step => ($self->cellWidth * 5),
+            y_step => ($self->cellHeight * 5),
+            x_offset => 0,
+            y_offset => 0,
+            'horz-grid-line-width' => 1,
+            'horz-grid-line-color' => '#000000',
+            'vert-grid-line-width' => 1,
+            'vert-grid-line-color' => '#000000',
+        );
+
+        $canvasObj3->raise();
+
+        # Save more IVs
+        $self->ivPoke('canvasWidget', $canvasWidget);
+        $self->ivPoke('bgCanvasObj', $canvasObj);
+        $self->ivPoke('gridCanvasObj', $canvasObj2);
+        $self->ivPoke('gridCanvasObj2', $canvasObj3);
+
+        # Now draw any existing winzones
+        $self->winzones1Tab_refreshGrid();
 
         ########
         # Part 2 - widgets for adding new zones
@@ -51504,33 +51581,33 @@
         my ($radioGroup, $radioButton, $radioButton2);
         ($radioGroup, $radioButton) = $self->addRadioButton($table,
             undef, 'Use 5-block clicks', undef, undef, TRUE,
-            8, 12, 1, 2);
+            7, 12, 1, 2);
 
         ($radioGroup, $radioButton2) = $self->addRadioButton($table,
             $radioGroup, 'Use 1-block clicks', undef, undef, TRUE,
-            8, 12, 2, 3);
+            7, 12, 2, 3);
 
         $self->addLabel($table, 'Top-left corner',
-            8, 10, 3, 4);
+            7, 9, 3, 4);
         my $entry = $self->addEntry($table, undef, FALSE,
-            10, 11, 3, 4, 3, 3);
+            9, 10, 3, 4, 3, 3);
         my $entry2 = $self->addEntry($table, undef, FALSE,
-            11, 12, 3, 4, 3, 3);
+            10, 12, 3, 4, 3, 3);
 
         $self->addLabel($table, 'Bottom-right corner',
-            8, 10, 4, 5);
+            7, 9, 4, 5);
         my $entry3 = $self->addEntry($table, undef, FALSE,
-            10, 11, 4, 5, 3, 3);
+            9, 10, 4, 5, 3, 3);
         my $entry4 = $self->addEntry($table, undef, FALSE,
-            11, 12, 4, 5, 3, 3);
+            10, 12, 4, 5, 3, 3);
 
         @comboList = (sort {lc($a) cmp lc($b)} (keys %packageHash));
         my $combo = $self->addComboBox($table, undef, \@comboList, '',
             TRUE,              # no 'undef' value allowed
-            8, 12, 5, 6);
+            7, 12, 5, 6);
 
         # Save these entry boxes as IVs, so they can be updated as the mouse moves over the drawing
-        #   area
+        #   canvas
         $self->ivPoke('entryStartX', $entry);
         $self->ivPoke('entryStartY', $entry2);
         $self->ivPoke('entryStopX', $entry3);
@@ -51540,12 +51617,12 @@
         #   the bottom-right, then on the 'add winzone' button
         my $button = $self->addButton($table,
             'Add winzone', 'Create a winzone using the selected area', undef,
-            8, 10, 6, 7,
+            7, 9, 6, 7,
             TRUE,           # Irreversible
         );
         my $button2 = $self->addButton($table,
             'Cancel', 'Don\'t create a winzone using the selected area', undef,
-            10, 12, 6, 7);
+            9, 12, 6, 7);
 
         # Save the combo/ buttons as IVs, so that they can be sensitised/desensitised (start
         #   desensitised)
@@ -51568,41 +51645,47 @@
         # Part 3 - widgets for existing zones
 
         $self->addLabel($table, '<b>Winzone actions</b>',
-            8, 12, 7, 8);
+            7, 12, 7, 8);
 
         # When clicking on an existing zone, the winzone's number is displayed...
         $self->addLabel($table, 'Selected winzone #',
-            8, 10, 8, 9);
+            7, 9, 8, 9);
         my $entry5 = $self->addEntry($table, undef, FALSE,
-            10, 11, 8, 9, 3, 3);
+            9, 10, 8, 9, 3, 3);
         $self->ivPoke('entryCurrentZone', $entry5);
 
         # ...as is its colour
-        my $drawingAreaObj2 = $self->addDrawingArea($table, '',
-            undef, undef, undef,    # No function references
-            FALSE, FALSE,           # No scrolling
-            11, 12, 8, 9,           # Position in table
-            15, 15,                 # Width/height request
+        my ($frame, $simpleCanvasWidget, $simpleCanvasObj) = $self->addSimpleCanvas(
+            $table, undef, undef,
+            10, 11, 8, 9,               # Position in table
+            $self->simpleCanvasSize,    # Width request
+            $self->simpleCanvasSize,    # Height request
         );
+        $self->ivPoke('frame', $frame);
+        $self->ivPoke('simpleCanvasWidget', $simpleCanvasWidget);
+        $self->ivPoke('simpleCanvasObj', $simpleCanvasObj);
 
-        $self->ivPoke('drawingArea2', $drawingAreaObj2);
+        # (This empty label reduces the size of the simple canvas, so that the whole frame is filled
+        #   by a single colour)
+        $self->addLabel($table, '',
+            11, 12, 8, 9);
 
         # Other widgets
         my $entry6 = $self->addEntry($table, undef, FALSE,
-            8, 12, 9, 10);
+            7, 12, 9, 10);
         $self->ivPoke('entryCurrentTable', $entry6);
 
         my $button3 = $self->addButton($table, 'Edit...', 'Edit the selected winzone', undef,
-            8, 10, 10, 11);
+            7, 9, 10, 11);
         my $button4 = $self->addButton($table, 'Delete', 'Delete the selected winzone', undef,
-            10, 12, 10, 11,
+            9, 12, 10, 11,
             TRUE,           # Irreversible
         );
         my $button5 = $self->addButton($table,
             'Dump list', 'Display the list of winzones in the \'main\' window', undef,
-            8, 10, 11, 12);
+            7, 9, 11, 12);
         my $button6 = $self->addButton($table, 'Refresh grid', 'Refresh the winmap grid', undef,
-            10, 12, 11, 12);
+            9, 12, 11, 12);
 
         # Save the buttons as IVs, so that it can be sensitised/desensitised (starts desensitised.
         #   Don't need to save or desensitise the 'dump' button)
@@ -51627,16 +51710,17 @@
                 $self->pseudoCmdMode,
             );
 
-            # Re-draw the grid and all existing winzones (including the new one, if it was created),
-            #   and return to mouse step 1
-            $self->winzones1Tab_resetMouseStep($drawingAreaObj);
+            # We don't know which winzone was created, so re-draw all of them
+            # Re-draw the grid and all existing winzones, and return to step 1
+            $self->winzones1Tab_refreshGrid();
+            $self->winzones1Tab_resetMouseStep();
         });
 
         # Cancel button
         $button2->signal_connect('clicked' => sub {
 
             # Re-draw the grid and all existing winzones, and return to step 1
-            $self->winzones1Tab_resetMouseStep($drawingAreaObj);
+            $self->winzones1Tab_resetMouseStep();
         });
 
         # Edit/View button
@@ -51668,7 +51752,8 @@
             }
 
             # Re-draw the grid and all existing winzones, and return to step 1
-            $self->winzones1Tab_resetMouseStep($drawingAreaObj);
+            $self->winzones1Tab_refreshGrid();
+            $self->winzones1Tab_resetMouseStep();
         });
 
         # Delete button
@@ -51688,7 +51773,8 @@
                     );
 
                     # Re-draw the grid and all existing winzones, and return to step 1
-                    $self->winzones1Tab_resetMouseStep($drawingAreaObj);
+                    $self->winzones1Tab_refreshGrid();
+                    $self->winzones1Tab_resetMouseStep();
                 }
             }
         });
@@ -51706,7 +51792,7 @@
         $button6->signal_connect('clicked' => sub {
 
             # Re-draw the grid and all existing zones, and return to step 1
-            $self->winzones1Tab_resetMouseStep($drawingAreaObj);
+            $self->winzones1Tab_resetMouseStep();
         });
 
         # 5-block / 1-block clicks radio button
@@ -51714,7 +51800,7 @@
 
             # Re-draw the grid and all existing zones (including the new one, if it was created),
             #   and return to mouse step 1
-            $self->winzones1Tab_resetMouseStep($drawingAreaObj);
+            $self->winzones1Tab_resetMouseStep();
 
             if ($radioButton->get_active()) {
                 $self->ivPoke('clickMode', 1);
@@ -51724,7 +51810,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -51732,21 +51818,24 @@
     sub winzones1Tab_resetMouseStep {
 
         # Called by $self->winzones1Tab when the $self->mouseStep needs to be set back to 1, either
-        #   because the user clicked a third time on the drawing area, or because they clicked the
+        #   because the user clicked a third time on the drawing canvas, or because they clicked the
         #   'cancel' button, or because they changed from 1-block clicks to 5-block clicks (or
         #   vice-versa)
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
+        #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $drawingAreaObj, $check) = @_;
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $canvasObj;
 
         # Check for improper arguments
-        if (! defined $drawingAreaObj || defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->winzones1Tab_resetMouseStep',
@@ -51754,8 +51843,12 @@
             );
         }
 
-        # Re-draw the grid and all existing zones, removing the selected area
-        $self->winzones1Tab_refreshGrid($drawingAreaObj);
+        # Remove the selected block/zone, if drawn
+        if ($self->selectCanvasObj) {
+
+            $self->selectCanvasObj->remove();
+            $self->ivUndef('selectCanvasObj');
+        }
 
         # Go back to step 1
         $self->ivPoke('mouseStep', 1);
@@ -51779,11 +51872,16 @@
         $self->entryCurrentZone->set_text('');
         $self->entryCurrentTable->set_text('');
 
-        $self->drawingArea2->drawRectangle(
-            [0, 0, 50, 50],
-            'white',
-            TRUE,                   # Rectangle filled in
+        # Reset the colour displayed in the simple canvas
+        $canvasObj = $self->fillSimpleCanvas(
+            $self->simpleCanvasWidget,
+            $self->simpleCanvasObj,
+            '#FFFFFF',
+            $self->simpleCanvasSize,
+            $self->simpleCanvasSize,
         );
+
+        $self->ivPoke('simpleCanvasObj', $canvasObj);
 
         # Move back to the first step
         $self->ivPoke('mouseStep', 1);
@@ -51791,182 +51889,29 @@
         return 1;
     }
 
-    sub winzones1Tab_refreshGrid {
-
-        # Called by $self->addDrawingArea (inherited from GA::Generic::Win), following a call from
-        #   $self->winzones1Tab
-        # Draws (or re-draws) the grid, and fills in parts of the grid to show existing winzones
-        #
-        # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $drawingAreaObj, $check) = @_;
-
-        # Local variables
-        my (
-            $count,
-            @zoneList, @sortedList, @colourList,
-        );
-
-        # Check for improper arguments
-        if (! defined $drawingAreaObj || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->winzones1Tab_refreshGrid',
-                @_,
-            );
-        }
-
-        # Draw a white rectangle, filled in, to draw over anything that already exists
-        $drawingAreaObj->drawRectangle(
-            [
-                $self->borderX,
-                $self->borderY,
-                # (+1 to remove the bottom and right black lines)
-                ($self->gridSize * $self->cellWidth) + 1,
-                ($self->gridSize * $self->cellHeight) + 1,
-            ],
-            'white',
-            TRUE,           # Rectangle filled in
-        );
-
-        # Draw a 60x60 grey grid
-
-        # Draw vertical lines
-        for (
-            my $x = $self->borderX;
-            $x <= ($self->borderX + ($self->gridSize * $self->cellWidth));
-            $x += $self->cellWidth
-        ) {
-            $drawingAreaObj->drawLine(
-                [
-                    $x,
-                    $self->borderY,
-                    $x,
-                    ($self->borderY + ($self->gridSize * $self->cellHeight))
-                ],
-                'gray',
-            );
-        }
-
-        # Draw horizontal lines
-        for (
-            my $y = $self->borderY;
-            $y <= ($self->borderY + ($self->gridSize * $self->cellHeight));
-            $y += $self->cellHeight
-        ) {
-            $drawingAreaObj->drawLine(
-                [
-                    $self->borderX,
-                    $y,
-                    ($self->borderX + ($self->gridSize * $self->cellWidth)),
-                    $y
-                ],
-                'gray',
-            );
-        }
-
-        # Draw a black grid, overlaid on the grey grid, on every 5th line
-
-        # Draw vertical lines
-        for (
-            my $x = $self->borderX;
-            $x <= ($self->borderX + ($self->gridSize * $self->cellWidth));
-            $x += ($self->cellWidth * 5)
-        ) {
-            $drawingAreaObj->drawLine(
-                [
-                    $x,
-                    $self->borderY,
-                    $x,
-                    ($self->borderY + ($self->gridSize * $self->cellHeight))
-                ],
-                'black',
-            );
-        }
-
-        # Draw horizontal lines
-        for (
-            my $y = $self->borderY;
-            $y <= ($self->borderY + ($self->gridSize * $self->cellHeight));
-            $y += ($self->cellHeight * 5)
-        ) {
-            $drawingAreaObj->drawLine(
-                [
-                    $self->borderX,
-                    $y,
-                    ($self->borderX + ($self->gridSize * $self->cellWidth)),
-                    $y
-                ],
-                'black',
-            );
-        }
-
-        # Draw each existing winzone in turn
-        @zoneList = $self->editObj->ivKeys('zoneHash');
-        # Sort the list numerically
-        @sortedList = sort {$a <=> $b} (@zoneList);
-        # Import a list of 32 colours in roughly rainbow order
-        @colourList = $axmud::CLIENT->constRainbowColourList;
-
-        # Draw each winzone in turn, using a different colour for each
-        foreach my $winzoneNum (@sortedList) {
-
-            my ($winzoneObj, $colour);
-
-            $winzoneObj = $self->editObj->ivShow('zoneHash', $winzoneNum);
-
-            $colour = shift @colourList;
-            if (! $colour) {
-
-                # All of the colours have been used - so re-import the list, and start taking
-                #   colours from the beginning again
-                @colourList = $axmud::CLIENT->constRainbowColourList;
-                $colour = shift @colourList;
-            }
-
-            $self->winzones1Tab_fillZone(
-                $drawingAreaObj,
-                $winzoneObj->left,
-                $winzoneObj->top,
-                $winzoneObj->right,
-                $winzoneObj->bottom,
-                $colour,
-            );
-        }
-
-        # Operation complete
-        return 1;
-    }
-
     sub winzones1Tab_getMouseClick {
 
-        # Called by $self->addDrawingArea (inherited from GA::Generic::Win), whenever the user
-        #   clicks on the drawing area
+        # Called by ->signal_connect in $self->addDrawingCanvas (inherited from GA::Generic::Win),
+        #   whenever the user clicks on the drawing canvas
         # Updates the tab's entry boxes and buttons
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
-        #   $xPos, $yPos    - The coordinates on the drawing area at which the user clicked
+        #   $xPos, $yPos    - The coordinates on the drawing canvas at which the user clicked
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $drawingAreaObj, $xPos, $yPos, $check) = @_;
+        my ($self, $xPos, $yPos, $check) = @_;
 
         # Local variables
         my (
-            $xGrid, $yGrid, $winzoneObj, $number, $posn,
+            $xGrid, $yGrid, $winzoneObj, $number, $posn, $canvasObj, $canvasObj2,
             @colourList, @sortedList,
         );
 
         # Check for improper arguments
-        if (! defined $drawingAreaObj || ! defined $xPos || ! defined $yPos || defined $check) {
+        if (! defined $xPos || ! defined $yPos || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->winzones1Tab_getMouseClick',
@@ -51974,7 +51919,7 @@
             );
         }
 
-        # Convert $xPos and $yPos - coordinates in the drawing area - into coordinates on the grid
+        # Convert $xPos and $yPos - coordinates in the drawing canvas - into coordinates on the grid
         $xGrid = int( ($xPos - $self->borderX) / $self->cellWidth);
         $yGrid = int( ($yPos - $self->borderY) / $self->cellHeight);
 
@@ -51991,11 +51936,10 @@
             # See if this particular grid block is occupied; if so, display the number of the
             #   winzone that occupies it
             $winzoneObj = $self->editObj->findWinzone($xGrid, $yGrid, 1, 1);
-
             if ($winzoneObj) {
 
                 # Refresh the grid, and return to mouse step 1
-                $self->winzones1Tab_resetMouseStep($drawingAreaObj);
+                $self->winzones1Tab_resetMouseStep();
 
                 # Display the number and colour of the clicked zone in one of the entry boxes
                 $number = $winzoneObj->number;
@@ -52033,11 +51977,16 @@
                     $posn = $posn % (scalar @colourList);
                 }
 
-                $self->drawingArea2->drawRectangle(
-                    [0, 0, 50, 50],
+                # Set the colour displayed in the simple canvas
+                $canvasObj = $self->fillSimpleCanvas(
+                    $self->simpleCanvasWidget,
+                    $self->simpleCanvasObj,
                     $colourList[$posn],
-                    TRUE,           # Rectangle filled in
+                    $self->simpleCanvasSize,
+                    $self->simpleCanvasSize,
                 );
+
+                $self->ivPoke('simpleCanvasObj', $canvasObj);
 
                 # Display the grid coordinates of the clicked block
                 $self->entryStartX->set_text($winzoneObj->left);
@@ -52071,30 +52020,42 @@
                 if (! $self->clickMode) {
 
                     # Mark the gridblock pink, as a visual aid
-                    $self->winzones1Tab_fillBlock($drawingAreaObj, $xGrid, $yGrid, 'pink');
+                    $canvasObj = $self->winzones1Tab_fillBlock(
+                        '#FFC8CB',
+                        $xGrid,
+                        $yGrid,
+                        TRUE,               # Don't add this to $self->drawnObjList
+                    );
 
                 } else {
 
                     # Mark a 5x5 group of gridblocks pink
-                    $self->winzones1Tab_fillZone(
-                        $drawingAreaObj,
+                    $canvasObj = $self->winzones1Tab_fillZone(
+                        '#FFC8CB',
                         $self->startX,
                         $self->startY,
                         $self->startX + 4,
                         $self->startY + 4,
-                        'pink',
+                        TRUE,               # Don't add this to $self->drawnObjList
                     );
                 }
+
+                $self->ivPoke('selectCanvasObj', $canvasObj);
 
                 # If the number of a zone that's been clicked on is displayed, remove it
                 $self->entryCurrentZone->set_text('');
                 $self->entryCurrentTable->set_text('');
 
-                $self->drawingArea2->drawRectangle(
-                    [0, 0, 50, 50],
-                    'white',
-                    TRUE,       # Rectangle filled in
+                # Reset the colour displayed in the simple canvas
+                $canvasObj2 = $self->fillSimpleCanvas(
+                    $self->simpleCanvasWidget,
+                    $self->simpleCanvasObj,
+                    '#FFFFFF',
+                    $self->simpleCanvasSize,
+                    $self->simpleCanvasSize,
                 );
+
+                $self->ivPoke('simpleCanvasObj', $canvasObj2);
 
                 # Desensitise the 'Edit'/'Delete' buttons
                 $self->editButton->set_sensitive(FALSE);
@@ -52177,14 +52138,16 @@
                 $self->entryStopY->set_text($newStopY);
 
                 # Paint the potentional zone pink, as a visual aid
-                $self->winzones1Tab_fillZone(
-                    $drawingAreaObj,
+                $canvasObj = $self->winzones1Tab_fillZone(
+                    '#FFC8CB',
                     $self->startX,
                     $self->startY,
                     $self->stopX,
                     $self->stopY,
-                    'pink',
+                    TRUE,               # Don't add this to $self->drawnObjList
                 );
+
+                $self->ivPoke('selectCanvasObj', $canvasObj);
 
                 # The 'Add winzone'/'Cancel' buttons are now sensitised, as is the combo
                 $self->addZoneCombo->set_sensitive(TRUE);
@@ -52197,7 +52160,7 @@
             } elsif ($self->mouseStep == 3) {
 
                 # Refresh the grid, and return to mouse step 1
-                $self->winzones1Tab_resetMouseStep($drawingAreaObj);
+                $self->winzones1Tab_resetMouseStep();
             }
         }
 
@@ -52206,25 +52169,24 @@
 
     sub winzones1Tab_getMouseMotion {
 
-        # Called by $self->addDrawingArea (inherited from GA::Generic::Win), whenever the user moves
-        #   the mouse pointer over the drawing area
+        # Called by ->signal_connect in $self->addDrawingCanvas (inherited from GA::Generic::Win),
+        #   whenever the user moves the mouse pointer over the drawing canvas
         # Updates the tab's entry boxes and buttons
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
-        #   $xPos, $yPos    - The current coordiantes of the mouse over the drawing area
+        #   $xPos, $yPos    - The current coordiantes of the mouse over the drawing canvas
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $drawingAreaObj, $xPos, $yPos, $check) = @_;
+        my ($self, $xPos, $yPos, $check) = @_;
 
         # Local variables
         my ($xGrid, $yGrid);
 
         # Check for improper arguments
-        if (! defined $drawingAreaObj || ! defined $xPos || ! defined $yPos || defined $check) {
+        if (! defined $xPos || ! defined $yPos || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->winzones1Tab_getMouseMotion',
@@ -52232,7 +52194,7 @@
             );
         }
 
-        # Convert $xPos and $yPos - coordinates in the drawing area - into coordinates on the grid
+        # Convert $xPos and $yPos - coordinates in the drawing canvas - into coordinates on the grid
         $xGrid = int( ($xPos - $self->borderX) / $self->cellWidth);
         $yGrid = int( ($yPos - $self->borderY) / $self->cellHeight);
 
@@ -52259,93 +52221,199 @@
         return 1;
     }
 
-    sub winzones1Tab_fillBlock {
+    sub winzones1Tab_refreshGrid {
 
-        # Called by various functions of this 'edit' window object
-        # Fills in a single block of the grid in a single colour
+        # Called by ->winzones1Tab
+        # Draws (or re-draws) all existing winzones
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
-        #   $xPos, $yPos    - The coordinates of the gridblock to be filled in
-        #   $colour         - The colour, e.g. 'red'
+        #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $drawingAreaObj, $xPos, $yPos, $colour, $check) = @_;
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @colourList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->winzones1Tab_refreshGrid',
+                @_,
+            );
+        }
+
+        # Remove any existing winzones
+        foreach my $canvasObj ($self->drawnObjList) {
+
+            $canvasObj->remove();
+        }
+
+        # Import a list of 32 colours in roughly rainbow order
+        @colourList = $axmud::CLIENT->constRainbowColourList;
+        # Draw each winzone in turn, using a different colour for each. If we run out of colours,
+        #   start again from the first colour
+        foreach my $winzoneNum (sort {$a <=> $b} ($self->editObj->ivKeys('zoneHash'))) {
+
+            my ($winzoneObj, $colour);
+
+            $winzoneObj = $self->editObj->ivShow('zoneHash', $winzoneNum);
+
+            $colour = shift @colourList;
+            if (! $colour) {
+
+                # All of the colours have been used - so re-import the list, and start taking
+                #   colours from the beginning again
+                @colourList = $axmud::CLIENT->constRainbowColourList;
+                $colour = shift @colourList;
+            }
+
+            $self->winzones1Tab_fillZone(
+                $colour,
+                $winzoneObj->left,
+                $winzoneObj->top,
+                $winzoneObj->right,
+                $winzoneObj->bottom,
+            );
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub winzones1Tab_fillBlock {
+
+        # Called by $self->winzones1Tab_getMouseClick
+        # Fills in a single block of the grid in a single colour
+        #
+        # Expected arguments
+        #   $colour         - The colour (an RGB tag, e.g. '#ABCDEF')
+        #   $xPos, $yPos    - The coordinates of the gridblock to be filled in
+        #
+        # Optional arguments
+        #   $tempFlag       - If TRUE, it's a temporary (pink) area of the grid that should not be
+        #                       added to $self->drawnObjList. FALSE (or 'undef') otherwise
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   The drawn canvas object otherwise
+
+        my ($self, $colour, $xPos, $yPos, $tempFlag, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $drawingAreaObj || ! defined $xPos || ! defined $yPos || ! defined $colour
+            ! defined $colour || ! defined $xPos || ! defined $yPos || ! defined $colour
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->winzones1Tab_fillBlock', @_);
         }
 
-        # Fill the square at grid coordinates $xPos, $yPos
-        $drawingAreaObj->drawRectangle(
-            [
-                $self->borderX + ($xPos * $self->cellWidth) + 1,
-                $self->borderY + ($yPos * $self->cellHeight) + 1,
-                $self->cellWidth - 1,
-                $self->cellHeight - 1,
-            ],
-            $colour,
-            TRUE,           # Rectangle filled in
+        # (Drawing any coloured area displaces any selection that has been made)
+        if ($self->selectCanvasObj) {
+
+            $self->selectCanvasObj->remove();
+            $self->ivUndef('selectCanvasObj');
+        }
+
+        # Fill the gridblock at grid coordinates $xPos, $yPos
+        my $canvasObj = GooCanvas2::CanvasRect->new(
+            'parent' => $self->canvasWidget->get_root_item(),
+            x => $self->borderX + ($xPos * $self->cellWidth),
+            y => $self->borderY + ($yPos * $self->cellHeight),
+            width => $self->cellWidth,
+            height => $self->cellHeight,
+            'line-width' => 1,
+            'stroke-color' => $colour,
+            'fill-color' => $colour,
         );
 
-        return 1
+        $canvasObj->lower($self->gridCanvasObj);
+        if (! $tempFlag) {
+
+            $self->ivPush('drawnObjList', $canvasObj);
+        }
+
+        return $canvasObj;
     }
 
     sub winzones1Tab_fillZone {
 
-        # Called by various functions of this 'edit' window object
-        # Fills in an area of the grid in a single colour, representing a particular winzone
+        # Called by $self->winzones1Tab_getMouseClick and ->winzones1Tab_refreshGrid
+        # Fills in an area of the grid, 5x5 blocks, in a single colour
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
+        #   $colour         - The colour (an RGB tag, e.g. '#ABCDEF')
         #   $startX, $startY, $stopX, $stopY
         #                   - The area of the grid to fill in
-        #   $colour         - The colour, e.g. 'red'
+        #
+        # Optional arguments
+        #   $tempFlag       - If TRUE, it's a temporary (pink) area of the grid that should not be
+        #                       added to $self->drawnObjList. FALSE (or 'undef') otherwise
         #
         # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
+        #   'undef' on improper arguments or if $colour is invalid
+        #   The drawn canvas object otherwise
 
-        my (
-            $self, $drawingAreaObj, $startX, $startY, $stopX, $stopY, $colour,
-            $check
-        ) = @_;
+        my ($self, $colour, $startX, $startY, $stopX, $stopY, $tempFlag, $check) = @_;
+
+        # Local variables
+        my ($x, $y, $width, $height);
 
         # Check for improper arguments
         if (
-            ! defined $drawingAreaObj || ! defined $startX || ! defined $startY || ! defined $stopX
+            ! defined $colour || ! defined $startX || ! defined $startY || ! defined $stopX
             || ! defined $stopY || ! defined $colour || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->winzones1Tab_fillZone', @_);
         }
 
-        # Fill the area bounded by $startX, $startY, $stopX, $stopY
-        for (my $xPos = $startX; $xPos <= $stopX; $xPos++) {
+        # (Drawing any coloured area displaces any selection that has been made)
+        if ($self->selectCanvasObj) {
 
-            for (my $yPos = $startY; $yPos <= $stopY; $yPos++) {
-
-                # Fill the square at grid coordinates $xPos, $yPos
-                $drawingAreaObj->drawRectangle(
-                    [
-                        $self->borderX + ($xPos * $self->cellWidth) + 1,
-                        $self->borderY + ($yPos * $self->cellHeight) + 1,
-                        $self->cellWidth - 1,
-                        $self->cellHeight - 1,
-                    ],
-                    $colour,
-                    TRUE,       # Rectangle filled in
-                );
-            }
+            $self->selectCanvasObj->remove();
+            $self->ivUndef('selectCanvasObj');
         }
 
-        return 1
+        # For reasons unknown, the coloured zone seeps outside the top and left boundaries of the
+        #   grid. Adjust the zone's size and position to prevent that
+        $x = $self->borderX + ($startX * $self->cellWidth);
+        $y = $self->borderY + ($startY * $self->cellHeight);
+        $width = ($self->cellWidth * ($stopX - $startX + 1));
+        $height = ($self->cellHeight * ($stopY - $startY + 1));
+        if ($x <= $self->borderX) {
+
+            $x++;
+            $width--;
+        }
+
+        if ($y <= $self->borderY) {
+
+            $y++;
+            $height--;
+        }
+
+        my $canvasObj = GooCanvas2::CanvasRect->new(
+            'parent' => $self->canvasWidget->get_root_item(),
+            x => $x,
+            y => $y,
+            width => $width,
+            height => $height,
+            'line-width' => 1,
+            'stroke-color' => $colour,
+            'fill-color' => $colour,
+        );
+
+        $canvasObj->lower($self->gridCanvasObj);
+        if (! $tempFlag) {
+
+            $self->ivPush('drawnObjList', $canvasObj);
+        }
+
+        return $canvasObj;
     }
 
     sub winzones2Tab {
@@ -52353,7 +52421,7 @@
         # Winzones2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -52375,26 +52443,22 @@
             0, 12, 0, 1);
         $self->addLabel(
             $table,
-            '<i>Standard size for adding new table objects to an existing window, if a default size'
-            . ' is required. Use a size</i>',
-            1, 12, 1, 2);
-        $self->addLabel(
-            $table,
-            '<i>which will fill up a 60x60 grid without leaving gaps, e.g. 10x10, 15x15, 30x15,'
-            . ' 20x20, 12x60, 60x5 etc)</i>',
-            2, 12, 2, 3);
+            "<i>Standard size for adding new table objects to an existing window, if a default size"
+            . " is required. Use a size\nthat will fill a 60x60 grid without leaving gaps, e.g."
+            . " 10x10, 15x15, 30x15, 20x20, 12x60, 60x5 etc</i>",
+            2, 12, 1, 2);
 
         $self->addLabel($table, 'Zone width (1-60)',
-            2, 4, 3, 4);
+            2, 4, 2, 3);
         $self->addEntryWithIcon($table, 'zoneWidth', 'int', 1, 60,
-            4, 6, 3, 4);
+            4, 6, 2, 3);
         $self->addLabel($table, 'Zone height (1-60)',
-            7, 9, 3, 4);
+            7, 9, 2, 3);
         $self->addEntryWithIcon($table, 'zoneHeight', 'int', 1, 60,
-            9, 12, 3, 4);
+            9, 12, 2, 3);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -52418,6 +52482,19 @@
         { $_[0]->{cellHeight} }
     sub clickMode
         { $_[0]->{clickMode} }
+
+    sub canvasWidget
+        { $_[0]->{canvasWidget} }
+    sub bgCanvasObj
+        { $_[0]->{bgCanvasObj} }
+    sub gridCanvasObj
+        { $_[0]->{gridCanvasObj} }
+    sub gridCanvasObj2
+        { $_[0]->{gridCanvasObj2} }
+    sub selectCanvasObj
+        { $_[0]->{selectCanvasObj} }
+    sub drawnObjList
+        { my $self = shift; return @{$self->{drawnObjList}}; }
 
     sub entryStartX
         { $_[0]->{entryStartX} }
@@ -52448,8 +52525,14 @@
         { $_[0]->{entryCurrentZone} }
     sub entryCurrentTable
         { $_[0]->{entryCurrentTable} }
-    sub drawingArea2
-        { $_[0]->{drawingArea2} }
+    sub frame
+        { $_[0]->{frame} }
+    sub simpleCanvasWidget
+        { $_[0]->{simpleCanvasWidget} }
+    sub simpleCanvasObj
+        { $_[0]->{simpleCanvasObj} }
+    sub simpleCanvasSize
+        { $_[0]->{simpleCanvasSize} }
     sub editButton
         { $_[0]->{editButton} }
     sub deleteButton
@@ -52559,7 +52642,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -52678,7 +52761,7 @@
             9, 12, 8, 9);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -52734,7 +52817,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 9,
-            -1, 230);       # Fixed height
+            -1, 250);       # Fixed height
 
         # Initialise the simple list
         $self->initTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -52890,7 +52973,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -52900,7 +52983,7 @@
         # Resets the simple list displayed by $self->file2Tab
         #
         # Expected arguments
-        #   $slWidget       - The GA::Obj::Simple::List
+        #   $slWidget       - The GA::Obj::SimpleList
         #   $columns        - The number of columns
         #
         # Return values
@@ -53081,7 +53164,6 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
@@ -53093,13 +53175,13 @@
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -53135,7 +53217,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -53205,44 +53287,21 @@
             3, 6, 2, 3);
         $self->addLabel($table, 'System workspace number',
             1, 3, 3, 4);
-        my $entry = $self->addEntry($table, undef, FALSE,
+        my $entry = $self->addEntry($table, 'systemNum', FALSE,
             3, 6, 3, 4);
-        if ($self->editObj->wnckWorkspace) {
-            $entry->set_text($self->editObj->wnckWorkspace->get_number());
-        } else {
-            $entry->set_text('(unknown)');
-        }
-        $self->addLabel($table, 'System workspace name',
-            1, 3, 4, 5);
-        my $entry2 = $self->addEntry($table, undef, FALSE,
-            3, 6, 4, 5);
-        if ($self->editObj->wnckWorkspace) {
-            $entry2->set_text($self->editObj->wnckWorkspace->get_name());
-        } else {
-            $entry2->set_text('(unknown)');
-        }
-        $self->addLabel($table, 'System screen number',
-            1, 3, 5, 6);
-        my $entry3 = $self->addEntry($table, undef, FALSE,
-            3, 6, 5, 6);
-        if ($self->editObj->wnckScreen) {
-            $entry3->set_text($self->editObj->wnckScreen->get_number());
-        } else {
-            $entry3->set_text('(unknown)');
-        }
 
         $self->addLabel($table, 'Current width (pixels)',
-            1, 3, 6, 7);
+            1, 3, 4, 5);
         $self->addEntry($table, 'currentWidth', FALSE,
-            3, 6, 6, 7);
+            3, 6, 4, 5);
         $self->addLabel($table, 'Current height',
-            1, 3, 7, 8);
+            1, 3, 5, 6);
         $self->addEntry($table, 'currentHeight', FALSE,
-            3, 6, 7, 8);
+            3, 6, 5, 6);
         $self->addLabel($table, 'Default zonemap',
-            1, 3, 8, 9);
+            1, 3, 6, 7);
         $self->addEntry($table, 'defaultZonemap', FALSE,
-            3, 6, 8, 9);
+            3, 6, 6, 7);
 
         # Right column
         $self->addLabel($table, '<i>Panel sizes for this workspace (if detected)</i>',
@@ -53284,7 +53343,7 @@
             9, 12, 10, 11);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -53323,10 +53382,7 @@
         $self->addLabel($table,
             '<i>List of workspace grids on this workspace</i>',
             1, 6, 1, 2);
-        $self->addCheckButton($table, 'gridEnableFlag', FALSE,
-            6, 7, 1, 2, 0, 0.5);
-        $self->addLabel($table,
-            'Grids enabled on this workspace',
+        $self->addCheckButton($table, 'Grids enabled on this workspace', 'gridEnableFlag', FALSE,
             7, 12, 1, 2);
 
         # Add a simple list
@@ -53342,7 +53398,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);           # Fixed height
+            -1, 310);           # Fixed height
 
         # Initialise the list
         $self->gridsTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -53390,7 +53446,7 @@
 
         my $button2 = $self->addButton(
             $table,
-            'View',
+            'View...',
             'View settings for the selected workspace grid',
             undef,
             8, 10, 10, 11);
@@ -53437,17 +53493,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub gridsTab_refreshList {
 
-        # Called by $self->gridTab to refresh the first GA::Obj::Simple::List
+        # Called by $self->gridTab to refresh the first GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -53578,25 +53634,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -53632,7 +53687,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -53755,7 +53810,7 @@
             9, 12, 6, 7);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -53807,7 +53862,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);           # Fixed height
+            -1, 310);           # Fixed height
 
         # Initialise the list
         $self->zonesTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -53825,17 +53880,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub zonesTab_refreshList {
 
-        # Called by $self->zonesTab to refresh the first GA::Obj::Simple::List
+        # Called by $self->zonesTab to refresh the first GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -53947,7 +54002,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 300);           # Fixed height
+            -1, 310);           # Fixed height
 
         # Initialise the list
         $self->windowsTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -53955,7 +54010,7 @@
         # Add buttons
         my $button = $self->addButton(
             $table,
-            'View',
+            'View...',
             'View settings for the selected \'grid\' window', undef,
             8, 10, 10, 11);
         $button->signal_connect('clicked' => sub {
@@ -53996,17 +54051,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub windowsTab_refreshList {
 
-        # Called by $self->windowsTab to refresh the first GA::Obj::Simple::List
+        # Called by $self->windowsTab to refresh the first GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -54162,7 +54217,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -54296,11 +54351,9 @@
                 # ->settings1Tab
                 'drawOrnamentsFlag', 'draw_ornaments', 'icon_draw_ornaments',
                 'trackPosnFlag', 'track_current_room', 'icon_track_current_room',
+                'preDrawAllowFlag', 'allow_pre_draw', undef,
                  # ->settings2Tab
-                'fixedRoomTagFlag', 'fixed_room_tag', undef,
-                'fixedRoomGuildFlag', 'fixed_room_guild', undef,
-                'fixedExitTagFlag', 'fixed_exit_tag', undef,
-                'fixedLabelFlag', 'fixed_label', undef,
+                 # (none)
                 # ->settings3Tab
                 'matchTitleFlag', 'match_title', undef,
                 'matchDescripFlag', 'match_descrip', undef,
@@ -54604,7 +54657,7 @@
             3, 6, 11, 12);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -54765,7 +54818,7 @@
             9, 12, 11, 12);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -54809,7 +54862,7 @@
         # model1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -54863,7 +54916,7 @@
             9, 12, 4, 5, 8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -54873,7 +54926,7 @@
         # model2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -54918,7 +54971,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 230);       # Fixed height
+            -1, 250);       # Fixed height
 
         # Initialise the list
         $self->model2Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -54973,10 +55026,9 @@
             $self->model2Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
-        $self->addLabel($table, 'Automapper shows regions in reverse',
-            1, 5, 11, 12);
-        $self->addCheckButton($table, 'reverseRegionListFlag', TRUE,
-            5, 6, 11, 12, 1, 0.5);
+        $self->addCheckButton(
+            $table, 'Automapper shows regions in reverse', 'reverseRegionListFlag', TRUE,
+            1, 6, 11, 12);
 
         $self->addLabel($table, 'First region shown',
             7, 9, 11, 12);
@@ -54999,17 +55051,17 @@
             9, 12, 11, 12);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub model2Tab_refreshList {
 
-        # Called by $self->model2Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->model2Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -55061,7 +55113,7 @@
         # model3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -55101,7 +55153,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Initialise the list
         $self->model3Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -55154,17 +55206,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub model3Tab_refreshList {
 
-        # Called by $self->model3Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->model3Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -55212,7 +55264,7 @@
         # model4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -55252,7 +55304,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);       # Fixed height
+            -1, 220);       # Fixed height
 
         # Initialise the list
         $self->model4Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -55262,10 +55314,8 @@
             1, 3, 8, 9);
         my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
             3, 9, 8, 9);
-        $self->addLabel($table, 'Own minion',
-            9, 11, 8, 9);
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            11, 12, 8, 9, 1, 0.5);
+        my $checkButton = $self->addCheckButton($table, 'Own minion', undef, TRUE,
+            9, 12, 8, 9);
         $checkButton->set_active(TRUE);     # Default - minion belongs to user
 
         my $button = $self->addButton(
@@ -55408,17 +55458,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub model4Tab_refreshList {
 
-        # Called by $self->model4Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->model4Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -55470,7 +55520,7 @@
         # model5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -55509,7 +55559,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Initialise the list
         $self->model5Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -55562,17 +55612,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub model5Tab_refreshList {
 
-        # Called by $self->model5Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->model5Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -55636,7 +55686,7 @@
         # model6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -55674,7 +55724,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 200);      # Fixed height
+            -1, 220);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'teleportHash');
@@ -55722,7 +55772,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -55768,7 +55818,7 @@
         # Settings1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -55827,22 +55877,14 @@
         # Left column
         $self->addLabel($table, '<u>Window components</u>',
             1, 6, 1, 2);
-        $self->addLabel($table, 'Show menu bar',
-            1, 5, 2, 3);
-        $self->addCheckButton($table, 'showMenuBarFlag', TRUE,
-            5, 6, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Show toolbar',
-            1, 5, 3, 4);
-        $self->addCheckButton($table, 'showToolbarFlag', TRUE,
-            5, 6, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Show region list',
-            1, 5, 4, 5);
-        $self->addCheckButton($table, 'showTreeViewFlag', TRUE,
-            5, 6, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Show map',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'showCanvasFlag', TRUE,
-            5, 6, 5, 6, 1, 0.5);
+        $self->addCheckButton($table, 'Show menu bar', 'showMenuBarFlag', TRUE,
+            1, 6, 2, 3);
+        $self->addCheckButton($table, 'Show toolbar', 'showToolbarFlag', TRUE,
+            1, 6, 3, 4);
+        $self->addCheckButton($table, 'Show region list', 'showTreeViewFlag', TRUE,
+            1, 6, 4, 5);
+        $self->addCheckButton($table, 'Show map', 'showCanvasFlag', TRUE,
+            1, 6, 5, 6);
 
         $self->addLabel($table, '<u>Drawing modes</u>',
             1, 6, 6, 7);
@@ -55865,10 +55907,8 @@
             3, 6, 9, 10);
         $entry3->set_text($exitModeHash{$self->editObj->drawExitMode});
 
-        $self->addLabel($table, 'Draw exit ornaments',
-            1, 5, 10, 11);
-        $self->addCheckButton($table, 'drawOrnamentsFlag', TRUE,
-            5, 6, 10, 11, 1, 0.5);
+        $self->addCheckButton($table, 'Draw exit ornaments', 'drawOrnamentsFlag', TRUE,
+            1, 6, 10, 11);
 
         # Right column
         $self->addLabel($table, '<u>Show \'Working...\' dialogue</u>',
@@ -55886,36 +55926,35 @@
 
         $self->addLabel($table, '<u>Pre-drawing of maps</u>',
             7, 12, 4, 5);
-        $self->addLabel($table, 'Pre-draw if this many rooms',
-            7, 9, 5, 6);
-        $self->addEntryWithIcon($table, 'preDrawMinRooms', 'int', 0, undef,
-            9, 12, 5, 6,
-            8, 8);
-        $self->addLabel($table, 'Retain in memory if this many rooms',
+        $self->addCheckButton($table, 'Allow pre-drawing in general', 'preDrawAllowFlag', TRUE,
+            7, 12, 5, 6);
+        $self->addLabel($table, 'Pre-draw regions with this many rooms',
             7, 9, 6, 7);
-        $self->addEntryWithIcon($table, 'retainDrawMinRooms', 'int', 0, undef,
+        $self->addEntryWithIcon($table, 'preDrawMinRooms', 'int', 0, undef,
             9, 12, 6, 7,
             8, 8);
-        $self->addLabel($table, 'Queued objects drawn per second',
+        $self->addLabel($table, 'Retain in memory if this many rooms',
             7, 9, 7, 8);
-        $self->addEntryWithIcon($table, 'queueDrawMaxObjs', 'int', 0, undef,
+        $self->addEntryWithIcon($table, 'preDrawRetainRooms', 'int', 0, undef,
             9, 12, 7, 8,
+            8, 8);
+        $self->addLabel($table, '% processor time used (1-100)',
+            7, 9, 8, 9);
+        $self->addEntryWithIcon($table, 'preDrawAllocation', 'int', 1, 100,
+            9, 12, 8, 9,
             8, 8);
 
         $self->addLabel($table, '<u>Tracking</u>',
-            7, 12, 8, 9);
-        $self->addLabel($table, 'Track position',
-            7, 11, 9, 10);
-        $self->addCheckButton($table, 'trackPosnFlag', TRUE,
-            11, 12, 9, 10,
-            1, 0.5);
+            7, 12, 9, 10);
+        $self->addCheckButton($table, 'Track position', 'trackPosnFlag', TRUE,
+            7, 12, 10, 11);
         $self->addLabel($table, 'Tracking sensitivity',
-            7, 9, 10, 11);
+            7, 9, 11, 12);
         $self->addEntry($table, 'trackingSensitivity', FALSE,
-            9, 12, 10, 11, 4, 4);
+            9, 12, 11, 12, 4, 4);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -55925,7 +55964,7 @@
         # Settings2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -55947,41 +55986,19 @@
             0, 12, 0, 1);
 
         # Left column
-        $self->addLabel($table, '<u>Preserve size of text during zooms</u>',
+        $self->addLabel($table, '<u>Label alignment</u>',
             1, 6, 1, 2);
 
-        $self->addLabel($table, 'Preserve room tags',
-            1, 5, 2, 3);
-        $self->addCheckButton($table, 'fixedRoomTagFlag', FALSE,
-            5, 6, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Preserve room guilds',
-            1, 5, 3, 4);
-        $self->addCheckButton($table, 'fixedRoomGuildFlag', FALSE,
-            5, 6, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Preserve exit tags',
-            1, 5, 4, 5);
-        $self->addCheckButton($table, 'fixedExitTagFlag', FALSE,
-            5, 6, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Preserve labels',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'fixedLabelFlag', FALSE,
-            5, 6, 5, 6, 1, 0.5);
-
-        $self->addLabel($table, '<u>Label alignment</u>',
-            1, 6, 6, 7);
-
-        $self->addLabel($table, 'Labels alignored horizontally',
-            1, 5, 7, 8);
-        $self->addCheckButton($table, 'mapLabelAlignXFlag', FALSE,
-            5, 6, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Labels aligned vertically',
-            1, 5, 8, 9);
-        $self->addCheckButton($table, 'mapLabelAlignYFlag', FALSE,
-            5, 6, 8, 9, 1, 0.5);
-        $self->addLabel($table, 'Label configuration window uses multi-line input',
-            1, 5, 9, 10);
-        $self->addCheckButton($table, 'mapLabelTextViewFlag', FALSE,
-            5, 6, 9, 10, 1, 0.5);
+        $self->addCheckButton($table, 'Labels alignored horizontally', 'mapLabelAlignXFlag', FALSE,
+            1, 6, 2, 3);
+        $self->addCheckButton($table, 'Labels aligned vertically', 'mapLabelAlignYFlag', FALSE,
+            1, 6, 3, 4);
+        $self->addCheckButton(
+            $table,
+            'Label configuration window uses multi-line input',
+            'mapLabelTextViewFlag',
+            FALSE,
+            1, 6, 4, 5);
 
         # Right column
         $self->addLabel($table, '<u>Map font</u>',
@@ -56012,17 +56029,13 @@
 
         $self->addLabel($table, '<u>Painter</u>',
             7, 12, 3, 4);
-        $self->addLabel($table, 'Paint existing rooms',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'paintAllRoomsFlag', FALSE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Quick-paint without resetting',
-            7, 11, 5, 6);
-        $self->addCheckButton($table, 'quickPaintMultiFlag', FALSE,
-            11, 12, 5, 6, 1, 0.5);
+        $self->addCheckButton($table, 'Paint existing rooms', 'paintAllRoomsFlag', FALSE,
+            7, 12, 4, 5);
+        $self->addCheckButton($table, 'Quick-paint without resetting', 'quickPaintMultiFlag', FALSE,
+            7, 12, 5, 6);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -56032,7 +56045,7 @@
         # Settings3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -56056,69 +56069,45 @@
         # Left column
         $self->addLabel($table, '<u>Room matching</u>',
             1, 6, 1, 2);
-        $self->addLabel($table, 'Match room titles',
-            1, 5, 2, 3);
-        $self->addCheckButton($table, 'matchTitleFlag', TRUE,
-            5, 6, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Match (verbose) descriptions',
-            1, 5, 3, 4);
-        $self->addCheckButton($table, 'matchDescripFlag', TRUE,
-            5, 6, 3, 4, 1, 0.5);
+        $self->addCheckButton($table, 'Match room titles', 'matchTitleFlag', TRUE,
+            1, 6, 2, 3);
+        $self->addCheckButton($table, 'Match (verbose) descriptions', 'matchDescripFlag', TRUE,
+            1, 6, 3, 4);
         $self->addLabel($table, 'Characters to match (0 - match whole)',
             1, 4, 4, 5);
-        $self->addEntryWithIcon($table, 'matchDescripCharCount', 'int', 0, undef,
+        $self->addEntryWithIcon(
+            $table, 'matchDescripCharCount', 'int', 0, undef,
             4, 6, 4, 5, 4, 4);
-        $self->addLabel($table, 'Match exits',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'matchExitFlag', TRUE,
-            5, 6, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Analyse verbose descriptions',
-            1, 5, 6, 7);
-        $self->addCheckButton($table, 'analyseDescripFlag', TRUE,
-            5, 6, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Match room source code path',
-            1, 5, 7, 8);
-        $self->addCheckButton($table, 'matchSourceFlag', TRUE,
-            5, 6, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Match world\'s room vnum',
-            1, 5, 8, 9);
-        $self->addCheckButton($table, 'matchVNumFlag', TRUE,
-            5, 6, 8, 9, 1, 0.5);
+        $self->addCheckButton($table, 'Match exits', 'matchExitFlag', TRUE,
+            1, 6, 5, 6);
+        $self->addCheckButton($table, 'Analyse verbose descriptions', 'analyseDescripFlag', TRUE,
+            1, 6, 6, 7);
+        $self->addCheckButton($table, 'Match room source code path', 'matchSourceFlag', TRUE,
+            1, 6, 7, 8);
+        $self->addCheckButton($table, 'Match world\'s room vnum', 'matchVNumFlag', TRUE,
+            1, 6, 8, 9);
 
         # Right column
         $self->addLabel($table, '<u>Room updating</u>',
             7, 12, 1, 2);
-        $self->addLabel($table, 'Update room titles',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'updateTitleFlag', TRUE,
-            11, 12, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Update room descriptions',
-            7, 11, 3, 4);
-        $self->addCheckButton($table, 'updateDescripFlag', TRUE,
-            11, 12, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Update exits',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'updateExitFlag', TRUE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Update exit ornaments using exit states',
-            7, 11, 5, 6);
-        $self->addCheckButton($table, 'updateOrnamentFlag', TRUE,
-            11, 12, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Update room source code path',
-            7, 11, 6, 7);
-        $self->addCheckButton($table, 'updateSourceFlag', TRUE,
-            11, 12, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Update world\'s room vnum',
-            7, 11, 7, 8);
-        $self->addCheckButton($table, 'updateVNumFlag', TRUE,
-            11, 12, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Update room commands',
-            7, 11, 8, 9);
-        $self->addCheckButton($table, 'updateRoomCmdFlag', TRUE,
-            11, 12, 8, 9, 1, 0.5);
+        $self->addCheckButton($table, 'Update room titles', 'updateTitleFlag', TRUE,
+            7, 12, 2, 3);
+        $self->addCheckButton($table, 'Update room descriptions', 'updateDescripFlag', TRUE,
+            7, 12, 3, 4);
+        $self->addCheckButton($table, 'Update exits', 'updateExitFlag', TRUE,
+            7, 12, 4, 5);
+        $self->addCheckButton(
+            $table, 'Update exit ornaments using exit states', 'updateOrnamentFlag', TRUE,
+            7, 12, 5, 6);
+        $self->addCheckButton($table, 'Update room source code path', 'updateSourceFlag', TRUE,
+            7, 12, 6, 7);
+        $self->addCheckButton($table, 'Update world\'s room vnum', 'updateVNumFlag', TRUE,
+            7, 12, 7, 8);
+        $self->addCheckButton($table, 'Update room commands', 'updateRoomCmdFlag', TRUE,
+            7, 12, 8, 9);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -56128,7 +56117,7 @@
         # Settings4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -56144,10 +56133,6 @@
 
         # Tab setup
         my ($vBox, $table) = $self->addTab('Page _4', $innerNotebook);
-
-        # (Need just a little extra space to make everything fit)
-        $table->set_col_spacings($self->spacingPixels - 1);
-        $table->set_row_spacings($self->spacingPixels - 1);
 
         # Settings (cont.)
         $self->addLabel($table, '<b>Settings (cont.)</b>',
@@ -56210,18 +56195,14 @@
         $self->addLabel($table, '<u>Auto-rescue mode</u>',
             1, 6, 10, 11);
 
-        $self->addCheckButton($table, 'autoRescueFlag', TRUE,
-            1, 2, 11, 12, 0, 0.5);
-        $self->addLabel($table, 'Enable auto-rescue mode when lost',
-            2, 6, 11, 12);
-        $self->addCheckButton($table, 'autoRescueFirstFlag', TRUE,
-            1, 2, 12, 13, 0, 0.5);
-        $self->addLabel($table, 'Auto-merge rooms at first matching room',
-            2, 6, 12, 13);
-        $self->addCheckButton($table, 'autoRescuePromptFlag', TRUE,
-            1, 2, 13, 14, 0, 0.5);
-        $self->addLabel($table, 'Prompt user before auto-merge rooms',
-            2, 6, 13, 14);
+        $self->addCheckButton($table, 'Enable auto-rescue mode when lost', 'autoRescueFlag', TRUE,
+            1, 2, 11, 12);
+        $self->addCheckButton(
+            $table, 'Auto-merge rooms at first matching room', 'autoRescueFirstFlag', TRUE,
+            1, 2, 12, 13);
+        $self->addCheckButton(
+            $table, 'Prompt user before auto-merge rooms', 'autoRescuePromptFlag', TRUE,
+            1, 2, 13, 14);
 
         # Auto-slide mode
         $self->addLabel($table, '<u>Auto-slide mode</u>',
@@ -56259,21 +56240,18 @@
             10, 12, 9, 10, 8, 8);
 
         # (Auto-rescue mode continued, right column)
-        $self->addCheckButton($table, 'autoRescueNoMoveFlag', TRUE,
-            7, 8, 11, 12, 0, 0.5);
-        $self->addLabel($table, 'Don\'t move non-matching rooms',
-            8, 12, 11, 12);
-        $self->addCheckButton($table, 'autoRescueVisitsFlag', TRUE,
-            7, 8, 12, 13, 0, 0.5);
-        $self->addLabel($table, 'Only update visits in merged rooms',
-            8, 12, 12, 13);
-        $self->addCheckButton($table, 'autoRescueForceFlag', TRUE,
-            7, 8, 13, 14, 0, 0.5);
-        $self->addLabel($table, 'Temporarily switch to \'update\' mode',
-            8, 12, 13, 14);
+        $self->addCheckButton(
+            $table, 'Don\'t move non-matching rooms', 'autoRescueNoMoveFlag', TRUE,
+            7, 8, 11, 12);
+        $self->addCheckButton(
+            $table, 'Only update visits in merged rooms', 'autoRescueVisitsFlag', TRUE,
+            7, 8, 12, 13);
+        $self->addCheckButton(
+            $table, 'Temporarily switch to \'update\' mode', 'autoRescueForceFlag', TRUE,
+            7, 8, 13, 14);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -56283,7 +56261,7 @@
         # Settings5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -56312,20 +56290,21 @@
         $self->addTextView($table, 'newRoomScriptList', TRUE,
             1, 10, 2, 10,
             TRUE, TRUE, TRUE, FALSE,    # Treat as a list, remove empty lines, remove whitespace
-            -1, 250);                   # Fixed height
+            -1, 270);                   # Fixed height
 
-        $self->addLabel(
+        $self->addCheckButton(
             $table,
             'Allow scripts applying to all rooms in the world model above (including the scripts'
             . ' listed above)',
-            2, 12, 10, 11);
-        $self->addCheckButton($table, 'allowModelScriptFlag', TRUE,
-            1, 2, 10, 11, 1, 0.5);
-        $self->addLabel($table, 'Allow invididual room scripts (which run before the scripts'
-            . ' listed above)',
-            2, 12, 11, 12);
-        $self->addCheckButton($table, 'allowRoomScriptFlag', TRUE,
-            1, 2, 11, 12, 1, 0.5);
+            'allowModelScriptFlag',
+            TRUE,
+            1, 12, 10, 11);
+        $self->addCheckButton(
+            $table,
+            'Allow invididual room scripts (which run before the scripts listed above)',
+            'allowRoomScriptFlag',
+            TRUE,
+            1, 12, 11, 12);
 
         # Right column
         $self->addLabel(
@@ -56338,7 +56317,7 @@
             -1, 250);                   # Fixed height
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -56348,7 +56327,7 @@
         # Settings6 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -56380,10 +56359,8 @@
             1, 3, 3, 4);
         $self->addEntryWithIcon($table, 'searchMaxMatches', 'int', 0, undef,
             3, 6, 3, 4, 4, 4);
-        $self->addLabel($table, 'Select matching rooms',
-            1, 5, 4, 5);
-        $self->addCheckButton($table, 'searchSelectRoomsFlag', TRUE,
-            5, 6, 4, 5, 1, 0.5);
+        $self->addCheckButton($table, 'Select matching rooms', 'searchSelectRoomsFlag', TRUE,
+            1, 6, 4, 5);
 
         $self->addLabel($table, '<u>Locate room (0 - no limit)</u>',
             1, 6, 5, 6);
@@ -56393,30 +56370,20 @@
             3, 6, 6, 7, 8, 8);
         $self->addLabel($table, '<u>Locate room after random exit</u>',
             1, 6, 7, 8);
-        $self->addLabel($table, 'Locate in region',
-            1, 5, 8, 9);
-        $self->addCheckButton($table, 'locateRandomInRegionFlag', TRUE,
-            5, 6, 8, 9, 1, 0.5);
-        $self->addLabel($table, 'Locate anywhere',
-            1, 5, 9, 10);
-        $self->addCheckButton($table, 'locateRandomAnywhereFlag', TRUE,
-            5, 6, 9, 10, 1, 0.5);
+        $self->addCheckButton($table, 'Locate in region', 'locateRandomInRegionFlag', TRUE,
+            1, 6, 8, 9);
+        $self->addCheckButton($table, 'Locate anywhere', 'locateRandomAnywhereFlag', TRUE,
+            1, 6, 9, 10);
 
         # Right column
         $self->addLabel($table, '<u>Pathfinding</u>',
             7, 12, 1, 2);
-        $self->addLabel($table, 'Avoid hazards',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'avoidHazardsFlag', TRUE,
-            11, 12, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Apply post-processing to paths',
-            7, 11, 3, 4);
-        $self->addCheckButton($table, 'postProcessingFlag', TRUE,
-            11, 12, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Double-click pathfinding',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'quickPathFindFlag', TRUE,
-            11, 12, 4, 5, 1, 0.5);
+        $self->addCheckButton($table, 'Avoid hazards', 'avoidHazardsFlag', TRUE,
+            7, 12, 2, 3);
+        $self->addCheckButton($table, 'Apply post-processing to paths', 'postProcessingFlag', TRUE,
+            7, 12, 3, 4);
+        $self->addCheckButton($table, 'Double-click pathfinding', 'quickPathFindFlag', TRUE,
+            7, 12, 4, 5);
         $self->addLabel($table, 'Maximum steps in path (0 - no limit)',
             7, 10, 5, 6);
         $self->addEntryWithIcon($table, 'pathFindStepLimit', 'int', 0, undef,
@@ -56441,7 +56408,7 @@
             10, 12, 10, 11, 4, 4);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -56451,7 +56418,7 @@
         # Settings7 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -56482,55 +56449,39 @@
         # Left column
         $self->addLabel($table, '<u>Assisted moves</u>',
             1, 6, 1, 2);
-        $self->addLabel($table, 'Assisted moves enabled',
-            1, 5, 2, 3);
-        my $checkButton = $self->addCheckButton($table, undef, TRUE,
-            5, 6, 2, 3, 1, 0.5);
+        my $checkButton = $self->addCheckButton($table, 'Assisted moves enabled', undef, TRUE,
+            1, 6, 2, 3);
         $checkButton->set_active($self->editObj->assistedMovesFlag);
         # (->signal_connect appears below)
 
-        $self->addLabel($table, 'Break down doors',
-            1, 5, 3, 4);
-        $self->addCheckButton($table, 'assistedBreakFlag', TRUE,
-            5, 6, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Pick locks',
-            1, 5, 4, 5);
-        $self->addCheckButton($table, 'assistedPickFlag', TRUE,
-            5, 6, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Unlock doors',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'assistedUnlockFlag', TRUE,
-            5, 6, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Open doors',
-            1, 5, 6, 7);
-        $self->addCheckButton($table, 'assistedOpenFlag', TRUE,
-            5, 6, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Close doors',
-            1, 5, 7, 8);
-        $self->addCheckButton($table, 'assistedCloseFlag', TRUE,
-            5, 6, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Lock doors',
-            1, 5, 8, 9);
-        $self->addCheckButton($table, 'assistedLockFlag', TRUE,
-            5, 6, 8, 9, 1, 0.5);
+        $self->addCheckButton($table, 'Break down doors', 'assistedBreakFlag', TRUE,
+            1, 6, 3, 4);
+        $self->addCheckButton($table, 'Pick locks', 'assistedPickFlag', TRUE,
+            1, 6, 4, 5);
+        $self->addCheckButton($table, 'Unlock doors', 'assistedUnlockFlag', TRUE,
+            1, 6, 5, 6);
+        $self->addCheckButton($table, 'Open doors', 'assistedOpenFlag', TRUE,
+            1, 6, 6, 7);
+        $self->addCheckButton($table, 'Close doors', 'assistedCloseFlag', TRUE,
+            1, 6, 7, 8);
+        $self->addCheckButton($table, 'Lock doors', 'assistedLockFlag', TRUE,
+            1, 6, 8, 9);
 
         $self->addLabel($table, '<u>Protected moves</u>',
             1, 6, 9, 10);
 
-        $self->addLabel($table, 'Protected moves enabled',
-            1, 5, 10, 11);
-        my $checkButton2 = $self->addCheckButton($table, 'protectedMovesFlag', TRUE,
-            5, 6, 10, 11, 1, 0.5);
+        my $checkButton2 = $self->addCheckButton(
+            $table, 'Protected moves enabled', 'protectedMovesFlag', TRUE,
+            1, 6, 10, 11);
         # ->signal_connect appears below
         if (! $self->editObj->assistedMovesFlag) {
 
             $checkButton2->set_state('insensitive');
         }
 
-        $self->addLabel($table, 'Cancel commands when move overruled',
-            1, 5, 11, 12);
-        my $checkButton3 = $self->addCheckButton($table, 'superProtectedMovesFlag', TRUE,
-            5, 6, 11, 12, 1, 0.5);
+        my $checkButton3 = $self->addCheckButton(
+            $table, 'Cancel commands when move overruled', 'superProtectedMovesFlag', TRUE,
+            1, 6, 11, 12);
         if (! $self->editObj->assistedMovesFlag) {
 
             $checkButton3->set_state('insensitive');
@@ -56540,10 +56491,9 @@
         $self->addLabel($table, '<u>Crafty moves</u>',
             7, 12, 1, 2);
 
-        $self->addLabel($table, 'Crafty moves enabled',
-            7, 11, 2, 3);
-        my $checkButton4 = $self->addCheckButton($table, 'craftyMovesFlag', TRUE,
-            11, 12, 2, 3, 1, 0.5);
+        my $checkButton4 = $self->addCheckButton(
+            $table, 'Crafty moves enabled', 'craftyMovesFlag', TRUE,
+            7, 12, 2, 3);
         if ($self->editObj->protectedMovesFlag) {
 
             $checkButton4->set_state('insensitive');
@@ -56572,14 +56522,10 @@
 
         $self->addLabel($table, '<u>Checked directions</u>',
             7, 12, 7, 8);
-        $self->addLabel($table, 'Collect checked directions',
-            7, 11, 8, 9);
-        $self->addCheckButton($table, 'collectCheckedDirsFlag', TRUE,
-            11, 12, 8, 9, 1, 0.5);
-        $self->addLabel($table, 'Draw checked directions',
-            7, 11, 9, 10);
-        $self->addCheckButton($table, 'drawCheckedDirsFlag', TRUE,
-            11, 12, 9, 10, 1, 0.5);
+        $self->addCheckButton($table, 'Collect checked directions', 'collectCheckedDirsFlag', TRUE,
+            7, 12, 8, 9);
+        $self->addCheckButton($table, 'Draw checked directions', 'drawCheckedDirsFlag', TRUE,
+            7, 12, 9, 10);
         $self->addLabel($table, 'Checkable directions to count',
             7, 12, 10, 11);
 
@@ -56649,7 +56595,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -56659,7 +56605,7 @@
         # Settings8 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -56683,83 +56629,51 @@
         # Left column
         $self->addLabel($table, '<u>Miscellaneous flags</u>',
             1, 6, 1, 2);
-        $self->addLabel($table, 'Open window automatically',
-            1, 5, 2, 3);
-        $self->addCheckButton($table, 'autoOpenWinFlag', TRUE,
-            5, 6, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Open as pseudo-window (if possible)',
-            1, 5, 3, 4);
-        $self->addCheckButton($table, 'pseudoWinFlag', TRUE,
-            5, 6, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Keep following character after closing',
-            1, 5, 4, 5);
-        $self->addCheckButton($table, 'allowTrackAloneFlag', TRUE,
-            5, 6, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Set twin exit ornaments',
-            1, 5, 5, 6);
-        $self->addCheckButton($table, 'setTwinOrnamentFlag', TRUE,
-            5, 6, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Auto-complete uncertain exits',
-            1, 5, 6, 7);
-        $self->addCheckButton($table, 'autocompleteExitsFlag', TRUE,
-            5, 6, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Intelligent uncertain exits',
-            1, 5, 7, 8);
-        $self->addCheckButton($table, 'intelligentExitsFlag', TRUE,
-            5, 6, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Draw new exits for follow anchors',
-            1, 5, 8, 9);
-        $self->addCheckButton($table, 'followAnchorFlag', TRUE,
-            5, 6, 8, 9, 1, 0.5);
-        $self->addLabel($table, 'Auto-set tags for region exits',
-            1, 5, 9, 10);
-        $self->addCheckButton($table, 'updateExitTagFlag', TRUE,
-            5, 6, 9, 10, 1, 0.5);
-        $self->addLabel($table, 'Show all 18 primary directions in dialogues',
-            1, 5, 10, 11);
-        $self->addCheckButton($table, 'showAllPrimaryFlag', TRUE,
-            5, 6, 10, 11, 1, 0.5);
+        $self->addCheckButton($table, 'Open window automatically', 'autoOpenWinFlag', TRUE,
+            1, 6, 2, 3);
+        $self->addCheckButton($table, 'Open as pseudo-window (if possible)', 'pseudoWinFlag', TRUE,
+            1, 6, 3, 4);
+        $self->addCheckButton(
+            $table, 'Keep following character after closing', 'allowTrackAloneFlag', TRUE,
+            1, 6, 4, 5);
+        $self->addCheckButton($table, 'Set twin exit ornaments', 'setTwinOrnamentFlag', TRUE,
+            1, 6, 5, 6);
+        $self->addCheckButton(
+            $table, 'Auto-complete uncertain exits', 'autocompleteExitsFlag', TRUE,
+            1, 6, 6, 7);
+        $self->addCheckButton($table, 'Intelligent uncertain exits', 'intelligentExitsFlag', TRUE,
+            1, 6, 7, 8);
+        $self->addCheckButton($table, 'Draw new exits for follow anchors', 'followAnchorFlag', TRUE,
+            1, 6, 8, 9);
+        $self->addCheckButton($table, 'Auto-set tags for region exits', 'updateExitTagFlag', TRUE,
+            1, 6, 9, 10);
+        $self->addCheckButton(
+            $table, 'Show all 18 primary directions in dialogues', 'showAllPrimaryFlag', TRUE,
+            1, 6, 10, 11);
 
         # Right column
-        $self->addLabel($table, 'Capitalise room tags',
-            7, 11, 2, 3);
-        $self->addCheckButton($table, 'capitalisedRoomTagFlag', TRUE,
-            11, 12, 2, 3, 1, 0.5);
-        $self->addLabel($table, 'Show tooltips',
-            7, 11, 3, 4);
-        $self->addCheckButton($table, 'showTooltipsFlag', TRUE,
-            11, 12, 3, 4, 1, 0.5);
-        $self->addLabel($table, 'Show room notes in tooltips',
-            7, 11, 4, 5);
-        $self->addCheckButton($table, 'showNotesFlag', TRUE,
-            11, 12, 4, 5, 1, 0.5);
-        $self->addLabel($table, 'Show explanation when lost',
-            7, 11, 5, 6);
-        $self->addCheckButton($table, 'explainGetLostFlag', TRUE,
-            11, 12, 5, 6, 1, 0.5);
-        $self->addLabel($table, 'Update mode disabled',
-            7, 11, 6, 7);
-        $self->addCheckButton($table, 'disableUpdateModeFlag', TRUE,
-            11, 12, 6, 7, 1, 0.5);
-        $self->addLabel($table, 'Count character visits',
-            7, 11, 7, 8);
-        $self->addCheckButton($table, 'countVisitsFlag', TRUE,
-            11, 12, 7, 8, 1, 0.5);
-        $self->addLabel($table, 'Draw room echos',
-            7, 11, 8, 9);
-        $self->addCheckButton($table, 'drawRoomEchoFlag', TRUE,
-            11, 12, 8, 9, 1, 0.5);
-        $self->addLabel($table, 'Draw bent broken exits',
-            7, 11, 9, 10);
-        $self->addCheckButton($table, 'drawBentExitsFlag', TRUE,
-            11, 12, 9, 10, 1, 0.5);
-        $self->addLabel($table, 'Use CTRL+C for \'move rooms to click\'',
-            7, 11, 10, 11);
-        $self->addCheckButton($table, 'allowCtrlCopyFlag', TRUE,
-            11, 12, 10, 11, 1, 0.5);
+        $self->addCheckButton($table, 'Capitalise room tags', 'capitalisedRoomTagFlag', TRUE,
+            7, 12, 2, 3);
+        $self->addCheckButton($table, 'Show tooltips', 'showTooltipsFlag', TRUE,
+            7, 12, 3, 4);
+        $self->addCheckButton($table, 'Show room notes in tooltips', 'showNotesFlag', TRUE,
+            7, 12, 4, 5);
+        $self->addCheckButton($table, 'Show explanation when lost', 'explainGetLostFlag', TRUE,
+            7, 12, 5, 6);
+        $self->addCheckButton($table, 'Update mode disabled', 'disableUpdateModeFlag', TRUE,
+            7, 12, 6, 7);
+        $self->addCheckButton($table, 'Count character visits', 'countVisitsFlag', TRUE,
+            7, 12, 7, 8);
+        $self->addCheckButton($table,  'Draw room echos', 'drawRoomEchoFlag', TRUE,
+            7, 12, 8, 9);
+        $self->addCheckButton($table, 'Draw bent broken exits', 'drawBentExitsFlag', TRUE,
+            7, 12, 9, 10);
+        $self->addCheckButton(
+            $table, 'Use CTRL+C for \'move rooms to click\'',  'allowCtrlCopyFlag', TRUE,
+            7, 12, 10, 11);
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -56802,7 +56716,7 @@
         # Colours1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -56865,7 +56779,7 @@
         );
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -56877,8 +56791,8 @@
         #   colour IV
         #
         # Expected arguments
-        #   $table      - The Gtk2::Table for this tab
-        #   $row        - The number of the row in the Gtk2::Table displayed in this tab
+        #   $table      - The Gtk3::Grid for this tab
+        #   $row        - The number of the row in the Gtk3::Grid displayed in this tab
         #   $iv         - The IV used, e.g. 'backgroundColour'
         #   $defaultIV  - The default colour used to set this IV, e.g. 'defaultBackgroundColour'
         #   $labelName  - Which label to use, e.g. 'background'
@@ -56961,7 +56875,7 @@
         # Colours2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -57044,7 +56958,7 @@
         );
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -57054,7 +56968,7 @@
         # Colours3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -57121,7 +57035,7 @@
         );
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -57131,7 +57045,7 @@
         # Colours4 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -57226,7 +57140,7 @@
         );
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -57236,7 +57150,7 @@
         # Colours5 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -57327,7 +57241,7 @@
         );
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -57381,7 +57295,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 11,
-            -1, 300);      # Fixed height
+            -1, 310);      # Fixed height
 
         # Initialise the list
         $self->stylesTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -57509,7 +57423,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -57519,7 +57433,7 @@
         # Resets the simple list displayed by $self->stylesTab
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns
         #
         # Return values
@@ -57644,7 +57558,7 @@
         # RoomFlags1 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -57655,7 +57569,8 @@
         # Local variables
         my (
             $sortMode,
-            @columnList,
+            @list, @comboList, @columnList,
+            %descripHash,
         );
 
         # Check for improper arguments
@@ -57669,12 +57584,42 @@
 
         # Room flags
         $self->addLabel($table, '<b>Room flags</b>',
-            0, 12, 0, 1);
+            0, 14, 0, 1);
         $self->addLabel(
             $table,
             '<i>List of flags that mark a room as being of a particular type</i>',
-            1, 12, 1, 2,
+            1, 9, 1, 2,
         );
+
+        @list = (
+            'default'   => 'Show all room flags',
+            'essential' => 'Hide non-essential room flags',
+            'custom'    => 'Show only custom room flags',
+        );
+
+        do {
+
+            my ($mode, $descrip);
+
+            $mode = shift @list;
+            $descrip = shift @list;
+
+            $descripHash{$descrip} = $mode;
+            push (@comboList, $descrip);
+
+        } until (! @list);
+
+        my $combo = $self->addComboBox($table, undef, \@comboList, '',
+            TRUE,              # 'undef' value not used
+            9, 14, 1, 2);
+        # (->signal_connect appears below)
+        if ($self->editObj->roomFlagShowMode eq 'essential') {
+            $combo->set_active(1);
+        } elsif ($self->editObj->roomFlagShowMode eq 'custom') {
+            $combo->set_active(2);
+        } else {
+            $combo->set_active(0);
+        }
 
         # Add a simple list
         @columnList = (
@@ -57688,8 +57633,8 @@
         );
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 9,
-            -1, 200);       # Fixed height
+            1, 14, 2, 9,
+            -1, 180);       # Fixed height
 
         # Initialise the list
         $sortMode = 'priority';      # Sort by priority
@@ -57697,35 +57642,35 @@
 
         # Add entry boxes, canvases and editing buttons
         my $entry = $self->addEntry($table, undef, FALSE,
-            1, 4, 9, 10,
+            1, 3, 9, 10,
             16, 16);
 
         $self->addLabel($table, 'Colour',
-            4, 5, 9, 10);
+            3, 4, 9, 10);
         my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($table, undef, undef,
-            5, 6, 9, 10);
+            4, 5, 9, 10);
         my $entry2 = $self->addEntry($table, undef, FALSE,
-            6, 7, 9, 10,
-            7, 7);
+            5, 7, 9, 10,
+            8, 8);
         my $button = $self->addButton($table, 'Change', 'Change this colour', undef,
-            7, 8, 9, 10,
+            7, 9, 9, 10,
             TRUE);              # Irreversible
 
         my $button2 = $self->addButton($table, 'Use default:', 'Use the default colour', undef,
-            8, 10, 9, 10,
+            9, 11, 9, 10,
             TRUE);              # Irreversible
         my ($frame2, $canvas2, $canvasObj2) = $self->addSimpleCanvas($table, undef, undef,
-            10, 11, 9, 10);
+            11, 12, 9, 10);
         my $entry3 = $self->addEntry($table, undef, FALSE,
-            11, 12, 9, 10,
-            7, 7);
+            12, 14, 9, 10,
+            8, 8);
 
         my $button3 = $self->addButton(
             $table,
             'Move up',
             'Move this flag up the priority list',
             undef,
-            1, 2, 10, 11,
+            1, 3, 10, 11,
             TRUE,               # Irreversible
         );
 
@@ -57734,7 +57679,7 @@
             'Move down',
             'Move this flag down the priority list',
             undef,
-            2, 4, 10, 11,
+            3, 7, 10, 11,
             TRUE,               # Irreversible
         );
 
@@ -57743,7 +57688,7 @@
             'Move to top',
             'Move this flag down the priority list',
             undef,
-            4, 6, 10, 11,
+            7, 10, 10, 11,
             TRUE,               # Irreversible
         );
 
@@ -57752,7 +57697,7 @@
             'Move to bottom',
             'Move this flag down the priority list',
             undef,
-            6, 8, 10, 11,
+            10, 14, 10, 11,
             TRUE,               # Irreversible
         );
 
@@ -57761,7 +57706,7 @@
             'Sort by priority',
             'Sort room flags by priority',
             undef,
-            8, 10, 10, 11,
+            1, 5, 11, 12,
         );
 
         my $button8 = $self->addButton(
@@ -57769,7 +57714,15 @@
             'Sort by filter',
             'Sort room flags by filter',
             undef,
-            10, 12, 10, 11,
+            5, 9, 11, 12,
+        );
+
+        my $button11 = $self->addButton(
+            $table,
+            'Sort alphabetically',
+            'Sort room flags alphabetically',
+            undef,
+            9, 14, 11, 12,
         );
 
         my $button9 = $self->addButton(
@@ -57777,7 +57730,7 @@
             'Add custom flag',
             'Add a custom room flag',
             undef,
-            1, 5, 11, 12,
+            1, 5, 12, 13,
         );
 
         my $button10 = $self->addButton(
@@ -57785,26 +57738,36 @@
             'Delete custom flag',
             'Delete a custom room flag',
             undef,
-            5, 8, 11, 12,
+            5, 9, 12, 13,
         );
         $button10->set_sensitive(FALSE);
 
-        my $button11 = $self->addButton(
-            $table,
-            'Sort alphabetically',
-            'Sort room flags alphabetically',
-            undef,
-            8, 10, 11, 12,
-        );
 
         my $button12 = $self->addButton(
             $table,
             'Restore defaults',
             'Restore default flag colours/priorities',
             undef,
-            10, 12, 11, 12,
+            9, 14, 12, 13,
             TRUE,               # Irreversible
         );
+
+        # Signal connect - combobox
+        $combo->signal_connect('changed' => sub {
+
+            my $descrip = $combo->get_active_text();
+
+            # (Set the IV immediately, so ->roomFlags1Tab_refreshList can use it)
+            $self->editObj->set_roomFlagShowMode($descripHash{$descrip});
+
+            # Reset widgets
+            $self->roomFlags1Tab_refreshList($slWidget, scalar (@columnList / 2), $sortMode);
+            $entry->set_text('');
+            $entry2->set_text('');
+            $entry3->set_text('');
+            $canvasObj = $self->fillSimpleCanvas($canvas, $canvasObj, undef);
+            $canvasObj2 = $self->fillSimpleCanvas($canvas2, $canvasObj2, undef);
+        });
 
         # Signal connect - 'Change' button
         $button->signal_connect('clicked' => sub {
@@ -57831,7 +57794,7 @@
 
                 # Update the room flag object
                 $flagObj->ivPoke('colour', $rgb);
-                # Update widgets to show the chaneg
+                # Update widgets to show the change
                 $canvasObj = $self->fillSimpleCanvas($canvas, $canvasObj, $rgb);
                 $entry2->set_text($rgb);
 
@@ -58160,17 +58123,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub roomFlags1Tab_refreshList {
 
-        # Called by $self->roomFlags1Tab to refresh the GA::Obj::Simple::List
+        # Called by $self->roomFlags1Tab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #   $sortMode   - 'priority' - sort room flags by priority, 'filter' - sort by filter,
         #                   'name' - sort room flags by name
@@ -58184,7 +58147,7 @@
         # Local variables
         my (
             @sortedList, @dataList,
-            %ivHash,
+            %ivHash, %showHash,
         );
 
         # Check for improper arguments
@@ -58219,18 +58182,24 @@
             @sortedList = sort {lc($a->name) cmp lc($b->name)} (values %ivHash);
         }
 
-        # Compile the simple list data
+        # Import a hash of room flags which should be visible in various 'edit' windows
+        %showHash = $self->session->worldModelObj->getVisibleRoomFlags();
+
+        # Compile the simple list data, eliminating any room flags which should be hidden
         foreach my $obj (@sortedList) {
 
-            push (@dataList,
-                $obj->name,
-                $obj->customFlag,
-                $obj->shortName,
-                $obj->priority,
-                $obj->filter,
-                $obj->colour,
-                $obj->descrip,
-            );
+            if (exists $showHash{$obj->name}) {
+
+                push (@dataList,
+                    $obj->name,
+                    $obj->customFlag,
+                    $obj->shortName,
+                    $obj->priority,
+                    $obj->filter,
+                    $obj->colour,
+                    $obj->descrip,
+                );
+            }
         }
 
         # Reset the simple list
@@ -58244,7 +58213,7 @@
         # RoomFlags2 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #
         # Return values
         #   'undef' on improper arguments
@@ -58285,7 +58254,7 @@
 
         my $slWidget = $self->addSimpleList($table, 'roomTerrainHash', \@columnList,
             1, 12, 2, 9,
-            -1, 200);       # Fixed height
+            -1, 220);       # Fixed height
 
         # Add editing widgets
         $self->addLabel($table, 'Terrain type',
@@ -58422,7 +58391,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -58432,7 +58401,7 @@
         # RoomFlags3 tab
         #
         # Expected arguments
-        #   $innerNotebook  - The Gtk2::Notebook object inside $self->notebook
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
         #   $number         - The page number to use for this tab
         #   $title, $descrip, $iv
         #                   - The title, description and IV to use for this tab
@@ -58475,7 +58444,7 @@
 
         my $slWidget = $self->addSimpleList($table, $iv, \@columnList,
             1, 12, 2, 9,
-            -1, 200);       # Fixed height
+            -1, 220);       # Fixed height
 
         # Add editing widgets
         $self->addLabel($table, 'Pattern',
@@ -58595,7 +58564,7 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -58643,7 +58612,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 10,
-            -1, 270);       # Fixed height
+            -1, 290);       # Fixed height
 
         # Initialise the simple list
         $self->lightTab_refreshList($slWidget, scalar (@columnList / 2));
@@ -58780,17 +58749,17 @@
         });
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
 
     sub lightTab_refreshList {
 
-        # Called by $self->lightTab to refresh the GA::Obj::Simple::List
+        # Called by $self->lightTab to refresh the GA::Obj::SimpleList
         #
         # Expected arguments
-        #   $slWidget   - The GA::Obj::Simple::List
+        #   $slWidget   - The GA::Obj::SimpleList
         #   $columns    - The number of columns in the list
         #
         # Return values
@@ -58923,25 +58892,24 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
-        return $self->enableSingleButton($hBox, $tooltips);
+        return $self->enableSingleButton($hBox);
     }
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
@@ -58981,10 +58949,18 @@
         $self->{cellHeight} = undef;
         $self->{clickMode} = undef;
 
+        $self->{canvasWidget} = undef;
+        $self->{bgCanvasObj} = undef;
+        $self->{gridCanvasObj} = undef;
+        $self->{gridCanvasObj2} = undef;
+        $self->{selectCanvasObj} = undef;
+        $self->{drawnObjList} = [];
+
         $self->{entryStartX} = undef;
         $self->{entryStartY} = undef;
         $self->{entryStopX} = undef;
         $self->{entryStopY} = undef;
+        $self->{addZoneCombo} = undef;
         $self->{addZoneButton} = undef;
         $self->{cancelButton} = undef;
         $self->{mouseStep} = undef;
@@ -58994,7 +58970,12 @@
         $self->{stopY} = undef;
 
         $self->{entryCurrentZone} = undef;
-        $self->{drawingArea2} = undef;
+        $self->{entryCurrentTable} = undef;
+        $self->{frame} = undef;
+        $self->{simpleCanvasWidget} = undef;
+        $self->{simpleCanvasObj} = undef;
+        $self->{simpleCanvasSize} = 30;
+        $self->{frame} = undef;
         $self->{editButton} = undef;
         $self->{deleteButton} = undef;
 
@@ -59005,7 +58986,7 @@
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -59044,7 +59025,7 @@
         # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
-        #   $table  -  The Gtk2::Table which has already been created for this tab
+        #   $table  -  The Gtk3::Grid which has already been created for this tab
         #
         # Return values
         #   'undef' on improper arguments
@@ -59070,17 +59051,13 @@
             3, 6, 2, 4, 16, 16);
 
         # Right column
-        $self->addLabel($table, 'Zonemap is full',
-            7, 11, 2, 4);
-        $self->addCheckButton($table, 'fullFlag', FALSE,
-            11, 12, 2, 4, 1, 0.5);
-        $self->addLabel($table, 'Zonemap is temporary',
-            7, 11, 4, 6);
-        $self->addCheckButton($table, 'tempFlag', FALSE,
-            11, 12, 4, 6, 1, 0.5);
+        $self->addCheckButton($table, 'Zonemap is full', 'fullFlag', FALSE,
+            7, 12, 2, 4);
+        $self->addCheckButton($table, 'Zonemap is temporary', 'tempFlag', FALSE,
+            7, 12, 4, 6);
 
 #       # Tab complete (handled by the calling function)
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -59113,43 +59090,99 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Zone models', $self->notebook);
 
-        # We're going to draw a grid full of pretty colours, using a pixmap and a Gtk2::DrawingArea
-        #   object
+        # We're going to use a GooCanvas2::Canvas to draw a grid containing squares in various
+        #   colours
 
         ########
-        # Part 1 - draw the grid
+        # Part 1 - set up the canvas, and draw an empty grid
 
         # Unusual step - we have to save a number of variables as IVs, so that this object's methods
         #   can access them, without passing a million arguments back and forth
-        $self->ivPoke('borderX', 10);           # Size of area around the grid (pixels)
+        $self->ivPoke('borderX', 10);           # Size of area outside the grid (pixels)
         $self->ivPoke('borderY', 10);           #
         $self->ivPoke('gridSize', 60);          # Grid is 60x60 gridblocks
         $self->ivPoke('cellWidth', 6);          # Size of each gridblock (pixels)
         $self->ivPoke('cellHeight', 5);         #
 
-        # Add a drawing area, containing the main grid - a 60x60 grid containing zones
-        #   $self->zoneModelsTab_refreshGrid    - Draws the grid
-        #   $self->zoneModelsTab_getMouseClick  - Responds to mouse clicks on the area
-        #   $self->zoneModelsTab_getMouseMotion - Responds to mouse motion over the are
-        $widthRequest = $self->borderX + ($self->gridSize * $self->cellWidth) + 30;
-        $heightRequest = $self->borderY + ($self->gridSize * $self->cellHeight) + 50;
+        # Add a drawing canvas, displaying a 60x60 grid containing any number of zones
+        #   $self->zoneModelsTab_getMouseClick  - Responds to mouse clicks on the canvas
+        #   $self->zoneModelsTab_getMouseMotion - Responds to mouse motion over the canvas
+        $widthRequest = ($self->borderX * 2) + ($self->gridSize * $self->cellWidth);
+        $heightRequest = ($self->borderY * 2) + ($self->gridSize * $self->cellHeight);
 
-        my $drawingAreaObj = $self->addDrawingArea(
+        my $canvasWidget = $self->addDrawingCanvas(
             $table,
-            '',
-            'zoneModelsTab_refreshGrid',
             'zoneModelsTab_getMouseClick',
             'zoneModelsTab_getMouseMotion',
             FALSE, FALSE,                       # No scrolling
-            0, 8, 0, 12,                        # Position in table
+            0, 7, 0, 12,                        # Position in table
             $widthRequest, $heightRequest,      # Requested size of viewport
         );
+
+        # Draw the canvas background (in white)
+        my $canvasObj = GooCanvas2::CanvasRect->new(
+            'parent' => $canvasWidget->get_root_item(),
+            x => 0,
+            y => 0,
+            width => $widthRequest,
+            height => $heightRequest,
+#            'line-width' => 2,
+            'stroke-color' => '#FFFFFF',
+            'fill-color' => '#FFFFFF',
+        );
+
+        $canvasObj->lower();
+
+        # Draw a 60x60 grid on the canvas
+        my $canvasObj2 = GooCanvas2::CanvasGrid->new(
+            'parent' => $canvasWidget->get_root_item(),
+            x => $self->borderX,
+            y => $self->borderY,
+            width => ($self->gridSize * $self->cellWidth),
+            height => ($self->gridSize * $self->cellHeight),
+            x_step => $self->cellWidth,
+            y_step => $self->cellHeight,
+            x_offset => 0,
+            y_offset => 0,
+            'horz-grid-line-width' => 1,
+            'horz-grid-line-color' => '#808080',
+            'vert-grid-line-width' => 1,
+            'vert-grid-line-color' => '#808080',
+        );
+
+        # Overlay that with a 12x12 grid in a stronger colour, to clearly show the subvidisions
+        my $canvasObj3 = GooCanvas2::CanvasGrid->new(
+            'parent' => $canvasWidget->get_root_item(),
+            x => $self->borderX,
+            y => $self->borderY,
+            width => ($self->gridSize * $self->cellWidth),
+            height => ($self->gridSize * $self->cellHeight),
+            x_step => ($self->cellWidth * 5),
+            y_step => ($self->cellHeight * 5),
+            x_offset => 0,
+            y_offset => 0,
+            'horz-grid-line-width' => 1,
+            'horz-grid-line-color' => '#000000',
+            'vert-grid-line-width' => 1,
+            'vert-grid-line-color' => '#000000',
+        );
+
+        $canvasObj3->raise();
+
+        # Save more IVs
+        $self->ivPoke('canvasWidget', $canvasWidget);
+        $self->ivPoke('bgCanvasObj', $canvasObj);
+        $self->ivPoke('gridCanvasObj', $canvasObj2);
+        $self->ivPoke('gridCanvasObj2', $canvasObj3);
+
+        # Now draw any existing zone models
+        $self->zoneModelsTab_refreshGrid();
 
         ########
         # Part 2 - widgets for adding new zones
 
         $self->addLabel($table, '<b>Add a new zone model</b>',
-            8, 12, 0, 1);
+            7, 12, 0, 1);
 
         # Create an IV to store whether we want 1-block clicks or 5-block clicks
         $self->ivPoke('clickMode', 1);  # 0     - 1-block clicks
@@ -59158,28 +59191,28 @@
         my ($radioGroup, $radioButton, $radioButton2);
         ($radioGroup, $radioButton) = $self->addRadioButton($table,
             undef, 'Use 5-block clicks', undef, undef, TRUE,
-            8, 12, 1, 2);
+            7, 12, 1, 2);
 
         ($radioGroup, $radioButton2) = $self->addRadioButton($table,
             $radioGroup, 'Use 1-block clicks', undef, undef, TRUE,
-            8, 12, 2, 3);
+            7, 12, 2, 3);
 
         $self->addLabel($table, 'Top-left corner',
-            8, 10, 3, 4);
+            7, 9, 3, 4);
         my $entry = $self->addEntry($table, undef, FALSE,
-            10, 11, 3, 4, 3, 3);
+            9, 10, 3, 4, 3, 3);
         my $entry2 = $self->addEntry($table, undef, FALSE,
-            11, 12, 3, 4, 3, 3);
+            10, 12, 3, 4, 3, 3);
 
         $self->addLabel($table, 'Bottom-right corner',
-            8, 10, 4, 5);
+            7, 9, 4, 5);
         my $entry3 = $self->addEntry($table, undef, FALSE,
-            10, 11, 4, 5, 3, 3);
+            9, 10, 4, 5, 3, 3);
         my $entry4 = $self->addEntry($table, undef, FALSE,
-            11, 12, 4, 5, 3, 3);
+            10, 12, 4, 5, 3, 3);
 
         # Save these entry boxes as IVs, so they can be updated as the mouse moves over the drawing
-        #   area
+        #   canvas
         $self->ivPoke('entryStartX', $entry);
         $self->ivPoke('entryStartY', $entry2);
         $self->ivPoke('entryStopX', $entry3);
@@ -59189,12 +59222,12 @@
         #   the bottom-right, then on the 'add zone model' button
         my $button = $self->addButton($table,
             'Add zone model', 'Create a zone model using the selected area', undef,
-            8, 10, 5, 6,
+            7, 9, 5, 6,
             TRUE,           # Irreversible
         );
         my $button2 = $self->addButton($table,
             'Cancel', 'Don\'t create a zone model using the selected area', undef,
-            10, 12, 5, 6);
+            9, 12, 5, 6);
 
         # Save the buttons as IVs, so that they can be sensitised/desensitised (start desensitised)
         $self->ivPoke('addZoneButton', $button);
@@ -59214,47 +59247,58 @@
         # Part 3 - widgets for existing zones
 
         $self->addLabel($table, '<b>Zone model actions</b>',
-            8, 12, 6, 7);
+            7, 12, 6, 7);
 
         # When clicking on an existing zone, the zone model's number is displayed...
         $self->addLabel($table, 'Selected model #',
-            8, 10, 7, 8);
+            7, 9, 7, 8);
         my $entry5 = $self->addEntry($table, undef, FALSE,
-            10, 11, 7, 8, 3, 3);
+            9, 10, 7, 8, 3, 3);
         $self->ivPoke('entryCurrentZone', $entry5);
 
         # ...as is its colour
-        my $drawingAreaObj2 = $self->addDrawingArea($table, '',
-            undef, undef, undef,    # No function references
-            FALSE, FALSE,           # No scrolling
-            11, 12, 7, 8,           # Position in table
-            15, 15,                 # Width/height request
+        my ($frame, $simpleCanvasWidget, $simpleCanvasObj) = $self->addSimpleCanvas(
+            $table, undef, undef,
+            10, 11, 7, 8,               # Position in table
+            $self->simpleCanvasSize,    # Width request
+            $self->simpleCanvasSize,    # Height request
         );
+        $self->ivPoke('frame', $frame);
+        $self->ivPoke('simpleCanvasWidget', $simpleCanvasWidget);
+        $self->ivPoke('simpleCanvasObj', $simpleCanvasObj);
 
-        $self->ivPoke('drawingArea2', $drawingAreaObj2);
+        # (This empty label reduces the size of the simple canvas, so that the whole frame is filled
+        #   by a single colour)
+        $self->addLabel($table, '',
+            11, 12, 7, 8);
 
-        # Editing buttons
+        # Other widgets
         my $button3;
         if ($axmud::CLIENT->checkCurrentZonemap($self->editObj->name)) {
 
             $button3 = $self->addButton($table, 'View...', 'View the selected zone model', undef,
-                8, 10, 8, 9);
+                7, 9, 8, 9);
 
         } else {
 
             $button3 = $self->addButton($table, 'Edit...', 'Edit the selected zone model', undef,
-                8, 10, 8, 9);
+                7, 9, 8, 9);
         }
 
         my $button4 = $self->addButton($table, 'Delete', 'Delete the selected zone model', undef,
-            10, 12, 8, 9,
+            9, 12, 8, 9,
             TRUE,           # Irreversible
         );
         my $button5 = $self->addButton($table,
             'Dump list', 'Display the list of zone models in the \'main\' window', undef,
-            8, 10, 9, 10);
+            7, 9, 9, 10);
         my $button6 = $self->addButton($table, 'Refresh grid', 'Refresh the zonemap grid', undef,
-            10, 12, 9, 10);
+            9, 12, 9, 10);
+
+        # (This empty label reduces the size of the simple canvas, so that the whole frame is filled
+        #   by a single colour)
+        $self->addLabel($table, '',
+            9, 12, 10, 11);
 
         # Save the buttons as IVs, so that it can be sensitised/desensitised (starts desensitised.
         #   Don't need to save or desensitise the 'dump' button)
@@ -59278,16 +59322,18 @@
                 $self->pseudoCmdMode,
             );
 
-            # Re-draw the grid and all existing zones (including the new one, if it was created),
-            #   and return to mouse step 1
-            $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+            # We don't know which zone model was created, so re-draw all of them
+            # Re-draw the grid and all existing zone models, and return to step 1
+            $self->zoneModelsTab_refreshGrid();
+            $self->zoneModelsTab_resetMouseStep();
+
         });
 
         # Cancel button
         $button2->signal_connect('clicked' => sub {
 
             # Re-draw the grid and all existing zones, and return to step 1
-            $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+            $self->zoneModelsTab_resetMouseStep();
         });
 
         # Edit/View button
@@ -59318,8 +59364,9 @@
                 }
             }
 
-            # Re-draw the grid and all existing zones, and return to step 1
-            $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+            # Re-draw the grid and all existing zone models, and return to step 1
+            $self->zoneModelsTab_refreshGrid();
+            $self->zoneModelsTab_resetMouseStep();
         });
 
         # Delete button
@@ -59338,8 +59385,9 @@
                         $self->pseudoCmdMode,
                     );
 
-                    # Re-draw the grid and all existing zones, and return to step 1
-                    $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+                    # Re-draw the grid and all existing zone models, and return to step 1
+                    $self->zoneModelsTab_refreshGrid();
+                    $self->zoneModelsTab_resetMouseStep();
                 }
             }
         });
@@ -59357,7 +59405,7 @@
         $button6->signal_connect('clicked' => sub {
 
             # Re-draw the grid and all existing zones, and return to step 1
-            $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+            $self->zoneModelsTab_resetMouseStep();
         });
 
         # 5-block / 1-block clicks radio button
@@ -59365,7 +59413,7 @@
 
             # Re-draw the grid and all existing zones (including the new one, if it was created),
             #   and return to mouse step 1
-            $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+            $self->zoneModelsTab_resetMouseStep();
 
             if ($radioButton->get_active()) {
                 $self->ivPoke('clickMode', 1);
@@ -59385,7 +59433,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -59393,21 +59441,24 @@
     sub zoneModelsTab_resetMouseStep {
 
         # Called by $self->zoneModelsTab when the $self->mouseStep needs to be set back to 1, either
-        #   because the user clicked a third time on the drawing area, or because they clicked the
+        #   because the user clicked a third time on the drawing canvas, or because they clicked the
         #   'cancel' button, or because they changed from 1-block clicks to 5-block clicks (or
         #   vice-versa)
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
+        #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $drawingAreaObj, $check) = @_;
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $canvasObj;
 
         # Check for improper arguments
-        if (! defined $drawingAreaObj || defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->zoneModelsTab_resetMouseStep',
@@ -59415,8 +59466,12 @@
             );
         }
 
-        # Re-draw the grid and all existing zones, removing the selected area
-        $self->zoneModelsTab_refreshGrid($drawingAreaObj);
+        # Remove the selected block/zone, if drawn
+        if ($self->selectCanvasObj) {
+
+            $self->selectCanvasObj->remove();
+            $self->ivUndef('selectCanvasObj');
+        }
 
         # Go back to step 1
         $self->ivPoke('mouseStep', 1);
@@ -59438,11 +59493,16 @@
         $self->entryStopY->set_text('');
         $self->entryCurrentZone->set_text('');
 
-        $self->drawingArea2->drawRectangle(
-            [0, 0, 50, 50],
-            'white',
-            TRUE,                   # Rectangle filled in
+        # Reset the colour displayed in the simple canvas
+        $canvasObj = $self->fillSimpleCanvas(
+            $self->simpleCanvasWidget,
+            $self->simpleCanvasObj,
+            '#FFFFFF',
+            $self->simpleCanvasSize,
+            $self->simpleCanvasSize,
         );
+
+        $self->ivPoke('simpleCanvasObj', $canvasObj);
 
         # Move back to the first step
         $self->ivPoke('mouseStep', 1);
@@ -59450,182 +59510,29 @@
         return 1;
     }
 
-    sub zoneModelsTab_refreshGrid {
-
-        # Called by $self->addDrawingArea (inherited from GA::Generic::Win), following a call from
-        #   $self->zoneModelsTab
-        # Draws (or re-draws) the grid, and fills in parts of the grid to show existing zone models
-        #
-        # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $drawingAreaObj, $check) = @_;
-
-        # Local variables
-        my (
-            $count,
-            @modelList, @sortedList, @colourList,
-        );
-
-        # Check for improper arguments
-        if (! defined $drawingAreaObj || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->zoneModelsTab_refreshGrid',
-                @_,
-            );
-        }
-
-        # Draw a white rectangle, filled in, to draw over anything that already exists
-        $drawingAreaObj->drawRectangle(
-            [
-                $self->borderX,
-                $self->borderY,
-                # (+1 to remove the bottom and right black lines)
-                ($self->gridSize * $self->cellWidth) + 1,
-                ($self->gridSize * $self->cellHeight) + 1,
-            ],
-            'white',
-            TRUE,           # Rectangle filled in
-        );
-
-        # Draw a 60x60 grey grid
-
-        # Draw vertical lines
-        for (
-            my $x = $self->borderX;
-            $x <= ($self->borderX + ($self->gridSize * $self->cellWidth));
-            $x += $self->cellWidth
-        ) {
-            $drawingAreaObj->drawLine(
-                [
-                    $x,
-                    $self->borderY,
-                    $x,
-                    ($self->borderY + ($self->gridSize * $self->cellHeight))
-                ],
-                'gray',
-            );
-        }
-
-        # Draw horizontal lines
-        for (
-            my $y = $self->borderY;
-            $y <= ($self->borderY + ($self->gridSize * $self->cellHeight));
-            $y += $self->cellHeight
-        ) {
-            $drawingAreaObj->drawLine(
-                [
-                    $self->borderX,
-                    $y,
-                    ($self->borderX + ($self->gridSize * $self->cellWidth)),
-                    $y
-                ],
-                'gray',
-            );
-        }
-
-        # Draw a black grid, overlaid on the grey grid, on every 5th line
-
-        # Draw vertical lines
-        for (
-            my $x = $self->borderX;
-            $x <= ($self->borderX + ($self->gridSize * $self->cellWidth));
-            $x += ($self->cellWidth * 5)
-        ) {
-            $drawingAreaObj->drawLine(
-                [
-                    $x,
-                    $self->borderY,
-                    $x,
-                    ($self->borderY + ($self->gridSize * $self->cellHeight))
-                ],
-                'black',
-            );
-        }
-
-        # Draw horizontal lines
-        for (
-            my $y = $self->borderY;
-            $y <= ($self->borderY + ($self->gridSize * $self->cellHeight));
-            $y += ($self->cellHeight * 5)
-        ) {
-            $drawingAreaObj->drawLine(
-                [
-                    $self->borderX,
-                    $y,
-                    ($self->borderX + ($self->gridSize * $self->cellWidth)),
-                    $y
-                ],
-                'black',
-            );
-        }
-
-        # Draw each existing zone model in turn
-        @modelList = $self->editObj->ivKeys('modelHash');
-        # Sort the list numerically
-        @sortedList = sort {$a <=> $b} (@modelList);
-        # Import a list of 32 colours in roughly rainbow order
-        @colourList = $axmud::CLIENT->constRainbowColourList;
-
-        # Draw each zone in turn, using a different colour for each
-        foreach my $modelNum (@sortedList) {
-
-            my ($modelObj, $colour);
-
-            $modelObj = $self->editObj->ivShow('modelHash', $modelNum);
-
-            $colour = shift @colourList;
-            if (! $colour) {
-
-                # All of the colours have been used - so re-import the list, and start taking
-                #   colours from the beginning again
-                @colourList = $axmud::CLIENT->constRainbowColourList;
-                $colour = shift @colourList;
-            }
-
-            $self->zoneModelsTab_fillZone(
-                $drawingAreaObj,
-                $modelObj->left,
-                $modelObj->top,
-                $modelObj->right,
-                $modelObj->bottom,
-                $colour,
-            );
-        }
-
-        # Operation complete
-        return 1;
-    }
-
     sub zoneModelsTab_getMouseClick {
 
-        # Called by $self->addDrawingArea (inherited from GA::Generic::Win), whenever the user
-        #   clicks on the drawing area
+        # Called by ->signal_connect in $self->addDrawingCanvas (inherited from GA::Generic::Win),
+        #   whenever the user clicks on the drawing canvas
         # Updates the tab's entry boxes and buttons
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
-        #   $xPos, $yPos    - The coordinates on the drawing area at which the user clicked
+        #   $xPos, $yPos    - The coordinates on the drawing canvas at which the user clicked
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $drawingAreaObj, $xPos, $yPos, $check) = @_;
+        my ($self, $xPos, $yPos, $check) = @_;
 
         # Local variables
         my (
-            $xGrid, $yGrid, $zoneModelObj, $number, $posn,
+            $xGrid, $yGrid, $zoneModelObj, $number, $posn, $canvasObj, $canvasObj2,
             @colourList, @sortedList,
         );
 
         # Check for improper arguments
-        if (! defined $drawingAreaObj || ! defined $xPos || ! defined $yPos || defined $check) {
+        if (! defined $xPos || ! defined $yPos || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->zoneModelsTab_getMouseClick',
@@ -59633,7 +59540,7 @@
             );
         }
 
-        # Convert $xPos and $yPos - coordinates in the drawing area - into coordinates on the grid
+        # Convert $xPos and $yPos - coordinates in the drawing canvas - into coordinates on the grid
         $xGrid = int( ($xPos - $self->borderX) / $self->cellWidth);
         $yGrid = int( ($yPos - $self->borderY) / $self->cellHeight);
 
@@ -59650,11 +59557,10 @@
             # See if this particular grid block is occupied; if so, display the number of the zone
             #   model that occupies it
             $zoneModelObj = $self->editObj->findZoneModel($xGrid, $yGrid, 1, 1);
-
             if ($zoneModelObj) {
 
                 # Refresh the grid, and return to mouse step 1
-                $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+                $self->zoneModelsTab_resetMouseStep();
 
                 # Display the number and colour of the clicked zone in one of the entry boxes
                 $number = $zoneModelObj->number;
@@ -59689,11 +59595,16 @@
                     $posn = $posn % (scalar @colourList);
                 }
 
-                $self->drawingArea2->drawRectangle(
-                    [0, 0, 50, 50],
+                # Set the colour displayed in the simple canvas
+                $canvasObj = $self->fillSimpleCanvas(
+                    $self->simpleCanvasWidget,
+                    $self->simpleCanvasObj,
                     $colourList[$posn],
-                    TRUE,           # Rectangle filled in
+                    $self->simpleCanvasSize,
+                    $self->simpleCanvasSize,
                 );
+
+                $self->ivPoke('simpleCanvasObj', $canvasObj);
 
                 # Display the grid coordinates of the clicked block
                 $self->entryStartX->set_text($zoneModelObj->left);
@@ -59714,7 +59625,7 @@
 
                 # This 'edit' window can't be used to create new zonemodels for temporary zonemaps.
                 #   In case the previous click was on an existing zonemodel, reset widgets
-                $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+                $self->zoneModelsTab_resetMouseStep();
 
                 return 1;
 
@@ -59738,29 +59649,41 @@
                 if (! $self->clickMode) {
 
                     # Mark the gridblock pink, as a visual aid
-                    $self->zoneModelsTab_fillBlock($drawingAreaObj, $xGrid, $yGrid, 'pink');
+                    $self->zoneModelsTab_fillBlock(
+                        '#FFC8CB',
+                        $xGrid,
+                        $yGrid,
+                        TRUE,               # Don't add this to $self->drawnObjList
+                    );
 
                 } else {
 
                     # Mark a 5x5 group of gridblocks pink
                     $self->zoneModelsTab_fillZone(
-                        $drawingAreaObj,
+                        '#FFC8CB',
                         $self->startX,
                         $self->startY,
                         $self->startX + 4,
                         $self->startY + 4,
-                        'pink',
+                        TRUE,               # Don't add this to $self->drawnObjList
                     );
                 }
+
+                $self->ivPoke('selectCanvasObj', $canvasObj);
 
                 # If the number of a zone that's been clicked on is displayed, remove it
                 $self->entryCurrentZone->set_text('');
 
-                $self->drawingArea2->drawRectangle(
-                    [0, 0, 50, 50],
-                    'white',
-                    TRUE,       # Rectangle filled in
+                # Reset the colour displayed in the simple canvas
+                $canvasObj2 = $self->fillSimpleCanvas(
+                    $self->simpleCanvasWidget,
+                    $self->simpleCanvasObj,
+                    '#FFFFFF',
+                    $self->simpleCanvasSize,
+                    $self->simpleCanvasSize,
                 );
+
+                $self->ivPoke('simpleCanvasObj', $canvasObj2);
 
                 # Desensitise the 'Edit'/'Delete' buttons
                 $self->editButton->set_sensitive(FALSE);
@@ -59844,13 +59767,15 @@
 
                 # Paint the potentional zone pink, as a visual aid
                 $self->zoneModelsTab_fillZone(
-                    $drawingAreaObj,
+                    '#FFC8CB',
                     $self->startX,
                     $self->startY,
                     $self->stopX,
                     $self->stopY,
-                    'pink',
+                    TRUE,               # Don't add this to $self->drawnObjList
                 );
+
+                $self->ivPoke('selectCanvasObj', $canvasObj);
 
                 # The 'Add zone model'/'Cancel' buttons are now sensitised
                 $self->addZoneButton->set_sensitive(TRUE);
@@ -59862,7 +59787,7 @@
             } elsif ($self->mouseStep == 3) {
 
                 # Refresh the grid, and return to mouse step 1
-                $self->zoneModelsTab_resetMouseStep($drawingAreaObj);
+                $self->zoneModelsTab_resetMouseStep();
             }
         }
 
@@ -59871,25 +59796,24 @@
 
     sub zoneModelsTab_getMouseMotion {
 
-        # Called by $self->addDrawingArea (inherited from GA::Generic::Win), whenever the user moves
-        #   the mouse pointer over the drawing area
+        # Called by ->signal_connect in $self->addDrawingCanvas (inherited from GA::Generic::Win),
+        #   whenever the user moves the mouse pointer over the drawing canvas
         # Updates the tab's entry boxes and buttons
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
-        #   $xPos, $yPos    - The current coordiantes of the mouse over the drawing area
+        #   $xPos, $yPos    - The current coordiantes of the mouse over the drawing canvas
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $drawingAreaObj, $xPos, $yPos, $check) = @_;
+        my ($self, $xPos, $yPos, $check) = @_;
 
         # Local variables
         my ($xGrid, $yGrid);
 
         # Check for improper arguments
-        if (! defined $drawingAreaObj || ! defined $xPos || ! defined $yPos || defined $check) {
+        if (! defined $xPos || ! defined $yPos || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->zoneModelsTab_getMouseMotion',
@@ -59897,7 +59821,7 @@
             );
         }
 
-        # Convert $xPos and $yPos - coordinates in the drawing area - into coordinates on the grid
+        # Convert $xPos and $yPos - coordinates in the drawing canvas - into coordinates on the grid
         $xGrid = int( ($xPos - $self->borderX) / $self->cellWidth);
         $yGrid = int( ($yPos - $self->borderY) / $self->cellHeight);
 
@@ -59924,25 +59848,92 @@
         return 1;
     }
 
-    sub zoneModelsTab_fillBlock {
+    sub zoneModelsTab_refreshGrid {
 
-        # Called by various functions of this 'edit' window object
-        # Fills in a single block of the grid in a single colour
+        # Called by ->zoneModelsTab
+        # Draws (or re-draws) all existing zone models
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
-        #   $xPos, $yPos    - The coordinates of the gridblock to be filled in
-        #   $colour         - The colour, e.g. 'red'
+        #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $drawingAreaObj, $xPos, $yPos, $colour, $check) = @_;
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @colourList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->zoneModelsTab_refreshGrid',
+                @_,
+            );
+        }
+
+        # Remove any existing zone models
+        foreach my $canvasObj ($self->drawnObjList) {
+
+            $canvasObj->remove();
+        }
+
+        # Import a list of 32 colours in roughly rainbow order
+        @colourList = $axmud::CLIENT->constRainbowColourList;
+        # Draw each zone model in turn, using a different colour for each. If we run out of colours,
+        #   start again from the first colour
+        foreach my $modelNum (sort {$a <=> $b} ($self->editObj->ivKeys('modelHash'))) {
+
+            my ($modelObj, $colour);
+
+            $modelObj = $self->editObj->ivShow('modelHash', $modelNum);
+
+            $colour = shift @colourList;
+            if (! $colour) {
+
+                # All of the colours have been used - so re-import the list, and start taking
+                #   colours from the beginning again
+                @colourList = $axmud::CLIENT->constRainbowColourList;
+                $colour = shift @colourList;
+            }
+
+            $self->zoneModelsTab_fillZone(
+                $colour,
+                $modelObj->left,
+                $modelObj->top,
+                $modelObj->right,
+                $modelObj->bottom,
+            );
+        }
+
+        # Operation complete
+        return 1;
+    }
+
+    sub zoneModelsTab_fillBlock {
+
+        # Called by $self->zoneModelsTab_getMouseClick
+        # Fills in a single block of the grid in a single colour
+        #
+        # Expected arguments
+        #   $colour         - The colour (an RGB tag, e.g. '#ABCDEF')
+        #   $xPos, $yPos    - The coordinates of the gridblock to be filled in
+        #
+        # Optional arguments
+        #   $tempFlag       - If TRUE, it's a temporary (pink) area of the grid that should not be
+        #                       added to $self->drawnObjList. FALSE (or 'undef') otherwise
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   The drawn canvas object otherwise
+
+        my ($self, $colour, $xPos, $yPos, $tempFlag, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $drawingAreaObj || ! defined $xPos || ! defined $yPos || ! defined $colour
+            ! defined $colour || ! defined $xPos || ! defined $yPos || ! defined $colour
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -59951,69 +59942,108 @@
             );
         }
 
-        # Fill the square at grid coordinates $xPos, $yPos
-        $drawingAreaObj->drawRectangle(
-            [
-                $self->borderX + ($xPos * $self->cellWidth) + 1,
-                $self->borderY + ($yPos * $self->cellHeight) + 1,
-                $self->cellWidth - 1,
-                $self->cellHeight - 1,
-            ],
-            $colour,
-            TRUE,           # Rectangle filled in
+        # (Drawing any coloured area displaces any selection that has been made)
+        if ($self->selectCanvasObj) {
+
+            $self->selectCanvasObj->remove();
+            $self->ivUndef('selectCanvasObj');
+        }
+
+        # Fill the gridblock at grid coordinates $xPos, $yPos
+        my $canvasObj = GooCanvas2::CanvasRect->new(
+            'parent' => $self->canvasWidget->get_root_item(),
+            x => $self->borderX + ($xPos * $self->cellWidth),
+            y => $self->borderY + ($yPos * $self->cellHeight),
+            width => $self->cellWidth,
+            height => $self->cellHeight,
+            'line-width' => 1,
+            'stroke-color' => $colour,
+            'fill-color' => $colour,
         );
 
-        return 1
+        $canvasObj->lower($self->gridCanvasObj);
+        if (! $tempFlag) {
+
+            $self->ivPush('drawnObjList', $canvasObj);
+        }
+
+        return $canvasObj;
     }
 
     sub zoneModelsTab_fillZone {
 
-        # Called by various functions of this 'edit' window object
+        # Called by $self->zoneModelsTab_getMouseClick and ->zoneModelsTab_refreshGrid
         # Fills in an area of the grid in a single colour, representing a particular zone model
         #
         # Expected arguments
-        #   $drawingAreaObj - The GA::Obj::DrawingArea in use
+        #   $colour         - The colour (an RGB tag, e.g. '#ABCDEF')
         #   $startX, $startY, $stopX, $stopY
         #                   - The area of the grid to fill in
-        #   $colour         - The colour, e.g. 'red'
+        #
+        # Optional arguments
+        #   $tempFlag       - If TRUE, it's a temporary (pink) area of the grid that should not be
+        #                       added to $self->drawnObjList. FALSE (or 'undef') otherwise
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my (
-            $self, $drawingAreaObj, $startX, $startY, $stopX, $stopY, $colour,
-            $check
-        ) = @_;
+        my ($self, $colour, $startX, $startY, $stopX, $stopY, $tempFlag, $check) = @_;
+
+        # Local variables
+        my ($x, $y, $width, $height);
 
         # Check for improper arguments
         if (
-            ! defined $drawingAreaObj || ! defined $startX || ! defined $startY || ! defined $stopX
+            ! defined $colour || ! defined $startX || ! defined $startY || ! defined $stopX
             || ! defined $stopY || ! defined $colour || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->zoneModelsTab_fillZone', @_);
         }
 
-        # Fill the area bounded by $startX, $startY, $stopX, $stopY
-        for (my $xPos = $startX; $xPos <= $stopX; $xPos++) {
+        # (Drawing any coloured area displaces any selection that has been made)
+        if ($self->selectCanvasObj) {
 
-            for (my $yPos = $startY; $yPos <= $stopY; $yPos++) {
-
-                # Fill the square at grid coordinates $xPos, $yPos
-                $drawingAreaObj->drawRectangle(
-                    [
-                        $self->borderX + ($xPos * $self->cellWidth) + 1,
-                        $self->borderY + ($yPos * $self->cellHeight) + 1,
-                        $self->cellWidth - 1,
-                        $self->cellHeight - 1,
-                    ],
-                    $colour,
-                    TRUE,       # Rectangle filled in
-                );
-            }
+            $self->selectCanvasObj->remove();
+            $self->ivUndef('selectCanvasObj');
         }
 
-        return 1
+        # For reasons unknown, the coloured zone seeps outside the top and left boundaries of the
+        #   grid. Adjust the zone's size and position to prevent that
+        $x = $self->borderX + ($startX * $self->cellWidth);
+        $y = $self->borderY + ($startY * $self->cellHeight);
+        $width = ($self->cellWidth * ($stopX - $startX + 1));
+        $height = ($self->cellHeight * ($stopY - $startY + 1));
+        if ($x <= $self->borderX) {
+
+            $x++;
+            $width--;
+        }
+
+        if ($y <= $self->borderY) {
+
+            $y++;
+            $height--;
+        }
+
+        my $canvasObj = GooCanvas2::CanvasRect->new(
+            'parent' => $self->canvasWidget->get_root_item(),
+            x => $x,
+            y => $y,
+            width => $width,
+            height => $height,
+            'line-width' => 1,
+            'stroke-color' => $colour,
+            'fill-color' => $colour,
+        );
+
+        $canvasObj->lower($self->gridCanvasObj);
+        if (! $tempFlag) {
+
+            $self->ivPush('drawnObjList', $canvasObj);
+        }
+
+        return $canvasObj;
     }
 
     ##################
@@ -60035,6 +60065,19 @@
         { $_[0]->{cellHeight} }
     sub clickMode
         { $_[0]->{clickMode} }
+
+    sub canvasWidget
+        { $_[0]->{canvasWidget} }
+    sub bgCanvasObj
+        { $_[0]->{bgCanvasObj} }
+    sub gridCanvasObj
+        { $_[0]->{gridCanvasObj} }
+    sub gridCanvasObj2
+        { $_[0]->{gridCanvasObj2} }
+    sub selectCanvasObj
+        { $_[0]->{selectCanvasObj} }
+    sub drawnObjList
+        { my $self = shift; return @{$self->{drawnObjList}}; }
 
     sub entryStartX
         { $_[0]->{entryStartX} }
@@ -60061,8 +60104,14 @@
 
     sub entryCurrentZone
         { $_[0]->{entryCurrentZone} }
-    sub drawingArea2
-        { $_[0]->{drawingArea2} }
+    sub frame
+        { $_[0]->{frame} }
+    sub simpleCanvasWidget
+        { $_[0]->{simpleCanvasWidget} }
+    sub simpleCanvasObj
+        { $_[0]->{simpleCanvasObj} }
+    sub simpleCanvasSize
+        { $_[0]->{simpleCanvasSize} }
     sub editButton
         { $_[0]->{editButton} }
     sub deleteButton
@@ -60146,28 +60195,27 @@
         # Expected arguments
         #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
         #                   an IV)
-        #   $tooltips   - A Gtk2::Tooltips object for the buttons (not yet stored as an IV)
         #
         # Return values
         #   An empty list on improper arguments
         #   Otherwise, a list containing the Gtk::Button object created
 
-        my ($self, $hBox, $tooltips, $check) = @_;
+        my ($self, $hBox, $check) = @_;
 
         # Local variables
         my @emptyList;
 
         # Check for improper arguments
-        if (! defined $hBox || ! defined $tooltips || defined $check) {
+        if (! defined $hBox || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
             return @emptyList;
         }
 
         if ($axmud::CLIENT->checkCurrentZonemap($self->editObj->zonemapObj->name)) {
-            return $self->enableSingleButton($hBox, $tooltips);
+            return $self->enableSingleButton($hBox);
         } else {
-            return $self->SUPER::enableButtons($hBox, $tooltips);
+            return $self->SUPER::enableButtons($hBox);
         }
     }
 
@@ -60204,7 +60252,7 @@
         $self->expandNotebook();
 
 #       # Tab complete
-#       $vBox->pack_start($table, 0, 0, 0);
+#       $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -60266,10 +60314,6 @@
         # Tab setup
         my ($vBox, $table) = $self->addTab('_Number', $self->notebook);
 
-        # (Need just a little extra space to make everything fit)
-        $table->set_col_spacings($self->spacingPixels - 1);
-        $table->set_row_spacings($self->spacingPixels - 1);
-
         # Can't edit zone models in use
         if ($axmud::CLIENT->checkCurrentZonemap($self->editObj->zonemapObj->name)) {
 
@@ -60321,42 +60365,36 @@
 
         $self->addLabel($table, '<i>Coordinates in parent zonemap:</i>',
             1, 6, 6, 7);
-        $self->addLabel($table, 'Top-left X',
+        $self->addLabel($table, 'Top-left X/Y',
             1, 3, 7, 8);
         $self->addEntry($table, 'left', FALSE,
-            3, 6, 7, 8, 4, 4);
-        $self->addLabel($table, 'Top-left Y',
-            1, 3, 8, 9);
+            3, 5, 7, 8, 4, 4);
         $self->addEntry($table, 'top', FALSE,
-            3, 6, 8, 9, 4, 4);
-        $self->addLabel($table, 'Bottom-right X',
-            1, 3, 9, 10);
+            5, 6, 7, 8, 4, 4);
+        $self->addLabel($table, 'Bottom-right X/Y',
+            1, 3, 8, 9);
         $self->addEntry($table, 'right', FALSE,
-            3, 6, 9, 10, 4, 4);
-        $self->addLabel($table, 'Bottom-right Y',
-            1, 3, 10, 11);
+            3, 5, 8, 9, 4, 4);
         $self->addEntry($table, 'bottom', FALSE,
-            3, 6, 10, 11, 4, 4);
+            5, 6, 8, 9, 4, 4);
         $self->addLabel($table, 'Width (blocks)',
-            1, 3, 11, 12);
+            1, 3, 9, 10);
         $self->addEntry($table, 'width', FALSE,
-            3, 6, 11, 12, 4, 4);
+            3, 6, 9, 10, 4, 4);
         $self->addLabel($table, 'Height (blocks)',
-            1, 3, 12, 13);
+            1, 3, 10, 11);
         $self->addEntry($table, 'height', FALSE,
-            3, 6, 12, 13, 4, 4);
+            3, 6, 10, 11, 4, 4);
 
         # Right column
-        $self->addLabel($table, 'Reserved windows (see next page)',
-            7, 11, 1, 2);
-        my $checkButton = $self->addCheckButton($table, 'reservedFlag', TRUE,
-            11, 12, 1, 2, 1, 0.5);
-        $self->addLabel($table, 'Allow multiple layers',
-            7, 11, 2, 3);
-        my $checkButton2 = $self->addCheckButton($table, 'multipleLayerFlag', TRUE,
-            11, 12, 2, 3, 1, 0.5);
+        my $checkButton = $self->addCheckButton(
+            $table, 'Reserved windows (see next page)', 'reservedFlag', TRUE,
+            7, 12, 1, 2);
+        my $checkButton2 = $self->addCheckButton(
+            $table, 'Allow multiple layers', 'multipleLayerFlag', TRUE,
+            7, 12, 2, 3);
 
-        $self->addLabel($table, 'Optional owner ID)',
+        $self->addLabel($table, 'Optional owner ID',
             7, 9, 3, 4);
         $self->addEntryWithIconButton($table, 'ownerString', 'string', 0, undef,
             9, 12, 3, 4, 8, 8);
@@ -60414,7 +60452,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }
@@ -60464,7 +60502,7 @@
 
         my $slWidget = $self->addSimpleList($table, undef, \@columnList,
             1, 12, 2, 8,
-            -1, 240);      # Fixed height
+            -1, 250);      # Fixed height
 
         # Initialise the list
         $self->refreshList_hashIV($slWidget, scalar (@columnList / 2), 'reservedHash');
@@ -60570,7 +60608,7 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, 0, 0, 0);
+        $vBox->pack_start($table, FALSE, FALSE, 0);
 
         return 1;
     }

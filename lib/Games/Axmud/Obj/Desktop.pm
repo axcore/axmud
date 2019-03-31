@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -65,6 +65,10 @@
             # Widget registries
             # -----------------
 
+            # The GA::Obj::WMCtrl object, based on X11::WMCtrl, which handles multiple workspaces
+            #   (on systems that support wmctrl)
+            wmCtrlObj                   => undef,
+
             # Registry hash of all workspace objects which still exist. Workspace objects
             #   (GA::Obj::Workspace) handle a single workspace on the desktop, on which 'grid'
             #   windows can be arranged on a 3-dimensional grid to avoid overlapping (each grid is
@@ -83,10 +87,9 @@
             # Number of workspace objects ever created (used to give each workspace object a unique
             #   number)
             workspaceCount              => 0,
-            # The 'default' workspace is the workspace in which Axmud is opened (#0), and is also
-            #   stored here for convenience
+            # For convenience, the 'default' workspace object (whose unique number is 0) is stored
+            #   here
             defaultWorkspaceObj         => undef,
-            defaultWorkspace            => undef,
 
             # Registry hash of workspace grid objects which still exist. Each workspace objects
             #   usually has one or more workspace grid objects (or none, if
@@ -132,10 +135,10 @@
             freeWinCount                => 0,
 
             # Registry hash of all textview objects (created by all sessions) which still exist.
-            #   Textview objects (GA::Obj::TextView) handle a single Gtk2::Textview
-            # NB The code is at liberty to create its own Gtk2::TextViews, not handled by textview
+            #   Textview objects (GA::Obj::TextView) handle a single Gtk3::Textview
+            # NB The code is at liberty to create its own Gtk3::TextViews, not handled by textview
             #   objects, if the code doesn't need the full functionality of a textview object. Those
-            #   Gtk2::TextViews are not stored here
+            #   Gtk3::TextViews are not stored here
             # Hash in the form
             #   $textViewHash{unique_number} = blessed_reference_to_textview_object
             textViewHash                => {},
@@ -164,32 +167,32 @@
             #   workspaces being created
             newWorkspaceFlag            => TRUE,
 
-            # A list of Gtk2::Gdk::Pixbufs corresponding to the icons stored in the '/icons/win'
+            # A list of Gtk3::Gdk::Pixbufs corresponding to the icons stored in the '/icons/win'
             #   sub-directory for 'main' windows
             mainWinIconList             => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'map' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'map' windows
             mapWinIconList              => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'protocol' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'protocol' windows
             protocolWinIconList         => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'fixed' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'fixed' windows
             fixedWinIconList            => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'custom' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'custom' windows
             customWinIconList           => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'external' windows (the pixbufs are created, but not
+            # A list of Gtk3::Gdk::Pixbufs for 'external' windows (the pixbufs are created, but not
             #   used - 'external' windows keep their own icons)
             externalWinIconList         => [],
 
-            # A list of Gtk2::Gdk::Pixbufs for 'viewer' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'viewer' windows
             viewerWinIconList           => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'edit' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'edit' windows
             editWinIconList             => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'pref' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'pref' windows
             prefWinIconList             => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'wiz' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'wiz' windows
             wizWinIconList              => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'dialogue' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'dialogue' windows
             dialogueWinIconList         => [],
-            # A list of Gtk2::Gdk::Pixbufs for 'other' windows
+            # A list of Gtk3::Gdk::Pixbufs for 'other' windows
             otherWinIconList            => [],
         };
 
@@ -205,10 +208,9 @@
     sub start {
 
         # Called by GA::Client->start immediately after the call to $self->new
-        # Sets up the desktop object with its first (default) workspace, sets up pixbufs for all
-        #   window icons, sets up rc styles for each type of window
-        # Then creates a spare 'main' window, which doesn't belong to any session, and which will
-        #   be re-used by the first session that opens
+        # Sets up pixbufs for all window icons, then sets up workspaces, then creates a spare 'main'
+        #   window, which doesn't belong to any session, and which will be re-used by the first
+        #   session that opens
         #
         # Expected arguments
         #   (none besides $self)
@@ -220,12 +222,65 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($zonemap, $screen, $workspace, $workspaceObj, $winObj);
+        my ($wmCtrlObj, $zonemap, $screen, $workspace, $workspaceObj, $winObj);
 
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->start', @_);
+        }
+
+        # Set up pixbufs for all Axmud-created windows
+        if (! $self->prepareIcons()) {
+
+            $axmud::CLIENT->writeWarning(
+                'Could not create icon pixbufs for windows',
+                $self->_objClass . '->start',
+            );
+        }
+
+        # Set a default workspace number, which the code below may update. On X11::WMCtrl,
+        #   workspaces are zero-indexed
+        $workspace = 0;
+
+        # On Axmud 'blind' mode, workspace grids are currently disabled in all circumstances
+        if ($axmud::BLIND_MODE_FLAG) {
+
+            $self->ivPoke('gridPermitFlag', FALSE);
+
+        # Otherwise, set up wmctrl (on compatible systems; it definitely won't work on MS Windows,
+        #   and if it's not installed on a Linux system, we'll just disable multiple workspaces)
+        } elsif ($^O ne 'MSWin32') {
+
+            $wmCtrlObj = Games::Axmud::Obj::WMCtrl->new();
+            if ($wmCtrlObj) {
+
+                $self->ivPoke('wmCtrlObj', $wmCtrlObj);
+
+                # Create a test window
+                my $testWin = Gtk3::Window->new('toplevel');
+                $testWin->set_title('test_wmctrl');
+                $testWin->set_size_request(100, 100);
+                $testWin->set_opacity(0);
+                $testWin->set_skip_taskbar_hint(TRUE);
+                $testWin->set_skip_pager_hint(TRUE);
+                $testWin->show_all();
+                $self->updateWidgets($self->_objClass . '->start');
+
+                # Work out in which workspace the test window opened, if possible (or continue using
+                #   the default value of $workspace, if not)
+                OUTER: foreach my $hashRef ($wmCtrlObj->get_windows()) {
+
+                    if ($hashRef->{title} eq 'test_wmctrl') {
+
+                        $workspace = $hashRef->{workspace};
+                        last OUTER;
+                    }
+                }
+
+                # Destroy the test window immediately
+                $testWin->destroy();
+            }
         }
 
         # GA::Client->initWorkspaceHash should contain at least the following key-value pair:
@@ -238,36 +293,9 @@
             $zonemap = $axmud::CLIENT->ivShow('initWorkspaceHash', 0);
         }
 
-        # Set up pixbufs for all Axmud-created windows
-        if (! $self->prepareIcons()) {
-
-            $axmud::CLIENT->writeWarning(
-                'Could not create icon pixbufs for windows',
-                $self->_objClass . '->start',
-            );
-        }
-
-        # On MSWin and in Axmud 'blind' mode, workspace grids are currently disabled in all
-        #   circumstances
-        if ($axmud::BLIND_MODE_FLAG || $^O eq 'MSWin32') {
-
-            $self->ivPoke('gridPermitFlag', FALSE);
-        }
-
         # Create the default (first) workspace object, representing the workspace in which Axmud
         #   starts
-        # Gnome2::Wnck doesn't exist on MS Windows, so we need to check for that
-        if ($^O ne 'MSWin32') {
-
-            $screen = Gnome2::Wnck::Screen->get_default();
-            if ($screen) {
-
-                $screen->force_update();
-                $workspace = $screen->get_active_workspace();
-            }
-        }
-
-        $workspaceObj = $self->add_workspace($workspace, $screen);
+        $workspaceObj = $self->add_workspace($workspace);
         if (! $workspaceObj) {
 
             return $axmud::CLIENT->writeError(
@@ -278,7 +306,6 @@
         } else {
 
             $self->ivPoke('defaultWorkspaceObj', $workspaceObj);
-            $self->ivPoke('defaultWorkspace', $workspace);
 
             # Find the available size of the workspace, panels and window controls. Set the
             #   workspace's default zonemap
@@ -306,8 +333,8 @@
                 undef,                          # Window title set automatically
                 'main_wait',                    # Use a minimal winmap, replaced by first session
                 'Games::Axmud::Win::Internal',  # Package name
-                undef,                          # No known Gtk2::Window
-                undef,                          # No known Gnome2::Wnck::Window
+                undef,                          # No known Gtk3::Window
+                undef,                          # No system internal ID
                 $axmud::CLIENT,                 # Owner
                 undef,                          # No owner session
             );
@@ -370,7 +397,6 @@
         }
 
         $self->ivUndef('defaultWorkspaceObj');
-        $self->ivUndef('defaultWorkspace');
 
         # Check there are no workspaces, workspace grids, 'grid' windows, 'free' windows or
         #   textviews left (for error-detection purposes)
@@ -470,7 +496,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my (@initList, @useList);
+        my @useList;
 
         # Check for improper arguments
         if (defined $check) {
@@ -478,26 +504,25 @@
              return $axmud::CLIENT->writeImproper($self->_objClass . '->setupWorkspaces', @_);
         }
 
-        if ($self->gridPermitFlag && $self->newWorkspaceFlag) {
+        if ($self->wmCtrlObj && $self->gridPermitFlag && $self->newWorkspaceFlag) {
 
-            # Get a list of Gnome2::Workspaces, in the order in which they should be used. The order
-            #   depends on GA::Client->initWorkspaceDir; the returned list doesn't include the
-            #   default workspace
+            # Get a list of system workspace numbers (zero-indexed), in the order in which they
+            #   should be used. The order depends on GA::Client->initWorkspaceDir; the returned list
+            #   doesn't include the default workspace
             @useList = $self->detectWorkspaces();
 
-            # GA::Client->initWorkspaceHash specifies the Gnome2::Workspaces that Axmud should use
-            #   initially. If it specifies more workspaces than the 'default' one, create a new
-            #   workspace object for them (but not if we've run out of available workspaces)
-            @initList = sort {$a <=> $b} ($axmud::CLIENT->ivKeys('initWorkspaceHash'));
-            foreach my $num (@initList) {
+            # GA::Client->specifies the workspaces that Axmud should use initially. If it specifies
+            #   more workspaces than the 'default' one, create a new workspace object for each of
+            #   them (but not if we've run out of available workspaces)
+            foreach my $index (sort {$a <=> $b} ($axmud::CLIENT->ivKeys('initWorkspaceHash'))) {
 
                 my ($workspace, $zonemap, $workspaceObj);
 
-                # The default workspace already exists
-                if ($num) {
+                # The default workspace, numbered 0, already has a GA::Obj::Workspace
+                if ($index) {
 
                     $workspace = shift @useList;
-                    $zonemap = $axmud::CLIENT->ivShow('initWorkspaceHash', $num);
+                    $zonemap = $axmud::CLIENT->ivShow('initWorkspaceHash', $index);
                     if ($workspace) {
 
                         $self->useWorkspace($workspace, $zonemap);
@@ -511,11 +536,11 @@
 
     sub useWorkspace {
 
-        # Called by $self->setupWorkspaces or GA::Cmd::AddWorkspace->do
-        # Creates a workspace object (GA::Obj::Workspace) for the specified Gnome2::Workspace
+        # Called by $self->setupWorkspaces or GA::Cmd::UseWorkspace->do
+        # Creates a workspace object (GA::Obj::Workspace) for the system workspace
         #
         # Expected arguments
-        #   $workspace  - The Gnome2::Workspace to use
+        #   $workspace  - The system workspace number to use
         #
         # Optional arguments
         #   $zonemap    - The name of the default zonemap for the workspace object. If 'undef',
@@ -554,7 +579,7 @@
         }
 
         # Create the workspace object and set it up
-        $workspaceObj = $self->add_workspace($workspace, $workspace->get_screen());
+        $workspaceObj = $self->add_workspace($workspace);
         if (! $workspaceObj) {
 
             return undef;
@@ -582,22 +607,22 @@
     sub detectWorkspaces {
 
         # Called by $self->setupWorkspaces and $self->detectUnusedWorkspaces
-        # Get a list of Gnome2::Workspaces, in the order in which they should be used. The order
-        #   depends on GA::Client->initWorkspaceDir; the returned list doesn't include the
-        #   default workspace
+        # Returns a list of system workspace numbers, in the order in which they should be used
+        # System workspaces are zero-indexed. The order of the returned list depends on
+        #   GA::Client->initWorkspaceDir; the returned list doesn't include the default workspace
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   An empty list on improper arguments
-        #   Otherwise returns the list of Gnome2::Workspace objects
+        #   Otherwise returns the list of system workspace numbers
 
         my ($self, $check) = @_;
 
         # Local variables
         my (
-            $workspace, $otherWorkspace,
+            $workspace, $hashRef, $total, $otherWorkspace,
             @emptyList, @useList,
         );
 
@@ -608,7 +633,11 @@
              return @emptyList;
         }
 
-        $workspace = $self->defaultWorkspace;
+        # Get the workspace system number of Axmud's default workspace
+        $workspace = $self->defaultWorkspaceObj->systemNum;
+        # Get the number of system workspaces that actually exist
+        $hashRef = $self->wmCtrlObj->get_workspaces();
+        $total = scalar (keys %$hashRef);
 
         # 'move_left'   - move left from the default workspace until we reach the left-most
         #                   workspace (and then stop)
@@ -616,8 +645,7 @@
 
             do {
 
-                $otherWorkspace = $workspace->get_neighbor('WNCK_MOTION_LEFT');
-
+                $otherWorkspace = $workspace - 1;
                 if ($otherWorkspace) {
 
                     push (@useList, $otherWorkspace);
@@ -632,79 +660,40 @@
 
             do {
 
-                $otherWorkspace = $workspace->get_neighbor('WNCK_MOTION_RIGHT');
-
-                if ($otherWorkspace) {
+                $otherWorkspace = $workspace + 1;
+                if ($otherWorkspace < $total) {
 
                     push (@useList, $otherWorkspace);
                     $workspace = $otherWorkspace;
                 }
 
-            } until (! $otherWorkspace);
+            } until ($otherWorkspace >= $total);
 
         # 'start_left'  - after finding the default workspace, the next workspace should be the
         #                   left-most one, after that move right until we reach the right-most
         #                   workspace (and then stop)
         } elsif ($axmud::CLIENT->initWorkspaceDir eq 'start_left') {
 
-            do {
+            foreach my $otherWorkspace (sort {$a <=> $b} (keys %$hashRef)) {
 
-                $otherWorkspace = $workspace->get_neighbor('WNCK_MOTION_LEFT');
-
-                if ($otherWorkspace) {
+                if ($otherWorkspace != $workspace) {
 
                     push (@useList, $otherWorkspace);
-                    $workspace = $otherWorkspace;
                 }
-
-            } until (! $otherWorkspace);
-
-            @useList = reverse @useList;
-            $workspace = $self->defaultWorkspace;
-
-            do {
-
-                $otherWorkspace = $workspace->get_neighbor('WNCK_MOTION_RIGHT');
-
-                if ($otherWorkspace) {
-
-                    push (@useList, $otherWorkspace);
-                    $workspace = $otherWorkspace;
-                }
-
-            } until (! $otherWorkspace);
+            }
 
         # 'start_right' - after finding the default workspace, the next workspace should be the
         #   right-most one, after that move left until we reach the left-most workspace (and then
         #   stop)
         } elsif ($axmud::CLIENT->initWorkspaceDir eq 'start_right') {
 
-            do {
+            foreach my $otherWorkspace (sort {$b <=> $a} (keys %$hashRef)) {
 
-                $otherWorkspace = $workspace->get_neighbor('WNCK_MOTION_RIGHT');
-
-                if ($otherWorkspace) {
+                if ($otherWorkspace != $workspace) {
 
                     push (@useList, $otherWorkspace);
-                    $workspace = $otherWorkspace;
                 }
-
-            } until (! $otherWorkspace);
-
-            @useList = reverse @useList;
-            $workspace = $self->defaultWorkspace;
-
-            do {
-
-                $otherWorkspace = $workspace->get_neighbor('WNCK_MOTION_LEFT');
-
-                if ($otherWorkspace) {
-
-                    push (@useList, $otherWorkspace);
-                    $workspace = $otherWorkspace;
-                }
-
-            } until (! $otherWorkspace);
+            }
         }
 
         return @useList;
@@ -713,25 +702,22 @@
     sub detectUnusedWorkspaces {
 
         # Called by GA::Cmd::ListWorkspace->do
-        # Calls $self->detectWorkspaces to get a list of Gnome2::Workspaces, then removes from that
-        #   list any workspace already in use by Axmud (i.e. any workspace for which there is a
+        # Calls $self->detectWorkspaces to get a list of system workspace numbers, then removes from
+        #   that list any workspace already in use by Axmud (i.e. any workspace for which there is a
         #   workspace object, GA::Obj::Workspace)
-        # Returns a list of the remaining workspaces (which may be empty)
-        #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so this function currently returns an
-        #   empty list
+        # Returns a list of the remaining system workspaces numbers (which may be empty)
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   An empty list on improper arguments or if there are no unused workspaces
-        #   Otherwise returns the list of Gnome2::Workspace objects
+        #   Otherwise returns the list of system workspace numbers (which may be empty)
 
         my ($self, $check) = @_;
 
         # Local variables
-        my (@emptyList, @list, @modList);
+        my (@emptyList, @modList);
 
         # Check for improper arguments
         if (defined $check) {
@@ -740,19 +726,18 @@
              return @emptyList;
         }
 
-        if ($^O eq 'MSWin32') {
+        if (! $self->wmCtrlObj) {
 
+            # X11::WMCtrl not available, so cannot detect workspaces
             return @emptyList;
 
         } else {
 
-            @list = $self->detectWorkspaces();
-
-            OUTER: foreach my $workspace (@list) {
+            OUTER: foreach my $workspace ($self->detectWorkspaces()) {
 
                 INNER: foreach my $workspaceObj ($self->ivValues('workspaceHash')) {
 
-                    if ($workspaceObj->wnckWorkspace eq $workspace) {
+                    if ($workspaceObj->systemNum eq $workspace) {
 
                         next OUTER;
                     }
@@ -990,7 +975,7 @@
     sub prepareIcons {
 
         # Called by $self->start
-        # Sets up Gtk2::Gdk::Pixbufs for use as icons in 'grid' and 'free' windows
+        # Sets up Gtk3::Gdk::Pixbufs for use as icons in 'grid' and 'free' windows
         #
         # Expected arguments
         #   (none besides $self)
@@ -1038,7 +1023,7 @@
 
                 } else {
 
-                    $icon = Gtk2::Gdk::Pixbuf->new_from_file($path);
+                    $icon = Gtk3::Gdk::Pixbuf->new_from_file($path);
                     if (! $icon) {
 
                         # Continue trying to create the other icons
@@ -1070,62 +1055,70 @@
         }
     }
 
-    sub getTextViewStyle {
+    sub setTextViewStyle {
 
-        # Can be called by anything
-        # Shortcut to $self->setTextViewStyle. Takes the name of colour scheme as an argument, and
-        #   calls $self->setTextViewStyle with the correct arguments for that colour scheme
+        # Can be called by anything to set the CSS style for a Gtk3::Textview
+        # However, Axmud textview objects (GA::Obj::TextView) only call ->setTextViewObjStyle
         #
         # Expected arguments
-        #   $name       - The name of a colour scheme (matching a key in
-        #                   GA::CLIENT->colourSchemeHash). If the colour scheme doesn't exist,
-        #                   Axmud default colours/fonts are used
+        #   $scheme     - The name of the colour scheme object (GA::Obj::ColourScheme) to use
+        #   $textView   - The Gtk3::TextView whose CSS style should be set
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the return value of the call to $self->setTextViewStyle
+        #   1 otherwise
 
-        my ($self, $name, $check) = @_;
+        my ($self, $scheme, $textView, $check) = @_;
 
         # Local variables
-        my $obj;
+        my ($schemeObj, $theming);
 
         # Check for improper arguments
-        if (defined $check) {
+        if (! defined $scheme || ! defined $textView || defined $check) {
 
-             return $axmud::CLIENT->writeImproper($self->_objClass . '->getTextViewStyle', @_);
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setTextViewStyle', @_);
         }
 
-        # Get the corresponding colour scheme
-        $obj = $axmud::CLIENT->ivShow('colourSchemeHash', $name);
-        if (! $obj) {
+        # Get the named colour scheme object (GA::Obj::ColourScheme). If it doesn't exist, use the
+        #   'dialogue' colour scheme as a backup
+        $schemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', $scheme);
+        if (! $schemeObj) {
 
-            return $self->setTextViewStyle();
-
-        } else {
-
-            return $self->setTextViewStyle(
-                $axmud::CLIENT->returnRGBColour($obj->textColour),
-                $axmud::CLIENT->returnRGBColour($obj->backgroundColour),
-                $obj->font,
-                $obj->fontSize,
-            );
+            $schemeObj = $axmud::CLIENT->ivShow('colourSchemeHash', 'dialogue');
         }
+
+        # Prepare the theming data to use
+        my $provider = Gtk3::CssProvider->new();
+        my $display = Gtk3::Gdk::Display::get_default();
+        my $screen = Gtk3::Gdk::Display::get_default_screen($display);
+        Gtk3::StyleContext::add_provider_for_screen($screen, $provider, 600);
+
+        $theming = "#css_text_id_" . $scheme . ", textview text {\n"
+            . "   background-color: "
+            . $axmud::CLIENT->returnRGBColour($schemeObj->backgroundColour) . ";\n"
+            . "   color: " . $axmud::CLIENT->returnRGBColour($schemeObj->textColour) . ";\n"
+            . "}"
+            . "#css_label_id_" . $scheme . ", textview {\n"
+            . "   font: " . $schemeObj->fontSize . "pt " . $schemeObj->font . ", monospace;\n"
+            . "}";
+
+        $provider->load_from_data ([map ord, split //, $theming]);
+
+        my $context = $textView->get_style_context();
+        $context->add_provider($provider, 600);
+
+        return 1;
     }
 
-    sub setTextViewStyle {
+    sub setTextViewObjStyle {
 
-        # Can be called by anything
-        #
-        # Gtk2 uses rc files to specify the style (colours and fonts) used in a Gtk2 widget
-        #   (Gtk2::TextViews in particular)
-        # This function should be called immediately before creating a Gtk2::TextView, so that
-        #   the correct colours/fonts are used
-        # (To create a textview using the system's preferred colours and fonts, don't call this
-        #   function at all; instead, use the subclass GA::Gtk::TextView)
+        # Called by several functions in Axmud textview objects (GA::Obj::TextView) to set the CSS
+        #   style for one or more Gtk3::TextViews
+        # All other functions creating a Gtk3::TextView should call $self->setTextViewStyle
         #
         # Expected arguments
-        #   (none besides $self)
+        #   $number     - The number of the textview object (GA::Obj::TextView) to which a CSS style
+        #                   is being applied
         #
         # Optional arguments
         #   $fgColour   - The RGB colour to use for the foreground text, e.g. '#000000'. If 'undef',
@@ -1135,20 +1128,22 @@
         #   $font       - The font to use in the new style
         #   $fontSize   - The font size to use in the new style. If either $font or $fontSize are
         #                   'undef', the Axmud default font is used
+        #   @tvList     - List of one or more Gtk3::TextViews. The CSS style is applied to any
+        #                   element in this list which is defined (so 'undef' values are acceptable)
         #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $fgColour, $bgColour, $font, $fontSize, $check) = @_;
+        my ($self, $number, $fgColour, $bgColour, $font, $fontSize, @tvList) = @_;
 
         # Local variables
-        my ($style, $rcString);
+        my ($style, $theming);
 
         # Check for improper arguments
-        if (defined $check) {
+        if (! defined $number) {
 
-             return $axmud::CLIENT->writeImproper($self->_objClass . '->setTextViewStyle', @_);
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->setTextViewObjStyle', @_);
         }
 
         # Use Axmud default colours/fonts, if none were specified
@@ -1162,37 +1157,39 @@
             $bgColour = $axmud::CLIENT->constBackgroundColour;
         }
 
+        $fgColour = $axmud::CLIENT->returnRGBColour($fgColour);
+        $bgColour = $axmud::CLIENT->returnRGBColour($bgColour);
+
         if (! defined $font || ! defined $fontSize) {
 
             $font = $axmud::CLIENT->constFont;
             $fontSize = $axmud::CLIENT->constFontSize;
         }
 
-        # Prepare the string to use
-        $style = $axmud::NAME_SHORT . '_textview';
+        # Prepare the theming data to use
+        my $provider = Gtk3::CssProvider->new();
+        my $display = Gtk3::Gdk::Display::get_default();
+        my $screen = Gtk3::Gdk::Display::get_default_screen($display);
+        Gtk3::StyleContext::add_provider_for_screen($screen, $provider, 600);
 
-        $rcString = "style \"" . $style . "\" {\n";
+        $theming = "#css_tvobj_text_id_" . $number . ", textview text {\n"
+            . "   background-color: $bgColour;\n"
+            . "   color: $fgColour;\n"
+            . "}"
+            . "#css_tvobj_label_id_" . $number . ", textview {\n"
+            . "   font: ${fontSize}pt $font, monospace;\n"
+            . "}";
 
-        if ($font && $fontSize) {
+        $provider->load_from_data ([map ord, split //, $theming]);
 
-            $rcString .= "font_name = \"" . $font . " " . $fontSize . "\"\n";
+        foreach my $textView (@tvList) {
+
+            if (defined $textView) {
+
+                my $context = $textView->get_style_context();
+                $context->add_provider($provider, 600);
+            }
         }
-
-        if ($fgColour) {
-
-            $rcString .= "text[NORMAL] = \"" . $fgColour . "\"\n";
-        }
-
-        if ($bgColour) {
-
-            $rcString .= "base[NORMAL] = \"" . $bgColour . "\"\n"
-        }
-
-        $rcString .= "}\n";
-        $rcString .= "widget_class \"*TextView\" style \"" . $style . "\"\n";
-
-        # Apply the style
-        Gtk2::Rc->parse_string($rcString);
 
         return 1;
     }
@@ -1428,7 +1425,7 @@
                         $winObj->workspaceObj
                         && $winObj->workspaceObj eq $session->mainWin->workspaceObj
                     ) {
-                        if ($axmud::CLIENT->gridInvisWinFlag || ! $winObj->wnckWin) {
+                        if ($axmud::CLIENT->gridInvisWinFlag) {
 
                             # Make the window visible
                             $winObj->setVisible();
@@ -1436,7 +1433,7 @@
                         } else {
 
                             # Unminimise the window
-                            $winObj->wnckWin->unminimize(time());
+                            $winObj->unminimise();
                         }
                     }
                 }
@@ -1454,8 +1451,7 @@
         # Do nothing if GA::CLIENT->shareMainWinFlag = FALSE, when all sessions have their own
         #   'main' window and share workspace grids
         # If GA::Client->gridInvisWinFlag is TRUE, the windows are made invisible; otherwise they
-        #   are just minimised. However, window objects that don't have their ->wnckWindow set are
-        #   always made invisible
+        #   are just minimised
         #
         # Expected arguments
         #   $session    - The GA::Session whose windows should be made not visible
@@ -1503,7 +1499,7 @@
                         $winObj->workspaceObj
                         && $winObj->workspaceObj eq $session->mainWin->workspaceObj
                     ) {
-                        if ($axmud::CLIENT->gridInvisWinFlag || ! $winObj->wnckWin) {
+                        if ($axmud::CLIENT->gridInvisWinFlag) {
 
                             # Make the window invisible
                             $winObj->setInvisible();
@@ -1511,7 +1507,7 @@
                         } else {
 
                             # Minimise the window
-                            $winObj->wnckWin->minimize();
+                            $winObj->minimise();
                         }
                     }
                 }
@@ -1903,6 +1899,7 @@
         #   GA::Client->add_storeGridPosn to store them
         # Works even when GA::Client->storeGridPosnFlag is FALSE, but otherwise ->add_storeGridPosn
         #   itself decides whether each window's size and position should be stored
+        # Ignores 'external' windows
         #
         # Expected arguments
         #   $session    - The GA::Session whose 'grid' windows should be stored
@@ -1921,7 +1918,7 @@
 
         foreach my $winObj (sort {$a->number <=> $b->number} ($self->ivValues('gridWinHash'))) {
 
-            if ($winObj->session eq $session) {
+            if ($winObj->winType ne 'external' && $winObj->session eq $session) {
 
                 # The TRUE flag means to ignore the setting of GA::Client->storeGridPosnFlag
                 $axmud::CLIENT->add_storeGridPosn(
@@ -2044,9 +2041,9 @@
 
     sub updateWidgets {
 
-        # Can be called by anything. Updates Gtk2's events queue
+        # Can be called by anything. Updates Gtk3's events queue
         # Used for debugging, so that we can track all lines of code like this, if we need to:
-        #   Gtk2->main_iteration() while Gtk2->events_pending();
+        #   Gtk3->main_iteration() while Gtk3->events_pending();
         #
         # Expected arguments
         #   (none besides $self)
@@ -2067,8 +2064,8 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->updateWidgets', @_);
         }
 
-        # Update Gtk2's events queue
-        Gtk2->main_iteration() while Gtk2->events_pending();
+        # Update Gtk3's events queue
+        Gtk3::main_iteration() while Gtk3::events_pending();
 
         # Any textview objects (GA::Obj::TextView) which is waiting to update its size IVs can now
         #   do so
@@ -2092,20 +2089,26 @@
 #               . "\n";
 #        }
 
+        # Handle any Gtk3::TextView scrolling problems (see the comments in GA::Session->new)
+        foreach my $session ($axmud::CLIENT->ivValues('sessionHash')) {
+
+            $session->forceScrollTextViews();
+        }
+
         return 1
     }
 
     sub removeWidget {
 
         # Can be called by anything
-        # Calls to a Gtk2 widgets ->remove function will cause a crash, if the child is no longer
+        # Calls to a Gtk3 widgets ->remove function will cause a crash, if the child is no longer
         #   inside its parent
         # This function checks the child is inside its parent and, if so, calls the ->remove
         #   function; otherwise it does nothing
         #
         # Expected arguments
-        #   $parent     - The parent Gtk2 widget
-        #   $child      - The child Gtk2 widget
+        #   $parent     - The parent Gtk3 widget
+        #   $child      - The child Gtk3 widget
         #
         # Return values
         #   'undef' on improper arguments
@@ -2134,11 +2137,11 @@
     sub bufferGetText {
 
         # Can be called by anything
-        # Gets the entire text displayed in a Gtk2::TextView from its Gtk2::TextBuffer and returns
+        # Gets the entire text displayed in a Gtk3::TextView from its Gtk3::TextBuffer and returns
         #   it as a string, often containing newline characters
         #
         # Expected arguments
-        #   $buffer     - The Gtk2::TextBuffer whose text should be extracted
+        #   $buffer     - The Gtk3::TextBuffer whose text should be extracted
         #
         # Return values
         #   'undef' on improper arguments
@@ -2392,7 +2395,8 @@
     sub add_workspace {
 
         # Called by $self->start and $self->setupWorkspaces
-        my ($self, $workspace, $screen, $check) = @_;
+
+        my ($self, $workspace, $check) = @_;
 
         # Local variables
         my $workspaceObj;
@@ -2403,8 +2407,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->add_workspace', @_);
         }
 
-        $workspaceObj
-            = Games::Axmud::Obj::Workspace->new($self->workspaceCount, $workspace, $screen);
+        $workspaceObj = Games::Axmud::Obj::Workspace->new($self->workspaceCount, $workspace);
 
         if (! $workspaceObj) {
 
@@ -2450,14 +2453,15 @@
     ##################
     # Accessors - get
 
+    sub wmCtrlObj
+        { $_[0]->{wmCtrlObj} }
+
     sub workspaceHash
         { my $self = shift; return %{$self->{workspaceHash}}; }
     sub workspaceCount
         { $_[0]->{workspaceCount} }
     sub defaultWorkspaceObj
         { $_[0]->{defaultWorkspaceObj} }
-    sub defaultWorkspace
-        { $_[0]->{defaultWorkspace} }
 
     sub gridHash
         { my $self = shift; return %{$self->{gridHash}}; }

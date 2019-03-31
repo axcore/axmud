@@ -1,4 +1,4 @@
-IFACETIME ()
+Ifacetime ()
 
    Synopsis:
       Returns the time at which the current interface notification was received

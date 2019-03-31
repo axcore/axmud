@@ -1,11 +1,11 @@
-FP (x)
+Fp (x)
 
    Synopsis:
       Returns the floating part of x
 
    Notes:
-      It is always true that IP(x) + FP(x) = x.
+      It is always true that Ip (x) + Fp (x) = x.
 
    Examples:
-      FP (4.3)    >> 0.3
-      FP (-7.21)  >> -0.21
+      Fp (4.3)    >> 0.3
+      Fp (-7.21)  >> -0.21

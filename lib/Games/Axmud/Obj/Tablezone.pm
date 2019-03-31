@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -13,7 +13,7 @@
 #
 #
 # Games::Axmud::Obj::Tablezone
-# A tablezone object marks out an area on the Gtk2::Table used by an 'internal' window as being in
+# A tablezone object marks out an area on the Gtk3::Grid used by an 'internal' window as being in
 #   use by a single widget, and stores the widget type used
 
 { package Games::Axmud::Obj::Tablezone;
@@ -33,7 +33,7 @@
 
         # Called by GA::Strip::Table->addTableObj
         # Create a new instance of the tablezone object, each of which marks out an area of the
-        #   Gtk2::Table used by an 'internal' window as being in use by a table object (inheriting
+        #   Gtk3::Grid used by an 'internal' window as being in use by a table object (inheriting
         #   from GA::Generic::Table), and specifies the type of table object used
         #
         # Expected arguments
@@ -80,7 +80,7 @@
             #   tablezone, e.g. GA::Table::Pane
             packageName                 => $packageName,
 
-            # The coordinates of the tablezone within the strip object's Gtk2::Table
+            # The coordinates of the tablezone within the strip object's Gtk3::Grid
             # Coordinates of the top-left corner (e.g. 0x0)
             left                        => $left,
             top                         => $top,

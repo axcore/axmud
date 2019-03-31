@@ -1,4 +1,4 @@
-IFACEPOS ()
+Ifacepos ()
 
    Synopsis:
       Returns the position of the current interface notification

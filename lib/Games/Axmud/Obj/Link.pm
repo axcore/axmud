@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -13,7 +13,7 @@
 #
 #
 # Games::Axmud::Obj::Link
-# Stores details about a clickable link in a Gtk2::TextView, retrieved when the user clicks the link
+# Stores details about a clickable link in a Gtk3::TextView, retrieved when the user clicks the link
 
 { package Games::Axmud::Obj::Link;
 
@@ -42,7 +42,7 @@
         #                       applied to the textview until the whole link has been processed,
         #                       e.g. when called by GA::Session->processMxpLinkElement)
         #   $textViewObj    - The parent textview object (GA::Obj::TextView)
-        #   $lineNum        - The line number for the Gtk2::TextBuffer line in which the link
+        #   $lineNum        - The line number for the Gtk3::TextBuffer line in which the link
         #                       appears (doesn't necessarily match the GA::Session's display buffer
         #                       line numbers)
         #   $posn           - The position of the first character of the link (first character on
@@ -82,7 +82,7 @@
             number                      => $number,
             # The parent textview object (GA::Obj::TextView)
             textViewObj                 => $textViewObj,
-            # The line number for the Gtk2::TextBuffer line in which the link appears (doesn't
+            # The line number for the Gtk3::TextBuffer line in which the link appears (doesn't
             #   necessarily match the GA::Session's display buffer line numbers)
             lineNum                     => $lineNum,
             # The position of the first character of the link (first character on the line is

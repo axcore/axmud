@@ -1,4 +1,4 @@
-GETROOMTAG$ ()
+Getroomtag$ ()
  
    Synopsis:
       Returns the room tag of the automapper's current room

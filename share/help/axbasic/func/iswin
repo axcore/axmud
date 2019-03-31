@@ -1,4 +1,4 @@
-ISWIN ()
+Iswin ()
 
    Synopsis:
       Tests whether there is a task window open

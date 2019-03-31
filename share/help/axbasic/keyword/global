@@ -18,10 +18,10 @@ GLOBAL variable-name [ , variable-name ... ]
       LET string$ = "Hello world!"
       LET other$ = "Goodbye cruel world!"
 
-      CALL mysub ()
+      CALL MySub ()
       END
 
-      SUB STRING mysub ()
+      SUB STRING MySub ()
          ! string$ and other$ can still be used in this subroutine
          PRINT string$
          PRINT other$

@@ -9,11 +9,11 @@ STOP
          use as many STOP statements as you like).
 
    Examples:
-      CALL mysub()
+      CALL MySub()
       PRINT "This line is never executed"
       END
 
-      SUB STRING mysub ()
+      SUB STRING MySub ()
          PRINT "Goodbye cruel world!"
          STOP
       END SUB

@@ -18,13 +18,13 @@ RELAY expression [ , expression ]
    Examples:
       ! Send a non-movement command
       RELAY "open curtains"
-      RELAY $action
+      RELAY action$
 
       ! Send a password (and obscure the whole password)
-      LET $password = "123456"
-      RELAY $password, $password
+      LET password$ = "123456"
+      RELAY password$, password$
 
       ! Send a non-movement command, but obscure part of it
-      LET $command = "My PIN code is 1234"
-      LET $substring = "1234"
-      RELAY $command, $substring
+      LET command$ = "My PIN code is 1234"
+      LET substring$ = "1234"
+      RELAY command$, substring$

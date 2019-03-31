@@ -1,4 +1,4 @@
-SCRIPTNAME$ ()
+Scriptname$ ()
 
    Synopsis:
       Returns the script's name

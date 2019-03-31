@@ -1,4 +1,4 @@
-CEIL (x)
+Ceil (x)
 
    Synopsis:
       Returns the smallest integer value greater than or equal to x

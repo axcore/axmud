@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -207,6 +207,7 @@
             #   code in the Locator task). All other Axmud code uses the original GA::Client IVs
             mxpOverrideHash             => {
 #               'room'                  => TRUE,            # GA::Client->allowMxpRoomFlag
+#               'flexible'              => TRUE,            # GA::Client->allowMxpFlexibleFlag
             },
             # A hash which overrides the values of GA::Client->termTypeMode, ->customClientName,
             #   ->customClientVersion, ->useCtrlSeqFlag, ->useVisibleCursorFlag and

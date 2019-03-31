@@ -1,4 +1,4 @@
-FINDTASK$ (string)
+Findtask$ (string)
         
    Synopsis:
       Returns the (unique) name of the first currently-running task matching the
@@ -9,4 +9,4 @@ FINDTASK$ (string)
          (e.g. "status_task") or the unique name of a particular task in the
          current tasklist (e.g. "status_task_17").
       If no matching tasks are found, returns an empty string.
-      See also the COUNTTASK function.
+      See also the Counttask () function.

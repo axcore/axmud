@@ -1,4 +1,4 @@
-IFACENUM ()
+Ifacenum ()
 
    Synopsis:
       Returns the interface number corresponding to the current interface

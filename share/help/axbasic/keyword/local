@@ -14,11 +14,11 @@ LOCAL variable-name [ , variable-name ... ]
       LOCAL is not available in scripts with primitive line numbers.
 
    Examples:
-      CALL mysub ()
+      CALL MySub ()
       ! string$ and other$ are not available here
       END
 
-      SUB STRING mysub ()
+      SUB STRING MySub ()
          LOCAL string$, other$
          LET string$ = "Hello world!"
          LET other$ = "Goodbye cruel world!"

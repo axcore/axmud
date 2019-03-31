@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -34,31 +34,18 @@
         #
         # Expected arguments
         #   $number     - Unique number for this workspace object
-        #
-        # Optional arguments
-        #   $workspace  - The corresponding Gnome2::Wnck::Workspace, if already known ('undef'
-        #                   otherwise)
-        #   $screen     - The workspace's Gnome2::Wnck::Screen, if already known ('undef' otherwise.
-        #                   Gnome2::Wnck doesn't exist on windows, in which case $workspace and
-        #                   $screen will be undefined)
+        #   $systemNum  - The corresponding system workspace number (0 if not known)
         #
         # Return values
         #   'undef' on improper arguments
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $number, $workspace, $screen, $check) = @_;
+        my ($class, $number, $systemNum, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $class || ! defined $number || defined $check) {
+        if (! defined $class || ! defined $number || ! defined $systemNum || defined $check) {
 
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
-        }
-
-        # Get the Gnome2::Wnck::Screen, if not specified
-        # Gnome2::Wnck doesn't exist on MS Windows, so we need to check for that
-        if ($^O ne 'MSWin32' && ! $screen) {
-
-            $screen = $workspace->get_screen();
         }
 
         # Setup
@@ -74,10 +61,8 @@
 
             # Unique number for this workspace object (across all sessions)
             number                      => $number,
-            # The corresponding Gnome2::Wnck::Workspace ('undef' if unknown)
-            wnckWorkspace               => $workspace,
-            # The workspace's Gnome2::Wnck::Screen ('undef' if unknown)
-            wnckScreen                  => $screen,
+            # The corresponding system workspace number (0 if not known)
+            systemNum                   => $systemNum,
 
             # The current size of the workspace, set by $self->start
             currentWidth                => undef,
@@ -133,8 +118,6 @@
         #   minus any panels/taskbars), if possible. If not possible, artificially sets the size
         #   of the available workspace according to various IVs
         #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so some of the test can't be performed
-        #
         # Expected arguments
         #   $zonemap    - The default zonemap to use for this workspace
         #
@@ -145,7 +128,7 @@
         my ($self, $zonemap, $check) = @_;
 
         # Local variables
-        my $msg;
+        my ($screen, $msg);
 
         # Check for improper arguments
         if (! defined $zonemap || defined $check) {
@@ -153,17 +136,19 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->start', @_);
         }
 
-        # Perform certain tests on this workspace
         if (! $axmud::CLIENT->desktopObj->gridPermitFlag) {
 
             # Workspace grids are disabled in general
             $self->ivPoke('gridEnableFlag', FALSE);
 
-        } elsif ($self->wnckWorkspace) {
+        } else {
 
             # Test whether the workspace is too small
-            $self->ivPoke('currentWidth', $self->wnckWorkspace->get_width());
-            $self->ivPoke('currentHeight', $self->wnckWorkspace->get_height());
+            # NB Due to technical limitations, we assume that the values returned by this test
+            #   apply to all workspaces, on systems where multiple workspaces are available
+            $screen = Gtk3::Gdk::Screen::get_default();
+            $self->ivPoke('currentWidth', $screen->get_width());
+            $self->ivPoke('currentHeight', $screen->get_height());
 
             if (
                 $self->currentWidth < $axmud::CLIENT->constWorkspaceMinWidth
@@ -301,7 +286,7 @@
             && $axmud::CLIENT->mainWin->workspaceObj eq $self
         ) {
             $axmud::CLIENT->mainWin->winDestroy();
-            # GA::Client->stop must not call Gtk2->main_quit(), as it normally does, as this will
+            # GA::Client->stop must not call Gtk3->main_quit(), as it normally does, as this will
             #   produce a Gtk-CRITICAL error. Instead, tell it to exit
             $axmud::CLIENT->set_forceExitFlag();
         }
@@ -659,13 +644,11 @@
         #
         # Returns the actual sizes detected - not the new values of $self->panelLeftSize, etc
         #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so the test can't be performed
-        #
         # Expected arguments
         #   (none besides $self)
         #
         # Optional arguments
-        #   $timeout    - A timeout for the test, in seconds. If not defined, the default timeout is
+        #   $timeout    - A timeout for the test, in seconds. If not defined, a default timeout is
         #                   used
         #
         # Return values
@@ -689,14 +672,16 @@
             return @emptyList;
         }
 
-        # Can't do anything without Gnome2::Wnck
-        if ($^O eq 'MSWin32') {
-
-            return @emptyList;
-        }
-
         # Try to detect panel sizes
         ($xPos, $yPos, $width, $height) = $self->testPanelSize($timeout);
+        # If the test succeeded, perform some sanity checking (just in case)
+        if (defined $xPos && ($xPos < 0 || $yPos < 0 || $width < 0 || $height < 0)) {
+
+            # Sanity check fails, therefore the test fails
+            $xPos = undef;
+        }
+
+        # Respond to the test
         if (! defined $xPos) {
 
             # Test failed
@@ -779,7 +764,7 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   $timeout    - A timeout, in seconds. If not defined, the default timeout is used
+        #   $timeout    - A timeout, in seconds. If not defined, a default timeout is used
         #
         # Return values
         #   An empty list on improper arguments or if the test fails
@@ -790,8 +775,8 @@
 
         # Local variables
         my (
-            $initSize, $startTime, $checkTime, $xPos, $yPos, $width, $height, $left, $right, $top,
-            $bottom,
+            $testWinName, $initSize, $startTime, $checkTime, $regionX, $regionY, $regionWidth,
+            $regionHeight,
             @emptyList,
         );
 
@@ -802,6 +787,8 @@
             return @emptyList;
         }
 
+        # Prepare the test window's title bar
+        $testWinName = $axmud::SCRIPT . ' panel test';
         # The test window's size can be measured once it is no longer its original size
         $initSize = 100;
         # If no timeout was specified, use the default one
@@ -811,25 +798,24 @@
         }
 
         # Create a test window with maximum opacity, so the user doesn't see it
-        my $testWin = Gtk2::Window->new('toplevel');
-        $testWin->set_title($axmud::SCRIPT . ' panel test');
+        my $testWin = Gtk3::Window->new('toplevel');
+        $testWin->set_title($testWinName);
         $testWin->set_border_width(0);
         $testWin->set_size_request($initSize, $initSize);
         $testWin->set_decorated(FALSE);
         $testWin->set_opacity(0);
-        $testWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $testWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
         $testWin->set_skip_taskbar_hint(TRUE);
         $testWin->set_skip_pager_hint(TRUE);
         $testWin->show_all();
 
-        # If we can find the Gnome2::Wnck::Window, we can move it this workspace
-        my $wnckWin = $self->findWnckWin($testWin);
-        if (! $wnckWin) {
+        # If using X11::WMCtrl, we can move the test window to the correct workspace (if not, there
+        #   is only one workspace in use, anyway)
+        if ($axmud::CLIENT->desktopObj->wmCtrlObj) {
 
-            return undef;
+            $axmud::CLIENT->desktopObj->wmCtrlObj->move_to($testWinName, $self->systemNum);
         }
 
-        $wnckWin->move_to_workspace($self->wnckWorkspace);
         $testWin->maximize();
         $testWin->show_all();
 
@@ -841,18 +827,19 @@
         do {
 
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->testWinControls');
-            ($xPos, $yPos, $width, $height) = $self->getWinGeometry($wnckWin);
+            ($regionX, $regionY, $regionWidth, $regionHeight)
+                = $self->getWinGeometry($testWin->get_window());
 
             $checkTime = $axmud::CLIENT->getTime();
 
         } until (
-            ($width != $initSize && $height != $initSize)
+            ($regionWidth != $initSize && $regionHeight != $initSize)
             || $checkTime > ($startTime + $timeout)
         );
 
         $testWin->destroy();
 
-        if ($width == $initSize || $height == $initSize) {
+        if ($regionWidth == $initSize || $regionHeight == $initSize) {
 
             # Test failed
             return @emptyList;
@@ -860,7 +847,7 @@
         } else {
 
             # Test successful
-            return ($xPos, $yPos, $width, $height);
+            return ($regionX, $regionY, $regionWidth, $regionHeight);
         }
     }
 
@@ -878,8 +865,6 @@
         # If the test fails and $self->controlsLeftSize (etc) have never been set for this
         #   workspace, sets them using GA::Client->customControlsLeftSize or
         #   ->constControlsLeftSize (etc)
-        #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so the test can't be performed
         #
         # Expected arguments
         #   (none besides $self)
@@ -905,18 +890,28 @@
             return @emptyList;
         }
 
-        # Can't do anything without Gnome2::Wnck
-        if ($^O eq 'MSWin32') {
-
-            return @emptyList;
-        }
-
         # Try to detect window controls sizes. Create first test window near the top-left corner of
         #   this workspace
         ($left, $top) = $self->testWinControls(FALSE);
         # Create second test window near the bottom-right corner
         ($right, $bottom) = $self->testWinControls(TRUE);
 
+        # If the test succeeded, perform some sanity checking (just in case)
+        if (
+            defined $left
+            && defined $right
+            && (
+                $left < 0 || $left > 200
+                || $top < 0 || $top > 200
+                || $right < 0 || $right > 200
+                || $bottom < 0 || $bottom > 200
+            )
+        ) {
+            # Sanity check fails, therefore the test fails
+            $left = undef;
+        }
+
+        # Respond to the test
         if (! defined $left || ! defined $right) {
 
             # Test failed
@@ -1007,7 +1002,8 @@
 
         # Local variables
         my (
-            $testWinName, $testWinSize, $testWinDistance, $wnckWin, $xPos, $yPos,
+            $testWinName, $testWinSize, $testWinDistance, $checkTime, $matchFlag, $regionX,
+            $regionY, $regionWidth, $regionHeight, $clientX, $clientY,
             @emptyList, @nameList,
         );
 
@@ -1019,7 +1015,7 @@
         }
 
         # This test requires that window panels have been set in an earlier call to
-        #   $self->findPanelSize; in case they haven't the test fails
+        #   $self->findPanelSize; if they haven't, then this test fails
         if (
             ! defined $self->panelLeftSize
             || ! defined $self->panelRightSize
@@ -1042,7 +1038,7 @@
         $testWinDistance = 100;
 
         # Create the test window
-        my $testWin = Gtk2::Window->new('toplevel');
+        my $testWin = Gtk3::Window->new('toplevel');
         $testWin->set_title($testWinName);
         $testWin->set_border_width(0);
         $testWin->set_size_request($testWinSize, $testWinSize);
@@ -1056,21 +1052,15 @@
             # Position the test window near the top-left corner
             $testWin->move(
                 ($self->panelLeftSize + $testWinDistance),
-                ($self->panelTopSize + $testWinDistance)
+                ($self->panelTopSize + $testWinDistance),
             );
 
         } else {
 
             # Position the test window near the bottom-right corner
             $testWin->move(
-                (
-                    $self->wnckScreen->get_width() - $self->panelRightSize
-                    - $testWinDistance - $testWinSize
-                ),
-                (
-                    $self->wnckScreen->get_height() - $self->panelBottomSize
-                    - $testWinDistance - $testWinSize
-                ),
+                ($self->currentWidth - $self->panelRightSize - $testWinDistance - $testWinSize),
+                ($self->currentHeight - $self->panelBottomSize - $testWinDistance - $testWinSize),
             );
         }
 
@@ -1082,51 +1072,65 @@
         }
 
         # Use standard 'dialogue' window icons
-        $testWin->set_icon_list($axmud::CLIENT->desktopObj->dialogueWinIconList);
+        $testWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
-        # Make the window visible, briefly, otherwise we won't be able to find the
-        #   Gnome2::Wnck::Window (and the sizes themselves will sometimes be wrong, as well)
+        # Make the window visible, briefly
         $testWin->show_all();
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->testWinControls');
 
-        # Find the test window's corresponding Gnome2::Wnck::Window
-        $wnckWin = $self->findWnckWin($testWin);
-        if (! $wnckWin) {
+        # If using X11::WMCtrl, we can move the test window to the correct workspace (if not, there
+        #   is only one workspace in use, anyway)
+        if ($axmud::CLIENT->desktopObj->wmCtrlObj) {
 
-            # The test window wasn't found. Destroy the test window
-            $testWin->destroy();
+            # Very rarely, the call to X11::WMCtrl->get_windows() produces an unexplainable error.
+            #   This nudge seems to prevent it from happening
+            $axmud::CLIENT->desktopObj->wmCtrlObj->get_window_manager();
 
-            return @emptyList;
+            # In some cases, X11::WMCtrl doesn't know about the test window (despite the call to
+            #   ->updateWidgets just above). Wait for up to a second and, if X11::WMCtrl still
+            #   hasn't spotted the new window, regard the test as a failure
+            $checkTime = $axmud::CLIENT->getTime() + 1;
+            do {
+
+                OUTER: foreach my $hashRef ($axmud::CLIENT->desktopObj->wmCtrlObj->get_windows()) {
+
+                    if ($$hashRef{'title'} eq $testWinName) {
+
+                        $matchFlag = TRUE;
+                        last OUTER;
+                    }
+                }
+
+            } until ($matchFlag || $axmud::CLIENT->getTime() > $checkTime);
+
+            if (! $matchFlag) {
+
+                # Test failed
+                return @emptyList;
+
+            } else {
+
+                # Can move the window to its workspace without triggering an error (providing we do
+                #   a quick ->updateWidgets first)
+                $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->testWinControls');
+                $axmud::CLIENT->desktopObj->wmCtrlObj->move_to($testWinName, $self->systemNum);
+            }
         }
 
-        # Move the test window to the correct workspace
-        $wnckWin->move_to_workspace($self->wnckWorkspace);
-
-        # Use the corresponding Gnome2::Wnck::Window to get information about the window's actual
-        #   position on the desktop
-        ($xPos, $yPos) = $self->getWinGeometry($wnckWin);
+        # Get the window's actual position on the desktop
+        ($regionX, $regionY, $regionWidth, $regionHeight, $clientX, $clientY)
+            = $self->getWinGeometry($testWin->get_window());
 
         # Destroy the test window, now that we have all the data we want
         $testWin->destroy();
-
-        if (! defined $xPos || ! defined $yPos) {
-
-            # No window matching the title $testWinName was found
-            $axmud::CLIENT->writeError(
-                'Undefined window position values',
-                $self->_objClass . '->testWinControls',
-            );
-
-            return @emptyList;
-        }
 
         # Return the window controls sizes as a list
         if (! $gravityFlag) {
 
             # Return size of the left and top window controls
             return (
-                ($xPos - ($self->panelLeftSize + $testWinDistance)),
-                ($yPos - ($self->panelTopSize + $testWinDistance)),
+                ($clientX - ($self->panelLeftSize + $testWinDistance)),
+                ($clientY - ($self->panelTopSize + $testWinDistance)),
             )
 
         } else {
@@ -1134,15 +1138,12 @@
             # Return size of the right and bottom window controls
             return (
                 (
-                    (
-                        $self->wnckScreen->get_width() - $self->panelRightSize
-                        - $testWinDistance - $testWinSize
-                    ) - $xPos
-                ), (
-                    (
-                        $self->wnckScreen->get_height() - $self->panelBottomSize
-                        - $testWinDistance - $testWinSize
-                    ) - $yPos
+                    $self->currentWidth - $self->panelRightSize - $testWinDistance - $testWinSize
+                    - $clientX
+                ),
+                (
+                    $self->currentHeight - $self->panelBottomSize - $testWinDistance - $testWinSize
+                    - $clientY
                 ),
             )
         }
@@ -1151,289 +1152,134 @@
     sub getWinGeometry {
 
         # Can be called by any function, e.g. by $self->testWinControls
-        # Gets the actual size and position of a Gnome2::Wnck::Window
-        #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so the test can't be performed
+        # Gets the actual size and position of a Gdk::Window
         #
         # Expected arguments
-        #   $wnckWin    - The Gnome2::Wnck::Window to use
+        #   $gdkWin     - The Gdk::Window to use
         #
         # Return values
         #   An empty list on improper arguments or if the test fails
-        #   Otherwise a list in the form
-        #       ($xPosPixels, $yPosPixels, $widthPixels, $heightPixels)
+        #   Otherwise a list in groups of 4, showing the size and position of the window region (the
+        #       window's visible size and position), and then the size and position of the window's
+        #       client area (i.e. not taking into account the window's title bar):
+        #       (
+        #           $regionX, $regionY, $regionWidth, $regionHeight,
+        #           $clientX, $clientY, $clientWidth, $clientHeight,
+        #       )
 
-        my ($self, $wnckWin, $check) = @_;
+        my ($self, $gdkWin, $check) = @_;
 
         # Local variables
-        my @emptyList;
+        my (
+            $regionX, $regionY, $clientX, $clientY, $clientWidth, $clientHeight,
+            @emptyList,
+        );
 
         # Check for improper arguments
-        if (! defined $wnckWin || defined $check) {
+        if (! defined $gdkWin || defined $check) {
 
             $axmud::CLIENT->writeImproper($self->_objClass . '->getWinGeometry', @_);
             return @emptyList;
         }
 
-        # Can't do anything without Gnome2::Wnck
-        if ($^O eq 'MSWin32') {
+        # Make sure all drawing operations are complete
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->getWinGeometry');
 
-            return @emptyList;
+        # Get the position of the visible window
+        ($regionX, $regionY) = $gdkWin->get_root_origin();
+        # Get the position of the window's client area
+        ($clientX, $clientY) = $gdkWin->get_origin();
+        # Get the size of the window's client area; the size of the window region can be calculated
+        #   by adding the ttitle bar
+        $clientWidth = $gdkWin->get_width();
+        $clientHeight = $gdkWin->get_height();
 
-        } else {
-
-            # Update Wnck
-            $self->wnckScreen->force_update();
-            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->getWinGeometry');
-
-            # Return the window's size and position
-            return $wnckWin->get_client_window_geometry();
-        }
-    }
-
-    sub findGtkWin {
-
-        # Called by $self->createGridWin
-        # Given a Gnome2::Wnck::Window, finds the corresponding Gtk2::Window by comparing xids
-        # NB Unlike $self->findWnckWin, this function doesn't use a timeout, and will only return
-        #   a matching Gtk2::Window if one actually exists
-        # NB Unlike $self->findWnckWin, this function checks all top-level windows, not just those
-        #   on this workspace
-        #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so the test can't be performed
-        #
-        # Expected arguments
-        #   $wnckWin - The Gnome2::Wnck::Window
-        #
-        # Return values
-        #   'undef' on improper arguments, if the Gnome2::Wnck::Window's xid can't be found or if
-        #       the corresponding Gtk2::Window can't be found
-        #   Otherwise, returns the corresponding Gtk2::Window
-
-        my ($self, $wnckWin, $check) = @_;
-
-        # Local variables
-        my $wnckWinXid;
-
-        # Check for improper arguments
-        if (! defined $wnckWin || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->findGtkWin', @_);
-        }
-
-        # Can't do anything without Gnome2::Wnck
-        if ($^O eq 'MSWin32') {
-
-            return undef;
-        }
-
-        # Otherwise, find the Gnome2::Wnck::Window's xid
-        $wnckWinXid = $wnckWin->get_xid();
-        if (! $wnckWinXid) {
-
-            return undef;
-        }
-
-        # Find matching windows
-        foreach my $item (Gtk2::Window->list_toplevels()) {
-
-            my ($window, $winXid);
-
-            # Ignore any which aren't Gtk2::Windows
-            if (ref($item) eq 'Gtk2::Window') {
-
-                $window = $item->get_window();
-                if ($window) {
-
-                    $winXid = $window->get_xid();
-                    if ($winXid && $winXid eq $wnckWinXid) {
-
-                        # We have found the corresponding Gtk2::Window!
-                        return $item;
-                    }
-                }
-            }
-        }
-
-        # No corresponding Gtk2::Window has been found
-        return undef;
-    }
-
-    sub findWnckWin {
-
-        # Called by $self->testWinControls, ->createGridWin and ->createSimpleGridWin
-        # Given a Gtk2::Window, finds the corresponding Gnome2::Wnck::Window by comparing xids
-        # The Gtk2::Window may not appear immediately in the Wnck module's list of windows, so we
-        #   keep looking on a continuous loop, until a timeout expires (the default value is 1
-        #   second)
-        #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so the test can't be performed
-        #
-        # Expected arguments
-        #   $window     - The Gtk2::Window
-        #
-        # Optional arguments
-        #   $timeout    - A timeout, in seconds. If not defined, the default timeout is used
-        #
-        # Return values
-        #   'undef' in improper arguments, if the Gtk2::Window's xid can't be determined or if the
-        #       corresponding Gnome2::Wnck::Window can't be found before the timeout expires
-        #   Otherwise, returns the corresponding Gnome2::Wnck::Window
-
-        my ($self, $window, $timeout, $check) = @_;
-
-        # Local variables
-        my ($gdkWin, $winXid, $startTime, $checkTime);
-
-        # Check for improper arguments
-        if (! defined $window || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->findWnckWin', @_);
-        }
-
-        # Can't do anything without Gnome2::Wnck
-        if ($^O eq 'MSWin32') {
-
-            return undef;
-        }
-
-        # Find the Gtk2::Window's xid
-        $gdkWin = $window->get_window();
-        if (! $gdkWin) {
-
-            return undef;
-        }
-
-        $winXid = $gdkWin->get_xid();
-        if (! $winXid) {
-
-            return undef;
-        }
-
-        # If no timeout was specified, use the default one
-        if (! $timeout) {
-
-            $timeout = 1;
-        }
-
-        # Initialise the timeout (a time in seconds)
-        $startTime = $axmud::CLIENT->getTime();
-
-        # The Gtk2::Window may not appear immediately in the Wnck module's list of windows, so we
-        #   keep looking on a loop until we find a match or the timeout expires
-        do {
-
-            # Update Wnck
-            $self->wnckScreen->force_update();
-            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->findWnckWin');
-
-            # Find matching windows
-            OUTER: foreach my $wnckWin ($self->wnckScreen->get_windows()) {
-
-                my $wnckWinXid = $wnckWin->get_xid();
-
-                if ($wnckWinXid && $wnckWinXid eq $winXid) {
-
-                    # We have found the corresponding Gnome2::Wnck::Window!
-                    return $wnckWin;
-                }
-            }
-
-            # No corresponding Gnome2::Wnck::Window has yet been found. Update the timer.
-            $checkTime = $axmud::CLIENT->getTime();
-
-        } until ($checkTime > ($startTime + $timeout));
-
-        # The timeout has expired and no correspnding Gnome2::Wnck::Window has been found
-        return undef;
+        # Return the results
+        return (
+            $regionX,
+            $regionY,
+            $clientWidth + ($clientX - $regionX),
+            $clientHeight + ($clientY - $regionY),
+            $clientX,
+            $clientY,
+            $clientWidth,
+            $clientHeight,
+        );
     }
 
     sub matchWinList {
 
         # Called GA::GrabWindowCmd->do or any other code
-        # Compares a list of strings - e.g. ('Notepad', 'Firefox') - against a list of
-        #   Gnome2::Wnck::Windows on this workspace
-        # Returns a list containing every Gnome2::Wnck::Window which matches one or more of the
-        #   supplied names
+        # Compares a list of patterns - e.g. ('Notepad', 'Firefox') - against a list of windows on
+        #   this workspace. Returns a list of internal IDs for the matching windows
+        # The patterns are treated as regexes (so 'Notepad' and '^Note' are both acceptable). The
+        #   pattern match is case-insensitive
         #
-        # N.B. The names can be a regex (so 'Notepad' and '^Note' are both acceptable)
-        #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so the test can't be performed
+        # NB This function does nothing if X11::WMCtrl is not available
         #
         # Expected arguments
         #   $number         - The number of windows to match. 1 - return only the first matching
         #                       window; 7 - return only the first 7 matching windows, 0 - return all
         #                       matching windows
-        #   $nameListRef    - Reference to a list of names to check
         #
         # Optional arguments
-        #   $timeout        - A timeout, in seconds. If defined, we continue looking for matching
-        #                       windows until at least one is found, or until the timeout expires
+        #   @patternList    - A list of patterns matching one or more window titles. If an empty
+        #                       list, no matching occurs
         #
         # Return values
         #   An empty list on improper arguments
-        #   Otherwise returns a list of Gnome2::Wnck::Windows (which may be empty)
+        #   Otherwise returns a list (which may be an empty list) in groups of 2 for each matching
+        #       window, in the form
+        #           (window_title, window_internal_id)
 
-        my ($self, $number, $nameListRef, $timeout, $check) = @_;
+        my ($self, $number, @patternList) = @_;
 
         # Local variables
         my (
-            $startTime, $checkTime,
-            @emptyList, @nameList, @matchList,
+            $count,
+            @emptyList, @returnList,
         );
 
-        # Can't do anything without Gnome2::Wnck
-        if ($^O eq 'MSWin32') {
+        # Check for improper arguments
+        if (! defined $number) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->matchWinList', @_);
+        }
+
+        # Can't do anything without X11::WMCtrl
+        if (! $axmud::CLIENT->desktopObj->wmCtrlObj) {
 
             return @emptyList;
         }
 
-        # Check for improper arguments; adding a check that $number is an integer (which would
-        #   indicate that $number has been missed out in the argument list)
-        if (
-            ! $axmud::CLIENT->intCheck($number)
-            || ! defined $nameListRef
-            || (defined $timeout && ! $axmud::CLIENT->intCheck($timeout))
-            || defined $check
-        ) {
-            $axmud::CLIENT->writeImproper($self->_objClass . '->matchWinList', @_);
-            return @emptyList;
-        }
+        # Cycle through the list of windows on all workspaces, ignoring any windows that aren't on
+        #   this workspace
+        $count = 0;
+        OUTER: foreach my $hashRef ($axmud::CLIENT->desktopObj->wmCtrlObj->get_windows()) {
 
-        # Dereference the list of names
-        @nameList = @$nameListRef;
+            my $title;
 
-        # Initialise the timeout, if one was specified
-        if ($timeout) {
+            if ($$hashRef{'workspace'} == $self->systemNum) {
 
-            $startTime = $axmud::CLIENT->getTime();
-        }
+                # X11::WMCtrl handles a string containing both the window's title and the hostname
+                #   of the X client drawing the window; however, when that hostname is 'N/A',
+                #   X11::WMCtrl is unable to remove it, so we'll have to do that ourselves
+                $title = $$hashRef{'title'};
+                $title =~ s/^\sN\/A\s//;
 
-        # Keep looking for windows until we reach the number of matching windows specified by
-        #   $number, or until the timer expires
-        do {
+                INNER: foreach my $pattern (@patternList) {
 
-            # Update Wnck
-            $self->wnckScreen->force_update();
-            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->matchWinList');
-
-            # Find matching windows
-            OUTER: foreach my $wnckWin ($self->wnckScreen->get_windows()) {
-
-                my $name = $wnckWin->get_name();
-
-                INNER: foreach my $matchName (@nameList) {
-
-                    if ($name && $matchName && ($name =~ m/$matchName/i)) {
+                    if ($title =~ m/$pattern/i) {
 
                         # A matching window was found
-                        push (@matchList, $wnckWin);
+                        push (@returnList, $title, $$hashRef{'id'});
+                        $count++;
 
                         # Do we have enough matching windows now?
-                        if ($number > 0 && scalar @matchList >= $number) {
+                        if ($number > 0 && $count >= $number) {
 
                             # We have enough matching windows
-                            return @matchList;
+                            return @returnList;
 
                         } else {
 
@@ -1443,65 +1289,16 @@
                     }
                 }
             }
-
-            # Update the timer
-            $checkTime = $axmud::CLIENT->getTime();
-
-        } until (
-            ($number == 0 && @matchList)
-            || (defined $timeout && $timeout > ($startTime + $timeout))
-        );
-
-        # Return the matching list of Gnome2::Wnck::Windows (may be empty)
-        return @matchList;
-    }
-
-    sub getWnckWinList {
-
-        # Can be called by any function, e.g. by $self->findPanelSize
-        # Returns a list of (all) Gnome2::Wnck::Windows
-        #
-        # NB On MS Windows, Gnome2::Wnck does not exist, so the test can't be performed
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise returns the list of Gnome2::Wnck::Windows
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my @emptyList;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->getWnckWinList', @_);
-            return @emptyList;
         }
 
-        # Can't do anything without Gnome2::Wnck
-        if ($^O eq 'MSWin32') {
-
-            return @emptyList;
-
-        } else {
-
-            # Update Wnck
-            $self->wnckScreen->force_update();
-            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->getWnckWinList');
-
-            # Get the list of windows
-            return $self->wnckScreen->get_windows();
-        }
+        # Operation complete
+        return @returnList;
     }
 
     sub moveResizeWin {
 
         # Can be called by any function (but not used by $self->testWinControls, which calls
-        #   Gtk2::Window->move and ->resize directly)
+        #   Gtk3::Window->move and ->resize directly)
         # Moves a window to a specific position on the workspace and resizes it
         # Calls to this function should usually be followed by a call to
         #   GA::Obj::Zone->restackWin() and/or GA::Generic::Win->restoreFocus
@@ -1528,11 +1325,14 @@
         #       ($winObj, $xPosPixels, $yPosPixels, undef, $heightPixels)
         #
         # Return values
-        #   'undef' on improper arguments or if the window can't be moved (because the window object
-        #       has neither its ->winWidget or ->wnckWin set)
+        #   'undef' on improper arguments or if the window can't be moved (because a non-external
+        #       window object doesn't have its ->winWidget set)
         #   1 otherwise
 
         my ($self, $winObj, $xPosPixels, $yPosPixels, $widthPixels, $heightPixels, $check) = @_;
+
+        # Local variables
+        my $title;
 
         # Check for improper arguments
         if (
@@ -1546,25 +1346,30 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->moveResizeWin', @_);
         }
 
-        # Move the window to the correct workspace, if possible (if known, and if it's not already
-        #   there)
-        if ($winObj->wnckWin) {
+        if ($winObj->winType ne 'external') {
 
-            $winObj->wnckWin->move_to_workspace($self->wnckWorkspace);
-        }
+            # Move the window to the correct workspace, if possible
+            if ($axmud::CLIENT->desktopObj->wmCtrlObj) {
 
-        # If the window's ->winWidget is set (i.e. we know the Gtk2::Window), move it that way
-        if ($winObj->winWidget) {
+                # Give the window a unique name, so WMCtrl can find it
+                my $title = $winObj->winWidget->get_title();
+                $winObj->winWidget->set_title($axmud::SCRIPT . int(rand(1_000_000_000)));
+
+                # Move the window
+                $axmud::CLIENT->desktopObj->wmCtrlObj->move_to(
+                    $winObj->winWidget->get_title(),
+                    $self->systemNum,
+                );
+
+                # Restore the original title
+                $winObj->winWidget->set_title($title);
+            }
 
             # Resize the window, if that was specified
             if (defined $widthPixels) {
 
                 $winObj->winWidget->resize($widthPixels, $heightPixels);
             }
-
-            # This line prevents the system's window manager from placing the 'main' window at the
-            #   wrong location on smaller desktops
-            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->moveResizeWin');
 
             # Move the window, if that was specified
             # $winObj->winWidget is occasionally set to 'undef' just before this line. It's a very
@@ -1574,27 +1379,37 @@
                 $winObj->winWidget->move($xPosPixels, $yPosPixels);
             }
 
-        # Otherwise if the window's ->wnckWin (i.e. we know the equivalent Gnome2::Wnck::Window),
-        #   move that, instead
-        } elsif ($winObj->wnckWin) {
+        } else {
 
-            # Move and resize the window, if both were specified
-            if (defined $widthPixels && $xPosPixels) {
+            # X11::WMCtrl expects -1 values, rather than undef
+            if (! defined $xPosPixels) {
 
-                $winObj->wnckWin->set_geometry(
-                    'WNCK_WINDOW_GRAVITY_CURRENT',
-                    [
-                        'WNCK_WINDOW_CHANGE_X',         # Gnome2::Wnck::WindowMoveResizeMask
-                        'WNCK_WINDOW_CHANGE_Y',
-                        'WNCK_WINDOW_CHANGE_WIDTH',
-                        'WNCK_WINDOW_CHANGE_HEIGHT',
-                    ],
-                    $xPosPixels,
-                    $yPosPixels,
-                    $widthPixels,
-                    $heightPixels
-                );
+                $xPosPixels = -1;
+                $yPosPixels = -1;
             }
+
+            if (! defined $widthPixels) {
+
+                $widthPixels = -1;
+                $heightPixels = -1;
+            }
+
+            # Move the window to the correct workspace
+            $axmud::CLIENT->desktopObj->wmCtrlObj->wmctrl(
+                '-r',
+                $winObj->internalID,
+                '-t',
+                $self->systemNum,
+                '-i',
+            );
+
+            # Set the window's size and position
+            $axmud::CLIENT->desktopObj->wmCtrlObj->wmctrl(
+                '-r',
+                $winObj->internalID,
+                "-e 0,$xPosPixels,$yPosPixels,$widthPixels,$heightPixels",
+                '-i',
+            );
         }
 
         # Operation complete
@@ -1611,7 +1426,7 @@
         #   kinds of 'grid' window use GA::Win::Internal. (This function isn't used to create 'free'
         #   windows; call GA::Generic::Win->createFreeWin for that)
         # If the window itself doesn't exist, creates it using the specified size and coordinates,
-        #   in the specified layer, on the workspace $self->wnckWorkspace
+        #   in the specified layer, on the workspace $self->systemNum
         # If the window already exists, resizes and moves it using the specified size and
         #   coordinates
         # If workspace grids are available and the window's specified position is occupied by
@@ -1654,7 +1469,7 @@
         #   $winTitle       - The text to use in the window's title bar. If 'undef', a default
         #                       window title is used
         #   $winmapName     - The name of the GA::Obj::Winmap object that specifies the
-        #                       Gtk2::Window's layout when it is first created. If 'undef', a
+        #                       Gtk3::Window's layout when it is first created. If 'undef', a
         #                       default winmap is used. Ignored for 'map', 'fixed' and 'external'
         #                       windows which should have no winmap
         #   $packageName    - 'main', 'protocol' and 'custom' windows are created via a call to
@@ -1669,11 +1484,10 @@
         #                       similar range of functions for other parts of the Axmud code to call
         #                   - $packageName must be specified when creating a 'fixed' window. If not,
         #                       an error is produced
-        #   $winWidget      - The Gtk2::Window, if it already exists and it is known (otherwise
+        #   $winWidget      - The Gtk3::Window, if it already exists and it is known (otherwise
         #                       set to 'undef')
-        #   $wnckWin        - The Gnome2::Wnck::Window, if it already exists and it is known
-        #                       (otherwise set to 'undef'. If both $winWidget and $wnckWin are
-        #                       'undef', a new window object is created)
+        #   $internalID     - For 'external' windows, the window internal ID, provided by
+        #                       X11::WMCtrl ('undef' for other types of window)
         #   $owner          - The owner, if known. Can be any blessed reference, typically it's an
         #                       GA::Session or a task (inheriting from GA::Generic::Task). The owner
         #                       must have a ->del_winObj function, which is called when this window
@@ -1708,7 +1522,7 @@
         #                       if $zone is specified)
         #   $beforeListRef, $afterListRef
         #                   - References to a list of functions in the window object. Any functions
-        #                       in the first list are called just after the Gtk2::Window is created.
+        #                       in the first list are called just after the Gtk3::Window is created.
         #                       Any functions in the second list are called just after the
         #                       window is made visible. These functions should be used to set up
         #                       additional ->signal_connects for this type of window, if they are
@@ -1720,9 +1534,9 @@
         #   Blessed reference to the newly-created window object on success
 
         my (
-            $self, $winType, $winName, $winTitle, $winmapName, $packageName, $winWidget, $wnckWin,
-            $owner, $session, $workspaceGrid, $zone, $layer, $xPosPixels, $yPosPixels, $widthPixels,
-            $heightPixels, $beforeListRef, $afterListRef, $check,
+            $self, $winType, $winName, $winTitle, $winmapName, $packageName, $winWidget,
+            $internalID, $owner, $session, $workspaceGrid, $zone, $layer, $xPosPixels, $yPosPixels,
+            $widthPixels, $heightPixels, $beforeListRef, $afterListRef, $check,
         ) = @_;
 
         # Local variables
@@ -1807,7 +1621,7 @@
         if (! $self->gridEnableFlag || ! $axmud::CLIENT->activateGridFlag) {
 
             return $self->createSimpleGridWin(
-                $winType, $winName, $winTitle, $winmapName, $packageName, $winWidget, $wnckWin,
+                $winType, $winName, $winTitle, $winmapName, $packageName, $winWidget, $internalID,
                 $owner, $session, $xPosPixels, $yPosPixels, $widthPixels, $heightPixels,
                 $beforeListRef, $afterListRef,
             );
@@ -1943,7 +1757,7 @@
                     $winType,
                     $winName,
                     $winWidget,
-                    $wnckWin,
+                    $internalID,
                     $owner,
                     $session,
                 );
@@ -2079,7 +1893,7 @@
         # Move the window to its correct workspace, size and position
         if ($winType ne 'external') {
 
-            # Create a new Gtk2::Window widget at the specified size and position (but don't make
+            # Create a new Gtk3::Window widget at the specified size and position (but don't make
             #   it visible yet)
             if (! $winObj->winSetup($winTitle, $beforeListRef)) {
 
@@ -2095,16 +1909,6 @@
                 $winObj->winEnable($afterListRef);
             }
 
-            # Find the Gtk2::Window or the Gnome2::Wnck::Window, if we don't already know them
-            if (! $wnckWin) {
-
-                $wnckWin = $self->findWnckWin($winObj->winWidget);
-                if ($wnckWin) {
-
-                    $winObj->set_wnckWin($wnckWin);
-                }
-            }
-
             # Move the window to its correct workspace, size and position
             $self->moveResizeWin(
                 $winObj,
@@ -2114,11 +1918,9 @@
                 $heightPixels,
             );
 
-            # For 'grid' windows, $winObj->winEnable created the window in a minimised state, so its
-            #   Gnome2::Wnck::Window can be found, and so the window can be moved to its correct
-            #   workspace, before actually becoming visible on the desktop
-            # Unminimise it now
-            $winObj->winWidget->deiconify();
+#            # For 'grid' windows, $winObj->winEnable created the window in a minimised state so it
+#            #   didn't appear to jump around on the desktop. Unminimise it now
+#            $winObj->unminimise();
 
             # Update the GA::Client's hash of stored window positions (if required)
             if ($winObj->winWidget) {
@@ -2133,38 +1935,12 @@
         } else {
 
             # Update the 'external' window object's IVs
-            if (! $winObj->winSetup($wnckWin)) {
+            if (! $winObj->winSetup($internalID)) {
 
                 # Something or other failed. Update the zone
                 $zoneObj->removeArea($areaObj);
 
                 return undef;
-            }
-
-            # We already have ->wnckWin, but not ->winWidget
-            $winWidget = $self->findGtkWin($winObj->wnckWin);
-            if ($winWidget) {
-
-                $winObj->set_winWidget($winWidget);
-                $winObj->set_winBox($winWidget);
-                # When the user closes this 'external' window manually, it needs to be removed
-                #   from the workspace grid. Set up a ->signal_connect
-                $winObj->setDeleteEvent($winWidget);
-
-            } else {
-
-                # If we don't have a corresponding Gtk2::Window, create a Gnome2::Wnck::Screen
-                #   ->signal_connect to deal with removing the 'external' window from the workspace
-                #   grid, when the time comes
-                $winObj->setWindowClosedEvent();
-            }
-
-            # Store the 'external' window's original position and size, so that they can be restored
-            #   if the window is banished from the workspace grid
-            @geometryList = $self->getWinGeometry($winObj->wnckWin);
-            if (@geometryList) {
-
-                $winObj->set_oldPosn(@geometryList);
             }
 
             $self->moveResizeWin(
@@ -2185,10 +1961,7 @@
             #   ';grabwindow' and then removed from it with ';banishwindow', it will be minimised.
             #   In any case, if the window is minimised, it should be unminimised before being
             #   restacked
-            if ($winObj->wnckWin->is_minimized) {
-
-                $winObj->wnckWin->unminimize(time());
-            }
+            $winObj->unminimise();
         }
 
         # The workspace grid's new current layer is the layer in which this window will be
@@ -2273,7 +2046,7 @@
         #   $winTitle       - The text to use in the window's title bar. If 'undef', a default
         #                       window title is used
         #   $winmapName     - The name of the GA::Obj::Winmap object that specifies the
-        #                       Gtk2::Window's layout when it is first created. If 'undef', a
+        #                       Gtk3::Window's layout when it is first created. If 'undef', a
         #                       default winmap is used. Ignored for 'map', 'fixed' and 'external'
         #                       windows which should have no winmap
         #   $packageName    - 'main', 'protocol' and 'custom' windows are created via a call to
@@ -2288,11 +2061,10 @@
         #                       similar range of functions for other parts of the Axmud code to call
         #                   - $packageName must be specified when creating a 'fixed' window. If not,
         #                       an error is produced
-        #   $winWidget      - The Gtk2::Window, if it already exists and it is known (otherwise
+        #   $winWidget      - The Gtk3::Window, if it already exists and it is known (otherwise
         #                       set to 'undef')
-        #   $wnckWin        - The Gnome2::Wnck::Window, if it already exists and it is known
-        #                       (otherwise set to 'undef'. If both $winWidget and $wnckWin are
-        #                       'undef', a new window object is created)
+        #   $internalID     - For 'external' windows, the window internal ID, provided by
+        #                       X11::WMCtrl ('undef' for other types of window)
         #   $owner          - The owner, if known. Can be any blessed reference, typically it's an
         #                       GA::Session or a task (inheriting from GA::Generic::Task). The owner
         #                       must have a ->del_winObj function, which is called when this window
@@ -2311,7 +2083,7 @@
         #                       'undef', this function will decide the size of the window)
         #   $beforeListRef, $afterListRef
         #                   - References to a list of functions in the window object. Any functions
-        #                       in the first list are called just after the Gtk2::Window is created.
+        #                       in the first list are called just after the Gtk3::Window is created.
         #                       Any functions in the second list are called just after the
         #                       window is made visible. These functions should be used to set up
         #                       additional ->signal_connects for this type of window, if they are
@@ -2323,9 +2095,9 @@
         #   Blessed reference to the newly-created window object on success
 
         my (
-            $self, $winType, $winName, $winTitle, $winmapName, $packageName, $winWidget, $wnckWin,
-            $owner, $session, $xPosPixels, $yPosPixels, $widthPixels, $heightPixels, $beforeListRef,
-            $afterListRef, $check,
+            $self, $winType, $winName, $winTitle, $winmapName, $packageName, $winWidget,
+            $internalID, $owner, $session, $xPosPixels, $yPosPixels, $widthPixels, $heightPixels,
+            $beforeListRef, $afterListRef, $check,
         ) = @_;
 
         # Local variables
@@ -2463,7 +2235,7 @@
         # Move the window to its correct workspace, size and position
         if ($winType ne 'external') {
 
-            # Create a new Gtk2::Window widget (but don't make it visible yet)
+            # Create a new Gtk3::Window widget (but don't make it visible yet)
             if (! $winObj->winSetup($winTitle, $beforeListRef)) {
 
                 # Something or other failed
@@ -2490,16 +2262,6 @@
                 $winObj->winEnable($afterListRef);
             }
 
-            # Find the Gtk2::Window or the Gnome2::Wnck::Window, if we don't already know them
-            if (! $wnckWin) {
-
-                $wnckWin = $self->findWnckWin($winObj->winWidget);
-                if ($wnckWin) {
-
-                    $winObj->set_wnckWin($wnckWin);
-                }
-            }
-
             # Update the GA::Client's hash of stored window positions (if required)
             if ($winObj->winWidget) {
 
@@ -2512,30 +2274,11 @@
 
         } else {
 
-            # For 'external' windows, we already have ->wnckWin, but not ->winWidget
-            $winWidget = $self->findGtkWin($winObj->wnckWin);
-            if ($winWidget) {
+            # Update the 'external' window object's IVs
+            if (! $winObj->winSetup($internalID)) {
 
-                $winObj->set_winWidget($winWidget);
-                $winObj->set_winBox($winWidget);
-                # When the user closes this 'external' window manually, it needs to be removed
-                #   from the workspace grid. Set up a ->signal_connect
-                $winObj->setDeleteEvent($winWidget);
-
-            } else {
-
-                # If we don't have a corresponding Gtk2::Window, create a Gnome2::Wnck::Screen
-                #   ->signal_connect to deal with removing the 'external' window from the workspace
-                #   grid, when the time comes
-                $winObj->setWindowClosedEvent($wnckWin);
-            }
-
-            # Store the 'external' window's original position and size, so that they can be restored
-            #   if the window is banished from the workspace grid
-            @geometryList = $self->getWinGeometry($winObj->wnckWin);
-            if (@geometryList) {
-
-                $winObj->set_oldPosn(@geometryList);
+                # Something or other failed
+                return undef;
             }
 
             # If a size and/or position were specified, move the window
@@ -2562,10 +2305,7 @@
             #   ';grabwindow' and then removed from it with ';banishwindow', it will be minimised.
             #   In any case, if the window is minimised, it should be unminimised before being
             #   restacked
-            if ($winObj->wnckWin->is_minimized) {
-
-                $winObj->wnckWin->unminimize(time());
-            }
+            $axmud::CLIENT->desktopObj->wmCtrlObj->unminimize($internalID);
         }
 
         # Windows created via this function always have the focus (unlike those created by calls to
@@ -2606,10 +2346,10 @@
         #                       external    The 'external' window's name (e.g. 'Notepad')
         #
         # Optional arguments
-        #   $winWidget      - The Gtk2::Window, if it already exists and it is known (otherwise set
+        #   $winWidget      - The Gtk3::Window, if it already exists and it is known (otherwise set
         #                       to 'undef')
-        #   $wnckWin        - The Gnome2::Wnck::Window, if it already exists and it is known
-        #                       (otherwise set to 'undef')
+        #   $internalID     - For 'external' windows, the window internal ID, provided by
+        #                       X11::WMCtrl ('undef' for other types of window)
         #   $owner          - The owner, if known. Can be any blessed reference, typically it's an
         #                       GA::Session or a task (inheriting from GA::Generic::Task)
         #   $session        - The owner's session. If $owner is a GA::Session, that session. If
@@ -2621,7 +2361,7 @@
         #   Otherwise, returns the chosen GA::Obj::Zone
 
         my (
-            $self, $workspaceGridObj, $winType, $winName, $winWidget, $wnckWin, $owner, $session,
+            $self, $workspaceGridObj, $winType, $winName, $winWidget, $internalID, $owner, $session,
             $check,
         ) = @_;
 
@@ -3199,10 +2939,8 @@
 
     sub number
         { $_[0]->{number} }
-    sub wnckWorkspace
-        { $_[0]->{wnckWorkspace} }
-    sub wnckScreen
-        { $_[0]->{wnckScreen} }
+    sub systemNum
+        { $_[0]->{systemNum} }
 
     sub currentWidth
         { $_[0]->{currentWidth} }

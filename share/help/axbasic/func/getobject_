@@ -1,4 +1,4 @@
-GETOBJECT$ (number)
+Getobject$ (number)
         
    Synopsis:
       Returns a string describing an object in the Locator task's current room
@@ -11,4 +11,4 @@ GETOBJECT$ (number)
          location, if the numbered object doesn't exist or if the object hasn't
          had its base string set, an empty string is returned.
       To get the number of objects in the curent location, see the
-         GETROOMOBJECTS function.
+         Getroomobjects () function.

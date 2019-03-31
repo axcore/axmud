@@ -1,4 +1,4 @@
-CLIENTDATE$ ()
+Clientdate$ ()
 
    Synopsis:
       Returns the date of the current version of the Axmud client

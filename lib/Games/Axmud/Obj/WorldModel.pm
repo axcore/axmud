@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -80,6 +80,14 @@
             modelConvertedFlag          => FALSE,
             # The other client's version, set if known ('undef' otherwise)
             modelConvertedVersion       => undef,
+            # Large world models can cause 'out of memory' errors on low-spec machines. The
+            #   problem is not that the world model takes up too much memory, but that the Perl
+            #   Storable module struggles to load very large files into memory
+            # Since v1.1.529, the world model is saved either as a monolithic file (as previously),
+            #   or as multiple files, all of which are handled by a single file object
+            # The number of files used to store this world model, the last time it was saved. If 0,
+            #   a single monolithic file was used
+            modelSaveFileCount          => 0,
 
             # IVs for the world model
             # -----------------------
@@ -208,6 +216,9 @@
             firstRegion                 => undef,
 
             # IVs which set how the automapper window handles pre-drawing of regions
+            # Flag set to TRUE if pre-drawing should occur at all, FALSE if no pre-drawing should
+            #   occur
+            preDrawAllowFlag            => TRUE,
             # When the automapper opens, check all regions; any that have this many rooms in them
             #   are added to the queue to be drawn by background processes (i.e. regular calls to
             #   GA::Win::Map->winUpdate)
@@ -221,14 +232,14 @@
             # Must be an integer, 0 or above. If 0, all regions are retained in memory
             # Otherwise, the canvas objects are destroyed and the canvas widgets are recycled for
             #   the next region which doesn't have at least this many rooms
-            retainDrawMinRooms          => 500,
-            # When drawing queued rooms/exits/labels by background processes, the number of objects
-            #   to draw per second during successive calls to GA::Win::Map->winUpdate (an
-            #   approximate number, since drawing a room also draws its room tags, exits etc)
-            # For example, if 500 and the GA::Session's maintain loop spins ten times a second,
-            #   then 50 objects are marked to be drawn on every call to ->winUpdate
-            # Must be an integer, 0 or above. If 0, no drawing by background processes takes place
-            queueDrawMaxObjs            => 500,
+            preDrawRetainRooms          => 500,
+            # What percentage of the available processor time should be allocated to pre-drawing
+            #   operations
+            # The value is in the range 1-100. For efficiency, the value is approximate, so
+            #   changing 50 to 51 will have absolutely no effect, but changing 50 to 70 will. If
+            #   someone were to change the value to 0 (for some reason), some amount of pre-drawing
+            #   would still occur
+            preDrawAllocation           => 50,
 
             # An additional hash for character model objects. Contains exactly the same number
             #   of entries as $self->charModelHash, but this hash is in the form
@@ -504,6 +515,13 @@
             # A single flag which, when set to TRUE, releases all filters, overriding the contents
             #   of ->roomFilterApplyHash (set to FALSE otherwise)
             allRoomFiltersFlag          => TRUE,
+            # How lists of room flags should be displayed in the automapper window (and in various
+            #   'edit' windows)
+            #   'default'   - List all room flags
+            #   'essential' - Show only essential standard flags (those specified by
+            #                   GA::Client->constRoomHazardHash) and any custom room flags
+            #   'custom'    - Show only custom room flags
+            roomFlagShowMode            => 'default',
             # MSDP can supply a 'TERRAIN' variable for each room. If so, those variables are
             #   collected initially in this hash, in the form
             #       $roomTerrainInitHash{terrain_type} = undef
@@ -1034,13 +1052,17 @@
             exitTagRatio                => 0.7,
             labelRatio                  => 0.8,
             roomTextRatio               => 0.7,
-            # Room tags, room guilds, exit tags and/or labels (but not room text) can retain their
-            #   size as a map zooms in and out. This is turned off by default (FALSE), but can be
-            #   turned on at any time (TRUE)
-            fixedRoomTagFlag            => FALSE,
-            fixedRoomGuildFlag          => FALSE,
-            fixedExitTagFlag            => FALSE,
-            fixedLabelFlag              => FALSE,
+
+            # $self->deleteRegions, ->deleteRooms, ->deleteExits and ->deleteLabels all make a call
+            #   to GA::Win::Map->setSelectedObj to make sure there are no selected objects in the
+            #   automapper window(s)
+            # A single call to ->deleteRegions could cause thousands of calls to ->deleteExits,
+            #   each of them calling GA::Win::Map->setSelectedObj in turn
+            # In that case, we only need a single call to GA::Win::Map->setSelectedObj. This flag is
+            #   set to TRUE when ->deleteRegions is called, and reset back to FALSE when that
+            #   function is finished. When the flag is TRUE, no time-wasting calls to
+            #   GA::Win::Map->setSelectedObj are made
+            blockUnselectFlag           => FALSE,
         };
 
         # Bless the object into existence
@@ -4736,7 +4758,13 @@
         }
 
         # Create the new room object
-        $roomObj = Games::Axmud::ModelObj::Room->new($session, $name, TRUE, $regionmapObj->number);
+        $roomObj = Games::Axmud::ModelObj::Room->new(
+            $session,
+            $name,
+            'model',
+            $regionmapObj->number,
+        );
+
         if (! $roomObj) {
 
             return undef;
@@ -5210,7 +5238,7 @@
         $exitObj = Games::Axmud::Obj::Exit->new(
             $session,
             $dir,
-            TRUE,
+            'model',
         );
 
         if (! $exitObj) {
@@ -5480,6 +5508,16 @@
         if ($taskExitObj->exitInfo) {
 
             $modelExitObj->ivPoke('exitInfo', $taskExitObj->exitInfo);
+        }
+
+        # If the Locator task found a duplicate exit, it may have converted it using the pattern
+        #   specified by GA::Profile::World->duplicateReplaceString (e.g. it might have converted a
+        #   duplicate 'east' exit into a 'swim east' exit)
+        # Any such duplicate exits are marked hidden. If the non-model exit object is marked hidden
+        #  then so must the model exit object
+        if ($taskExitObj->hiddenFlag) {
+
+            $modelExitObj->ivPoke('hiddenFlag', TRUE);
         }
 
         # Update any GA::Win::Map objects using this world model (if allowed)
@@ -6217,14 +6255,18 @@
                 $obj->ivValues('involuntaryExitPatternHash'),
                 $obj->ivValues('repulseExitPatternHash'),
             ) {
-                # $value can be a room model number or a direction
-                my $destRoomObj = $self ->ivShow('modelHash', $value);
-                if ($destRoomObj) {
+                # The values in both hashes can be 'undef' if the destination room is unknown
+                if (defined $value) {
 
-                    $self->updateInvoluntaryExit(
-                        $destRoomObj,
-                        $obj,
-                    );
+                    # Otherwise, $value is probably a room model number or a direction
+                    my $destRoomObj = $self->ivShow('modelHash', $value);
+                    if ($destRoomObj) {
+
+                        $self->updateInvoluntaryExit(
+                            $destRoomObj,
+                            $obj,
+                        );
+                    }
                 }
             }
 
@@ -6381,6 +6423,11 @@
             $mapWin->setSelectedObj();
         }
 
+        # This functions causes calls to self->deleteRooms and ->deleteExits. Everything in the
+        #   automapper window is already unselected, so those functions don't need to make further
+        #   calls to GA::Win::Map->setSelectedObj
+        $self->ivPoke('blockUnselectFlag', TRUE);
+
         foreach my $regionObj (@regionList) {
 
             my @childList;
@@ -6469,6 +6516,10 @@
                 $mapWin->resetTreeView();
             }
         }
+
+        # (Allow future calls to $self->deleteRooms and ->deleteExits to check that everything in
+        #   the automapper window is unselected)
+        $self->ivPoke('blockUnselectFlag', FALSE);
 
         return 1;
     }
@@ -6600,10 +6651,14 @@
             return undef;
         }
 
-        # Before any deletion operation, all selected canvas objects must be un-selected
-        foreach my $mapWin ($self->collectMapWins()) {
+        # Before any deletion operation, all selected canvas objects must be un-selected (but don't
+        #   need to to do that if there has been an earlier call to $self->deleteRegions)
+        if (! $self->blockUnselectFlag) {
 
-            $mapWin->setSelectedObj();
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                $mapWin->setSelectedObj();
+            }
         }
 
         foreach my $roomObj (@roomList) {
@@ -6636,7 +6691,8 @@
             # Delete the room object and its child objects and exit objects (if any)
             $self->deleteObj(
                 $session,
-                TRUE,       # Update Automapper windows now - is applied to the room's exits
+#                TRUE,       # Update Automapper windows now - is applied to the room's exits
+                $updateFlag,
                 $roomObj,
             );
 
@@ -6696,9 +6752,11 @@
                         $parchmentObj->ivDelete('markedRoomTagHash', $roomObj->number);
                         $parchmentObj->ivDelete('markedRoomGuildHash', $roomObj->number);
 
-                        $parchmentObj->ivDelete('queueRoomHash', $roomObj->number);
-                        $parchmentObj->ivDelete('queueRoomTagHash', $roomObj->number);
-                        $parchmentObj->ivDelete('queueRoomGuildHash', $roomObj->number);
+                        $parchmentObj->ivDelete('queueRoomEchoHash', $roomObj->number);
+                        $parchmentObj->ivDelete('queueRoomBoxHash', $roomObj->number);
+                        $parchmentObj->ivDelete('queueRoomTextHash', $roomObj->number);
+                        $parchmentObj->ivDelete('queueRoomExitHash', $roomObj->number);
+                        $parchmentObj->ivDelete('queueRoomInfoHash', $roomObj->number);
                     }
                 }
             }
@@ -6735,7 +6793,6 @@
     sub deleteExits {
 
         # Called by GA::Win::Map->deleteExitCallback, GA::Cmd::DeleteExit->do and $self->deleteObj
-        #   $self->deleteObj
         # Deletes one or more GA::Obj::Exit objects
         #
         # Expected arguments
@@ -6772,10 +6829,14 @@
             return undef;
         }
 
-        # Before any deletion operation, all selected canvas objects must be un-selected
-        foreach my $mapWin ($self->collectMapWins()) {
+        # Before any deletion operation, all selected canvas objects must be un-selected (but don't
+        #   need to to do that if there has been an earlier call to $self->deleteRegions)
+        if (! $self->blockUnselectFlag) {
 
-            $mapWin->setSelectedObj();
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                $mapWin->setSelectedObj();
+            }
         }
 
         foreach my $exitObj (@exitList) {
@@ -7007,9 +7068,6 @@
 
                         $parchmentObj->ivDelete('markedExitHash', $exitObj->number);
                         $parchmentObj->ivDelete('markedExitTagHash', $exitObj->number);
-
-                        $parchmentObj->ivDelete('queueExitHash', $exitObj->number);
-                        $parchmentObj->ivDelete('queueExitTagHash', $exitObj->number);
                     }
                 }
 
@@ -7091,9 +7149,6 @@
 
                 $parchmentObj->ivDelete('markedExitHash', $exitObj->number);
                 $parchmentObj->ivDelete('markedExitTagHash', $exitObj->number);
-
-                $parchmentObj->ivDelete('queueExitHash', $exitObj->number);
-                $parchmentObj->ivDelete('queueExitTagHash', $exitObj->number);
             }
         }
 
@@ -7132,10 +7187,14 @@
             return undef;
         }
 
-        # Before any deletion operation, all selected canvas objects must be un-selected
-        foreach my $mapWin ($self->collectMapWins()) {
+        # Before any deletion operation, all selected canvas objects must be un-selected (but don't
+        #   need to to do that if there has been an earlier call to $self->deleteRegions)
+        if (! $self->blockUnselectFlag) {
 
-            $mapWin->setSelectedObj();
+            foreach my $mapWin ($self->collectMapWins()) {
+
+                $mapWin->setSelectedObj();
+            }
         }
 
         foreach my $labelObj (@labelList) {
@@ -9669,9 +9728,8 @@
                     $choice = $session->mapWin->showMsgDialogue(
                         'Set up twin exit',
                         'question',
-                        "Would you like to modify the clicked\n"
-                        . "room\'s existing \'" . $exitObj->dir . "\' exit to lead\n"
-                        . "back to the original room?",
+                        'Would you like to modify the clicked room\'s existing \'' . $exitObj->dir
+                        . '\' exit to lead back to the original room?',
                         'yes-no',
                         'yes',
                     );
@@ -9711,10 +9769,9 @@
                     # Prompt the user for an exit
                     $choice = $session->mapWin->showComboDialogue(
                         'Set up twin exit',
-                        "Choose one of the clicked room\'s existing exits\n"
-                        . "to lead back to the original room (or click the\n"
-                        . "'Cancel' button to mark this exit as one-way)",
-                        FALSE,
+                        'Choose one of the clicked room\'s existing exits to lead back to the'
+                        . ' original room (or click the \'Cancel\' button to mark this exit as'
+                        . ' one-way)',
                         \@comboList,
                     );
 
@@ -14336,18 +14393,21 @@
         return 1;
     }
 
-    sub addAssistedMove {
+    sub setAssistedMove {
 
         # Called by GA::Win::Map->addExitCallback and ->setAssistedMoveCallback
-        # Adds an assisted move to a specified exit object
+        # Adds or removes an assisted move to/from a specified exit object
         #
         # Expected arguments
         #   $exitObj        - The GA::Obj::Exit to be modified
         #   $profile        - The name of a profile. When it's a current profile, this assisted move
-        #                       is available
+        #                       is available to the automapper object code
+        #
+        # Optional arguments
         #   $cmdSequence    - A sequence of one or more world commands (separated by the usual
         #                       command separator) that comprise the assisted move, e.g.
-        #                       'north;open door;east'
+        #                       'north;open door;east'. If 'undef' or an empty string, the assisted
+        #                       move for $profile is removed
         #
         # Return values
         #   'undef' on improper arguments
@@ -14356,13 +14416,17 @@
         my ($self, $exitObj, $profile, $cmdSequence, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $exitObj || ! defined $profile || ! defined $cmdSequence || defined $check) {
+        if (! defined $exitObj || ! defined $profile || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->addAssistedMove', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setAssistedMove', @_);
         }
 
         # Update the exit object
-        $exitObj->ivAdd('assistedHash', $profile, $cmdSequence);
+        if (! defined $cmdSequence || $cmdSequence eq '') {
+            $exitObj->ivDelete('assistedHash', $profile);
+        } else {
+            $exitObj->ivAdd('assistedHash', $profile, $cmdSequence);
+        }
 
         return 1;
     }
@@ -16588,7 +16652,7 @@
     sub getRoomFlagsInFilter {
 
         # Can be called by anything
-        # Returns a list of room flag (names, not objects) belonging to the specified room filter
+        # Returns a list of room flags (names, not objects) belonging to the specified room filter
         # The list is sorted in priority order
         #
         # Expected arguments
@@ -16631,6 +16695,54 @@
 
         # Operation complete
         return @returnList;
+    }
+
+    sub getVisibleRoomFlags {
+
+        # Can be called by anything
+        # Returns a hash of room flags which should be visible in various windows, depending on the
+        #   current value of $self->roomFlagShowMode
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   An empty hash on improper arguments
+        #   Otherwise returns the hash (which might be empty), in the form
+        #       $showHash{room_flag_name} = room_flag_object
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (%emptyHash, %showHash);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->getVisibleRoomFlags', @_);
+            return %emptyHash;
+        }
+
+        foreach my $roomFlagObj ($self->ivValues('roomFlagHash')) {
+
+            if (
+                $self->roomFlagShowMode eq 'default'
+                || (
+                    $self->roomFlagShowMode eq 'essential'
+                    && (
+                        $roomFlagObj->customFlag
+                        || $axmud::CLIENT->ivExists('constRoomHazardHash', $roomFlagObj->name)
+                    )
+                ) || (
+                    $self->roomFlagShowMode eq 'custom' && $roomFlagObj->customFlag
+                )
+            ) {
+                $showHash{$roomFlagObj->name} = $roomFlagObj;
+            }
+        }
+
+        # Operation complete
+        return %showHash;
     }
 
     sub moveRoomFlag {
@@ -16805,7 +16917,7 @@
         }
 
         # Create a new non-model room
-        $roomObj = Games::Axmud::ModelObj::Room->new($session, 'world model painter', FALSE);
+        $roomObj = Games::Axmud::ModelObj::Room->new($session, 'painter', 'non_model');
         if ($roomObj) {
 
             $self->ivPoke('painterObj', $roomObj);
@@ -17008,7 +17120,23 @@
             %modelExitHash = $modelRoomObj->exitNumHash;
             %otherExitHash = $otherRoomObj->exitNumHash;
 
-            # From the latter hash, remove any transient exits (those which appear from time to
+            # If the Locator task found a duplicate exit, it may have converted it using the
+            #   pattern specified by GA::Profile::World->duplicateReplaceString (e.g. it might have
+            #   converted a duplicate 'east' exit into a 'swim east' exit)
+            # Any such duplicate exits are marked hidden. Remove them from our considerations
+            if ($taskFlag) {
+
+                foreach my $dir (keys %otherExitHash) {
+
+                    my $exitObj = $otherExitHash{$dir};
+                    if ($exitObj->hiddenFlag) {
+
+                        delete $otherExitHash{$dir};
+                    }
+                }
+            }
+
+            # From the latter hash, also remove any transient exits (those which appear from time to
             #   time in various locations, for example the entrance to a moving wagon)
             OUTER: foreach my $dir (keys %otherExitHash) {
 
@@ -18373,8 +18501,8 @@
         # Local variables
         my (
             $regionmapObj, $oldOffsetXPos, $oldOffsetYPos, $oldStartXPos, $oldStartYPos,
-            $offsetXPos, $offsetYPos, $startXPos, $startYPos, $width, $height, $adjustXFlag,
-            $adjustYFlag,
+            $oldWidth, $oldHeight, $offsetXPos, $offsetYPos, $startXPos, $startYPos, $width,
+            $height, $adjustXFlag, $adjustYFlag,
         );
 
         # Check for improper arguments
@@ -18386,15 +18514,16 @@
         $regionmapObj = $mapWin->currentRegionmap;
         $regionmapObj->ivPoke('magnification', $magnification);
 
-        # When we fully zoom out, so that there are no scroll bars visible, Gnome2::Canvas helpfully
-        #   forgets the scrollbar's position. This means that the current room, if we were centred
-        #   on it, is no longer centred. Therefore we have to get the scrollbar's position, change
-        #   the map's visible size, and then - if the map is fully zoomed out, and the scrollbars
-        #   have disappeared - record their position, for the next time the user zooms in
+        # When we fully zoom out, so that there are no scroll bars visible, GooCanvas2::Canvas
+        #   helpfully forgets the scrollbar's position. This means that the current room, if we were
+        #   centred on it, is no longer centred. Therefore we have to get the scrollbar's position,
+        #   change the map's visible size, and then - if the map is fully zoomed out, and the
+        #   scrollbars have disappeared - record their position, for the next time the user zooms in
 
         # Get the visible map's size and position. The six return values are all numbers in the
         #   range 0-1
-        ($oldOffsetXPos, $oldOffsetYPos, $oldStartXPos, $oldStartYPos) = $mapWin->getMapPosn();
+        ($oldOffsetXPos, $oldOffsetYPos, $oldStartXPos, $oldStartYPos, $oldWidth, $oldHeight)
+            = $mapWin->getMapPosn();
 
         # Update every Automapper window using this world model
         foreach my $otherMapWin ($self->collectMapWins()) {
@@ -18423,7 +18552,7 @@
             #   regionmap
             $regionmapObj->ivPoke('maxZoomOutXFlag', TRUE);
             # Remember the position of the scrollbars before the zoom
-            $regionmapObj->ivPoke('scrollXPos', $oldOffsetXPos);
+            $regionmapObj->ivPoke('scrollXPos', $oldStartXPos + ($oldWidth / 2));
 
         } elsif (
             $regionmapObj->maxZoomOutXFlag
@@ -18445,7 +18574,7 @@
             )
         ) {
             $regionmapObj->ivPoke('maxZoomOutYFlag', TRUE);
-            $regionmapObj->ivPoke('scrollYPos', $oldOffsetYPos);
+            $regionmapObj->ivPoke('scrollYPos', $oldStartYPos + ($oldHeight / 2));
 
         } elsif (
             $regionmapObj->maxZoomOutYFlag
@@ -18466,11 +18595,22 @@
                 && $otherMapWin->currentRegionmap eq $regionmapObj
             ) {
                 if ($adjustXFlag && $adjustYFlag) {
+
                     $otherMapWin->setMapPosn($regionmapObj->scrollXPos, $regionmapObj->scrollYPos);
+
                 } elsif ($adjustXFlag) {
-                    $otherMapWin->setMapPosn($regionmapObj->scrollXPos, $offsetYPos);
+
+                    $otherMapWin->setMapPosn(
+                        $regionmapObj->scrollXPos,
+                        ($startYPos + ($height / 2)),
+                    );
+
                 } elsif ($adjustYFlag) {
-                    $otherMapWin->setMapPosn($offsetXPos, $regionmapObj->scrollYPos);
+
+                    $otherMapWin->setMapPosn(
+                        ($startXPos + ($width / 2)),
+                        $regionmapObj->scrollYPos,
+                    );
                 }
             }
         }
@@ -20645,8 +20785,8 @@
 
         $dummyRoomObj = Games::Axmud::ModelObj::Room->new(
             $session,
-            '<dummy room>',
-            FALSE,              # Not a real world model object
+            'dummy',
+            'non_model',
         );
 
         $dummyRoomObj->ivPoke('number', $number);
@@ -20658,7 +20798,7 @@
         $dummyExitObj = Games::Axmud::Obj::Exit->new(
             $session,
             'dummy',            # Use a dummy direction, too!
-            FALSE,              # Not a real exit model object
+            'non_model',        # Not a real exit model object
         );
 
         $dummyExitObj->ivPoke('number', $number);
@@ -24151,22 +24291,6 @@
         return 1;
     }
 
-    sub set_queueDrawMaxObjs {
-
-        my ($self, $number, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $number || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_queueDrawMaxObjs', @_);
-        }
-
-        # Update IVs
-        $self->ivPoke('queueDrawMaxObjs', $number);
-
-        return 1;
-    }
-
     sub set_quickPaintMultiFlag {
 
         my ($self, $flag, $check) = @_;
@@ -24189,18 +24313,54 @@
         return 1;
     }
 
-    sub set_retainDrawMinRooms {
+
+    sub set_preDrawAllocation {
 
         my ($self, $number, $check) = @_;
 
         # Check for improper arguments
         if (! defined $number || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_retainDrawMinRooms', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_preDrawAllocation', @_);
         }
 
         # Update IVs
-        $self->ivPoke('retainDrawMinRooms', $number);
+        $self->ivPoke('preDrawAllocation', $number);
+
+        return 1;
+    }
+
+    sub set_preDrawRetainRooms {
+
+        my ($self, $number, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_preDrawRetainRooms', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('preDrawRetainRooms', $number);
+
+        return 1;
+    }
+
+    sub set_roomFlagShowMode {
+
+        my ($self, $mode, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $mode || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_roomFlagShowMode', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('roomFlagShowMode', $mode);
+
+        # Must redraw the menu in any automapper windows, so that the new room flag appears in them
+        $self->updateMapMenuToolbars();
 
         return 1;
     }
@@ -24323,6 +24483,8 @@
         { $_[0]->{modelConvertedFlag} }
     sub modelConvertedVersion
         { $_[0]->{modelConvertedVersion} }
+    sub modelSaveFileCount
+        { $_[0]->{modelSaveFileCount} }
 
     sub modelHash
         { my $self = shift; return %{$self->{modelHash}}; }
@@ -24382,12 +24544,14 @@
     sub firstRegion
         { $_[0]->{firstRegion} }
 
+    sub preDrawAllowFlag
+        { $_[0]->{preDrawAllowFlag} }
     sub preDrawMinRooms
         { $_[0]->{preDrawMinRooms} }
-    sub retainDrawMinRooms
-        { $_[0]->{retainDrawMinRooms} }
-    sub queueDrawMaxObjs
-        { $_[0]->{queueDrawMaxObjs} }
+    sub preDrawRetainRooms
+        { $_[0]->{preDrawRetainRooms} }
+    sub preDrawAllocation
+        { $_[0]->{preDrawAllocation} }
 
     sub knownCharHash
         { my $self = shift; return %{$self->{knownCharHash}}; }
@@ -24614,6 +24778,8 @@
         { my $self = shift; return @{$self->{roomFlagOrderedList}}; }
     sub allRoomFiltersFlag
         { $_[0]->{allRoomFiltersFlag} }
+    sub roomFlagShowMode
+        { $_[0]->{roomFlagShowMode} }
     sub roomTerrainInitHash
         { my $self = shift; return %{$self->{roomTerrainInitHash}}; }
     sub roomTerrainHash
@@ -24846,14 +25012,9 @@
         { $_[0]->{labelRatio} }
     sub roomTextRatio
         { $_[0]->{roomTextRatio} }
-    sub fixedRoomTagFlag
-        { $_[0]->{fixedRoomTagFlag} }
-    sub fixedRoomGuildFlag
-        { $_[0]->{fixedRoomGuildFlag} }
-    sub fixedExitTagFlag
-        { $_[0]->{fixedExitTagFlag} }
-    sub fixedLabelFlag
-        { $_[0]->{fixedLabelFlag} }
+
+    sub blockUnselectFlag
+        { $_[0]->{blockUnselectFlag} }
 }
 
 # Package must return a true value

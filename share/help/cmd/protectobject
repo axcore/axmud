@@ -69,4 +69,4 @@ prt / protectobject           Grants an object semi-protection
       See also the help for ';monitorobject'.
  
    User commands:
-      prt / protectobj / protectobject
+      prt / protect / protectobj / protectobject

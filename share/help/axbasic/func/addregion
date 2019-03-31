@@ -1,5 +1,4 @@
-
-ADDREGION (string)
+Addregion (string)
         
    Synopsis:
       Adds a new region to the world model
@@ -10,4 +9,4 @@ ADDREGION (string)
       If the operation is successful, the new region's world model number is
          returned. If the operation fails, 0 is returned.
       To add a temporary region that will automatically be deleted at the end of
-         the session, see the ADDTEMPREGION function.
+         the session, see the Addtempregion () function.

@@ -1,4 +1,4 @@
-IFACENAME$ ()
+Ifacename$ ()
 
    Synopsis:
       Returns the name of the active interface that caused the current interface

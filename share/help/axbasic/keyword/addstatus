@@ -21,7 +21,7 @@ ADDSTATUS expression , expression
          "HP". If it's an empty string, Axbasic will assign its own label.
 
       An ADDSTATUS statement is usually followed by a SETSTATUS statement, which
-         sets the numerical values displayed by the status bar. A DELSTATUS
+         sets the numeric values displayed by the status bar. A DELSTATUS
          statement removes the status bar entirely. Status bars are  
          automatically removed when the script terminates.
       Often, these statements are used in some kind of loop, which updates the

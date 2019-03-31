@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -759,6 +759,23 @@
             #   value is 0.01)
             sessionLoopDelay            => 0.05,
 
+            # GA::Obj::TextView->scrollToTop and ->scrollToBottom request scrolling through
+            #   Gt3k::TextView->scroll_to_mark, which scrolls smoothly (a nice visual effect) but
+            #   fails when many lines are display in the textview
+            # As a result, we let Gtk do its smooth scrolling (which preserves the nice visual
+            #   effect), then a little later (on every spin of the maintain loop, and after every
+            #   call to GA::Obj::Desktop->updateWidgets) we force the textview to the top/bottom
+            #   (which fixes any failures to scroll)
+            # Hash of Gtk3::TextView objects (not GA::Obj::TextView objects) which must be forcibly
+            #   scrolled to the top on the next session loop (via a call to
+            #   $self->forceScrollTextViews). Hash in the form
+            #       $textViewScrollUpHash{textview_object} = textview_object
+            textViewScrollUpHash        => {},
+            # Hash of Gtk3::TextView objects (not GA::Obj::TextView objects) which must be forcibly
+            #   scrolled to the bottom on the next session loop. Hash in the form
+            #       $textViewScrollDownHash{textview_object} = textview_object
+            textViewScrollDownHash      => {},
+
             # Maintenance loop
             # ----------------
 
@@ -1025,12 +1042,12 @@
             #   this session's registry (there is no equivalent registry in GA::Client)
             # Text which is redirected to another tab (for example, because MXP has created internal
             #   frames) is not stored in this hash
-            # Text which is inserted in the Gtk2::TextBuffer at an insertion point other than the
+            # Text which is inserted in the Gtk3::TextBuffer at an insertion point other than the
             #   one at the end of the buffer is added to the end of this hash, on a new line.
             #   Earlier lines in the hash are not modified)
             # When the buffer is full, adding a line to the buffer also deletes the oldest existing
             #   one
-            # The hash might not be the same size as the default tab's Gtk2::TextBuffer (although
+            # The hash might not be the same size as the default tab's Gtk3::TextBuffer (although
             #   they are, by default); so it could happen that text visible in the textview is no
             #   longer stored in this hash, or that text still stored in this hash is no longer
             #   visible in the textview
@@ -1810,7 +1827,7 @@
             # List of MXP/Pueblo/MCP debug messages created when processing a token. A message is
             #   added to the list by a call to $self->mxpDebug, $self->puebloDebug or
             #   $self->mcpDebug. When $self->processIncomingData is ready, any debug messages are
-            #   displayed. (Doing it this way saves us from some very ugly Gtk2 errors)
+            #   displayed. (Doing it this way saves us from some very ugly Gtk3 errors)
             # List in groups of 4, in the form
             #   (protocol, token, num, message...)
             # ...where 'protocol' is the string 'mxp', 'pueblo' or 'mcp', 'token' is the original
@@ -2145,6 +2162,8 @@
                     'info',
                     $string .= "\n\nTo see this message again, type ';hint'",
                     'ok',
+                    undef,
+                    TRUE,           # Preserve newline characters in the message
                 );
             }
         }
@@ -2164,7 +2183,7 @@
 
         # Re-enable text-to-speech after displaying the introductory system messages
         $self->ivPoke('ttsTempDisableFlag', FALSE);
-        # Inserting a Gtk2 update here allows all of the introductory messages actually to be
+        # Inserting a Gtk3 update here allows all of the introductory messages actually to be
         #   displayed, before any text-to-speech stuff is done
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->start');
 
@@ -2382,13 +2401,13 @@
         # Creates a new 'main' window or re-uses an existing one
         #
         # Expected arguments
-        #   $sessionCount   - The number of sessions that exist, besides this one (so can be 0)
+        #   $currentCount   - The number of sessions that exist, besides this one (so can be 0)
         #
         # Return values
         #   'undef' on improper arguments or if the 'main' window can't be created
         #   1 on success
 
-        my ($self, $sessionCount, $check) = @_;
+        my ($self, $currentCount, $check) = @_;
 
         # Local variables
         my (
@@ -2397,7 +2416,7 @@
         );
 
         # Check for improper arguments
-        if (! defined $sessionCount || defined $check) {
+        if (! defined $currentCount || defined $check) {
 
              return $axmud::CLIENT->writeImproper($self->_objClass . '->setMainWin', @_);
         }
@@ -2416,7 +2435,7 @@
 
             if ($axmud::CLIENT->shareMainWinFlag) {
                 $gridObj = $workspaceObj->addWorkspaceGrid($self);
-            } elsif (! $sessionCount) {
+            } elsif (! $currentCount) {
                 $gridObj = $workspaceObj->addWorkspaceGrid();
             }
 
@@ -2431,14 +2450,17 @@
         # Create a 'main' window, or use an existing one
         if (
             ($axmud::CLIENT->shareMainWinFlag && $axmud::CLIENT->mainWin)
-            || (! $axmud::CLIENT->shareMainWinFlag && ! $sessionCount)
+            || (! $axmud::CLIENT->shareMainWinFlag && ! $currentCount)
         ) {
             # Use the existing shared 'main' window
             $winObj = $axmud::CLIENT->mainWin;
         }
 
-        if (! $sessionCount && ! $axmud::TEST_MODE_FLAG) {
-
+        if (
+            ! $currentCount
+            && (! $axmud::TEST_MODE_FLAG || $axmud::CLIENT->sessionCount)
+            && $winObj
+        ) {
             # Convert a spare 'main' window into a normal one
             if (! $axmud::CLIENT->desktopObj->convertSpareMainWin($self, $winObj, $winmap)) {
 
@@ -2462,8 +2484,8 @@
                     undef,                                  # Window title set automatically
                     $winmap,                                # Winmap name
                     'Games::Axmud::Win::Internal',          # Package name
-                    undef,                                  # No known Gtk2::Window
-                    undef,                                  # No known Gnome2::Wnck::Window
+                    undef,                                  # No known Gtk3::Window
+                    undef,                                  # No system internal ID
                     $self,                                  # Owner
                     $self,                                  # Owner session
                     $workspaceHash{$workspaceObj->number},  # 'undef' if ->shareMainWinFlag = FALSE
@@ -9223,29 +9245,82 @@
         $self->ivPoke('sessionTime', $loopObj->spinTime);
 
         # Spin subservient loops, if they are running
-        if (! $spinType || $spinType eq 'maintain') {
+        if (
+            defined $self->maintainLoopCheckTime
+            && (
+                (! $spinType && $self->maintainLoopCheckTime < $self->sessionTime)
+                || ($spinType && $spinType eq 'maintain')
+            )
+        ) {
+            if ($self->spinMaintainLoop()) {
 
-            $self->spinMaintainLoop();
+                $self->ivPoke(
+                    'maintainLoopCheckTime',
+                    $self->sessionTime + $self->maintainLoopDelay,
+                )
+            }
         }
 
-        if (! $spinType || $spinType eq 'timer') {
+        if (
+            defined $self->timerLoopCheckTime
+            && (
+                (! $spinType && $self->timerLoopCheckTime < $self->sessionTime)
+                || ($spinType && $spinType eq 'timer')
+            )
+        ) {
+            if ($self->spinTimerLoop()) {
 
-            $self->spinTimerLoop();
+                $self->ivPoke(
+                    'timerLoopCheckTime',
+                    $self->sessionTime + $self->timerLoopDelay,
+                )
+            }
         }
 
-        if (! $spinType || $spinType eq 'incoming') {
+        if (
+            defined $self->incomingLoopCheckTime
+            && (
+                (! $spinType && $self->incomingLoopCheckTime < $self->sessionTime)
+                || ($spinType && $spinType eq 'incoming')
+            )
+        ) {
+            if ($self->spinIncomingLoop()) {
 
-            $self->spinIncomingLoop();
+                $self->ivPoke(
+                    'incomingLoopCheckTime',
+                    $self->sessionTime + $self->incomingLoopDelay,
+                )
+            }
         }
 
-        if (! $spinType || $spinType eq 'task') {
+        if (
+            defined $self->taskLoopCheckTime
+            && (
+                (! $spinType && $self->taskLoopCheckTime < $self->sessionTime)
+                || ($spinType && $spinType eq 'task')
+            )
+        ) {
+            if ($self->spinTaskLoop()) {
 
-            $self->spinTaskLoop();
+                $self->ivPoke(
+                    'taskLoopCheckTime',
+                    $self->sessionTime + $self->taskLoopDelay,
+                )
+            }
         }
 
-        if (! $spinType || $spinType eq 'replay') {
+        if (
+            defined $self->replayLoopCheckTime
+            && (! $spinType && $self->replayLoopCheckTime < $self->sessionTime)
+            || ($spinType && $spinType eq 'replay')
+        ) {
+            if ($self->spinReplayLoop()) {
 
-            $self->spinReplayLoop();
+                $self->ivPoke(
+                    'replayLoopCheckTime',
+                    $self->sessionTime + $self->replayLoopDelay,
+                )
+            }
         }
 
         return 1;
@@ -9581,6 +9656,33 @@
             $self->mapWin->winUpdate();
         }
 
+        # DEBUG
+        if ($axmud::TEST_MODEL_FLAG && $self->mapWin && $self->status eq 'connected') {
+
+            # Run a model test every 60 seconds (when the automapper window is open)
+            my $time = (int($self->sessionTime / 60)) * 60;
+            if (
+                $time > $axmud::TEST_MODEL_TIME
+                && ! $self->worldModelObj->testModel($self)
+            ) {
+                $self->writeDebug(
+                    'AUTOMATIC MODEL TEST: World model test failed at '
+                    . $axmud::CLIENT->localTime(),
+                );
+
+                $axmud::CLIENT->playSound('alarm');
+
+                # Test failed. Don't keep running tests
+                $axmud::TEST_MODEL_FLAG = FALSE;
+
+            } else {
+
+                # Test succeeded
+                $axmud::TEST_MODEL_TIME = $self->sessionTime;
+            }
+        }
+        # DEBUG
+
         # Check if sounds played by GA::Client->playSoundFile have finished and, if so, prune the
         #   registry accordingly
         @soundObjList = $self->ivValues('soundHarnessHash');
@@ -9631,6 +9733,9 @@
 
         # Handle changes to this session's tab label (if visible)
         $self->checkTabLabels();
+
+        # Handle any Gtk3::TextView scrolling problems (see the comments in $self->new)
+        $self->forceScrollTextViews();
 
         # Update any MXP gauges whose entities have been modified
         $self->updateMxpGauges();
@@ -9934,6 +10039,89 @@
         }
 
         return $labelText;
+    }
+
+    sub forceScrollTextViews {
+
+        # Called by $self->spinMaintainLoop and GA::Obj::Desktop->updateWidgets
+        # Handle any Gtk3::TextView scrolling problems. Since the update to Gtk3, Gtk3::Textviews
+        #   sometimes fail to scroll to the top/bottom when required
+        # This is corrected by compiling hashes of any textviews which were told to scroll to the
+        #   top/bottom. Periodically (once per Axmud maintain loop, and after every Gtk3 main loop
+        #   iteration) we forcibly scroll the marked textviews to the bottom, which takes care of
+        #   any problems (while preserving the smooth scrolling effect)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $gtkFlag    - Set to TRUE when called by GA::Obj::Desktop->updateWidgets
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 on success
+
+        my ($self, $gtkFlag, $check) = @_;
+
+        # Local variables
+        my (%upHash, %downHash);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->forceScrollTextViews', @_);
+        }
+
+        # For any textviews which had been scrolled to the top, forcibly scroll them to the top
+        %upHash = $self->textViewScrollUpHash;
+        $self->ivEmpty('textViewScrollUpHash');
+        foreach my $textView (values %upHash) {
+
+            $textView->get_vadjustment->set_value(0);
+        }
+
+        # For any textviews which had been scrolled to the bottom, forcibly scroll them to the
+        #   bottom
+        %downHash = $self->textViewScrollDownHash;
+        $self->ivEmpty('textViewScrollDownHash');
+        foreach my $textView (values %downHash) {
+
+            my $adjust = $textView->get_vadjustment();
+
+            $adjust->set_value($adjust->get_upper() - $adjust->get_page_size());
+        }
+
+        if (%upHash || %downHash) {
+
+            # (Avoid infinite recursion)
+            if (! $gtkFlag) {
+
+                $axmud::CLIENT->desktopObj->updateWidgets();
+            }
+
+            # Check the textviews have actually scrolled to the correct position
+            foreach my $textView (values %upHash) {
+
+                if ($textView->get_vadjustment->get_value()) {
+
+                    # Forced scrolling wasn't successful, so try again on the next maintain loop
+                    $self->ivAdd('textViewScrollUpHash', $textView, $textView);
+                }
+            }
+
+            foreach my $textView (values %downHash) {
+
+                my $adjust = $textView->get_vadjustment();
+
+                if ($adjust->get_value() < ($adjust->get_upper() - $adjust->get_page_size())) {
+
+                    # Forced scrolling wasn't successful, so try again on the next maintain loop
+                    $self->ivAdd('textViewScrollDownHash', $textView, $textView);
+                }
+            }
+        }
+
+        return 1;
     }
 
     sub setCrawlMode {
@@ -10264,6 +10452,8 @@
                     $taskObj->shutdown();
                 }
             }
+
+            $self->ivEmpty('currentTaskHash');
 
             return 1;
         }
@@ -10629,7 +10819,7 @@
 
             if (defined $currentTab && $currentTab eq 'Current tasklist') {
 
-                # If there are currently any selected lines in the tab's GA::Obj::Simple::List,
+                # If there are currently any selected lines in the tab's GA::Obj::SimpleList,
                 #   remember them, so we can select them again as soon as the list is redrawn
                 @selectedList = $self->viewerWin->notebookGetSelectedLines();
 
@@ -13476,11 +13666,20 @@
                 $text = substr($text, length($token));
                 $self->ivPoke('lastTokenType', 'bsp');
 
-            # 7. MSP tokens, starting '!!SOUND' or '!!MUSIC' (if MSP is enabled)
+            # 7. MSP tokens, starting '!!SOUND' or '!!MUSIC' (if MSP is enabled). If the user has
+            #   just sent a world command, the current textview object's insertion position may be
+            #   at the beginning of a line, yet $self->lastTokenType won't necessarily be 'nl' or
+            #   'ga'. Therefore, if we require MSP tags to be at the start of a line, we have to
+            #   check the textview object
             } elsif (
                 ($mspString eq '!!SOUND' || $mspString eq '!!MUSIC')
                 && $mspFlag
-                && ($axmud::CLIENT->allowMspFlexibleFlag || $self->lastTokenType eq 'nl')
+                && (
+                    $axmud::CLIENT->allowMspFlexibleFlag
+                    || $self->lastTokenType eq 'nl'
+                    || $self->lastTokenType eq 'ga'
+                    || $self->currentTabObj->textViewObj->insertNewLineFlag
+                )
             ) {
                 # Attempt to extract a valid MSP sound trigger
                 $token = $self->extractMspSoundTrigger($text);
@@ -17462,7 +17661,7 @@
 
         # Local variables
         my (
-            $origToken, $firstChar, $tagMode, $keyword,
+            $origToken, $firstChar, $tagMode, $flexibleFlag, $keyword,
             @emptyList, @argList,
         );
 
@@ -17526,8 +17725,18 @@
 
         # Remove the keyword, which 'must start with a letter (A-Z) and then consist of letters,
         #   numbers or the underline character'
-        if ($token =~ m/^([A-Za-z][A-Za-z0-9_]*)/) {
+        # v1.1.510 - The Gathering MUD uses hyphens, instead of underscores. Allow that only if the
+        #   flag is set (allow dots and slashes, too)
+        if ($self->currentWorld->ivExists('mxpOverrideHash', 'flexible')) {
+            $flexibleFlag = $self->currentWorld->ivShow('mxpOverrideHash', 'flexible');
+        } else {
+            $flexibleFlag = $axmud::CLIENT->allowMxpFlexibleFlag;
+        }
 
+        if (
+            (! $flexibleFlag && $token =~ m/^([A-Za-z][A-Za-z0-9_]*)/)
+            || ($flexibleFlag && $token =~ m/^([A-Za-z][A-Za-z0-9_\-\.\\\/]*)/)
+        ) {
             # (Simplify things by converting all keywords to upper-case)
             $keyword = uc($1);
             $token = substr($token, length($keyword));
@@ -19337,7 +19546,7 @@
                 }
 
                 # 'argument_name=' constructions are not allowed
-                if (! $argValue) {
+                if ($argValue eq '') {
 
                     # Improper arguments or malformed MXP argument
                     if ($self->mxpMode eq 'client_agree') {
@@ -22039,7 +22248,7 @@
 
             } else {
 
-                # Take account of any lines removed from the textview's Gtk2::TextBuffer
+                # Take account of any lines removed from the textview's Gtk3::TextBuffer
                 $line += $textViewObj->nextDeleteLine;
             }
 
@@ -22280,7 +22489,7 @@
 
             } else {
 
-                # Take account of any lines removed from the textview's Gtk2::TextBuffer
+                # Take account of any lines removed from the textview's Gtk3::TextBuffer
                 $line += $textViewObj->nextDeleteLine;
             }
 
@@ -22637,7 +22846,7 @@
             'w'         => undef,
             'hspace'    => FALSE,
             'vspace'    => FALSE,
-            'align'     => undef,       # Cannot be implemented in Gtk2 - text tags broken
+            'align'     => undef,       # Cannot be implemented in Gtk3 - text tags broken
             'ismap'     => FALSE,
         );
 
@@ -22803,7 +23012,7 @@
         # Convert the image file to a pixbuf
         if (! defined $width || ! defined $height) {
 
-            $pixbuf = Gtk2::Gdk::Pixbuf->new_from_file($path);
+            $pixbuf = Gtk3::Gdk::Pixbuf->new_from_file($path);
             if ($pixbuf) {
 
                 $width = $pixbuf->get_width();
@@ -22812,7 +23021,7 @@
 
         } else {
 
-            $pixbuf = Gtk2::Gdk::Pixbuf->new_from_file_at_scale(
+            $pixbuf = Gtk3::Gdk::Pixbuf->new_from_file_at_scale(
                 $path,
                 $width,
                 $height,
@@ -22838,7 +23047,7 @@
                     $vFactor = 1;
                 }
 
-                $pixbuf2 = Gtk2::Gdk::Pixbuf->new(
+                $pixbuf2 = Gtk3::Gdk::Pixbuf->new(
                     'GDK_COLORSPACE_RGB',
                     FALSE,
                     $pixbuf->get_bits_per_sample(),
@@ -27152,7 +27361,7 @@
         #   tags are processed, this function is called
         # Creates a dummy style tags in the form 'mxpf_monospace_bold_12' or 'mxpf_off'
         # GA::Obj::TextView->applyColourStyleTags extracts everything after the 'mxpf', and uses the
-        #   extracted text to modify the 'mxp_font' Gtk2::TextTag
+        #   extracted text to modify the 'mxp_font' Gtk3::TextTag
         #
         # Expected arguments
         #   %stackHash      - A hash of MXP text attributes and their settings, in the same format
@@ -27598,7 +27807,7 @@
                 # Convert the percentage into a fraction (e.g. convert 50% into 0.5)
                 $num /= 100;
 
-                # Get a Gtk2::Gdk::Rectangle
+                # Get a Gtk3::Gdk::Rectangle
                 $rectObj = $self->defaultTabObj->textViewObj->textView->get_visible_rect();
                 if ($mode eq 'width') {
 
@@ -28826,7 +29035,7 @@
 
         # Called by various functions
         # Stores an MXP debug message until $self->processIncomingData is ready to display it (by
-        #   not displaying it immediately, we can avoid some very ugly Gtk2 errors)
+        #   not displaying it immediately, we can avoid some very ugly Gtk3 errors)
         #
         # Expected arguments
         #   $token      - The MXP token that caused the error
@@ -28868,7 +29077,7 @@
 
         # Called by various functions
         # Stores a Pueblo debug message until $self->processIncomingData is ready to display it (by
-        #   not displaying it immediately, we can avoid some very ugly Gtk2 errors)
+        #   not displaying it immediately, we can avoid some very ugly Gtk3 errors)
         #
         # Expected arguments
         #   $token      - The MXP token that caused the error
@@ -28910,7 +29119,7 @@
 
         # Called by various functions
         # Stores an MCP debug message until $self->processIncomingData is ready to display it (by
-        #   not displaying it immediately, we can avoid some very ugly Gtk2 errors)
+        #   not displaying it immediately, we can avoid some very ugly Gtk3 errors)
         #
         # Expected arguments
         #   $token      - The MCP token that caused the error
@@ -29115,7 +29324,7 @@
         #   Server: IAC DO TELOPT_TTYPE
         #   Client: IAC WONT TELOPT_TTYPE
         #
-        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.net/mtts/)
+        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
         #
         #   Server: IAC DO TELOPT_TTYPE
         #   Client: IAC WILL TELOPT_TTYPE
@@ -29421,7 +29630,7 @@
         # Import the hash of telnet constants (for convenience)
         %telConstHash = $axmud::CLIENT->constTelnetHash;
 
-        # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.net/msdp/)
+        # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.io/msdp/)
         #
         #   Server: IAC WILL TELOPT_MSDP
         #   Client: IAC DO TELOPT_MSDP
@@ -29450,7 +29659,7 @@
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_MSDP'});
         }
 
-        # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.net/mssp/)
+        # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.io/mssp/)
         #
         #   Server: IAC WILL TELOPT_MSSP
         #   Client: IAC DO TELOPT_MSSP
@@ -29481,8 +29690,8 @@
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_MSSP'});
         }
 
-        # MCCP1 (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/)
-        # MCCP2 (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/)
+        # MCCP1 (Mud Client Compression Protocol - http://tintin.sourceforge.io/mccp/)
+        # MCCP2 (Mud Client Compression Protocol - http://tintin.sourceforge.io/mccp/)
         #
         #   Server: IAC WILL TELOPT_MCCP1 / IAC WILL TELOPT_MCCP2
         #   Client: IAC DO TELOPT_MCCP1 / IAC DO TELOPT_MCCP2
@@ -29582,7 +29791,7 @@
             $connectObj->option_accept(Will => $telConstHash{'TELOPT_MXP'});
         }
 
-        # PUEBLO (http://pueblo.sourceforge.net/doc/manual/html_standard_elements.html)
+        # PUEBLO (http://pueblo.sourceforge.io/doc/manual/html_standard_elements.html)
         # Implemented, but not handled out-of-bounds
 
         # ZMP (Zenith Mud Protocol - http://discworld.starturtle.net/external/protocols/zmp.html)
@@ -29717,7 +29926,7 @@
             $connectObj->option_accept(Do => $telConstHash{'TELOPT_GMCP'});
         }
 
-        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.net/mtts/)
+        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
         # Strictly speaking a standard, not a protocol; Axmud implements it alongside TTYPE
         #   negotiatons
 
@@ -29768,7 +29977,7 @@
         # Import the hash of telnet constants (for convenience)
         %telConstHash = $axmud::CLIENT->constTelnetHash;
 
-        # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.net/msdp/)
+        # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.io/msdp/)
         #   Client: IAC DONT TELOPT_MSDP
         if ($protocol eq 'msdp' && $self->msdpMode eq 'client_agree') {
 
@@ -29776,13 +29985,13 @@
             $self->optSendWont($telConstHash{'TELOPT_MSDP'});
             $self->ivPoke('msdpMode', 'client_refuse');
 
-        # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.net/mssp/)
+        # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.io/mssp/)
         } elsif ($protocol eq 'mssp' && $self->msspMode eq 'client_agree') {
 
             $self->ivPoke('msspMode', 'client_refuse');
             # (Don't remove any collected data from the world profile)
 
-        # MCCP (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/)
+        # MCCP (Mud Client Compression Protocol - http://tintin.sourceforge.io/mccp/)
         } elsif ($protocol eq 'mccp') {
 
             # (Nothing to do; GA::Obj::Telnet handles it)
@@ -29801,7 +30010,7 @@
 
             $self->removeMxpGauges();
 
-        # PUEBLO (http://pueblo.sourceforge.net/doc/manual/html_standard_elements.html)
+        # PUEBLO (http://pueblo.sourceforge.io/doc/manual/html_standard_elements.html)
         # (negotiations not handled out-of-bounds)
 
         # ZMP (Zenith Mud Protocol - http://discworld.starturtle.net/external/protocols/zmp.html)
@@ -29829,7 +30038,7 @@
             $self->optSendDont($telConstHash{'TELOPT_GMCP'});
             $self->ivPoke('gmcpMode', 'client_refuse');
 
-        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.net/mtts/)
+        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
         } elsif ($protocol eq 'mtts') {
 
             # (Nothing to do - $self->prepareTTypeData checks GA::Client->useMttsFlag)
@@ -29984,7 +30193,7 @@
             }
 
         # TTYPE (Terminal type - http://www.ietf.org/rfc/rfc1091.txt)
-        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.net/mtts/)
+        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
         } elsif ($option == $telConstHash{'TELOPT_TTYPE'}) {
 
             if (
@@ -30051,7 +30260,7 @@
                 $self->ivPoke('charSetMode', 'client_agree');
             }
 
-        # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.net/msdp/)
+        # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.io/msdp/)
         } elsif ($option == $telConstHash{'TELOPT_MSDP'}) {
 
             # Server: IAC WILL TELOPT_MSDP
@@ -30072,7 +30281,7 @@
                 $self->resetMsdpData();
             }
 
-        # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.net/mssp/)
+        # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.io/mssp/)
         } elsif ($option == $telConstHash{'TELOPT_MSSP'}) {
 
             # Server: IAC WILL TELOPT_MSSP
@@ -30081,8 +30290,8 @@
                 $self->ivPoke('msspMode', 'client_agree');
             }
 
-        # MCCP1 (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/)
-        # MCCP2 (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/)
+        # MCCP1 (Mud Client Compression Protocol - http://tintin.sourceforge.io/mccp/)
+        # MCCP2 (Mud Client Compression Protocol - http://tintin.sourceforge.io/mccp/)
         } elsif (
             $option == $telConstHash{'TELOPT_MCCP1'}
             || $option == $telConstHash{'TELOPT_MCCP2'}
@@ -30124,7 +30333,7 @@
                 $self->ivPoke('mxpMode', 'client_agree');
             }
 
-        # PUEBLO (http://pueblo.sourceforge.net/doc/manual/html_standard_elements.html)
+        # PUEBLO (http://pueblo.sourceforge.io/doc/manual/html_standard_elements.html)
         # Implemented, but not handled out-of-bounds
 
         # ZMP (Zenith Mud Protocol - http://discworld.starturtle.net/external/protocols/zmp.html)
@@ -30194,7 +30403,7 @@
             }
         }
 
-        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.net/mtts/)
+        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
         # Handled above alongside TTYPE
 
         # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/)
@@ -30292,7 +30501,7 @@
                 $self->processCharSetData($parameters);
             }
 
-        # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.net/msdp/)
+        # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.io/msdp/)
         } elsif ($option == $telConstHash{'TELOPT_MSDP'}) {
 
             # (There's a lot of stuff to process, so use a separate function)
@@ -30302,7 +30511,7 @@
                 $self->processMsdpData(%msdpHash);
             }
 
-        # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.net/mssp/)
+        # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.io/mssp/)
         } elsif ($option == $telConstHash{'TELOPT_MSSP'}) {
 
             # Server: IAC SB TELOPT_MSSP MSSP_VAR <variable> MSSP_VAL <value> MSSP_VAR <variable>
@@ -30318,7 +30527,7 @@
                 $self->processMsspData(%msspHash);
             }
 
-        # MCCP1 (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/)
+        # MCCP1 (Mud Client Compression Protocol - http://tintin.sourceforge.io/mccp/)
         } elsif ($option == $telConstHash{'TELOPT_MCCP1'}) {
 
             # Server: IAC SB TELOPT_MCCP1 WILL SE
@@ -30328,7 +30537,7 @@
                 $self->ivPoke('mccpMode', 'compress_start');
             }
 
-        # MCCP2 (Mud Client Compression Protocol - http://tintin.sourceforge.net/mccp/)
+        # MCCP2 (Mud Client Compression Protocol - http://tintin.sourceforge.io/mccp/)
         } elsif ($option == $telConstHash{'TELOPT_MCCP2'}) {
 
             # Server: IAC SB TELOPT_MCCP2 IAC SE
@@ -30655,7 +30864,7 @@
 
         # Called by $self->optCallback and $self->textViewSizeUpdate
         # Sends a NAWS telnet option to the server (the width and height, in characters, of the
-        #   Gtk2::Textview in this session's default tab)
+        #   Gtk3::Textview in this session's default tab)
         #
         # Expected arguments
         #   (none besides $self)
@@ -41651,6 +41860,7 @@
                 'protocol.mxp.crosslink'
                                         => 'allowMxpCrosslinkFlag',
                 'protocol.mxp.room'     => 'allowMxpRoomFlag',
+                'protocol.mxp.flexible' => 'allowMxpFlexibleFlag',
             );
 
             # S protocol.ttype.sent
@@ -44762,6 +44972,37 @@
         return 1;
     }
 
+    sub add_textViewScrollUp {
+
+        my ($self, $textView, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $textView || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_textViewScrollUp', @_);
+        }
+
+        $self->ivAdd('textViewScrollUpHash', $textView, $textView);
+
+        return 1;
+    }
+
+
+    sub add_textViewScrollDown {
+
+        my ($self, $textView, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $textView || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->add_textViewScrollDown', @_);
+        }
+
+        $self->ivAdd('textViewScrollDownHash', $textView, $textView);
+
+        return 1;
+    }
+
     sub set_transferWorldModelFlag {
 
         my ($self, $flag, $check) = @_;
@@ -45191,6 +45432,11 @@
         { $_[0]->{childLoopSpinFlag} }
     sub sessionLoopDelay
         { $_[0]->{sessionLoopDelay} }
+
+    sub textViewScrollUpHash
+        { my $self = shift; return %{$self->{textViewScrollUpHash}}; }
+    sub textViewScrollDownHash
+        { my $self = shift; return %{$self->{textViewScrollDownHash}}; }
 
     sub maintainLoopDelay
         { $_[0]->{maintainLoopDelay} }

@@ -1,4 +1,4 @@
-LTRIM$ (string)
+Ltrim$ (string)
 
    Synopsis:
       Removes leading whitespace from the beginning of the specified string

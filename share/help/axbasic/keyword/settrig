@@ -8,7 +8,7 @@ SETTRIG expression [ , expression ]
          (or notifies this script's parent task) whenever it fires.
          
       The first expression is the stimulus (a pattern). Axmud automatically
-         assigns a own name to dependent triggers.
+         assigns its own name to dependent triggers.
       If the second expression is specified, it should be the name of an Axbasic
          script to run immediately (without a parent task) when the trigger
          fires.

@@ -1,4 +1,4 @@
-TIMESTAMP ()
+Timestamp ()
 
    Synopsis:
       Returns the number of seconds since the current session began

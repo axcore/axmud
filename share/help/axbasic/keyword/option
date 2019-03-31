@@ -1,10 +1,10 @@
 OPTION ANGLE DEGREES
 OPTION ANGLE RADIANS
-OPTION DIVERT
 OPTION NEEDTASK
 OPTION NOLET
 OPTION PERSIST
 OPTION PSEUDO expression
+OPTION REDIRECT
 OPTION REQUIRE expression
 OPTION TYPO
 
@@ -18,13 +18,10 @@ OPTION TYPO
 
       OPTION ANGLE defines what kind of angles Axbasic trigonometric functions
          will expect as arguments. OPTION ANGLE DEGREES will cause functions
-         like SIN(), COS() and TAN() to expect an angle measured in degrees.
+         like Sin (), Cos () and Tan () to expect an angle measured in degrees.
          OPTION ANGLE RADIANS will cause them to expect an angle measured in
          radians. If OPTION ANGLE isn't used at all, the functions will expect
          an angle measured in radians by default.
-      OPTION DIVERT specifies that, if the task window is not open, the output
-         of WRITEWIN statements should be diverted to the 'main' window 
-         (otherwise the output is not displayed at all).
       OPTION NEEDTASK allows you to specify that the Axbasic script should not 
          be allowed to run unless it is run within a task.
       OPTION NOLET allows you to omit the LET keyword in your Axbasic scripts:
@@ -47,6 +44,9 @@ OPTION TYPO
                messages in 'dialogue' windows
             "win_only" - suppress system success messages, but show system error 
                messages in 'dialogue' windows
+      OPTION REDIRECT specifies that, if the task window is not open, the output
+         of WRITEWIN statements should be redirected to the 'main' window 
+         (otherwise the output is not displayed at all).
       OPTION REQUIRE allows you to specify that the Axbasic script should not be
          allowed to run unless the version of Axbasic used by the client is at
          least the value of the expression. 
@@ -62,6 +62,9 @@ OPTION TYPO
          is ignored in Axbasic script with line numbers, for which all variables
          are treated as global variables.
 
+   Compatibility:
+      Before Axbasic v1.002, OPTION REDIRECT was OPTION DIVERT.
+      
    Examples:
       OPTION NOLET
       string$ = "Hello world"

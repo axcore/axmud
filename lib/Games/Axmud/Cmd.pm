@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -1523,10 +1523,10 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('testpattern', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('testpattern', TRUE, TRUE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['tpt', 'testregex', 'testpattern'];
+        $self->{defaultUserCmdList} = ['tpt', 'testregex', 'patterntest', 'testpattern'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
         $self->{descrip} = 'Opens the Pattern Test window';
 
@@ -1588,7 +1588,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('quickinput', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('quickinput', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['inp', 'qinput', 'quickinput'];
@@ -2609,6 +2609,16 @@
 
             $axmud::CLIENT->restoreSessionLoops();
 
+            # GA::Client->haltSessionLoops displayed a message in every session, so this command
+            #   must display a message in every session too
+            foreach my $otherSession ($axmud::CLIENT->ivValues('sessionHash')) {
+
+                if ($otherSession ne $session) {
+
+                    $otherSession->writeText($axmud::SCRIPT . ' internal processes restarted');
+                }
+            }
+
             return $self->complete(
                 $session, $standardCmd,
                 $axmud::SCRIPT . ' internal processes restarted',
@@ -3093,7 +3103,7 @@
 
         # Local variables
         my (
-            $msg, $disconnectFlag, $obj, $count, $string, $limit,
+            $disconnectFlag, $obj, $count, $string, $limit,
             @list,
             %hash,
         );
@@ -3117,18 +3127,21 @@
         # ;h
         if (! defined $cmd) {
 
-            $msg = 'List of client commands (type \';help <command>\' for more help';
             if ($session->status eq 'disconnected') {
 
                 $disconnectFlag = TRUE;
+                $session->writeText(
+                    'List of client commands (* - available after a disconnection)',
+                );
+
+                $session->writeText('Type \';help <command>\' for more help');
+
+            } else {
+
+                $session->writeText(
+                    'List of client commands (type \';help <command>\' for more help',
+                );
             }
-
-            if ($disconnectFlag) {
-
-                $msg .= '; * - available offline';
-            }
-
-            $session->writeText($msg . ')');
 
             # Display each line in the ordered list of commands. Lines that begin with the '@'
             #   character are group headings; all other lines are commands
@@ -7429,202 +7442,6 @@
     }
 }
 
-{ package Games::Axmud::Cmd::OLDSetCountdown;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('setcountdown', TRUE, FALSE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['scd', 'countdown', 'setcountdown'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Sets off the Countdown task';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            @args,
-        ) = @_;
-
-        # Local variables
-        my ($flagCount, $switch, $secsFlag, $minsFlag, $hoursFlag, $number, $string, $taskObj);
-
-        # Extract switches
-        $flagCount = 0;
-
-        ($switch, @args) = $self->extract('-s', 0, @args);
-        if (defined $switch) {
-
-            $secsFlag = TRUE;
-            $flagCount++;
-        }
-
-        ($switch, @args) = $self->extract('-m', 0, @args);
-        if (defined $switch) {
-
-            $minsFlag = TRUE;
-            $flagCount++;
-        }
-
-        ($switch, @args) = $self->extract('-h', 0, @args);
-        if (defined $switch) {
-
-            $hoursFlag = TRUE;
-            $flagCount++;
-        }
-
-        # Extract remaining arguments (if any)
-        $number = shift @args;
-
-        # There should be nothing left in @args
-        if (@args) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Switches can't be combined
-        if ($flagCount > 1) {
-
-            return $self->error(
-                $session, $inputString,
-                'The switches \'-s\', \'-m\' and \'-h\' can\'t be combined',
-            );
-        }
-
-        # If $number was specified, check it's valid
-        if (defined $number) {
-
-            if (! $axmud::CLIENT->floatCheck($number, 0) || $number == 0) {
-
-                return $self->error(
-                    $session, $inputString,
-                    'Invalid time \'' . $number . '\' (must be a positive number)',
-                );
-            }
-
-            # Convert it to seconds, and create a partial confirmation message in advance
-            if ($hoursFlag) {
-
-                if ($number == 1) {
-                    $string = '1 hour';
-                } else {
-                    $string = $number . ' hours';
-                }
-
-                $number *= 3600;
-
-            } elsif ($minsFlag) {
-
-                if ($number == 1) {
-                    $string = '1 minute';
-                } else {
-                    $string = $number . ' minutes';
-                }
-
-                $number *= 60;
-
-            } else {
-
-                if ($number == 1) {
-                    $string = '1 second';
-                } else {
-                    $string = $number . ' seconds';
-                }
-            }
-        }
-
-        # There can be multiple Countdown tasks running; find the most recent one
-        $taskObj = $session->ivShow('currentTaskNameHash', 'countdown_task');
-        if ($taskObj) {
-
-            # Countdown task running. If it's already counting down, we need to start a new task
-            #   (or use one of the others)
-            if ($taskObj->countMode ne 'default') {
-
-                OUTER: foreach my $otherTaskObj ($session->ivValues('currentTaskHash')) {
-
-                    if (
-                        $otherTaskObj->name eq 'countdown_task'
-                        && $otherTaskObj->countMode eq 'default'
-                    ) {
-                        $taskObj = $otherTaskObj;
-                        last OUTER;
-                    }
-                }
-            }
-        }
-
-        if (! $taskObj) {
-
-            # No countdown task running (or all existing tasks busy), so start a new one
-            $taskObj = Games::Axmud::Task::Countdown->new($session, 'current');
-            if (! $taskObj) {
-
-                return $self->error(
-                    $session, $inputString,
-                    'General error creating a new Countdown task',
-                );
-
-            } elsif ($number) {
-
-                # Give the task its initial settings
-                $taskObj->initClock('down', $number);
-
-                return $self->complete(
-                    $session, $standardCmd,
-                    'Countdown task initialised; counting down from '. $string,
-                );
-
-            } else {
-
-                return $self->complete($session, $standardCmd, 'Countdown task started');
-            }
-
-        } else {
-
-            # Countdown task running and is available to start counting down
-            $taskObj->startClock('down', $number);
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Countdown task updated; counting down from '. $string,
-            );
-        }
-    }
-}
-
 { package Games::Axmud::Cmd::SetCountdown;
 
     use strict;
@@ -8787,7 +8604,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('repeat', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('repeat', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rp', 'repeat'],
@@ -9773,7 +9590,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('echo', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('echo', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['echo'];
@@ -10798,117 +10615,6 @@
         }
 
         return $self->complete($session, $standardCmd, 'User commands set to their default values');
-    }
-}
-
-{ package Games::Axmud::Cmd::Screenshot;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
-
-    ##################
-    # Constructors
-
-    sub new {
-
-        # Create a new instance of this command object (there should only be one)
-        #
-        # Expected arguments
-        #   (none besides $class)
-        #
-        # Return values
-        #   'undef' if GA::Generic::Cmd->new reports an error
-        #   Blessed reference to the new object on success
-
-        my ($class, $check) = @_;
-
-        # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('screenshot', TRUE, TRUE);
-        if (! $self) {return undef}
-
-        $self->{defaultUserCmdList} = ['shot', 'screenshot'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
-        $self->{descrip} = 'Takes a screenshot of the current session';
-
-        # Bless the object into existence
-        bless $self, $class;
-        return $self;
-    }
-
-    ##################
-    # Methods
-
-    sub do {
-
-        my (
-            $self, $session, $inputString, $userCmd, $standardCmd,
-            $check,
-        ) = @_;
-
-        # Local variables
-        my ($textView, $width, $height, $pixBuffer, $file, $path, $count);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $self->improper($session, $inputString);
-        }
-
-        # Before starting, update Gtk2's events queue
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
-
-        # Get the size of the default tab's textview
-        $textView = $session->defaultTabObj->textViewObj->textView;
-        ($width, $height) = $textView->window->get_size();
-
-        # Create a blank pixbuffer to hold the image
-        $pixBuffer = Gtk2::Gdk::Pixbuf->new(
-            'rgb',
-            0,
-            8,
-            $width,
-            $height,
-        );
-
-        # Take the screenshot
-        $pixBuffer->get_from_drawable(
-            $textView->window,
-            undef, 0, 0, 0, 0,
-            $width, $height,
-        );
-
-        # Decide which filename to use; don't overwrite existing screenshots
-        $file = $session->currentWorld->name;
-        $path = $axmud::DATA_DIR . '/screenshots/' . $file . '.jpg';
-
-        if (-e $path) {
-
-            # File already exists; choose a different name
-            $count = 0;
-
-            do {
-
-                my $newFile;
-
-                $count++;
-                $newFile = $file . '_' . $count;
-                $path = $axmud::DATA_DIR . '/screenshots/' . $newFile . '.jpg';
-
-            } until (! -e $path);
-        }
-
-        # Save the screenshot as a JPEG file
-        $pixBuffer->save($path, 'jpeg', quality => 100);
-
-        return $self->complete(
-            $session, $standardCmd,
-            'Screenshot saved to ' . $path,
-        );
     }
 }
 
@@ -15921,10 +15627,11 @@
 
         # Local variables
         my (
-            $switch, $string, $worldFlag, $modelFlag, $tasksFlag, $scriptsFlag, $contactsFlag,
+            $switch, $string, $worldFlag,  $modelFlag, $tasksFlag, $scriptsFlag, $contactsFlag,
             $dictsFlag, $toolbarFlag, $userCmdFlag, $zonemapsFlag, $winmapsFlag, $ttsFlag,
-            $exportPath, $tarObj,
+            $exportPath, $tarObj, $total,
             @exportList, @namedWorldList, @namedModelList, @combinedList,
+            %miniFileHash,
         );
 
         # Check that saving is allowed at all
@@ -16209,6 +15916,37 @@
 
                 push (@exportList, 'data/tts.axm');
             }
+
+            if ($worldFlag || $modelFlag) {
+
+                foreach my $world (@namedModelList) {
+
+                    my ($count, $exitFlag);
+
+                    # Large world models are split into multiple files. Make sure we're exporting
+                    #   all of them together
+                    $count = 0;
+                    do {
+
+                        my $miniFile;
+
+                        $count++;
+                        $miniFile = 'data/worlds/' . $world . '/worldmodel_' . $count . '.axm';
+                        if (! -e $axmud::DATA_DIR . '/' . $miniFile) {
+
+                            $exitFlag = TRUE;
+
+                        } else {
+
+                            push (@exportList, $miniFile);
+                            # At the end of this function, when listing the files exported, only
+                            #   include the main world model file
+                            $miniFileHash{$miniFile} = undef;
+                        }
+
+                    } until ($exitFlag);
+                }
+            }
         }
 
         # Check at least one file has been marked for exporting
@@ -16284,7 +16022,7 @@
 
         } else {
 
-            # Display list of exported files.
+            # Display list of exported files
 
             # Display header
             $session->writeText('List of exported files (destination: ' . $exportPath . ')');
@@ -16292,11 +16030,16 @@
             # Display list
             foreach my $file (@exportList) {
 
-                $session->writeText('   ' . $file);
+                if (! exists $miniFileHash{$file}) {
+
+                    # When the world model is exported as multiple files, only show the main file
+                    $session->writeText('   ' . $file);
+                }
             }
 
             # Display footer
-            if (@exportList == 1) {
+            $total = (scalar @exportList) - (keys %miniFileHash);
+            if ($total == 1) {
 
                 return $self->complete($session, $standardCmd, '1 file exported to ' . $exportPath);
 
@@ -16304,7 +16047,7 @@
 
                 return $self->complete(
                     $session, $standardCmd,
-                    scalar @exportList . ' files exported to ' . $exportPath,
+                    $total . ' files exported to ' . $exportPath,
                 );
             }
         }
@@ -16363,9 +16106,9 @@
 
         # Local variables
         my (
-            $extractObj, $tempDir, $onlyModelHashRef, $assocWorldProf, $thisWorldProf, $choice,
-            $thisFile, $thisDir, $regex,
-            @fileList, @failList, @successList, @worldList, @otherList, @dataList,
+            $extractObj, $tempDir, $slash, $count, $mainModelHashRef, $thisWorldProf,
+            $assocWorldProf, $choice, $regex,
+            @fileList, @failList, @worldList, @exceptList, @relatedList, @otherList, @successList,
         );
 
         # Check for improper arguments
@@ -16460,6 +16203,11 @@
         foreach my $file (@fileList) {
 
             $file = $axmud::DATA_DIR . '/data/temp/' . $file;
+            if ($^O eq 'MSWin32') {
+
+                $slash = '\\';
+                $file =~ s/\//$slash/g;
+            }
         }
 
         # Before v1.0.868, 'otherprof.axm' files were called 'otherdefn.amd' files. Change the
@@ -16476,10 +16224,12 @@
             }
         }
 
-        # Divide @fileList into groups - (1) 'worldprof' files, (2) 'otherprof'/'worldmodel' files
-        #   and (3) everything else
+        # The world model, if it is large, may have been divided into multiple files - a main one,
+        #   and several 'mini' files containing a limited number of model objects
+        # Divide @fileList into groups: (1) 'worldprof' files, (2) 'otherprof' files, the main
+        #   'worldmodel' file and any 'mini' world model files, (3) everything else
         # At the same time, remove any files from @fileList which don't seem to be Axmud data files,
-        #   or which are Axmud config files, or which are files that seem to be corrupted)
+        #   or which are Axmud config files, or which are files that seem to be corrupted
         OUTER: foreach my $file (@fileList) {
 
             my (
@@ -16533,74 +16283,96 @@
             ) {
                 # Put the file into the world profile-related list
                 $headerHash{'file'} = $file;
-                push (@otherList, \%headerHash);
 
-                # Special case: if the archive contains only one file, and it's a 'worldmodel' file,
-                #   treat it slightly differently (but only if this command was called from the
-                #   Automapper window, in which case GA::Session->transferWorldModelFlag will be
-                #   set)
-                if (
-                    $headerHash{'file_type'} eq 'worldmodel'
-                    && scalar @fileList == 1
-                    && $session->transferWorldModelFlag
-                ) {
-                    $onlyModelHashRef = $otherList[0];
+                # Special case: if the archive contains only 'worldmodel' files (perhaps a single
+                #   file, or perhaps multiple files), treat them slightly differently (but only if
+                #   this command was called from the Automapper window, in which case
+                #   GA::Session->transferWorldModelFlag will be set)
+                if ($headerHash{'file_type'} eq 'worldmodel' && $session->transferWorldModelFlag) {
+                    push (@exceptList, \%headerHash);
+                } else {
+                    push (@relatedList, \%headerHash);
                 }
 
             } else {
 
-                # Put the file in the data file list
+                # Put the file in the other file list
                 $headerHash{'file'} = $file;
-                push (@dataList, \%headerHash);
+                push (@otherList, \%headerHash);
             }
         }
 
-        # If the archive only contains a world model file, and if its parent world is different to
-        #   the current world, ask the user if they'd like to associate the world model with the
-        #   current world instead
-        if ($onlyModelHashRef) {
+        # If the archive contains only a world model (perhaps a single file, or perhaps a world
+        #   model split across multiple files, one of them being a 'main' file), and if its parent
+        #   world is different to the current world, ask the user if they'd like to associate the
+        #   world model with the current world instead
+        if (! @failList && ! @worldList && ! @relatedList && ! @otherList && @exceptList) {
 
-            $thisWorldProf = $session->currentWorld->name;
-            $assocWorldProf = $$onlyModelHashRef{'assoc_world_prof'};
+            # The world model file(s) can now be added to group (2)
+            push (@relatedList, @exceptList);
 
-            if ($assocWorldProf ne $thisWorldProf) {
+            # Check against the (unlikely) possibility that the archive contains more than one
+            #   world model by counting the number of 'main' world model files
+            $count = 0;
+            OUTER: foreach my $hashRef (@exceptList) {
 
-                $choice = $session->mainWin->showMsgDialogue(
-                    'Import world model',
-                    'question',
-                    'The world model belongs to a profile called \'' . $assocWorldProf
-                    . '\'. Would you like to associate it with the current world profile, \''
-                    . $session->currentWorld->name . '\', instead?',
-                    'yes-no',
-                );
+                my $regex = 'worldmodel\.(' . join('|', @axmud::COMPAT_EXT_LIST) . ')$';
 
-                if ($choice && $choice eq 'yes') {
+                if ($$hashRef{'file'} =~ m/$regex/) {
 
-                    # Change the hash's stored file name, so that when the temporary file is copied
-                    #   into the permanent folders, the file will be associated with a different
-                    #   world profile
-                    $thisFile = $$onlyModelHashRef{'file'};
-                    $thisFile =~ s/$assocWorldProf/$thisWorldProf/s;        # Last match
+                    # This is a 'main' world model file
+                    $count++;
+                    $mainModelHashRef = $hashRef;
+                }
+            }
 
-                    # Make a copy of the temporary file, creating its directory if it doesn't
-                    #   already exist
-                    $thisDir = $thisFile;
-                    # Matching (e.g.) 'worldmodel.axm'
-                    $regex = 'worldmodel\.(' . join('|', @axmud::COMPAT_EXT_LIST) . ')$';
-                    $thisDir =~ s/$regex//;
-                    mkdir ($thisDir, 0755);
+            if ($count == 1 && $session->transferWorldModelFlag) {
 
-                    if (! File::Copy::copy($$onlyModelHashRef{'file'}, $thisFile)) {
+                $thisWorldProf = $session->currentWorld->name;
+                $assocWorldProf = $$mainModelHashRef{'assoc_world_prof'};
 
-                        return $self->error(
-                            $session, $inputString,
-                            'No files imported (file copy error)',
-                        );
+                if ($assocWorldProf ne $thisWorldProf) {
+
+                    $choice = $session->mainWin->showMsgDialogue(
+                        'Import world model',
+                        'question',
+                        'The world model belongs to a profile called \'' . $assocWorldProf
+                        . '\'. Would you like to associate it with the current world profile, \''
+                        . $session->currentWorld->name . '\', instead?',
+                        'yes-no',
+                    );
+
+                    if ($choice && $choice eq 'yes') {
+
+                        # Change the name of the file(s) so that when they are copied into their
+                        #   permanent locations, the file(s) will be associated with a different
+                        #   world profile
+                        foreach my $hashRef (@exceptList) {
+
+                            my ($thisFile, $thisDir, $regex);
+
+                            $thisFile = $$hashRef{'file'};
+                            $thisFile =~ s/$assocWorldProf/$thisWorldProf/s;        # Last match
+
+                            # Make a copy of the temporary file, creating its directory if it
+                            #   doesn't already exist
+                            $thisDir = $thisFile;
+                            $thisDir =~ s/\/[^\/]+$//;
+                            mkdir ($thisDir, 0755);
+
+                            if (! File::Copy::copy($$hashRef{'file'}, $thisFile)) {
+
+                                return $self->error(
+                                    $session, $inputString,
+                                    'No files imported (file copy error)',
+                                );
+                            }
+
+                            # Update the header hash to use the new temporary file
+                            $$hashRef{'file'} = $thisFile;
+                            $$hashRef{'assoc_world_prof'} = $thisWorldProf;
+                        }
                     }
-
-                    # Update the header hash to use the new temporary file
-                    $$onlyModelHashRef{'file'} = $thisFile;
-                    $$onlyModelHashRef{'assoc_world_prof'} = $thisWorldProf;
                 }
             }
         }
@@ -16636,16 +16408,38 @@
         }
 
         # Now deal with other world-related files
-        OUTER: foreach my $hashRef (@otherList) {
+        OUTER: foreach my $hashRef (@relatedList) {
 
             my (
-                $newDir, $newFile,
+                $newDir, $newFile, $miniFlag,
                 %headerHash,
             );
 
             %headerHash = %$hashRef;
             $newDir = $axmud::DATA_DIR . '/data/worlds/' . $headerHash{'assoc_world_prof'};
-            $newFile = $newDir . '/' . $headerHash{'file_type'} . '.axm';
+
+            if (! $headerHash{'file_type'} eq 'worldmodel') {
+
+                $newFile = $newDir . '/' . $headerHash{'file_type'} . '.axm';
+
+            } else {
+
+                # The world model might be split across several files, a 'main' one (worldmodel.axm)
+                #   and several others (worldmodel_1.axm, worldmodel_2.axm, etc)
+                $newFile = $headerHash{'file'};
+                $regex = '\_(\d+)\.(' . join('|', @axmud::COMPAT_EXT_LIST) . ')$';
+
+                if ($newFile =~ m/$regex/) {
+
+                    $newFile = $newDir . '/' . $headerHash{'file_type'} . '_' . $1 . '.axm';
+                    # Don't display this mini-file at the bottom of this function
+                    $miniFlag = TRUE;
+
+                } else {
+
+                    $newFile = $newDir . '/' . $headerHash{'file_type'} . '.axm';
+                }
+            }
 
             # Check that the directory exists, and that the corresponding 'worldprof' file already
             #   exists in it
@@ -16657,15 +16451,19 @@
 
                 # Copy the file into the world's directory
                 if (! File::Copy::copy($headerHash{'file'}, $newFile)) {
+
                     push (@failList, $headerHash{'file'});
-                } else {
+
+                # Only display the 'main' world model file at the bottom of this function
+                } elsif (! $miniFlag) {
+
                     push (@successList, $newFile);
                 }
             }
         }
 
         # Finally deal with all other files (which are simpy copied into the /data directory)
-        OUTER: foreach my $hashRef (@dataList) {
+        OUTER: foreach my $hashRef (@otherList) {
 
             my (
                 $newFile,
@@ -16729,6 +16527,7 @@
             );
         }
     }
+
 }
 
 { package Games::Axmud::Cmd::ExportData;
@@ -17234,7 +17033,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('listdatadirectory', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('listdatadirectory', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ldd', 'listdatadir', 'listdatafolder', 'listdatadirectory'];
@@ -17744,10 +17543,10 @@
         $choice = $session->mainWin->showMsgDialogue(
             'Restore data from backup',
             'question',
-            "Are you sure you want to restore data from backup?\n\n"
-            . "This operation will completely replace the current " . $axmud::SCRIPT
-            . " data directory.\n\nIn addition, you won't be able to save any data files until you"
-            . " restart " . $axmud::SCRIPT . ", so any data currently in memory will be lost.",
+            'Are you sure you want to restore data from backup? (This operation will completely'
+            . ' replace the current ' . $axmud::SCRIPT . ' data directory. In addition, you won\'t'
+            . ' be able to save any data files until you restart ' . $axmud::SCRIPT
+            . ', so any data currently in memory will be lost.)',
             'yes-no',
         );
 
@@ -21072,8 +20871,15 @@
                 $session->writeText($string . ' no');
             }
 
-            $string = '   Allow MXP to change fonts                     - ';
-            if ($axmud::CLIENT->allowMxpCrosslinkFlag) {
+            $string = '   Allow Locator task to rely on MXP room data   - ';
+            if ($axmud::CLIENT->allowMxpRoomFlag) {
+                $session->writeText($string . ' yes');
+            } else {
+                $session->writeText($string . ' no');
+            }
+
+            $string = '   Allow MXP to use (some) illegal keywords      - ';
+            if ($axmud::CLIENT->allowMxpFlexibleFlag) {
                 $session->writeText($string . ' yes');
             } else {
                 $session->writeText($string . ' no');
@@ -21248,7 +21054,22 @@
 
             return $self->complete(
                 $session, $standardCmd,
-                'Allow Locator task to use MXP room data set to ' . $string,
+                'Allow Locator task to rely on MXP room data set to ' . $string,
+            );
+
+        # ;mxp -k
+        } elsif ($switch eq '-k') {
+
+            $axmud::CLIENT->set_allowMxpFlag('flexible', ! $axmud::CLIENT->allowMxpFlexibleFlag);
+            if (! $axmud::CLIENT->allowMxpFlexibleFlag) {
+                $string = 'OFF';
+            } else {
+                $string = 'ON';
+            }
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Allow MXP to use (some) illegal keywords set to ' . $string,
             );
 
         } else {
@@ -24680,7 +24501,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('speak', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('speak', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spk', 'speak'];
@@ -31797,7 +31618,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('listdirection', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('listdirection', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ldi', 'listdirection'];
@@ -32095,7 +31916,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('listautosecondary', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('listautosecondary', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['las', 'listsecond', 'listautosecond', 'listautosecondary'];
@@ -36510,7 +36331,7 @@
             $msg .= $successCount . ' worlds';
         }
 
-        $msg .= ")\n" . $axmud::SCRIPT . ' will now shut down';
+        $msg .= '; ' . $axmud::SCRIPT . ' will now shut down';
 
         # (Show the message both in the 'main' window, and in a dialogue - so that logfiles can
         #   read it)
@@ -36624,7 +36445,7 @@
                     . join(' ', @successList) . '\'';
         }
 
-        $msg .= ' Click \'OK\' to shut down ' . $axmud::SCRIPT . '.';
+        $msg .= '. Click \'OK\' to shut down ' . $axmud::SCRIPT . '.';
 
         # (Show the message both in the 'main' window, and in a 'dialogue' window, so that logfiles
         #   can read it)
@@ -45616,7 +45437,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('listtask', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('listtask', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lt', 'listtask'];
@@ -48442,7 +48263,7 @@
 
         # Local variables
         my (
-            $scriptObj, $type, $modTopic,
+            $scriptObj, $modTopic,
             @list, @showList, @topicList,
         );
 
@@ -48577,26 +48398,28 @@
         # ;abh <topic>
         } else {
 
-            # Check <topic> is a recognised keyword or intrinsic function
+            # Check <topic> is a recognised keyword or intrinsic function (or perhaps both, in the
+            #   case of weak keywords)
             if ($scriptObj->ivExists('keywordHash', $topic)) {
-
-                $type = 'keyword';
 
                 if ($scriptObj->ivExists('weakKeywordHash', $topic)) {
 
                     # Instead of displaying help for the weak keyword, display help for the
                     #   corresponding strong keyword (e.g. instead of displaying help for RADIANS,
                     #   display help for OPTION)
-                    push (@topicList, $scriptObj->ivShow('weakKeywordHash', $topic));
+                    push (@topicList, $scriptObj->ivShow('weakKeywordHash', $topic), 'keyword');
 
                 } else {
 
-                    push (@topicList, $topic);
+                    push (@topicList, $topic, 'keyword');
                 }
+            }
 
-            } else {
-
-                $type = 'func';
+            if (
+                ! $scriptObj->ivExists('keywordHash', $topic)
+                # Weak keywords can be used as function names, e.g. ANGLE / Angle()
+                || $scriptObj->ivExists('weakKeywordHash', $topic)
+            ) {
                 $modTopic = $topic;
 
                 if ($modTopic =~ m/\$$/) {
@@ -48605,51 +48428,63 @@
                     $modTopic =~ s/\$$//;
                 }
 
-                # For getting help on CHR$(), user can specify either 'chr' or 'chr$'. However,
-                #   there is a DATE() and DATE$(), also a TIME() and TIME$()
-                # Deal with DATE/DATE$, TIME/TIME$ and any similar pairs
+                # For getting help on Chr$(), user can specify either 'chr' or 'chr$'. However,
+                #   there is a Date() and Date$(), also a Time() and Time$()
+                # Deal with Date/Date$, Time/Time$ and any similar pairs
                 if (
                     $scriptObj->ivExists('funcArgHash', $modTopic)
                     && $scriptObj->ivExists('funcArgHash', $modTopic . '$')
                 ) {
-                    # Display help for both DATE() and DATE$()
-                    push (@topicList, $modTopic, $modTopic . '$')
+                    # Display help for both Date() and Date$()
+                    push (@topicList, $modTopic, 'func', $modTopic . '$', 'func')
 
                 } elsif ($scriptObj->ivExists('funcArgHash', $modTopic)) {
 
-                    push (@topicList, $modTopic);
+                    push (@topicList, $modTopic, 'func');
 
                 } elsif ($scriptObj->ivExists('funcArgHash', $modTopic . '$')) {
 
-                    push (@topicList, $modTopic . '$');
-
-                } else {
-
-                    return $self->error(
-                        $session, $inputString,
-                        'No ' . $axmud::BASIC_NAME . ' help available for the topic \'' . $topic
-                        . '\'',
-                    );
+                    push (@topicList, $modTopic . '$', 'func');
                 }
             }
 
             # Call the help function for the topic to fetch the topic-specific text
-            foreach my $item (@topicList) {
+            if (! @topicList) {
 
-                my @lineList = $self->abHelp($session, $item, $type);
-                if (! @lineList) {
+                return $self->error(
+                    $session, $inputString,
+                    'No ' . $axmud::BASIC_NAME . ' help available for the topic \'' . $topic
+                    . '\'',
+                );
 
-                    return $self->error(
-                        $session, $inputString,
-                        'No ' . $axmud::BASIC_NAME . ' help available for the topic \'' . $topic
-                        . '\'',
+            } else {
+
+                do {
+
+                    my (
+                        $thisTopic, $thisType,
+                        @lineList,
                     );
 
-                } else {
+                    $thisTopic = shift @topicList;
+                    $thisType = shift @topicList;
 
-                    # Insert an empty line between topics (if there is more than one)
-                    push (@showList, @lineList, ' ');
-                }
+                    @lineList = $self->abHelp($session, $thisTopic, $thisType);
+                    if (! @lineList) {
+
+                        return $self->error(
+                            $session, $inputString,
+                            'No ' . $axmud::BASIC_NAME . ' help available for the topic \'' . $topic
+                            . '\'',
+                        );
+
+                    } else {
+
+                        # Insert an empty line between topics (if there is more than one)
+                        push (@showList, @lineList, ' ');
+                    }
+
+                } until (! @topicList);
             }
 
             # Display header and list
@@ -48659,7 +48494,7 @@
             }
 
             # Display footer
-            if ($type eq 'keyword') {
+            if ($scriptObj->ivExists('keywordHash', $topic)) {
 
                 return $self->complete(
                     $session, $inputString,
@@ -48670,8 +48505,8 @@
 
                 return $self->complete(
                     $session, $inputString,
-                    $axmud::BASIC_NAME . ' help for the \'' . uc($topic) . '\' intrinsic function'
-                    . ' displayed',
+                    $axmud::BASIC_NAME . ' help for the \'' . ucfirst($topic)
+                    . '()\' intrinsic function displayed',
                 );
             }
         }
@@ -49066,22 +48901,13 @@
         # ;uws
         if (! defined $name) {
 
-            # NB On MS Windows, Gnome2::Wnck does not exist, so the test can't be performed
-            if ($^O eq 'MSWin32') {
-
-                return $self->error(
-                    $session, $inputString,
-                    'Sorry, this feature is currently not available on MS Windows',
-                );
-            }
-
-            # Find the first available Gnome2::Workspace that's not in use
+            # Find the first available workspace that's not in use
             OUTER: foreach my $workspace (@workspaceList) {
 
                 INNER: foreach $workspaceObj (
                     $axmud::CLIENT->desktopObj->ivValues('workspaceHash')
                 ) {
-                    if ($workspaceObj->wnckWorkspace eq $workspace) {
+                    if ($workspaceObj->systemNum eq $workspace) {
 
                         next OUTER;
                     }
@@ -49101,31 +48927,11 @@
             }
 
         # ;uws <number>
-        } elsif ($axmud::CLIENT->intCheck($name, 0)) {
-
-            OUTER: foreach my $workspace (@workspaceList) {
-
-                if ($workspace->get_number() eq $name) {
-
-                    $useWorkspace = $workspace;
-                    last OUTER;
-                }
-            }
-
-            if (! $useWorkspace) {
-
-                return $self->error(
-                    $session, $inputString,
-                    'System workspace #' . $name . ' not found',
-                );
-            }
-
-        # ;uws <name>
         } else {
 
             OUTER: foreach my $workspace (@workspaceList) {
 
-                if ($workspace->get_name() eq $name) {
+                if ($workspace eq $name) {
 
                     $useWorkspace = $workspace;
                     last OUTER;
@@ -49363,8 +49169,7 @@
 
             } else {
 
-                $msg = "Do you really want to remove workspace #$num?\n"
-                        . "(It contains ";
+                $msg = 'Do you really want to remove workspace #' . $num . '? (It contains ';
 
                 if ($mainCount == 1) {
                     $msg .= ' \'main\' window';
@@ -49372,7 +49177,7 @@
                     $msg .= $mainCount . ' \'main\' windows';
                 }
 
-                $msg .= ', which will close too';
+                $msg .= ', which will close too)';
 
                 $choice = $session->mainWin->showMsgDialogue(
                     'Remove workspace',
@@ -49499,20 +49304,10 @@
         foreach my $workspaceObj (
             sort {$a->number <=> $b->number} ($axmud::CLIENT->desktopObj->ivValues('workspaceHash'))
         ) {
-            # NB On MS Windows, Gnome2::Wnck does not exist, so the workspace number/name can't be
-            #   retrieved
-            if ($^O eq 'MSWin32') {
-
-                $session->writeText('   Workspace #' . $workspaceObj->number);
-
-            } else {
-
-                $session->writeText(
-                    '   Workspace #' . $workspaceObj->number . ' (system: #'
-                    . $workspaceObj->wnckWorkspace->get_number() . ', \''
-                    . $workspaceObj->wnckWorkspace->get_name() . '\')',
-                );
-            }
+            $session->writeText(
+                '   Workspace #' . $workspaceObj->number . ' (system: #'
+                . $workspaceObj->systemNum . '\')',
+            );
 
             $session->writeText(
                 '      Size: width ' . $workspaceObj->currentWidth . ' height '
@@ -49577,7 +49372,7 @@
             }
         }
 
-        # Get a list of unused Gnome2::Workspace objects (which might conceivably be different to
+        # Get a list of unused system workspace numbers (which might conceivably be different to
         #   the list found on the original call to GA::Obj::Desktop->detectWorkspaces)
         @workspaceList = $axmud::CLIENT->desktopObj->detectUnusedWorkspaces();
         if (@workspaceList) {
@@ -49585,10 +49380,7 @@
             $session->writeText('List of unused (but available) workspaces');
             foreach my $workspace (@workspaceList) {
 
-                $session->writeText(
-                    '   System #' . $workspace->get_number() . ', \'' . $workspace->get_name()
-                    . '\'',
-                );
+                $session->writeText('   System #' . $workspace);
             }
         }
 
@@ -56529,8 +56321,8 @@
                 $string .= 'M ';
             }
 
-            if (defined $modelObj->owner) {
-                $owner = $modelObj->owner;
+            if (defined $modelObj->ownerString) {
+                $owner = $modelObj->ownerString;
             } else {
                 $owner = 'n/a';
             }
@@ -56957,7 +56749,7 @@
                 $winObj->winType,
                 $winObj->winName,
                 $winObj->winWidget,
-                $winObj->wnckWin,
+                undef,
                 $winObj->owner,
                 $winObj->session,
             );
@@ -57184,7 +56976,7 @@
         my (
             $switch, $allFlag, $workspaceNum, $workspaceFlag, $pattern, $workspaceObj, $gridObj,
             $failFlag,
-            @matchList, @duplicateList, @finalList,
+            @matchList, @finalList,
         );
 
         # Extract switches
@@ -57207,6 +56999,15 @@
         if (! defined $pattern || ($workspaceFlag && ! defined $workspaceNum) || @args) {
 
             return $self->improper($session, $inputString);
+        }
+
+        # Check window grabbing is possible
+        if (! $axmud::CLIENT->desktopObj->wmCtrlObj) {
+
+            return $self->error(
+                $session, $inputString,
+                'Sorry, ' . $axmud::SCRIPT . ' is unable to handle external windows on this system',
+            );
         }
 
         # Check $pattern is valid
@@ -57248,13 +57049,9 @@
             );
         }
 
-        # Get a list of Gnome2::Wnck::Windows that match the $pattern
-        @matchList = $workspaceObj->matchWinList(
-            0,              # All windows...
-            [$pattern],     # ...matching $pattern
-            1,              # Timeout
-        );
-
+        # Get a list of windows that match the $pattern. List in groups of two, in the form
+        #   (window_title, window_internal_id)
+        @matchList = $workspaceObj->matchWinList(0, $pattern);
         if (! @matchList) {
 
             return $self->error(
@@ -57263,59 +57060,60 @@
             );
         }
 
-        # Now, go through @matchList and remove any windows that are already on the workspace grid.
-        #   Put duplicates in @duplicateList, and fill @finalList with everything else
-        OUTER: foreach my $wnckWin (@matchList) {
+        # Now, go through @matchList and remove any windows that have the same name as an Axmud
+        #   'grid' or 'free' window (which will include any 'external' windows that have already
+        #   been grabbed)
+        do {
 
-            INNER: foreach my $winObj ($axmud::CLIENT->desktopObj->ivValues('gridWinHash')) {
+            my ($title, $id, $matchFlag);
 
-                if ($winObj->wnckWin && $wnckWin eq $winObj->wnckWin) {
+            $title = shift @matchList;
+            $id = shift @matchList;
 
-                    push (@duplicateList, $wnckWin);
-                    next OUTER;
+            OUTER: foreach my $winObj (
+                $axmud::CLIENT->desktopObj->ivValues('gridWinHash'),
+                $axmud::CLIENT->desktopObj->ivValues('freeWinHash'),
+            ) {
+                if ($winObj->winWidget->get_title() eq $title) {
+
+                    $matchFlag = TRUE;
+                    last OUTER;
                 }
             }
 
-            # $wnckWin isn't a duplicate
-            push (@finalList, $wnckWin);
-        }
+            if (! $matchFlag) {
 
-        # Display an error if there are no windows in @finalList (or if they are all duplicates)
+                push (@finalList, $title, $id);
+            }
+
+        } until (! @matchList);
+
+        # Display an error if there are no windows in @finalList
         if (! @finalList) {
 
-            if (@duplicateList == 1) {
-
-                return $self->error(
-                    $session, $inputString,
-                    'Found no matching windows (but found 1 window that has already been grabbed)',
-                );
-
-            } elsif (@duplicateList) {
-
-                return $self->error(
-                    $session, $inputString,
-                    'Found no matching windows (but found ' . @duplicateList . ' windows that have'
-                    . ' already been grabbed',
-                );
-
-            } else {
-
-                return $self->error($session, $inputString, 'Found no matching windows');
-            }
+            return $self->error(
+                $session, $inputString,
+                'No \'external\' windows matching the pattern \'' . $pattern . '\' found',
+            );
         }
 
         # Incorporate all the windows in @finalList into the workspace grid
-        OUTER: foreach my $wnckWin (@finalList) {
+        do {
+
+            my ($title, $id);
+
+            $title = shift @finalList;
+            $id = shift @finalList;
 
             if (
                 ! $workspaceObj->createGridWin(
                     'external',
-                    $wnckWin->get_name(),       # Window name
-                    $wnckWin->get_name(),       # Window title
+                    $title,                     # Window name
+                    $title,                     # Window title
                     undef,                      # No winmap
                     undef,                      # Default package name
-                    undef,                      # Gtk2::Window currently unknown
-                    $wnckWin,
+                    undef,                      # Gtk3::Window currently unknown...
+                    $id,                        # ...but we know the X11::WMCtrl internal ID
                     $session,                   # Owner
                     $session,                   # Session
                     $gridObj->number,
@@ -57324,7 +57122,8 @@
                 $failFlag = TRUE;
                 last OUTER;
             }
-        }
+
+        } until (! @finalList);
 
         if ($failFlag) {
 
@@ -57582,19 +57381,11 @@
                 . $winObj->workspaceObj->number . ' because workspace grids are not activated'
                 . ' there',
             );
-
-        # Can't fix windows if their Gnome2::Wnck::Window is unknown
-        } elsif (! $winObj->wnckWin) {
-
-            return $self->error(
-                $session, $inputString,
-                'Window #' . $winNum . ' can\'t be fixed in place (WNCK error)',
-            );
         }
 
         # Get the window's actual size and position
         ($xPosPixels, $yPosPixels, $widthPixels, $heightPixels)
-            = $winObj->workspaceObj->getWinGeometry($winObj->wnckWin);
+            = $winObj->workspaceObj->getWinGeometry($winObj->winWidget->get_window());
 
         # Find which zone occupies this position
         $zoneObj = $winObj->workspaceGridObj->findZone($xPosPixels, $yPosPixels);
@@ -57919,18 +57710,6 @@
                 $session, $inputString,
                 '\'main\' windows can\'t be closed with this command',
             );
-
-        } elsif ($winObj->winType eq 'external') {
-
-            eval { $winObj->wnckWin->close(time()); };
-            if ($@) {
-
-                $result = FALSE;
-
-            } else {
-
-                $result = TRUE;
-            }
 
         } else {
 
@@ -60312,7 +60091,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('listtextview', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('listtextview', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ltv', 'listtv', 'listtextview'];
@@ -60424,7 +60203,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('findtext', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('findtext', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['find', 'findtext'];
@@ -60569,7 +60348,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('findreset', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('findreset', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['frt', 'findreset'];
@@ -60840,7 +60619,7 @@
 
             my $tabObj;
 
-            # Update the textview object's Gtk2::TextTag
+            # Update the textview object's Gtk3::TextTag
             $textViewObj->updateStandardTag($tag);
 
             # Update any textview object in monochrome mode
@@ -63983,7 +63762,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('copyrecording', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('copyrecording', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['crc', 'copyrc', 'copyrecord', 'copyrecording'];
@@ -64835,15 +64614,6 @@
             return $self->error(
                 $session, $inputString,
                 'Invalid mission description (max 64 chars)',
-            );
-
-        # Check there's something that can be used as the mission's contents
-        } elsif (! $session->recordingList) {
-
-            return $self->error(
-                $session, $inputString,
-                'Can\'t add a new mission because the current recording is empty (or there is no'
-                . ' current recording)',
             );
         }
 
@@ -77191,7 +76961,7 @@
         my $self = Games::Axmud::Generic::Cmd->new('protectobject', TRUE, FALSE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['prt', 'protectobj', 'protectobject'];
+        $self->{defaultUserCmdList} = ['prt', 'protect', 'protectobj', 'protectobject'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
         $self->{descrip} = 'Grants an object semi-protection';
 
@@ -77537,7 +77307,7 @@
         my $self = Games::Axmud::Generic::Cmd->new('unprotectobject', TRUE, FALSE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['upr', 'unprotectobj', 'unprotectobject'];
+        $self->{defaultUserCmdList} = ['upr', 'unprotect', 'unprotectobj', 'unprotectobject'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
         $self->{descrip} = 'Removes an object\'s semi-protection';
 
@@ -77778,7 +77548,7 @@
         my $self = Games::Axmud::Generic::Cmd->new('monitorobject', TRUE, FALSE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['mno', 'monitorobj', 'monitorobject'];
+        $self->{defaultUserCmdList} = ['mno', 'monitor', 'monitorobj', 'monitorobject'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
         $self->{descrip} = 'Sets objects monitored by the Condition task';
 
@@ -78134,7 +77904,7 @@
         my $self = Games::Axmud::Generic::Cmd->new('unmonitorobject', TRUE, FALSE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['umo', 'unmonitorobj', 'unmonitorobject'];
+        $self->{defaultUserCmdList} = ['umo', 'unmonitor', 'unmonitorobj', 'unmonitorobject'];
         $self->{userCmdList} = $self->{defaultUserCmdList};
         $self->{descrip} = 'Removes objects monitored by the Condition task';
 
@@ -83311,6 +83081,8 @@
                 'question',
                 $msg,
                 'yes-no',
+                undef,
+                TRUE,           # Preserve newline characters in $msg
             );
 
             if ($result ne 'yes') {
@@ -83414,7 +83186,7 @@
         # Get the region model object specified by <number> or <name>
 
         # ;drn <number>
-        if (! $axmud::CLIENT->intCheck($arg, 0)) {
+        if ($axmud::CLIENT->intCheck($arg, 0)) {
 
             if ($session->worldModelObj->ivExists('regionModelHash', $arg)) {
 
@@ -83476,6 +83248,8 @@
                 'question',
                 $msg,
                 'yes-no',
+                undef,
+                TRUE,           # Preserve newline characters in $msg
             );
 
             if ($result ne 'yes') {
@@ -84509,6 +84283,162 @@
     }
 }
 
+{ package Games::Axmud::Cmd::SplitModel;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('splitmodel', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['smd', 'splitmodel'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Sets hows ' . $axmud::SCRIPT . ' stores large world models';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $arg,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $msg;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # ;smd
+        if (! defined $arg) {
+
+            # Display header
+            $session->writeText('World model split settings');
+
+            # Display list
+            $msg = '   Split large world models into multiple data files: ';
+            if (! $axmud::CLIENT->allowModelSplitFlag) {
+                $session->writeText($msg . 'NO');
+            } else {
+                $session->writeText($msg . 'YES');
+            }
+
+            $session->writeText(
+                '   Default size of split files (# model objects):     '
+                . $axmud::CLIENT->constModelSplitSize,
+            );
+
+            $session->writeText(
+                '   Actual size of split files (# model objects):      '
+                . $axmud::CLIENT->modelSplitSize,
+            );
+
+            # Display footer
+            return $self->complete($session, $standardCmd, 'End of list');
+
+        } elsif ($arg eq 'on') {
+
+            if ($axmud::CLIENT->allowModelSplitFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Large world models can already be split into multiple data files',
+                );
+
+            } else {
+
+                $axmud::CLIENT->set_allowModelSplitFlag(TRUE);
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Large world models can now be split into multiple data files',
+                );
+            }
+
+        } elsif ($arg eq 'off') {
+
+            if ($axmud::CLIENT->allowModelSplitFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Large world models are already saved as a single data file',
+                );
+
+            } else {
+
+                $axmud::CLIENT->set_allowModelSplitFlag(TRUE);
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Large world models are now saved as a single data file',
+                );
+            }
+
+        } elsif ($arg eq '-d') {
+
+            $axmud::CLIENT->set_modelSplitSize($axmud::CLIENT->constModelSplitSize);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Maximum size of split world model data files set to '
+                . $axmud::CLIENT->modelSplitSize,
+            );
+
+        } else {
+
+            if (! $axmud::CLIENT->intCheck($arg, 1000)) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Invalid value (must be an integer, 1000 or above)',
+                );
+
+            } else {
+
+                $axmud::CLIENT->set_modelSplitSize($arg);
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Maximum size of split world model data files set to ' . $arg,
+                );
+            }
+        }
+    }
+}
+
 { package Games::Axmud::Cmd::EditModel;
 
     use strict;
@@ -85184,6 +85114,85 @@
                 . ', still unrecognised: ' . scalar (keys %unknownHash),
             );
         }
+    }
+}
+
+{ package Games::Axmud::Cmd::CompressModel;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('compressmodel', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['cmd', 'compmd', 'compressmodel'];
+        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{descrip} = 'Reduces amount of memory used by the world model';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # It might be a long wait, so make sure the message is visible right away
+        $session->writeText('Reducing amount of memory used by world model...');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
+
+        foreach my $roomObj ($session->worldModelObj->ivValues('roomModelHash')) {
+
+            $roomObj->compress();
+        }
+
+        foreach my $exitObj ($session->worldModelObj->ivValues('exitModelHash')) {
+
+            $exitObj->compress();
+        }
+
+        # (This line makes sure the correct file object's ->modifyFlag is set)
+        $session->worldModelObj->ivPoke('author', $session->worldModelObj->author);
+
+        return $self->complete(
+            $session, $standardCmd,
+            'Operation complete (don\'t forget to \';save\' the changes)',
+        );
     }
 }
 
@@ -86694,8 +86703,8 @@
 
                 if ($underlayFlag) {
 
-                    # Convert an underlay tag to a text tag (the Gnome2::Canvas doesn't care about
-                    #   the difference between Axmud text/underlay colour tags)
+                    # Convert an underlay tag to a text tag (the GooCanvas2::Canvas doesn't care
+                    #   about the difference between Axmud text/underlay colour tags)
                     $text = $axmud::CLIENT->swapColours($text);
                 }
 
@@ -87038,7 +87047,7 @@
         my ($class, $check) = @_;
 
         # Setup
-        my $self = Games::Axmud::Generic::Cmd->new('listlabelstyle', TRUE, FALSE);
+        my $self = Games::Axmud::Generic::Cmd->new('listlabelstyle', TRUE, TRUE);
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lls', 'liststyle', 'listlabelstyles'];
@@ -87144,13 +87153,12 @@
                 $box = 'YES  ';
             }
 
-
             $session->writeText(
                 $column
                 .  sprintf(
                     '%-16.16s %-8.8s %-8.8s %-8.8s ', $obj->name, $text, $underlay, $obj->relSize,
                 )
-                . $italics . $bold . $under . $strike . $box . $obj->gravity,
+                . $italics . $bold . $under . $strike . $box . $obj->rotateAngle,
             );
         }
 
@@ -88916,8 +88924,9 @@
 
         # Local variables
         my (
-            $waitFlag, $followFlag, $updateFlag, $taskObj, $newRoomObj, $result,
-            @roomList, @selectList,
+            $waitFlag, $followFlag, $updateFlag, $taskObj, $newRoomObj, $result, $count, $largest,
+            @roomList, @sortedList, @selectList,
+            %checkHash,
         );
 
         # Check for improper arguments
@@ -89011,14 +89020,58 @@
             );
         }
 
-        # At least one matching room found, so list them
+        # At least one matching room found, so list them (but don't display more than 100 rooms)
+        if ((scalar @roomList) > 100) {
+
+            # We'll list the first 100 rooms, sorted by room number
+            $count = 0;
+
+            foreach my $roomObj (@roomList) {
+
+                $count++;
+
+                if ($count <= 100) {
+
+                    $checkHash{$roomObj->number} = $roomObj;
+                    if (! defined $largest || $count > $largest) {
+
+                        $largest = $count;
+                    }
+
+                } elsif ($count < $largest) {
+
+                    delete $checkHash{$largest};
+                    $checkHash{$roomObj->number} = $roomObj;
+
+                    $largest = undef;
+                    foreach my $number (keys %checkHash) {
+
+                        if (! defined $largest || $number > $largest) {
+
+                            $largest = $number;
+                        }
+                    }
+                }
+            }
+
+            @sortedList = sort {$a->number <=> $b->number} (values %checkHash);
+
+        } else {
+
+            @sortedList = sort {$a->number <=> $b->number} (@roomList);
+        }
 
         # Display header
-        $session->writeText('Locate room list');
+        if ((scalar @roomList) <= 100) {
+            $session->writeText('Locate room list');
+        } else {
+            $session->writeText('Locate room list (showing first 100 rooms)');
+        }
+
         $session->writeText('   Room num      Room tag     Region name');
 
         # Display list
-        foreach my $roomObj (@roomList) {
+        OUTER: foreach my $roomObj (@sortedList) {
 
             my ($regionObj, $tag);
 
@@ -89033,6 +89086,11 @@
                 '   #' . sprintf('%-12.12s %-12.12s', $roomObj->number, $tag)
                 . ' ' . $regionObj->name,
             );
+        }
+
+        if ((scalar @roomList) > 100) {
+
+            $session->writeText('   ...');
         }
 
         # If exactly one matching room was found, set the automapper's current room

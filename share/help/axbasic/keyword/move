@@ -13,5 +13,5 @@ MOVE expression
 
    Examples:
       MOVE "north"
-      MOVE $direction
+      MOVE direction$
       MOVE "squeeze between curtains"

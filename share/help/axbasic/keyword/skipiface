@@ -10,7 +10,7 @@ SKIPIFACE
          but not yet processed. One of them - usually the first one in the
          list - is the 'current' notification.
          
-      Axbasic functions like IFACENAME$() and IFACENUM() can be used to import
+      Axbasic functions like Ifacename$() and Ifacenum() can be used to import
          information about the trigger that caused the current notification.
       NEXTIFACE removes the current notification from the list, but SKIPIFACE
          retains it and simply moves on to the next notification in the list. In
@@ -26,13 +26,13 @@ SKIPIFACE
    Examples:
       SETTRIG "You are dead"
 
-      IF IFACECOUNT() >= 2
+      IF Ifaceount() >= 2
          ! Get the name and number of the current interface notification
-         LET $name = IFACENAME$()
-         LET number = IFACENUM()
+         LET name$ = Ifacename$()
+         LET number = Ifacenum()
 
          ! Move on the next notification on the list
          SKIPIFACE
-         LET $name2 = IFACENAME$()
-         LET number2 = IFACENUM()
+         LET name2$ = Ifacename$()
+         LET number2 = Ifacenum()
       END IF

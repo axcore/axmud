@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -43,14 +43,14 @@
         #                       tab will be $self->session's default textview object (where text
         #                       received from the world is usually displayed), FALSE otherwise
         #   $textViewObj    - The textview object  that handles the widgets contained in this tab
-        #   $packableObj    - The textview object packs a single widget (a Gtk2::TextView or a
-        #                       Gtk2::VPaned) into a Gtk2::ScrolledWindow. The Gtk2::ScrolledWindow
-        #   $packedObj      - The single widget packed into the Gtk2::ScrolledWindow
+        #   $packableObj    - The textview object packs a single widget (a Gtk3::TextView or a
+        #                       Gtk3::VPaned) into a Gtk3::ScrolledWindow. The Gtk3::ScrolledWindow
+        #   $packedObj      - The single widget packed into the Gtk3::ScrolledWindow
         #
         # Optional arguments
         #   $tabWidget      - For 'normal' tabs, the widget that is added to a page in the
-        #                       Gtk2::Notebook (a Gtk2::VBox). Set to 'undef' for simple tabs
-        #   $tabLabel       - For 'normal' tabs, the Gtk2::Label used. Set to 'undef' for simple
+        #                       Gtk3::Notebook (a Gtk3::VBox). Set to 'undef' for simple tabs
+        #   $tabLabel       - For 'normal' tabs, the Gtk3::Label used. Set to 'undef' for simple
         #                       tabs
         #
         # Return values
@@ -102,16 +102,16 @@
             # The textview object  that handles the widgets contained in this tab
             textViewObj                 => $textViewObj,
 
-            # The textview object packs a single widget (a Gtk2::TextView or a Gtk2::VPaned) into
-            #   a Gtk2::ScrolledWindow. The Gtk2::ScrolledWindow
+            # The textview object packs a single widget (a Gtk3::TextView or a Gtk3::VPaned) into
+            #   a Gtk3::ScrolledWindow. The Gtk3::ScrolledWindow
             packableObj                 => $packableObj,
-            # The single widget packed into the Gtk2::ScrolledWindow
+            # The single widget packed into the Gtk3::ScrolledWindow
             packedObj                   => $packedObj,
 
-            # For 'normal' tabs, the widget that is added to a page in the Gtk2::Notebook (a
-            #   Gtk2::VBox). Set to 'undef' for simple tabs
+            # For 'normal' tabs, the widget that is added to a page in the Gtk3::Notebook (a
+            #   Gtk3::VBox). Set to 'undef' for simple tabs
             tabWidget                   => $tabWidget,
-            # For 'normal' tabs, the Gtk2::Label used. Set to 'undef' for simple tabs
+            # For 'normal' tabs, the Gtk3::Label used. Set to 'undef' for simple tabs
             tabLabel                    => $tabLabel,
         };
 

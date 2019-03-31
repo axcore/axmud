@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -95,9 +95,9 @@
             if ($^O eq 'MSWin32') {
 
                 $standardFileName = $axmud::NAME_SHORT . '.ini';
-                $standardPath = '/' . $axmud::NAME_SHORT . '.ini';
+                $standardPath = '\\' . $axmud::NAME_SHORT . '.ini';
                 $altFileName = $axmud::NAME_SHORT . '.conf';
-                $altPath = '/' . $axmud::NAME_SHORT . '.conf';
+                $altPath = '\\' . $axmud::NAME_SHORT . '.conf';
 
             } else {
 
@@ -187,6 +187,14 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
+        # (Convert forward slashes to backwards slashes on MS Windows)
+        if ($^O eq 'MSWin32') {
+
+            $standardFileName =~ s/\//\\/g;
+            $standardPath =~ s/\//\\/g;
+            $standardDir =~ s/\//\\/g;
+        }
+
         if ($fileType eq 'worldprof') {
             $name = $assocWorldProf;
         } else {
@@ -216,7 +224,7 @@
             # The information included in a file's header (i.e. the meta-data)
             fileType                    => $fileType,
             scriptName                  => undef,
-            scriptVersion               => undef,    # e.g. '1.0.5'
+            scriptVersion               => undef,    # e.g. '1.2.345'
             scriptConvertVersion        => undef,    # Set by call to GA::Client->convertVersion
             saveDate                    => undef,
             saveTime                    => undef,
@@ -609,6 +617,10 @@
                 $client->autoBackupFileType,
             '# Append time to auto-backup files',
                 $self->convert($client->autoBackupAppendFlag),
+            '# Store large world models as multiple files',
+                $self->convert($client->modelSplitSize),
+            '# Approximate size of multiple world model files',
+                $client->modelSplitSize,
             '@@@ eos',
         );
 
@@ -1037,6 +1049,8 @@
                 $self->convert($client->allowMxpCrosslinkFlag),
             '# Allow Locator task to use MXP room data',
                 $self->convert($client->allowMxpRoomFlag),
+            '# Allow some illegal MXP keywords (e.g. those using hyphens)',
+                $self->convert($client->allowMxpFlexibleFlag),
             '# Allow MSP to play concurrent sound triggers',
                 $self->convert($client->allowMspMultipleFlag),
             '# Allow MSP to download sound files',
@@ -1461,6 +1475,11 @@
             $failFlag = $self->readValue($failFlag, \%dataHash, 'auto_backup_file_type');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'auto_backup_append_flag');
         }
+        if ($self->scriptConvertVersion >= 1_001_529) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_model_split_flag');
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'model_split_size');
+        }
         $failFlag = $self->readEndOfSection($failFlag, $fileHandle);
 
         # Read plugin data
@@ -1758,6 +1777,10 @@
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_mxp_room_flag');
         }
+        if ($self->scriptConvertVersion >= 1_001_510) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_mxp_flexible_flag');
+        }
         if ($self->scriptConvertVersion >= 1_000_678) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_msp_multiple_flag');
@@ -2021,8 +2044,8 @@
             return $self->disableSaveLoad(TRUE);
         }
 
-        #############
-        # Mode update
+        ##############
+        # Data updates
 
         # v1.0.908 converts some numerical mode values to string mode values
         if ($self->scriptConvertVersion < 1_000_909) {
@@ -2054,6 +2077,21 @@
                 } elsif ($dataHash{'term_type_mode'} eq '5') {
                     $dataHash{'term_type_mode'} = 'send_unknown';
                 }
+            }
+        }
+
+        # v1.2.0 makes window tiling available on all operating systems
+        if ($self->scriptConvertVersion < 1_002_000 && $^O eq 'MSWin32') {
+
+            $dataHash{'store_grid_posn_flag'} = FALSE;
+
+            # Show the Setup 'wiz' window again, so the user can choose a layout. As of this
+            #   version, the 'wiz' window now checks that any initial tasks already exist and, if
+            #   so, updates them (usually to make their windows upon automatically) rather than
+            #   creating new initial tasks
+            if (! $axmud::TEST_MODE_FLAG && ! $axmud::BLIND_MODE_FLAG) {
+
+                $axmud::CLIENT->set_showSetupWizWinFlag(TRUE);
             }
         }
 
@@ -2101,6 +2139,11 @@
             $client->ivPoke('autoBackupDate', $dataHash{'auto_backup_date'});
             $client->ivPoke('autoBackupFileType', $dataHash{'auto_backup_file_type'});
             $client->ivPoke('autoBackupAppendFlag', $dataHash{'auto_backup_append_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_001_529) {
+
+            $client->ivPoke('allowModelSplitFlag', $dataHash{'allow_model_split_flag'});
+            $client->ivPoke('modelSplitSize', $dataHash{'model_split_size'});
         }
 
         # Set plugin data
@@ -2367,6 +2410,10 @@
         if ($self->scriptConvertVersion >= 1_000_887) {
 
             $client->ivPoke('allowMxpRoomFlag', $dataHash{'allow_mxp_room_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_001_510) {
+
+            $client->ivPoke('allowMxpFlexibleFlag', $dataHash{'allow_mxp_flexible_flag'});
         }
         if ($self->scriptConvertVersion >= 1_000_678) {
 
@@ -2698,8 +2745,8 @@
 
         # Local variables
         my (
-            $buPath, $checkWorldObj,
-            %saveHash, %reverseHash, %importHash, %usrCmdHash,
+            $checkWorldObj, $count, $buPath,
+            %saveHash, %preserveHash, %reverseHash, %importHash, %usrCmdHash,
         );
 
         # Check for improper arguments
@@ -2766,7 +2813,24 @@
             }
         }
 
-        # Compile a special hash, %saveHash, that references all the data we want to save
+        # For the file type 'worldmodel', we might use a single monolithic file or, if the model is
+        #   large, multiple smaller ones. A single monolithic file is handled by this function;
+        #   multiple files are handled by a call to $self->saveDataFile_worldModel
+        if ($self->fileType eq 'worldmodel') {
+
+            if (
+                ! $emergFlag
+                && $axmud::CLIENT->allowModelSplitFlag
+                && $self->session->worldModelObj->ivPairs('modelHash')
+                        > $axmud::CLIENT->modelSplitSize
+            ) {
+                return $self->saveDataFile_worldModel($fileName, $path, $dir);
+            } else {
+                $self->session->worldModelObj->ivPoke('modelSaveFileCount', 0);
+            }
+        }
+
+        # Otherwise, compile a special hash, %saveHash, that references all the data we want to save
 
         # First compile the header information (i.e. metadata)...
         $saveHash{'file_type'} = $self->fileType;
@@ -3006,6 +3070,322 @@
         }
     }
 
+    sub saveDataFile_worldModel {
+
+        # Called by $self->saveDataFile
+        # For the file type 'worldmodel', we might use a single monolithic file or, if the model is
+        #   large, multiple smaller ones. A single monolithic file is handled by
+        #   $self->saveDataFile; multiple files are handled by a call to this function
+        #
+        # Expected arguments
+        #   $fileName   - The file name, i.e. 'worldmodel.axm'
+        #   $path       - The full path, i.e. '/home/me/axmud-data/data/worldmodel.axm'
+        #   $dir        - The directory, i.e. '/home/me/axmud-data/data/'
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error saving the data file(s) themselves
+        #   1 otherwise
+
+        my ($self, $fileName, $path, $dir, $check) = @_;
+
+        # Local variables
+        my (
+            $tempDir, $count, $mainSavePath, $dirHandle,
+            @ivList, @objList,
+            %standardHash, %storeHash, %mainSaveHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $fileName || ! defined $path || ! defined $dir || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->saveDataFile_worldModel',
+                @_,
+            );
+        }
+
+        # When using multiple files, we use a 'main' file and multiple 'mini' files. The 'mini'
+        #   files each contain a limited number of model objects (regions, rooms, weapons etc) and
+        #   exit model objects. The 'main' file contains everything else
+
+        # Because we're dealing with multiple files, rather than a single one, the way this function
+        #   handles backup files is different. We'll create a temporary directory, save our files
+        #   there and, if there are no problems, we'll then move the files into their proper
+        #   directory
+        # There's a (small) possibility that two sessions might saving their world model at the same
+        #   time, in which case, this save operation fails
+        $tempDir = $dir . '/temp/';
+        if (-d $tempDir || ! mkdir ($tempDir, 0755)) {
+
+            return undef;
+        }
+
+        # Prepare a standard header, used by all of these files
+        $standardHash{'file_type'} = $self->fileType;
+        $standardHash{'script_name'} = $axmud::NAME_FILE;
+        $standardHash{'script_version'} = $axmud::VERSION;
+        $standardHash{'save_date'} = $axmud::CLIENT->localDate();
+        $standardHash{'save_time'} = $axmud::CLIENT->localTime();
+        $standardHash{'assoc_world_prof'} = $self->assocWorldProf;
+
+        # Empty all world model IVs which store model objects and exit model objects, storing them
+        #   in a temporary hash. Everything left in GA::Obj::WorldModel is stored in the 'main' file
+        @ivList = qw (
+            modelHash
+            regionModelHash roomModelHash weaponModelHash armourModelHash garmentModelHash
+            charModelHash minionModelHash sentientModelHash creatureModelHash portableModelHash
+            decorationModelHash customModelHash
+            exitModelHash
+        );
+
+        foreach my $iv (@ivList) {
+
+            $storeHash{$iv} = $self->session->worldModelObj->{$iv};
+            $self->session->worldModelObj->{$iv} = {};
+        }
+
+        # Save the 'mini' files. Keep track of how many 'mini' files we've saved
+        $count = 0;
+
+        # Move the contents of the model, and the contents of the exit model, into flat lists so
+        #   we can chop away at them, GA::Client->modelSplitSize objects at a time
+        @objList = %{$storeHash{'modelHash'}};
+        do {
+
+            my (
+                $thisSavePath,
+                %thiSaveHash,
+            );
+
+            # Set the path for this mini world model file
+            $count++;
+            $thisSavePath = $tempDir . '/worldmodel_' . $count . '.axm';
+
+            # All the 'mini' files have the same header
+            %thiSaveHash = %standardHash;
+
+            # @objList is a list in groups of 2, in the form (model_number, model_object...).
+            #   Use the first $axmud::CLIENT->modelSplitSize objects
+            $thiSaveHash{'model_hash'}
+                = { splice(@objList, 0, ($axmud::CLIENT->modelSplitSize * 2)) };
+
+            # Glob test mode: In earlier Axmud versions, saving of data files failed (and Axmud
+            #   crashed) because of infinite recursions with two Perl objects referencing each
+            #   other. If TRUE, every save file operation (not including the config file) tests data
+            #   for this problem, before saving it, writing the output to the terminal
+            if ($axmud::TEST_GLOB_MODE_FLAG && ! $self->globTest(%thiSaveHash)) {
+
+                # (Delete the temporary directory before giving up)
+                File::Path::remove_tree($tempDir);
+
+                return undef;
+            }
+
+            # Save the 'mini' file
+            eval { Storable::lock_nstore(\%thiSaveHash, $thisSavePath) };
+            if ($@) {
+
+                # Disable loading/saving in all sessions
+                $axmud::CLIENT->disableAllFileAccess();
+
+                # Delete the temporary directory before giving up
+                File::Path::remove_tree($tempDir);
+
+                return $self->writeError(
+                    'Save data failure: \'' . $dir . '/worldmodel_' . $count . '.axm\' (existing'
+                    . ' world model files are not affected, file loading/saving disabled)',
+                    $self->_objClass . '->saveDataFile_worldModel',
+                );
+            }
+
+        } until (! @objList);
+
+        @objList = %{$storeHash{'exitModelHash'}};
+        do {
+
+            my (
+                $thisSavePath,
+                %thiSaveHash,
+            );
+
+            # Set the path for this mini world model file
+            $count++;
+            $thisSavePath = $tempDir . '/worldmodel_' . $count . '.axm';
+
+            # All the 'mini' files have the same header
+            %thiSaveHash = %standardHash;
+
+            # @objList is a list in groups of 2, in the form (model_number, model_object...).
+            #   Use the first $axmud::CLIENT->modelSplitSize objects
+            $thiSaveHash{'exit_model_hash'}
+                = { splice(@objList, 0, ($axmud::CLIENT->modelSplitSize * 2)) };
+
+            # Glob check, if required
+            if ($axmud::TEST_GLOB_MODE_FLAG && ! $self->globTest(%thiSaveHash)) {
+
+                # (Delete the temporary directory before giving up)
+                File::Path::remove_tree($tempDir);
+
+                return undef;
+            }
+
+            # Save the 'mini' file
+            eval { Storable::lock_nstore(\%thiSaveHash, $thisSavePath) };
+            if ($@) {
+
+                # Disable loading/saving in all sessions
+                $axmud::CLIENT->disableAllFileAccess();
+
+                # Delete the temporary directory before giving up
+                File::Path::remove_tree($tempDir);
+
+                return $self->writeError(
+                    'Save data failure: \'' . $dir . '/worldmodel_' . $count . '.axm\' (existing'
+                    . ' world model files are not affected, file loading/saving disabled)',
+                    $self->_objClass . '->saveDataFile_worldModel',
+                );
+            }
+
+        } until (! @objList);
+
+        # Update the world model with the number of mini files it needs, the next time it's loaded
+        $self->session->worldModelObj->ivPoke('modelSaveFileCount', $count);
+
+        # Prepare the 'main' file
+        %mainSaveHash = %standardHash;
+        $mainSaveHash{'world_model_obj'} = $self->session->worldModelObj;
+
+        # Glob check, if required
+        if ($axmud::TEST_GLOB_MODE_FLAG && ! $self->globTest(%mainSaveHash)) {
+
+            # (Delete the temporary directory before giving up)
+            File::Path::remove_tree($tempDir);
+
+            return undef;
+        }
+
+        # Save the 'main' file
+        $mainSavePath = $tempDir . 'worldmodel.axm';
+        eval { Storable::lock_nstore(\%mainSaveHash, $mainSavePath) };
+        if ($@) {
+
+            # Disable loading/saving in all sessions
+            $axmud::CLIENT->disableAllFileAccess();
+
+            # Delete the temporary directory before giving up
+            File::Path::remove_tree($tempDir);
+
+            return $self->writeError(
+                'Save data failure: \'' . $path . '\' (existing world model files are not affected,'
+                . ' file loading/saving disabled)',
+                $self->_objClass . '->saveDataFile_worldModel',
+            );
+        }
+
+        # Save operations successful. Before doing anything else, restore GA::Obj::WorldModel's
+        #   IVs
+        foreach my $iv (@ivList) {
+
+            $self->session->worldModelObj->{$iv} = $storeHash{$iv};
+            delete $storeHash{$iv};
+        }
+
+        # We can now deal with the pre-existing data files in $dir
+        if ($self->preserveBackupFlag) {
+
+            # The files themselves were missing/corrupted, so data was loaded from the backup files
+            # Don't replace the (good) backup files; just remove the (faulty) files themselves
+            $self->ivPoke('preserveBackupFlag', FALSE);
+
+            if (opendir($dirHandle, $dir)) {
+
+                my @fileList = readdir($dirHandle);
+                closedir $dirHandle;
+
+                foreach my $file (@fileList) {
+
+                    if (
+                        $file =~ m/worldmodel\.axm$/
+                        || $file =~ m/worldmodel_\d+\.axm$/
+                    ) {
+                        unlink $dir . '/' . $file;
+                    }
+                }
+            }
+
+        } else {
+
+            # Remove the existing backup files...
+            if (opendir($dirHandle, $dir)) {
+
+                my @fileList = readdir($dirHandle);
+                closedir $dirHandle;
+
+                foreach my $file (@fileList) {
+
+                    if (
+                        $file =~ m/worldmodel\.axm\.bu$/
+                        || $file =~ m/worldmodel_\d+\.axm\.bu$/
+                    ) {
+                        unlink $dir . '/' . $file;
+                    }
+                }
+            }
+
+            # ...and replace them with the pre-existing data files
+            if (opendir($dirHandle, $dir)) {
+
+                my @fileList = readdir($dirHandle);
+                closedir $dirHandle;
+
+                foreach my $file (@fileList) {
+
+                    if (
+                        $file =~ m/worldmodel\.axm$/
+                        || $file =~ m/worldmodel_\d+\.axm$/
+                    ) {
+                        File::Copy::move($dir . '/' . $file, $dir . '/' . $file . '.bu');
+                    }
+                }
+            }
+        }
+
+        # Move everything from the temporary directory into the proper directory...
+        if (opendir($dirHandle, $tempDir)) {
+
+            my @fileList = readdir($dirHandle);
+            closedir $dirHandle;
+
+            foreach my $file (@fileList) {
+
+                File::Copy::move($tempDir . $file, $dir . '/' . $file);
+            }
+        }
+
+        # ...and delete the temporary directory
+        File::Path::remove_tree($tempDir);
+
+        # Finally, set this file object's metadata variables
+        $self->ivPoke('scriptName', $mainSaveHash{'script_name'});
+        $self->ivPoke('scriptVersion', $mainSaveHash{'script_version'});
+        $self->ivPoke(
+            'scriptConvertVersion',
+            $axmud::CLIENT->convertVersion($mainSaveHash{'script_version'}),
+        );
+        $self->ivPoke('saveDate', $mainSaveHash{'save_date'});
+        $self->ivPoke('saveTime', $mainSaveHash{'save_time'});
+        $self->ivPoke('assocWorldProf', $mainSaveHash{'assoc_world_prof'});
+
+        $self->ivPoke('actualFileName', $fileName);
+        $self->ivPoke('actualPath', $path);
+        $self->ivPoke('actualDir', $dir);
+
+        # Mark the file object's data as not modified
+        $self->set_modifyFlag(FALSE, $self->_objClass . '->saveDataFile');
+
+        return 1;
+    }
+
     sub loadDataFile {
 
         # Called by $self->setupDataFile (or by any other function) for the file types:
@@ -3167,6 +3547,18 @@
                 return undef;
             }
 
+            # For the file type 'worldmodel', we might use a single monolithic file or, if the model
+            #   is large, multiple smaller ones. Check whether multiple files exist and, if so,
+            #   load them, updating the world model that's currently stored in
+            #   $loadHash{'world_model_obj'}
+            if (
+                $axmud::CLIENT->convertVersion($scriptVersion) >= 1_001_529
+                && $self->fileType eq 'worldmodel'
+                && ! $self->loadDataFile_worldModel($dir, \%loadHash)
+            ) {
+                return undef;
+            }
+
             # Header information checks out. Store the values in this object
             $self->ivPoke('scriptName', $scriptName);
             $self->ivPoke('scriptVersion', $scriptVersion);
@@ -3180,7 +3572,8 @@
             $self->ivPoke('actualDir', $dir);
 
             # Extract the rest of the data from %loadHash, replacing data in memory with data from
-            #   the loaded file
+            #   the loaded file. The TRUE argument tells ->extractData that this is the calling
+            #   function
             if (! $self->extractData(TRUE, %loadHash)) {
 
                 # Load failed
@@ -3199,6 +3592,137 @@
             # Load complete
             return 1;
         }
+    }
+
+    sub loadDataFile_worldModel {
+
+        # Called by $self->loadDataFile
+        # For the file type 'worldmodel', we might use a single monolithic file or, if the model is
+        #   large, multiple smaller ones (a 'main' file and several 'mini' files)
+        # $self->loadDataFile loads the 'worldmodel.axm' file, which is either a monolithic file,
+        #   or the 'main' file
+        # This function checks whether the loaded file is a 'main' file and, if so, tries to load
+        #   the remaining 'mini' files, merging the data from the 'main' and 'mini' files into a
+        #   single world model
+        #
+        # Expected arguments
+        #   $dir            - The directory from which the monolothic/'main' file was loaded
+        #   $mainHashRef    - A hash containing data loaded from the monolithic or 'main' file.
+        #                       The loaded world model itself (GA::Obj::WorldModel) is stored in
+        #                       $$loadHashRef{'world_model_obj'}, and has not yet replaced the
+        #                       world model in memory (GA::Session->worldModelObj). Anything loaded
+        #                       from the 'mini' files is incorporated into that loaded world model
+        #                       before the complete world model is transferred to
+        #                       GA::Session->worldModelObj
+        #
+        # Return values
+        #   'undef' on improper arguments or if we fail to load any 'mini' files that exist
+        #   1 if the file loaded was a monolithic file, or if the 'main' and 'mini' files have all
+        #       been loaded successfully
+
+        my ($self, $dir, $mainHashRef, $check) = @_;
+
+        # Local variables
+        my (
+            $wmObj,
+            @modelList, @exitList,
+        );
+
+        # Check for improper arguments
+        if (! defined $dir || ! defined $mainHashRef || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->loadDataFile_worldModel',
+                @_,
+            );
+        }
+
+        # Import the loaded world model
+        $wmObj = $$mainHashRef{'world_model_obj'};
+        if (! defined $wmObj) {
+
+            # Load failure
+            return undef;
+        }
+
+        # If it's a monolithic world model file, there's nothing for this function to do
+        if (! exists $wmObj->{modelSaveFileCount} || ! $wmObj->{modelSaveFileCount}) {
+
+            # The monolithic file's data can now be extracted into memory as normal
+            return 1;
+        }
+
+        # Some 'mini' files exist; load them all
+        for (my $count = 1; $count <= $wmObj->{modelSaveFileCount}; $count++) {
+
+            my (
+                $loadPath, $hashRef, $fileType, $scriptName, $scriptVersion, $saveDate, $saveTime,
+                $assocWorldProf,
+                %loadHash,
+            );
+
+            # If this 'mini' file doesn't exist, loading of the whole world model fails
+            $loadPath = $dir . '/worldmodel_' . $count . '.axm';
+            if (! -e $loadPath) {
+
+                return undef;
+            }
+
+            # Load all the data into a hash
+            eval { $hashRef = Storable::lock_retrieve($loadPath); };
+            if (! $hashRef) {
+
+                # ->lock_retrieve() failed
+                return undef;
+            }
+
+            # Convert the hash referenced by $hashRef into a named hash
+            %loadHash = %{$hashRef};
+
+            # Check that the header information in the 'mini' file is exactly the same as for the
+            #   'main' file
+            if (
+                $loadHash{'file_type'} ne $$mainHashRef{'file_type'}
+                || $loadHash{'script_name'} ne $$mainHashRef{'script_name'}
+                || $loadHash{'script_version'} ne $$mainHashRef{'script_version'}
+                || $loadHash{'save_date'} ne $$mainHashRef{'save_date'}
+                || $loadHash{'save_time'} ne $$mainHashRef{'save_time'}
+                || $loadHash{'assoc_world_prof'} ne $$mainHashRef{'assoc_world_prof'}
+            ) {
+                return undef;
+            }
+
+            # Extract the data from the 'mini' file
+            if (exists $loadHash{'model_hash'}) {
+
+                # Extract some model objects (regions, room etc)
+                push (@modelList, %{$loadHash{'model_hash'}});
+
+            } elsif (exists $loadHash{'exit_model_hash'}) {
+
+                # Extract some exit model objects
+                push (@exitList, %{$loadHash{'exit_model_hash'}});
+
+            } else {
+
+                # If neither exist in the file, it must be corrupted
+                return undef;
+            }
+        }
+
+        # All mini model files loaded successfully, so incorporate their data into the loaded
+        #   world model
+        $wmObj->{modelHash} = {@modelList};
+        $wmObj->{exitModelHash} = {@exitList};
+        foreach my $obj (values %{$wmObj->{modelHash}}) {
+
+            my $iv = $obj->category . 'ModelHash';      # e.g. ->regionModelHash
+
+            $wmObj->{$iv}{$obj->number} = $obj;
+        }
+
+        # Operation complete
+        return 1;
     }
 
     sub exportDataFile {
@@ -3693,7 +4217,8 @@
                 return undef;
             }
 
-            # Extract the imported data
+            # Extract the imported data. The FALSE argument tells ->extractData that this is the
+            #   calling function
             $result = $fileObj->extractData(FALSE, %loadHash);
             if (! $result) {
 
@@ -3953,6 +4478,17 @@
 
                 # The data in memory doesn't match saved data files
                 $self->set_modifyFlag(TRUE, $self->_objClass . '->extractData');
+            }
+
+            # If the world model belonging to one world was imported into another using
+            #   ;importFiles, the world model's ->_parentWorld won't have been updated yet
+            if ($session->worldModelObj->_parentWorld ne $session->currentWorld->name) {
+
+                # Update it now
+                $session->worldModelObj->{_parentWorld} = $session->currentWorld->name;
+                $self->set_modifyFlag(TRUE, $self->_objClass . '->extractData');
+                # This file object's IV is also wrong
+                $self->ivPoke('assocWorldProf', $session->currentWorld->name);
             }
 
             # Delete any temporary regions from the world model
@@ -6923,9 +7459,9 @@
                     $response = $self->session->mainWin->showMsgDialogue(
                         'Adjust text position',
                         'question',
-                        "Room tags and room guilds are now drawn in the\nAutomapper window at a"
-                        . " slightly different position.\n\nDo you want to adjust your existing"
-                        . " room tags/guilds,\nso that they appear in the same position as before?",
+                        'Room tags and room guilds are now drawn in the Automapper window at a'
+                        . ' slightly different position. Do you want to adjust your existing'
+                        . ' room tags/guilds, so that they appear in the same position as before?',
                         'yes-no',
                     );
 
@@ -8691,21 +9227,21 @@
                 }
             }
 
-            if ($version < 1_001_358) {
-
-                # This version adds new IVs to the world model
-                if (! exists $wmObj->{fixedRoomTagFlag}) {
-
-                    $wmObj->{fixedRoomTagFlag} = undef;
-                    $wmObj->ivPoke('fixedRoomTagFlag', FALSE);
-                    $wmObj->{fixedRoomGuildFlag} = undef;
-                    $wmObj->ivPoke('fixedRoomGuildFlag', FALSE);
-                    $wmObj->{fixedExitTagFlag} = undef;
-                    $wmObj->ivPoke('fixedExitTagFlag', FALSE);
-                    $wmObj->{fixedLabelFlag} = undef;
-                    $wmObj->ivPoke('fixedLabelFlag', FALSE);
-                }
-            }
+#            if ($version < 1_001_358) {
+#
+#                # This version adds new IVs to the world model
+#                if (! exists $wmObj->{fixedRoomTagFlag}) {
+#
+#                    $wmObj->{fixedRoomTagFlag} = undef;
+#                    $wmObj->ivPoke('fixedRoomTagFlag', FALSE);
+#                    $wmObj->{fixedRoomGuildFlag} = undef;
+#                    $wmObj->ivPoke('fixedRoomGuildFlag', FALSE);
+#                    $wmObj->{fixedExitTagFlag} = undef;
+#                    $wmObj->ivPoke('fixedExitTagFlag', FALSE);
+#                    $wmObj->{fixedLabelFlag} = undef;
+#                    $wmObj->ivPoke('fixedLabelFlag', FALSE);
+#                }
+#            }
 
             if ($version < 1_001_376) {
 
@@ -8714,6 +9250,156 @@
 
                     $wmObj->{retainDrawMinRooms} = undef;
                     $wmObj->ivPoke('retainDrawMinRooms', 500);
+                }
+            }
+
+            if ($version < 1_001_408) {
+
+                # This version compresses the world model. Before we do that, the ->_objName and
+                #   ->name IVs for room model object have become standardised, no longer depending
+                #   on the room's title or verbose description; update all room objects
+                foreach my $roomObj ($wmObj->ivValues('roomModelHash')) {
+
+                    $roomObj->{_objName} = 'room';
+                    $roomObj->{name} = 'room';
+                }
+
+                # Same for exit object, which no longer take the exit's direction as its ->name
+                #   (since the direction can change anyway)
+                foreach my $exitObj ($wmObj->ivValues('exitModelHash')) {
+
+                    $exitObj->{_objName} = 'exit';
+                    $exitObj->{name} = 'exit';
+                }
+
+                # Now we can compress the world model. For each room object and exit object, any IVs
+                #   which are set to default values can be completely removed. The new code gets its
+                #   default values from the room object and the exit object stored in the global
+                #   variables $DEFAULT_ROOM and $DEFAULT EXIT
+                if ($wmObj->{modelHash}) {
+
+                    $self->writeText('Applying essential world model update. Please be patient...');
+                    $axmud::CLIENT->desktopObj->updateWidgets(
+                        $self->_objClass . '->updateExtractedData',
+                    );
+                }
+
+                foreach my $roomObj ($wmObj->ivValues('roomModelHash')) {
+
+                    $roomObj->compress();
+                }
+
+                foreach my $exitObj ($wmObj->ivValues('exitModelHash')) {
+
+                    $exitObj->compress();
+                }
+
+                # (This line makes sure the correct file object's ->modifyFlag is set)
+                $wmObj->ivPoke('author', $wmObj->author);
+            }
+
+            if ($version < 1_001_409) {
+
+                # This version adds a new IV to the world model
+                if (! exists $wmObj->{roomFlagShowMode}) {
+
+                    $wmObj->{roomFlagShowMode} = undef;
+                    $wmObj->ivPoke('roomFlagShowMode', 'default');
+                }
+            }
+
+            if ($version < 1_001_450) {
+
+                # This version removes IVs from the world model
+                delete $wmObj->{fixedRoomTagFlag};
+                delete $wmObj->{fixedRoomGuildFlag};
+                delete $wmObj->{fixedExitTagFlag};
+                delete $wmObj->{fixedLabelFlag};
+
+                # Also, the ->_objClass for room objects was set to the class of an exit object
+                #   instead, so let's fix that
+                foreach my $roomObj ($wmObj->ivValues('roomModelHash')) {
+
+                    $roomObj->{_objClass} = ref $roomObj;
+                }
+
+                if ($wmObj->{painterObj}) {
+
+                    $wmObj->{painterObj}->{_objClass} = ref $wmObj->{painterObj};
+                }
+            }
+
+            if ($version < 1_001_453) {
+
+                # This version adds a new IV to the world model
+                if (! exists $wmObj->{blockUnselectFlag}) {
+
+                    $wmObj->{blockUnselectFlag} = undef;
+                    $wmObj->ivPoke('blockUnselectFlag', TRUE);
+                }
+            }
+
+            if ($version < 1_001_456) {
+
+                # This version adds a new IV to the world model
+                if (! exists $wmObj->{queueDrawMaxExits}) {
+
+                    $wmObj->{queueDrawMaxExits} = undef;
+                    $wmObj->ivPoke('queueDrawMaxExits', 150);
+                }
+            }
+
+            if ($version < 1_001_465) {
+
+                # This version replaces an IV in map labels and map label styles
+                foreach my $regionmapObj ($wmObj->ivValues('regionmapHash')) {
+
+                    foreach my $labelObj ($regionmapObj->ivValues('gridLabelHash')) {
+
+                        delete $labelObj->{gravity};
+
+                        $labelObj->{rotateAngle} = undef;
+                        $labelObj->ivPoke('rotateAngle', 0);
+                    }
+                }
+
+                foreach my $styleObj ($wmObj->ivValues('mapLabelStyleHash')) {
+
+                    delete $styleObj->{gravity};
+
+                    $styleObj->{rotateAngle} = undef;
+                    $styleObj->ivPoke('rotateAngle', 0);
+                }
+
+            }
+
+            if ($version < 1_001_517) {
+
+                # This version changes the IVs used in pre-drawing operations
+                if (! exists $wmObj->{preDrawAllowFlag}) {
+
+                    $wmObj->{preDrawAllowFlag} = undef;
+                    $wmObj->ivPoke('preDrawAllowFlag', TRUE);
+
+                    $wmObj->{preDrawRetainRooms} = undef;
+                    $wmObj->ivPoke('preDrawRetainRooms', $wmObj->{retainDrawMinRooms});
+                    delete $wmObj->{retainDrawMinRooms};
+
+                    delete $wmObj->{queueDrawMaxObjs};
+                    delete $wmObj->{queueDrawMaxExits};
+
+                    $wmObj->{preDrawAllocation} = undef;
+                    $wmObj->ivPoke('preDrawAllocation', 50);
+                }
+            }
+
+            if ($version < 1_001_529) {
+
+                # This version adds a new IV to the world model
+                if (! exists $wmObj->{modelSaveFileCount}) {
+
+                    $wmObj->{modelSaveFileCount} = undef;
+                    $wmObj->ivPoke('modelSaveFileCount', 0);
                 }
             }
         }
@@ -10841,6 +11527,55 @@
                 }
             }
 
+            if ($version < 1_001_507) {
+
+                my (
+                    @newList,
+                    %checkHash,
+                );
+
+                # This version removes a toolbar button, as the client command has been removed
+                foreach my $name ($axmud::CLIENT->ivKeys('toolbarHash')) {
+
+                    my $obj = $axmud::CLIENT->ivShow('toolbarHash', $name);
+
+                    if ($obj->instruct eq ';screenshot') {
+
+                        $axmud::CLIENT->ivDelete('toolbarHash', $name);
+                        $checkHash{$name} = undef;
+                    }
+                }
+
+                foreach my $name ($axmud::CLIENT->toolbarList) {
+
+                    if (! exists $checkHash{$name}) {
+
+                        push (@newList, $name);
+                    }
+                }
+
+                $axmud::CLIENT->ivPoke('toolbarList', @newList);
+            }
+
+
+        ### usercmds ##############################################################################
+
+        } elsif ($self->fileType eq 'usercmds') {
+
+            if ($version < 1_000_507) {
+
+                # This version removes the ;screenshot command
+                foreach my $userCmd ($axmud::CLIENT->ivKeys('userCmdHash')) {
+
+                    my $standardCmd = $axmud::CLIENT->ivShow('userCmdHash', $userCmd);
+
+                    if ($standardCmd eq 'screenshot') {
+
+                        $axmud::CLIENT->ivDelete('userCmdHash', $userCmd);
+                    }
+                }
+            }
+
         ## zonemaps ###############################################################################
 
         } elsif ($self->fileType eq 'zonemaps') {
@@ -11310,10 +12045,9 @@
             $choice = $axmud::CLIENT->mainWin->showMsgDialogue(
                 'Patch pre-configured world',
                 'question',
-                "The world profile '" . $world . "' requires a patch. Do you want to apply this"
-                . " patch now?\n\n"
-                . "Click 'Yes' unless you have modified the world profile yourself and you are"
-                . " CERTAIN that it is working properly.",
+                'The world profile \'' . $world . '\' requires a patch. Do you want to apply this'
+                . ' patch now? (Click \'Yes\' unless you have modified the world profile yourself'
+                . ' and you are CERTAIN that it is working properly)',
                 'yes-no',
             );
 
@@ -11660,6 +12394,21 @@
 
                 $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
             }
+        }
+
+        if ($world eq 'dunemud' && $fileVersion < 1_002_0) {
+
+            # Change of DNS/IP address, replacing dunemud.com 4200
+            $worldObj->ivPoke('dns', 'dunemud.net');
+            $worldObj->ivPoke('ipv4', '68.183.23.43');
+        }
+
+
+        if ($world eq 'islands' && $fileVersion < 1_002_0) {
+
+            # Change of DNS/IP address, replacing islands.genesismuds.com 3000
+            $worldObj->ivPoke('dns', 'play.islands-game.live');
+            $worldObj->ivPoke('ipv4', '45.79.14.59');
         }
 
         if ($world eq 'luminari' && $fileVersion < 1_001_270) {
@@ -12171,6 +12920,91 @@
             }
         }
 
+        if ($world eq 'twotowers' && $fileVersion < 1_002_000) {
+
+            my $compObj;
+
+            # Further fix to handling of room statements
+
+            $worldObj->ivPoke(
+                'verboseAnchorPatternList',
+                    '^\s\s\s\sThe only obvious exits are (.*)',
+                    '^\s\s\s\sThe only obvious exit is (.*)',
+            );
+
+            $worldObj->ivDelete('componentHash', 'verb_exit_1');
+            $worldObj->ivDelete('componentHash', 'verb_exit_2');
+
+            $compObj = Games::Axmud::Obj::Component->new(
+                $axmud::CLIENT,
+                $worldObj,
+                'verb_exit_1',
+                'verb_exit',
+            );
+
+            if ($compObj) {
+
+                $compObj->{size} = 0;
+                $compObj->{minSize} = 0;                    # Optional
+                $compObj->{maxSize} = 16;
+                $compObj->{analyseMode} = 'check_line';
+                $compObj->{boldSensitiveFlag} = FALSE;
+                $compObj->{useInitialTagsFlag} = FALSE;
+                $compObj->{combineLinesFlag} = TRUE;
+
+                $compObj->{startPatternList} = [];
+                $compObj->{startTagList} = [
+                    'blue',
+                ];
+                $compObj->{startAllFlag} = FALSE;
+                $compObj->{startTagMode} = 'default';
+
+                $compObj->{stopAtPatternList} = [
+                    '^\s\s\s\sThere is water to the',
+                ];
+                $compObj->{stopAtTagList} = [];
+                $compObj->{stopAtAllFlag} = FALSE;
+                $compObj->{stopAtTagMode} = 'default';
+
+                $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
+            }
+
+            $compObj = Games::Axmud::Obj::Component->new(
+                $axmud::CLIENT,
+                $worldObj,
+                'verb_exit_2',
+                'verb_exit',
+            );
+
+            if ($compObj) {
+
+                $compObj->{size} = 0;
+                $compObj->{minSize} = 1;
+                $compObj->{maxSize} = 16;
+                $compObj->{analyseMode} = 'check_line';
+                $compObj->{boldSensitiveFlag} = FALSE;
+                $compObj->{useInitialTagsFlag} = FALSE;
+                $compObj->{combineLinesFlag} = TRUE;
+
+                $compObj->{startPatternList} = [
+                    '^\s\s\s\sThe only obvious exits are',
+                    '^\s\s\s\sThe only obvious exit is',
+                ];
+                $compObj->{startTagList} = [];
+                $compObj->{startAllFlag} = FALSE;
+                $compObj->{startTagMode} = 'default';
+
+                $compObj->{stopAtPatternList} = [
+                    '\.\s*$',
+                ];
+                $compObj->{stopAtTagList} = [];
+                $compObj->{stopAtAllFlag} = FALSE;
+                $compObj->{stopAtTagMode} = 'default';
+
+                $worldObj->ivAdd('componentHash', $compObj->name, $compObj);
+            }
+        }
+
         return 1;
     }
 
@@ -12352,7 +13186,7 @@
 
         # Load all the data into a hash
         eval { $hashRef = Storable::lock_retrieve($path); };
-        if (! $hashRef) {
+        if (! $hashRef || (ref $hashRef) ne 'HASH') {
 
             # ->lock_retrieve() failed
             return %emptyHash;

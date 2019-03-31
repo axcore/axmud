@@ -24,8 +24,18 @@ DO
 
       ! Keep rolling the dice until we get a 3 or a 6
       DO
-         LET dice = int (rnd (6) + 1)
+         LET dice = Int (Rnd (6) + 1)
          PRINT dice
          IF dice = 3 THEN EXIT DO
          PRINT "Phew! We didn't roll a 3"
       UNTIL dice = 6
+
+      ! This loop runs forever
+      DO
+         PRINT "Hello, world!"
+      UNTIL 0
+
+      ! This loop runs exactly once
+      DO
+         PRINT "Hello, world!"
+      UNTIL 1   

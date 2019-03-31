@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -110,7 +110,7 @@
             # Contact's advertised email ('undef' if not advertised)
             email                       => $email,
 
-            # The last icon send by the contact - set to a Gtk2::Gdk::Pixbuf
+            # The last icon send by the contact - set to a Gtk3::Gdk::Pixbuf
             lastIcon                    => undef,       # Set below
             # A scaled copy of the last icon (at size 16x16) for use in the 'edit' window's simple
             #   list
@@ -120,15 +120,15 @@
         # Bless the object into existence
         bless $self, $class;
 
-        # Create a Gtk2::Gdk::Pixbuf for the icon to be used as the chat contact's default icon
+        # Create a Gtk3::Gdk::Pixbuf for the icon to be used as the chat contact's default icon
         $path = $axmud::SHARE_DIR . $axmud::CLIENT->constChatContactIcon;
         if (-e $path) {
 
-            my $pixBuffer = Gtk2::Gdk::Pixbuf->new_from_file($path);
+            my $pixBuffer = Gtk3::Gdk::Pixbuf->new_from_file($path);
             if ($pixBuffer) {
 
                 # Create a scaled copy of this icon
-                my $pixBuffer2 = Gtk2::Gdk::Pixbuf->new_from_file_at_scale($path, 16, 16, 1);
+                my $pixBuffer2 = Gtk3::Gdk::Pixbuf->new_from_file_at_scale($path, 16, 16, 1);
                 if ($pixBuffer2) {
 
                     # Update IVs

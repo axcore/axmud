@@ -47,10 +47,9 @@ PRINT #channel: expression [ separator ] [ expression [ separator ] ... ]
       END
 
       ! Write data to a file
-      OPEN #1: NAME "output.txt", ACCESS OUTPUT
-      FOR i = 1 TO 3
-         PRINT #1: "Going ";
-      NEXT i
-      PRINT #1: "Gone!"
+      OPEN #1: NAME "myfile.txt", CREATE NEWOLD
+      PRINT #1: "Going ";
+      PRINT #1: "going ";
+      PRINT #1: "gone!"
       CLOSE #1
       END

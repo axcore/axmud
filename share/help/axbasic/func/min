@@ -1,4 +1,4 @@
-MIN (x, y)
+Min (x, y)
 
    Synopsis:
       Returns the smaller of the two values, x and y

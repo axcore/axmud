@@ -1,4 +1,4 @@
-SETMAPMODE (string)
+Setmapmode (string)
 
    Synopsis:
       Sets the automapper's current mode

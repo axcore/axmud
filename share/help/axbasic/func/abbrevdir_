@@ -1,4 +1,4 @@
-ABBREVDIR$ (string)
+Abbrevdir$ (string)
         
    Synopsis:
       Returns the abbreviated form of a direction
@@ -8,4 +8,4 @@ ABBREVDIR$ (string)
          relative directions, in both abbreviated and unabbreviated forms. If
          'string' is stored there, returns the abbreviated form of the
          direction; otherwise, returns 'string' unmodified.
-      See also the UNABBREVDIR$ function.
+      See also the Unabbrevdir$ () function.

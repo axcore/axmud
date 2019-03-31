@@ -27,7 +27,6 @@ SPEED expression
       SEND "west"
       SEND "south"
       SEND "south"
-      
       ! ...is the equivalent of this one
       SPEED "3nw2s"
       

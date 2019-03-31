@@ -1,30 +1,45 @@
-SUB STRING subroutine-name ( [ arg-list ] )
-SUB NUMERIC subroutine-name ( [ arg-list ] )
-
+SUB NUMERIC subroutine-name
+SUB NUMERIC subroutine-name ( [ parameter-list ] )
+SUB subroutine-name
+SUB subroutine-name ( [ parameter-list ] )
+SUB STRING subroutine-name
+SUB STRING subroutine-name ( [ parameter-list ] )
+    
    Synopsis:
       Declares a subroutine with a numeric or string return value
 
    Notes:
       A subroutine is called with a CALL statement. Execution moves to the first
          line after the SUB statement.
-      The argument list, if it is specified, contains a list of one or more 
+      The parameter list, if it is specified, contains a list of one or more 
          scalar variables, which are used as local variables within the scope of 
          the subroutine. More local variables in the same scope can be created 
          with LOCAL or DIM LOCAL statements.
-      The variables in the argument list are set to the values specified in the 
-         CALL statement. Both argument lists must have the same number of 
-         variables, each of the same type (string or numeric).
-
-      All subroutines have a return value. Subroutines declared with SUB STRING
-         return a string value and those declared with SUB NUMERIC return a
-         numeric value.
+      When the subroutine is called, the variables in its parameter list are set
+         to the values specified in the CALL statement's argument list. Both
+         lists must have the same number of variables (which might be zero). If
+         a value in the parameter list is numeric, the corresponding value in
+         the argument list must also be numeric. If a value in the parameter
+         list is a string, the corresponding value in the argument list must
+         also be a string.
+         
+      All subroutines have a return value. The CALL statement can use that value
+         or ignore it, as required.
+      Subroutines declared with SUB NUMERIC return a numeric value and those
+         declared with SUB STRING return a string value. If neither NUMERIC nor
+         STRING are used, a numeric value is returned.
       You should use one or more RETURN statements to return the value you want.
-         If the END SUB statement occurs first, the return value is either an
-         empty string or 0.
+         If the END SUB statement is executed first, the return value is either
+         0 or an empty string.
       EXIT SUB behaves exactly like END SUB, except that whereas each subroutine
          can have only one END SUB statement, it can have as many EXIT SUB
          statements as you like. The subroutine's return value is again either
          an empty string or 0.
+
+      A subroutine can occur anywhere in a script, including after the END
+         statement. If the next line to be executed is a SUB statement,
+         execution skips to the first line after the corresponding END SUB
+         statement.
       See also the help for CALL, END, EXIT and RETURN.
 
    Availability:
@@ -34,10 +49,10 @@ SUB NUMERIC subroutine-name ( [ arg-list ] )
    Examples:
       LET number1 = 2
       LET number2 = 5
-      LET result = CALL multiply (number1, number2)
+      LET result = CALL Multiply (number1, number2)
       PRINT result
       END
 
-      SUB NUMERIC multiply (val1, val2)
+      SUB NUMERIC Multiply (val1, val2)
          RETURN (val1 * val2)
       END SUB

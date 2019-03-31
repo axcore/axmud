@@ -27,6 +27,6 @@ DEF function-name ( variable-name [ , variable-name ... ] ) = expression
 
       ! Every defined function must have at least one argument, even if the
       ! function doesn't need one
-      DEF Roll (x) = int(rnd(6) + 1)
+      DEF Roll (x) = Int (Rnd(6) + 1)
       ! Roll the die to print a value between 1 and 6
       PRINT Roll

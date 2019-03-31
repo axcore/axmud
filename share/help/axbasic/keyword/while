@@ -1,4 +1,5 @@
 WHILE condition
+WHILE expression
 
    Synopsis:
       Initiates a WHILE..LOOP loop
@@ -22,3 +23,13 @@ WHILE condition
          LET count = count + 1
          PRINT count
       LOOP
+
+      ! This loop runs forever
+      WHILE 1
+         PRINT "Hello, world!"
+      LOOP
+
+      ! This loop doesn't run once
+      WHILE 0
+         PRINT "Hello, world!"
+      LOOP     

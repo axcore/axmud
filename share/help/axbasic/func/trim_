@@ -1,4 +1,4 @@
-TRIM$ (string)
+Trim$ (string)
 
    Synopsis:
       Removes any leading or trailing white space from the specified string

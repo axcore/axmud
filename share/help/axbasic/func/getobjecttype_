@@ -1,4 +1,4 @@
-GETOBJECTTYPE$ (number)
+Getobjecttype$ (number)
         
    Synopsis:
       Returns the type of an object in the Locator task's current room
@@ -14,4 +14,4 @@ GETOBJECTTYPE$ (number)
          location or if the numbered object doesn't exist, the return value is
          an empty string.
       To get the number of objects in the curent location, see the
-         GETROOMOBJECTS function.
+         Getroomobjects () function.

@@ -5,10 +5,10 @@ ADDGAUGE expression , expression [ , expression ] [ , expression ]
       Adds a 'main' window gauge
     
    Notes:
-      Adds a gauge to the 'main' window. This gauge displays two numerical 
-         values, such as your character's health points and their maximum health 
-         points. The first value is expected (but not required) to be less than 
-         or equal to the second.
+      Adds a gauge to the 'main' window. This gauge displays two numeric values, 
+         such as your character's health points and their maximum health points.
+         The first value is expected (but not required) to be less than or equal
+         to the second.
 
       The first expression is a unique gauge number. You can specify any 
          integer, zero or above. If a gauge with this number already exists, it
@@ -28,7 +28,7 @@ ADDGAUGE expression , expression [ , expression ] [ , expression ]
          default colours are used instead.
 
       An ADDGAUGE statement is usually followed by a SETGAUGE statement, which
-         sets the numerical values displayed by the gauge. A DELGAUGE statement
+         sets the numeric values displayed by the gauge. A DELGAUGE statement
          removes the gauge entirely. Gauges are automatically removed when the
          script terminates.
       Often, these statements are used in some kind of loop, which updates the

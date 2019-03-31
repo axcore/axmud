@@ -16,4 +16,4 @@ umo / unmonitorobject         Removes objects monitored by the Condition task
          numbered list of monitored objects.
  
    User commands:
-      umo / unmonitorobj / unmonitorobject
+      umo / unmonitor / unmonitorobj / unmonitorobject

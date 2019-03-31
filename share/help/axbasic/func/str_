@@ -1,7 +1,7 @@
-STR$ (number)
+Str$ (number)
 
    Synopsis:
       Converts a numeric variable into a string variable
 
    Examples:
-      STR$ (10) returns "10"
+      Str$ (10) returns "10"

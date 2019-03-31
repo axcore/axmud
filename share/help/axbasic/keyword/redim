@@ -4,6 +4,8 @@ REDIM variable-name [ arg-list ] [ , variable-name [ arg-list ] ... ]
       Changes the size and dimensions of array variables
 
    Notes:
+      All values already stored in the array are replaced with default values
+         (empty strings for string arrays, or zeroes for numeric arrays).
       The expressions in the argument list(s) must evaluate to positive 
          integers.
       Axbasic arrays have a maximum size of 1,000,000 cells.

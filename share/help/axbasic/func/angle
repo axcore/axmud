@@ -1,4 +1,4 @@
-ANGLE (x, y)
+Angle (x, y)
 
    Synopsis:
       Returns the angle, in an anti-clockwise direction, between the positive

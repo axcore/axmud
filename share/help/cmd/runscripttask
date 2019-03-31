@@ -55,11 +55,11 @@ rst / runscripttask           Runs an Axbasic script as a task
  
       Group 3 <switches>: 0 or 1 switch from: 
          -w               - Run the Script task in 'forced window' mode, which
-                               diverts most output into a task window, which is
-                               opened regardless of whether the script asks for
-                               one, or not. This is useful for running old BASIC
-                               programmes in their own window, even though they
-                               don't know how to create one
+                               redirects most output into a task window, which
+                               is opened regardless of whether the script asks
+                               for one, or not. This is useful for running old
+                               BASIC programmes in their own window, even though
+                               they don't know how to create one
  
       Group 4 <switches>: 0 or 1 switch from: 
          -m <number>      - Specifies the maximum number of steps the script can

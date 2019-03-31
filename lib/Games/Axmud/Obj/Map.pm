@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -376,7 +376,7 @@
 
         # (No improper arguments to check)
 
-        # If the Automapper window's menu bar is open, we get a long stream of Gtk2 errors, so make
+        # If the Automapper window's menu bar is open, we get a long stream of Gtk3 errors, so make
         #   sure it's closed
         if ($self->mapWin) {
 
@@ -490,6 +490,7 @@
             #   further room statements)
             if (
                 ! $newFlag
+                && $taskObj
                 && (scalar $taskObj->moveList) <= 1
                 && (
                     $self->worldModelObj->autoCompareMode eq 'current'
@@ -3313,6 +3314,21 @@
                 }
             }
         }
+
+        # DEBUG
+        if ($axmud::TEST_MODEL_FLAG && ! $self->worldModelObj->testModel($self->session)) {
+
+            $self->session->writeDebug(
+                'NEW ROOM MODEL TEST: World model test failed at '
+                . $axmud::CLIENT->localTime(),
+            );
+
+            $axmud::CLIENT->playSound('alarm');
+
+            # Test failed. Don't keep running tests
+            $axmud::TEST_MODEL_FLAG = FALSE;
+        }
+        # DEBUG
 
         return $newRoomObj;
     }

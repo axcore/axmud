@@ -1,4 +1,4 @@
-LEN (string)
+Len (string)
 
    Synopsis:
       Returns the length of the specified string

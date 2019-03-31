@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -4004,7 +4004,7 @@
         # zChat's stamp is a random 32-bit number
         $self->{localZChatStamp}        = int(rand(2**32 - 1));
 
-        # When the chat contact sends their own icon, we store it in this IV as a Gtk2::Gdk::Pixbuf,
+        # When the chat contact sends their own icon, we store it in this IV as a Gtk3::Gdk::Pixbuf,
         #   so that it can be saved in the contacts list, where necessary
         $self->{remoteIcon}             = undef;
         # The same icon scaled to 16x16 (required by GA::Obj::ChatContact)
@@ -5031,7 +5031,6 @@
             $result = $self->session->mainWin->showComboDialogue(
                 'Chat task',
                 'Choose a new lead Chat task',
-                FALSE,
                 \@nameList,
             );
 
@@ -5276,7 +5275,7 @@
                     $fontSize = $axmud::CLIENT->constFontSize;
                 }
 
-                $pixbuf = Gtk2::Gdk::Pixbuf->new_from_file_at_scale(
+                $pixbuf = Gtk3::Gdk::Pixbuf->new_from_file_at_scale(
                     $smileyHash{$smiley},
                     # Width/height comparable to font size
                     ($fontSize * $self->smileySizeFactor),
@@ -7975,7 +7974,7 @@
         $localName = $self->localName;
         if ($type == $self->ivShow('constOptHash', 'MM')) {
 
-            # (Quoted from http://tintin.sourceforge.net/manual/chatprotocol.php)
+            # (Quoted from http://tintin.sourceforge.io/manual/chatprotocol.php)
             # Once a connection is made the caller sends a connection string which looks like:
             #   "CHAT:<chat name>\n<ip address><port>".
             # The sprintf syntax is:
@@ -8204,7 +8203,7 @@
         $self->{dataBuffer} .= $tempBuffer;
 
         # Process the incoming data, which is the same for both MudMaster and zChat
-        # MudMaster (http://tintin.sourceforge.net/manual/chatprotocol.php):
+        # MudMaster (http://tintin.sourceforge.io/manual/chatprotocol.php):
         #   If a "NO" is received the call is cancelled. If the call was accepted the string
         #       "YES:<chat name>\n" is received.
         # zChat (http://www.zuggsoft.com/zchat/zchatprot.htm)
@@ -8370,7 +8369,7 @@
 
         # Process the incoming header
         #
-        # (Quoted from http://tintin.sourceforge.net/manual/chatprotocol.php)
+        # (Quoted from http://tintin.sourceforge.io/manual/chatprotocol.php)
         # Once a connection is made the caller sends a connection string which looks like:
         #   "CHAT:<chat name>\n<ip address><port>".
         # The sprintf syntax is:
@@ -8580,7 +8579,7 @@
                 }
 
                 # Accept the connection
-                # (Quoted from http://tintin.sourceforge.net/manual/chatprotocol.php)
+                # (Quoted from http://tintin.sourceforge.io/manual/chatprotocol.php)
                 #   If a "NO" is received the call is cancelled. If the call was accepted the string
                 #   "YES:<chat name>\n" is received.
                 #
@@ -8767,7 +8766,7 @@
         # Add the incoming data to the buffer
         $self->{dataBuffer} .= $tempBuffer;
 
-        # (http://tintin.sourceforge.net/manual/chatprotocol.php)
+        # (http://tintin.sourceforge.io/manual/chatprotocol.php)
         # Once the MudMaster connection is open, instructions are sent in the form
         #    <COMMAND BYTE><data><END OF COMMAND>
         #
@@ -9051,7 +9050,7 @@
 
         if ($self->chatType == $self->ivShow('constOptHash', 'MM')) {
 
-            # (from http://tintin.sourceforge.net/manual/chatprotocol.php)
+            # (from http://tintin.sourceforge.io/manual/chatprotocol.php)
             # A chat data block looks like this: <COMMAND BYTE><data><END OF COMMAND>. All data
             #   dealing with needs to follow this format with a couple exceptions. The connection
             #   process doesn't use the data blocks and the file transfer blocks are a fixed size
@@ -9492,7 +9491,7 @@
 
         if ($self->chatType == $self->ivShow('constOptHash', 'MM')) {
 
-            # (from http://tintin.sourceforge.net/manual/chatprotocol.php)
+            # (from http://tintin.sourceforge.io/manual/chatprotocol.php)
             # Used when you send text to a specific group of connections. Works basically the same
             #   as the other text commands. The group name is a 15 character string. It *must* be 15
             #   characters long and pad it on the right with spaces to fill it out.
@@ -9833,7 +9832,7 @@
                     || $taskObj->remotePort != $self->remotePort
                 )
             ) {
-                # (from http://tintin.sourceforge.net/manual/chatprotocol.php)
+                # (from http://tintin.sourceforge.io/manual/chatprotocol.php)
                 # <CHAT_CONNECTION_LIST><address>,<port>,<address>,<port><CHAT_END_OF_COMMAND>
                 # The receiver needs to put all the IPs and port numbers of the public connections
                 #   in a comma delimited string and send them back as a connection list.
@@ -9916,7 +9915,7 @@
         # Get a list of all tasks, including this one
         @taskList = $self->findAllTasks();
 
-        # (from http://tintin.sourceforge.net/manual/chatprotocol.php)
+        # (from http://tintin.sourceforge.io/manual/chatprotocol.php)
         # <CHAT_CONNECTION_LIST><address>,<port>,<address>,<port><CHAT_END_OF_COMMAND>
         # The receiver needs to put all the IPs and port numbers of the public connections in a
         #   comma delimited string and send them back as a connection list.
@@ -10054,7 +10053,7 @@
 
         if ($self->pendingOpCode == $self->ivShow('constOptHash', 'TEXT_GROUP')) {
 
-            # MM (from http://tintin.sourceforge.net/manual/chatprotocol.php)
+            # MM (from http://tintin.sourceforge.io/manual/chatprotocol.php)
             # <CHAT_TEXT_GROUP><group><text to send><CHAT_END_OF_COMMAND>
             # Used when you send text to a specific group of connections. Works basically the same
             #   as the other text commands. The group name is a 15 character string. It *must* be 15
@@ -10622,7 +10621,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->pingResponse', @_);
         }
 
-        # (from http://tintin.sourceforge.net/manual/chatprotocol.php)
+        # (from http://tintin.sourceforge.io/manual/chatprotocol.php)
         # <CHAT_PING_RESPONSE><timing data><CHAT_END_OF_COMMAND>
         #   When receiving a CHAT_PING_REQUEST you should send back the timing data.
         #
@@ -10687,7 +10686,7 @@
         # Get a list of all tasks, including this one
         @taskList = $self->findAllTasks();
 
-        # (from http://tintin.sourceforge.net/manual/chatprotocol.php)
+        # (from http://tintin.sourceforge.io/manual/chatprotocol.php)
         # <CHAT_CONNECTION_LIST><address>,<port>,<address>,<port><CHAT_END_OF_COMMAND>
         # The receiver needs to put all the IPs and port numbers of the public connections in a
         #   comma delimited string and send them back as a connection list.
@@ -10914,11 +10913,11 @@
         # Store the icon as a pixbuf, so that it can be stored in the contacts list, if necessary
         my ($pixBuffer, $pixBuffer2);
 
-        $pixBuffer = Gtk2::Gdk::Pixbuf->new_from_file($file);
+        $pixBuffer = Gtk3::Gdk::Pixbuf->new_from_file($file);
         if ($pixBuffer) {
 
             # Also create a scaled 16x16 copy of the icon for display in a simple list
-            $pixBuffer2 = Gtk2::Gdk::Pixbuf->new_from_file_at_scale(
+            $pixBuffer2 = Gtk3::Gdk::Pixbuf->new_from_file_at_scale(
                 $file,
                 16, 16,     # Width, height
                 1,          # Scaled
@@ -11127,7 +11126,7 @@
 
         # Usually called by ->signal_connect in GA::Strip::Entry->setEntrySignals or in
         #   GA::Table::Entry->setActivateEvent, when the user types something in the strip/table
-        #   object's Gtk2::Entry and presses RETURN
+        #   object's Gtk3::Entry and presses RETURN
         #
         # Text that begins with the client command sigil ';' is treated as a Chat task command, e.g.
         #   ;ping
@@ -11140,12 +11139,12 @@
         #   (depending on the value of $self->entryMode)
         #
         # Expected arguments
-        #   $obj        - The strip or table object whose Gtk2::Entry was used
-        #   $entry      - The Gtk2::Entry itself
+        #   $obj        - The strip or table object whose Gtk3::Entry was used
+        #   $entry      - The Gtk3::Entry itself
         #
         # Optional arguments
         #   $id         - A value passed to the table object that identifies the particular
-        #                   Gtk2::Entry used (in case the table object uses multiple entries). By
+        #                   Gtk3::Entry used (in case the table object uses multiple entries). By
         #                   default, $self->openWin sets $id to the same as $self->uniqueName;
         #                   could be an 'undef' value otherwise
         #   $text       - The text typed in the entry by the user (should not be 'undef')
@@ -11878,7 +11877,7 @@
         # If this flag is TRUE when the task starts, the task window is automatically enabled
         $self->{enabledFlag}            = TRUE;
 
-        # The table objects (GA::Table::Button) created for each Gtk2::Button
+        # The table objects (GA::Table::Button) created for each Gtk3::Button
         # A hash so we can work out which compass button was pressed, in the form
         #   $compassHash{table_object} = standard_primary_direction
         $self->{compassHash}            = {};
@@ -11886,12 +11885,12 @@
         #   in the form
         #   $cmdHash{table_object} = command_string
         $self->{cmdHash}                = {};
-        # A second hash for these other buttons, linking the Gtk2::Button object to an Axmud
+        # A second hash for these other buttons, linking the Gtk3::Button object to an Axmud
         #   standard keycode. Hash in the form
         #   $hash{standard_keycode} = table_object
         $self->{cmdKeycodeHash}         = {};
 
-        # Table objects created for various Gtk2 widgets, stored here because various functions
+        # Table objects created for various Gtk3 widgets, stored here because various functions
         #   need them
         $self->{radioTableObj}          = undef;        # GA::Table::RadioButton
         $self->{radioTableObj2}         = undef;        # GA::Table::RadioButton
@@ -12521,7 +12520,7 @@
         } until (! @list);
 
         # Store all the buttons created, so that $self->moveCallback and ->cmdCallback can work
-        #   out which Gtk2::Button corresponds to which command
+        #   out which Gtk3::Button corresponds to which command
         $self->ivPoke('compassHash', %compassHash);
         $self->ivPoke('cmdHash', %cmdHash);
         $self->ivPoke('cmdKeycodeHash', %cmdKeycodeHash);
@@ -12736,7 +12735,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, a keycode
         #
         # Return values
@@ -12790,7 +12789,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, a keycode
         #
         # Return values
@@ -12840,7 +12839,7 @@
         #
         # Expected arguments
         #   $tableObj       - The GA::Table::RadioButton object for the button
-        #   $radioButton    - The actual Gtk2::RadioButton clicked
+        #   $radioButton    - The actual Gtk3::RadioButton clicked
         #   $id             - The callback ID; in this case, the strings 'button_1' or 'button_2'
         #
         # Return values
@@ -12875,11 +12874,11 @@
         # Called by a ->signal_connect in a GA::Table::Entry object when the user types something
         #   in the entry box and presses ENTER
         # Finds the keycode currently displayed in the combobox and updates both the macro and the
-        #   Gtk2::Button for that keycode
+        #   Gtk3::Button for that keycode
         #
         # Expected arguments
         #   $entryTableObj  - The GA::Table::Entry object for the entry
-        #   $entry          - The actual Gtk2::Entry used
+        #   $entry          - The actual Gtk3::Entry used
         #   $id             - The callback ID; in this case, an empty string
         #   $text           - The text entered by the user (may be an empty string)
         #
@@ -12901,7 +12900,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->miniEntryCallback', @_);
         }
 
-        # Get the text entered in the Gtk2::Entry and trim leading/trailing whitespace
+        # Get the text entered in the Gtk3::Entry and trim leading/trailing whitespace
         $cmd = $axmud::CLIENT->trimWhitespace($text);
 
         # Retrieve the last value selected in the combobox, which will be a standard keycode
@@ -14986,7 +14985,7 @@
 
         # Task parameters
 
-        # Table objects created for various Gtk2 widgets, stored here because various functions
+        # Table objects created for various Gtk3 widgets, stored here because various functions
         #   need them
         $self->{labelTableObj}          = undef;        # GA::Table::Label
         $self->{entryTableObj}          = undef;        # GA::Table::Entry
@@ -15473,7 +15472,7 @@
 
     sub drawTime {
 
-        # Called by various functions to set (or reset) the clock time displayed as a Gtk2::Label
+        # Called by various functions to set (or reset) the clock time displayed as a Gtk3::Label
         #
         # Expected arguments
         #   (none besides $self)
@@ -15595,7 +15594,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, 'start'
         #
         # Return values
@@ -15665,7 +15664,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, 'pause'
         #
         # Return values
@@ -15725,7 +15724,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, 'stop'
         #
         # Return values
@@ -17079,17 +17078,17 @@
 
         # Usually called by ->signal_connect in GA::Strip::Entry->setEntrySignals or in
         #   GA::Table::Entry->setActivateEvent, when the user types something in the strip/table
-        #   object's Gtk2::Entry and presses RETURN
+        #   object's Gtk3::Entry and presses RETURN
         # The text is treated as an ordinary instruction (but Perl commands are not allowed); a
         #   copy is also displayed in the task window
         #
         # Expected arguments
-        #   $obj        - The strip or table object whose Gtk2::Entry was used
-        #   $entry      - The Gtk2::Entry itself
+        #   $obj        - The strip or table object whose Gtk3::Entry was used
+        #   $entry      - The Gtk3::Entry itself
         #
         # Optional arguments
         #   $id         - A value passed to the table object that identifies the particular
-        #                   Gtk2::Entry used (in case the table object uses multiple entries). By
+        #                   Gtk3::Entry used (in case the table object uses multiple entries). By
         #                   default, $self->openWin sets $id to the same as $self->uniqueName;
         #                   could be an 'undef' value otherwise
         #   $text       - The text typed in the entry by the user (should not be 'undef')
@@ -17554,7 +17553,7 @@
         # Use the layer one higher than the highest window (ignoring other Frame task windows, of
         #   course), so that the task window's size won't be adjusted to fit around existing windows
         # Exception: if Pueblo specified a floating frame, implement that by putting the task window
-        #   in the highest layer (rather than calling Gtk2::Window->set_keep_above, or something)
+        #   in the highest layer (rather than calling Gtk3::Window->set_keep_above, or something)
         if ($self->frameObj->floatingFlag) {
 
             $layer = $gridObj->maxLayers - 1;
@@ -19792,7 +19791,7 @@
 
         # Task parameters
         #
-        # Table object handling the GA::Obj::Simple::List
+        # Table object handling the GA::Obj::SimpleList
         $self->{slTableObj}             = undef;
         # A hash of scripts displayed in the window, in the form
         #   $fileHash{script_name} = full_file_path
@@ -20154,7 +20153,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, an empty string
         #
         # Return values
@@ -20202,7 +20201,7 @@
                 return $self->winObj->showMsgDialogue(
                     'New script',
                     'error',
-                    "Unable to create the file\n\'" . $path . "\'",
+                    'Unable to create the file \'' . $path . '\'',
                     'ok',
                 );
             }
@@ -20233,7 +20232,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, an empty string
         #
         # Return values
@@ -20293,7 +20292,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, an empty string
         #
         # Return values
@@ -20323,7 +20322,7 @@
             $choice = $self->winObj->showMsgDialogue(
                 'Delete script',
                 'question',
-                "Are you sure you want to delete\n\'" . $path . "\'?",
+                'Are you sure you want to delete \'' . $path . '\'?',
                 'yes-no',
                 'no',
             );
@@ -20348,7 +20347,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, an empty string
         #
         # Return values
@@ -20393,7 +20392,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, an empty string
         #
         # Return values
@@ -20439,7 +20438,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, an empty string
         #
         # Return values
@@ -21963,8 +21962,8 @@
             # Create a non-model object for this room
             $tempRoomObj = Games::Axmud::ModelObj::Room->new(
                 $self->session,
-                '<temporary name>',     # Room description
-                FALSE,                  # Non-model object
+                'temporary',
+                'non_model',
             );
 
             $self->ivPoke('roomObj', $tempRoomObj);     # Even if $tempRoomObj is 'undef'
@@ -22193,8 +22192,8 @@
                     # Create a non-model object for this room
                     $tempRoomObj = Games::Axmud::ModelObj::Room->new(
                         $self->session,
-                        '<temporary name>',     # Room description
-                        FALSE,                  # Non-model object
+                        'temporary',
+                        'non_model',
                     );
 
                     $self->ivPoke('roomObj', $tempRoomObj);     # Even if $tempRoomObj is 'undef'
@@ -22245,8 +22244,8 @@
                     # Create a non-model object for this room
                     $tempRoomObj = Games::Axmud::ModelObj::Room->new(
                         $self->session,
-                        '<temporary name>',     # Room description
-                        FALSE,                  # Non-model object
+                        'temporary',
+                        'non_model',
                     );
 
                     $self->ivPoke('roomObj', $tempRoomObj);     # Even if $tempRoomObj is 'undef'
@@ -22296,8 +22295,8 @@
                         # Create a non-model object for this room
                         $tempRoomObj = Games::Axmud::ModelObj::Room->new(
                             $self->session,
-                            '<temporary name>',     # Room description
-                            FALSE,                  # Non-model object
+                            'temporary',
+                            'non_model',
                         );
 
                         $self->ivPoke('roomObj', $tempRoomObj);   # Even if $tempRoomObj is 'undef'
@@ -22334,74 +22333,74 @@
         # PART 12
         # If allowed, look for an MXP tag property (one of the keys in $self->mxpFlagTextHash,
         #   normally one of 'RoomName', 'RoomDesc', 'RoomExit', 'RoomNum')
-        if (
-            ! $failExitFlag
-            && ! $involuntaryExitFlag
-            && ! $specialFlag
-            && (
-                (! $existsFlag && $axmud::CLIENT->allowMxpRoomFlag)
-                || ($existsFlag && $worldObj->ivShow('mxpOverrideHash', 'room'))
-            )
-        ) {
-            OUTER: foreach my $prop ($bufferObj->ivKeys('mxpFlagTextHash')) {
-
-                my $text = $bufferObj->ivShow('mxpFlagTextHash', $prop);
-
-                if ($self->ivExists('mxpPropHash', $prop)) {
-
-                    # When the first tag property is found, stop searching for anchor lines
-                    #   altogether
-                    if (! $self->useMxpFlag) {
-
-                        $self->ivPoke('useMxpFlag', TRUE);
-                    }
-
-                    # Update the local hash; as soon as a duplicate property is found on another
-                    #   line, it marks the start of a new statement
-                    # An <ELEMENT>...</ELEMENT> construction could appear more than once on the
-                    #   same line, so watch out for that
-                    if (! defined $mxpPropHash{$prop}) {
-
-                        $mxpPropHash{$prop} = $text;
-
-                    } elsif ($prop eq 'RoomExit') {
-
-                        # Tell $self->setRoomFromMxp that these are separate exits by using a
-                        #   newline character
-                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . "\n" . $text;
-
-                    } else {
-
-                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . " " . $text;
-                    }
-                }
-            }
-
-            if (%mxpPropHash) {
-
-                $anchorFlag = TRUE;
-
-                if ($axmud::CLIENT->debugLocatorFlag) {
-
-                    $self->session->writeDebug(
-                        'LOCATOR 271: Found MXP tag properties '
-                        . join('/', sort {$a cmp $b} (keys %mxpPropHash)),
-                    );
-                }
-
-                # Search more lines, looking for more MXP tag properties until (1) an identical tag
-                #   property is found (which means the start of another room statement), or (2) all
-                #   four tag properties are found (which means the end of the current room
-                #   statement) or (3) the task runs out of lines (which means the end of the current
-                #   room statement)
-                $self->processMxpProperties(
-                    $lineNum,
-                    $stopLineNum,
-                    $worldObj,
-                    %mxpPropHash,
-                );
-            }
-        }
+#        if (
+#            ! $failExitFlag
+#            && ! $involuntaryExitFlag
+#            && ! $specialFlag
+#            && (
+#                (! $existsFlag && $axmud::CLIENT->allowMxpRoomFlag)
+#                || ($existsFlag && $worldObj->ivShow('mxpOverrideHash', 'room'))
+#            )
+#        ) {
+#            OUTER: foreach my $prop ($bufferObj->ivKeys('mxpFlagTextHash')) {
+#
+#                my $text = $bufferObj->ivShow('mxpFlagTextHash', $prop);
+#
+#                if ($self->ivExists('mxpPropHash', $prop)) {
+#
+#                    # When the first tag property is found, stop searching for anchor lines
+#                    #   altogether
+#                    if (! $self->useMxpFlag) {
+#
+#                        $self->ivPoke('useMxpFlag', TRUE);
+#                    }
+#
+#                    # Update the local hash; as soon as a duplicate property is found on another
+#                    #   line, it marks the start of a new statement
+#                    # An <ELEMENT>...</ELEMENT> construction could appear more than once on the
+#                    #   same line, so watch out for that
+#                    if (! defined $mxpPropHash{$prop}) {
+#
+#                        $mxpPropHash{$prop} = $text;
+#
+#                    } elsif ($prop eq 'RoomExit') {
+#
+#                        # Tell $self->setRoomFromMxp that these are separate exits by using a
+#                        #   newline character
+#                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . "\n" . $text;
+#
+#                    } else {
+#
+#                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . " " . $text;
+#                    }
+#                }
+#            }
+#
+#            if (%mxpPropHash) {
+#
+#                $anchorFlag = TRUE;
+#
+#                if ($axmud::CLIENT->debugLocatorFlag) {
+#
+#                    $self->session->writeDebug(
+#                        'LOCATOR 271: Found MXP tag properties '
+#                        . join('/', sort {$a cmp $b} (keys %mxpPropHash)),
+#                    );
+#                }
+#
+#                # Search more lines, looking for more MXP tag properties until (1) an identical tag
+#                #   property is found (which means the start of another room statement), or (2) all
+#                #   four tag properties are found (which means the end of the current room
+#                #   statement) or (3) the task runs out of lines (which means the end of the 
+#                #   current room statement)
+#                $self->processMxpProperties(
+#                    $lineNum,
+#                    $stopLineNum,
+#                    $worldObj,
+#                    %mxpPropHash,
+#                );
+#            }
+#        }
 
         # PARTS 13-16
         # Look for an anchor line (unless a failed exit, involuntary exit, special departure pattern
@@ -23039,8 +23038,8 @@
         # Create a non-model object for this room
         $roomObj = Games::Axmud::ModelObj::Room->new(
             $self->session,
-            '<temporary name>',     # Room description
-            FALSE,                  # Non-model object
+            'temporary',
+            'non_model',
         );
 
         # Move backwards or forwards (default) in the display buffer
@@ -23554,8 +23553,8 @@
         # In anticipation of a successful extraction, create a non-model object for this room
         $roomObj = Games::Axmud::ModelObj::Room->new(
             $self->session,
-            '<temporary name>',     # Room description
-            FALSE,                  # Non-model object
+            'temporary',
+            'non_model',
         );
 
         # $self->roomObj hasn't been set yet, but we still need to reset $self->weatherHash, as it's
@@ -26738,7 +26737,7 @@
         my (
             $delimIV, $nonDelimIV, $leftMarkerIV, $rightMarkerIV, $splitCharIV,
             @bufferObjList, @lineTextList, @lineOffsetList, @markerList, @exitList, @finalList,
-            %checkHash,
+            %checkHash, %duplicateHash,
         );
 
         # Check for improper arguments
@@ -27087,7 +27086,7 @@
 
                 # Remove any leading/trailing whitespace from strings in @exitList, convert
                 #   multiple-character whitespace into single-character whitespace
-                $modString = $axmud::CLIENT->trimWhitespace($exitString, TRUE);
+                $modString = lc($axmud::CLIENT->trimWhitespace($exitString, TRUE));
 
                 # Ignore any strings that are now empty strings
                 if (defined $modString && $modString ne '') {
@@ -27104,6 +27103,8 @@
                         $replace = $worldObj->duplicateReplaceString;
                         $replace =~ s/@@@/$modString/g;
                         $modString = $replace;
+                        # After the non-model exit object is created, we'll mark it as a hidden exit
+                        $duplicateHash{$modString} = undef;
                     }
 
                     # If $modString is still a duplicate, just ignore it
@@ -27138,7 +27139,21 @@
 
         # Now, for each exit in @finalList, create a non-exit model object, and add it to the room
         #   model object
-        return $self->processExits($worldObj, $roomObj, @finalList);
+        if (! $self->processExits($worldObj, $roomObj, @finalList)) {
+
+            return undef;
+        }
+
+        # Any duplicate exits that were converted (e.g. east > swim east) must be marked as hidden
+        #   exits, so that the imaginary 'swim east' direction doesn't conflict with the
+        #   corresponding room's list of exits in a map
+        foreach my $string (keys %duplicateHash) {
+
+            my $exitObj = $roomObj->ivShow('exitNumHash', $string);
+            $exitObj->ivPoke('hiddenFlag', TRUE);
+        }
+
+        return 1;
     }
 
     sub setRoomContent {
@@ -27867,7 +27882,7 @@
                 $exitObj = Games::Axmud::Obj::Exit->new(
                     $self->session,
                     $modString,             # Nominal direction with state symbols (if any) removed
-                    FALSE,                  # Non-exit model object
+                    'non_model',            # Non-exit model object
                 );
 
                 if (! $exitObj) {
@@ -28950,8 +28965,8 @@
         # Create a new non-model room, whose properties will be set to match $modelRoomObj
         $tempRoomObj = Games::Axmud::ModelObj::Room->new(
             $self->session,
-            $modelRoomObj->name,
-            FALSE,                  # Non-model object
+            'temporary',
+            'non_model',
         );
 
         # Store it as the Locator task's current room
@@ -29057,7 +29072,7 @@
         $cloneExitObj = Games::Axmud::Obj::Exit->new(
             $self->session,
             $modelExitObj->dir,     # Nominal direction
-            FALSE,                  # Non-exit model object
+            'non_model',            # Non-exit model object
         );
 
         # Clone the model exit's properties
@@ -29840,7 +29855,7 @@
 
                     push (
                         @lineList,
-                        'Parchment objects: ' . (scalar $mapWin->ivKeys('parchmentHash')),
+                        'Regions drawn: ' . (scalar $mapWin->ivKeys('parchmentHash')),
                     );
 
                     foreach my $name (sort {lc($a) cmp lc($b)} ($mapWin->ivKeys('parchmentHash'))) {
@@ -29856,14 +29871,24 @@
                 push (@lineList, 'Region queue: ' . (scalar $mapWin->parchmentQueueList));
                 foreach my $obj ($mapWin->parchmentQueueList) {
 
-                    my $count = $obj->ivPairs('queueRoomHash') + $obj->ivPairs('queueRoomTagHash')
-                        + $obj->ivPairs('queueRoomGuildHash') + $obj->ivPairs('queueExitHash')
-                        + $obj->ivPairs('queueExitTagHash') + $obj->ivPairs('queueLabelHash');
+                    my $count = $obj->ivPairs('queueRoomEchoHash')
+                        + $obj->ivPairs('queueRoomBoxHash')
+                        + $obj->ivPairs('queueRoomTextHash')
+                        + $obj->ivPairs('queueRoomExitHash')
+                        + $obj->ivPairs('queueRoomInfoHash')
+                        + $obj->ivPairs('queueLabelHash');
 
-                    push (@lineList, '   ' . $obj->name . ' : ' . $count);
+                    push (
+                        @lineList,
+                        '   ' . $obj->name . ' : ' . $count,
+                        '      Ec ' . $obj->ivPairs('queueRoomEchoHash')
+                        . ' Bo ' . $obj->ivPairs('queueRoomBoxHash')
+                        . ' Te ' . $obj->ivPairs('queueRoomTextHash')
+                        . ' Ex ' . $obj->ivPairs('queueRoomExitHash')
+                        . ' In ' . $obj->ivPairs('queueRoomInfoHash')
+                        . ' La ' . $obj->ivPairs('queueLabelHash')
+                    );
                 }
-
-                push (@lineList, 'Destroy queue: ' . (scalar $mapWin->destroyQueueList));
 
                 # Display the list in the task window
                 $self->insertQuick(join("\n", @lineList));
@@ -30029,7 +30054,7 @@
 
         # Task parameters
         #
-        # Table objects created for various Gtk2 widgets, stored here because various functions
+        # Table objects created for various Gtk3 widgets, stored here because various functions
         #   need them
         $self->{textTableObj}           = undef;
         $self->{comboTableObj}          = undef;
@@ -30359,8 +30384,8 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::TextView object for the textview
-        #   $textView   - The actual Gtk2::TextView edited
-        #   $buffer     - The textview's Gtk2::Buffer
+        #   $textView   - The actual Gtk3::TextView edited
+        #   $buffer     - The textview's Gtk3::Buffer
         #   $id         - The callback ID; in this case, an empty string
         #   $text       - The contents of the buffer (a string containing one or more lines
         #                   separated by newline characters)
@@ -30407,7 +30432,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::ComboBox object for the combobox
-        #   $comboBox   - The actual Gtk2::ComboBox used
+        #   $comboBox   - The actual Gtk3::ComboBox used
         #   $id         - The callback ID; in this case, an empty string
         #   $profile    - The selected world profile
         #
@@ -30448,7 +30473,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, a keycode
         #
         # Return values
@@ -30489,7 +30514,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, a keycode
         #
         # Return values
@@ -30519,7 +30544,7 @@
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
-        #   $button     - The actual Gtk2::Button clicked
+        #   $button     - The actual Gtk3::Button clicked
         #   $id         - The callback ID; in this case, a keycode
         #
         # Return values
@@ -31731,7 +31756,7 @@
         if ($self->Games::Axmud::Generic::Task::openWin($winmap, @preferList)) {
 
             # Set a customised window title
-            $self->resetTaskWinTitle();
+            $self->setTitle();
 
             return 1;
 
@@ -32657,7 +32682,7 @@
         return 1;
     }
 
-    sub resetTaskWinTitle {
+    sub setTitle {
 
         # Called by $self->openWin and LA::Statement::settitle->implement
         # Sets the task window's title to include the task name and the script name
@@ -32665,20 +32690,28 @@
         # Expected arguments
         #   (none besides $self)
         #
+        # Optional arguments
+        #   $text   - The text to use as the window's title (if an empty string or 'undef', a
+        #               default title is used)
+        #
         # Return values
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $check) = @_;
+        my ($self, $text, $check) = @_;
 
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetTaskWinTitle', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setTitle', @_);
         }
 
         # Reset the title
-        $self->setTaskWinTitle($self->prettyName . ' (' . $self->scriptName . ')');
+        if (defined $text && $text ne '') {
+            $self->setTaskWinTitle($text);
+        } else {
+            $self->setTaskWinTitle($self->prettyName . ' (' . $self->scriptName . ')');
+        }
 
         return 1;
     }
@@ -32698,9 +32731,11 @@
         #                   label
         #   $addFlag    - Flag matching GA::Obj::Gauge->addFlag. FALSE when called by ADDGAUGE
         #                   statements, TRUE when called by ADDCONGAUGE statements
+        #
+        # Optional arguments
         #   $fullCol    - The colour of the full portion of the gauge. Must be an Axmud colour tag
-        #                   (including standard, xterm and RGB tags). If an empty string or an
-        #                   invalid colour tag, the default gauge colour is used
+        #                   (including standard, xterm and RGB tags). If an empty string, 'undef' or
+        #                   an invalid colour tag, the default gauge colour is used
         #   $emptyCol   - The colour of the empty portion of the gauge
         #   $labelCol   - The colour of the label
         #
@@ -32715,8 +32750,7 @@
 
         # Check for improper arguments
         if (
-            ! defined $number || ! defined $label || ! defined $addFlag || ! defined $fullCol
-            || ! defined $emptyCol || ! defined $labelCol || defined $check
+            ! defined $number || ! defined $label || ! defined $addFlag || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addGauge', @_);
         }
@@ -32760,32 +32794,43 @@
 
             $self->gaugeStripObj->removeGauges(
                 $self->session,
-                FALSE,
+                TRUE,
                 $self->ivShow('gaugeHash', $number),
             );
         }
 
         # Conver the specified colour tags into RGB colour tags (or use default colours, if the
         #   specified tags are invalid)
-        ($fullType) = $axmud::CLIENT->checkColourTags($fullCol);
+        if (defined $fullCol) {
+
+            ($fullType) = $axmud::CLIENT->checkColourTags($fullCol);
+        }
+
         if (! $fullType) {
             $fullCol = $self->gaugeStripObj->gaugeFullColour;
         } else {
             $fullCol = $axmud::CLIENT->returnRGBColour($fullCol);
         }
 
-        ($emptyType) = $axmud::CLIENT->checkColourTags($emptyCol);
+        if (defined $emptyCol) {
+
+            ($emptyType) = $axmud::CLIENT->checkColourTags($emptyCol);
+        }
+
         if (! $emptyType) {
             $emptyCol = $self->gaugeStripObj->gaugeEmptyColour;
         } else {
             $emptyCol = $axmud::CLIENT->returnRGBColour($emptyCol);
         }
 
-        ($labelType) = $axmud::CLIENT->checkColourTags($labelCol);
-        if (! $labelType) {
-            $labelCol = $self->gaugeStripObj->gaugeLabelColour;
-        } else {
-            $labelCol = $axmud::CLIENT->returnRGBColour($labelCol);
+        if (defined $labelCol) {
+
+            ($labelType) = $axmud::CLIENT->checkColourTags($labelCol);
+            if (! $labelType) {
+                $labelCol = $self->gaugeStripObj->gaugeLabelColour;
+            } else {
+                $labelCol = $axmud::CLIENT->returnRGBColour($labelCol);
+            }
         }
 
         # Assign a label, if none was specified
@@ -33338,18 +33383,18 @@
 
         # Usually called by ->signal_connect in GA::Strip::Entry->setEntrySignals or in
         #   GA::Table::Entry->setActivateEvent, when the user types something in the strip/table
-        #   object's Gtk2::Entry and presses RETURN
+        #   object's Gtk3::Entry and presses RETURN
         # If the script is paused (->scriptStatus is 'paused') and is expecting input (->inputList
         #   is not empty), send the typed value to be stored in one of the script's variables
         # Then, if no more input is expected, resume executing the script
         #
         # Expected arguments
-        #   $obj        - The strip or table object whose Gtk2::Entry was used
-        #   $entry      - The Gtk2::Entry itself
+        #   $obj        - The strip or table object whose Gtk3::Entry was used
+        #   $entry      - The Gtk3::Entry itself
         #
         # Optional arguments
         #   $id         - A value passed to the table object that identifies the particular
-        #                   Gtk2::Entry used (in case the table object uses multiple entries). By
+        #                   Gtk3::Entry used (in case the table object uses multiple entries). By
         #                   default, $self->openWin sets $id to the same as $self->uniqueName;
         #                   could be an 'undef' value otherwise
         #   $text       - The text typed in the entry by the user (should not be 'undef')

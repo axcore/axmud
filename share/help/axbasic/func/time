@@ -1,4 +1,4 @@
-TIME ()
+Time ()
 
    Synopsis:
       Returns the number of seconds since midnight

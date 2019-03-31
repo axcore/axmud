@@ -1,3 +1,182 @@
+v1.2.0 (31 Mar 2019)
+--------------------------------------------------------------------------------
+
+Release notes
+- Thanks to Håkon and Rob, without whose generous assistance this release would
+    not have been possible
+- Axmud's graphics libraries have been replaced with something more modern
+    (Gtk2 has been migrated to Gtk3; Gnome2::Canvas has been migrated to
+    GooCanvas2, Gnome2::WNCK has been replaced with WMCtrl). As a result, you
+    will notice small differences in the appearance of almost everything (but
+    hopefully not too many error messages)
+- Window tiling has been implemented for users of MS Windows. Window tiling of
+    external (non-Axmud) windows only works with X11-compatible systems, so it
+    definitely won't work on MS Windows or on Wayland. Multiple workspaces still
+    do not work on MS Windows
+- MS Windows can now run Axmud using both the 32-bit and 64-bit editions of
+    Strawberry Perl
+- Over time, duplicate keyboard shortcuts had crept into many menus. The menus
+    have been checked and, as a result, many keyboard shortcuts have been
+    modified. Please be careful when navigating menus using your keyboard rather
+    than with your mouse
+- The ability to take screenshots of the 'main' window has been removed (please
+    use an external screenshot programme instead). The ';screenshot' command has
+    been removed. Automapper screenshots are not affected by this change
+
+Known issues
+- If the system terminal window is visible, you might see a lot of Gtk3 warning
+    messages displayed there. We think this is an issue with the Gtk3 graphics
+    library. The issue(s) have been corrected, but the fix is not available on
+    all systems yet
+- When there isn't enough space to draw all the toolbuttons in the 'main' window
+    and the automapper window, the extra buttons are drawn in a drop-down menu.
+    Items in this menu are not visible on some computers, particularly on MS
+    Windows. We think this is another Gtk3 issue which will fix itself
+    eventually
+- There are some intermittent problems with scrolling text. If a textview (an
+    area of a window containing mostly text) seems to be juddering, you can
+    type ';cls' to clear the window. You can also try reducing the maximum size
+    of the textview (from the 'main' window menu, click 'Edit > Axmud
+    preferences... > Settings > Page 6', change 'Size of textviews' to a value
+    like 2000, then click the 'Set' button to apply the change)
+    
+Automapper new features
+- As a result of the graphics upgrade, the automapper will draw your maps
+    somewhat more quickly. Pre-drawing operations, in particular, are much
+    faster now. Some drawing operations which took an interminably long time
+    (due to some quirks in the old graphics libraries) are now either much
+    faster or virtually instantaneous
+- The world model (containing all maps) has been redesigned so that it takes up
+    much less memory - typically 60-70% less. You'll notice that, for large
+    maps, file load/save times are dramatically quicker
+- From now on, you can use the new ';compressmodel' command to make (small)
+    reductions in the amount of memory used by any new maps you draw. Most users
+    can ignore this command 
+- For users who prefer to use their own room flags, you can now hide all
+    standard room flags, leaving only your custom flags visible. This applies
+    both to the automapper window's menus and the world model edit window. From
+    the menu, click 'Edit > Edit world model... > Room flags > Page 1' and
+    modify the setting in the top-right corner
+- Map labels can now be rotated at any angle
+- When pre-drawing regions, a summary of drawing operations is now visible in
+    the automapper window's title bar
+    
+Automapper fixes
+- Some users with very large maps were experiencing an 'out of memory' error on
+    low-to-medium specification machines. This issue is now fixed: we have not
+    been able to generate the error even in maps with hundreds of thousands of
+    rooms. However, you will still need enough memory on your machine to convert
+    the old map into its new format. The authors can do this for you, if you
+    like. You can contact them on the Axmud forum
+- There is a new ';splitmodel' command which can be used to vary the size of
+    the multiple data files now used to save maps. Most users can ignore this
+    command
+- In the automapper window, if you changed the visible level to an empty one,
+    then switched to a different region, then switched back again, a Perl error
+    was generated. This is now fixed
+- When the Locator task was running and the user set a current room in the
+    automapper window, a load of Perl errors were generated. Fixed
+- Zooming in and out of the map is now (more or less) instantaneous. Zooming all
+    the way out will no longer change the position of the map. However, the
+    ability to display text in a constant size while zooming in or out has been
+    removed
+- Map screenshots now work much better (and faster) than before
+- Room echoes were being drawn the wrong way around. This is now fixed - the
+    dark patch to the left of a room now represents a room immediately above,
+    not a room immediately below
+- Fixed an issue with drawing map labels containing non-alphanumeric characters
+    such as @
+- Fixed an issue with exits treated by Axmud as duplicate exits, for example the
+    'east' and 'swim east' exits at Two Towers MUD
+- Axmud crashed after resetting an exit's assisted move. Fixed
+- Fixed handling of room statements at Kallisti; Axmud now recognises the
+    upper-case [ N S E W ] exits
+- All types of random exit now turn blue when you click to select them
+
+Axbasic new features
+- This version introduces a complete tutorial for the Axbasic scripting
+    language. See the files in ../share/docs/tutorial (or just read them on the
+    Axmud website)
+- The only string concatenation operator that's now allowed is &. (Earlier
+    versions of Language::Basic used +, but this is now deprecated)
+- Added an exponent operator, ^
+- Subroutines now return 0, by default. To return a string value, start your
+    subroutine declaration with 'SUB STRING'. The default string value returned
+    is an empty string. See the Axbasic tutorial for more information on how
+    this works
+- Added new statement RANDOMIZE
+- Added new functions Epoch (), Floor (), Left$ () and Right$ ()
+- Modified the WHILE statement to allow for 'WHILE 1' and 'WHILE 0'. Modified
+    the UNTIL statement to allow for 'UNTIL 1' and 'UNTIL 0'
+- OPTION DIVERT has been renamed as OPTION REDIRECT (to avoid confusion with the
+    similarly-named Divert task)
+- PEEKPOP has been renamed as POKEPOP, and PEEKSHIFT has been renamed as
+    POKESHIFT
+- Showprofile () has been renamed as Showprofile$ (), as it returns a string, not
+    a numeric value
+        
+Axbasic fixes
+- Axbasic got confused by 'LET name$ = "gandalf"', because NAME is also a
+    keyword. From now on, 'name$' is treated as a variable, but 'NAME' is
+    treated as a keyword in all circumstances. In other words, you can have a
+    string variable called 'name$', but not a numeric variable called 'name'
+- Built-in function names like Sin () can no longer be used as variable names
+    (so 'LET sin = 50' is no longer allowed)
+- Fixed an error which failed to interpret 'IF number = 10 THEN PRINT "Hello"'
+    correctly
+- Fixed an error that enacted FOR loops with a negative increment as an infinite
+    loop, e.g. during 'FOR a = 5 TO 1 STEP -1'
+- The rules for subroutines are now the same as those for functions; invalid
+    subroutine (and function) names are not allowed
+- 'CALL funcname' can now be used as well as 'CALL funcname ()'
+- Fixed errors in column PRINTing, for example in 'PRINT x, y'. Also fixed some
+    errors in PRINTing the results of functions, such that 'PRINT Int' now
+    generates a useful Axbasic error, rather than a useless Perl error 
+- Fixed minor problems with the ADDGAUGE, DELGAUGE, OPEN, TITLEWIN and VAL
+    statements
+- The Timestamp () function was returning negative numbers. Fixed
+- Help files for the Int (), Ip () and Fp () functions gave the wrong return
+    values. Updated the files
+- Axbasic was unable to handle the keyword ANGLE and the built-in function
+    Angle () correctly. Fixed
+- Fixed some problems in handling invalid tokens (like 'hello' instead of
+    "hello"), array out-of-bounds errors and scripts lacking the compulsory END
+    statement
+    
+Minor new features
+- In all windows with more tabs than available space, you can now right-click
+    any of the tabs to get a list of the invisible tabs, rather than scrolling
+    through them, one by one
+- The ';testpattern' command can now be typed as ';patterntest', too
+- ';protectobject' can now be typed as ';protect', and ';monitorobject' can now
+    be typed as ';monitor'
+- You can now create an empty mission with ';addmision' (previously, it was
+    necessary to create a recording first)
+
+Minor fixes
+- When Axmud crashes, the restart message is now made visible in every session
+- Blinking text with RGB colours now works
+- Fixed 'wide character in print' errors when logfiles are turned on, and when
+    connected to a MUD which uses non-ASCII characters
+- ';deleteregion' wouldn't accept a number as an argument. Fixed
+- Modified ';locateroom' so that it doesn't generated countless thousands of
+    lines of output
+- The tooltip for the 'main' window blinkers displayed values in the wrong
+    order. Fixed
+- Fixed error in ';listzonemodel'
+- In the client preference window, on the 'Plugins > Page 1' tab, the Enable/
+    Disable/Test buttons were broken. Fixed them
+- Fixed some minor problems with Axmud's implementation MXP/MSP protocols. MXP/
+    MSP data sent by The Gathering MUD (tgmud.net 9010, which is not a
+    pre-configured world) now works better. Axmud can optionally accept some
+    types of MXP/MSP data which is, strictly speaking, illegal (this is turned
+    off by default)
+- Tidied up the output of the ';mxp' command
+- After a disconnection, ';listtask' no longer lists tasks that have already
+    shut down
+- About a dozen client commands that could not be used after a disconnection
+    (for example, ';testpattern' and ';listtask'), can now be used
+    
 v1.1.405 (24 Dec 2018)
 --------------------------------------------------------------------------------
 

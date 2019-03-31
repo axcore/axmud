@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -13,7 +13,7 @@
 #
 #
 # Games::Axmud::Obj::Winzone
-# A winzone object marks out an area on the Gtk2::Table used by an 'internal' window as being in use
+# A winzone object marks out an area on the Gtk3::Grid used by an 'internal' window as being in use
 #   by a single widget, and stores the widget type used
 
 { package Games::Axmud::Obj::Winzone;
@@ -33,7 +33,7 @@
 
         # Called by GA::Obj::Winmap->setupStandardWinmap and GA::Cmd::AddWinzone->do
         # Create a new instance of the winzone object, each of which marks out an area of the
-        #   Gtk2::Table used by an 'internal' window as being in use by a table object (inheriting
+        #   Gtk3::Grid used by an 'internal' window as being in use by a table object (inheriting
         #   from GA::Generic::Table), and specifies the type of table object used
         #
         # Expected arguments
@@ -72,7 +72,7 @@
             #   GA::Obj::Winmap->zoneCount) - set by GA::Obj::Winmap->addWinzone when the winzone is
             #   added to the winmap
             number                      => undef,
-            # The package name for the table object handling the Gtk2::Widget in this winzone
+            # The package name for the table object handling the Gtk3::Widget in this winzone
             #   (inherits from GA::Generic::Table)
             packageName                 => undef,
             # An optional name to give to the table object, when it is created. If not specified,
@@ -88,7 +88,7 @@
             #   the key-value pairs in the hash, if there are any
             initHash                    => {},
 
-            # The coordinates of the winzone within the winmap's Gtk2::Table
+            # The coordinates of the winzone within the winmap's Gtk3::Grid
             # Coordinates of the top-left corner (e.g. 0,0)
             left                        => undef,
             top                         => undef,

@@ -1,5 +1,5 @@
-NCPOSR (string, substring)
-NCPOSR (string, substring, n)
+Ncposr (string, substring)
+Ncposr (string, substring, n)
 
    Synopsis:
       Returns the position in the string of the last occurence of any character
@@ -13,8 +13,8 @@ NCPOSR (string, substring, n)
          substring is an empty string but the string isn't, the length of the
          string is returned.
       If the third argument is specified, the search begins at the nth character
-         in the string and proceeds to the left. NCPOSR(string, substring) is
-         interchangeable with NCPOSR(string, substring, length) where 'length'
+         in the string and proceeds to the left. Ncposr (string, substring) is
+         interchangeable with Ncposr (string, substring, length) where 'length'
          is the length of the string. If the substring is empty but the string
          isn't, the starting position is returned.
       If n is not an integer, it is rounded off. An error occurs if n is zero

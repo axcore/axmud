@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -612,7 +612,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ABS (x)
+    # Abs (x)
 
     ##################
     # Methods
@@ -648,7 +648,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ACOS (x)
+    # Acos (x)
 
     ##################
     # Methods
@@ -695,7 +695,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ANGLE (x, y)
+    # Angle (x, y)
 
     ##################
     # Methods
@@ -794,7 +794,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ASC (string)
+    # Asc (string)
 
     ##################
     # Methods
@@ -846,7 +846,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ASIN (x)
+    # Asin (x)
 
     ##################
     # Methods
@@ -893,7 +893,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ATN (x)
+    # Atn (x)
 
     ##################
     # Methods
@@ -940,7 +940,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # CEIL (x)
+    # Ceil (x)
 
     ##################
     # Methods
@@ -976,7 +976,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # COS (x)
+    # Cos (x)
 
     ##################
     # Methods
@@ -1021,7 +1021,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # COSH (x)
+    # Cosh (x)
 
     ##################
     # Methods
@@ -1057,7 +1057,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # COT (x)
+    # Cot (x)
 
     ##################
     # Methods
@@ -1115,8 +1115,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # CPOS (string, substring)
-    # CPOS (string, substring, n)
+    # Cpos (string, substring)
+    # Cpos (string, substring, n)
 
     ##################
     # Methods
@@ -1207,8 +1207,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # CPOSR (string, substring)
-    # CPOSR (string, substring, n)
+    # Cposr (string, substring)
+    # Cposr (string, substring, n)
 
     ##################
     # Methods
@@ -1299,7 +1299,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # CSC (x)
+    # Csc (x)
 
     ##################
     # Methods
@@ -1354,7 +1354,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # DATE ()
+    # Date ()
 
     ##################
     # Methods
@@ -1381,8 +1381,9 @@
             $daylightSavings,
         ) = localtime();
 
-        # Return a value in the form YYDDD
-        return (sprintf("%02d", $yearOffset % 100) . $dayOfYear);
+        # Return a value in the form YYDDD, where YY is in the range 00-99, and DDD is in the
+        #   range 1-365
+        return (sprintf("%02d", $yearOffset % 100) . ($dayOfYear + 1));
     }
 }
 
@@ -1398,7 +1399,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # DEG (x)
+    # Deg (x)
 
     ##################
     # Methods
@@ -1434,7 +1435,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # EOF (channel)
+    # Eof (channel)
 
     ##################
     # Methods
@@ -1482,6 +1483,42 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::epoch;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::epoch::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Epoch ()
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form '')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        return time;
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::exp;
 
     use strict;
@@ -1494,7 +1531,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # EXP (x)
+    # Exp (x)
 
     ##################
     # Methods
@@ -1518,6 +1555,42 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::floor;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::floor::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Floor (x)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        return POSIX::floor($arg);
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::fp;
 
     use strict;
@@ -1530,7 +1603,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # FP (x)
+    # Fp (x)
 
     ##################
     # Methods
@@ -1566,7 +1639,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # INT (number)
+    # Int (number)
 
     ##################
     # Methods
@@ -1606,7 +1679,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # IP (x)
+    # Ip (x)
 
     ##################
     # Methods
@@ -1642,7 +1715,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # LEN (string)
+    # Len (string)
 
     ##################
     # Methods
@@ -1678,7 +1751,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # LOG (x)
+    # Log (x)
 
     ##################
     # Methods
@@ -1714,7 +1787,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # LOG2 (x)
+    # Log2 (x)
 
     ##################
     # Methods
@@ -1750,7 +1823,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # LOG10 (x)
+    # Log10 (x)
 
     ##################
     # Methods
@@ -1786,7 +1859,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # MATCH (string, regex)
+    # Match (string, regex)
 
     ##################
     # Methods
@@ -1831,7 +1904,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # MATCHI (string, regex)
+    # Matchi (string, regex)
 
     ##################
     # Methods
@@ -1876,7 +1949,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # MAX (x, y)
+    # Max (x, y)
 
     ##################
     # Methods
@@ -1916,7 +1989,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # MIN (x, y)
+    # Min (x, y)
 
     ##################
     # Methods
@@ -1956,7 +2029,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # MOD (x, y)
+    # Mod (x, y)
 
     ##################
     # Methods
@@ -1994,8 +2067,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # NCPOS (string, substring)
-    # NCPOS (string, substring, n)
+    # Ncpos (string, substring)
+    # Ncpos (string, substring, n)
 
     ##################
     # Methods
@@ -2014,10 +2087,7 @@
         my ($self, $string, $subString, $posn) = @_;
 
         # Local variables
-        my (
-            $result,
-            @charList,
-        );
+        my @charList;
 
         # (No improper arguments to check)
 
@@ -2068,9 +2138,7 @@
         @charList = split(//, $string);
         for (my $count = $posn; $count < length $string; $count++) {
 
-            $result = index($subString, $charList[$count]);
-
-            if ($result == -1) {
+            if (index($subString, $charList[$count]) == -1) {
 
                 # The character doesn't appear in the substring
                 return ($count + 1);
@@ -2094,8 +2162,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # NCPOSR (string, substring)
-    # NCPOSR (string, substring, n)
+    # Ncposr (string, substring)
+    # Ncposr (string, substring, n)
 
     ##################
     # Methods
@@ -2114,10 +2182,7 @@
         my ($self, $string, $subString, $posn) = @_;
 
         # Local variables
-        my  (
-            $result,
-            @charList,
-        );
+        my @charList;
 
         # (No improper arguments to check)
 
@@ -2178,9 +2243,7 @@
         @charList = split(//, $string);
         for (my $count = $posn; $count >= 0; $count--) {
 
-            $result = index($subString, $charList[$count]);
-
-            if ($result == -1) {
+            if (index($subString, $charList[$count]) == -1) {
 
                 # The character doesn't appear in the substring
                 return ($count + 1);
@@ -2204,7 +2267,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # PI ()
+    # Pi ()
 
     ##################
     # Methods
@@ -2240,8 +2303,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # POS (string, substring)
-    # POS (string, substring, n)
+    # Pos (string, substring)
+    # Pos (string, substring, n)
 
     ##################
     # Methods
@@ -2340,8 +2403,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # POSR (string, substring)
-    # POSR (string, substring, n)
+    # Posr (string, substring)
+    # Posr (string, substring, n)
 
     ##################
     # Methods
@@ -2436,7 +2499,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # RAD (x)
+    # Rad (x)
 
     ##################
     # Methods
@@ -2472,7 +2535,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # REMAINDER (x, y)
+    # Remainder (x, y)
 
     ##################
     # Methods
@@ -2508,7 +2571,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # RND (n)
+    # Rnd (n)
 
     ##################
     # Methods
@@ -2547,8 +2610,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ROUND (x)
-    # ROUND (x, n)
+    # Round (x)
+    # Round (x, n)
 
     ##################
     # Methods
@@ -2596,7 +2659,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SEC (x)
+    # Sec (x)
 
     ##################
     # Methods
@@ -2662,7 +2725,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SGN (x)
+    # Sgn (x)
 
     ##################
     # Methods
@@ -2704,7 +2767,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SIN (x)
+    # Sin (x)
 
     ##################
     # Methods
@@ -2749,7 +2812,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SINH (x)
+    # Sinh (x)
 
     ##################
     # Methods
@@ -2785,7 +2848,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SQR (x)
+    # Sqr (x)
 
     ##################
     # Methods
@@ -2833,7 +2896,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # TAN (x)
+    # Tan (x)
 
     ##################
     # Methods
@@ -2896,7 +2959,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # TANH (x)
+    # Tanh (x)
 
     ##################
     # Methods
@@ -2955,7 +3018,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # TESTPAT (regex)
+    # Testpat (regex)
 
     ##################
     # Methods
@@ -2999,7 +3062,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # TIME
+    # Time
 
     ##################
     # Methods
@@ -3040,8 +3103,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # TRUNC (x)
-    # TRUNC (x, n)
+    # Trunc (x)
+    # Trunc (x, n)
 
     ##################
     # Methods
@@ -3108,7 +3171,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # VAL (string)
+    # Val (string)
 
     ##################
     # Methods
@@ -3128,7 +3191,11 @@
         # (No improper arguments to check)
 
         # Evaluate the function and return the value
-        return ($arg + 0);
+        if (! $axmud::CLIENT->floatCheck($arg)) {
+            return 0;
+        } else {
+            return ($arg + 0);
+        }
     }
 }
 
@@ -3144,7 +3211,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # VERSION
+    # Version
 
     ##################
     # Methods
@@ -3182,7 +3249,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # CHR$ (number)
+    # Chr$ (number)
 
     ##################
     # Methods
@@ -3229,7 +3296,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # DATE$ ()
+    # Date$ ()
 
     ##################
     # Methods
@@ -3275,7 +3342,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # IP$ ()
+    # Ip$ ()
 
     ##################
     # Methods
@@ -3320,7 +3387,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # LCASE$ (string)
+    # Lcase$ (string)
 
     ##################
     # Methods
@@ -3344,6 +3411,57 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::String::left;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::left::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # Left$ (string, length)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'SN')
+        #
+        # Expected arguments
+        #   @args   - The list of arguments supplied to the function
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, @args) = @_;
+
+        # Local variables
+        my ($string, $length);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        ($string, $length) = @args;
+
+        # The value of $length can be 0 (which returns an empty string), but cannot be negative
+        if ($length < 0) {
+
+            return $self->scriptObj->setError(
+                'number_NUM_out_of_range',
+                $self->_objClass . '->evaluate',
+                'NUM', $length,
+            );
+        }
+
+        return substr($string, 0, $length);
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::String::ltrim;
 
     use strict;
@@ -3356,7 +3474,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # LTRIM$ (string)
+    # Ltrim$ (string)
 
     ##################
     # Methods
@@ -3394,8 +3512,8 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # MID$ (string, offset)
-    # MID$ (string, offset, length)
+    # Mid$ (string, offset)
+    # Mid$ (string, offset, length)
 
     ##################
     # Methods
@@ -3419,6 +3537,26 @@
 
         # Evaluate the function and return the value
         ($string, $index, $length) = @args;
+
+        # $index must be 1 or more. $length can be (which returns an empty string), but cannot be
+        #   negative
+        if ($index < 1) {
+
+            return $self->scriptObj->setError(
+                'number_NUM_out_of_range',
+                $self->_objClass . '->evaluate',
+                'NUM', $index,
+            );
+
+        } elsif ($length < 0) {
+
+            return $self->scriptObj->setError(
+                'number_NUM_out_of_range',
+                $self->_objClass . '->evaluate',
+                'NUM', $length,
+            );
+        }
+
         # Axbasic strings index from 1
         $index--;
 
@@ -3442,7 +3580,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # REPEAT$ (string, n)
+    # Repeat$ (string, n)
 
     ##################
     # Methods
@@ -3485,6 +3623,57 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::String::right;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::right::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # Right$ (string, length)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'SN')
+        #
+        # Expected arguments
+        #   @args   - The list of arguments supplied to the function
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, @args) = @_;
+
+        # Local variables
+        my ($string, $length);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        ($string, $length) = @args;
+
+        # The value of $length can be 0 (which returns an empty string), but cannot be negative
+        if ($length < 0) {
+
+            return $self->scriptObj->setError(
+                'number_NUM_out_of_range',
+                $self->_objClass . '->evaluate',
+                'NUM', $length,
+            );
+        }
+
+        return substr($string, ($length * -1));
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::String::rtrim;
 
     use strict;
@@ -3497,7 +3686,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # RTRIM$ (string)
+    # Rtrim$ (string)
 
     ##################
     # Methods
@@ -3535,7 +3724,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # STR$ (number)
+    # Str$ (number)
 
     ##################
     # Methods
@@ -3571,7 +3760,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # TESTPAT$ (regex)
+    # Testpat$ (regex)
 
     ##################
     # Methods
@@ -3617,7 +3806,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # TIME$ ()
+    # Time$ ()
 
     ##################
     # Methods
@@ -3662,7 +3851,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # TRIM$ (string)
+    # Trim$ (string)
 
     ##################
     # Methods
@@ -3701,7 +3890,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # UCASE$ (string)
+    # Ucase$ (string)
 
     ##################
     # Methods
@@ -3739,7 +3928,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ADDFIRSTROOM ()
+    # Addfirstroom ()
 
     ##################
     # Methods
@@ -3797,7 +3986,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ADDLABEL (string, x, y, z)
+    # Addlabel (string, x, y, z)
 
     ##################
     # Methods
@@ -3882,7 +4071,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ADDREGION (string)
+    # Addregion (string)
 
     ##################
     # Methods
@@ -3931,7 +4120,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ADDROOM (x, y, z)
+    # Addroom (x, y, z)
 
     ##################
     # Methods
@@ -4015,8 +4204,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ADDTEMPREGION ()
-    # ADDTEMPREGION (string)
+    # Addtempregion ()
+    # Addtempregion (string)
 
     ##################
     # Methods
@@ -4112,7 +4301,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # CLOSEMAP ()
+    # Closemap ()
 
     ##################
     # Methods
@@ -4172,7 +4361,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # COUNTTASK (string)
+    # Counttask (string)
 
     ##################
     # Methods
@@ -4219,7 +4408,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # DELREGION (string)
+    # Delregion (string)
 
     ##################
     # Methods
@@ -4286,7 +4475,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # DELTEMPREGIONS ()
+    # Deltempregions ()
 
     ##################
     # Methods
@@ -4331,7 +4520,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETEXITDEST (number)
+    # Getexitdest (number)
 
     ##################
     # Methods
@@ -4409,7 +4598,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETEXITNUM (number)
+    # Getexitnum (number)
 
     ##################
     # Methods
@@ -4478,7 +4667,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETEXITTWIN (number)
+    # Getexittwin (number)
 
     ##################
     # Methods
@@ -4556,7 +4745,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETLOSTROOM ()
+    # Getlostroom ()
 
     ##################
     # Methods
@@ -4605,7 +4794,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETOBJECTALIVE (number)
+    # Getobjectalive (number)
 
     ##################
     # Methods
@@ -4674,7 +4863,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETOBJECTCOUNT (number)
+    # Getobjectcount (number)
 
     ##################
     # Methods
@@ -4747,7 +4936,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETREGIONNUM ()
+    # Getregionnum ()
 
     ##################
     # Methods
@@ -4796,7 +4985,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETROOMEXITS ()
+    # Getroomexits ()
 
     ##################
     # Methods
@@ -4845,7 +5034,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETROOMNUM ()
+    # Getroomnum ()
 
     ##################
     # Methods
@@ -4895,8 +5084,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # GETROOMOBJECTS ()
-    # GETROOMOBJECTS (string)
+    # Getroomobjects ()
+    # Getroomobjects (string)
 
     ##################
     # Methods
@@ -4994,7 +5183,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # IFACECOUNT ()
+    # Ifacecount ()
 
     ##################
     # Methods
@@ -5032,7 +5221,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # IFACENUM ()
+    # Ifacenum ()
 
     ##################
     # Methods
@@ -5086,7 +5275,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # IFACEPOS ()
+    # Ifacepos ()
 
     ##################
     # Methods
@@ -5126,7 +5315,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # IFACESTRINGS ()
+    # Ifacestrings ()
 
     ##################
     # Methods
@@ -5180,7 +5369,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # IFACETIME ()
+    # Ifacetime ()
 
     ##################
     # Methods
@@ -5234,7 +5423,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ISMAP
+    # Ismap
 
     ##################
     # Methods
@@ -5281,7 +5470,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ISSCRIPT (string)
+    # Isscript (string)
 
     ##################
     # Methods
@@ -5333,7 +5522,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ISTASK ()
+    # Istask ()
 
     ##################
     # Methods
@@ -5380,7 +5569,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # ISWIN ()
+    # Iswin ()
 
     ##################
     # Methods
@@ -5427,7 +5616,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # OPENMAP ()
+    # Openmap ()
 
     ##################
     # Methods
@@ -5482,7 +5671,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SETLIGHT (string)
+    # Setlight (string)
 
     ##################
     # Methods
@@ -5534,7 +5723,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SETMAPMODE (string)
+    # Setmapmode (string)
 
     ##################
     # Methods
@@ -5599,7 +5788,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SETREGION (string)
+    # Setregion (string)
 
     ##################
     # Methods
@@ -5653,7 +5842,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SETREGIONNUM (number)
+    # Setregionnum (number)
 
     ##################
     # Methods
@@ -5716,8 +5905,8 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SETROOMNUM ()
-    # SETROOMNUM (number)
+    # Setroomnum ()
+    # Setroomnum (number)
 
     ##################
     # Methods
@@ -5801,7 +5990,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # SETROOMTAGGED (string)
+    # Setroomtagged (string)
 
     ##################
     # Methods
@@ -5879,51 +6068,6 @@
     }
 }
 
-{ package Language::Axbasic::Function::Intrinsic::Numeric::showprofile;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    @Language::Axbasic::Function::Intrinsic::Numeric::showprofile::ISA = qw(
-        Language::Axbasic::Function::Intrinsic::Numeric
-    );
-
-    # SHOWPROFILE ()
-
-    ##################
-    # Methods
-
-    sub evaluate {
-
-        # Called by LA::Expression::Function->evaluate (using arguments in the form '')
-        #
-        # Expected arguments
-        #   $arg    - The first (and only) argument in the argument list
-        #
-        # Return values
-        #   The return value of the function
-
-        my ($self, $arg) = @_;
-
-        # (No improper arguments to check)
-
-        # Evaluate the function and return the value
-
-        # A value of 'undef' means 'use the current world'
-        if (! defined $self->scriptObj->useProfile) {
-
-            return $self->scriptObj->session->currentWorld->name;
-
-        } else {
-
-            return $self->scriptObj->useProfile;
-        }
-    }
-}
-
 { package Language::Axbasic::Function::Intrinsic::Numeric::timestamp;
 
     use strict;
@@ -5936,7 +6080,7 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # TIMESTAMP ()
+    # Timestamp ()
 
     ##################
     # Methods
@@ -5953,15 +6097,10 @@
 
         my ($self, $arg) = @_;
 
-        # Local variables
-        my $session;
-
         # (No improper arguments to check)
 
         # Evaluate the function and return the value
-        $session = $self->scriptObj->session;
-
-        return (int($session->sessionLoopObj->spinTime - $session->sessionLoopObj->startTime));
+        return int($self->scriptObj->session->sessionLoopObj->spinTime);
     }
 }
 
@@ -5979,7 +6118,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # ABBREVDIR$ ()
+    # Abbrevdir$ ()
 
     ##################
     # Methods
@@ -6015,7 +6154,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # CLIENTDATE$ ()
+    # Clientdate$ ()
 
     ##################
     # Methods
@@ -6051,7 +6190,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # CLIENTNAME$ ()
+    # Clientname$ ()
 
     ##################
     # Methods
@@ -6087,7 +6226,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # CLIENTVERSION$ ()
+    # Clientversion$ ()
 
     ##################
     # Methods
@@ -6123,7 +6262,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # FINDTASK$ (string)
+    # Findtask$ (string)
 
     ##################
     # Methods
@@ -6183,7 +6322,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETEXIT$ (number)
+    # Getexit$ (number)
 
     ##################
     # Methods
@@ -6241,7 +6380,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETEXITDRAWN$ (number)
+    # Getexitdrawn$ (number)
 
     ##################
     # Methods
@@ -6320,7 +6459,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETEXITSTATUS$ (number)
+    # Getexitstatus$ (number)
 
     ##################
     # Methods
@@ -6400,7 +6539,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETEXITTYPE$ (number)
+    # Getexittype$ (number)
 
     ##################
     # Methods
@@ -6505,7 +6644,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETLIGHT$ ()
+    # Getlight$ ()
 
     ##################
     # Methods
@@ -6541,7 +6680,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETMAPMODE$ ()
+    # Getmapmode$ ()
 
     ##################
     # Methods
@@ -6591,7 +6730,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETOBJECT$ (number)
+    # Getobject$ (number)
 
     ##################
     # Methods
@@ -6661,7 +6800,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETOBJECTNOUN$ (number)
+    # Getobjectnoun$ (number)
 
     ##################
     # Methods
@@ -6731,7 +6870,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETOBJECTTYPE$ (number)
+    # Getobjecttype$ (number)
 
     ##################
     # Methods
@@ -6801,7 +6940,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETREGION$ ()
+    # Getregion$ ()
 
     ##################
     # Methods
@@ -6850,8 +6989,8 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETROOMDESCRIP$ ()
-    # GETROOMDESCRIP$ (string)
+    # Getroomdescrip$ ()
+    # Getroomdescrip$ (string)
 
     ##################
     # Methods
@@ -6913,7 +7052,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETROOMGUILD$ ()
+    # Getroomguild$ ()
 
     ##################
     # Methods
@@ -6963,7 +7102,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETROOMSOURCE$ ()
+    # Getroomsource$ ()
 
     ##################
     # Methods
@@ -7020,7 +7159,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETROOMTAG$ ()
+    # Getroomtag$ ()
 
     ##################
     # Methods
@@ -7070,7 +7209,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # GETROOMTITLE$ ()
+    # Getroomtitle$ ()
 
     ##################
     # Methods
@@ -7122,7 +7261,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # IFACE$ ()
+    # Iface$ ()
 
     ##################
     # Methods
@@ -7168,7 +7307,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # IFACENAME$ ()
+    # Ifacename$ ()
 
     ##################
     # Methods
@@ -7222,7 +7361,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # IFACEPOP$ ()
+    # Ifacepop$ ()
 
     ##################
     # Methods
@@ -7284,7 +7423,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # IFACESHIFT$ ()
+    # Ifaceshift$ ()
 
     ##################
     # Methods
@@ -7346,7 +7485,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # IFACETEXT$ ()
+    # Ifacetext$ ()
 
     ##################
     # Methods
@@ -7400,7 +7539,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # IFACETYPE$ ()
+    # Ifacetype$ ()
 
     ##################
     # Methods
@@ -7454,7 +7593,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # POPUP$ (type, text, response)
+    # Popup$ (type, text, response)
 
     ##################
     # Methods
@@ -7528,7 +7667,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # SCRIPTNAME$ ()
+    # Scriptname$ ()
 
     ##################
     # Methods
@@ -7555,6 +7694,51 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::String::showprofile;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::showprofile::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # Showprofile$ ()
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form '')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+
+        # A value of 'undef' means 'use the current world'
+        if (! defined $self->scriptObj->useProfile) {
+
+            return $self->scriptObj->session->currentWorld->name;
+
+        } else {
+
+            return $self->scriptObj->useProfile;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::String::unabbrevdir;
 
     use strict;
@@ -7567,7 +7751,7 @@
         Language::Axbasic::Function::Intrinsic::String
     );
 
-    # UNABBREVDIR$ ()
+    # Unabbrevdir$ ()
 
     ##################
     # Methods

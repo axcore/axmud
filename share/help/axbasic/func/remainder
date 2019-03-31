@@ -1,7 +1,7 @@
-REMAINDER (x, y)
+Remainder (x, y)
 
    Synopsis:
       Returns the remainder when x is divided by y
 
    Notes:
-      The MOD and REMAINDER functions are identical.
+      The Mod () and Remainder () functions are identical.

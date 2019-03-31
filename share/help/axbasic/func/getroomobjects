@@ -1,5 +1,5 @@
-GETROOMOBJECTS ()
-GETROOMOBJECTS (string)
+Getroomobjects ()
+Getroomobjects (string)
 
    Synopsis:
       Returns the number of objects in the Locator task's current location

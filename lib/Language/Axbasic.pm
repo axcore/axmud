@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -931,25 +931,25 @@
             'addstatus', 'addtimer', 'addtrig', 'angle', 'array', 'beep', 'begin', 'break',
             'bypass', 'call', 'case', 'client', 'cls', 'close', 'closewin', 'create', 'data',
             'debug', 'def', 'degrees', 'delalias', 'delgauge', 'delhook', 'deliface', 'delmacro',
-            'delstatus', 'deltimer', 'deltrig', 'dim', 'divert', 'do', 'else', 'emptywin', 'end',
-            'erase', 'error', 'exit', 'flashwin', 'for', 'global', 'gosub', 'goto', 'help', 'if',
-            'input', 'let', 'local', 'login', 'loop', 'multi', 'move', 'name', 'needtask', 'new',
-            'newold', 'next', 'nextiface', 'nolet', 'numeric', 'old', 'on', 'open', 'openentry',
-            'openwin', 'option', 'org', 'organization', 'outin', 'output', 'paintwin', 'pause',
-            'peek', 'peekequals', 'peekexists', 'peekfind', 'peekfirst', 'peekget', 'peekindex',
-            'peekkeys', 'peeklast', 'peekmatch', 'peeknumber', 'peekpairs', 'peekpop', 'peekshift',
-            'peekshow', 'peekvalues', 'perl', 'persist', 'play',  'poke', 'pokeadd', 'pokedec',
-            'pokedechash', 'pokedelete', 'pokedivide', 'pokeempty', 'pokefalse', 'pokeinc',
-            'pokeinchash', 'pokeint', 'pokeminus', 'pokemultiply', 'pokeplus', 'pokepush',
-            'pokereplace', 'pokeset', 'poketrue', 'pokeundef', 'pokeunshift', 'print', 'profile',
-            'pseudo', 'radians', 'read', 'redim', 'relay', 'rem',  'require', 'reset', 'restore',
-            'return', 'revpath', 'select', 'send', 'setgauge', 'setstatus', 'settrig', 'skipiface',
-            'sleep', 'sort', 'sortcase', 'sortcaser', 'sortr', 'speak', 'speed', 'step', 'stop',
-            'string', 'sub', 'text', 'titlewin', 'then', 'to', 'typo', 'unflashwin', 'until',
-            'waitactive', 'waitalive', 'waitarrive', 'waitdead', 'waitep', 'waitgp', 'waithp',
-            'waitmp', 'waitnextxp', 'waitnotactive', 'waitpassout', 'waitscript', 'waitsleep',
-            'waitsp', 'waittask', 'waittotalxp', 'waittrig', 'waitxp', 'warning', 'while', 'write',
-            'writewin',
+            'delstatus', 'deltimer', 'deltrig', 'dim', 'do', 'else', 'emptywin', 'end', 'erase',
+            'error', 'exit', 'flashwin', 'for', 'global', 'gosub', 'goto', 'help', 'if', 'input',
+            'let', 'local', 'login', 'loop', 'multi', 'move', 'name', 'needtask', 'new', 'newold',
+            'next', 'nextiface', 'nolet', 'numeric', 'old', 'on', 'open', 'openentry', 'openwin',
+            'option', 'org', 'organization', 'outin', 'output', 'paintwin', 'pause', 'peek',
+            'peekequals', 'peekexists', 'peekfind', 'peekfirst', 'peekget', 'peekindex', 'peekkeys',
+            'peeklast', 'peekmatch', 'peeknumber', 'peekpairs', 'peekshow', 'peekvalues', 'perl',
+            'persist', 'play',  'poke', 'pokeadd', 'pokedec', 'pokedechash', 'pokedelete',
+            'pokedivide', 'pokeempty', 'pokefalse', 'pokeinc', 'pokeinchash', 'pokeint',
+            'pokeminus', 'pokemultiply', 'pokeplus', 'pokepop', 'pokepush', 'pokereplace',
+            'pokeset', 'pokeshift', 'poketrue', 'pokeundef', 'pokeunshift', 'print', 'profile',
+            'pseudo', 'radians', 'randomize', 'read', 'redim', 'redirect', 'relay', 'rem',
+            'require', 'reset', 'restore', 'return', 'revpath', 'select', 'send', 'setgauge',
+            'setstatus', 'settrig', 'skipiface', 'sleep', 'sort', 'sortcase', 'sortcaser', 'sortr',
+            'speak', 'speed', 'step', 'stop', 'string', 'sub', 'text', 'titlewin', 'then', 'to',
+            'typo', 'unflashwin', 'until', 'waitactive', 'waitalive', 'waitarrive', 'waitdead',
+            'waitep', 'waitgp', 'waithp', 'waitmp', 'waitnextxp', 'waitnotactive', 'waitpassout',
+            'waitscript', 'waitsleep', 'waitsp', 'waittask', 'waittotalxp', 'waittrig', 'waitxp',
+            'warning', 'while', 'write', 'writewin',
         );
 
         foreach my $keyword (@keywordList) {
@@ -1043,11 +1043,11 @@
             # A list of keywords used to set/fetch Axmud's internal variables
             peekPokeList                => [
                 'peek', 'peekequals', 'peekexists', 'peekfind', 'peekfirst', 'peekget', 'peekindex',
-                'peekkeys', 'peeklast', 'peekmatch', 'peeknumber', 'peekpairs', 'peekpop',
-                'peekshift', 'peekshow', 'peekvalues', 'poke', 'pokeadd', 'pokedec', 'pokedechash',
-                'pokedelete', 'pokedivide', 'pokeempty', 'pokefalse', 'pokeinc', 'pokeinchash',
-                'pokeint', 'pokeminus', 'pokemultiply', 'pokeplus', 'pokepush', 'pokereplace',
-                'pokeset', 'poketrue', 'pokeundef', 'pokeunshift',
+                'peekkeys', 'peeklast', 'peekmatch', 'peeknumber', 'peekpairs', 'peekshow',
+                'peekvalues', 'poke', 'pokeadd', 'pokedec', 'pokedechash', 'pokedelete',
+                'pokedivide', 'pokeempty', 'pokefalse', 'pokeinc', 'pokeinchash', 'pokeint',
+                'pokeminus', 'pokemultiply', 'pokeplus', 'pokepop', 'pokepush', 'pokereplace',
+                'pokeset', 'pokeshift', 'poketrue', 'pokeundef', 'pokeunshift',
             ],
             # A hash of keywords that can't begin a statement. The keys in the hash are the keywords
             #   themselves; the corresponding values are keywords which can begin a statement. When
@@ -1060,7 +1060,6 @@
                 'begin'                 => 'reset',
                 'create'                => 'open',
                 'degrees'               => 'option',
-                'divert'                => 'option',
                 'name'                  => 'open',
                 'needtask'              => 'option',
                 'new'                   => 'open',
@@ -1075,6 +1074,7 @@
                 'persist'               => 'option',
                 'pseudo'                => 'option',
                 'radians'               => 'option',
+                'redirect'              => 'option',
                 'require'               => 'option',
                 'step'                  => 'for',
                 'string'                => 'sub',
@@ -1099,16 +1099,16 @@
                 'delstatus', 'deltimer', 'deltrig', 'emptywin', 'error', 'flashwin', 'login',
                 'move', 'multi', 'nextiface', 'openentry', 'openwin', 'paintwin', 'pause', 'peek',
                 'peekequals', 'peekexists', 'peekfind', 'peekfirst', 'peekget', 'peekindex',
-                'peekkeys', 'peeklast', 'peekmatch', 'peeknumber', 'peekpairs', 'peekpop',
-                'peekshift', 'peekshow', 'peekvalues', 'perl', 'play', 'poke', 'pokeadd', 'pokedec',
-                'pokedechash', 'pokedelete', 'pokedivide', 'pokeempty', 'pokefalse', 'pokeinc',
-                'pokeinchash', 'pokeint', 'pokeminus', 'pokemultiply', 'pokeplus', 'pokepush',
-                'pokereplace', 'pokeset', 'poketrue', 'pokeundef', 'pokeunshift', 'profile',
-                'relay', 'revpath', 'send', 'setgauge', 'setstatus', 'settrig', 'skipiface',
-                'sleep', 'speak', 'speed', 'titlewin', 'unflashwin', 'waitactive', 'waitalive',
-                'waitarrive', 'waitdead', 'waitep', 'waitgp', 'waithp', 'waitmp', 'waitnextxp',
-                'waitpassout', 'waitscript', 'waitsleep', 'waitsp', 'waittask', 'waittotalxp',
-                'waittrig', 'waitxp', 'warning', 'write', 'writewin',
+                'peekkeys', 'peeklast', 'peekmatch', 'peeknumber', 'peekpairs', 'peekshow',
+                'peekvalues', 'perl', 'play', 'poke', 'pokeadd', 'pokedec', 'pokedechash',
+                'pokedelete', 'pokedivide', 'pokeempty', 'pokefalse', 'pokeinc', 'pokeinchash',
+                'pokeint', 'pokeminus', 'pokemultiply', 'pokeplus', 'pokepop', 'pokepush',
+                'pokereplace', 'pokeset', 'pokeshift', 'poketrue', 'pokeundef', 'pokeunshift',
+                'profile', 'relay', 'revpath', 'send', 'setgauge', 'setstatus', 'settrig',
+                'skipiface', 'sleep', 'speak', 'speed', 'titlewin', 'unflashwin', 'waitactive',
+                'waitalive', 'waitarrive', 'waitdead', 'waitep', 'waitgp', 'waithp', 'waitmp',
+                'waitnextxp', 'waitpassout', 'waitscript', 'waitsleep', 'waitsp', 'waittask',
+                'waittotalxp', 'waittrig', 'waitxp', 'warning', 'write', 'writewin',
             ],
             # A list of keywords that are ignored when the Axbasic script isn't being run from
             #   within a task
@@ -1138,9 +1138,9 @@
                 'right_paren'           => '\\)',
                 'file_channel'          => '\#[0-9]+\s*\:?',
                 'separator'             => '[,;]' ,
-                'arithmetic_operator'   => '[-+]',
+                'arithmetic_operator'   => '[-+&]',
                 'multiplicative_operator'
-                                        => '[*/]',
+                                        => '[*/\^]',
                 'relational_operator'   => '<[=>]?|>=?|=',
                 'assignment_operator'   => '=',
                 'statement_end'         =>  ':',
@@ -1311,7 +1311,9 @@
                 'date'                  => '',
                 'deg'                   => 'N',
                 'eof'                   => 'N',
+                'epoch'                 => '',
                 'exp'                   => 'N',
+                'floor'                 => 'N',
                 'fp'                    => 'N',
                 'int'                   => 'N',
                 'ip'                    => 'N',
@@ -1350,9 +1352,11 @@
                 'date$'                 => '',
                 'ip$'                   => '',
                 'lcase$'                => 'S',
+                'left$'                 => 'SN',
                 'ltrim$'                => 'S',
                 'mid$'                  => 'SN;N',
                 'repeat$'               => 'SN',
+                'right$'                => 'SN',
                 'rtrim$'                => 'S',
                 'str$'                  => 'N',
                 'testpat$'              => 'S',
@@ -1395,7 +1399,6 @@
                 'setregionnum'          => 'N',
                 'setroomnum'            => ';N',
                 'setroomtagged'         => ';S',
-                'showprofile'           => '',
                 'timestamp'             => '',
                 # Axmud-dependent functions (returning a string value)
                 'abbrevdir$'            => 'S',
@@ -1426,6 +1429,7 @@
                 'ifacepop$'             => '',
                 'popup$'                => 'SSS',
                 'scriptname$'           => '',
+                'showprofile$'          => '',
                 'unabbrevdir$'          => 'S',
             },
             # While parsing the script (in $self->parse), we need to keep track of whether the line
@@ -1488,11 +1492,6 @@
             #       - Specifies the type of angle measure used with trigonometric and graphics
             #           functions
             #
-            #   divert      FALSE (default) / TRUE
-            #
-            #       - If task window is not open, WRITEWIN statements divert their output to the
-            #           'main' window
-            #
             #   needtask    FALSE (default) / TRUE
             #
             #       - Script refuses to run without a parent task, if TRUE
@@ -1510,6 +1509,11 @@
             #
             #       - Sets ->pseudoCmdMode (so value in ->optionStatementHash not used)
             #
+            #   redirect    FALSE (default) / TRUE
+            #
+            #       - If task window is not open, WRITEWIN statements redirect their output to the
+            #           'main' window
+            #
             #   require     0 / float (e.g. 1.0)
             #
             #       - Script refuses to run unless global variable $BASIC_VERSION >= float
@@ -1520,11 +1524,11 @@
             #           scripts with line numbers
             optionStatementHash         => {
                 'angle'                 => 'radians',
-                'divert'                => FALSE,
                 'needtask'              => FALSE,
                 'nolet'                 => FALSE,
                 'persist'               => FALSE,
                 'pseudo'                => 'hide_complete',   # If changed, also set ->pseudoCmdMode
+                'redirect'              => FALSE,
                 'require'               => 0,
                 'typo'                  => FALSE,
             },
@@ -1540,10 +1544,10 @@
             # Flag set to TRUE when the parent task's own ->forcedWinFlag is set to TRUE (set to
             #   FALSE otherwise)
             # In 'forced window' mode, the task opens an 'entry' task window before starting to
-            #   execute the script. This script then diverts the output from PRINT statements to the
-            #   task window. This allows the user to run old BASIC scripts - which obviously don't
-            #   know how to open Axmud task windows - in their own window, away from the 'main'
-            #   window
+            #   execute the script. This script then redirects the output from PRINT statements to
+            #   the task window. This allows the user to run old BASIC scripts - which obviously
+            #   don't know how to open Axmud task windows - in their own window, away from the
+            #   'main' window
             forcedWinFlag               => FALSE,
             # All Axbasic scripts must have one, and only one, END statement. When
             #   LA::Statement::end->parse() is run, it checks that this IV is FALSE. If so, it is
@@ -1615,7 +1619,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($lineObj, $mainSubObj, $result);
+        my ($lineObj, $mainSubObj);
 
         # Check for improper arguments
         if (defined $check) {
@@ -1676,8 +1680,7 @@
             }
 
             # Parse the line
-            $result = $lineObj->parse();
-            if ($self->executionStatus eq 'finished' || ! defined $result) {
+            if ($self->executionStatus eq 'finished' || ! defined $lineObj->parse()) {
 
                 # Execution has halted, either because the script has finished, or because of an
                 #   error
@@ -2082,18 +2085,20 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEndStatements', @_);
         }
 
-        if ($self->endStatementFlag) {
-
-            return 1;
-
-        } elsif (! $self->endStatementFlag) {
+        if (! $self->endStatementFlag) {
 
             # Because the call to this function might be the last thing that $self->parse does, if
-            #   there's an error, we have to use the Axmud error function
-            return $self->setError(
+            #   there's an error, we have to call ->terminateExecution ourselves
+            $self->setError(
                 'Axbasic script does not contain an END statement',
                 $self->_objClass . '->checkEndStatements',
             );
+
+            return $self->terminateExecution();
+
+        } else {
+
+            return 1;
         }
     }
 
@@ -3919,7 +3924,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($token, $result);
+        my $token;
 
         # Check for improper arguments
         if (defined $check) {
@@ -3935,9 +3940,17 @@
                 return undef;
             }
 
-            $result = $token->extract();
+            if (! $token->extract()) {
 
-            if (defined $result) {
+                # An invalid token, like 'string' instead of "string"
+                return $self->scriptObj->setError(
+                    'syntax_error',
+                    $self->_objClass . '->lex',
+                );
+
+                return undef;
+
+            } else {
 
                 if ($token->category eq 'short_comment') {
 
@@ -3955,8 +3968,8 @@
                 }
             }
 
-        # Continue until there is no text left, or the remaining text doesn't contain a token
-        } until (! defined $result || ! $self->text || $token->category eq 'short_comment');
+        # Continue until there are no tokens left
+        } until (! $self->text || $token->category eq 'short_comment');
 
         return 1;
     }
@@ -4368,7 +4381,7 @@
         #   'identifier' matches nearly all alphanumeric text)
         OUTER: foreach my $category ($self->scriptObj->categoryList) {
 
-            my ($regex, $tokenText);
+            my ($regex, $origSpace, $tokenText);
 
             if (! $self->scriptObj->ivExists('regexHash', $category)) {
 
@@ -4383,26 +4396,27 @@
             if ($text =~ s/^(\s*)($regex)//) {
 
                 # Found a token matching $category
+                $origSpace = $1;
+                $tokenText = $2;
 
-#               # v1.0.359 - 'short_comment' tokens are now created; it's up to the calling function
-#               # to ignore them
-#                if ($category eq 'short_comment') {
-#
-#                    # This token, and the rest of the line, is a comment. Behave as though no token
-#                    #   was found
-#                    return undef;
-#                }
+                # (Special case: PRINT$ can be used as a variable, but PRINT obviously cannot.
+                #   The $regex picks up the PRINT portion of PRINT$ as a keyword, so we need to
+                #   convert it)
+                if ($category eq 'keyword' && $text =~ s/^\$//) {
 
-                # Otherwise, store details of the token in this object's IVs
-                $self->ivPoke('origTokenText', $1 . $2);
-                $self->ivPoke('leadSpace', $1);
-
-                if ($category eq 'string_constant') {
-                    $tokenText = $2;
-                } else {
-                    $tokenText = lc($2)
+                    $category = 'identifier';
+                    $tokenText .= '$';
                 }
 
+                # Most tokens are case-insensitive
+                if ($category ne 'string_constant') {
+
+                    $tokenText = lc($tokenText);
+                }
+
+                # Store details of the token in this object's IVs
+                $self->ivPoke('origTokenText', $origSpace . $tokenText);
+                $self->ivPoke('leadSpace', $origSpace);
                 $self->ivPoke('tokenText', $tokenText);
                 $self->ivPoke('category', $category);
                 $self->ivPoke('remainText', $text);

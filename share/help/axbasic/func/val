@@ -1,7 +1,10 @@
-VAL (string)
+Val (string)
 
    Synopsis:
-      Converts a numeric variable into a string variable
+      Converts a string variable into a numeric variable
 
+   Notes:
+      Returns 0 if the string isn't a numeric value.
+         
    Examples:
-      VAL ("65") returns 65.
+      Val ("65") returns 65.

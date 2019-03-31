@@ -1,4 +1,4 @@
-GETROOMEXITS ()
+Getroomexits ()
 
    Synopsis:
       Returns the number of exits in the automapper's current room

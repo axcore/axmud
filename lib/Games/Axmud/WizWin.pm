@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -71,12 +71,6 @@
             %configHash,
         ) = @_;
 
-        # Local variables
-        my (
-            @pageList,
-            %taskSettingHash,
-        );
-
         # Check for improper arguments
         if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
 
@@ -93,43 +87,6 @@
         if (! $title) {
 
             $title = $axmud::SCRIPT . ' setup wizard';
-        }
-
-        # Initial settings for some IVs depends on the system. There is no window tiling on MS
-        #   Windows (yet), so reduce the number of tabs in this wizwin, and the number of task
-        #   windows that open by default
-        if ($^O eq 'MSWin32') {
-
-            @pageList                   = (
-                'intro',    # Corresponds to function $self->introPage
-                'mainWin',
-                'task',
-                'sigil',
-                'last',
-            );
-
-            %taskSettingHash            = (
-                'status_win'            => FALSE,
-                'status_gauge'          => TRUE,
-                'locator_win'           => FALSE,
-            );
-
-        } else {
-
-            @pageList                   = (
-                'intro',
-                'mainWin',
-                'zonemap',
-                'task',
-                'sigil',
-                'last',
-            );
-
-            %taskSettingHash            = (
-                'status_win'            => TRUE,
-                'status_gauge'          => TRUE,
-                'locator_win'           => TRUE,
-            );
         }
 
         # Setup
@@ -165,22 +122,20 @@
             #   displayed in a 'dialogue' window)
             pseudoCmdMode               => 'win_error',
 
-            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
-            #   parent 'main' window's Gtk2::Window
+            # The window widget. For most window objects, the Gtk3::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk3::Window
             # The code should use this IV when it wants to do something to the window itself
             #   (minimise it, make it active, etc)
             winWidget                   => undef,
-            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            # The window container. For most window objects, the Gtk3::Window. For pseudo-windows,
             #   the parent GA::Table::PseudoWin table object
             # The code should use this IV when it wants to add, modify or remove widgets inside the
             #   window itself
             winBox                      => undef,
-            # The Gnome2::Wnck::Window, if known
-            wnckWin                     => undef,
             # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
             #   FALSE if not
             enabledFlag                 => FALSE,
-            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            # Flag set to TRUE if the Gtk3 window itself is visible (after a call to
             #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
             visibleFlag                 => TRUE,
             # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
@@ -198,10 +153,10 @@
             #       (sub_name, argument_list_ref, sub_name, argument_list_ref...)
             childDestroyHash            => {},
 
-            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
-            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            # The container widget into which all other widgets are packed (usually a Gtk3::VBox or
+            #   Gtk3::HBox, but any container widget can be used; takes up the whole window client
             #   area)
-            packingBox                  => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox
 
             # Standard IVs for 'free' windows
 
@@ -224,19 +179,14 @@
             # Widgets
 
             # A vertical pane, with the main area above, and a button strip below
-            scroller                    => undef,       # Gtk2::ScrolledWindow
-            hAdjustment                 => undef,       # Gtk2::Adjustment
-            vAdjustment                 => undef,       # Gtk2::Adjustment
-            table                       => undef,       # Gtk2::Table
-            hBox                        => undef,       # Gtk2::HBox
-            tooltips                    => undef,       # Gtk2::Tooltips
-            nextButton                  => undef,       # Gtk2::Button
-            previousButton              => undef,       # Gtk2::Button
-            cancelButton                => undef,       # Gtk2::Button
-
-            # The default size of the table on each page
-            tableWidth                  => 12,
-            tableHeight                 => 32,
+            scroller                    => undef,       # Gtk3::ScrolledWindow
+            hAdjustment                 => undef,       # Gtk3::Adjustment
+            vAdjustment                 => undef,       # Gtk3::Adjustment
+            table                       => undef,       # Gtk3::Grid
+            hBox                        => undef,       # Gtk3::HBox
+            nextButton                  => undef,       # Gtk3::Button
+            previousButton              => undef,       # Gtk3::Button
+            cancelButton                => undef,       # Gtk3::Button
 
             # Three flags that can be set by any page, to prevent one of three buttons from being
             #   made sensitive (temporarily)
@@ -245,7 +195,14 @@
             disableCancelButtonFlag     => FALSE,
 
             # The names of pages, in order of appearance
-            pageList                    => \@pageList,
+            pageList                    => [
+                'intro',
+                'mainWin',
+                'zonemap',
+                'task',
+                'sigil',
+                'last',
+            ],
             # The number of the current page (first page is 0)
             currentPage                 => 0,
 
@@ -285,7 +242,11 @@
                 'notepad'               => FALSE,
             },
             # Initial task settings
-            taskSettingHash             => \%taskSettingHash,
+            taskSettingHash             => {
+                'status_win'            => TRUE,
+                'status_gauge'          => TRUE,
+                'locator_win'           => TRUE,
+            },
             # Instruction sigils
             sigilHash                   => {
                 'echo'                  => FALSE,
@@ -311,7 +272,7 @@
     sub winSetup {
 
         # Called by GA::Generic::Win->createFreeWin, after the call to $self->new
-        # Creates the Gtk2::Window itself
+        # Creates the Gtk3::Window itself
         #
         # Expected arguments
         #   (none besides $self)
@@ -340,7 +301,7 @@
         # Some desktop managers use a bigger font than the author's desktop manager; as a result,
         #   'free' windows like this one will be too small for comfort
         # This window is (usually) only seen the first time Axmud is run. If the user's destkop
-        #   manager font is too big, this window's Gtk2::ScrolledWindow will contain scrollbars
+        #   manager font is too big, this window's Gtk3::ScrolledWindow will contain scrollbars
         # If the scrollbars are present, we can increase the size of default 'free' windows to
         #   compensate, which removes the scrollbars in this window and (hopefully) most other
         #   'free' windows, too
@@ -355,15 +316,15 @@
         # Detect the presence of any scrollbars and decide by which ratio the window's size should
         #   be increased
         $hAdjust = $self->scroller->get_hadjustment();
-        if ($hAdjust->upper != $hAdjust->page_size) {
-            $ratioX =  $hAdjust->upper / $hAdjust->page_size;
+        if ($hAdjust->get_upper() != $hAdjust->get_page_size()) {
+            $ratioX = $hAdjust->get_upper() / $hAdjust->get_page_size();
         } else {
             $ratioX = 1;
         }
 
         $vAdjust = $self->scroller->get_vadjustment();
-        if ($vAdjust->upper != $vAdjust->page_size) {
-            $ratioY =  $vAdjust->upper / $vAdjust->page_size;
+        if ($vAdjust->get_upper() != $vAdjust->get_page_size()) {
+            $ratioY =  $vAdjust->get_upper() / $vAdjust->get_page_size();
         } else {
             $ratioY = 1;
         }
@@ -449,8 +410,9 @@
 
         # Local variables
         my (
-            $zonemapObj,
+            $zonemapObj, $initStatusObj, $initLocatorObj,
             @taskList,
+            %checkHash,
         );
 
         # Check for improper arguments
@@ -482,6 +444,23 @@
             }
         }
 
+        # In v1.2.0, window tiling was enable for MSWin users. For those users with existing Axmud
+        #   installations, this 'wiz' window is called a second time
+        # For that reason, check that Locator/Status tasks don't already exist in the global
+        #   tasklist. If they do, update their settings, rather than creating a new task
+        foreach my $initTaskObj ($axmud::CLIENT->ivValues('initTaskHash')) {
+
+            if ($initTaskObj->name eq 'status_task') {
+                $initStatusObj = $initTaskObj;
+            } elsif ($initTaskObj->name eq 'locator_task') {
+                $initLocatorObj = $initTaskObj;
+            }
+
+            # While we're at it, compile a hash of global initial tasks, containing only the first
+            #   instance of each type of task
+            $checkHash{$initTaskObj->name} = undef;
+        }
+
         # Add initial tasks (if any) in a set order
         @taskList = qw(status locator attack compass channels divert inventory launch notepad);
         foreach my $name (@taskList) {
@@ -490,7 +469,20 @@
 
             if ($self->ivShow('taskInitHash', $name)) {
 
-                $taskObj = $axmud::CLIENT->addGlobalInitTask($name . '_task');  # e.g. 'status_task'
+                if ($name eq 'status' && $initStatusObj) {
+
+                    $taskObj = $initStatusObj;
+
+                } elsif ($name eq 'locator' && $initLocatorObj) {
+
+                    $taskObj = $initLocatorObj;
+
+                } elsif (! exists $checkHash{$name . '_task'}) {
+
+                    # e.g. 'status_task'
+                    $taskObj = $axmud::CLIENT->addGlobalInitTask($name . '_task');
+                }
+
                 if ($taskObj) {
 
                     if ($name eq 'status') {
@@ -579,14 +571,14 @@
 
     sub introPage {
 
-        # Intro page - called by $self->setupTable or ->expandTable
+        # Intro page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -610,12 +602,9 @@
             1, 6, 1, 12);
 
         # (Empty labels for spacing)
-        $self->addLabel($self->table, '',
-            7, 10, 1, 2);
-        $self->addLabel($self->table, '',
-            7, 10, 2, 3);
-        $self->addLabel($self->table, '',
-            7, 10, 3, 4);
+        my $label = $self->addLabel($self->table, '',
+            7, 10, 1, 4);
+        $label->set_vexpand(TRUE);
 
         $self->addLabel($self->table, '<b>Welcome to ' . $axmud::SCRIPT . '!</b>',
             7, 10, 4, 5);
@@ -630,6 +619,7 @@
             "Ok, let's get started!",
             "Move on to the next page",
             7, 10, 6, 7);
+        $button->set_vexpand(TRUE);
         $button->signal_connect('clicked' => sub {
 
             # (The same as clicking the 'Next' button at the bottom of the window)
@@ -642,6 +632,7 @@
             "Use recommended settings for my system",
             "Close this window and use recommended settings",
             7, 10, 7, 8);
+        $button2->set_vexpand(TRUE);
         $button2->signal_connect('clicked' => sub {
 
             # The only change that the widgets on the following pages make is to set the zonemap...
@@ -664,32 +655,31 @@
             "Just use default settings",
             "Close this window and use default settings",
             7, 10, 8, 9);
+        $button3->set_vexpand(TRUE);
         $button3->signal_connect('clicked' => sub {
 
             # (The same as clicking the 'Cancel' button at the bottom of the window)
             $self->buttonCancel();
         });
 
-        $self->addLabel($self->table, '',
-            7, 10, 9, 10);
-        $self->addLabel($self->table, '',
-            7, 10, 10, 11);
-        $self->addLabel($self->table, '',
-            7, 10, 11, 12);
+        # (Empty labels for spacing)
+        my $label2 = $self->addLabel($self->table, '',
+            7, 10, 9, 12);
+        $label2->set_vexpand(TRUE);
 
-        return 12;
+        return 1;
     }
 
     sub mainWinPage {
 
-        # 'Main' window page - called by $self->setupTable or ->expandTable
+        # 'Main' window page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -737,6 +727,10 @@
             . "to several worlds at a time. You can click the tabs at the top of each\n"
             . "window to switch between connections.</i>",
             5, 12, 4, 5);
+
+        # (Empty labels for spacing)
+        $self->addLabel($self->table, '',
+            1, 12, 5, 6);
 
         $self->addSimpleImage(
             $self->table,
@@ -789,27 +783,24 @@
             }
         });
 
-        # Add a few empty labels to get the spacing right
-        @spacingList = (5);
-        foreach my $row (@spacingList) {
+        # (Empty labels for spacing)
+        my $label = $self->addLabel($self->table, '',
+            1, 12, 9, 10);
+        $label->set_vexpand(TRUE);
 
-            $self->addLabel($self->table, '',
-                1, 12, $row, ($row + 1));
-        }
-
-        return 12;
+        return 1;
     }
 
     sub zonemapPage {
 
-        # Zonemap page - called by $self->setupTable or ->expandTable
+        # Zonemap page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -837,7 +828,7 @@
                 $self->table,
                 $axmud::SHARE_DIR . '/icons/setup/basic_zonemap.png',
                 undef,
-                1, 4, 3, 6);
+                1, 4, 2, 5);
 
             my ($radioButton, $radioButton2, $radioButton3, $group);
             ($group, $radioButton) = $self->addRadioButton(
@@ -847,13 +838,13 @@
                 'Basic',
                 FALSE,
                 TRUE,
-                4, 6, 4, 5);
+                4, 6, 3, 4);
 
             $self->addSimpleImage(
                 $self->table,
                 $axmud::SHARE_DIR . '/icons/setup/extended_zonemap.png',
                 undef,
-                7, 10, 3, 5);
+                7, 10, 2, 5);
 
             ($group, $radioButton2) = $self->addRadioButton(
                 $self->table,
@@ -862,13 +853,17 @@
                 'Extended',
                 FALSE,
                 TRUE,
-                10, 12, 4, 5);
+                10, 12, 3, 4);
+
+            # (Empty labels for spacing)
+            $self->addLabel($self->table, '',
+                1, 12, 5, 6);
 
             $self->addSimpleImage(
                 $self->table,
                 $axmud::SHARE_DIR . '/icons/setup/widescreen_zonemap.png',
                 undef,
-                1, 4, 7, 10);
+                1, 4, 6, 9);
 
             ($group, $radioButton3) = $self->addRadioButton(
                 $self->table,
@@ -877,7 +872,7 @@
                 'Widescreen',
                 FALSE,
                 TRUE,
-                4, 6, 8, 9);
+                4, 6, 7, 8);
 
             # (->signal_connects from above)
 
@@ -938,7 +933,7 @@
                 $self->table,
                 $axmud::SHARE_DIR . '/icons/setup/horizontal_zonemap.png',
                 undef,
-                1, 4, 3, 6);
+                1, 4, 2, 5);
 
             my ($radioButton, $radioButton2, $radioButton3, $group);
             ($group, $radioButton) = $self->addRadioButton(
@@ -948,13 +943,13 @@
                 'Horizontal',
                 FALSE,
                 TRUE,
-                4, 6, 4, 5);
+                4, 6, 3, 4);
 
             $self->addSimpleImage(
                 $self->table,
                 $axmud::SHARE_DIR . '/icons/setup/vertical_zonemap.png',
                 undef,
-                7, 10, 3, 6);
+                7, 10, 2, 5);
 
             ($group, $radioButton2) = $self->addRadioButton(
                 $self->table,
@@ -963,13 +958,17 @@
                 'Vertical',
                 FALSE,
                 TRUE,
-                10, 12, 4, 5);
+                10, 12, 3, 4);
+
+            # (Empty labels for spacing)
+            $self->addLabel($self->table, '',
+                1, 12, 5, 6);
 
             $self->addSimpleImage(
                 $self->table,
                 $axmud::SHARE_DIR . '/icons/setup/no_zonemap.png',
                 undef,
-                1, 4, 7, 10);
+                1, 4, 6, 9);
 
             ($group, $radioButton3) = $self->addRadioButton(
                 $self->table,
@@ -978,7 +977,7 @@
                 'No zonemap',
                 FALSE,
                 TRUE,
-                4, 6, 8, 9);
+                4, 6, 7, 8);
 
             # (->signal_connects from above)
             if ($self->zonemap eq 'horizontal') {
@@ -1014,32 +1013,24 @@
             });
         }
 
-        # Add a few empty labels to get the spacing right
-        @spacingList = (
-            2,
-            6,
-            10, 11,
-        );
+        # (Empty labels for spacing)
+        my $label = $self->addLabel($self->table, '',
+            1, 12, 9, 10);
+        $label->set_vexpand(TRUE);
 
-        foreach my $row (@spacingList) {
-
-            $self->addLabel($self->table, '',
-                11, 12, $row, ($row + 1));
-        }
-
-        return 12;
+        return 1;
     }
 
     sub taskPage {
 
-        # Task page - called by $self->setupTable or ->expandTable
+        # Task page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -1081,25 +1072,25 @@
 
         my $checkButton = $self->addCheckButton(
             $self->table,
+            'Status task',
             undef,
             $self->ivShow('taskInitHash', 'status'),
             TRUE,
             2, 6, 3, 4);
-        $checkButton->set_label('Status task');
         my $checkButton2 = $self->addCheckButton(
             $self->table,
+            'Show task window',
             undef,
             $self->ivShow('taskSettingHash', 'status_win'),
             TRUE,
             2, 4, 4, 5);
-        $checkButton2->set_label('Show task window');
         my $checkButton3 = $self->addCheckButton(
             $self->table,
+            'Show gauges',
             undef,
             $self->ivShow('taskSettingHash', 'status_gauge'),
             TRUE,
             4, 6, 4, 5);
-        $checkButton3->set_label('Show gauges');
 
         $self->addLabel(
             $self->table,
@@ -1116,18 +1107,18 @@
 
         my $checkButton4 = $self->addCheckButton(
             $self->table,
+            'Locator task',
             undef,
             $self->ivShow('taskInitHash', 'locator'),
             TRUE,
             8, 12, 3, 4);
-        $checkButton4->set_label('Locator task');
         my $checkButton5 = $self->addCheckButton(
             $self->table,
+            'Show task window',
             undef,
             $self->ivShow('taskSettingHash', 'locator_win'),
             TRUE,
             8, 12, 4, 5);
-        $checkButton5->set_label('Show task window');
 
         $self->addLabel(
             $self->table,
@@ -1148,11 +1139,11 @@
 
         my $checkButton6 = $self->addCheckButton(
             $self->table,
+            'Attack task',
             undef,
             $self->ivShow('taskInitHash', 'attack'),
             TRUE,
             2, 6, 8, 9);
-        $checkButton6->set_label('Attack task');
         $self->addLabel(
             $self->table,
             "<i>Tracks the character\'s fights and interactions,\n"
@@ -1167,11 +1158,11 @@
 
         my $checkButton7 = $self->addCheckButton(
             $self->table,
+            'Compass task',
             undef,
             $self->ivShow('taskInitHash', 'compass'),
             TRUE,
             2, 6, 10, 11);
-        $checkButton7->set_label('Compass task');
         $self->addLabel(
             $self->table,
             "<i>A convenient way to enable and disable keypad\n"
@@ -1186,18 +1177,18 @@
 
         my $checkButton8 = $self->addCheckButton(
             $self->table,
+            'Channels task, or',
             undef,
             $self->ivShow('taskInitHash', 'divert'),
             TRUE,
             2, 4, 12, 13);
-        $checkButton8->set_label('Channels task, or');
         my $checkButton9 = $self->addCheckButton(
             $self->table,
+            'Divert task',
             undef,
             $self->ivShow('taskInitHash', 'divert'),
             TRUE,
             4, 6, 12, 13);
-        $checkButton9->set_label('Divert task');
         $self->addLabel(
             $self->table,
             "<i>Diverts social messages and tells to a separate\n"
@@ -1213,11 +1204,11 @@
 
         my $checkButton10 = $self->addCheckButton(
             $self->table,
+            'Inventory task',
             undef,
             $self->ivShow('taskInitHash', 'inventory'),
             TRUE,
             8, 12, 8, 9);
-        $checkButton10->set_label('Inventory task');
         $self->addLabel(
             $self->table,
             "<i>Keeps track of the character's inventory and\n"
@@ -1232,11 +1223,11 @@
 
         my $checkButton11 = $self->addCheckButton(
             $self->table,
+            'Launch task',
             undef,
             $self->ivShow('taskInitHash', 'launch'),
             TRUE,
             8, 12, 10, 11);
-        $checkButton11->set_label('Launch task');
         $self->addLabel(
             $self->table,
             "<i>A convenient method for selecting and running\n"
@@ -1251,11 +1242,11 @@
 
         my $checkButton12 = $self->addCheckButton(
             $self->table,
+            'Notepad task',
             undef,
             $self->ivShow('taskInitHash', 'notepad'),
             TRUE,
             8, 12, 12, 13);
-        $checkButton12->set_label('Notepad task');
         $self->addLabel(
             $self->table,
             "<i>Write your notes here. They will be waiting for\n"
@@ -1389,19 +1380,19 @@
 
         } until (! @signalList2);
 
-        return 14;
+        return 1;
     }
 
     sub sigilPage {
 
-        # Sigil page - called by $self->setupTable or ->expandTable
+        # Sigil page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -1441,9 +1432,8 @@
             undef,
             1, 2, 3, 4);
 
-        my $checkButton = $self->addCheckButton($self->table, undef, TRUE, FALSE,
+        my $checkButton = $self->addCheckButton($self->table, 'Client commands', undef, TRUE, FALSE,
             2, 6, 3, 4);
-        $checkButton->set_label('Client commands');
 
         $self->addLabel(
             $self->table,
@@ -1457,9 +1447,9 @@
             undef,
             7, 8, 3, 4);
 
-        my $checkButton2 = $self->addCheckButton($self->table, undef, TRUE, FALSE,
+        my $checkButton2 = $self->addCheckButton(
+            $self->table, 'Forced world commands', undef, TRUE, FALSE,
             8, 12, 3, 4);
-        $checkButton2->set_label('Forced world commands');
 
         $self->addLabel(
             $self->table,
@@ -1479,11 +1469,11 @@
 
         my $checkButton3 = $self->addCheckButton(
             $self->table,
+            'Echo commands',
             undef,
             $self->ivShow('sigilHash', 'echo'),
             TRUE,
             2, 6, 6, 7);
-        $checkButton3->set_label('Echo commands');
         $self->addLabel(
             $self->table,
             "<i>Everything after the quote is displayed in the\n"
@@ -1498,11 +1488,11 @@
 
         my $checkButton4 = $self->addCheckButton(
             $self->table,
+            'Perl commands',
             undef,
             $self->ivShow('sigilHash', 'perl'),
             TRUE,
             2, 6, 8, 9);
-        $checkButton4->set_label('Perl commands');
         $self->addLabel(
             $self->table,
             "<i>Everything after the forward slash is executed\n"
@@ -1517,11 +1507,11 @@
 
         my $checkButton5 = $self->addCheckButton(
             $self->table,
+            'Script commands',
             undef,
             $self->ivShow('sigilHash', 'script'),
             TRUE,
             2, 6, 10, 11);
-        $checkButton5->set_label('Script commands');
         $self->addLabel(
             $self->table,
             "<i>A quick way to run " . $axmud::BASIC_NAME . " scripts. Everything\n"
@@ -1537,11 +1527,11 @@
 
         my $checkButton6 = $self->addCheckButton(
             $self->table,
+            'Multi commands',
             undef,
             $self->ivShow('sigilHash', 'multi'),
             TRUE,
             8, 12, 6, 7);
-        $checkButton6->set_label('Multi commands');
         $self->addLabel(
             $self->table,
             "<i>Sends a world command to every session (or every\n"
@@ -1556,11 +1546,11 @@
 
         my $checkButton7 = $self->addCheckButton(
             $self->table,
+            'Speedwalk commands',
             undef,
             $self->ivShow('sigilHash', 'speed'),
             TRUE,
             8, 12, 8, 9);
-        $checkButton7->set_label('Speedwalk commands');
         $self->addLabel(
             $self->table,
             "<i>Speedwalk commands can be simple, e.g. <b>.3n</b>\n"
@@ -1575,11 +1565,11 @@
 
         my $checkButton8 = $self->addCheckButton(
             $self->table,
+            'Bypass commands',
             undef,
             $self->ivShow('sigilHash', 'bypass'),
             TRUE,
             8, 12, 10, 11);
-        $checkButton8->set_label('Bypass commands');
         $self->addLabel(
             $self->table,
             "<i>Sends a command to the world immediately,\n"
@@ -1646,19 +1636,19 @@
 
         } until (! @signalList);
 
-        return 14;
+        return 1;
     }
 
     sub lastPage {
 
-        # Last page - called by $self->setupTable or ->expandTable
+        # Last page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -1691,7 +1681,7 @@
             1, 12, 11, 12,
             0.5, 0.5);
 
-        return 12;
+        return 1;
     }
 
     # Support functions
@@ -1818,22 +1808,20 @@
             #   displayed in a 'dialogue' window)
             pseudoCmdMode               => 'win_error',
 
-            # The window widget. For most window objects, the Gtk2::Window. For pseudo-windows, the
-            #   parent 'main' window's Gtk2::Window
+            # The window widget. For most window objects, the Gtk3::Window. For pseudo-windows, the
+            #   parent 'main' window's Gtk3::Window
             # The code should use this IV when it wants to do something to the window itself
             #   (minimise it, make it active, etc)
             winWidget                   => undef,
-            # The window container. For most window objects, the Gtk2::Window. For pseudo-windows,
+            # The window container. For most window objects, the Gtk3::Window. For pseudo-windows,
             #   the parent GA::Table::PseudoWin table object
             # The code should use this IV when it wants to add, modify or remove widgets inside the
             #   window itself
             winBox                      => undef,
-            # The Gnome2::Wnck::Window, if known
-            wnckWin                     => undef,
             # Flag set to TRUE if the window actually exists (after a call to $self->winEnable),
             #   FALSE if not
             enabledFlag                 => FALSE,
-            # Flag set to TRUE if the Gtk2 window itself is visible (after a call to
+            # Flag set to TRUE if the Gtk3 window itself is visible (after a call to
             #   $self->setVisible), FALSE if it is not visible (after a call to $self->setInvisible)
             visibleFlag                 => TRUE,
             # Registry hash of 'free' windows (excluding 'dialogue' windows) for which this window
@@ -1851,10 +1839,10 @@
             #       (sub_name, argument_list_ref, sub_name, argument_list_ref...)
             childDestroyHash            => {},
 
-            # The container widget into which all other widgets are packed (usually a Gtk2::VBox or
-            #   Gtk2::HBox, but any container widget can be used; takes up the whole window client
+            # The container widget into which all other widgets are packed (usually a Gtk3::VBox or
+            #   Gtk3::HBox, but any container widget can be used; takes up the whole window client
             #   area)
-            packingBox                  => undef,       # Gtk2::VBox
+            packingBox                  => undef,       # Gtk3::VBox
 
             # Standard IVs for 'free' windows
 
@@ -1877,19 +1865,14 @@
             # Widgets
 
             # A vertical pane, with the main area above, and a button strip below
-            scroller                    => undef,       # Gtk2::ScrolledWindow
-            hAdjustment                 => undef,       # Gtk2::Adjustment
-            vAdjustment                 => undef,       # Gtk2::Adjustment
-            table                       => undef,       # Gtk2::Table
-            hBox                        => undef,       # Gtk2::HBox
-            tooltips                    => undef,       # Gtk2::Tooltips
-            nextButton                  => undef,       # Gtk2::Button
-            previousButton              => undef,       # Gtk2::Button
-            cancelButton                => undef,       # Gtk2::Button
-
-            # The default size of the table on each page
-            tableWidth                  => 12,
-            tableHeight                 => 32,
+            scroller                    => undef,       # Gtk3::ScrolledWindow
+            hAdjustment                 => undef,       # Gtk3::Adjustment
+            vAdjustment                 => undef,       # Gtk3::Adjustment
+            table                       => undef,       # Gtk3::Grid
+            hBox                        => undef,       # Gtk3::HBox
+            nextButton                  => undef,       # Gtk3::Button
+            previousButton              => undef,       # Gtk3::Button
+            cancelButton                => undef,       # Gtk3::Button
 
             # Three flags that can be set by any page, to prevent one of three buttons from being
             #   made sensitive (temporarily)
@@ -2020,13 +2003,13 @@
             analysisCount               => 0,
             # The current analysis is of which type? ('verbose', 'short' or 'brief')
             analysisType                => 'verbose',
-            # How many recently-received lines to analyse,, by default
-            analysisLength              => 8,
+            # How many recently-received lines to analyse, by default
+            analysisLength              => 9,
             # The minimum and maximum number of recently-received lines to analyse
             analysisMinLength           => 6,
-            analysisMaxLength           => 16,
+            analysisMaxLength           => 15,
             # How many lines to increase/decrease this number at a time
-            analysisInc                 => 2,
+            analysisInc                 => 3,
             # A hash containing an analysis of ->bufferObjList, compiled by
             #   $self->collectComponentGroups, in the form
             #   $hash{component_name} = reference_to_list_of_lines
@@ -2356,7 +2339,6 @@
             $choice = $self->showComboDialogue(
                 'Change dictionary language',
                 'Do you want to change the current dictionary\'s language?',
-                FALSE,
                 \@comboList,
             );
 
@@ -2414,14 +2396,14 @@
 
     sub introPage {
 
-        # Intro page - called by $self->setupTable or ->expandTable
+        # Intro page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -2475,19 +2457,19 @@
                 1, 12, $row, ($row + 1));
         }
 
-        return 12;
+        return 1;
     }
 
     sub directionsPage {
 
-        # Directions page - called by $self->setupTable or ->expandTable
+        # Directions page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -2695,19 +2677,19 @@
             $self->ivAdd('ivChangeHash', 'customPrimaryAbbrevHash', FALSE);
         });
 
-        return ($row + 1);
+        return 1;
     }
 
     sub dictionaryPage {
 
-        # Dictionary page - called by $self->setupTable or ->expandTable
+        # Dictionary page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -2875,19 +2857,19 @@
             $self->ivAdd('ivChangeHash', 'numberList', FALSE);
         });
 
-        return 16;
+        return 1;
     }
 
     sub statementsPage {
 
-        # Statements page - called by $self->setupTable or ->expandTable
+        # Statements page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -2971,19 +2953,19 @@
             . " \'Next\'.</b>",
             1, 12, 12, 13);
 
-        return 13;
+        return 1;
     }
 
     sub capturePage {
 
-        # Capture page - called by $self->setupTable or ->expandTable
+        # Capture page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -3189,22 +3171,22 @@
             $self->winShowAll($self->_objClass . '->capturePage');
         });
 
-        return ($row + scalar @entryList + 1);
+        return 1;
     }
 
     sub capturePage_drawWidgets {
 
         # Called by $self->capturePage
-        # Draws a Gtk2::Entry and a Gtk2::Combobox, one for each line in the display buffer
+        # Draws a Gtk3::Entry and a Gtk3::Combobox, one for each line in the display buffer
         #   displayed on this page
         #
         # Expected arguments
         #   $startRow       - The row on which the first entry/combobox is drawn
-        #   $labelListRef   - Reference to a list of Gtk2::Labels at the beginning of each line
+        #   $labelListRef   - Reference to a list of Gtk3::Labels at the beginning of each line
         #                       (an empty list if none have been drawn yet)
-        #   $entryListRef   - Reference to a list of Gtk2::Entry boxes in which to display received
+        #   $entryListRef   - Reference to a list of Gtk3::Entry boxes in which to display received
         #                       lines (an empty list if none have been drawn yet)
-        #   $comboListRef   - Reference to a list of Gtk2::ComboBoxes in which to display components
+        #   $comboListRef   - Reference to a list of Gtk3::ComboBoxes in which to display components
         #                       (an empty list if none have been drawn yet)
         #
         # Return values
@@ -3311,9 +3293,9 @@
         #   page)
         #
         # Expected arguments
-        #   $entryListRef   - Reference to a list of Gtk2::Entry boxes in which to display received
+        #   $entryListRef   - Reference to a list of Gtk3::Entry boxes in which to display received
         #                       lines
-        #   $comboListRef   - Reference to a list of Gtk2::ComboBox-s in which to display components
+        #   $comboListRef   - Reference to a list of Gtk3::ComboBox-s in which to display components
         #
         # Return values
         #   An empty list on improper arguments
@@ -3400,9 +3382,9 @@
         #   capture
         #
         # Expected arguments
-        #   $entryListRef   - Reference to a list of Gtk2::Entry boxes in which to display received
+        #   $entryListRef   - Reference to a list of Gtk3::Entry boxes in which to display received
         #                       lines
-        #   $comboListRef   - Reference to a list of Gtk2::ComboBox-s in which to display components
+        #   $comboListRef   - Reference to a list of Gtk3::ComboBox-s in which to display components
         #
         # Return values
         #   'undef' on improper arguments
@@ -3477,7 +3459,7 @@
         # Gives each combobox a ->signal_connect method
         #
         # Expected arguments
-        #   $comboListRef   - Reference to a list of Gtk2::ComboBoxes in which to display components
+        #   $comboListRef   - Reference to a list of Gtk3::ComboBoxes in which to display components
         #
         # Return values
         #   'undef' on improper arguments
@@ -3551,14 +3533,14 @@
 
     sub analysisPage {
 
-        # Analysis page - called by $self->setupTable or ->expandTable
+        # Analysis page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -3625,7 +3607,7 @@
                 );
             }
 
-            return 12;
+            return 1;
 
         # Analysis succeeded in verbose/short verbose mode
         } elsif ($self->analysisType eq 'verbose' || $self->analysisType eq 'short') {
@@ -3674,27 +3656,30 @@
             $self->addLabel($self->table, '<i>Verbose description</i>',
                 1, 6, 7, 8);
             my $textView = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                1, 6, 8, 11);
+                1, 6, 8, 11,
+                -1, 130);           # Fixed height
             $self->updateTextView($textView, 'verb_descrip');
 
             # Right column
             $self->addLabel($self->table, '<i>Exit list</i>',
                 6, 12, 3, 4);
             my $textView2 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                6, 12, 4, 7);
+                6, 12, 4, 7,
+                -1, 130);           # Fixed height
             $self->updateTextView($textView2, 'verb_exit');
 
             $self->addLabel($self->table, '<i>Individual exits</i>',
                 6, 12, 7, 8);
             my $textView3 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                6, 12, 8, 11);
+                6, 12, 8, 11,
+                -1, 130);           # Fixed height
             if ($self->analysisExitList) {
 
                 my $buffer3 = $textView3->get_buffer();
                 $buffer3->set_text(join("\n", $self->analysisExitList));
             }
 
-            return 12;
+            return 1;
 
         # Analysis succeeded in brief mode
         } elsif ($self->analysisType eq 'brief') {
@@ -3894,10 +3879,10 @@
                     $qmStartText = quotemeta($startText);
                     $qmStopText = quotemeta($stopText);
 
-                    $errorMsg = "Test failed (usually because the room title contains a direction,"
-                                    . " e.g. \'The northeast corner of the square\').\n\n"
-                                    . "Click the \'Previous\' button and try a room with a"
-                                    . " different title.";
+                    $errorMsg = 'Test failed (usually because the room title contains a direction,'
+                                    . ' e.g. \'The northeast corner of the square\').'
+                                    . ' Click the \'Previous\' button and try a room with a'
+                                    . ' different title.';
 
                     if ($component eq 'brief_title_exit' && $lineText =~ m/$qmStartText/) {
 
@@ -4000,20 +3985,20 @@
                 $entry4->set_text(join(' ', $self->analysisExitList));
             }
 
-            return ($row + 9);
+            return 1;
         }
     }
 
     sub analysis2Page {
 
-        # Analysis2 page - called by $self->setupTable or ->expandTable
+        # Analysis2 page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -4032,31 +4017,23 @@
         $self->addLabel(
             $self->table,
             $axmud::SCRIPT . " needs some more details so it can analyse lists of objects. For"
-            . " example, in the lines:",
+            . " example, in the line:",
             1, 12, 1, 2);
-        $self->addLabel($self->table, '<i>A stick of dynamite is here.</i>',
-            2, 12, 2, 3);
         $self->addLabel(
             $self->table,
             '<i>Three orcs, two lamps and a giraffe are here.</i>',
-            2, 12, 3, 4);
+            2, 12, 2, 3);
         $self->addLabel(
             $self->table,
-            "..." . $axmud::SCRIPT . " needs to know that the patterns <i>\'is here\'</i> and"
-            . " <i>\'are here\'</i> mean that there are objects\nin this room.",
-            1, 12, 4, 5);
+            "..." . $axmud::SCRIPT . " needs to know that the pattern <i>\'are here\'</i> means"
+            . " that there are objects in this room.",
+            1, 12, 3, 4);
         $self->addLabel(
             $self->table,
             "Please examine the contents list on the left (it will be empty if you didn\'t allocate"
-            . " any\ncontents components). If the box on the right doesn\'t contain the correct"
-            . " patterns,\nyou can add them now.",
-            1, 12, 5, 6);
-
-        $self->addLabel(
-            $self->table,
-            "<b>Hint:</b> The patterns are Perl regular expressions, so you can use special"
-            . " characters like <u>\\s</u>\nand <u>(.*)</u>",
-            1, 12, 6, 7);
+            . " any contents).\nIf the box on the right doesn\'t contain the correct patterns"
+            . " (regular expressions), you can add them now.",
+            1, 12, 4, 5);
 
         if ($self->ivExists('analysisHash', 'verb_content')) {
             $component = 'verb_content';
@@ -4066,9 +4043,10 @@
 
         # Left column
         $self->addLabel($self->table, '<i>Room statement\'s contents list</i>',
-            1, 6, 7, 8);
+            1, 6, 5, 6);
         my $textView = $self->addTextView($self->table, undef, undef, undef, FALSE,
-            1, 6, 8, 9);
+            1, 6, 6, 7,
+            -1, 110);
         my $buffer = $textView->get_buffer();
         if ($component && ($component eq 'verb_content' || $component eq 'brief_content')) {
 
@@ -4077,9 +4055,10 @@
 
         # Right column
         $self->addLabel($self->table, '<i>Marker patterns (e.g. \'is here.\')</i>',
-            6, 12, 7, 8);
+            6, 12, 5, 6);
         my $textView2 = $self->addTextView($self->table, undef, undef, undef, TRUE,
-            6, 12, 8, 9);
+            6, 12, 6, 7,
+            -1, 110);
         my $buffer2 = $textView2->get_buffer();
         if ($self->markerList) {
 
@@ -4093,21 +4072,20 @@
             $self->addLabel(
                 $self->table,
                 "If you like, you can test the patterns by clicking the <b>\'Test\'</b> button."
-                . " When\nyou\'re satisfied, click the <b>\'Next\'</b> button at the bottom of the"
+                . " When you\'re satisfied,\nclick the <b>\'Next\'</b> button at the bottom of the"
                 . " window.",
-                1, 9, 9, 10);
+                1, 9, 7, 8);
             my $button = $self->addButton(
                 $self->table,
                 undef,
                 'Test',
                 'Test the contents patterns',
-                9, 12, 9, 10);
+                9, 12, 7, 8);
             # ->signal_connect appears just below...
 
-            $self->addLabel($self->table, '<i>List of objects</i>',
-                1, 12, 10, 11);
             my $textView3 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                1, 12, 11, 12);
+                1, 12, 8, 9,
+                -1, 110);
             my $buffer3 = $textView3->get_buffer();
 
             $button->signal_connect('clicked' => sub {
@@ -4148,22 +4126,22 @@
             $self->addLabel(
                 $self->table,
                 "When you\'re ready, click the \'Next\' button at the bottom of the window.",
-                1, 12, 9, 10);
+                1, 12, 7, 8);
         }
 
-        return 12;
+        return 1;
     }
 
     sub lastPage {
 
-        # Last page - called by $self->setupTable or ->expandTable
+        # Last page - called by $self->setupTable or ->updateTable
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Return values
         #   'undef' on improper arguments
-        #   Otherwise returns the number of table rows used
+        #   1 otherwise
 
         my ($self, $check) = @_;
 
@@ -4192,19 +4170,17 @@
         # Left column
         $self->addLabel($self->table, '<u>Verbose statements</u>',
             1, 4, 3, 4);
-        $self->addLabel($self->table, 'Analysis complete',
-            1, 3, 4, 5);
-        my $checkButton = $self->addCheckButton($self->table, undef, FALSE, FALSE,
-            3, 4, 4, 5);
+        my $checkButton = $self->addCheckButton(
+            $self->table, 'Analysis complete', undef, FALSE, FALSE,
+            1, 4, 4, 5);
         if ($self->verboseComponentObjList) {
 
             $checkButton->set_active(TRUE);
         }
 
-        $self->addLabel($self->table, 'Set in profile',
-            1, 3, 5, 6);
-        my $checkButton2 = $self->addCheckButton($self->table, undef, FALSE, FALSE,
-            3, 4, 5, 6);
+        my $checkButton2 = $self->addCheckButton(
+            $self->table, 'Set in profile', undef, FALSE, FALSE,
+            1, 4, 5, 6);
         if ($self->session->currentWorld->verboseComponentList) {
 
             $checkButton2->set_active(TRUE);
@@ -4213,7 +4189,8 @@
         $self->addLabel($self->table, 'Component list:',
             1, 4, 6, 7);
         my $textView = $self->addTextView($self->table, undef, undef, undef, FALSE,
-            1, 4, 7, 10);
+            1, 4, 7, 10,
+            -1, 220);
         my $buffer = $textView->get_buffer();
         foreach my $componentObj ($self->verboseComponentObjList) {
 
@@ -4224,19 +4201,17 @@
         # Middle column
         $self->addLabel($self->table, '<u>Short verbose statements</u>',
             5, 8, 3, 4);
-        $self->addLabel($self->table, 'Analysis complete',
-            5, 7, 4, 5);
-        my $checkButton3 = $self->addCheckButton($self->table, undef, FALSE, FALSE,
-            7, 8, 4, 5);
+        my $checkButton3 = $self->addCheckButton(
+            $self->table, 'Analysis complete', undef, FALSE, FALSE,
+            5, 8, 4, 5);
         if ($self->shortComponentObjList) {
 
             $checkButton3->set_active(TRUE);
         }
 
-        $self->addLabel($self->table, 'Set in profile',
-            5, 7, 5, 6);
-        my $checkButton4 = $self->addCheckButton($self->table, undef, FALSE, FALSE,
-            7, 8, 5, 6);
+        my $checkButton4 = $self->addCheckButton(
+            $self->table, 'Set in profile', undef, FALSE, FALSE,
+            5, 8, 5, 6);
         if ($self->session->currentWorld->shortComponentList) {
 
             $checkButton4->set_active(TRUE);
@@ -4245,7 +4220,8 @@
         $self->addLabel($self->table, 'Component list:',
             5, 8, 6, 7);
         my $textView2 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-            5, 8, 7, 10);
+            5, 8, 7, 10,
+            -1, 220);
         my $buffer2 = $textView2->get_buffer();
         foreach my $componentObj ($self->shortComponentObjList) {
 
@@ -4256,19 +4232,17 @@
         # Right column
         $self->addLabel($self->table, '<u>Brief statements</u>',
             9, 12, 3, 4);
-        $self->addLabel($self->table, 'Analysis complete',
-            9, 11, 4, 5);
-        my $checkButton5 = $self->addCheckButton($self->table, undef, FALSE, FALSE,
-            11, 12, 4, 5);
+        my $checkButton5 = $self->addCheckButton(
+            $self->table, 'Analysis complete', undef, FALSE, FALSE,
+            9, 12, 4, 5);
         if ($self->briefComponentObjList) {
 
             $checkButton5->set_active(TRUE);
         }
 
-        $self->addLabel($self->table, 'Set in profile',
-            9, 11, 5, 6);
-        my $checkButton6 = $self->addCheckButton($self->table, undef, FALSE, FALSE,
-            11, 12, 5, 6);
+        my $checkButton6 = $self->addCheckButton(
+            $self->table, 'Set in profile', undef, FALSE, FALSE,
+            9, 12, 5, 6);
         if ($self->session->currentWorld->briefComponentList) {
 
             $checkButton6->set_active(TRUE);
@@ -4277,7 +4251,8 @@
         $self->addLabel($self->table, 'Component list:',
             9, 12, 6, 7);
         my $textView3 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-            9, 12, 7, 10);
+            9, 12, 7, 10,
+            -1, 220);
         my $buffer3 = $textView3->get_buffer();
         foreach my $componentObj ($self->briefComponentObjList) {
 
@@ -4288,7 +4263,7 @@
         # Special rule for the \'previous\' button: it returns to page 5
         $self->ivAdd('specialPreviousButtonHash', $self->currentPage, 4);
 
-        return 12;
+        return 1;
     }
 
     # Support functions
@@ -5679,7 +5654,7 @@
         # (Code used is very similar to the ->signal_connect in GA::Generic::EditWin->addTextView)
         #
         # Expected arguments
-        #   $buffer     - The Gtk2::TextView's buffer
+        #   $buffer     - The Gtk3::TextView's buffer
         #   $iv         - The list IV in which the lines should be stored
         #
         # Return values
@@ -5732,10 +5707,10 @@
     sub updateTextView {
 
         # Called by $self->analysisPage and later pages
-        # Fills a Gtk2::TextView with the lines in a single component
+        # Fills a Gtk3::TextView with the lines in a single component
         #
         # Expected arguments
-        #   $textView   - The Gtk2::TextView to fill up
+        #   $textView   - The Gtk3::TextView to fill up
         #   $component  - The component to use - a key in $self->analysisHash
         #
         # Return values

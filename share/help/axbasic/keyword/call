@@ -1,26 +1,26 @@
+CALL subroutine-name
 CALL subroutine-name ( [ expression [ , expression ... ] ] )
 
    Synopsis:
       Calls a subroutine with the specified arguments
 
    Notes:
-      The arguments, if any, must match those in the SUB statement at the
-         beginning of the subroutine profile, both in type and number.
+      The arguments, if any, must match those in the SUB statement's parameter
+         list, both in type and number.
 
-      In a statement like:
-      
-         CALL mysub (...)
+      All Axbasic subroutines have a return value, the default value being 0. In
+         the following statement, the return value is discarded:
          
-      ...the subroutine's return value, if any, is ignored.
+         CALL MySub
+
+      If you want to test the return value, you can use a LET statement to
+         capture it:         
       
-      However, CALL can also be used in LET statements to capture return values:
-      
-         LET result$ = CALL mysub (...)
-         result$ = CALL mysub (...)
+         LET result = CALL MySub (...)
          
       Note that CALL is a statement, not a function, so it cannot be used thus:
       
-         PRINT 10 * (CALL mysub (...))
+         PRINT 10 * (CALL MySub (...))
 
    Availability:
       CALL is not available in scripts with primitive line numbers.
@@ -28,10 +28,10 @@ CALL subroutine-name ( [ expression [ , expression ... ] ] )
    Examples:
       LET number1 = 2
       LET number2 = 5
-      LET result = CALL multiply (number1, number2)
+      LET result = CALL Multiply (number1, number2)
       PRINT result
       END
 
-      SUB NUMERIC multiply (val1, val2)
+      SUB NUMERIC Multiply (val1, val2)
          RETURN (val1 * val2)
       END SUB

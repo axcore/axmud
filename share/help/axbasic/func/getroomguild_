@@ -1,4 +1,4 @@
-GETROOMGUILD$ ()
+Getroomguild$ ()
  
    Synopsis:
       Returns the room guild of the automapper's current room

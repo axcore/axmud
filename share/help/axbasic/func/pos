@@ -1,5 +1,5 @@
-POS (string, substring)
-POS (string, substring, n)
+Pos (string, substring)
+Pos (string, substring, n)
 
    Synopsis:
       Returns the position in the string of the first occurence of the whole
@@ -13,8 +13,8 @@ POS (string, substring, n)
          substring is specified, 1 is returned. If the string is null but the
          substring is not null, 0 is returned.
       If the third argument is specified, the search begins at the nth character
-         in the string and proceeds to the right. POS(string, substring, 1) is
-         interchangeable with POS(string, substring). If the substring is empty,
-         the starting position is returned.
+         in the string and proceeds to the right. Pos (string, substring, 1) is
+         interchangeable with Pos (string, substring). If the substring is
+         empty, the starting position is returned.
       If n is not an integer, it is rounded off. An error occurs if n is zero
          or a negative number.

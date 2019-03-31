@@ -1,13 +1,13 @@
-MATCHI (string, regex)
+Matchi (string, regex)
 
    Synopsis:
-      MATCH is an Axbasic pattern-matching function, comparing a Perl regular
-         expression (regex) with a string to see whether the pattern matches
+      An Axbasic pattern-matching function, comparing a Perl regular expression
+         (regex) with a string to see whether the pattern matches
 
    Notes:
       'regex' is a Perl regular expression like "orc", "^orc" or "^orc (.*)$".
-         If this pattern matches the string, MATCHI returns 1; otherwise it
+         If this pattern matches the string, Matchi () returns 1; otherwise it
          returns 0.
-      MATCHI behaves just like MATCH, except that for MATCHI, the pattern-
-         matching operation is case insensitive (equivalent to the Perl
+      Matchi () behaves just like Match (), except that for Matchi (), the
+         pattern-matching operation is case insensitive (equivalent to the Perl
          expression 'm/.../i').

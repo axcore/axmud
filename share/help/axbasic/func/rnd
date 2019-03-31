@@ -1,14 +1,14 @@
-RND (n)
+Rnd (n)
 
    Synopsis:
-      Returns a random number between 0 and (n - 1).
+      Returns a random number, greater than or equal to 0, but less than n
 
    Notes:
-      The return value is a floating-point number, so RND(10) will produce a
+      The return value is a floating-point number, so Rnd (10) will produce a
          number like 7.79433435135619.
 
    Examples:
-      ! Get a random integer in the range 0-9:
-      LET result = INT ( RND (10) )
-      ! Get a random integer in the range 1-10:
-      LET result = INT ( RND (10) + 1 )
+      ! Get a random integer in the range 0-9
+      LET result = Int ( Rnd (10) )
+      ! Get a random integer in the range 1-10
+      LET result = Int ( Rnd (10) + 1 )

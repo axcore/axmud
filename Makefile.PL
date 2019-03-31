@@ -25,12 +25,9 @@ my %prereqHash = (
     'File::ShareDir::Install'
                             => '0',
     'Glib'                  => '0',
-    'Glib::Object::Subclass'
-                            => '0',
-
-    'Gnome2::Canvas'        => '0',
-    'Gnome2::Wnck'          => '0',
-    'Gtk2'                  => '0',
+    'GooCanvas2'            => '0',
+    'Gtk3'                  => '0',
+    'HTTP::Tiny'            => '0',
     'IO::Socket::INET'      => '0',
     'IO::Socket::INET6'     => '0',
     'IO::Socket::SSL'       => '0',
@@ -49,12 +46,6 @@ my %prereqHash = (
     'Time::HiRes'           => '0',
     'Time::Piece'           => '0',
 );
-
-if ($^O eq 'MSWin32') {
-
-    # Wnck doesn't exist on MS Windows systems
-    delete $prereqHash{'Gnome2::Wnck'};
-}
 
 WriteMakefile(
     NAME                    => 'Games::Axmud',

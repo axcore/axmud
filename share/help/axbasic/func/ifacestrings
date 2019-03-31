@@ -1,4 +1,4 @@
-IFACESTRINGS ()
+Ifacestrings ()
 
    Synopsis:
       Returns the number of substrings stored in the current interface

@@ -1,4 +1,4 @@
-IFACESHIFT$ ()
+Ifaceshift$ ()
 
    Synopsis:
       Returns the first substring stored in the current interface notification
@@ -7,7 +7,7 @@ IFACESHIFT$ ()
       The interface notification list contains all the notifications received,
          and not yet processed, as the result of an earlier SETTRIG statement.
       The group substring is removed from the notification, so you can call
-         IFACESHIFT$() repeatedly until there are no more substrings to remove.
-         When there are no more substrings to remove, IFACESHIFT$ returns an
+         Ifaceshift$ () repeatedly until there are no more substrings to remove.
+         When there are no more substrings to remove, Ifaceshift$ () returns an
          empty string.
       If there is no current notification, returns an empty string.

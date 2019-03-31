@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2018 A S Lewis
+# Copyright (C) 2011-2019 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -459,7 +459,7 @@
                 return undef;
             }
 
-            if ($operator eq '+') {
+            if ($operator eq '&') {
 
                 $expression .= $nextExpression;
 
@@ -558,7 +558,7 @@
 
             $obj = shift @expList;
             $nextExpression = $obj->evaluate;
-            if (! defined $nextExpression) {
+            if (! defined $nextExpression || ! Scalar::Util::looks_like_number($nextExpression)) {
 
                 return undef;
             }
@@ -646,6 +646,7 @@
         #   set, return the Boolean value; otherwise Boolean values constitute an error
         $expression
             = Language::Axbasic::Expression::Unary->new($scriptObj, $tokenGroupObj, $maybeBoolean);
+
         if (! defined $expression) {
 
             return undef;
@@ -854,7 +855,7 @@
 
             $obj = shift @expList;
             $nextExpression = $obj->evaluate();
-            if (! defined $nextExpression) {
+            if (! defined $nextExpression || ! Scalar::Util::looks_like_number($nextExpression)) {
 
                 return undef;
             }
@@ -877,6 +878,10 @@
 
                     $expression = $expression / $nextExpression;
                 }
+
+            } elsif ($operator eq '^') {
+
+                $expression = $expression ** $nextExpression;
 
             } else {
 
@@ -1606,6 +1611,12 @@
 
         # Import the variable name from the token (ie A, a$, array)
         $varName = $token->tokenText;
+        if ($scriptObj->ivExists('funcArgHash', $varName)) {
+
+            # Using names of intrinsic functions as variables is not allowed (using names of
+            #   defined functions is allowed, but the variable's value can never be retrieved)
+            return undef;
+        }
 
         # Test whether the variable refers to a cell in an array (e.g. A(5,6) ) by trying to extract
         #   an argument list
@@ -1794,7 +1805,7 @@
         my ($class, $scriptObj, $tokenGroupObj, $check) = @_;
 
         # Local variables
-        my ($token, $tokenText, $subObj, $argListObj, $result);
+        my ($token, $tokenText, $subObj, $argListObj);
 
         # Check for improper arguments
         if (
@@ -1839,9 +1850,11 @@
         }
 
         # Compare the proposed subroutine name, $tokenText, with the list of existing keywords and
-        #   subroutine names
-        if (defined $scriptObj->ivFind('keywordList', $tokenText)) {
-
+        #   subroutine names, and also filter out any invalid names
+        if (
+            defined $scriptObj->ivFind('keywordList', $tokenText)
+            || ! ($tokenText =~ m/^[A-Z][A-Z0-9_]*$/i)
+        ) {
             return $scriptObj->setError(
                 'illegal_subroutine_name',
                 $class . '->new',
@@ -1867,8 +1880,11 @@
         # Now we know that the first token in the token group is a subroutine, extract it
         $tokenGroupObj->shiftToken();
 
-        # Extract the argument list
-        $argListObj = Language::Axbasic::Expression::ArgList->new($scriptObj, $tokenGroupObj);
+        # Extract the argument list. The TRUE argument means that an empty token group is treated
+        #   the same an empty arglist, in this case (e.g. 'SUB hello ()' and 'SUB hello' are both
+        #   acceptable)
+        $argListObj
+            = Language::Axbasic::Expression::ArgList->new($scriptObj, $tokenGroupObj, TRUE);
         if (! defined $argListObj) {
 
             return $scriptObj->setError(
@@ -2021,8 +2037,23 @@
 
         # Don't extract the first token in the token group if it's not a true function name (could
         #   be an lvalue)
+        # NB To preserve backwards compatibility with True BASIC, 'angle' can be either a keyword
+        #   or a built-in function. This is true for all 'weak' keywords, but 'angle' is the only
+        #   built-in function that is also a keyword
         $token = $tokenGroupObj->lookAhead();
-        if (! defined $token || $token->category ne 'identifier') {
+        if (! defined $token) {
+
+            return undef;
+
+        } elsif (
+            $token->category eq 'keyword'
+            && $scriptObj->ivExists('weakKeywordHash', $token->tokenText)
+        ) {
+            # Change the token type; it's the built-in function Angle(), not the keyword ANGLE
+            $token->{category} = 'identifier';
+            $tokenText = $token->tokenText;
+
+        } elsif ($token->category ne 'identifier') {
 
             return undef;
 
@@ -2106,19 +2137,34 @@
 
             # Pre-defined functions are allowed to have no arguments, in some cases. We might have
             #   to extract an arglist, or not
-            # e.g. These statements are both valid
-            #   PRINT PI()
-            #   PRINT PI
-            # Custom functions must have argument lists
+            # e.g. These statements are both valid, because Pi() expects no arguments
+            #   PRINT Pi()
+            #   PRINT Pi
+            # e.g. These statements are not valid, because Int() expects an argument
+            #   PRINT Int()
+            #   PRINT Int
             $argListObj = Language::Axbasic::Expression::ArgList->new($scriptObj, $tokenGroupObj);
-            if (! $scriptObj->ivExists('funcArgHash', $tokenText) && ! defined $argListObj) {
 
-                # A custom function, created in a DEF statement, has been called without a parseable
-                #   arglist
-                return $scriptObj->setError(
-                    'function_called_without_arguments',
-                    $class . '->new',
-                );
+            if (! defined $argListObj) {
+
+                if (! $scriptObj->ivExists('funcArgHash', $tokenText)) {
+
+                    # A custom function, created in a DEF statement, has been called without a
+                    #   parseable arglist
+                    return $scriptObj->setError(
+                        'function_called_without_arguments',
+                        $class . '->new',
+                    );
+
+                } elsif ($scriptObj->ivShow('funcArgHash', $tokenText)) {
+
+                    # A pre-defined function that expects at least one argument, but has been called
+                    #   without a parseable arglist
+                    return $scriptObj->setError(
+                        'wrong_number_of_arguments',
+                        $class . '->new',
+                    );
+                }
             }
 
             if (
@@ -2272,11 +2318,17 @@
         #   $scriptObj      - Blessed reference to the parent LA::Script
         #   $tokenGroupObj  - Blessed reference of the line's token group
         #
+        # Optional arguments
+        #   $implicitFlag   - If TRUE, a non-existent argulist is acceptable, i.e. a token group
+        #                       with no more tokens is treated the same as an empty arglist token,
+        #                       namely '()'. If FALSE or 'undef', an empty arglist (at the very
+        #                       least) is expected
+        #
         # Return values
         #   'undef' on improper arguments
         #   Returns either the LA::Expression::Arglist created, or 'undef'
 
-        my ($class, $scriptObj, $tokenGroupObj, $check) = @_;
+        my ($class, $scriptObj, $tokenGroupObj, $implicitFlag, $check) = @_;
 
         # Local variables
         my (
@@ -2312,46 +2364,51 @@
             argList                     => [],
         };
 
-        # The argument list must start with a left parenthesis
-        $token = $tokenGroupObj->shiftTokenIfCategory('left_paren');
-        if (! defined $token) {
+        if (! $implicitFlag || $tokenGroupObj->lookAhead()) {
 
-            # Not an argument list
-            return undef;
-        }
+            # The argument list, if explicitly specified, must start with a left parenthesis
+            $token = $tokenGroupObj->shiftTokenIfCategory('left_paren');
+            if (! defined $token) {
 
-        # Check for an empty arglist
-        $token = $tokenGroupObj->shiftTokenIfCategory('right_paren');
-        if (! defined $token) {
+                # Not an argument list
+                return undef;
+            }
 
-            # Go through the list, extracting arguments
-            do {
-
-                my $arg
-                    = Language::Axbasic::Expression::Arithmetic->new($scriptObj, $tokenGroupObj);
-
-                if (! defined $arg) {
-
-                    return undef;
-                }
-
-                push (@args, $arg);
-
-            } while ($tokenGroupObj->shiftMatchingToken(','));
-
-            # The argument list must end with a right parenthesis
+            # Check for an empty arglist
             $token = $tokenGroupObj->shiftTokenIfCategory('right_paren');
             if (! defined $token) {
 
-                return $scriptObj->setError(
-                    'mismatched_parentheses_error',
-                    $class . '->new',
-                );
-            }
-        }
+                # Go through the list, extracting arguments
+                do {
 
-        # Store the argument list, and bless this object
-        $self->{'argList'} = \@args;
+                    my $arg = Language::Axbasic::Expression::Arithmetic->new(
+                        $scriptObj,
+                        $tokenGroupObj,
+                    );
+
+                    if (! defined $arg) {
+
+                        return undef;
+                    }
+
+                    push (@args, $arg);
+
+                } while ($tokenGroupObj->shiftMatchingToken(','));
+
+                # The argument list must end with a right parenthesis
+                $token = $tokenGroupObj->shiftTokenIfCategory('right_paren');
+                if (! defined $token) {
+
+                    return $scriptObj->setError(
+                        'mismatched_parentheses_error',
+                        $class . '->new',
+                    );
+                }
+            }
+
+            # Store the argument list, and bless this object
+            $self->{'argList'} = \@args;
+        }
 
         # Bless the object into existence
         bless $self, $class;
@@ -2441,7 +2498,7 @@
         #
         # In Axbasic, Boolean expressions can't contain non-Boolean expressions except for
         #   Relational expressions (which have two Arithmetic expressions separated by a Relational
-        #   operation)
+        #   operator)
         # However, parentheses can confuse things.
         # LA::Expression::Unary is one of:
         #   (1) A constant, variable, function, etc.
@@ -2953,7 +3010,7 @@
         $token = $tokenGroupObj->shiftTokenIfCategory('relational_operator');
         if (! defined $token) {
 
-            # Found a parenthesised Arithemetic expression?
+            # Found a parenthesised Arithmetic expression?
             if ($maybeArithmetic) {
 
                 # Don't bother blessing and returning $self

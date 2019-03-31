@@ -1,4 +1,4 @@
-CLIENTNAME$ ()
+Clientname$ ()
 
    Synopsis:
       Returns the client name ("Axmud")

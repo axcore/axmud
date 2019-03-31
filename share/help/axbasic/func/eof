@@ -1,4 +1,4 @@
-EOF (channel)
+Eof (channel)
 
    Synopsis:
       Tests whether a file channel has reached the end of its file
@@ -12,13 +12,13 @@ EOF (channel)
    Examples:
       ! Read all the data in the file
       OPEN #5: NAME "data.txt", CREATE OLD, ACCESS INPUT
-      IF EOF(5) = 1 THEN
+      IF Eof (5) = 1 THEN
          PRINT "File is empty!"
       ELSE
-         ! Read data until EOF() returns 1
+         ! Read data until Eof () returns 1
          DO
             INPUT #5: a$
             PRINT a$
-         UNTIL EOF(5) = 1
+         UNTIL Eof (5) = 1
       END IF
       END

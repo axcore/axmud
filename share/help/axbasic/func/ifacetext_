@@ -1,4 +1,4 @@
-IFACETEXT$ ()
+Ifacetext$ ()
 
    Synopsis:
       Returns the line of text that caused the current interface notification

@@ -1,5 +1,5 @@
-CPOS (string, substring)
-CPOS (string, substring, n)
+Cpos (string, substring)
+Cpos (string, substring, n)
 
    Synopsis:
       Returns the position in the string of the first occurence of any character
@@ -12,7 +12,7 @@ CPOS (string, substring, n)
          returned. If either the string or the substring are empty strings, 0 is
          returned.
       If the third argument is specified, the search begins at the nth character
-         in the string and proceeds to the right. CPOS(string, substring, 1) is
-         interchangeable with CPOS(string, substring).
+         in the string and proceeds to the right. Cpos (string, substring, 1) is
+         interchangeable with Cpos (string, substring).
       If n is not an integer, it is rounded off. An error occurs if n is zero
          or a negative number.

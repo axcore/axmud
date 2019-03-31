@@ -1,4 +1,5 @@
 UNTIL condition
+UNTIL expression
 
    Synopsis:
       Terminates a DO..UNTIL loop

@@ -1,5 +1,5 @@
-CPOSR (string, substring)
-CPOSR (string, substring, n)
+Cposr (string, substring)
+Cposr (string, substring, n)
 
    Synopsis:
       Returns the position in the string of the last occurence of any character
@@ -12,8 +12,8 @@ CPOSR (string, substring, n)
          returned. If either the string or the substring are empty strings, 0 is
          returned.
       If the third argument is specified, the search begins at the nth character
-         in the string and proceeds to the left. CPOSR(string, substring) is the
-         equivalent of CPOSR(string, substring, length) where 'length' is the
-         length of the string.
+         in the string and proceeds to the left. Cposr (string, substring) is
+         the equivalent of Cposr (string, substring, length) where 'length' is
+         the length of the string.
       If n is not an integer, it is rounded off. An error occurs if n is zero
          or a negative number.
