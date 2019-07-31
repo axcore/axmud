@@ -39,7 +39,7 @@ Windows Start menu, you can click:
 
 Next, get some modules from CPAN:
 
-    cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
+    cpan Archive::Extract IO::Socket::INET6 IPC::Run Math::Round Net::OpenSSH Path::Tiny Regexp::IPv6
 
 Then get the following module:
 
@@ -100,7 +100,7 @@ First, open a command prompt. From the Windows Start menu, type 'cmd' inside the
 Then we can get some modules from CPAN:
 
     ppm install dmake
-    ppm install Archive::Extract File::ShareDir::Install IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
+    ppm install Archive::Extract File::ShareDir::Install IO::Socket::INET6 IPC::Run Math::Round Net::OpenSSH Path::Tiny Regexp::IPv6
 
 Now we need some modules from the Sisyphusion repo.
 
@@ -232,11 +232,17 @@ Make sure you have the right dependencies:
     sudo pacman -S gtk3 perl-gtk3 goocanvas wmctrl
     sudo pacman -S perl-cpanplus-dist-arch
     setupdistarch
-    sudo cpanp i Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk3 GooCanvas2 IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6 X11::WMCtrl
+    sudo cpanp i Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk3 GooCanvas2 IO::Socket::INET6 IPC::Run JSON Math::Round Net::OpenSSH Path::Tiny Regexp::IPv6
+
+At the time of writing, there are some issues with installing certain libraries
+on Arch. If you know that those issues have been fixed, you can type this
+command to allow Axmud to use SSL connections:
+
+    sudo cpanp i IO::Socket::SSL
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
-    sudo pacman -S sox timidity++
+    sudo pacman -S sox timidity++ espeak-ng
 
 Then install Axmud itself:
 
@@ -247,6 +253,23 @@ Then install Axmud itself:
 When installation is complete, start Axmud by typing:
 
     axmud.pl
+
+Axmud's default text-to-speech engine is eSpeak but, at the time of writing,
+there are some issues with its installation on Arch systems. Assuming that an
+alternative speech engine has been installed using the instructions just above,
+visually-impaired users should start Axmud by typing this, the first time:
+
+    baxmud.pl esng
+
+Once Axmud has started, type the following commands, which replace Axmud's
+default speech engine with espeak-ng:
+
+    ;config all engine esng
+    ;save
+
+Thereafter, visually-impaired users can start Axmud by typing:
+
+    baxmud.pl
 
 4.3.2 INSTALLATION ON DEBIAN-BASED SYSTEMS
 
@@ -269,7 +292,7 @@ Make sure you have the right dependencies:
 
     sudo apt-get update
     sudo apt-get install build-essential libgtk3-perl libgoocanvas-2.0-dev wmctrl
-    sudo cpan install Archive::Extract File::HomeDir File::ShareDir File::ShareDir::Install GooCanvas2 JSON Net::OpenSSH Path::Tiny Regexp::IPv6 X11::WMCtrl
+    sudo cpan install Archive::Extract File::HomeDir File::ShareDir File::ShareDir::Install GooCanvas2 JSON Math::Round Net::OpenSSH Path::Tiny Regexp::IPv6
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -311,8 +334,7 @@ Make sure you have the right dependencies:
     sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
     sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
     sudo dnf install cpan
-    sudo dnf install 'perl(Archive::Extract)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk3)' 'perl(GooCanvas2)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
-    sudo cpan install X11::WMCtrl
+    sudo dnf install 'perl(Archive::Extract)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk3)' 'perl(GooCanvas2)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Math::Round)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -360,7 +382,7 @@ for example:
 Make sure you have the right dependencies:
 
     sudo pacman -S base-devel gtk3 goocanvas perl-gtk3 perl-goocanvas2 wmctrl cpanminus
-    sudo cpanm Archive::Extract File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6
+    sudo cpanm Archive::Extract File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Math::Round Net::OpenSSH Path::Tiny Regexp::IPv6
     sudo cpanm Archive::Zip --force
 
 If you want to use sound effects and/or text-to-speech, you should also type:
@@ -421,8 +443,8 @@ Now make sure you have the right dependencies:
 
     sudo yum groupinstall 'Development Tools'
     sudo yum install epel-release cpan goocanvas2 wmctrl
-    sudo yum install 'perl(Archive::Extract)' 'perl(Archive::Tar)' 'perl(Archive::Zip)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk3)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
-    sudo cpan install GooCanvas2 X11::WMCtrl
+    sudo yum install 'perl(Archive::Extract)' 'perl(Archive::Tar)' 'perl(Archive::Zip)' 'perl(File::Copy::Recursive)' 'perl(File::Fetch)' 'perl(File::HomeDir)' 'perl(File::ShareDir)' 'perl(File::ShareDir::Install)' 'perl(Glib)' 'perl(Gtk3)' 'perl(IO::Socket::INET6)' 'perl(IPC::Run)' 'perl(JSON)' 'perl(Math::Round)' 'perl(Net::OpenSSH)' 'perl(Path::Tiny)' 'perl(Regexp::IPv6)' 'perl(Time::Piece)'
+    sudo cpan install GooCanvas2
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 
@@ -468,7 +490,7 @@ for example:
 Make sure you have the right dependencies:
 
     sudo pkg install goocanvas2 wmctrl
-    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk3 GooCanvas2 IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Net::OpenSSH Path::Tiny Regexp::IPv6 X11::WMCtrl
+    sudo cpan install Archive::Extract Archive::Zip File::Copy::Recursive File::HomeDir File::ShareDir File::ShareDir::Install Glib Gtk3 GooCanvas2 IO::Socket::INET6 IO::Socket::SSL IPC::Run JSON Math::Round Net::OpenSSH Path::Tiny Regexp::IPv6
 
 If you want to use sound effects and/or text-to-speech, you should also type:
 

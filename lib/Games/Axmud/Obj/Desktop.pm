@@ -1097,10 +1097,26 @@
             . "   background-color: "
             . $axmud::CLIENT->returnRGBColour($schemeObj->backgroundColour) . ";\n"
             . "   color: " . $axmud::CLIENT->returnRGBColour($schemeObj->textColour) . ";\n"
-            . "}"
-            . "#css_label_id_" . $scheme . ", textview {\n"
-            . "   font: " . $schemeObj->fontSize . "pt " . $schemeObj->font . ", monospace;\n"
+            . "}\n"
+            . "#css_label_id_" . $scheme . ", textview {\n";
+
+        # v1.2.007 because of some Gtk/Pango issue, if we specify 'monospace' as a fallback font on
+        #   MS Windows, as we do on Linux, the fallback font overrides everything
+        # Also, a 10pt is much larger on MS Windows, so use 10px instead
+        if ($^O eq 'MSWin32') {
+
+            $theming
+            .= "   font-family: " . $schemeObj->font . ";\n"
+            . "   font-size: " . $schemeObj->fontSize . "px;\n"
             . "}";
+
+        } else {
+
+            $theming
+            .= "   font-family: " . $schemeObj->font . ", monospace;\n"
+            . "   font-size: " . $schemeObj->fontSize . "pt;\n"
+            . "}";
+        }
 
         $provider->load_from_data ([map ord, split //, $theming]);
 
@@ -1175,10 +1191,27 @@
         $theming = "#css_tvobj_text_id_" . $number . ", textview text {\n"
             . "   background-color: $bgColour;\n"
             . "   color: $fgColour;\n"
-            . "}"
-            . "#css_tvobj_label_id_" . $number . ", textview {\n"
-            . "   font: ${fontSize}pt $font, monospace;\n"
+            . "}\n"
+            . "#css_tvobj_label_id_" . $number . ", textview {\n";
+
+        # v1.2.007 because of some Gtk/Pango issue, if we specify 'monospace' as a fallback font on
+        #   MS Windows, as we do on Linux, the fallback font overrides everything
+        # Also, a 10pt is much larger on MS Windows, so use 10px instead
+        if ($^O eq 'MSWin32') {
+
+            $theming
+            .= "   font-family: $font;\n"
+            . "   font-size: ${fontSize}px;\n"
             . "}";
+
+        } else {
+
+
+            $theming
+            .= "   font-family: $font, monospace;\n"
+            . "   font-size: ${fontSize}pt;\n"
+            . "}";
+        }
 
         $provider->load_from_data ([map ord, split //, $theming]);
 

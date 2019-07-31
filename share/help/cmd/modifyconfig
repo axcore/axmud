@@ -5,12 +5,14 @@ mcf / modifyconfig            Modifies text-to-speech configurations
       ;mcf <name>             Shows settings stored in the configuration <name>
       ;mcf <name> <options>   Modifies the text-to-speech configuration <name>
 
+      ;mcf all engine <engine>
+                              Changes the speech engine for most configurations
    Notes:
-      If you have one or more of the text-to-speech engines installed on your
-         system, Axmud can use them to convert text to speech.
-      The engines currently supported on MS Windows are eSpeak, espeak-ng and
-         Swift. The engines supported on Linux are eSpeak, espeak-ng, Flite,
-         Festival and Swift.
+      If you have one or more of the text-to-speech (TTS) engines installed on
+         your system, Axmud can use them to convert text to speech.
+      The TTS engines currently supported on MS Windows are eSpeak, espeak-ng
+         and Swift. The engines that are generally supported on Linux are
+         eSpeak, espeak-ng, Flite, Festival and Swift.
       Axmud also uses a dummy engine, called 'none'. If Axmud tries to convert
          text to speech using the dummy engine, you'll hear nothing.
 
@@ -87,5 +89,15 @@ mcf / modifyconfig            Modifies text-to-speech configurations
          voice, -s for speed, -r for rate, -p for pitch, -l for volume, -u for
          use and -x for exclude.
 
+      If you find that the default TTS engine is not available on your system,
+         you can use the following command:
+
+            ;mcf all engine <string>
+
+      This changes the TTS engine used by all configurations to the engine
+         called <string>. This doesn't affect the configurations that can't be
+         modified, namely 'espeak', 'esng', 'flite', 'festival', 'swift' and
+         'none'. 
+         
    User commands:
       mcf / config / modconfig / modifyconfig

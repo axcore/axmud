@@ -15242,6 +15242,9 @@
             'align_y'       => 0.5,
         );
 
+        # (This line forces the label to the middle of the window)
+        $labelTableObj->label->set_hexpand(TRUE);
+
         my $entryTableObj = $self->winObj->tableStripObj->addTableObj(
             'Games::Axmud::Table::Entry',
             0, 19, 40, 49,
@@ -15487,10 +15490,7 @@
         my ($self, $secs, $check) = @_;
 
         # Local variables
-        my (
-            $origSecs, $string, $hours, $mins, $fontSize, $textColour, $underlayColour, $setLength,
-            $modString, $column1, $column2,
-        );
+        my ($origSecs, $string, $hours, $mins, $fontSize, $textColour, $underlayColour, $modString);
 
         # Check for improper arguments
         if (defined $check) {
@@ -15503,7 +15503,7 @@
         if (! defined $secs) {
 
             # No time shown
-            $string = '';
+            $string = $modString = '';
 
         } else {
 
@@ -15514,12 +15514,22 @@
             $secs -= ($mins * 60);
 
             if ($hours) {
-                $string = sprintf('%02d:%02d:%02d', $hours, $mins, $secs);
+                if ($hours > 9) {
+                    $string = sprintf('%02d:%02d:%02d', $hours, $mins, $secs);
+                } else {
+                    $string = sprintf('%01d:%02d:%02d', $hours, $mins, $secs);
+                }
             } elsif ($mins) {
-                $string = sprintf('%02d:%02d', $mins, $secs);
+                if ($mins > 9) {
+                    $string = sprintf('%02d:%02d', $mins, $secs);
+                } else {
+                    $string = sprintf('%01d:%02d', $mins, $secs);
+                }
             } else {
                 $string = sprintf('0:%02d', $secs);
             }
+
+            $modString = ' ' . $string . ' ';
         }
 
         # Set the pango font size, making sure it's a reasonable value
@@ -15545,29 +15555,6 @@
             $textColour = $self->textWarning;
             $underlayColour = $self->underlayWarning;
         }
-
-        # So that the visible label remains a constant size...
-        $setLength = $self->textLen;
-        if (length ($string) > ($setLength - 2)) {
-
-            $setLength = length ($string) + 2;
-        }
-
-        # ...surround it with empty text
-        $column1 = ($setLength - length ($string)) / 2;
-        if (int($column1) != $column1) {
-
-            $column1 = int($column1);
-            $column2 = $column1 + 1;
-
-        } else {
-
-            $column2 = $column1;
-        }
-
-        $modString .= " " x $column1;
-        $modString .= $string;
-        $modString .= " " x $column2;
 
         $self->labelTableObj->label->set_markup(
             '<span font_family =\'' . $self->textFont . '\' foreground=\'' . $textColour
@@ -22333,74 +22320,74 @@
         # PART 12
         # If allowed, look for an MXP tag property (one of the keys in $self->mxpFlagTextHash,
         #   normally one of 'RoomName', 'RoomDesc', 'RoomExit', 'RoomNum')
-#        if (
-#            ! $failExitFlag
-#            && ! $involuntaryExitFlag
-#            && ! $specialFlag
-#            && (
-#                (! $existsFlag && $axmud::CLIENT->allowMxpRoomFlag)
-#                || ($existsFlag && $worldObj->ivShow('mxpOverrideHash', 'room'))
-#            )
-#        ) {
-#            OUTER: foreach my $prop ($bufferObj->ivKeys('mxpFlagTextHash')) {
-#
-#                my $text = $bufferObj->ivShow('mxpFlagTextHash', $prop);
-#
-#                if ($self->ivExists('mxpPropHash', $prop)) {
-#
-#                    # When the first tag property is found, stop searching for anchor lines
-#                    #   altogether
-#                    if (! $self->useMxpFlag) {
-#
-#                        $self->ivPoke('useMxpFlag', TRUE);
-#                    }
-#
-#                    # Update the local hash; as soon as a duplicate property is found on another
-#                    #   line, it marks the start of a new statement
-#                    # An <ELEMENT>...</ELEMENT> construction could appear more than once on the
-#                    #   same line, so watch out for that
-#                    if (! defined $mxpPropHash{$prop}) {
-#
-#                        $mxpPropHash{$prop} = $text;
-#
-#                    } elsif ($prop eq 'RoomExit') {
-#
-#                        # Tell $self->setRoomFromMxp that these are separate exits by using a
-#                        #   newline character
-#                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . "\n" . $text;
-#
-#                    } else {
-#
-#                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . " " . $text;
-#                    }
-#                }
-#            }
-#
-#            if (%mxpPropHash) {
-#
-#                $anchorFlag = TRUE;
-#
-#                if ($axmud::CLIENT->debugLocatorFlag) {
-#
-#                    $self->session->writeDebug(
-#                        'LOCATOR 271: Found MXP tag properties '
-#                        . join('/', sort {$a cmp $b} (keys %mxpPropHash)),
-#                    );
-#                }
-#
-#                # Search more lines, looking for more MXP tag properties until (1) an identical tag
-#                #   property is found (which means the start of another room statement), or (2) all
-#                #   four tag properties are found (which means the end of the current room
-#                #   statement) or (3) the task runs out of lines (which means the end of the 
-#                #   current room statement)
-#                $self->processMxpProperties(
-#                    $lineNum,
-#                    $stopLineNum,
-#                    $worldObj,
-#                    %mxpPropHash,
-#                );
-#            }
-#        }
+        if (
+            ! $failExitFlag
+            && ! $involuntaryExitFlag
+            && ! $specialFlag
+            && (
+                (! $existsFlag && $axmud::CLIENT->allowMxpRoomFlag)
+                || ($existsFlag && $worldObj->ivShow('mxpOverrideHash', 'room'))
+            )
+        ) {
+            OUTER: foreach my $prop ($bufferObj->ivKeys('mxpFlagTextHash')) {
+
+                my $text = $bufferObj->ivShow('mxpFlagTextHash', $prop);
+
+                if ($self->ivExists('mxpPropHash', $prop)) {
+
+                    # When the first tag property is found, stop searching for anchor lines
+                    #   altogether
+                    if (! $self->useMxpFlag) {
+
+                        $self->ivPoke('useMxpFlag', TRUE);
+                    }
+
+                    # Update the local hash; as soon as a duplicate property is found on another
+                    #   line, it marks the start of a new statement
+                    # An <ELEMENT>...</ELEMENT> construction could appear more than once on the
+                    #   same line, so watch out for that
+                    if (! defined $mxpPropHash{$prop}) {
+
+                        $mxpPropHash{$prop} = $text;
+
+                    } elsif ($prop eq 'RoomExit') {
+
+                        # Tell $self->setRoomFromMxp that these are separate exits by using a
+                        #   newline character
+                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . "\n" . $text;
+
+                    } else {
+
+                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . " " . $text;
+                    }
+                }
+            }
+
+            if (%mxpPropHash) {
+
+                $anchorFlag = TRUE;
+
+                if ($axmud::CLIENT->debugLocatorFlag) {
+
+                    $self->session->writeDebug(
+                        'LOCATOR 271: Found MXP tag properties '
+                        . join('/', sort {$a cmp $b} (keys %mxpPropHash)),
+                    );
+                }
+
+                # Search more lines, looking for more MXP tag properties until (1) an identical tag
+                #   property is found (which means the start of another room statement), or (2) all
+                #   four tag properties are found (which means the end of the current room
+                #   statement) or (3) the task runs out of lines (which means the end of the
+                #   current room statement)
+                $self->processMxpProperties(
+                    $lineNum,
+                    $stopLineNum,
+                    $worldObj,
+                    %mxpPropHash,
+                );
+            }
+        }
 
         # PARTS 13-16
         # Look for an anchor line (unless a failed exit, involuntary exit, special departure pattern
@@ -23173,12 +23160,6 @@
                     if (! exists $mxpPropHash{$prop}) {
 
                         $mxpPropHash{$prop} = $newHash{$prop};
-
-                    } elsif ($prop eq 'RoomExit') {
-
-                        # Tell $self->setRoomFromMxp that these are separate exits by using a
-                        #   newline character
-                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . "\n" . $newHash{$prop};
 
                     } else {
 
@@ -25804,8 +25785,7 @@
 
         # Local variables
         my (
-            $tag, $boldFlag, $currentText, $currentUnderlay, $usingTextFlag, $usingUnderlayFlag,
-            $modText,
+            $tag, $lineLen, $boldFlag, $currentText, $currentUnderlay, $modText,
             @emptyList, @useOffsetList, @disposeOffsetList,
             %offsetHash, %modOffsetHash,
         );
@@ -25819,6 +25799,8 @@
 
         # We only want to keep text using this Axmud colour tag
         $tag = $componentObj->useTextColour;
+        # Set the line length once, for quick lookup
+        $lineLen = length($bufferObj->modLine);
 
         # Import the buffer object's hash of Axmud colour/style tags, which is in the form
         #   $offsetHash{offset} = reference_to_list_of_tags_that_occur_there
@@ -25853,23 +25835,21 @@
             $currentUnderlay = $self->session->currentTabObj->textViewObj->underlayColour;
         }
 
-        if ($currentText eq $tag) {
+        if ($currentText eq $tag || $currentUnderlay eq $tag) {
 
-            $usingTextFlag = TRUE;
-            push (@useOffsetList, 0);
-        }
-
-        if ($currentUnderlay eq $tag) {
-
-            $usingUnderlayFlag = TRUE;
-            push (@useOffsetList, 0);
+            # Items in @useOffsetList are list references. Each list reference contain two items (a
+            #   start offset and a stop offset), marking a portion of the text in the colour we're
+            #   searching for
+            # The following line assumes the previous line's colour applies to the whole of this
+            #   line. If any more colour tags are found, we'll replace the 'stop' offset
+            push (@useOffsetList, [0, $lineLen]);
         }
 
         # Now, go through the offsets at which tags occur, looking for occurences of $tag
         @disposeOffsetList = sort {$a <=> $b} (keys %offsetHash);
         foreach my $offset (@disposeOffsetList) {
 
-            my ($tagListRef, $otherType, $underlayFlag);
+            my ($tagListRef, $otherType, $underlayFlag, $miniListRef);
 
             $tagListRef = $offsetHash{$offset};
 
@@ -25909,58 +25889,62 @@
                 }
             }
 
-            # @useOffsetList contains the offsets of the beginning and end of the line portion using
-            #   the colour we want. The list is in the form
-            #       (start, stop, start, stop...)
+            # Items in @useOffsetList are list references. Each list reference contain two items (a
+            #   start offset and a stop offset), marking a portion of the text in the colour we're
+            #   searching for
             if (
-                ! $usingTextFlag
-                && $currentText
-                && (
-                    $currentText eq $tag
-                    || (! $componentObj->boldSensitiveFlag && lc($currentText) eq lc($tag))
+                (
+                    $currentText
+                    && (
+                        $currentText eq $tag
+                        || (! $componentObj->boldSensitiveFlag && lc($currentText) eq lc($tag))
+                    )
+                ) || (
+                    $currentUnderlay
+                    && (
+                        $currentUnderlay eq $tag
+                        || (! $componentObj->boldSensitiveFlag && lc($currentUnderlay) eq lc($tag))
+                    )
                 )
             ) {
-                # This is a 'start'
-                $usingTextFlag = TRUE;
-                $usingUnderlayFlag = FALSE;
-                push (@useOffsetList, $offset);
+                $miniListRef = $useOffsetList[-1];
+                if (! defined $miniListRef || ! defined $$miniListRef[1]) {
+
+                    # This is a 'start'
+                    $miniListRef = [$offset, $lineLen];
+                    push (@useOffsetList, $miniListRef);
+                }
 
             } elsif (
-                ! $usingUnderlayFlag
-                && $currentUnderlay
-                && (
-                    $currentUnderlay eq $tag
-                    || (! $componentObj->boldSensitiveFlag && lc($currentUnderlay) eq lc($tag))
+                (
+                    $currentText
+                    && (
+                        ($componentObj->boldSensitiveFlag && $currentText ne $tag)
+                        || (! $componentObj->boldSensitiveFlag && lc($currentText) ne lc($tag))
+                    )
+                ) || (
+                    $currentUnderlay
+                    && (
+                        ($componentObj->boldSensitiveFlag && $currentUnderlay ne $tag)
+                        || (! $componentObj->boldSensitiveFlag && lc($currentUnderlay) ne lc($tag))
+                    )
                 )
             ) {
-                # This is a 'start'
-                $usingUnderlayFlag = TRUE;
-                $usingTextFlag = FALSE;
-                push (@useOffsetList, $offset);
+                $miniListRef = $useOffsetList[-1];
+                if (defined $miniListRef) {
 
-            } elsif (
-                $usingTextFlag
-                && $currentText
-                && (
-                    $currentText ne $tag
-                    || (! $componentObj->boldSensitiveFlag && lc($currentText) ne lc($tag))
-                )
-            ) {
-                # This is a 'stop'
-                $usingTextFlag = FALSE;
-                push (@useOffsetList, $offset);
+                    # A 'start' and 'stop' could occur at the same offset, in which case they cancel
+                    #   each other at
+                    if (defined $$miniListRef[0] && $$miniListRef[0] == $offset) {
 
-            } elsif (
-                $usingUnderlayFlag
-                && $currentUnderlay
-                && (
-                    $currentUnderlay ne $tag
-                    || (! $componentObj->boldSensitiveFlag && lc($currentUnderlay) ne lc($tag))
-                )
-            ) {
-                # This is a 'stop'
-                $usingUnderlayFlag = FALSE;
-                push (@useOffsetList, $offset);
+                        pop @useOffsetList;
+
+                    } elsif (! defined $$miniListRef[1] || $$miniListRef[1] > $offset) {
+                        # This is a 'stop', which replaces any 'stop' from later in the line (such
+                        #   as one we added to @useOffsetList near the beginning of this function)
+                        $$miniListRef[1] = $offset;
+                    }
+                }
             }
         }
 
@@ -25975,10 +25959,11 @@
         $modText = '';
         do {
 
-            my ($start, $stop);
+            my ($miniListRef, $start, $stop);
 
-            $start = shift @useOffsetList;
-            $stop = shift @useOffsetList;
+            $miniListRef = shift @useOffsetList;
+            $start = shift @$miniListRef;
+            $stop = shift @$miniListRef;
 
             OUTER: foreach my $offset (@disposeOffsetList) {
 
@@ -27701,8 +27686,8 @@
 
         # Local variables
         my (
-            $title, $descrip, $exitString, $num,
-            @exitList,
+            $title, $descrip, $exitString, $offset, $stopFlag, $num,
+            @exitList, @modList,
         );
 
         # Check for improper arguments
@@ -27731,16 +27716,65 @@
         $exitString = $mxpPropHash{'RoomExit'};
         if (defined $exitString) {
 
-            # $self->processMxpProperties separated multiple exits with newline characters
-            @exitList = split(/\n/, $exitString);
+            # This code is borrowed from $self->setRoomExit, removing most of its features, and
+            #   just splitting the string using known delimiters
+            $offset = 0;
 
+            # Split $exitString into a list of exits, using the normal delimiters specified by the
+            #   current world profile
+            do {
+
+                my ($posn, $delim);
+
+                # Find the position of the first delimiter at $offset or after
+                foreach my $thisDelim (
+                    $worldObj->verboseExitDelimiterList,
+                    $worldObj->briefExitDelimiterList,
+                ) {
+                    my $thisPosn = index(substr($exitString, $offset), $thisDelim);
+                    if ($thisPosn >= 0) {
+
+                        if (! defined $posn || $posn > $thisPosn) {
+
+                            $posn = $thisPosn;
+                            $delim = $thisDelim;
+                        }
+                    }
+                }
+
+                if (! defined $posn) {
+
+                    # $exitString, from $offset onwards, contains no delimiters
+                    push (@exitList, substr($exitString, $offset));
+                    $stopFlag = TRUE;
+
+                } else {
+
+                    # $text contains an offset an exit between $offset and ($offset + $posn)
+                    push (@exitList, substr($exitString, $offset, $posn));
+                    # On the next iteration of this loop, check from the start of the next exit
+                    #   string
+                    $offset += $posn + length($delim);
+                }
+
+            } until ($stopFlag);
+
+            # Remove any leading/trailing whitespace
+            # Also, convert the list into groups of three, which is the format $self->processExits
+            #   is expecting. This function doesn't test the exit colours, so just behave as if the
+            #   default colour was used
             foreach my $exit (@exitList) {
 
-                $exit = $axmud::CLIENT->trimWhitespace($exit);
+                push (
+                    @modList,
+                    $axmud::CLIENT->trimWhitespace($exit),
+                    $axmud::CLIENT->constTextColour,
+                    $axmud::CLIENT->constUnderlayColour,
+                );
             }
 
             # Create exit objects for each exit
-            $self->processExits($worldObj, $roomObj, @exitList);
+            $self->processExits($worldObj, $roomObj, @modList);
         }
 
         $num = $mxpPropHash{'RoomNum'};
@@ -32508,7 +32542,12 @@
         #   updates IVs
         #
         # Expected arguments
-        #   $interfaceObj   - The interface which has been removed
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $interfaceObj   - The interface which has been removed. Set when called by
+        #                       LA::Statement::deliface->implement, but 'undef' when called by
+        #                       $self->waitPatternSeen
         #
         # Return values
         #   'undef' on improper arguments
@@ -32517,13 +32556,13 @@
         my ($self, $interfaceObj, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $interfaceObj || defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->interfaceObj', @_);
         }
 
         # (For calls from AB::Statement::deliface, need to check it's the right interface)
-        if ($self->waitForInterface eq $interfaceObj->name) {
+        if (! defined $interfaceObj || $self->waitForInterface eq $interfaceObj->name) {
 
             # Update this task's IVs
             $self->ivUndef('waitForInterface');
@@ -32553,7 +32592,12 @@
         # Pauses this task. If a time is specified, sets the time at which the task should resume
         #
         # Expected arguments
-        #   $time   - The time at which the task should resume (matches GA::Session->sessionTime)
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $time   - The time at which the task should resume (matches GA::Session->sessionTime).
+        #               'undef' when called by LA::Statement::waittrig->implement, for a WAITTRIG
+        #               statement with no timeout (in which case, the task is paused indefinitely)
         #
         # Return values
         #   'undef' on improper arguments
@@ -32562,7 +32606,7 @@
         my ($self, $time, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $time || defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->pauseUntil', @_);
         }
@@ -32571,7 +32615,10 @@
         $self->ivPoke('resumeStatus', $self->status);
         $self->ivPoke('status', 'paused');
         # Set the time at which the task will resume
-        $self->ivPoke('checkTime', $time);
+        if (defined $time) {
+
+            $self->ivPoke('checkTime', $time);
+        }
 
         return 1;
     }
@@ -33201,12 +33248,13 @@
             return undef;
         }
 
-        # Get the interface object itself
-        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
-        if (! $obj) {
-
-            return undef;
-        }
+        # (Standard code commented out, because the temporary interface has already deleted itself)
+#        # Get the interface object itself
+#        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
+#        if (! $obj) {
+#
+#            return undef;
+#        }
 
         # Respond to the fired trigger
 
@@ -33218,7 +33266,7 @@
         $self->scriptObj->set_stepCount(0);
 
         # Update this task's IVs
-        $self->resetInterface($obj);
+        $self->resetInterface();
 
         return 1;
     }
@@ -35164,6 +35212,14 @@
                     #   replace the variable with a ?
                     $line =~ s/\@$varName\@/?/;
 
+                } elsif ($varName eq 'purse_contents' || $varName eq 'bank_balance') {
+
+                    # (For a cash value like $10.50, make sure we display 10.50 not 10.5)
+                    $value = $self->roundCashValue($value, TRUE);
+
+                    # Replace the variable with the corresponding value
+                    $line =~ s/\@$varName\@/$value/;
+
                 } else {
 
                     # Commify a numeric value
@@ -37008,18 +37064,23 @@
 
     sub roundCashValue {
 
-        # Called by $self->set_cashValues
+        # Called by $self->set_cashValues and ->processFormatList
         # Prevent Perl rounding errors by rounding a cash value to the number of decimal places
         #   specified by GA::Profile::World->currencyRounding
         #
         # Expected arguments
         #   $value      - An integer or floating point value, e.g. 1.124
         #
+        # Optional arguments
+        #   $formatFlag - TRUE when called by $self->->processFormatList, in which case we use
+        #       sprintf() to return a cash value to the correct number of decimal places (e.g.
+        #       returns 10.50, not 10.5)
+
         # Return values
         #   'undef' on improper arguments
         #   Otherwise returns the rounded value
 
-        my ($self, $value, $check) = @_;
+        my ($self, $value, $formatFlag, $check) = @_;
 
         # Local variables
         my ($rounding, $string);
@@ -37037,7 +37098,7 @@
 
             return $value;
 
-        } else {
+        } elsif ($formatFlag) {
 
             $string = "%." . $rounding . "f";       # e.g. %.3f
             $value = sprintf($string, $value);
@@ -37049,6 +37110,10 @@
             }
 
             return $value;
+
+        } else {
+
+            return Math::Round::nearest((10 ** ($rounding * -1)), $value);
         }
     }
 

@@ -16,6 +16,8 @@ mxp / mxp                     Manages the Mud Xtension Protocol (MXP)
       ;mxp -r                 Allow Locator task to use MXP room data
       ;mxp -k                 Allow MXP to use (some) illegal keywords
                                  (not recommended)
+      ;mxp -p                 Assume world has enabled MXP (recommended for IRE
+                                 MUDs)
        
    Notes:
       The Mud Xtension Protocol (MXP) allows a world more control over the way

@@ -725,7 +725,7 @@
                     }
                 }
 
-                $expression = Language::Axbasic::Expression::Constant->new(
+                $expression = Language::Axbasic::Expression::Arithmetic->new(
                     $self->scriptObj,
                     $self->tokenGroupObj,
                 );
@@ -9705,6 +9705,7 @@
     # OPTION PSEUDO expression
     # OPTION REDIRECT
     # OPTION REQUIRE expression
+    # OPTION SILENT
     # OPTION TYPO
 
     ##################
@@ -9964,6 +9965,24 @@
             return 1;
         }
 
+        # OPTION SILENT statement
+        $token = $self->tokenGroupObj->shiftMatchingToken('silent');
+        if (defined $token) {
+
+            if (! $self->tokenGroupObj->testStatementEnd()) {
+
+                return $self->scriptObj->setError(
+                    'unexpected_keywords,_operators_or_expressions',
+                    $self->_objClass . '->parse',
+                );
+
+            } else {
+
+                $self->scriptObj->add_optionStatement('silent', TRUE);
+                return 1;
+            }
+        }
+
         # OPTION TYPO statement
         $token = $self->tokenGroupObj->shiftMatchingToken('typo');
         if (defined $token) {
@@ -10177,7 +10196,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
         }
 
-        # The rest of the statement is an arithemetic expression which evaluates to a number of
+        # The rest of the statement is an arithmetic expression which evaluates to a number of
         #   seconds
         $expression = Language::Axbasic::Expression::Arithmetic->new(
             $self->scriptObj,
@@ -10262,7 +10281,7 @@
             # Reset the number of steps to take, before taking an automatic pause
             $self->scriptObj->set_stepCount(0);
 
-            # Also, tell the parent task to pause...
+            # Also, tell the parent task to pause
             $self->scriptObj->parentTask->pauseUntil(
                 ($self->scriptObj->session->sessionTime + $seconds),
             );
@@ -22540,9 +22559,16 @@
             #   the first time the trigger fires...
             $self->scriptObj->parentTask->ivPoke('waitForInterface', $interfaceObj->name);
             # ...and then mark the task as paused
-            $self->scriptObj->parentTask->pauseUntil(
-                ($self->scriptObj->session->sessionTime + $timeout),
-            );
+            if (defined $timeoutExp) {
+
+                $self->scriptObj->parentTask->pauseUntil(
+                    ($self->scriptObj->session->sessionTime + $timeout),
+                );
+
+            } else {
+
+                $self->scriptObj->parentTask->pauseUntil();
+            }
 
         } else {
 

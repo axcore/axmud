@@ -4516,8 +4516,12 @@
                     foreach my $labelObj ($regionmapObj->ivValues('gridLabelHash')) {
 
                         # Round the label's position to the nearest half gridblock
-                        my $xPos = $halfWidth * sprintf(
-                            '%.0f',
+#                        my $xPos = $halfWidth * sprintf(
+#                            '%.0f',
+#                            ($labelObj->xPosPixels / $halfWidth),
+#                        );
+                        my $xPos = $halfWidth * Math::Round::nearest(
+                            1,
                             ($labelObj->xPosPixels / $halfWidth),
                         );
 
@@ -4547,8 +4551,12 @@
                     foreach my $labelObj ($regionmapObj->ivValues('gridLabelHash')) {
 
                         # Round the label's position to the nearest half gridblock
-                        my $yPos = $halfHeight * sprintf(
-                            '%.0f',
+#                        my $yPos = $halfHeight * sprintf(
+#                            '%.0f',
+#                            ($labelObj->yPosPixels / $halfHeight),
+#                        );
+                        my $yPos = $halfHeight * Math::Round::nearest(
+                            1,
                             ($labelObj->yPosPixels / $halfHeight),
                         );
 
@@ -5596,7 +5604,8 @@
             # Half a block width is usually fractional, e.g. width 51, half is 25.5
             $halfWidth = $regionmapObj->blockWidthPixels / 2;
             # Round the label's position to the nearest half gridblock
-            $xPosPixels = $halfWidth * sprintf('%.0f', ($xPosPixels / $halfWidth));
+#            $xPosPixels = $halfWidth * sprintf('%.0f', ($xPosPixels / $halfWidth));
+            $xPosPixels = $halfWidth * Math::Round::nearest(1, ($xPosPixels / $halfWidth));
         }
 
         if ($self->mapLabelAlignYFlag) {
@@ -5604,7 +5613,8 @@
             # Half a block height is usually fractional, e.g. height 51, half is 25.5
             $halfHeight = $regionmapObj->blockHeightPixels / 2;
             # Round the label's position to the nearest half gridblock
-            $yPosPixels = $halfHeight * sprintf('%.0f', ($yPosPixels / $halfHeight));
+#            $yPosPixels = $halfHeight * sprintf('%.0f', ($yPosPixels / $halfHeight));
+            $yPosPixels = $halfHeight * Math::Round::nearest(1, ($yPosPixels / $halfHeight));
         }
 
         # Create the new map label object

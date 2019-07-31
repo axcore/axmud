@@ -286,9 +286,6 @@
             && $axmud::CLIENT->mainWin->workspaceObj eq $self
         ) {
             $axmud::CLIENT->mainWin->winDestroy();
-            # GA::Client->stop must not call Gtk3->main_quit(), as it normally does, as this will
-            #   produce a Gtk-CRITICAL error. Instead, tell it to exit
-            $axmud::CLIENT->set_forceExitFlag();
         }
 
         return 1;

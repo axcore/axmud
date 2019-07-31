@@ -1578,6 +1578,12 @@
         my ($group4, $radioButton4) = $self->addRadioButton(
             $self->table, undef, $group3, 'SSL', FALSE, TRUE,
             8, 12, 5, 6);
+        # If SSL is disabled, don't allow that button to be selected
+        if ($axmud::NO_SSL_FLAG) {
+
+            $radioButton4->set_sensitive(FALSE);
+            $radioButton4->set_label('(SSL unavailable)');
+        }
 
         # ->passwordHash, ->accountHash, ->lastConnectChar, ->loginMode (etc)
         $self->addLabel($self->table, '<i><u>Optional settings</u></i>',

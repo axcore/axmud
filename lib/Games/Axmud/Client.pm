@@ -762,7 +762,8 @@
                     'RetainFileCopy',
                     'ListDataDirectory', 'SetDataDirectory', 'BackupData', 'RestoreData',
                         'AutoBackup',
-                    'LoadPlugin', 'EnablePlugin', 'DisablePlugin', 'TestPlugin', 'ListPlugin',
+                    'ImportPlugin', 'LoadPlugin', 'EnablePlugin', 'DisablePlugin', 'TestPlugin',
+                        'ListPlugin',
                     'AddInitialPlugin', 'DeleteInitialPlugin', 'ListInitialPlugin',
                     'SetTelnetOption', 'SetMUDProtocol', 'SetTermType', 'ConfigureTerminal',
                     'MSDP', 'MSSP', 'MXP', 'MSP', 'ZMP', 'SendZMP', 'InputZMP', 'Aardwolf', 'ATCP',
@@ -1434,6 +1435,8 @@
             #   of serious problems, or because the IP/DNS/port has changed), and the most recent
             #   Axmud version whose saved data requires the patch
             constWorldPatchHash         => {
+                'achaea'            => '1.2.041',
+                'aetolia'           => '1.2.041',
                 'alteraeon'         => '1.1.270',
                 'avalonrpg'         => '1.1.012',
                 'discworld'         => '1.1.343',
@@ -1441,8 +1444,11 @@
                 'dslocal'           => '1.1.270',
                 'dsprime'           => '1.1.270',
                 'dunemud'           => '1.2.0',
+                'imperian'          => '1.2.041',
                 'islands'           => '1.2.0',
+                'kallisti'          => '1.2.041',
                 'luminari'          => '1.1.270',
+                'lusternia'         => '1.2.041',
                 'mud1'              => '1.1.270',
                 'mud2'              => '1.1.270',
                 'mudii'             => '1.1.270',
@@ -4075,6 +4081,13 @@
             #   those using hyphens instead of underlines); FALSE if it should only allow legal
             #   MXP keywords
             allowMxpFlexibleFlag        => FALSE,       # [config]
+            # Flag set to TRUE if GA::Session should assume that MXP has been negotiated with the
+            #   server (by artificially changing the value of GA::Session->mxpMode from 'no_invite'
+            #   to 'client_agree' once automatic logic is complete); FALSE if Axmud should rely on
+            #   telnet option negoatiation, as normal
+            # (Can be set to TRUE for IRE MUDs that provide MXP by default, but don't negotiate it
+            #   with the client)
+            allowMxpPermFlag            => FALSE,       # [config]
             # Flag temporarily set to TRUE when modifying the flags above, if
             #   $self->set_allowMxpFlag should not issue a new MXP <SUPPORTS> tag, as it normally
             #   would; usually set to FALSE
@@ -4886,6 +4899,8 @@
             constBackgroundColour       => 'black',
             constFont                   => 'monospace',
             constFontSize               => 10,
+            # In Pueblo mode, the default colour for clickable links (not used otherwise)
+            constPuebloLinkColour       => 'CYAN',
             # Registry hash of colour scheme objects, each of which defines a colour scheme that can
             #   be used in a Gtk3::TextView
             # Colour schemes with the same name as a type of window are used as the default colour
@@ -5353,6 +5368,10 @@
             # (Thus, a single installation of Axmud can be used by two users, one with a visual
             #   impairment and one without)
             systemAllowTTSFlag          => FALSE,                   # [config]
+            # If the user specifies a TTS engine from the command line (e.g. by running
+            #   './axmud.pl festival'  or './baxmud.pl deathmud.com 5000 festival'), that engine
+            #   is used exclusively while Axmud is running. This IV stores the engine, if specified
+            forceTTSEngine              => undef,
             # Constant list of TTS engines that Axmud currently supports - eSpeak, espeak-ng, Flite,
             #   Festival, Swift (using Cepstral) and a dummy engine, 'none', which produces no
             #   speech when specified
@@ -5682,13 +5701,6 @@
             startDate                   => undef,
             startClockString            => undef,
             startDateString             => undef,
-
-            # Axmud usually terminates via a call to Gtk3->main_quit in GA::Client->stop. Doing
-            #   this, rather than using the standard Perl exit, prevents a segfault
-            # However, in certain situations, we may need to use exit after all (e.g. when
-            #   GA::Obj::Workspace->stop closes a spare 'main' window). In those cases, the code can
-            #   set this flag to TRUE
-            forceExitFlag               => FALSE,
 
             # When text is received from the world that doesn't end in a newline character, we wait
             #   a short time before treating it as a prompt. If nothing else is received in that
@@ -6339,8 +6351,8 @@
 
         # Local variables
         my (
-            $warningFlag, $roomObj, $exitObj, $desktopObj, $host, $port, $world, $profObj, $taskObj,
-            $offlineFlag,
+            $warningFlag, $roomObj, $exitObj, $desktopObj, $host, $engine, $port, $world, $profObj,
+            $taskObj, $offlineFlag,
             @list,
         );
 
@@ -6747,7 +6759,23 @@
             # If the port is not specified, the generic port is used:
             #   ./axmud.pl deathmud.com          (use port 23)
             # The user can also specify a world profile name:
-            #   ./axmud:pl deathmud
+            #   ./axmud.pl deathmud
+            #
+            # Any of those formats can use baxmud.pl rather than axmud.pl
+            # Any of those formats can specify one of Axmud's supported text-to-speech engines,
+            #   after all the other arguments (any of the items in $self->constTTSList, e.g.
+            #   'festival'). If a recognised speech engine is specified, that engine is used for
+            #   all text-to-speech while Axmud is running
+            $engine = $ARGV[-1];
+            if (defined $engine && defined $self->ivFind('constTTSList', $engine)) {
+
+                pop @ARGV;
+                $self->ivPoke('forceTTSEngine', $engine);
+            }
+        }
+
+        if (@ARGV) {
+
             $host = shift @ARGV;
             $port = shift @ARGV;
             if (@ARGV) {
@@ -7037,16 +7065,8 @@
             mkdir ($tempDir, 0755);
         }
 
-        # Because of a Gtk issue, using 'exit' will cause a segfault. However, in certain (rare)
-        #   situations, we do actually need to use 'exit' or we'll get a Gtk3-CRITICAL error
-        if (
-            ! $self->forceExitFlag
-            || (! $axmud::BLIND_MODE_FLAG && ! $self->sessionCount)
-        ) {
-            Gtk3->main_quit();
-        } else {
-            exit;
-        }
+        # Halt Gtk3, which halts Axmud
+        Gtk3->main_quit();
 
         return 1;
     }
@@ -13563,6 +13583,8 @@
         #               set to an empty string or 'undef', or if no TTS configuration object called
         #               $name exists, the 'default' configuration object is used)
         #           - If set to the dummy configuration 'none', nothing is read out
+        #           - If $self->forceTTSEngine, that is used as the configuration, overriding any
+        #               setting of $configuration besides 'none'
         #   $session
         #           - The calling GA::Session (can be set to 'undef' if there is no calling
         #               session)
@@ -13609,6 +13631,22 @@
             || (! $self->systemAllowTTSFlag && ! $overrideFlag)
         ) {
             return undef;
+        }
+
+        # If the user specified a TTS engine from the command line, it overrides all other TTS
+        #   engines
+        if (
+            $self->forceTTSEngine
+            && (! defined $configuration || $configuration ne 'none')
+        ) {
+            if (defined $configuration && $self->forceTTSEngine ne $configuration) {
+
+                # Ignore the voice/speed/rate/pitch/volume specified by the calling function
+                #   GA::Cmd::Speak->do
+                $voice = $speed = $rate = $pitch = $volume = undef;
+            }
+
+            $configuration = $self->forceTTSEngine;
         }
 
         # The system commands use " to contain the text portion, so if $text contains any double
@@ -14403,19 +14441,25 @@
         }
 
         # Update TTS attributes
-        foreach my $attrib ($taskObj->ivKeys('ttsAttribHash')) {
+#       # v1.2.036. For unknown reasons, calling Games::Axmud::ivKeys() while loading a plugin from
+#       #   ../share/private causes a stream of Perl errors. Workaround is to fetch the keys from
+#       #   the IV directly
+#       foreach my $attrib ($taskObj->ivKeys('ttsAttribHash')) {
+        foreach my $attrib (keys %{$taskObj->{'ttsAttribHash'}}) {
 
             # In $self->ttsAttribHash, any existing (probably built-in tasks) using the same
             #   attribute are replaced with the task loaded from the plugin
             $self->ivAdd('ttsAttribHash', $attrib, $taskObj->name);
         }
 
-        foreach my $flagAttrib ($taskObj->ivKeys('ttsFlagAttribHash')) {
+#       foreach my $flagAttrib ($taskObj->ivKeys('ttsFlagAttribHash')) {
+        foreach my $flagAttrib (keys %{$taskObj->{'ttsFlagAttribHash'}}) {
 
             $self->ivAdd('ttsFlagAttribHash', $flagAttrib, $taskObj->name);
         }
 
-        foreach my $alertAttrib ($taskObj->ivKeys('ttsAlertAttribHash')) {
+#       foreach my $alertAttrib ($taskObj->ivKeys('ttsAlertAttribHash')) {
+        foreach my $alertAttrib (keys %{$taskObj->{'ttsAlertAttribHash'}}) {
 
             $self->ivAdd('ttsAlertAttribHash', $alertAttrib, $taskObj->name);
         }
@@ -16646,6 +16690,8 @@
             $self->ivPoke('allowMxpRoomFlag', $flag);
         } elsif ($type eq 'flexible') {
             $self->ivPoke('allowMxpFlexibleFlag', $flag);
+        } elsif ($type eq 'perm') {
+            $self->ivPoke('allowMxpPermFlag', $flag);
         }
 
         # The data stored in this IV is saved in the 'config' file
@@ -18311,21 +18357,6 @@
         }
 
         $self->ivDelete('fileObjHash', $obj->name);
-
-        return 1;
-    }
-
-    sub set_forceExitFlag {
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_forceExitFlag', @_);
-        }
-
-        $self->ivPoke('forceExitFlag', TRUE);
 
         return 1;
     }
@@ -21443,6 +21474,8 @@
         { $_[0]->{allowMxpRoomFlag} }
     sub allowMxpFlexibleFlag
         { $_[0]->{allowMxpFlexibleFlag} }
+    sub allowMxpPermFlag
+        { $_[0]->{allowMxpPermFlag} }
     sub mxpPreventSupportFlag
         { $_[0]->{mxpPreventSupportFlag} }
 
@@ -21682,6 +21715,8 @@
         { $_[0]->{constFont} }
     sub constFontSize
         { $_[0]->{constFontSize} }
+    sub constPuebloLinkColour
+        { $_[0]->{constPuebloLinkColour} }
     sub colourSchemeHash
         { my $self = shift; return %{$self->{colourSchemeHash}}; }
 
@@ -21837,6 +21872,8 @@
         { $_[0]->{customAllowTTSFlag} }
     sub systemAllowTTSFlag
         { $_[0]->{systemAllowTTSFlag} }
+    sub forceTTSEngine
+        { $_[0]->{forceTTSEngine} }
     sub constTTSList
         { my $self = shift; return @{$self->{constTTSList}}; }
     sub constTTSCompatList
@@ -21923,9 +21960,6 @@
         { $_[0]->{startClockString} }
     sub startDateString
         { $_[0]->{startDateString} }
-
-    sub forceExitFlag
-        { $_[0]->{forceExitFlag} }
 
     sub constPromptWaitTime
         { $_[0]->{constPromptWaitTime} }

@@ -38,17 +38,18 @@ use vars qw(
     $BLIND_MODE_FLAG $SAFE_MODE_FLAG $TEST_MODE_FLAG @TEST_MODE_LOGIN_LIST $TEST_MODE_CMD_FLAG
     $TEST_TERM_MODE_FLAG $TEST_GLOB_MODE_FLAG $TEST_REGEX_FLAG $TEST_REGEX_ERROR
     $TEST_PRE_CONFIG_FLAG $TEST_CTRL_SEQ_FLAG $TEST_MODEL_FLAG $TEST_MODEL_TIME $DEFAULT_ROOM
-    $DEFAULT_EXIT @LICENSE_LIST @CREDIT_LIST $TOP_DIR $SHARE_DIR $DEFAULT_DATA_DIR $DATA_DIR $CLIENT
+    $DEFAULT_EXIT @LICENSE_LIST @CREDIT_LIST $NO_SSL_FLAG $TOP_DIR $SHARE_DIR $DEFAULT_DATA_DIR
+    $DATA_DIR $CLIENT
 );
 
 $SCRIPT = 'Axmud';              # Name used in system messages
-$VERSION = '1.2.0';             # Version number for this client
-$DATE = '31 Mar 2019';
+$VERSION = '1.2.041';           # Version number for this client
+$DATE = '31 Jul 2019';
 $NAME_SHORT = 'axmud';          # Lower-case version of $SCRIPT; same as the package name above
 $NAME_ARTICLE = 'an Axmud';     # Name with an article
 $BASIC_NAME = 'Axbasic';        # Name of Axmud's built-in scripting library
 $BASIC_ARTICLE = 'an Axbasic';  # Name with an article
-$BASIC_VERSION = '1.002';       # Version number for the Axbasic library
+$BASIC_VERSION = '1.003';       # Version number for the Axbasic library
 $AUTHORS = 'A S Lewis';
 $COPYRIGHT = 'Copyright 2011-2019 A S Lewis';
 $URL = 'http://axmud.sourceforge.io/';
@@ -175,13 +176,13 @@ use Gtk3 '-init';
 use HTTP::Tiny;
 use IO::Socket::INET;
 use IO::Socket::INET6;
-use IO::Socket::SSL;
 use IPC::Run qw(start);
 use JSON;
+use Math::Round;
 use Math::Trig;
 use Module::Load qw(load);
 use Net::OpenSSH;
-use POSIX qw(ceil);
+use POSIX qw(ceil floor);
 use Regexp::IPv6 qw($IPv6_re);
 use Safe;
 use Scalar::Util qw(looks_like_number);
@@ -190,6 +191,15 @@ use Symbol qw(qualify);
 use Storable qw(lock_nstore lock_retrieve);
 use Time::HiRes qw(gettimeofday);
 use Time::Piece;
+
+# Net::SSLeay issues can cause inability to install IO::Socket::SSL on some systems. If it's not
+#   available, set a global flag so that GA::Session won't try to connect to a world with SSL
+eval "use IO::Socket::SSL";
+if ($!) {
+    $NO_SSL_FLAG = TRUE;
+} else {
+    $NO_SSL_FLAG = FALSE;
+}
 
 # Internal dependencies
 use Games::Axmud;

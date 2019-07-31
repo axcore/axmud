@@ -131,7 +131,7 @@
     use diagnostics;
 
     # (This variable exists for the benefit of Kwalitee, and is never referenced by the code)
-    our $VERSION = '1.2.0';
+    our $VERSION = '1.2.041';
 
     use Glib qw(TRUE FALSE);
 
@@ -4104,8 +4104,16 @@ If a world profile already exists, you can specify its name instead
 
     axmud.pl cryosphere
 
-Note that window tiling and multiple desktop support has not been implemented on
-MS Windows yet.
+You can force Axmud to use a particular text-to-speech engine by adding the
+engine's name to the end of those commands. This overrides (almost) all other
+text-to-speech settings.
+
+Acceptable engine names are 'espeak', 'esng' (for espeak-ng), 'flite' (for
+Festival Lite), 'festival', 'swift' and 'none' (for the dummy engine). For
+example:
+
+    baxmud.pl empiremud.net 4000 esng
+    axmud.pl cryosphere festival
 
 =head1 DESCRIPTION
 

@@ -1534,6 +1534,7 @@
         my $checkButton6 = $self->addCheckButton(
             $table, 'Sessions share a single \'main\' window', undef, FALSE,
             7, 12, 5, 6);
+        $checkButton6->set_active($axmud::CLIENT->shareMainWinFlag);
 
         my $button2 = $self->addButton(
             $table,
@@ -1545,14 +1546,25 @@
 
         my $entry3 = $self->addEntry($table, undef, FALSE,
             10, 12, 6, 7,
-            8, 8);
-        $entry3->set_text($axmud::CLIENT->restartShareMainWinMode);
-
+            12, 12);
+        # (The entry remains empty when the IV value is 'default')
+        if ($axmud::CLIENT->restartShareMainWinMode eq 'on') {
+            $entry3->set_text('share');
+        } elsif ($axmud::CLIENT->restartShareMainWinMode eq 'off') {
+            $entry3->set_text('don\'t share');
+        }
+        
         # ->signal_connect from above
         $button2->signal_connect('clicked' => sub {
 
             $self->session->pseudoCmd('toggleshare', $self->pseudoCmdMode);
-            $entry3->set_text($axmud::CLIENT->restartShareMainWinMode);
+            if ($axmud::CLIENT->restartShareMainWinMode eq 'default') {
+                $entry3->set_text('');
+            } elsif ($axmud::CLIENT->restartShareMainWinMode eq 'on') {
+                $entry3->set_text('share');
+            } else {
+                $entry3->set_text('don\'t share');
+            }
         });
 
         my $checkButton7 = $self->addCheckButton(
@@ -2911,12 +2923,21 @@
             $axmud::CLIENT->set_allowMxpFlag('flexible', $checkButton27->get_active());
         });
 
+        my $checkButton28 = $self->addCheckButton(
+            $table, 'Assume world has enabled MXP (for IRE MUDs)', undef, TRUE,
+            8, 12, 15, 16);
+        $checkButton28->set_active($axmud::CLIENT->allowMxpPermFlag);
+        $checkButton28->signal_connect('toggled' => sub {
+
+            $axmud::CLIENT->set_allowMxpFlag('perm', $checkButton28->get_active());
+        });
+
         # Sensitise/desensitise buttons
         $self->settings8Tab_sensitiseButtons(
             $checkButton10, $checkButton11, $checkButton12, $checkButton15, $checkButton16,
             $checkButton17, $checkButton18, $checkButton19, $checkButton20, $checkButton21,
             $checkButton22, $checkButton23, $checkButton24, $checkButton25, $checkButton26,
-            $checkButton27,
+            $checkButton27, $checkButton28, 
         );
 
         # (->signal_connects from above)
@@ -2927,7 +2948,7 @@
                 $checkButton10, $checkButton11, $checkButton12, $checkButton15, $checkButton16,
                 $checkButton17, $checkButton18, $checkButton19, $checkButton20, $checkButton21,
                 $checkButton22, $checkButton23, $checkButton24, $checkButton25, $checkButton26,
-                $checkButton27,
+                $checkButton27, $checkButton28,
             );
 
             $axmud::CLIENT->toggle_mudProtocol('msp', $checkButton10->get_active());
@@ -2940,7 +2961,7 @@
                 $checkButton10, $checkButton11, $checkButton12, $checkButton15, $checkButton16,
                 $checkButton17, $checkButton18, $checkButton19, $checkButton20, $checkButton21,
                 $checkButton22, $checkButton23, $checkButton24, $checkButton25, $checkButton26,
-                $checkButton27,
+                $checkButton27, $checkButton28,
             );
 
             $axmud::CLIENT->toggle_mudProtocol('mxp', $checkButton15->get_active());
@@ -2969,7 +2990,7 @@
                 $checkButton10, $checkButton11, $checkButton12, $checkButton15, $checkButton16,
                 $checkButton17, $checkButton18, $checkButton19, $checkButton20, $checkButton21,
                 $checkButton22, $checkButton23, $checkButton24, $checkButton25, $checkButton26,
-                $checkButton27,
+                $checkButton27, $checkButton28,
             );
         });
 
@@ -2994,7 +3015,7 @@
                 $checkButton10, $checkButton11, $checkButton12, $checkButton15, $checkButton16,
                 $checkButton17, $checkButton18, $checkButton19, $checkButton20, $checkButton21,
                 $checkButton22, $checkButton23, $checkButton24, $checkButton25, $checkButton26,
-                $checkButton27,
+                $checkButton27, $checkButton28,
             );
         });
 
@@ -3012,7 +3033,7 @@
         #   $checkButton10, $checkButton11, $checkButton12, $checkButton15, $checkButton16,
         #   $checkButton17, $checkButton18, $checkButton19, $checkButton20, $checkButton21,
         #   $checkButton22, $checkButton23, $checkButton24, $checkButton25, $checkButton26,
-        #   $checkButton27
+        #   $checkButton27, $checkButton28, 
         #       - The affected buttons
         #
         # Return values
@@ -3023,7 +3044,7 @@
             $self, $checkButton10, $checkButton11, $checkButton12, $checkButton15, $checkButton16,
             $checkButton17, $checkButton18, $checkButton19, $checkButton20, $checkButton21,
             $checkButton22, $checkButton23, $checkButton24, $checkButton25, $checkButton26,
-            $checkButton27, $check
+            $checkButton27, $checkButton28, $check
         ) = @_;
 
         # Local variables
@@ -3036,6 +3057,7 @@
             || ! defined $checkButton18 || ! defined $checkButton19 || ! defined $checkButton20
             || ! defined $checkButton21 || ! defined $checkButton22 || ! defined $checkButton23
             || ! defined $checkButton24 || ! defined $checkButton25 || ! defined $checkButton26
+            || ! defined $checkButton27 || ! defined $checkButton28 
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -3069,6 +3091,7 @@
             $checkButton25->set_sensitive(FALSE);
             $checkButton26->set_sensitive(FALSE);
             $checkButton27->set_sensitive(FALSE);
+            $checkButton28->set_sensitive(FALSE);
 
         } else {
 
@@ -3097,6 +3120,7 @@
             $checkButton25->set_sensitive(TRUE);
             $checkButton26->set_sensitive(TRUE);
             $checkButton27->set_sensitive(TRUE);
+            $checkButton28->set_sensitive(TRUE);
         }
 
         return 1;

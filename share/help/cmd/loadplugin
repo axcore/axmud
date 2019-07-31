@@ -11,6 +11,10 @@ lpl / loadplugin              Loads an Axmud plugin
          functionality with new tasks, client commands, cages, 'edit' windows 
          and menu items, all of them integrating seemlessly with the existing 
          Axmud code.
+      Because of an unresolved Perl issue, plugins can only be loaded from
+         Axmud's data directory. If you've downloaded a plugin (for example,
+         from the Axmud website), you should use ';importplugin' first, which
+         copies the file to the correct location in Axmud's data directory.
 
       This command loads an Axmud plugin immediately. If you want to load
          plugins every time Axmud starts, use the ';addinitialplugin' command.

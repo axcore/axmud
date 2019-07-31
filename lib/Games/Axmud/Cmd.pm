@@ -48,7 +48,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['test'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'General debugging command';
 
         # Bless the object into existence
@@ -117,7 +117,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['hpt', 'testhelp', 'helptest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tests ' . $axmud::SCRIPT . ' help files';
 
         # Bless the object into existence
@@ -733,7 +733,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['da', 'dumpascii'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tests display of ASCII characters';
 
         # Bless the object into existence
@@ -883,7 +883,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tco', 'testcolor', 'testcolour'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tests display of ' . $axmud::SCRIPT . ' colour tags';
 
         # Bless the object into existence
@@ -1057,7 +1057,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['txt', 'testxterm'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tests display of ' . $axmud::SCRIPT . ' xterm-256 colour tags';
 
         # Bless the object into existence
@@ -1198,7 +1198,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tf', 'testfile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tests a data file';
 
         # Bless the object into existence
@@ -1414,7 +1414,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tmd', 'testmodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Performs an integrity check on the world model';
 
         # Bless the object into existence
@@ -1527,7 +1527,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tpt', 'testregex', 'patterntest', 'testpattern'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens the Pattern Test window';
 
         # Bless the object into existence
@@ -1592,7 +1592,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['inp', 'qinput', 'quickinput'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens the Quick Input window';
 
         # Bless the object into existence
@@ -1657,7 +1657,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sim', 'simworld', 'simulateworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Simulates text received from the world';
 
         # Bless the object into existence
@@ -1755,7 +1755,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spr', 'simpr', 'simprompt', 'simulateprompt'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Simulates a prompt received from the world';
 
         # Bless the object into existence
@@ -1850,7 +1850,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scm', 'simcmd', 'simulatecmd', 'simulatecommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Simulates a world command';
 
         # Bless the object into existence
@@ -1951,7 +1951,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['shk', 'simhook', 'simulatehook'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Simulates ' . $axmud::NAME_ARTICLE . ' hook event';
 
         # Bless the object into existence
@@ -2242,7 +2242,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dbt', 'debugtoggle'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles ' . $axmud::SCRIPT . ' debugging flags';
 
         # Bless the object into existence
@@ -2408,7 +2408,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dco', 'debugconnect', 'debugconnection'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles connection debugging flags';
 
         # Bless the object into existence
@@ -2568,7 +2568,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['res', 'restart'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Restarts suspended ' . $axmud::SCRIPT . ' internal processes';
 
         # Bless the object into existence
@@ -2658,7 +2658,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['peek'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Reads ' . $axmud::SCRIPT . ' internal data';
 
         # Bless the object into existence
@@ -2859,7 +2859,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['poke'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies ' . $axmud::SCRIPT . ' internal data';
 
         # Bless the object into existence
@@ -2980,7 +2980,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['pkh', 'pokehelp', 'peekhelp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows strings for \';peek\' and \';poke\' operations';
 
         # Bless the object into existence
@@ -3082,7 +3082,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['h', 'help'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows help for client commands';
 
         # Bless the object into existence
@@ -3341,7 +3341,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['hint'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the current world\'s hint text again';
 
         # Bless the object into existence
@@ -3417,7 +3417,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['qh', 'quickhelp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows short ' . $axmud::SCRIPT . ' help document';
 
         # Bless the object into existence
@@ -3517,7 +3517,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sh', 'shelp', 'searchhelp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Searches ' . $axmud::SCRIPT . ' help';
 
         # Bless the object into existence
@@ -3899,7 +3899,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lrs', 'listreserved'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all reserved names';
 
         # Bless the object into existence
@@ -3985,7 +3985,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ab', 'about'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows information about ' . $axmud::SCRIPT;
 
         # Bless the object into existence
@@ -4107,7 +4107,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['oaw', 'aboutwin', 'openaboutwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens the ' . $axmud::SCRIPT . ' information window';
 
         # Bless the object into existence
@@ -4257,7 +4257,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['caw', 'closeabout', 'closeaboutwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Closes the ' . $axmud::SCRIPT . ' information window';
 
         # Bless the object into existence
@@ -4341,7 +4341,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['edq', 'editquick'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens the quick preference window';
 
         # Bless the object into existence
@@ -4420,7 +4420,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['edc', 'editclient'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens a preference window for the ' . $axmud::SCRIPT . ' client';
 
         # Bless the object into existence
@@ -4499,7 +4499,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eds', 'editsession'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens a preference window for the current session';
 
         # Bless the object into existence
@@ -4578,7 +4578,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sws', 'swsession', 'switchsession'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Switches the current session';
 
         # Bless the object into existence
@@ -4780,7 +4780,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mxs', 'mxsession', 'maxsession'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the maximum number of concurrent sessions';
 
         # Bless the object into existence
@@ -4870,7 +4870,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ls', 'listsession'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists sessions';
 
         # Bless the object into existence
@@ -4994,7 +4994,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ss', 'setsession'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Changes various session settings';
 
         # Bless the object into existence
@@ -5261,7 +5261,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cn', 'connect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Connects to a new world';
 
         # Bless the object into existence
@@ -5450,7 +5450,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rc', 'reconnect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Saves files and reconnects to the same world';
 
         # Bless the object into existence
@@ -5594,7 +5594,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['xcn', 'xconnect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Reconnects to the same world without saving files';
 
         # Bless the object into existence
@@ -5743,7 +5743,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['telnet'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Connects to an unnamed world via telnet';
 
         # Bless the object into existence
@@ -5871,7 +5871,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ssh'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Connects to an unnamed world via SSH';
 
         # Bless the object into existence
@@ -5999,7 +5999,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ssl'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Connects to an unnamed world via SSL';
 
         # Bless the object into existence
@@ -6127,7 +6127,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lgn', 'login'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Marks the current character as logged in';
 
         # Bless the object into existence
@@ -6218,7 +6218,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['quit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends \'quit\' and saves files';
 
         # Bless the object into existence
@@ -6318,7 +6318,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['qquit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends \'quit\' but doesn\'t save files';
 
         # Bless the object into existence
@@ -6420,7 +6420,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['qal', 'quitall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends \'quit\' to every world and saves files';
 
         # Bless the object into existence
@@ -6526,7 +6526,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['exit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Terminates the connection and saves files';
 
         # Bless the object into existence
@@ -6627,7 +6627,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['xxit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Terminates the connection and doesn\'t save files';
 
         # Bless the object into existence
@@ -6731,7 +6731,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eal', 'exitall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Terminates every connection and saves files';
 
         # Bless the object into existence
@@ -6838,7 +6838,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['asd', 'abortquit', 'abortexit', 'abortselfdestruct'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Aborts delayed quits/exits in all sessions';
 
         # Bless the object into existence
@@ -6914,7 +6914,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ssn', 'closetab', 'stopsession'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Stops a session and closes its tab';
 
         # Bless the object into existence
@@ -7053,7 +7053,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['stc', 'stopclient'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Stops the client and saves files';
 
         # Bless the object into existence
@@ -7174,7 +7174,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['boss', 'panic'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Stops the client and doesn\'t save files';
 
         # Bless the object into existence
@@ -7237,7 +7237,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['afk', 'awayfromkeys'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets an alert for when the world sends text';
 
         # Bless the object into existence
@@ -7331,7 +7331,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rmd', 'remind', 'setremind', 'setreminder'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets an alert for some time in the future';
 
         # Bless the object into existence
@@ -7473,7 +7473,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scd', 'countdown', 'setcountdown'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets a countdown';
 
         # Bless the object into existence
@@ -7527,7 +7527,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scu', 'countup', 'setcountup'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets a countdown, counting up from zero';
 
         # Bless the object into existence
@@ -7581,7 +7581,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scs', 'setcharset'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Specifies the character set to use';
 
         # Bless the object into existence
@@ -7781,7 +7781,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['smo', 'setmonth', 'setcustommonth'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets customised months of the year';
 
         # Bless the object into existence
@@ -7918,7 +7918,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scw', 'setday', 'setweek', 'setcustomweek'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets customised days of the week';
 
         # Bless the object into existence
@@ -8054,7 +8054,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scf', 'commify', 'setcommifymode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Customises conversion of long numbers';
 
         # Bless the object into existence
@@ -8192,7 +8192,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sap', 'setapp', 'setapplication'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets external application commands';
 
         # Bless the object into existence
@@ -8379,7 +8379,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rap', 'resetapp', 'resetapplication'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets external application commands';
 
         # Bless the object into existence
@@ -8483,7 +8483,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spd', 'setdelay', 'setpromptdelay'],
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets a system prompt delay time';
 
         # Bless the object into existence
@@ -8608,7 +8608,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rp', 'repeat'],
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a world command multiple times';
 
         # Bless the object into existence
@@ -8690,7 +8690,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['irp', 'intrep', 'intervalrepeat'],
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a world command multiple times at intervals';
 
         # Bless the object into existence
@@ -8785,7 +8785,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['stop', 'stopcmd', 'stopcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Stops all repeating / excess commands';
 
         # Bless the object into existence
@@ -8848,7 +8848,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rdm', 'redirect', 'redirectmode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Turns redirect mode on/off';
 
         # Bless the object into existence
@@ -8951,7 +8951,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['srd', 'setredirect', 'setredirectmode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Fine-tunes redirect mode';
 
         # Bless the object into existence
@@ -9072,7 +9072,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tin', 'toggleinstruct', 'toggleinstruction'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Enables/disables various instruction settings';
 
         # Bless the object into existence
@@ -9289,7 +9289,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tsg', 'sigil', 'togglesigil'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Enables/disables instruction sigils';
 
         # Bless the object into existence
@@ -9509,7 +9509,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['csp', 'cmdsep', 'commandseparator'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the command separator';
 
         # Bless the object into existence
@@ -9594,7 +9594,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['echo'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays an echo string as a system message';
 
         # Bless the object into existence
@@ -9670,7 +9670,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['perl'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Executes a Perl string as a programme';
 
         # Bless the object into existence
@@ -9743,7 +9743,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['multi'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Interprets a multi string in multiple sessions';
 
         # Bless the object into existence
@@ -9819,7 +9819,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spw', 'speed', 'speedwalk'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Interprets a speedwalk string';
 
         # Bless the object into existence
@@ -9896,7 +9896,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['slw', 'slow', 'slowwalk'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Handles the current world\'s slowwalk settings';
 
         # Bless the object into existence
@@ -10089,7 +10089,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['crawl'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Enables/disables crawl mode';
 
         # Bless the object into existence
@@ -10192,7 +10192,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['byp', 'bypass'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Interprets a bypass string as a world command';
 
         # Bless the object into existence
@@ -10268,7 +10268,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['auc', 'adduc', 'addusercmd', 'addusercommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new user command';
 
         # Bless the object into existence
@@ -10371,7 +10371,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['duc', 'deluc', 'deleterusercmd', 'deleteusercommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a user command';
 
         # Bless the object into existence
@@ -10472,7 +10472,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['luc', 'listuc', 'listusercmd', 'listusercommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists user commands';
 
         # Bless the object into existence
@@ -10582,7 +10582,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ruc', 'resetuc', 'resetusercmd', 'resetusercommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets the user command list';
 
         # Bless the object into existence
@@ -10649,7 +10649,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['db', 'dispbuff', 'displaybuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the status of the session\'s display buffer';
 
         # Bless the object into existence
@@ -10726,7 +10726,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sdb', 'setdispbuff', 'setdisplaybuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the size of display buffers';
 
         # Bless the object into existence
@@ -10813,7 +10813,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['edb', 'editdispbuff', 'editdisplaybuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a display buffer line';
 
         # Bless the object into existence
@@ -10915,7 +10915,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ddb', 'dumpdispbuff', 'dumpdisplaybuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays contents of the session\'s display buffer';
 
         # Bless the object into existence
@@ -11125,7 +11125,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ib', 'instructbuff', 'instructionbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the status of an instruction buffer';
 
         # Bless the object into existence
@@ -11222,7 +11222,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sib', 'setinstructbuff', 'setinstructionbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the size of instruction buffers';
 
         # Bless the object into existence
@@ -11309,7 +11309,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eib', 'editinstructbuff', 'editinstructionbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens \'edit\' window for an instruction buffer item';
 
         # Bless the object into existence
@@ -11439,7 +11439,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dib', 'dumpinstructbuff', 'dumpinstructionbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays contents of an instruction buffer';
 
         # Bless the object into existence
@@ -11705,7 +11705,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cb', 'cmdbuff', 'commandbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the status of a world command buffer';
 
         # Bless the object into existence
@@ -11802,7 +11802,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scb', 'setcmdbuff', 'setcommandbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the size of world command buffers';
 
         # Bless the object into existence
@@ -11889,7 +11889,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ecb', 'editcmdbuff', 'editcommandbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a command buffer item';
 
         # Bless the object into existence
@@ -12019,7 +12019,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dcb', 'dumpcmdbuff', 'dumpcommandbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays contents of a world command buffer';
 
         # Bless the object into existence
@@ -12277,7 +12277,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['svb', 'savebuff', 'savebuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Saves display/command buffers to file';
 
         # Bless the object into existence
@@ -12555,7 +12555,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ldb', 'loadbuff', 'loadbuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Loads display/command buffers from file';
 
         # Bless the object into existence
@@ -12792,7 +12792,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rpb', 'rpbuff', 'replaybuffer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Replays display/command buffers in \'offline\' mode';
 
         # Bless the object into existence
@@ -12946,7 +12946,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['hrp', 'haltrp', 'haltreplay'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Halts a buffer replay currently in progress';
 
         # Bless the object into existence
@@ -13028,7 +13028,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sac', 'setauto', 'setautocomplete'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets auto-complete options';
 
         # Bless the object into existence
@@ -13224,7 +13224,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['twk', 'togglewinkey', 'togglewindowkey'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles special keys used with ' . $axmud::SCRIPT . ' windows';
 
         # Bless the object into existence
@@ -13439,7 +13439,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tmw', 'togglemain', 'togglemainwin', 'togglemainwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles special features of \'main\' windows';
 
         # Bless the object into existence
@@ -13611,7 +13611,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tlb', 'togglelabel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles toolbar button labels';
 
         # Bless the object into existence
@@ -13707,7 +13707,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tir', 'toggleir', 'toggleirreversible'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles irreversible icons in \'edit\' windows';
 
         # Bless the object into existence
@@ -13797,7 +13797,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tpp', 'togglepop', 'togglepopup'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles popup windows';
 
         # Bless the object into existence
@@ -13873,7 +13873,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tsl', 'togglelink', 'toggleshortlink'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles detection of short weblinks';
 
         # Bless the object into existence
@@ -13950,7 +13950,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['shf', 'showfile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows information about data files';
 
         # Bless the object into existence
@@ -14286,7 +14286,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dsl', 'disablesaveload'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Disables saving/loading of all files';
 
         # Bless the object into existence
@@ -14372,7 +14372,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dsw', 'disablesaveworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Disables saving files associated with a world';
 
         # Bless the object into existence
@@ -14483,7 +14483,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sv', 'save'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Saves a file (or files)';
 
         # Bless the object into existence
@@ -15071,7 +15071,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['load'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Loads a file (or files)';
 
         # Bless the object into existence
@@ -15343,7 +15343,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ats', 'autosave'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Turns auto-saves on/off';
 
         # Bless the object into existence
@@ -15529,7 +15529,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ems', 'emsave', 'emergencysave'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Performs an emergency save';
 
         # Bless the object into existence
@@ -15607,7 +15607,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['exf', 'exportfile', 'exportfiles'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Exports a file (or files)';
 
         # Bless the object into existence
@@ -16085,7 +16085,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['imf', 'importfile', 'importfiles'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Imports a file (or files)';
 
         # Bless the object into existence
@@ -16561,7 +16561,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['exd', 'exportdata'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Exports an object (or objects)';
 
         # Bless the object into existence
@@ -16821,7 +16821,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['imd', 'importdata'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Imports an object (or objects)';
 
         # Bless the object into existence
@@ -16933,7 +16933,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rfc', 'retaincopy', 'retainfilecopy'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Retains copy of old files in file-save operations';
 
         # Bless the object into existence
@@ -17037,7 +17037,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ldd', 'listdatadir', 'listdatafolder', 'listdatadirectory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the location of the ' . $axmud::SCRIPT . ' data directory';
 
         # Bless the object into existence
@@ -17129,7 +17129,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sdd', 'setdatadir', 'setdatafolder', 'setdatadirectory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the location of the ' . $axmud::SCRIPT . ' data directory';
 
         # Bless the object into existence
@@ -17296,7 +17296,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['bud', 'backup', 'backupdata'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Creates a backup copy of the ' . $axmud::SCRIPT . ' data directory';
 
         # Bless the object into existence
@@ -17511,7 +17511,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rsd', 'restore', 'restoredata'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Restores ' . $axmud::SCRIPT . ' data directory from backup';
 
         # Bless the object into existence
@@ -17693,7 +17693,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['abu', 'autobu', 'autobackup'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Configures settings for auto-backups';
 
         # Bless the object into existence
@@ -17996,6 +17996,135 @@
     }
 }
 
+{ package Games::Axmud::Cmd::ImportPlugin;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('importplugin', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['ipl', 'importplugin'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Imports ' . $axmud::NAME_ARTICLE . ' plugin';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $path,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my ($file, $dir, $ext, $newPath, $choice);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # If a file path was not specified, open a file chooser dialogue to decide which plugin file
+        #   to import
+
+        # ;ipl
+        if (! defined $path) {
+
+            $path = $session->mainWin->showFileChooser(
+                'Import plugin',
+                'open',
+                $axmud::DATA_DIR . '/plugins',
+            );
+
+            if (! $path) {
+
+                return $self->complete($session, $standardCmd, 'Plugin not imported');
+            }
+        }
+
+        # Check the file exists
+        if (! -e $path) {
+
+            return $self->error(
+                $session, $inputString,
+                'Plugin file \''. $path . '\' doesn\'t exist',
+            );
+        }
+
+        # Check that a plugin with the same name doesn't already exist
+        ($file, $dir, $ext) = File::Basename::fileparse($path, qr/\.[^.]*/);
+
+        if ($^O eq 'MSWin32') {
+            $newPath = $axmud::DATA_DIR . '\\plugins\\' . $file . $ext;
+        } else {
+            $newPath = $axmud::DATA_DIR . '/plugins/' . $file . $ext;
+        }
+
+        if (-e $newPath) {
+
+
+            $choice = $session->mainWin->showMsgDialogue(
+                'Import plugin',
+                'question',
+                'The plugin \'' . $newPath . '\' already exists. Do you want to overwrite it?',
+                'yes-no',
+            );
+
+            if (! defined $choice || $choice eq 'no') {
+
+                return $self->complete($session, $standardCmd, 'Plugin not imported');
+            }
+        }
+
+        # Import the plugin
+        if (! File::Copy::copy($path, $newPath)) {
+
+            return $self->error(
+                $session, $inputString,
+                'Failed to import the plugin file \''. $path . '\'',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Imported the plugin file \''. $path . '\' (load it using \';loadplugin\')',
+            );
+        }
+    }
+}
+
 { package Games::Axmud::Cmd::LoadPlugin;
 
     use strict;
@@ -18027,7 +18156,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lpl', 'loadplugin'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Loads ' . $axmud::NAME_ARTICLE . ' plugin';
 
         # Bless the object into existence
@@ -18189,7 +18318,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['epl', 'enableplugin'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Enables ' . $axmud::NAME_ARTICLE . ' plugin';
 
         # Bless the object into existence
@@ -18284,7 +18413,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dpl', 'disableplugin'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Disables ' . $axmud::NAME_ARTICLE . ' plugin';
 
         # Bless the object into existence
@@ -18379,7 +18508,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tpl', 'testplugin'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tests ' . $axmud::NAME_ARTICLE . ' plugin';
 
         # Bless the object into existence
@@ -18484,7 +18613,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lpg', 'listplugin'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists existing ' . $axmud::SCRIPT . ' plugins';
 
         # Bless the object into existence
@@ -18593,7 +18722,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aip', 'addplugin', 'addinitialplugin'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds an initial plugin';
 
         # Bless the object into existence
@@ -18700,7 +18829,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dip', 'delplugin', 'deleteinitialplugin'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes an initial plugin';
 
         # Bless the object into existence
@@ -18813,7 +18942,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lip', 'listinitialplugin'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists initial plugins';
 
         # Bless the object into existence
@@ -18901,7 +19030,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sto', 'settelopt', 'settelnetoption'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Enables/disables telnet negotiation options';
 
         # Bless the object into existence
@@ -19202,7 +19331,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spt', 'setprotocol', 'setmudprotocol'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Enables/disables MUD protocols';
 
         # Bless the object into existence
@@ -19724,7 +19853,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['stt', 'setterm', 'settermtype'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the data sent during TTYPE/MTTS negotiations';
 
         # Bless the object into existence
@@ -19969,7 +20098,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ctl', 'configterm', 'configureterminal'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Configures terminal settings';
 
         # Bless the object into existence
@@ -20148,7 +20277,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['msdp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows MSDP data reported by the current world';
 
         # Bless the object into existence
@@ -20631,7 +20760,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mssp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows MSSP data collected from the current world';
 
         # Bless the object into existence
@@ -20759,7 +20888,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mxp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Manages the Mud Xtension Protocol (MXP)';
 
         # Bless the object into existence
@@ -20880,6 +21009,13 @@
 
             $string = '   Allow MXP to use (some) illegal keywords      - ';
             if ($axmud::CLIENT->allowMxpFlexibleFlag) {
+                $session->writeText($string . ' yes');
+            } else {
+                $session->writeText($string . ' no');
+            }
+
+            $string = '   Assume world has enabled MXP                  - ';
+            if ($axmud::CLIENT->allowMxpPermFlag) {
                 $session->writeText($string . ' yes');
             } else {
                 $session->writeText($string . ' no');
@@ -21072,6 +21208,21 @@
                 'Allow MXP to use (some) illegal keywords set to ' . $string,
             );
 
+        # ;mxp -p
+        } elsif ($switch eq '-p') {
+
+            $axmud::CLIENT->set_allowMxpFlag('perm', ! $axmud::CLIENT->allowMxpPermFlag);
+            if (! $axmud::CLIENT->allowMxpPermFlag) {
+                $string = 'OFF';
+            } else {
+                $string = 'ON';
+            }
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Assume world has enabled MXP set to ' . $string,
+            );
+
         } else {
 
             return $self->error(
@@ -21113,7 +21264,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['msp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Manages the Mud Sound Protocol (MSP)';
 
         # Bless the object into existence
@@ -21505,7 +21656,7 @@
                 || $dlPath =~ m/\.tbz$/
                 || $dlPath =~ m/\.lzma$/
             ) {
-                # Attempt to download the file
+                # Attempt to extract the file
                 $session->writeText('Sound pack downloaded, extracting...');
                 $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->do');
 
@@ -21703,7 +21854,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['zmp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows supported ZMP packages/commands';
 
         # Bless the object into existence
@@ -21833,7 +21984,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['szmp', 'sendzmp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a ZMP command to the world';
 
         # Bless the object into existence
@@ -21916,7 +22067,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['izmp', 'inputzmp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends pre-formatted text via ZMP';
 
         # Bless the object into existence
@@ -21998,7 +22149,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aard', 'aard102', 'aardwolf'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Handles AARD102 (Aardwolf 102 channel) data';
 
         # Bless the object into existence
@@ -22180,7 +22331,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['atcp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows ATCP data reported by the current world';
 
         # Bless the object into existence
@@ -22309,7 +22460,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['satcp', 'sendatcp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends encoded JSON data to the world via ATCP';
 
         # Bless the object into existence
@@ -22408,7 +22559,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['gmcp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows GMCP data reported by the current world';
 
         # Bless the object into existence
@@ -22539,7 +22690,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sgmcp', 'sendgmcp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends encoded JSON data to the world via GMCP';
 
         # Bless the object into existence
@@ -22638,7 +22789,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mcp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows supported MCP packages';
 
         # Bless the object into existence
@@ -22747,7 +22898,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['log'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles logfile settings on/off';
 
         # Bless the object into existence
@@ -23066,7 +23217,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['snd', 'sound'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Turns sound on/off';
 
         # Bless the object into existence
@@ -23198,7 +23349,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['asb', 'bell', 'asciibell'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Turns ASCII bells on/off';
 
         # Bless the object into existence
@@ -23319,7 +23470,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ase', 'addse', 'addsound', 'addsoundeffect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new sound effect';
 
         # Bless the object into existence
@@ -23443,7 +23594,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['pse', 'playse', 'playsound', 'playsoundeffect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Plays a sound effect and shows a system message';
 
         # Bless the object into existence
@@ -23549,7 +23700,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['qse', 'quickse', 'quicksound', 'quicksoundeffect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Plays a sound effect without a system message';
 
         # Bless the object into existence
@@ -23635,7 +23786,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['beep'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Plays the \'beep\' sound effect';
 
         # Bless the object into existence
@@ -23698,7 +23849,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dse', 'delse', 'delsound', 'deletesoundeffect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a sound effect';
 
         # Bless the object into existence
@@ -23811,7 +23962,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rse', 'resetse', 'resetsound', 'resetsoundeffect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets sound effects to defaults';
 
         # Bless the object into existence
@@ -23871,7 +24022,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lse', 'listse', 'listsound', 'listsoundeffect'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the sound effects bank';
 
         # Bless the object into existence
@@ -23993,7 +24144,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tts', 'speech'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies text-to-speech (TTS) general settings';
 
         # Bless the object into existence
@@ -24505,7 +24656,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spk', 'speak'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Uses a text-to-speech engine to read out a message';
 
         # Bless the object into existence
@@ -24688,7 +24839,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rd', 'read'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tells a task to read something aloud';
 
         # Bless the object into existence
@@ -24828,7 +24979,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['prd', 'permread'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tells an initial task to read something aloud';
 
         # Bless the object into existence
@@ -25019,7 +25170,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['swi', 'switch'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tells a task to automatically read something aloud';
 
         # Bless the object into existence
@@ -25145,7 +25296,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['pswi', 'permswitch'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tells an initial task to automatically read aloud';
 
         # Bless the object into existence
@@ -25314,7 +25465,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['alt', 'alert'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tells a task to automatically read aloud alerts';
 
         # Bless the object into existence
@@ -25462,7 +25613,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['palt', 'permalert'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Tells an initial task to automatically read alerts';
 
         # Bless the object into existence
@@ -25653,7 +25804,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lat', 'listattrib', 'listattribute'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists text-to-speech attributes';
 
         # Bless the object into existence
@@ -25795,7 +25946,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['acf', 'addcf', 'addconfig'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new text-to-speech configuration';
 
         # Bless the object into existence
@@ -25920,7 +26071,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ccf', 'clonecf', 'cloneconfig'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones an existing text-to-speech configuration';
 
         # Bless the object into existence
@@ -26037,7 +26188,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ecf', 'editcf', 'editconfig'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Edits a text-to-speech configuration';
 
         # Bless the object into existence
@@ -26140,7 +26291,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mcf', 'config', 'modconfig', 'modifyconfig'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies text-to-speech configurations';
 
         # Bless the object into existence
@@ -26160,21 +26311,83 @@
         ) = @_;
 
         # Local variables
-        my ($ttsObj, $otherObj, $var, $var2, $string, $choice);
+        my ($ttsObj, $count, $otherObj, $var, $var2, $string, $choice);
 
         # (For the benefit of visually-impaired users, don't check improper arguments and ignore
         #   everything after the expected arguments)
+
+        # There is one command format which doesn't match the others, so we'll deal with it first:
+        # ;mcf all engine <string>
+        # ;mcf all -e <string>
+        if ($configuration && $configuration eq 'all') {
+
+            if (! $args[0] || ! $args[1] || $args[0] ne 'engine' && $args[0] ne '-e') {
+
+                return $self->error(
+                    $session, $inputString,
+                    'You must specify an engine, for example \';engine espeak\'',
+                );
+
+            } elsif (! defined $axmud::CLIENT->ivFind('constTTSList', $args[1])) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'You must specify one of ' . $axmud::SCRIPT . '\'s recognised speech engines: '
+                    . join(', ', $axmud::CLIENT->constTTSList),
+                );
+
+            } else {
+
+                $ttsObj = $axmud::CLIENT->ivShow('ttsObjHash', $args[1]);
+            }
+
+            $count = 0;
+            foreach my $thisObj ($axmud::CLIENT->ivValues('ttsObjHash')) {
+
+                # The configurations that have the same name as a recognised speech engine can't
+                #   be modified. For all the other configurations, update its engine
+                if (! defined $axmud::CLIENT->ivFind('constTTSList', $thisObj->name)) {
+
+                    $count++;
+                    $thisObj->ivPoke('engine', $ttsObj->engine);
+                    $thisObj->ivPoke('voice', $ttsObj->voice);
+                    $thisObj->ivPoke('speed', $ttsObj->speed);
+                    $thisObj->ivPoke('rate', $ttsObj->rate);
+                    $thisObj->ivPoke('pitch', $ttsObj->pitch);
+                    $thisObj->ivPoke('volume', $ttsObj->volume);
+                }
+            }
+
+            if ($count == 1) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                       'Updated 1 text-to-speech configuration to use the speech engine \''
+                       . $ttsObj->engine . '\'',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                       'Updated ' . $count . ' text-to-speech configuration to use the speech'
+                       . ' engine \'' . $ttsObj->engine . '\'',
+                );
+            }
+        }
+
+        # Now deal with commands in all other formats
 
         # Check that the configuration is valid, if specified
         if ($configuration) {
 
             if (! $axmud::CLIENT->ivExists('ttsObjHash', $configuration)) {
 
-                return $self->complete(
-                    $session, $standardCmd,
-                       'The text-to-speech configuration \'' . $configuration . '\' is not'
-                       . ' recognised (for a quick list of configurations, try using this command'
-                       . ' with no arguments)',
+                return $self->error(
+                    $session, $inputString,
+                    'The text-to-speech configuration \'' . $configuration . '\' is not'
+                    . ' recognised (for a quick list of configurations, try using this command'
+                    . ' with no arguments)',
                 );
 
             } else {
@@ -26287,11 +26500,11 @@
             # Display footer
             return $self->complete($session, $standardCmd, 'End of configuration settings');
 
-        } elsif ($axmud::CLIENT->ivExists('constTtsFixedObjHash', lc($args[1]))) {
+        } elsif ($axmud::CLIENT->ivExists('constTtsFixedObjHash', $configuration)) {
 
             return $self->error(
                 $session, $inputString,
-                'The text-to-speech configuration \'' . lc($args[1]) . '\' can\'t be modified',
+                'The text-to-speech configuration \'' . $configuration . '\' can\'t be modified',
             );
         }
 
@@ -26596,7 +26809,7 @@
             # ;mcf <config> -u <pattern>
             } elsif ($var eq 'use' || $var eq '-u') {
 
-                if ($axmud::CLIENT->regexCheck($args[1])) {
+                if ($axmud::CLIENT->regexCheck($var2)) {
 
                     return $self->error(
                         $session, $inputString,
@@ -26604,7 +26817,7 @@
                     );
                 }
 
-                $ttsObj->ivPush('exclusiveList', $args[1]);
+                $ttsObj->ivPush('exclusiveList', $var2);
 
                 return $self->complete(
                     $session, $standardCmd,
@@ -26616,7 +26829,7 @@
             # ;mcf <config> -x <pattern>
             } else {
 
-                if ($axmud::CLIENT->regexCheck($args[1])) {
+                if ($axmud::CLIENT->regexCheck($var2)) {
 
                     return $self->error(
                         $session, $inputString,
@@ -26624,7 +26837,7 @@
                     );
                 }
 
-                $ttsObj->ivPush('excludedList', $args[1]);
+                $ttsObj->ivPush('excludedList', $var2);
 
                 return $self->complete(
                     $session, $standardCmd,
@@ -26674,7 +26887,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dcf', 'delcf', 'deleteconfig'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a text-to-speech configuration';
 
         # Bless the object into existence
@@ -26778,7 +26991,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lcf', 'listcf', 'listconfig'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows a list of text-to-speech configurations';
 
         # Bless the object into existence
@@ -26880,7 +27093,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['oov', 'viewer', 'openviewer', 'openobjectviewer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens the object viewer window';
 
         # Bless the object into existence
@@ -26965,7 +27178,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cov', 'closeviewer', 'closeobjectviewer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Closes the object viewer window';
 
         # Bless the object into existence
@@ -27049,7 +27262,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['oam', 'map', 'openmap', 'openautomapper'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens the Automapper window';
 
         # Bless the object into existence
@@ -27135,7 +27348,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cam', 'closemap', 'closeautomapper'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Closes the Automapper window';
 
         # Bless the object into existence
@@ -27219,7 +27432,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tam', 'toggleautomap', 'toggleautomapper'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles various automapper settings';
 
         # Bless the object into existence
@@ -27373,7 +27586,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lcw', 'locwiz', 'locwizard', 'locatorwizard'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens the Locator wizard window';
 
         # Bless the object into existence
@@ -27459,7 +27672,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ady', 'adddict', 'adddictionary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new dictionary';
 
         # Bless the object into existence
@@ -27564,7 +27777,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sdy', 'setdict', 'setdictionary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the current dictionary for this session';
 
         # Bless the object into existence
@@ -27716,7 +27929,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cdy', 'clonedict', 'clonedictionary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones a dictionary';
 
         # Bless the object into existence
@@ -27826,7 +28039,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['edy', 'editdict', 'editdictionary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a dictionary';
 
         # Bless the object into existence
@@ -27929,7 +28142,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ddy', 'deldict', 'deletedict', 'deletedictionary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a dictionary';
 
         # Bless the object into existence
@@ -28057,7 +28270,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ldy', 'listdict', 'listdictionary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists dictionaries';
 
         # Bless the object into existence
@@ -28157,7 +28370,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['stl', 'setlang', 'setlanguage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets a dictionary\'s language';
 
         # Bless the object into existence
@@ -28269,7 +28482,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['swl', 'switchlang', 'switchlanguage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Uploads a phrasebook to the current dictionary';
 
         # Bless the object into existence
@@ -28416,7 +28629,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['adw', 'addword'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds words or terms to the current dictionary';
 
         # Bless the object into existence
@@ -29214,7 +29427,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['qaw', 'quickword', 'quickaddword'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens a window to add words to the dictionary';
 
         # Bless the object into existence
@@ -29293,7 +29506,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dlw', 'delword', 'deleteword'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes words or terms from the current dictionary';
 
         # Bless the object into existence
@@ -30045,7 +30258,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lwd', 'lword', 'listword'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists words and terms from the current dictionary';
 
         # Bless the object into existence
@@ -30794,7 +31007,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mpr', 'modprimary', 'modifyprimary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies a primary direction';
 
         # Bless the object into existence
@@ -30961,7 +31174,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ads', 'addsecond', 'addsecondary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a secondary direction';
 
         # Bless the object into existence
@@ -31115,7 +31328,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mds', 'modsecond', 'modifysecondary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets a secondary direction\'s opposite direction';
 
         # Bless the object into existence
@@ -31228,7 +31441,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dds', 'delsecond', 'deletesecondary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a secondary direction';
 
         # Bless the object into existence
@@ -31327,7 +31540,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['arl', 'addrel', 'addrelative'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a relative direction';
 
         # Bless the object into existence
@@ -31514,7 +31727,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['drl', 'delrel', 'deleterelative'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a relative direction';
 
         # Bless the object into existence
@@ -31622,7 +31835,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ldi', 'listdirection'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists primary/secondary directions';
 
         # Bless the object into existence
@@ -31810,7 +32023,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sas', 'setsecond', 'setautosecond', 'setautosecondary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets preferred way to draw secondary directions';
 
         # Bless the object into existence
@@ -31920,7 +32133,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['las', 'listsecond', 'listautosecond', 'listautosecondary'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists preferred ways to draw secondary directions';
 
         # Bless the object into existence
@@ -32024,7 +32237,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['awk', 'addspeed', 'addspeedwalk'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a speedwalk character';
 
         # Bless the object into existence
@@ -32119,7 +32332,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dwk', 'delspeed', 'deletespeed', 'deletespeedwalk'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a speedwalk character';
 
         # Bless the object into existence
@@ -32215,7 +32428,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lwk', 'listspeed', 'listspeedwalk'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists speedwalk characters';
 
         # Bless the object into existence
@@ -32312,7 +32525,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['amc', 'addmod', 'addmodchar', 'addmodifierchar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a speedwalk modifier character';
 
         # Bless the object into existence
@@ -32417,7 +32630,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dmc', 'delmod', 'delmodchar', 'deletemodifierchar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a speedwalk modifier character';
 
         # Bless the object into existence
@@ -32512,7 +32725,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lmc', 'listmod', 'listmodchar', 'listmodifierchar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists speedwalk modifier characters';
 
         # Bless the object into existence
@@ -32624,7 +32837,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lpr', 'listprof', 'listprofile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists profiles';
 
         # Bless the object into existence
@@ -32817,7 +33030,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spp', 'setpriority', 'setprofilepriority'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the profile priority list';
 
         # Bless the object into existence
@@ -32961,7 +33174,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lpp', 'listpriority', 'listprofilepriority'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the profile priority list';
 
         # Bless the object into existence
@@ -33072,7 +33285,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['atm', 'addtm', 'addtemplate'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new profile template';
 
         # Bless the object into existence
@@ -33183,7 +33396,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ctm', 'clonetm', 'clonetemplate'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones an existing profile template';
 
         # Bless the object into existence
@@ -33313,7 +33526,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['etm', 'edittm', 'edittemplate'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a profile template';
 
         # Bless the object into existence
@@ -33412,7 +33625,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dtm', 'deltm', 'deletetm', 'deletetemplate'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a profile template';
 
         # Bless the object into existence
@@ -33518,7 +33731,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ltm', 'listtm', 'listtemplate'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists profile templates for the current world';
 
         # Bless the object into existence
@@ -33621,7 +33834,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['asp', 'addscalar', 'addscalarprop', 'addscalarproperty'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new scalar property to a template';
 
         # Bless the object into existence
@@ -33751,7 +33964,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['alp', 'addlist', 'addlistprop', 'addlistproperty'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new list property to a template';
 
         # Bless the object into existence
@@ -33883,7 +34096,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ahp', 'addhash', 'addhashprop', 'addhashproperty'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new hash property to a template';
 
         # Bless the object into existence
@@ -34049,7 +34262,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dp', 'delprop', 'deleteprop', 'deleteproperty'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a profile template property';
 
         # Bless the object into existence
@@ -34174,7 +34387,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lp', 'listprop', 'listproperty'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists a profile template\'s properties';
 
         # Bless the object into existence
@@ -34440,7 +34653,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['awo', 'addworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a world profile';
 
         # Bless the object into existence
@@ -34563,7 +34776,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['swo', 'setworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the current world profile';
 
         # Bless the object into existence
@@ -34680,7 +34893,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cwo', 'copyworld', 'cloneworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones a world profile';
 
         # Bless the object into existence
@@ -35113,7 +35326,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ewo', 'editworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a world profile';
 
         # Bless the object into existence
@@ -35221,7 +35434,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dwo', 'delworld', 'deleteworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a world profile';
 
         # Bless the object into existence
@@ -35385,7 +35598,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lwo', 'listworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all world profiles';
 
         # Bless the object into existence
@@ -35536,7 +35749,7 @@
             'setfavoriteworld',
             'setfavouriteworld',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the list of favourite worlds';
 
         # Bless the object into existence
@@ -35660,7 +35873,7 @@
             'listfavoriteworld',
             'listfavouriteworld',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the list of favourite worlds';
 
         # Bless the object into existence
@@ -35763,7 +35976,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['saw', 'setautoworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the list of auto-connecting worlds';
 
         # Bless the object into existence
@@ -35842,7 +36055,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['law', 'listautoworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the list of auto-connecting worlds';
 
         # Bless the object into existence
@@ -35927,7 +36140,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rwo', 'restoreworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Restores pre-configured worlds';
 
         # Bless the object into existence
@@ -36493,7 +36706,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lrw', 'listrestoreworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the list of pre-configured worlds';
 
         # Bless the object into existence
@@ -36600,7 +36813,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['uwo', 'updateworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Updates the current world profile';
 
         # Bless the object into existence
@@ -36863,7 +37076,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lbw', 'listbasic', 'listbasicworld'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays the basic mudlist';
 
         # Bless the object into existence
@@ -36994,7 +37207,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tgh', 'toghis', 'togglehistory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles collection of a world\'s connection history';
 
         # Bless the object into existence
@@ -37070,7 +37283,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['clh', 'clearhis', 'clearhistory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clears the current world\'s connection history';
 
         # Bless the object into existence
@@ -37165,7 +37378,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['shh', 'showhis', 'showhistory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays the current world\'s connection history';
 
         # Bless the object into existence
@@ -37386,7 +37599,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ag', 'addguild'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a guild profile';
 
         # Bless the object into existence
@@ -37447,7 +37660,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sg', 'setguild'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the current guild';
 
         # Bless the object into existence
@@ -37508,7 +37721,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ug', 'unsetguild'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Unsets the current guild';
 
         # Bless the object into existence
@@ -37568,7 +37781,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cg', 'copyguild', 'cloneguild'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones a guild profile';
 
         # Bless the object into existence
@@ -37629,7 +37842,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eg', 'editguild'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a guild profile';
 
         # Bless the object into existence
@@ -37742,7 +37955,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dg', 'delguild', 'deleteguild'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a guild profile';
 
         # Bless the object into existence
@@ -37803,7 +38016,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lg', 'listguild'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists guild profiles';
 
         # Bless the object into existence
@@ -37863,7 +38076,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ar', 'addrace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a race profile';
 
         # Bless the object into existence
@@ -37924,7 +38137,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sr', 'setrace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the current race';
 
         # Bless the object into existence
@@ -37985,7 +38198,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ur', 'unsetrace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Unsets the current race';
 
         # Bless the object into existence
@@ -38045,7 +38258,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cr', 'copyrace', 'clonerace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones a race profile';
 
         # Bless the object into existence
@@ -38106,7 +38319,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['er', 'editrace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a race profile';
 
         # Bless the object into existence
@@ -38220,7 +38433,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dr', 'delrace', 'deleterace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a race profile';
 
         # Bless the object into existence
@@ -38281,7 +38494,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lr', 'listrace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists race profiles';
 
         # Bless the object into existence
@@ -38341,7 +38554,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ach', 'addchar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a character profile';
 
         # Bless the object into existence
@@ -38410,7 +38623,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sch', 'setchar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the current character';
 
         # Bless the object into existence
@@ -38479,7 +38692,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['uch', 'unsetchar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Unsets the current character';
 
         # Bless the object into existence
@@ -38539,7 +38752,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cch', 'copychar', 'clonechar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones a character profile';
 
         # Bless the object into existence
@@ -38600,7 +38813,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ech', 'editchar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a character profile';
 
         # Bless the object into existence
@@ -38714,7 +38927,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dch', 'delchar', 'deletechar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a character profile';
 
         # Bless the object into existence
@@ -38775,7 +38988,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lch', 'listchar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists character profiles';
 
         # Bless the object into existence
@@ -38837,7 +39050,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['acp', 'addcustom', 'addcustomprof', 'addcustomprofile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a custom profile';
 
         # Bless the object into existence
@@ -38970,7 +39183,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scp', 'setcustom', 'setcustomprof', 'setcustomprofile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets a current custom profile';
 
         # Bless the object into existence
@@ -39256,7 +39469,7 @@
             'unsetcustomprof',
             'unsetcustomprofile',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Unsets a current custom profile';
 
         # Bless the object into existence
@@ -39387,7 +39600,7 @@
             'clonecustomprof',
             'clonecustomprofile',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones a custom profile';
 
         # Bless the object into existence
@@ -39483,7 +39696,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ecp', 'editcustom', 'editcustomprof', 'editcustomprofile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a custom profile';
 
         # Bless the object into existence
@@ -39587,7 +39800,7 @@
             'delcustomprof',
             'deletecustomprofile',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a custom profile';
 
         # Bless the object into existence
@@ -39687,7 +39900,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lcp', 'listcustom', 'listcustomprof',  'listcustomprofile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists custom profiles';
 
         # Bless the object into existence
@@ -39821,7 +40034,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ecg', 'editcage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a cage';
 
         # Bless the object into existence
@@ -39971,7 +40184,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dcg', 'delcage', 'deletecage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Removes all instances of an obsolete cage type';
 
         # Bless the object into existence
@@ -40102,7 +40315,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lcg', 'listcage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists cages';
 
         # Bless the object into existence
@@ -40407,7 +40620,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['smk', 'setmask', 'setcagemask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Manages cage masks';
 
         # Bless the object into existence
@@ -40774,7 +40987,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['emk', 'editmask', 'editcagemask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a cage mask';
 
         # Bless the object into existence
@@ -40893,7 +41106,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eai', 'enableinterface', 'enableactiveinterface'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Enables active interfaces';
 
         # Bless the object into existence
@@ -41014,7 +41227,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dai', 'disableinterface', 'disableactiveinterface'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Disables active interfaces';
 
         # Bless the object into existence
@@ -41136,7 +41349,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mai', 'moveinterface', 'moveactiveinterface'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves active interfaces';
 
         # Bless the object into existence
@@ -41255,7 +41468,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eda', 'editactive', 'editactiveinterface'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for an active interface';
 
         # Bless the object into existence
@@ -41392,7 +41605,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lai', 'listactive', 'listinterface', 'listactiveinterface'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists active interfaces';
 
         # Bless the object into existence
@@ -41722,7 +41935,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eim', 'editinterfacemodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for an interface model';
 
         # Bless the object into existence
@@ -41850,7 +42063,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lim', 'listinterfacemodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists default interface settings';
 
         # Bless the object into existence
@@ -42005,7 +42218,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['atr', 'addtrig', 'addtrigger'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds an independent trigger';
 
         # Bless the object into existence
@@ -42077,7 +42290,7 @@
             'modifytrig',
             'modifytrigger',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies a trigger';
 
         # Bless the object into existence
@@ -42149,7 +42362,7 @@
             'deletetrig',
             'deletetrigger',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a trigger';
 
         # Bless the object into existence
@@ -42214,7 +42427,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ltr', 'listtrig', 'listtrigger'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists triggers';
 
         # Bless the object into existence
@@ -42275,7 +42488,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aal', 'addal', 'addalias'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds an independent alias';
 
         # Bless the object into existence
@@ -42341,7 +42554,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mal', 'modal', 'modalias', 'modifyal', 'modifyalias'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies an alias';
 
         # Bless the object into existence
@@ -42407,7 +42620,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dal', 'delal', 'delalias', 'deleteal', 'deletealias'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes an alias';
 
         # Bless the object into existence
@@ -42472,7 +42685,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lal', 'listal', 'listalias'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists aliases';
 
         # Bless the object into existence
@@ -42533,7 +42746,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ama', 'addma', 'addmacro'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a macro';
 
         # Bless the object into existence
@@ -42599,7 +42812,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mma', 'modma', 'modmacro', 'modifyma', 'modifymacro'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies a macro';
 
         # Bless the object into existence
@@ -42665,7 +42878,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dma', 'delma', 'delmacro', 'deletema', 'deletemacro'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a macro';
 
         # Bless the object into existence
@@ -42730,7 +42943,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lma', 'listma', 'listmacro'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists macros';
 
         # Bless the object into existence
@@ -42791,7 +43004,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ati', 'addti', 'addtimer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a timer';
 
         # Bless the object into existence
@@ -42857,7 +43070,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mti', 'modti', 'modtimer', 'modifyti', 'modifytimer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies a timer';
 
         # Bless the object into existence
@@ -42923,7 +43136,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dti', 'delti', 'deltimer', 'deleteti', 'deletetimer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a timer';
 
         # Bless the object into existence
@@ -42988,7 +43201,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lti', 'listti', 'listtimer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists timers';
 
         # Bless the object into existence
@@ -43049,7 +43262,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ahk', 'addhk', 'addhook'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a hook';
 
         # Bless the object into existence
@@ -43115,7 +43328,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mhk', 'modhk', 'modhook', 'modifyhk', 'modifyhook'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies a hook';
 
         # Bless the object into existence
@@ -43181,7 +43394,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dhk', 'delhk', 'delhook', 'deletehk', 'deletehook'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a hook';
 
         # Bless the object into existence
@@ -43246,7 +43459,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lhk', 'listhk', 'listhook'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists hooks';
 
         # Bless the object into existence
@@ -43309,7 +43522,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lkc', 'listkc', 'listkeycode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists keycodes for the current system';
 
         # Bless the object into existence
@@ -43397,7 +43610,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lka', 'listka', 'listkeycodealternative'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists alternative forms for keycodes';
 
         # Bless the object into existence
@@ -43482,7 +43695,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['atp', 'addtp', 'addtaskpackage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a task package name';
 
         # Bless the object into existence
@@ -43578,7 +43791,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dtp', 'deltp', 'deletetp', 'deletetaskpackage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a task package name';
 
         # Bless the object into existence
@@ -43668,7 +43881,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rtp', 'resettp', 'resettaskpackage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets task package names to defaults';
 
         # Bless the object into existence
@@ -43810,7 +44023,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ltp', 'listtp', 'listtaskpackage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists task package names';
 
         # Bless the object into existence
@@ -43939,7 +44152,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['atl', 'addtl', 'addlabel', 'addtasklabel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds task labels';
 
         # Bless the object into existence
@@ -44093,7 +44306,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dtl', 'deltl', 'dellabel', 'deletetasklabel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a task label';
 
         # Bless the object into existence
@@ -44173,7 +44386,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rtl', 'resettl', 'resetlabel', 'resettasklabel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets task labels to default values';
 
         # Bless the object into existence
@@ -44292,7 +44505,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ltl', 'listtl', 'listlabel', 'listtasklabel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists task labels';
 
         # Bless the object into existence
@@ -44412,7 +44625,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['th', 'thelp', 'taskhelp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows help for a task';
 
         # Bless the object into existence
@@ -44521,7 +44734,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['st', 'starttask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Starts a task';
 
         # Bless the object into existence
@@ -44676,7 +44889,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ht', 'halttask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Halts a task (gracefully)';
 
         # Bless the object into existence
@@ -44765,7 +44978,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['kt', 'killtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Kills (stops) a task immediately';
 
         # Bless the object into existence
@@ -44867,7 +45080,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['pt', 'pausetask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Pauses a task';
 
         # Bless the object into existence
@@ -44974,7 +45187,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rt', 'resumetask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resumes a paused task';
 
         # Bless the object into existence
@@ -45135,7 +45348,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rtt', 'resettask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets a task';
 
         # Bless the object into existence
@@ -45242,7 +45455,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ft', 'freezetask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Freezes (or unfreezes) the current tasklist';
 
         # Bless the object into existence
@@ -45319,7 +45532,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['et', 'edittask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a current task';
 
         # Bless the object into existence
@@ -45441,7 +45654,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lt', 'listtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays the current tasklist';
 
         # Bless the object into existence
@@ -45568,7 +45781,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['srl', 'setrl', 'setrunlist'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets one of the task runlists';
 
         # Bless the object into existence
@@ -45729,7 +45942,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ait', 'addinittask', 'addinitialtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a task to an initial tasklist';
 
         # Bless the object into existence
@@ -45903,7 +46116,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eit', 'editinittask', 'editinitialtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for an initial task';
 
         # Bless the object into existence
@@ -46105,7 +46318,7 @@
             'deleteinittask',
             'deleteinitialtask',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a task from an initial tasklist';
 
         # Bless the object into existence
@@ -46372,7 +46585,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lit', 'listinittask', 'listinitialtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists initial tasks';
 
         # Bless the object into existence
@@ -46570,7 +46783,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['act', 'addcustomtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a task to the custom tasklist';
 
         # Bless the object into existence
@@ -46730,7 +46943,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ect', 'editcustomtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a custom task';
 
         # Bless the object into existence
@@ -46830,7 +47043,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dct', 'delcustomtask', 'deletecustomtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a task from the custom tasklist';
 
         # Bless the object into existence
@@ -46945,7 +47158,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lct', 'listcustomtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists custom tasks';
 
         # Bless the object into existence
@@ -47049,7 +47262,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sct', 'startcustomtask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Starts a custom task';
 
         # Bless the object into existence
@@ -47141,7 +47354,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ais', 'addinitscript', 'addinitialscript'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a script to an initial scriptlist';
 
         # Bless the object into existence
@@ -47293,7 +47506,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dis', 'delinitscript', 'deleteinitialscript'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a script from an initial scriptlist';
 
         # Bless the object into existence
@@ -47418,7 +47631,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lis', 'listinitscript', 'listinitialscript'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists initial scripts';
 
         # Bless the object into existence
@@ -47631,7 +47844,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['es', 'editscript'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens ' . $axmud::BASIC_ARTICLE . ' script for editing';
 
         # Bless the object into existence
@@ -47748,7 +47961,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cs', 'checkscript'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Checks an ' . $axmud::BASIC_NAME . ' script';
 
         # Bless the object into existence
@@ -47891,7 +48104,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rs', 'runscript'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Runs ' . $axmud::BASIC_ARTICLE . ' script';
 
         # Bless the object into existence
@@ -48086,7 +48299,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rst', 'runscripttask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Runs ' . $axmud::BASIC_ARTICLE . ' script as a task';
 
         # Bless the object into existence
@@ -48242,7 +48455,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['abh', 'abhelp', 'axbasichelp'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows help for ' . $axmud::BASIC_NAME . ' scripts';
 
         # Bless the object into existence
@@ -48544,7 +48757,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['adr', 'adddir', 'addfolder', 'adddirectory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Starts using directory containing ' . $axmud::BASIC_NAME . ' scripts';
 
         # Bless the object into existence
@@ -48643,7 +48856,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ddr', 'deldir', 'deletefolder', 'deletedirectory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Stops using directory containing ' . $axmud::BASIC_NAME . ' scripts';
 
         # Bless the object into existence
@@ -48736,7 +48949,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ldr', 'listdir', 'listfolder', 'listdirectory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists ' . $axmud::BASIC_NAME . ' script directories';
 
         # Bless the object into existence
@@ -48841,7 +49054,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['uws', 'usews', 'useworkspace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Makes a workspace available for ' . $axmud::SCRIPT . ' to use';
 
         # Bless the object into existence
@@ -48999,7 +49212,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ews', 'editws', 'editworkspace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a workspace object';
 
         # Bless the object into existence
@@ -49094,7 +49307,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rws', 'removews', 'removeworkspace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Makes a workspace unavailable for ' . $axmud::SCRIPT . ' use';
 
         # Bless the object into existence
@@ -49247,7 +49460,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lws', 'listws', 'listworkspace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all workspaces';
 
         # Bless the object into existence
@@ -49425,7 +49638,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['swd', 'setwsdir', 'setworkspacedirection'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the way in which new workspaces are used';
 
         # Bless the object into existence
@@ -49552,7 +49765,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aiw', 'addiw', 'addinitialworkspace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds an initial workspace';
 
         # Bless the object into existence
@@ -49648,7 +49861,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['miw', 'modiw', 'modifyinitialworkspace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies an initial workspace';
 
         # Bless the object into existence
@@ -49738,7 +49951,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['diw', 'deliw', 'deleteinitialworkspace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes an initial workspace';
 
         # Bless the object into existence
@@ -49828,7 +50041,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['liw', 'listiw', 'listinitialworkspace'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists initial workspace settings';
 
         # Bless the object into existence
@@ -49925,7 +50138,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['swz', 'setwinsize', 'setwindowsize'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the default size of windows';
 
         # Bless the object into existence
@@ -50122,7 +50335,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['twc', 'testwc', 'testcontrols', 'testwindowcontrols'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Finds the size of window controls';
 
         # Bless the object into existence
@@ -50249,7 +50462,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['swc', 'setwc', 'setcontrols', 'setwindowcontrols'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets custom window controls sizes';
 
         # Bless the object into existence
@@ -50432,7 +50645,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lwc', 'listwc', 'listcontrols', 'listwindowcontrols'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists window controls sizes';
 
         # Bless the object into existence
@@ -50549,7 +50762,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tpn', 'testpn', 'testpanel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Detects sizes of workspace panels (taskbars)';
 
         # Bless the object into existence
@@ -50676,7 +50889,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spn', 'setpn', 'setpanel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets custom workspace panel (taskbar) sizes';
 
         # Bless the object into existence
@@ -50871,7 +51084,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lpn', 'listpn', 'listpanel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists workspace panel (taskbar) sizes';
 
         # Bless the object into existence
@@ -50990,7 +51203,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['awm', 'addwm', 'addwinmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new winmap';
 
         # Bless the object into existence
@@ -51081,7 +51294,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cwm', 'clonewm', 'clonewinmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones a winmap';
 
         # Bless the object into existence
@@ -51184,7 +51397,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ewm', 'editwm', 'editwinmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a winmap';
 
         # Bless the object into existence
@@ -51278,7 +51491,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mwm', 'modwm', 'modifywinmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies an existing winmap';
 
         # Bless the object into existence
@@ -51608,7 +51821,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dwm', 'delwm', 'deletewm', 'deletewinmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a winmap';
 
         # Bless the object into existence
@@ -51689,7 +51902,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rwm', 'resetwm', 'resetwinmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets a winmap';
 
         # Bless the object into existence
@@ -51784,7 +51997,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sdw', 'setdw', 'setwinmap', 'setdefaultwinmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets default winmap for \'main\'/\'internal\' windows';
 
         # Bless the object into existence
@@ -51921,7 +52134,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lwm', 'listwm', 'listwinmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all winmaps';
 
         # Bless the object into existence
@@ -52166,7 +52379,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['awz', 'addwz', 'addwinzone'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new winzone';
 
         # Bless the object into existence
@@ -52302,7 +52515,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ewz', 'editwz', 'editwinzone'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a winzone';
 
         # Bless the object into existence
@@ -52409,7 +52622,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mwz', 'modwz', 'modifywinzone'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies an existing winzone';
 
         # Bless the object into existence
@@ -52548,7 +52761,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dwz', 'delwz', 'deletewz', 'deletewinzone'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a winzone';
 
         # Bless the object into existence
@@ -52664,7 +52877,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lwz', 'listwz', 'listwinzone'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists winzones';
 
         # Bless the object into existence
@@ -52808,7 +53021,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['agr', 'actgrid', 'activategrid'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Activates (turns on) workspace grids';
 
         # Bless the object into existence
@@ -52988,7 +53201,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dgr', 'disactgrid', 'disactivategrid'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Disactivates (turns off) workspace grids';
 
         # Bless the object into existence
@@ -53132,7 +53345,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sgr', 'setgrid'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets various workspace grid display settings';
 
         # Bless the object into existence
@@ -53408,7 +53621,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rgr', 'resetgrid'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets workspace grids';
 
         # Bless the object into existence
@@ -53639,7 +53852,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['egr', 'editgrid'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a workspace grid';
 
         # Bless the object into existence
@@ -53734,7 +53947,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lgr', 'listgrid'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists workspace grids';
 
         # Bless the object into existence
@@ -53977,7 +54190,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['layer', 'setlayer'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the session\'s workspace grid layer';
 
         # Bless the object into existence
@@ -54157,7 +54370,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lup', 'layerup'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves up the session\'s workspace grid layer';
 
         # Bless the object into existence
@@ -54309,7 +54522,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ldn', 'ldown', 'layerdown'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves down the session\'s workspace grid layer';
 
         # Bless the object into existence
@@ -54458,7 +54671,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tws', 'togglewinstore', 'togglewindowstorage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles storage of \'grid\' window sizes/positions';
 
         # Bless the object into existence
@@ -54538,7 +54751,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aws', 'applywinstore', 'applywindowstorage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Stores size/position of all \'grid\' windows';
 
         # Bless the object into existence
@@ -54603,7 +54816,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cws', 'clearwinstore', 'clearwindowstorage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clears stored \'grid\' window sizes/positions';
 
         # Bless the object into existence
@@ -54702,7 +54915,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dws', 'dumpwinstore', 'dumpwindowstorage'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays stored \'grid\' window sizes/positions';
 
         # Bless the object into existence
@@ -54848,7 +55061,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['azm', 'addzm', 'addzonemap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new zonemap';
 
         # Bless the object into existence
@@ -54939,7 +55152,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['czm', 'clonezm', 'clonezonemap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones a zonemap';
 
         # Bless the object into existence
@@ -55051,7 +55264,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ezm', 'editzm', 'editzonemap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a zonemap';
 
         # Bless the object into existence
@@ -55146,7 +55359,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dzm', 'delzm', 'deletezm', 'deletezonemap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a zonemap';
 
         # Bless the object into existence
@@ -55255,7 +55468,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rzm', 'resetzm', 'resetzonemap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets a zonemap';
 
         # Bless the object into existence
@@ -55364,7 +55577,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lzm', 'listzm', 'listzonemap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all zonemaps';
 
         # Bless the object into existence
@@ -55532,7 +55745,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['azl', 'addzl', 'addzonemodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new zone model';
 
         # Bless the object into existence
@@ -55737,7 +55950,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ezl', 'editzl', 'editzonemodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a zone model';
 
         # Bless the object into existence
@@ -55869,7 +56082,7 @@
             'modifyzl',
             'modifyzonemodel',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies an existing zone model';
 
         # Bless the object into existence
@@ -56118,7 +56331,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dzl', 'delzl', 'deletezl', 'deletezonemodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a zone model';
 
         # Bless the object into existence
@@ -56234,7 +56447,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lzl', 'listzl', 'listzonemodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists zone models';
 
         # Bless the object into existence
@@ -56432,7 +56645,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tsh', 'togglesh', 'toggleshare'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles sharing of \'main\' windows on or off';
 
         # Bless the object into existence
@@ -56520,7 +56733,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['swn', 'swapwin', 'swapwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Swaps the size and position of two windows';
 
         # Bless the object into existence
@@ -56635,7 +56848,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mwn', 'movewin', 'movewindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves a window into a new zone';
 
         # Bless the object into existence
@@ -56819,7 +57032,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rwn', 'restorewin', 'restorewindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Restores windows to their former size/position';
 
         # Bless the object into existence
@@ -56954,7 +57167,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['gwn', 'grabwin', 'grabwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Grabs an \'external\' window onto a workspace grid';
 
         # Bless the object into existence
@@ -57195,7 +57408,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['bwn', 'banwin', 'banishwin', 'banishwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Removes an \'external\' window from a workspace grid';
 
         # Bless the object into existence
@@ -57323,7 +57536,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['fwn', 'fixwin', 'fixwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Fixes a window at its current size/position';
 
         # Bless the object into existence
@@ -57467,7 +57680,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['flw', 'flashwin', 'flashwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets a \'grid\' window\'s urgency hint';
 
         # Bless the object into existence
@@ -57566,7 +57779,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ufw', 'unflashwin', 'unflashwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets a \'grid\' window\'s urgency hint';
 
         # Bless the object into existence
@@ -57665,7 +57878,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cwn', 'closewin', 'closewindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Closes a \'grid\' window';
 
         # Bless the object into existence
@@ -57764,7 +57977,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ewn', 'editwin', 'editwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a \'grid\' window';
 
         # Bless the object into existence
@@ -57961,7 +58174,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lwn', 'listwin', 'listwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists \'grid\' windows';
 
         # Bless the object into existence
@@ -58235,7 +58448,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['est', 'editstrip', 'editwindowstrip'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a strip object';
 
         # Bless the object into existence
@@ -58354,7 +58567,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lst', 'liststrip', 'listwindowstrip'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists strip objects in an \'internal\' window';
 
         # Bless the object into existence
@@ -58511,7 +58724,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ewt', 'edittable', 'editwindowtable'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a table object';
 
         # Bless the object into existence
@@ -58630,7 +58843,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lwt', 'listtable', 'listwindowtable'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists table objects in an \'internal\' window';
 
         # Bless the object into existence
@@ -58790,7 +59003,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['otw', 'opentaskwin', 'opentaskwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens a task\'s own window';
 
         # Bless the object into existence
@@ -58935,7 +59148,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ctw', 'closetaskwin', 'closetaskwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Closes a task\'s own window';
 
         # Bless the object into existence
@@ -59062,7 +59275,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['etb', 'edittool', 'edittoolbar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a toolbar button';
 
         # Bless the object into existence
@@ -59157,7 +59370,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ltb', 'listtool', 'listtoolbar'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists toolbar buttons used in \'internal\' windows';
 
         # Bless the object into existence
@@ -59285,7 +59498,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['efw', 'editfreewin', 'editfreewindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a \'free\' window';
 
         # Bless the object into existence
@@ -59380,7 +59593,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cfw', 'closefreewin', 'closefreewindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Closes a \'free\' window';
 
         # Bless the object into existence
@@ -59511,7 +59724,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lfw', 'listfree', 'listfreewin', 'listfreewindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists \'free\' windows';
 
         # Bless the object into existence
@@ -59605,7 +59818,7 @@
 
             $session->writeText(
                 $column . sprintf(
-                '%-4.4s %-8.8s %-16.16s %-4.4s %-4.4s',
+                    '%-4.4s %-8.8s %-16.16s %-4.4s %-4.4s',
                     $winObj->number,
                     $winObj->winType,
                     $winObj->winName,
@@ -59663,7 +59876,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['scr', 'lock', 'scrolllock'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles scroll lock mode in the \'main\' window';
 
         # Bless the object into existence
@@ -59743,7 +59956,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spl', 'split', 'splitscreen'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles split screen mode in the \'main\' window';
 
         # Bless the object into existence
@@ -59823,7 +60036,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ctv', 'cls', 'cleartextview'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Removes all text from textview(s)';
 
         # Bless the object into existence
@@ -59987,7 +60200,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['stv', 'settv', 'settextview'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the default size of textviews';
 
         # Bless the object into existence
@@ -60095,7 +60308,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ltv', 'listtv', 'listtextview'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists textview objects';
 
         # Bless the object into existence
@@ -60207,7 +60420,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['find', 'findtext'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Finds matching text in a textview';
 
         # Bless the object into existence
@@ -60352,7 +60565,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['frt', 'findreset'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets the last find operation';
 
         # Bless the object into existence
@@ -60451,7 +60664,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cvt', 'cvtext', 'converttext'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles conversion of invisible text';
 
         # Bless the object into existence
@@ -60527,7 +60740,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sco', 'setcol', 'setcolor', 'setcolour'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets ' . $axmud::SCRIPT . ' standard colour tags';
 
         # Bless the object into existence
@@ -60690,7 +60903,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lco', 'listcol', 'listcolor', 'listcolour'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists ' . $axmud::SCRIPT . ' standard colour tags';
 
         # Bless the object into existence
@@ -60830,7 +61043,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ssy', 'setsyscol', 'setsystemcolor', 'setsystemcolour'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets colours of ' . $axmud::SCRIPT . ' system messages';
 
         # Bless the object into existence
@@ -61024,7 +61237,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lsy', 'listsyscol', 'listsystemcolor', 'listsystemcolour'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists colours of ' . $axmud::SCRIPT . ' system messages';
 
         # Bless the object into existence
@@ -61197,7 +61410,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sxt', 'setxterm'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the colour cube used for xterm-256 colours';
 
         # Bless the object into existence
@@ -61319,7 +61532,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tgp', 'togglepalette'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles use of the OSC colour palette';
 
         # Bless the object into existence
@@ -61395,7 +61608,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['acs', 'addscheme', 'addcolorscheme', 'addcolourscheme'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a colour scheme';
 
         # Bless the object into existence
@@ -61648,7 +61861,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ecs', 'editscheme', 'editcolorscheme', 'editcolourscheme'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a colour scheme';
 
         # Bless the object into existence
@@ -61745,7 +61958,7 @@
         $self->{defaultUserCmdList} = [
             'mcs', 'modscheme', 'modifycolorscheme', 'modifycolourscheme',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies a colour scheme';
 
         # Bless the object into existence
@@ -62097,7 +62310,7 @@
         $self->{defaultUserCmdList} = [
             'ucs', 'updatescheme', 'updatecolorscheme', 'updatecolourscheme',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Updates \'internal\' windows using a colour scheme';
 
         # Bless the object into existence
@@ -62186,7 +62399,7 @@
         $self->{defaultUserCmdList} = [
             'apl', 'applyscheme', 'applycolorscheme', 'applycolourscheme',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Applies a colour scheme to \'internal\' windows';
 
         # Bless the object into existence
@@ -62366,7 +62579,7 @@
         $self->{defaultUserCmdList} = [
             'dcs', 'delscheme', 'deletecolorscheme', 'deletecolourscheme',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a colour scheme';
 
         # Bless the object into existence
@@ -62452,7 +62665,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lcs', 'listscheme', 'listcolorscheme', 'listcolourscheme'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists colour schemes';
 
         # Bless the object into existence
@@ -62598,7 +62811,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rcd', 'record'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Starts or stops a recording';
 
         # Bless the object into existence
@@ -62704,7 +62917,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['prc', 'pauserc', 'pauserecording'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Pauses or resumes the current recording';
 
         # Bless the object into existence
@@ -62806,7 +63019,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['wc', 'worldcmd', 'worldcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a world command to the current recording';
 
         # Bless the object into existence
@@ -62887,7 +63100,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cc', 'clientcmd', 'clientcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a client command to the current recording';
 
         # Bless the object into existence
@@ -62964,7 +63177,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spc', 'speedcmd', 'speedcommand', 'speedwalkcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a speedwalk command to the current recording';
 
         # Bless the object into existence
@@ -63045,7 +63258,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cmt', 'comment'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a comment to the current recording';
 
         # Bless the object into existence
@@ -63126,7 +63339,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['brk', 'break'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a break to the current recording';
 
         # Bless the object into existence
@@ -63282,7 +63495,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['irc', 'insert', 'insertrc', 'insertrecording'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the insertion point for the current recording';
 
         # Bless the object into existence
@@ -63405,7 +63618,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['drc', 'deleterc', 'deleterecording'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes line(s) from the current recording';
 
         # Bless the object into existence
@@ -63570,7 +63783,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lrc', 'listrc', 'listrecord', 'listrecording'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists contents of the current recording';
 
         # Bless the object into existence
@@ -63766,7 +63979,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['crc', 'copyrc', 'copyrecord', 'copyrecording'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows recording\'s commands as a single line';
 
         # Bless the object into existence
@@ -63916,7 +64129,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['smn', 'startmn', 'startmission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Starts a new mission';
 
         # Bless the object into existence
@@ -64047,7 +64260,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mn', 'mission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Continues the current mission';
 
         # Bless the object into existence
@@ -64142,7 +64355,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['nmn', 'nmission', 'nudgemission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Advances the current mission by one step';
 
         # Bless the object into existence
@@ -64238,7 +64451,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['hmn', 'haltmn', 'haltmission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Halts (resets) the current mission';
 
         # Bless the object into existence
@@ -64318,7 +64531,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rcm', 'repcm', 'repeatcm', 'repeatcomment'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Repeats the current mission\'s most recent comment';
 
         # Bless the object into existence
@@ -64411,7 +64624,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rmn', 'repmn', 'repeatmn', 'repeatmission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Repeats commands from the current mission';
 
         # Bless the object into existence
@@ -64562,7 +64775,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['amn', 'addmn', 'addmission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new mission using the current recording';
 
         # Bless the object into existence
@@ -64684,7 +64897,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cmn', 'clonemn', 'clonemission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones an existing mission';
 
         # Bless the object into existence
@@ -64797,7 +65010,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['emn', 'editmn', 'editmission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a mission';
 
         # Bless the object into existence
@@ -64896,7 +65109,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dmn', 'delmn', 'deletemn', 'deletemission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a mission';
 
         # Bless the object into existence
@@ -64981,7 +65194,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lmn', 'listmn', 'listmission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all missions';
 
         # Bless the object into existence
@@ -65089,7 +65302,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['pmn', 'presentmn', 'presentmission'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows the contents of a mission';
 
         # Bless the object into existence
@@ -65292,7 +65505,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aqs', 'addqs', 'addquest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new quest';
 
         # Bless the object into existence
@@ -65496,7 +65709,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cqs', 'cloneqs', 'clonequest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Clones an existing quest';
 
         # Bless the object into existence
@@ -65613,7 +65826,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eqs', 'editqs', 'editquest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a quest';
 
         # Bless the object into existence
@@ -65712,7 +65925,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mqs', 'modqs', 'modifyquest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies an existing quest';
 
         # Bless the object into existence
@@ -65970,7 +66183,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['fqs', 'finqs', 'finishqs', 'finishquest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Marks a quest as completed';
 
         # Bless the object into existence
@@ -66119,7 +66332,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dqs', 'delqs', 'deleteqs', 'deletequest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a quest';
 
         # Bless the object into existence
@@ -66203,7 +66416,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lqs', 'listqs', 'listquest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all quests';
 
         # Bless the object into existence
@@ -66525,7 +66738,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['art', 'addroute'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a new pre-defined route';
 
         # Bless the object into existence
@@ -67011,7 +67224,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ert', 'editroute'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a pre-defined route';
 
         # Bless the object into existence
@@ -67319,7 +67532,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['drt', 'delroute', 'deleteroute'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a pre-defined route';
 
         # Bless the object into existence
@@ -67622,7 +67835,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lrt', 'listroute'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists pre-defined routes';
 
         # Bless the object into existence
@@ -68069,7 +68282,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['go'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves the character to a new room';
 
         # Bless the object into existence
@@ -68326,7 +68539,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['drv', 'drive'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves the character using pre-defined routes';
 
         # Bless the object into existence
@@ -68432,7 +68645,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['road'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves the character using pre-defined road routes';
 
         # Bless the object into existence
@@ -68538,7 +68751,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['quick'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves the character using pre-defined quick routes';
 
         # Bless the object into existence
@@ -68644,7 +68857,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cct', 'circuit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Moves the character along a circuit route';
 
         # Bless the object into existence
@@ -68814,7 +69027,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rgs', 'resetgs', 'resetguildskills'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets the character\'s guild skills';
 
         # Bless the object into existence
@@ -68900,7 +69113,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lgs', 'listgs', 'listguildskills'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists guild skills for the current character';
 
         # Bless the object into existence
@@ -69087,7 +69300,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['adv', 'advance'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Advance the current character\'s guild skills';
 
         # Bless the object into existence
@@ -69303,7 +69516,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ska', 'skipadv', 'skipadvance'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Skips skills in the character\'s advance list';
 
         # Bless the object into existence
@@ -69471,7 +69684,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lav', 'listadv', 'listadvance'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists the skill order/cycle for current character';
 
         # Bless the object into existence
@@ -69681,7 +69894,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lah', 'listah', 'listadvancehistory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists the character\'s advance history';
 
         # Bless the object into existence
@@ -69819,7 +70032,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['k', 'kill'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Attacks target(s) in the current room';
 
         # Bless the object into existence
@@ -69874,7 +70087,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['kk', 'kkill'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Attacks all matching target(s) in the current room';
 
         # Bless the object into existence
@@ -69929,7 +70142,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ka', 'killall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Attacks all target(s) in the current room';
 
         # Bless the object into existence
@@ -69989,7 +70202,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['km', 'killmall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Attacks all NPC target(s) in the current room';
 
         # Bless the object into existence
@@ -70049,7 +70262,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['i', 'int', 'interact'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Interacts with target(s) in the current room';
 
         # Bless the object into existence
@@ -70104,7 +70317,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ii', 'iint', 'iinteract'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Interacts with all matching target(s) in the room';
 
         # Bless the object into existence
@@ -70159,7 +70372,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ia', 'intall', 'interactall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Interacts with all target(s) in the current room';
 
         # Bless the object into existence
@@ -70219,7 +70432,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['im', 'intmall', 'interactmall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Interacts with all NPC target(s) in the room';
 
         # Bless the object into existence
@@ -70281,7 +70494,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['achp', 'addchan', 'addchannel', 'addchannelpattern'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a Channels/Divert task pattern';
 
         # Bless the object into existence
@@ -70442,7 +70655,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dchp', 'delchan', 'delchannel', 'deletechannelpattern'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes Channels/Divert task patterns';
 
         # Bless the object into existence
@@ -70590,7 +70803,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lchp', 'listchan', 'listchannel', 'listchannelpattern'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists Channels/Divert task patterns';
 
         # Bless the object into existence
@@ -70808,7 +71021,7 @@
             'emptychannelswindow',
         ];
 
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Empties the Channels task window';
 
         # Bless the object into existence
@@ -70884,7 +71097,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['edw', 'emptydivert', 'emptydivertwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Empties the Divert task window';
 
         # Bless the object into existence
@@ -70969,7 +71182,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['gip', 'getip'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays your IP address';
 
         # Bless the object into existence
@@ -71039,7 +71252,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['listen', 'chatlisten'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Listens out for incoming calls';
 
         # Bless the object into existence
@@ -71186,7 +71399,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ignore', 'chatignore'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Stops listening out for incoming calls';
 
         # Bless the object into existence
@@ -71272,7 +71485,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['acn', 'addcontact'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds someone to your contacts list';
 
         # Bless the object into existence
@@ -71404,7 +71617,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ecn', 'editcontact'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a chat contact';
 
         # Bless the object into existence
@@ -71502,7 +71715,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dcn', 'delcontact', 'deletecontact'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes someone from your contacts list';
 
         # Bless the object into existence
@@ -71578,7 +71791,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lcn', 'listcontact'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays your contacts list';
 
         # Bless the object into existence
@@ -71684,7 +71897,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['call', 'chatcall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Calls one of your contacts';
 
         # Bless the object into existence
@@ -71831,7 +72044,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mcall', 'chatmcall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Calls someone using the MudMaster protocol';
 
         # Bless the object into existence
@@ -71959,7 +72172,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['zcall', 'chatzcall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Calls someone using the zChat protocol';
 
         # Bless the object into existence
@@ -72087,7 +72300,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['chat'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a message to a chat contact';
 
         # Bless the object into existence
@@ -72195,7 +72408,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['emote'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends an emote to a chat contact';
 
         # Bless the object into existence
@@ -72303,7 +72516,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['chatg', 'chatgroup'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a message to a group of chat contacts';
 
         # Bless the object into existence
@@ -72412,7 +72625,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['emoteg', 'emotegroup'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends an emote to a group of chat contacts';
 
         # Bless the object into existence
@@ -72521,7 +72734,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['chata', 'chatall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a message to all chat contacts';
 
         # Bless the object into existence
@@ -72615,7 +72828,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['emotea', 'emoteall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends an emote to all chat contacts';
 
         # Bless the object into existence
@@ -72709,7 +72922,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ping', 'chatping'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a ping to chat contacts';
 
         # Bless the object into existence
@@ -72902,7 +73115,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dnd', 'chatdnd'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a \'do not disturb\' request to chat contacts';
 
         # Bless the object into existence
@@ -73100,7 +73313,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['submit', 'chatsubmit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Allows chat contacts to send remote commands';
 
         # Bless the object into existence
@@ -73300,7 +73513,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['escape', 'chatescape'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Forbids chat contacts to send remote commands';
 
         # Bless the object into existence
@@ -73500,7 +73713,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ccm', 'chatcmd', 'chatcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a remote command to chat contacts';
 
         # Bless the object into existence
@@ -73701,7 +73914,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['csf', 'sendfile', 'chatsendfile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a file to chat contacts';
 
         # Bless the object into existence
@@ -73918,7 +74131,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cst', 'stopfile', 'chatstopfile'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Stops files transfers with chat contacts';
 
         # Bless the object into existence
@@ -74115,7 +74328,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['snp', 'snoop', 'chatsnoop'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Asks to start/stop snooping on chat contacts';
 
         # Bless the object into existence
@@ -74312,7 +74525,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['chu', 'hangup', 'chathangup'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Hangs up on chat contacts';
 
         # Bless the object into existence
@@ -74505,7 +74718,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['chp', 'chatpeek'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows chat contact\'s own public connections';
 
         # Bless the object into existence
@@ -74702,7 +74915,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['chr', 'chatrequest'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets up a conference call';
 
         # Bless the object into existence
@@ -74900,7 +75113,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['chi', 'chatinfo'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Shows information about chat sessions';
 
         # Bless the object into existence
@@ -75066,7 +75279,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['chs', 'chatset'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets various chat session settings';
 
         # Bless the object into existence
@@ -75417,7 +75630,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cname', 'chatsetname'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets your chat nickname';
 
         # Bless the object into existence
@@ -75530,7 +75743,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['csg', 'setgroup', 'chatsetgroup'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the members of a chat group';
 
         # Bless the object into existence
@@ -75711,7 +75924,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cse', 'chatsetemail'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets your chat email';
 
         # Bless the object into existence
@@ -75836,7 +76049,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['css', 'chatsetsmiley'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Turns smileys in all chat sessions on/off';
 
         # Bless the object into existence
@@ -75932,7 +76145,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['csi', 'chatseticon'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the icon used in chat sessions';
 
         # Bless the object into existence
@@ -76048,7 +76261,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['asm', 'addsmily', 'addsmiley'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a smiley for use with the Chat task';
 
         # Bless the object into existence
@@ -76135,7 +76348,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dsm', 'delsmiley', 'deletesmily', 'deletesmiley'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a smiley used by the Chat task';
 
         # Bless the object into existence
@@ -76207,7 +76420,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lsm', 'listsmily', 'listsmiley'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists smileys used by the Chat task';
 
         # Bless the object into existence
@@ -76310,7 +76523,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rsm', 'resetsmily', 'resetsmiley'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets Chat task smileys to the default list';
 
         # Bless the object into existence
@@ -76374,7 +76587,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cmp', 'compass'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies the Compass task';
 
         # Bless the object into existence
@@ -76585,7 +76798,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['pcm', 'permcompass'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies the global initial Compass task';
 
         # Bless the object into existence
@@ -76664,7 +76877,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['wcm', 'worldcompass'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Modifies the world\'s initial Compass task';
 
         # Bless the object into existence
@@ -76748,7 +76961,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aiv', 'actinv', 'activateinventory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Activates the Inventory/Condition tasks';
 
         # Bless the object into existence
@@ -76855,7 +77068,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['div', 'disinv', 'disactivateinventory'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Disactivates the Inventory/Condition tasks';
 
         # Bless the object into existence
@@ -76962,7 +77175,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['prt', 'protect', 'protectobj', 'protectobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Grants an object semi-protection';
 
         # Bless the object into existence
@@ -77308,7 +77521,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['upr', 'unprotect', 'unprotectobj', 'unprotectobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Removes an object\'s semi-protection';
 
         # Bless the object into existence
@@ -77413,7 +77626,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lpo', 'listprotect', 'listprotectobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists objects enjoying semi-protection';
 
         # Bless the object into existence
@@ -77549,7 +77762,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mno', 'monitor', 'monitorobj', 'monitorobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets objects monitored by the Condition task';
 
         # Bless the object into existence
@@ -77905,7 +78118,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['umo', 'unmonitor', 'unmonitorobj', 'unmonitorobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Removes objects monitored by the Condition task';
 
         # Bless the object into existence
@@ -78021,7 +78234,7 @@
             'listmonitor',
             'listmonitorobject',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists objects monitored by the Condition task';
 
         # Bless the object into existence
@@ -78157,7 +78370,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sall', 'sellall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sells all unprotected objects in the inventory';
 
         # Bless the object into existence
@@ -78286,7 +78499,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dall', 'dropall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Drops all unprotected objects in the inventory';
 
         # Bless the object into existence
@@ -78415,7 +78628,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['uall', 'useall'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Performs action on all unprotected objects';
 
         # Bless the object into existence
@@ -78557,7 +78770,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['move', 'movedir', 'movedirection'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a movement command to the world';
 
         # Bless the object into existence
@@ -78647,7 +78860,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rel', 'relay', 'relaydir', 'relaydirection'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sends a non-movement command to the world';
 
         # Bless the object into existence
@@ -78730,7 +78943,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['tp', 'tport', 'teleport'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Teleports to another part of the world';
 
         # Bless the object into existence
@@ -78879,7 +79092,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['adt', 'addport', 'addteleport'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a teleport destination to the world model';
 
         # Bless the object into existence
@@ -78968,7 +79181,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dlt', 'delport', 'deleteteleport'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes an existing teleport location';
 
         # Bless the object into existence
@@ -79057,7 +79270,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lpt', 'listport', 'listteleport'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists teleport locations';
 
         # Bless the object into existence
@@ -79166,7 +79379,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ilk', 'ilook', 'insertlook'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Inserts fake \'look\' into the Locator movement list';
 
         # Bless the object into existence
@@ -79245,7 +79458,7 @@
         $self->{defaultUserCmdList} = [
             'ife', 'ifail', 'insertfail', 'insertfailexit', 'insertfailedexit',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Automatically adds a failed exit message';
 
         # Bless the object into existence
@@ -79384,7 +79597,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rlc', 'resetloc', 'resetlocator', 'resetlocatortask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets the Locator task';
 
         # Bless the object into existence
@@ -79491,7 +79704,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sfc', 'facing', 'setfacing'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the direction the character is facing';
 
         # Bless the object into existence
@@ -79592,7 +79805,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aep', 'addexitpattern'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds exit pattern to current world profile';
 
         # Bless the object into existence
@@ -79800,7 +80013,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dep', 'delexitpattern', 'deleteexitpattern'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes exit pattern from current world profile';
 
         # Bless the object into existence
@@ -80009,7 +80222,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lep', 'listexitpattern'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists the world profile\'s exit patterns';
 
         # Bless the object into existence
@@ -80273,7 +80486,7 @@
             'collectunknown',
             'collectunknownwords',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles collection of unrecognised words';
 
         # Bless the object into existence
@@ -80351,7 +80564,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} =  ['euw', 'emptyuw', 'emptyunknown', 'emptyunknownwords'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Empties the collection of unrecognised words';
 
         # Bless the object into existence
@@ -80416,7 +80629,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} =  ['luw', 'listuw', 'listunknown', 'listunknownwords'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists the collection of unrecognised words';
 
         # Bless the object into existence
@@ -80522,7 +80735,7 @@
             'collectcontents',
             'collectcontentslines',
         ];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles collection of contents lines';
 
         # Bless the object into existence
@@ -80600,7 +80813,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} =  ['ecl', 'emptycl', 'emptycontents', 'emptycontentslines'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Empties the collection of contents lines';
 
         # Bless the object into existence
@@ -80665,7 +80878,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} =  ['lcl', 'listcl', 'listcontents', 'listcontentslines'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists the collection of contentslines';
 
         # Bless the object into existence
@@ -80759,7 +80972,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ast', 'activatestatustask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Activates the Status task';
 
         # Bless the object into existence
@@ -80850,7 +81063,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dst', 'disactivatestatustask'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Disactivates the Status task';
 
         # Bless the object into existence
@@ -80942,7 +81155,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rsc', 'resetcounter'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets the Status task\'s counters';
 
         # Bless the object into existence
@@ -81058,7 +81271,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['asc', 'addstatuscommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a command to those sent by Status task';
 
         # Bless the object into existence
@@ -81155,7 +81368,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dsc', 'delstatuscommand', 'deletestatuscommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a command from those sent by Status task';
 
         # Bless the object into existence
@@ -81249,7 +81462,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lsc', 'liststatuscommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists commands sent to world by Status task';
 
         # Bless the object into existence
@@ -81360,7 +81573,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['wmp', 'wimpy', 'setwimpy'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets local/remote wimpy level';
 
         # Bless the object into existence
@@ -81508,7 +81721,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['slf', 'setlife'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the Status task\'s current life status';
 
         # Bless the object into existence
@@ -81604,7 +81817,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sev', 'setevent', 'setstatusevent'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Handles settings for Status task events';
 
         # Bless the object into existence
@@ -81729,7 +81942,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ssg', 'showstatusgauge'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Enables/disables the Status task\'s gauges';
 
         # Bless the object into existence
@@ -81843,7 +82056,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ssm', 'systemmode', 'setsystemmode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Starts or configures the System task';
 
         # Bless the object into existence
@@ -82127,7 +82340,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eww', 'emptywatch', 'emptywatchwindow'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Empties the Watch task window';
 
         # Bless the object into existence
@@ -82205,7 +82418,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['arn', 'addregion'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a region to the world model';
 
         # Bless the object into existence
@@ -82352,7 +82565,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['arm', 'addroom'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a room to the world model';
 
         # Bless the object into existence
@@ -82460,7 +82673,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['amo', 'addmo', 'addmodel', 'addmodelobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds an object to the world model';
 
         # Bless the object into existence
@@ -82648,7 +82861,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['smp', 'setparent', 'setmodelparent'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets (or resets) the parent of a model object';
 
         # Bless the object into existence
@@ -82785,7 +82998,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['emo', 'editmo', 'editmodelobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a world model object';
 
         # Bless the object into existence
@@ -82883,7 +83096,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['erm', 'editregion', 'editregionmap'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a regionmap';
 
         # Bless the object into existence
@@ -82978,7 +83191,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ern', 'emptyregion'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Empties a world model region';
 
         # Bless the object into existence
@@ -83152,7 +83365,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['drn', 'delregion', 'deleteregion'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a world model region';
 
         # Bless the object into existence
@@ -83317,7 +83530,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dtn', 'deltempregion', 'deletetemporaryregion'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes all temporary regions';
 
         # Bless the object into existence
@@ -83455,7 +83668,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['drm', 'delroom', 'deleteroom'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a world model room';
 
         # Bless the object into existence
@@ -83556,7 +83769,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dmo', 'delmo', 'delmodel', 'deletemodelobject'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes an object from the world model';
 
         # Bless the object into existence
@@ -83658,7 +83871,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lmd', 'listmd', 'listmodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists world model objects';
 
         # Bless the object into existence
@@ -84040,7 +84253,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lor', 'listor', 'listorphan'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists world model orphan objects';
 
         # Bless the object into existence
@@ -84194,7 +84407,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dmd', 'dumpmd', 'dumpmodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all world model objects';
 
         # Bless the object into existence
@@ -84314,7 +84527,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['smd', 'splitmodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets hows ' . $axmud::SCRIPT . ' stores large world models';
 
         # Bless the object into existence
@@ -84470,7 +84683,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['emd', 'editmd', 'editmodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for the world model';
 
         # Bless the object into existence
@@ -84551,7 +84764,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mmd', 'mergemd', 'mergemodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Imports and merges a world model file';
 
         # Bless the object into existence
@@ -84886,7 +85099,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['umd', 'updatemd', 'updatemodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Updates the world model\'s lists of unknown words';
 
         # Bless the object into existence
@@ -85148,7 +85361,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['cmd', 'compmd', 'compressmodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Reduces amount of memory used by the world model';
 
         # Bless the object into existence
@@ -85227,7 +85440,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['mrp', 'modelreport'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Compiles a report on the world model';
 
         # Bless the object into existence
@@ -86450,7 +86663,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lso', 'listsource', 'listsourcecode'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays mudlib file paths for world model objects';
 
         # Bless the object into existence
@@ -86642,7 +86855,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['als', 'addstyle', 'addlabelstyle'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a map label style';
 
         # Bless the object into existence
@@ -86783,7 +86996,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['els', 'editstyle', 'editlabelstyle'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for a map label style';
 
         # Bless the object into existence
@@ -86878,7 +87091,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rls', 'renamestyle', 'renamelabelstyle'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Renames a map label style';
 
         # Bless the object into existence
@@ -86967,7 +87180,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dls', 'delstyle', 'deletestyle', 'deletelabelstyle'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a map label style';
 
         # Bless the object into existence
@@ -87051,7 +87264,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lls', 'liststyle', 'listlabelstyles'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists map label styles';
 
         # Bless the object into existence
@@ -87208,7 +87421,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['qld', 'quicklabel', 'quicklabeldelete'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens a window to quickly delete map labels';
 
         # Bless the object into existence
@@ -87287,7 +87500,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['apc', 'addpc', 'addplayerchar', 'addplayercharacter'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a player character (PC) to the world model';
 
         # Bless the object into existence
@@ -87408,7 +87621,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dpc', 'delpc', 'deletepc', 'deleteplayercharacter'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes a player character (PC) from the model';
 
         # Bless the object into existence
@@ -87505,7 +87718,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lpc', 'listpc', 'listplayerchar', 'listplayercharacter'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists player characters (PCs) in the world model';
 
         # Bless the object into existence
@@ -87637,7 +87850,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ams', 'addminionstring'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds a minion string to the world model';
 
         # Bless the object into existence
@@ -87856,7 +88069,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dms', 'delms', 'deleteminionstring'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes minion string(s) from the world model';
 
         # Bless the object into existence
@@ -87977,7 +88190,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lms', 'listms', 'listminionstring'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists minion strings stored in the world model';
 
         # Bless the object into existence
@@ -88087,7 +88300,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sll', 'setlightlist'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the list of recognised light status values';
 
         # Bless the object into existence
@@ -88187,7 +88400,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rll', 'resetlightlist'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets the list of recognised light status values';
 
         # Bless the object into existence
@@ -88256,7 +88469,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sls', 'setlight', 'setlightstatus'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the current light status';
 
         # Bless the object into existence
@@ -88358,7 +88571,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['srm', 'setroom'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the automapper\'s current room';
 
         # Bless the object into existence
@@ -88645,7 +88858,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['rrm', 'resetroom'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Resets the automapper\'s current room';
 
         # Bless the object into existence
@@ -88740,7 +88953,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sor', 'setoffline', 'setofflineroom'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets the type of room statement in \'offline\' mode';
 
         # Bless the object into existence
@@ -88903,7 +89116,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lrm', 'locateroom'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Locates the current room in the world model';
 
         # Bless the object into existence
@@ -89189,7 +89402,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ecm', 'editcomponent', 'editroomcomponent'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for the room component';
 
         # Bless the object into existence
@@ -89285,7 +89498,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lcm', 'listcomponent', 'listroomcomponent'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists room components for the current world';
 
         # Bless the object into existence
@@ -89689,7 +89902,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['edp', 'editpaint', 'editpainter'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for the world model painter';
 
         # Bless the object into existence
@@ -89770,7 +89983,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['sam', 'setam', 'setassistedmove', 'setassistedmoves'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Turns assisted moves on/off';
 
         # Bless the object into existence
@@ -89906,7 +90119,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['spm', 'setpm', 'setprotectedmove', 'setprotectedmoves'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Turns protected moves on/off';
 
         # Bless the object into existence
@@ -90042,7 +90255,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['room', 'roomcmd', 'roomcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Executes a room command';
 
         # Bless the object into existence
@@ -90144,7 +90357,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['iro', 'ignoreroom', 'ignoreroomcmd', 'ignoreroomcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Marks a room command as ignorable';
 
         # Bless the object into existence
@@ -90222,7 +90435,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['nro', 'noticeroom', 'noticeroomcmd', 'noticeroomcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Marks a room command as usable';
 
         # Bless the object into existence
@@ -90303,7 +90516,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lro', 'listroom', 'listroomcmd', 'listroomcommand'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Displays room command settings';
 
         # Bless the object into existence
@@ -90436,7 +90649,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['aex', 'addexit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Adds an exit to the exit model';
 
         # Bless the object into existence
@@ -90619,7 +90832,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['eex', 'editexit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Opens an \'edit\' window for an exit model object';
 
         # Bless the object into existence
@@ -90717,7 +90930,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dex', 'delexit', 'deleteexit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Deletes an exit from the exit model';
 
         # Bless the object into existence
@@ -90841,7 +91054,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['lem', 'listexit', 'listexitmodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists exit model objects';
 
         # Bless the object into existence
@@ -91112,7 +91325,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['dem', 'dumpexit', 'dumpexitmodel'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all exit model objects';
 
         # Bless the object into existence
@@ -91256,7 +91469,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['alx', 'allocexit', 'allocateexit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Allocates an unallocated exit';
 
         # Bless the object into existence
@@ -91439,7 +91652,7 @@
         if (! $self) {return undef}
 
         $self->{defaultUserCmdList} = ['ale', 'altexit', 'alternativeexit'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Sets an exit\'s alternative direction(s)';
 
         # Bless the object into existence

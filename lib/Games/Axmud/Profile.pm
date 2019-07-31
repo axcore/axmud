@@ -208,6 +208,7 @@
             mxpOverrideHash             => {
 #               'room'                  => TRUE,            # GA::Client->allowMxpRoomFlag
 #               'flexible'              => TRUE,            # GA::Client->allowMxpFlexibleFlag
+#               'perm'                  => TRUE,            # GA::Client->allowMxpPermFlag
             },
             # A hash which overrides the values of GA::Client->termTypeMode, ->customClientName,
             #   ->customClientVersion, ->useCtrlSeqFlag, ->useVisibleCursorFlag and

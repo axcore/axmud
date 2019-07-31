@@ -592,7 +592,7 @@
         $self->addLabel(
             $table,
             '<i>List of tag properties (defined by custom elements) which terminate on this'
-            . 'line</i>',
+            . ' line</i>',
             1, 12, 1, 2);
 
         # Add a simple list
@@ -25049,7 +25049,10 @@
         my ($self, $innerNotebook, $check) = @_;
 
         # Local variables
-        my (@comboList, @comboList2);
+        my (
+            $gap,
+            @comboList, @comboList2,
+        );
 
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
@@ -25084,19 +25087,31 @@
         $self->addComboBox($table, 'protocol', ['telnet', 'ssh', 'ssl'], '',
             TRUE,           # No 'undef' value used
             3, 6, 5, 6);
+
+        if ($axmud::NO_SSL_FLAG) {
+
+            $gap = 1;
+            $self->addLabel($table, 'NB <i>SSL connections are not available on this system</i>',
+                1, 6, 6, 7);
+
+        } else {
+
+            $gap = 0;
+        }
+
         # SSH Connection details
         $self->addLabel($table, '<b>SSH Connection details</b>',
-            0, 6, 6, 7);
+            0, 6, (6 + $gap), (7 + $gap));
         $self->addLabel($table, 'SSH username',
-            1, 3, 7, 8);
+            1, 3, (7 + $gap), (8 + $gap));
         $self->addEntryWithIcon($table, 'sshUserName', 'string', undef, undef,
-            3, 6, 7, 8);
+            3, 6, (7 + $gap), (8 + $gap));
         $self->addLabel($table, 'SSH password',
-            1, 3, 8, 9);
+            1, 3, (8 + $gap), (9 + $gap));
         $self->addEntryWithIcon($table, 'sshPassword', 'string', undef, undef,
-            3, 6, 8, 9);
+            3, 6, (8 + $gap), (9 + $gap));
         $self->addCheckButton($table, 'Specify port in SSH connections', 'sshPortFlag', TRUE,
-            1, 6, 9, 10);
+            1, 6, (9 + $gap), (10 + $gap));
 
         # Previous connections
         $self->addLabel($table, '<b>Previous connections</b>',
@@ -27151,6 +27166,7 @@
         @setupList = (
             'room'      => 'Use MXP room data',
             'flexible'  => 'Allow (some) illegal MXP keywords',
+            'perm'      => 'Assume world has enabled MXP',
         );
 
         do {
@@ -27304,7 +27320,7 @@
         %ivHash = $self->getEditHash_hashIV('mxpOverrideHash');
 
         # Compile the simple list data
-        foreach my $type ('room') {
+        foreach my $type ('room', 'flexible', 'perm') {
 
             my $iv;
 
@@ -37057,11 +37073,11 @@
             3, 6, 4, 5);
         $self->addLabel($table, 'Bank balance',
             1, 3, 5, 6);
-        $self->addEntryWithIcon($table, 'bankBalance', 'int', 0, undef,
+        $self->addEntryWithIcon($table, 'bankBalance', 'float', 0, undef,
             3, 6, 5, 6);
         $self->addLabel($table, 'Purse contents',
             1, 3, 6, 7);
-        $self->addEntryWithIcon($table, 'purseContents', 'int', 0, undef,
+        $self->addEntryWithIcon($table, 'purseContents', 'float', 0, undef,
             3, 6, 6, 7);
 
         # Right column

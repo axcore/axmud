@@ -6,7 +6,9 @@ Ifacepop$ ()
    Notes:
       The interface notification list contains all the notifications received,
          and not yet processed, as the result of an earlier SETTRIG statement.
-      The group substring is removed from the notification, so you can call
+      This function operates on the current notification (usually the first one
+         see the help for SKIPIFACE).
+      The group substring is removed from that notification, so you can call
          Ifacepop$ () repeatedly until there are no more substrings to remove.
          When there are no more substrings to remove, Ifacepop$ () returns an
          empty string.

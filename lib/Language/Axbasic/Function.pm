@@ -2641,7 +2641,8 @@
             $decimals = 0;
         }
 
-        return sprintf("%." . $decimals . "f", $number);
+#        return sprintf("%." . $decimals . "f", $number);
+        return Math::Round::nearest((10 ** ($decimals * -1)), $number);
     }
 }
 
@@ -5209,6 +5210,80 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::ifacedefined;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::ifacedefined::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Ifacedefined ()
+    # Ifacedefined (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form '')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($obj, $substr);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        if (! $self->scriptObj->notificationList || $self->scriptObj->currentNotification < 0) {
+
+            # The notification list is empty
+            return 0;
+
+        } else {
+
+            # Get the current notification
+            $obj = $self->scriptObj->ivIndex(
+                'notificationList',
+                $self->scriptObj->currentNotification,
+            );
+
+            if (
+                ! $obj->grpStringList
+                || $arg < 1
+                || $obj->ivNumber('grpStringList') > $arg
+            ) {
+                # No group substrings to return
+                return 0;
+
+            } else {
+
+                # If a regex matching a line is in the form (...|...|...), with each ... containing
+                #   its own substrings, ->grpStringList will contain lots of 'undef' values from
+                #   the ... portions that didn't match the line
+                # Return 1 if the specified argument is defined, and -1 if it is not defined
+                $substr = $obj->ivIndex('grpStringList', ($arg - 1));
+                if (defined $substr) {
+                    return 1;
+                } else {
+                    return -1;
+                }
+            }
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::ifacenum;
 
     use strict;
@@ -7379,7 +7454,7 @@
         my ($self, $arg) = @_;
 
         # Local variables
-        my $obj;
+        my ($obj, $substr);
 
         # (No improper arguments to check)
 
@@ -7404,8 +7479,88 @@
 
             } else {
 
-                # Return the last group substring, removing it from its list
-                return $obj->ivPop('grpStringList');
+                # If a regex matching a line is in the form (...|...|...), with each ... containing
+                #   its own substrings, ->grpStringList will contain lots of 'undef' values from
+                #   the ... portions that didn't match the line
+                # We can't return the 'undef' because it will cause an Axbasic 'Undefined function
+                #   error'. Therefore, return an empty string instead
+                $substr = $obj->ivPop('grpStringList');
+                if (defined $substr) {
+                    return $substr
+                } else {
+                    return '';
+                }
+            }
+        }
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::String::ifaceselect;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::ifaceselect::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # Ifaceselect$ (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form '')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($obj, $substr);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        if (! $self->scriptObj->notificationList || $self->scriptObj->currentNotification < 0) {
+
+            # The notification list is empty, so return an empty string
+            return '';
+
+        } else {
+
+            # Get the current notification
+            $obj = $self->scriptObj->ivIndex(
+                'notificationList',
+                $self->scriptObj->currentNotification,
+            );
+
+            if (! $obj->grpStringList) {
+
+                # No group substrings to return
+                return '';
+
+            } else {
+
+                # If a regex matching a line is in the form (...|...|...), with each ... containing
+                #   its own substrings, ->grpStringList will contain lots of 'undef' values from
+                #   the ... portions that didn't match the line
+                # We can't return the 'undef' because it will cause an Axbasic 'Undefined function
+                #   error'. Therefore, return an empty string instead
+                $substr = $obj->ivIndex('grpStringList', ($arg - 1));
+                if (defined $substr) {
+                    return $substr
+                } else {
+                    return '';
+                }
             }
         }
     }
@@ -7441,7 +7596,7 @@
         my ($self, $arg) = @_;
 
         # Local variables
-        my $obj;
+        my ($obj, $substr);
 
         # (No improper arguments to check)
 
@@ -7466,8 +7621,17 @@
 
             } else {
 
-                # Return the first group substring, removing it from its list
-                return $obj->ivShift('grpStringList');
+                # If a regex matching a line is in the form (...|...|...), with each ... containing
+                #   its own substrings, ->grpStringList will contain lots of 'undef' values from
+                #   the ... portions that didn't match the line
+                # We can't return the 'undef' because it will cause an Axbasic 'Undefined function
+                #   error'. Therefore, return an empty string instead
+                $substr = $obj->ivShift('grpStringList');
+                if (defined $substr) {
+                    return $substr
+                } else {
+                    return '';
+                }
             }
         }
     }

@@ -101,6 +101,7 @@ pack/axmud.desktop
 pack/axmud.png
 pack/axmud.xpm
 pack/baxmud.desktop
+pack/debian_descrip
 pack/install
 pack/README
 README
@@ -365,10 +366,12 @@ share/help/axbasic/func/getroomtag_
 share/help/axbasic/func/getroomtitle_
 share/help/axbasic/func/iface_
 share/help/axbasic/func/ifacecount
+share/help/axbasic/func/ifacedefined
 share/help/axbasic/func/ifacename_
 share/help/axbasic/func/ifacenum
 share/help/axbasic/func/ifacepop_
 share/help/axbasic/func/ifacepos
+share/help/axbasic/func/ifaceselect_
 share/help/axbasic/func/ifaceshift_
 share/help/axbasic/func/ifacestrings
 share/help/axbasic/func/ifacetext_
@@ -875,6 +878,7 @@ share/help/cmd/ignoreroomcommand
 share/help/cmd/iinteract
 share/help/cmd/importdata
 share/help/cmd/importfiles
+share/help/cmd/importplugin
 share/help/cmd/inputzmp
 share/help/cmd/insertfailedexit
 share/help/cmd/insertlook

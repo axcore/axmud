@@ -33,7 +33,7 @@
         if (! $self) {return undef};
 
         $self->{defaultUserCmdList} = ['clpc', 'convertlpc'];
-        $self->{userCmdList} = $self->{defaultUserCmdList};
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = '(convertlpc plugin) Converts world model to '
                                 . $convertlpc::CONVERT_TYPE;
 

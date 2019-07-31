@@ -6,6 +6,7 @@ OPTION PERSIST
 OPTION PSEUDO expression
 OPTION REDIRECT
 OPTION REQUIRE expression
+OPTION SILENT
 OPTION TYPO
 
    Synopsis:
@@ -56,6 +57,9 @@ OPTION TYPO
          number. To get the current Axbasic version number, use the VERSION() 
          function in your Axbasic script or use the client command 
          ';axbasichelp'.
+      OPTION SILENT prevents Axbasic from displaying messages like
+        'AXBASIC: Executing script' and 'AXBASIC: Execution of script complete',
+        although error/debug messages are still displayed as normal
       OPTION TYPO requires all variables in the Axbasic script to be declared
          (with GLOBAL or LOCAL statements) before they can be used. Otherwise,
          undeclared variables are assumed to be global variables. OPTION TYPO
@@ -63,7 +67,8 @@ OPTION TYPO
          are treated as global variables.
 
    Compatibility:
-      Before Axbasic v1.002, OPTION REDIRECT was OPTION DIVERT.
+      Before Axbasic v1.002, OPTION REDIRECT was OPTION DIVERT
+      OPTION SILENT is only available from Axbasic v1.003
       
    Examples:
       OPTION NOLET

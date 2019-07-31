@@ -6676,6 +6676,46 @@
         return 1;
     }
 
+    sub updateLinkTag {
+
+        # Called by GA::Session->detectPueblo
+        # When Pueblo is enabled, links are displayed in cyan and with no underline (normally, they
+        #   are displayed with no particular colour, but with an underline)
+        # This function modifies the Gtk3::TextTag's properties to display links in the correct way
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the 'link' tag is not updated
+        #   1 if the 'link' tag is updated
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $linkTag;
+
+        if (! $self->buffer || $self->session->puebloMode ne 'client_agree') {
+
+            return undef;
+        }
+
+        $linkTag = $self->buffer->get_tag_table->lookup('link');
+        if (! $linkTag) {
+
+            return undef;
+        }
+
+        $linkTag->set_property(
+            'foreground',
+            $axmud::CLIENT->returnRGBColour($axmud::CLIENT->constPuebloLinkColour),
+        );
+        $linkTag->set_property('foreground-set', TRUE);
+        $linkTag->set_property('underline', 'none');
+
+        return 1;
+    }
+
     sub createStyleTags {
 
         # Called by $self->objEnable
@@ -6744,10 +6784,25 @@
         );
 
         # Clickable links
-        $self->buffer->create_tag(
-            'link',
-            'underline'         => 'single',
-        );
+        if ($self->session->puebloMode eq 'client_agree') {
+
+            # In Pueblo mode, clickable links are cyan, and not underlined
+            $self->buffer->create_tag(
+                'link',
+                'foreground'        => $axmud::CLIENT->returnRGBColour(
+                                            $axmud::CLIENT->constPuebloLinkColour,
+                                       ),
+                'foreground-set'    => TRUE,
+            );
+
+        } else {
+
+            # At all other times, clickable links are just underlined
+            $self->buffer->create_tag(
+                'link',
+                'underline'         => 'single',
+            );
+        }
 
         # Justification
         $self->buffer->create_tag(

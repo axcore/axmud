@@ -1,4 +1,4 @@
-# Axmud v1.2.0 installer script for MS Windows
+# Axmud v1.2.041 installer script for MS Windows
 #
 # Copyright (C) 2011-2019 A S Lewis
 #
@@ -90,9 +90,9 @@
 #   - You can now close the command prompt window
 #
 #   - The Axmud folder contains an \nsis folder, which contains this file
-#   - In this file, opeupdate the version number just below, e.g.
+#   - In this file, update the version number just below, e.g.
 #
-#       OutFile "install-axmud-1.2.0.exe"
+#       OutFile "install-axmud-1.2.041.exe"
 #
 #   - Compile the installer (e.g. by right-clicking this file and selecting
 #       'Compile NSIS script file')
@@ -108,7 +108,7 @@
 
     ;Name and file
     Name "Axmud"
-    OutFile "install-axmud-1.2.0.exe"
+    OutFile "install-axmud-1.2.041.exe"
 
     ;Default installation folder
     InstallDir "$LOCALAPPDATA\Axmud"

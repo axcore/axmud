@@ -390,8 +390,10 @@
         # Set the window's size, in gridblocks; round up decimal values so that the whole of a
         #   partially-filled gridblock is used
         $blockSize = $axmud::CLIENT->gridBlockSize;
-        $widthBlocks = sprintf ("%.0f", ($widthPixels / $blockSize));
-        $heightBlocks = sprintf ("%.0f", ($heightPixels / $blockSize));
+#        $widthBlocks = sprintf ("%.0f", ($widthPixels / $blockSize));
+#        $heightBlocks = sprintf ("%.0f", ($heightPixels / $blockSize));
+        $widthBlocks = Math::Round::nearest(1, ($widthPixels / $blockSize));
+        $heightBlocks = Math::Round::nearest(1, ($heightPixels / $blockSize));
         # In case there were partially filled gridblocks, re-set the window's size in pixels
         $widthPixels = $widthBlocks * $blockSize;
         $heightPixels = $heightBlocks * $blockSize;

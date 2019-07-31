@@ -1051,6 +1051,8 @@
                 $self->convert($client->allowMxpRoomFlag),
             '# Allow some illegal MXP keywords (e.g. those using hyphens)',
                 $self->convert($client->allowMxpFlexibleFlag),
+            '# Allow MXP to be artificially enabled (for IRE MUDs)',
+                $self->convert($client->allowMxpPermFlag),
             '# Allow MSP to play concurrent sound triggers',
                 $self->convert($client->allowMspMultipleFlag),
             '# Allow MSP to download sound files',
@@ -1613,7 +1615,7 @@
         if ($self->scriptConvertVersion >= 1_000_800) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'share_main_win_flag');
-            $failFlag = $self->readFlag($failFlag, \%dataHash, 'restart_share_main_win_mode');
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'restart_share_main_win_mode');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'activate_grid_flag');
         }
         if ($self->scriptConvertVersion >= 1_001_164) {
@@ -1780,6 +1782,10 @@
         if ($self->scriptConvertVersion >= 1_001_510) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_mxp_flexible_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_002_020) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_mxp_perm_flag');
         }
         if ($self->scriptConvertVersion >= 1_000_678) {
 
@@ -2251,6 +2257,15 @@
                 #   (which didn't work as intended). Just change the value to 'default'
                 $client->ivPoke('restartShareMainWinMode', 'default');
 
+            } elsif ($self->scriptConvertVersion < 1_002_026) {
+
+                # Due to a bug, the value was set as 1 or 0, rather than 'on' or 'off'
+                if ($dataHash{'restart_share_main_win_mode'}) {
+                    $client->ivPoke('restartShareMainWinMode', 'on');
+                } else {
+                    $client->ivPoke('restartShareMainWinMode', 'off');
+                }
+
             } else {
 
                 $client->ivPoke(
@@ -2414,6 +2429,10 @@
         if ($self->scriptConvertVersion >= 1_001_510) {
 
             $client->ivPoke('allowMxpFlexibleFlag', $dataHash{'allow_mxp_flexible_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_002_020) {
+
+            $client->ivPoke('allowMxpPermFlag', $dataHash{'allow_mxp_perm_flag'});
         }
         if ($self->scriptConvertVersion >= 1_000_678) {
 
@@ -12057,6 +12076,32 @@
             }
         }
 
+        if (
+            (
+                $world eq 'achaea' || $world eq 'aetolia' || $world eq 'imperian'
+                || $world eq 'lusternia'
+            ) && $fileVersion < 1_002_041
+        ) {
+            my $compObj;
+
+            # Fix for IRE's odd habit of sending a single EOR and a single SGA, which permanently
+            #   disables the prompt-checking code in GA::Session->processLinePortion
+            $worldObj->ivAdd('telnetOverrideHash', 'sga', undef);
+            $worldObj->ivAdd('telnetOverrideHash', 'eor', undef);
+            # Fix for IRE's refusal to do MXP telnet negotiation
+            $worldObj->ivAdd('mxpOverrideHash', 'perm', TRUE);
+
+            # Also remove the '(road)' in Achaea room titles
+            if ($world eq 'achaea') {
+
+                $compObj = $worldObj->ivShow('componentHash', 'verb_title');
+                if ($compObj) {
+
+                    $compObj->{usePatternGroups} = '(.*)\.';
+                }
+            }
+        }
+
         if ($world eq 'alteraeon' && $fileVersion < 1_001_270) {
 
             # Patch to fix bad regex in the 'verb_exit' component
@@ -12409,6 +12454,65 @@
             # Change of DNS/IP address, replacing islands.genesismuds.com 3000
             $worldObj->ivPoke('dns', 'play.islands-game.live');
             $worldObj->ivPoke('ipv4', '45.79.14.59');
+        }
+
+        if ($world eq 'kallisti' && $fileVersion < 1_002_041) {
+
+            # Auto-disconnections no longer a problem so re-enabled MSDP
+            $worldObj->ivDelete('telnetOverrideHash', 'msdp');
+
+            # Looks like output for 'score' command and prompt have been updated, too
+            $worldObj->ivPush(
+                'groupPatternList',
+                    '^\< \w+ \| (\d+)h (\d+)m (\d+)s',
+                        1,
+                        'health_points',
+                        'show',
+                    '^\< \w+ \| (\d+)h (\d+)m (\d+)s',
+                        2,
+                        'magic_points',
+                        'show',
+                    '^\< \w+ \| (\d+)h (\d+)m (\d+)s',
+                        3,
+                        'energy_points',
+                        'show',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                        1,
+                        'health_points',
+                        'show',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                        2,
+                        'health_points_max',
+                        'show',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                        3,
+                        'magic_points',
+                        'show',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                        4,
+                        'magic_points_max',
+                        'show',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                        5,
+                        'energy_points',
+                        'show',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                        6,
+                        'energy_points_max',
+                        'show',
+            );
+
+            # Replace the command prompt pattern
+            $worldObj->ivPoke(
+                'cmdPromptPatternList',
+                    '^\< \w+ \| (\d+)h (\d+)m (\d+)s \> .',
+            );
+
+            # Add a very common fail exit message
+            $worldObj->ivPush(
+                'failExitPatternList',
+                    'Alas, you cannot go .*\.\.\.',
+            );
         }
 
         if ($world eq 'luminari' && $fileVersion < 1_001_270) {

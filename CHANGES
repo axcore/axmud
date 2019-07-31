@@ -1,3 +1,71 @@
+v1.2.041 (31 Jul 2019)
+--------------------------------------------------------------------------------
+
+Pre-configured worlds
+- MSDP is no longer disabled on Kallisti by default. The pre-configured world
+    has been updated a little
+- Numerous issues at Achaea (and other IRE worlds) have been fixed
+
+Major new features
+- A speech engine can now be specified from the command line, when starting
+    Axmud. For example, Linux users who want to use the Festival speech engine
+    might start Axmud by typing 'axmud.pl cryosphere festival'
+- For users of Arch Linux, there is now an AUR package available for use; see
+    https://aur.archlinux.org/packages/axmud/. If installing Axmud manually, the
+    installation procedure for Arch-based distros has changed; see the INSTALL
+    file
+
+Major fixes
+- Locales that use a comma as a decimal point (for example, German) cause
+    numerous problems throughout the code. This should now be fixed for all
+    languages/locales
+- Improved handling of the Pueblo protocol. Worlds like Ancient Anguish ask the
+    client to create additional windows; handling of those windows is now much
+    better. Fixed an error that prevented some of those additional windows
+    opening at all. Fixed an error that displayed a literal clickable link,
+    rather than the contents of a file. Links are now displayed in cyan, rather
+    than underlined, as with the original Pueblo client. Handling of
+    multi-character whitespace has been fixed
+- Axmud can force worlds to share a single main window, or grant each world
+    their own window. Switching between these two modes was broken. Fixed
+- Fixed MXP room statement (description) detection. For worlds that mark a room
+    statements with special tags, like Iberia MUD, Axmud can now use those tags
+    correctly
+- MS Windows users could not change the font. This is now fixed. The standard
+    Gtk font selection dialogue no longer worked, and could even cause crashes.
+    Replaced the deprecated dialogue with the modern one
+- Perl plugins cannot be loaded from all possible locations. The new
+    ;importplugin command will copy any Perl plugin to a location in Axmud's
+    data directory, from which it can be loaded
+- Fixed segfaults on shutdown in certain situations
+
+Minor fixes
+- IO::Socket::SSL is now an optional dependency, for the benefit of some Linux
+    distributions on which it can no longer be installed (due to problems with
+    the parent Net::SSLeay module). If the dependency is not satisfied, Axmud
+    will not be able to connect to any world using SSL
+- Fixed broken code in ;modifyconfig
+- The layout of the Countdown Task's window has been improved a little
+- A character's purse contents/bank balance could not be modified from withint
+    the character edit window. Fixed
+
+Axbasic features/fixes
+- Axbasic has been updated to v1.003
+- Added new OPTION SILENT, which suppresses messages like
+    'AXBASIC: Executing 'test''
+- Added new Ifaceselect () function, as an alternative to using Ifacepop () and
+    Ifaceshift ()
+- Fixed several issues with interface notifications, for example in the
+    NEXTIFACE statement and the Ifacename$ () function
+- Some issues with  matching substrings in regular expressions have been fixed.
+    For a regex in the form (...|...|...), with each ... containing its own
+    substring, the Ifaceshift () and Ifacepop () functions will now return an
+    empty string rather than crashing Axmud. Added a new Ifacedefined ()
+    function which might be useful in this situation
+- Fixed several issues with the WAITTRIG statement
+- Fixed incorrect regex handling in the POKEADD statement
+- Made a few minor corrections to the Axbasic tutorial
+
 v1.2.0 (31 Mar 2019)
 --------------------------------------------------------------------------------
 
@@ -39,7 +107,7 @@ Known issues
     of the textview (from the 'main' window menu, click 'Edit > Axmud
     preferences... > Settings > Page 6', change 'Size of textviews' to a value
     like 2000, then click the 'Set' button to apply the change)
-    
+
 Automapper new features
 - As a result of the graphics upgrade, the automapper will draw your maps
     somewhat more quickly. Pre-drawing operations, in particular, are much
@@ -51,7 +119,7 @@ Automapper new features
     maps, file load/save times are dramatically quicker
 - From now on, you can use the new ';compressmodel' command to make (small)
     reductions in the amount of memory used by any new maps you draw. Most users
-    can ignore this command 
+    can ignore this command
 - For users who prefer to use their own room flags, you can now hide all
     standard room flags, leaving only your custom flags visible. This applies
     both to the automapper window's menus and the world model edit window. From
@@ -60,7 +128,7 @@ Automapper new features
 - Map labels can now be rotated at any angle
 - When pre-drawing regions, a summary of drawing operations is now visible in
     the automapper window's title bar
-    
+
 Automapper fixes
 - Some users with very large maps were experiencing an 'out of memory' error on
     low-to-medium specification machines. This issue is now fixed: we have not
@@ -114,7 +182,7 @@ Axbasic new features
     POKESHIFT
 - Showprofile () has been renamed as Showprofile$ (), as it returns a string, not
     a numeric value
-        
+
 Axbasic fixes
 - Axbasic got confused by 'LET name$ = "gandalf"', because NAME is also a
     keyword. From now on, 'name$' is treated as a variable, but 'NAME' is
@@ -131,7 +199,7 @@ Axbasic fixes
 - 'CALL funcname' can now be used as well as 'CALL funcname ()'
 - Fixed errors in column PRINTing, for example in 'PRINT x, y'. Also fixed some
     errors in PRINTing the results of functions, such that 'PRINT Int' now
-    generates a useful Axbasic error, rather than a useless Perl error 
+    generates a useful Axbasic error, rather than a useless Perl error
 - Fixed minor problems with the ADDGAUGE, DELGAUGE, OPEN, TITLEWIN and VAL
     statements
 - The Timestamp () function was returning negative numbers. Fixed
@@ -142,7 +210,7 @@ Axbasic fixes
 - Fixed some problems in handling invalid tokens (like 'hello' instead of
     "hello"), array out-of-bounds errors and scripts lacking the compulsory END
     statement
-    
+
 Minor new features
 - In all windows with more tabs than available space, you can now right-click
     any of the tabs to get a list of the invisible tabs, rather than scrolling
@@ -176,7 +244,7 @@ Minor fixes
     shut down
 - About a dozen client commands that could not be used after a disconnection
     (for example, ';testpattern' and ';listtask'), can now be used
-    
+
 v1.1.405 (24 Dec 2018)
 --------------------------------------------------------------------------------
 

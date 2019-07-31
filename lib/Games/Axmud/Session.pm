@@ -2160,10 +2160,8 @@
                 $self->mainWin->showMsgDialogue(
                     'World hint',
                     'info',
-                    $string .= "\n\nTo see this message again, type ';hint'",
+                    $string .= ' (To see this message again, type \';hint\')',
                     'ok',
-                    undef,
-                    TRUE,           # Preserve newline characters in the message
                 );
             }
         }
@@ -2995,7 +2993,7 @@
 
         # Local variables
         my (
-            $taskCount, $scriptCount, $cmdCount, $msg,
+            $permFlag, $taskCount, $scriptCount, $cmdCount, $msg,
             @reportList, @sendList,
             %cmdHash,
         );
@@ -3090,6 +3088,19 @@
 
                 $self->sendModCmd('rows', 'number', $self->currentWorld->rows);
             }
+        }
+
+        # For the benefit of IRE worlds (that don't do MXP telnet option negotation), artificially
+        #   enable MXP if the flags are set
+        if ($self->currentWorld->ivExists('mxpOverrideHash', 'perm')) {
+            $permFlag = $self->currentWorld->ivShow('mxpOverrideHash', 'perm');
+        } else {
+            $permFlag = $axmud::CLIENT->allowMxpPermFlag;
+        }
+
+        if ($axmud::CLIENT->useMxpFlag && $permFlag && $self->mxpMode eq 'no_invite') {
+
+            $self->ivPoke('mxpMode', 'client_agree');
         }
 
         # If echo mode is still enabled ($self->echoMode is 'client_agree'), tell
@@ -11493,9 +11504,13 @@
 
             # Update replay loop time. The subtraction produces a system rounding error, so we need
             #   to round the value to 3dp
+#            $self->ivPoke(
+#                'replayLoopTime',
+#                sprintf('%.3f', $axmud::CLIENT->getTime() - $self->replayLoopStartTime),
+#            );
             $self->ivPoke(
                 'replayLoopTime',
-                sprintf('%.3f', $axmud::CLIENT->getTime() - $self->replayLoopStartTime),
+                Math::Round::nearest(0.001, $axmud::CLIENT->getTime() - $self->replayLoopStartTime),
             );
         }
 
@@ -11816,10 +11831,12 @@
             }
         }
 
-        # Failsafe - default protocol is 'telnet'
+        # Failsafe - default protocol is 'telnet'. If SSL is not available on this system, any SSL
+        #   connection reverts to a telnet connection
         if (
             ! $protocol
             || ($protocol ne 'telnet' && $protocol ne 'ssh' && $protocol ne 'ssl')
+            || ($axmud::NO_SSL_FLAG && $protocol eq 'ssl')
         ) {
             $protocol = 'telnet';
         }
@@ -13214,20 +13231,15 @@
                     $self->ivPoke('crlfMode', '');
 
                     # When Pueblo is active, reduce multiple whitespace characters to a single space
-                    #   (or none, if there are no characters on the line)
                     $reduceToken = $arg;
                     $wholeText = $self->getPartialLine() . $stripLine;
-                    if (
-                        $self->puebloActiveFlag
-                        && ! $self->puebloLiteralFlag
-                        && ! $self->puebloLiteralSampFlag
-                    ) {
-                        if (! ($wholeText =~ m/\S/)) {
+                    if ($self->puebloActiveFlag && ! $self->puebloLiteralSampFlag) {
+
+                        $reduceToken =~ s/\s+/ /g;
+                        if ($wholeText =~ m/\s$/) {
 
                             $reduceToken =~ s/^\s+//;
                         }
-
-                        $reduceToken =~ s/\s+/ /;
                     }
 
                     # Update the IV used to write logs showing images files
@@ -13492,7 +13504,7 @@
 
     sub tokeniseIncomingData {
 
-        # Called by $self->processIncomingData
+        # Called by $self->processIncomingData, and also by $self->processPuebloPaneElement
         # Tokenises the text received from the world, producing a list in groups of two, in the form
         #   (type, argument, type, argument...)
         # Where 'type' is one of the strings 'nl', 'ga', 'esc', 'inv', 'ctrl', 'seq', 'bsp', 'msp',
@@ -13504,13 +13516,20 @@
         #   calling function
         #
         # Expected arguments
-        #   $text   - The incoming text to tokenise
+        #   $text               - The incoming text to tokenise
+        #
+        # Optional arguments
+        #   $insertAtStartFlag  - TRUE when called by $self->processPuebloPaneElement, in which case
+        #       the tokens are inserted at the beginning of $self->currentTokenList, so they are
+        #       processed before any existing tokens (in other words, process the file we just
+        #       downloaded from a URL, before continuing to process data received over the telnet/
+        #       SSH/SSL connection). FALSE (or 'undef') otherwise
         #
         # Return values
         #   'undef' on improper arguments or if $text is an empty string
         #   1 otherwise
 
-        my ($self, $text, $check) = @_;
+        my ($self, $text, $insertAtStartFlag, $check) = @_;
 
         # Local variables
         my (
@@ -13617,7 +13636,11 @@
                             }
 
                             # Tokenisation is complete
-                            $self->ivPoke('currentTokenList', @tokenList);
+                            if ($insertAtStartFlag) {
+                                $self->ivUnshift('currentTokenList', @tokenList);
+                            } else {
+                                $self->ivPoke('currentTokenList', @tokenList);
+                            }
 
                             return 1;
 
@@ -13701,7 +13724,11 @@
                     }
 
                     # Tokenisation is complete
-                    $self->ivPoke('currentTokenList', @tokenList);
+                    if ($insertAtStartFlag) {
+                        $self->ivUnshift('currentTokenList', @tokenList);
+                    } else {
+                        $self->ivPoke('currentTokenList', @tokenList);
+                    }
 
                     return 1;
 
@@ -13735,7 +13762,11 @@
                     }
 
                     # Tokenisation is complete
-                    $self->ivPoke('currentTokenList', @tokenList);
+                    if ($insertAtStartFlag) {
+                        $self->ivUnshift('currentTokenList', @tokenList);
+                    } else {
+                        $self->ivPoke('currentTokenList', @tokenList);
+                    }
 
                     return 1;
 
@@ -13823,7 +13854,11 @@
                         }
 
                         # Tokenisation is complete
-                        $self->ivPoke('currentTokenList', @tokenList);
+                        if ($insertAtStartFlag) {
+                            $self->ivUnshift('currentTokenList', @tokenList);
+                        } else {
+                            $self->ivPoke('currentTokenList', @tokenList);
+                        }
 
                         return 1;
                     }
@@ -13909,7 +13944,11 @@
         } until ($text eq '');
 
         # Operation complete. Store the list as an IV, before returning
-        $self->ivPoke('currentTokenList', @tokenList);
+        if ($insertAtStartFlag) {
+            $self->ivUnshift('currentTokenList', @tokenList);
+        } else {
+            $self->ivPoke('currentTokenList', @tokenList);
+        }
 
         return 1;
     }
@@ -14070,7 +14109,7 @@
         #
         # At the same time we'll check splitter triggers. @offsetList contains the offset of the
         #   first character after the point at which a line portion is split into two
-        @offsetList = $self->checkLineSplit($stripPortion, $type);
+        @offsetList = $self->checkLineSplit($type, $stripPortion);
         if (! @offsetList) {
 
             # There are no command prompts in the middle of $stripPortion, and no splitter trigger
@@ -15104,12 +15143,17 @@
         }
 
         # On the first line, detect Pueblo (if allowed)
+        # v1.2.025 - The introductory Pueblo message is supposed to appear on the first line (only),
+        #   but Ancient Anguish has moved it below its logo. From this version onwards, we keep
+        #   checking for Pueblo until login is complete
         if (
             $axmud::CLIENT->usePuebloFlag
             && ! $self->currentWorld->ivExists('telnetOverrideHash', 'pueblo')
             && $self->puebloMode ne 'client_agree'
-            && $self->packetCount <= 1
-            && $text =~ m/^\s*This world is Pueblo (\d+\.\d+) Enhanced\./i
+#            && $self->packetCount <= 1
+#            && $text =~ m/^\s*This world is Pueblo (\d+\.\d+) Enhanced\./i
+            && ! $self->loginFlag
+            && $text =~ m/This world is Pueblo (\d+\.\d+) Enhanced\./i
         ) {
             if ($self->mxpMode eq 'client_agree') {
 
@@ -15122,6 +15166,10 @@
                 $self->ivPoke('puebloMode', 'client_agree');
                 $self->ivPoke('puebloVersion', $1);
                 $self->send('PUEBLOCLIENT 2.01');       # Same response as zMud
+
+                # Change the properties of 'link' tags, so they are displayed in cyan, and without
+                #   an underline
+                $self->defaultTabObj->textViewObj->updateLinkTag();
             }
         }
 
@@ -21243,9 +21291,10 @@
         my (
             $origFrameObj, $frameObj, $left, $right, $top, $bottom, $newFlag, $gridObj, $zonemapObj,
             $width, $height, $zoneModelObj, $taskObj, $currentLeft, $currentRight, $currentTop,
-            $currentBottom, $currentWidth, $currentHeight, $reduceWidth, $reduceHeight, $resizeLeft,
-            $resizeRight, $resizeTop, $resizeBottom, $newLeft, $newRight, $newTop, $newBottom,
-            $newPaneObj, $tabObj, $paneObj, $spinFlag,
+            $currentBottom, $xFactor, $yFactor, $currentWidth, $currentHeight, $reduceWidth,
+            $reduceHeight, $resizeLeft, $resizeRight, $resizeTop, $resizeBottom, $newLeft,
+            $newRight, $newTop, $newBottom, $newPaneObj, $tabObj, $paneObj, $spinFlag,
+            $noTempGridFlag,
             @emptyList, @origList, @checkList,
             %checkHash, %ivHash, %reservedHash,
         );
@@ -21283,6 +21332,8 @@
         @origList = @checkList = (
             'name', 'action', 'title', 'internal', 'align', 'left', 'top', 'width',
             'height', 'scrolling', 'floating',
+            # Pueblo option, ignored in MXP
+            'fit',
         );
         # Hash of argument names which don't take a corresponding value
         %checkHash = (
@@ -21303,6 +21354,8 @@
             'height'    => '50%',
             'scrolling' => FALSE,
             'floating'  => FALSE,
+            # Pueblo option, ignored in MXP
+            'fit'       => FALSE,       # Partially implemented
         );
 
         if (@argList) {
@@ -21325,17 +21378,34 @@
 
                     return @emptyList;
 
+                } elsif ($argName eq 'fit' && $self->puebloMode ne 'client_agree') {
+
+                    # Pueblo option, ignored in MXP
+                    $self->mxpDebug($origToken, 'Malformed element', 2703);
+
                 } elsif ($argName eq 'action') {
 
                     $ivHash{$argName} = lc($argValue);
 
-                } elsif (
-                    $argName eq 'internal'
-                    && ! $axmud::CLIENT->shareMainWinFlag
-                    && $axmud::CLIENT->allowMxpInteriorFlag
-                ) {
-                    # (If internal frames can't be created, created external frames instead)
-                    $ivHash{$argName} = TRUE;
+                } elsif ($argName eq 'internal') {
+
+                    if (
+                        ! $axmud::CLIENT->shareMainWinFlag
+                        && $axmud::CLIENT->allowMxpInteriorFlag
+                    ) {
+                        # Internal frames can be created
+                        $ivHash{$argName} = TRUE;
+
+                    } else {
+
+                        # Internal frames can't be created, so create an external frame instead
+                        # In addition, the size and position of the internal frame (if specified),
+                        #   or the default size and position (if not specified), is now irrelevant,
+                        #   and there is no need to create a temporary workspace grid - just use the
+                        #   existing one, setting the size and position of the frame as we would for
+                        #   any task window
+                        $noTempGridFlag = TRUE;
+                    }
 
                 } elsif ($argName eq 'scrolling') {
 
@@ -21351,6 +21421,18 @@
                 }
 
             } until (! @argList);
+        }
+
+        # If an internal frame was requested, but cannot be provided, the specified size and
+        #   position is irrelevant
+        if ($noTempGridFlag) {
+
+            # Reset those values to their defaults
+            $ivHash{'align'} = 'top';
+            $ivHash{'left'} = 0;
+            $ivHash{'top'} = 0;
+            $ivHash{'width'} = '50%';
+            $ivHash{'height'} = '50%';
         }
 
         # Check the validity of the compulsory 'Name' argument
@@ -21548,9 +21630,10 @@
             if (! $frameObj->internalFlag) {
 
                 # If workspace grids are available and the workspace containing the session's 'main'
-                #   window isn't using a temporary zonemap, then create a temporary zonemap
+                #   window isn't using a temporary zonemap, then create a temporary zonemap (so
+                #   that all frames can be placed at their specified size and position)
                 $gridObj = $self->mainWin->workspaceObj->findWorkspaceGrid($self);
-                if ($gridObj && $gridObj->zonemap) {
+                if ($gridObj && $gridObj->zonemap && ! $noTempGridFlag) {
 
                     $zonemapObj = $axmud::CLIENT->ivShow('zonemapHash', $gridObj->zonemap);
                     if ($zonemapObj && ! $zonemapObj->tempFlag) {
@@ -21578,7 +21661,10 @@
                     #   equivalent size and position in pixels on the same workspace that the
                     #   session's 'main' window is using, and store this size/position in the Frame
                     #   task so that the task window can be opened using them
-                    $taskObj->set_winPosn($self->convertMxpWinSize($frameObj));
+                    if (! $noTempGridFlag) {
+
+                        $taskObj->set_winPosn($self->convertMxpWinSize($frameObj));
+                    }
 
                     # Update IVs. The frame object's ->tabObj, ->paneObj and ->textViewObj IVs are
                     #   set when the task window is opened
@@ -21610,7 +21696,7 @@
 
                 # Reduce the size of the default tab's pane object (the original frame) to make
                 #   way for a new frame
-                # On the assumption that the world won't create endles frames with the same
+                # On the assumption that the world won't create endless frames with the same
                 #   alignment, reduce the original frame's current size by a factor of it original
                 #   size (e.g. original width = 60, current width = 40, new width = 20)
                 # If this would make the original frame's width/height too small (e.g. original
@@ -21622,12 +21708,26 @@
                         $self->defaultTabObj->paneObj,
                     );
 
+                # In Pueblo, the 'fit' option is only partially implemented. We can't (easily) make
+                #   the frame exactly the right size for the text it contains, but based on the
+                #   assumption that worlds are using the 'fit' option to display a single line of
+                #   text, or maybe two (most of the time), reduce the size of the frame by half
+                #   (e.g. reduce height from 25% to 12.5%)
+                $xFactor = $self->mxpFrameXFactor;
+                $yFactor = $self->mxpFrameYFactor;
+
+                if ($ivHash{'fit'}) {
+
+                    $xFactor /= 2;
+                    $yFactor /= 2;
+                }
+
                 # Original frame's current size
                 $currentWidth = $currentRight - $currentLeft + 1;
                 $currentHeight = $currentBottom - $currentTop + 1;
                 # Original frame should be reduced by this much
-                $reduceWidth = int($self->mxpFrameWidth * $self->mxpFrameXFactor);
-                $reduceHeight = int($self->mxpFrameHeight * $self->mxpFrameYFactor);
+                $reduceWidth = int($self->mxpFrameWidth * $xFactor);
+                $reduceHeight = int($self->mxpFrameHeight * $yFactor);
 
                 if ($currentWidth <= $reduceWidth) {
 
@@ -21776,9 +21876,10 @@
                 # Same applies to the previous frame
                 $self->ivPoke('mxpPrevFrame', '_top');
             }
+        }
 
         # Redirect text received from the world to the frame
-        } elsif ($ivHash{'action'} eq 'redirect') {
+        if ($ivHash{'action'} eq 'redirect') {
 
             $self->ivPoke('mxpPrevFrame', $self->mxpCurrentFrame);
             $self->ivPoke('mxpCurrentFrame', $frameObj->name);
@@ -25686,8 +25787,9 @@
 
         # Local variables
         my (
-            $tag, $action, $name, $count, $href, $imgTag, $scrolling, $internalFlag, $frameObj,
-            @emptyList, @attList,
+            $tag, $action, $name, $count, $href, $imgTag, $scrolling, $internalFlag, $align,
+            $frameObj, $fetchObj, $fetchPath, $fileHandle, $tokenString,
+            @emptyList, @attList, @fetchList,
             %ivHash,
         );
 
@@ -25705,6 +25807,7 @@
         #       "overlapped|floating|internal|browser|nonsizeable|noclose|small_title|fit|persistent
         #       |force|viewbottom|webtracker"
         #   ]
+        #   [ALIGN=left|right|top|bottom]
         #
         # Implementation notes:
         #   - ACTION=open - the Pueblo spec says "The HTML string must include a href attribute
@@ -25717,10 +25820,14 @@
         #       '_blank' are given the internal name pueblo_n, where n is a positive integer, and
         #       can be closed at any time by the user (just like any other internal/external window)
         #   - The MINWIDTH=, MINHEIGHT=, VSPACE= and HSPACE= attributes are not implemented
-        #   - The only OPTIONS= values which are implemented are 'floating' and 'internal'. If both
-        #       values are specified, only 'internal' is used
+        #   - The only OPTIONS= values which are implemented are 'floating', 'internal' and 'fit'.
+        #       If both 'floating' and 'internal', are specified, only 'internal' is used. 'fit' is
+        #       only partially implemented: we don't try to make the frame fit the text exactly, as
+        #       Pueblo demands, but on the assumption that most worlds are using 'fit' for a frame
+        #       containing 1 or 2 lines of text, we simply reduce the size of the frame by half
         #   - For ACTION=redirect is handled in the same way as ACTION=open, following the behaviour
         #       of the corresponding MXP <FRAME> tag attributes
+        #   - The ALIGN option is only obeyed when OPTIONS=internal is specified
         #
         if (($tagMode eq 'open' && ! @argList) || $tagMode eq 'close') {
 
@@ -25769,7 +25876,7 @@
             'hspace'    => undef,
             'scrolling' => 'auto',
             'options'   => undef,
-            'align'     => undef,       # not implemented
+            'align'     => undef,       # implemented only when OPTIONS=internal is used
         );
 
         if (@argList) {
@@ -25853,14 +25960,32 @@
                 push (@attList, 'title', $ivHash{'panetitle'});
             }
 
-            if (
-                defined $ivHash{'options'}
-                && $ivHash{'options'} =~ m/internal/
-                && ! $axmud::CLIENT->shareMainWinFlag
-            ) {
+            if (defined $ivHash{'options'} && $ivHash{'options'} =~ m/internal/) {
+
                 $tag .= ' internal';
                 push (@attList, 'internal', undef);
                 $internalFlag = TRUE;
+
+                $align = $ivHash{'align'};
+                if (defined $align) {
+
+                    if (
+                        $align ne 'left' && $align ne 'right' && $align ne 'top'
+                        && $align ne 'bottom'
+                    ) {
+                        $self->puebloDebug($origToken, 'Invalid align attribute', 7625);
+                        return @emptyList;
+
+                    } else {
+
+                        push(@attList, 'align', $align);
+                    }
+                }
+            }
+
+            if (defined $ivHash{'options'} && $ivHash{'options'} =~ m/fit/ && $internalFlag) {
+
+                push (@attList, 'fit', TRUE);
             }
 
             if (defined $ivHash{'width'}) {
@@ -25903,7 +26028,7 @@
             $frameObj = $self->getMxpFrame($name);
             if (! $frameObj) {
 
-                $self->puebloDebug($origToken, 'Internal error while creating MXP frame', 7625);
+                $self->puebloDebug($origToken, 'Internal error while creating MXP frame', 7626);
 
                 return @emptyList;
 
@@ -25918,18 +26043,19 @@
             $href = $ivHash{'href'};
             if ($href ne '') {
 
-                if ($action eq 'open') {
-
-                    $self->processMxpFrameElement(
-                        '<FRAME ' . $name . ' REDIRECT>',
-                        'open',
-                        'FRAME',
-                        'name'      => $name,
-                        'action'    => 'REDIRECT',
-                    );
-                }
-
                 if ($href =~ m/(\.gif|\.bmp|\.jpg)$/) {
+
+                    # Display an online image
+                    if ($action eq 'open') {
+
+                        $self->processMxpFrameElement(
+                            '<FRAME ' . $name . ' REDIRECT>',
+                            'open',
+                            'FRAME',
+                            'name'      => $name,
+                            'action'    => 'REDIRECT',
+                        );
+                    }
 
                     $self->processPuebloImageElement(
                         '<IMG src=' . $href . '>',
@@ -25938,20 +26064,62 @@
                         'src'       => $href,
                     );
 
+                    if ($action eq 'open') {
+
+                        $self->processMxpFrameElement(
+                            '<FRAME _previous REDIRECT>',
+                            'open',
+                            'FRAME',
+                            'name'      => '_previous',
+                            'action'    => 'REDIRECT',
+                        );
+                    }
+
                 } else {
 
-                    $self->currentTabObj->textViewObj->insertWithLinks($href, 'echo');
-                }
+                    # Attempt to download the online file into a temporary directory
+                    $fetchObj = File::Fetch->new(uri => $href);
+                    if ($fetchObj) {
 
-                if ($action eq 'open') {
+                        $fetchPath = $fetchObj->fetch(
+                            to => $axmud::DEFAULT_DATA_DIR . '/tmp/pueblo',
+                        );
+                    }
 
-                    $self->processMxpFrameElement(
-                        '<FRAME _previous REDIRECT>',
-                        'open',
-                        'FRAME',
-                        'name'      => '_previous',
-                        'action'    => 'REDIRECT',
-                    );
+                    # Open the file and read its contents
+                    if ($fetchPath && open($fileHandle, "<$fetchPath")) {
+
+                        while (my $row = <$fileHandle>) {
+
+                            push (@fetchList, $row);
+                        }
+
+                        close $fileHandle;
+                    }
+
+                    if (! @fetchList) {
+
+                        # If the file could not be downloaded or read (for whatever reason), or if
+                        #   the file was empty, just display a clickable link to it
+                        $tokenString = '<XCH_PANE ACTION=redirect NAME="' . $name . '">'
+                            . '<A href="' . $href . '">' . $href . '</A>'
+                            . '<XCH_PANE ACTION=redirect NAME=_previous>';
+
+                    } else {
+
+                        # File was downloaded
+                        $tokenString = '<XCH_PANE ACTION=redirect NAME="' . $name . '">'
+                            . join('', @fetchList)
+                            . '<XCH_PANE ACTION=redirect NAME=_previous>';
+                    }
+
+                    # Tokenise the contents of the file, as if the server had sent it over the
+                    #   telnet/SSH/SSL connection
+                    # The TRUE flag instructs the function to add the tokens to the beginning of
+                    #   $self->currentTokenList, before any tokens that are already stored there (in
+                    #   other words, we process the contents of this file before continuing to
+                    #   process data actually received over the telnet/SSH/SSL connection)
+                    $self->tokeniseIncomingData($tokenString, TRUE);
                 }
             }
 
@@ -29603,7 +29771,7 @@
     sub prepareMudProtocols {
 
         # Called by $self->doConnect just before opening the connection
-        # Sets up NUD protocols
+        # Sets up MUD protocols
         #
         # Expected arguments
         #   $connectObj - The GA::Obj::Telnet object to be used in the connection
@@ -38046,7 +38214,7 @@
         #                   - Axmud colour and style tags each correspond to an escape sequence
         #   $appliedListRef - Reference to a list of Axmud colour/style tags that actually applied
         #                       at the beginning of the line (may be an empty list)
-        #   $mxpFlagTextHash
+        #   $mxpFlagTextHashRef
         #                   - Reference to the contents of $self->mxpFlagTextStoreHash, just before
         #                       it was reset (may be an empty hash)
         #
@@ -38058,7 +38226,7 @@
 
         my (
             $self, $line, $stripLine, $modLine, $newLineFlag, $offsetListRef, $offsetHashRef,
-            $appliedListRef, $mxpFlagTextHash, $check,
+            $appliedListRef, $mxpFlagTextHashRef, $check,
         ) = @_;
 
         # Local variables
@@ -38139,7 +38307,7 @@
                 $offsetHashRef,
                 \%tagHash,
                 $appliedListRef,
-                $mxpFlagTextHash,
+                $mxpFlagTextHashRef,
             );
 
             if (! $thisObj) {
@@ -38172,7 +38340,7 @@
                 $newLineFlag,
                 $offsetHashRef,
                 \%tagHash,
-                $mxpFlagTextHash,
+                $mxpFlagTextHashRef,
             );
         }
 

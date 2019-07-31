@@ -944,12 +944,12 @@
             'pokeset', 'pokeshift', 'poketrue', 'pokeundef', 'pokeunshift', 'print', 'profile',
             'pseudo', 'radians', 'randomize', 'read', 'redim', 'redirect', 'relay', 'rem',
             'require', 'reset', 'restore', 'return', 'revpath', 'select', 'send', 'setgauge',
-            'setstatus', 'settrig', 'skipiface', 'sleep', 'sort', 'sortcase', 'sortcaser', 'sortr',
-            'speak', 'speed', 'step', 'stop', 'string', 'sub', 'text', 'titlewin', 'then', 'to',
-            'typo', 'unflashwin', 'until', 'waitactive', 'waitalive', 'waitarrive', 'waitdead',
-            'waitep', 'waitgp', 'waithp', 'waitmp', 'waitnextxp', 'waitnotactive', 'waitpassout',
-            'waitscript', 'waitsleep', 'waitsp', 'waittask', 'waittotalxp', 'waittrig', 'waitxp',
-            'warning', 'while', 'write', 'writewin',
+            'setstatus', 'settrig', 'silent', 'skipiface', 'sleep', 'sort', 'sortcase', 'sortcaser',
+            'sortr', 'speak', 'speed', 'step', 'stop', 'string', 'sub', 'text', 'titlewin', 'then',
+            'to', 'typo', 'unflashwin', 'until', 'waitactive', 'waitalive', 'waitarrive',
+            'waitdead', 'waitep', 'waitgp', 'waithp', 'waitmp', 'waitnextxp', 'waitnotactive',
+            'waitpassout', 'waitscript', 'waitsleep', 'waitsp', 'waittask', 'waittotalxp',
+            'waittrig', 'waitxp', 'warning', 'while', 'write', 'writewin',
         );
 
         foreach my $keyword (@keywordList) {
@@ -1076,6 +1076,7 @@
                 'radians'               => 'option',
                 'redirect'              => 'option',
                 'require'               => 'option',
+                'silent'                => 'option',
                 'step'                  => 'for',
                 'string'                => 'sub',
                 'text'                  => 'open',
@@ -1384,6 +1385,7 @@
                 'getroomnum'            => '',
                 'getroomobjects'        => ';S',
                 'ifacecount'            => '',
+                'ifacedefined'          => 'N',
                 'ifacepos'              => '',
                 'ifacenum'              => '',
                 'ifacestrings'          => '',
@@ -1422,11 +1424,12 @@
                 'getroomtag$'           => '',
                 'getroomtitle$'         => '',
                 'iface$'                => '',
-                'ifacetype$'            => '',
-                'ifacetext$'            => '',
                 'ifacename$'            => '',
-                'ifaceshift$'           => '',
                 'ifacepop$'             => '',
+                'ifaceselect$'          => 'N',
+                'ifaceshift$'           => '',
+                'ifacetext$'            => '',
+                'ifacetype$'            => '',
                 'popup$'                => 'SSS',
                 'scriptname$'           => '',
                 'showprofile$'          => '',
@@ -1518,6 +1521,11 @@
             #
             #       - Script refuses to run unless global variable $BASIC_VERSION >= float
             #
+            #   silent      FALSE (default) / TRUE
+            #
+            #       - Script does not display  messages like 'AXBASIC: Executing 'test'' or
+            #           'AXBASIC: Execution of 'test' complete'
+            #
             #   typo        FALSE (default) / TRUE
             #
             #       - Allows GLOBAL/LOCAL variable declarations to be omitted, if TRUE. Ignored in
@@ -1530,6 +1538,7 @@
                 'pseudo'                => 'hide_complete',   # If changed, also set ->pseudoCmdMode
                 'redirect'              => FALSE,
                 'require'               => 0,
+                'silent'                => FALSE,
                 'typo'                  => FALSE,
             },
 
@@ -1765,14 +1774,18 @@
         #   start)...
         if ($self->scriptStatus eq 'waiting') {
 
-            $self->session->writeText('AXBASIC: Executing \'' . $self->name . '\'');
-
             # Parse the script
             if (! $self->parse()) {
 
                 # Parsing failed - cannot continue
                 $self->ivPoke('implementFlag', FALSE);
                 return undef;
+            }
+
+            # The script has had an opportunity to set OPTION SILENT, so we now show a confirmation
+            if (! $self->ivShow('optionStatementHash', 'silent')) {
+
+                $self->session->writeText('AXBASIC: Executing \'' . $self->name . '\'');
             }
 
             # Mark the Axbasic script status as 'parsing' (being parsed/implemented), and the
@@ -2280,7 +2293,7 @@
                 push (@msgList, 'AXBASIC: Execution of \'' . $self->name . '\' halted');
             }
 
-        } else {
+        } elsif (! $self->ivShow('optionStatementHash', 'silent')) {
 
             push (@msgList, 'AXBASIC: Execution of \'' . $self->name . '\' complete');
         }
@@ -2406,11 +2419,9 @@
 
                 # Get the interface object
                 $obj = $self->session->ivShow('interfaceHash', $interfaceName);
-                # Prepare the Axmud client command
-                $string = 'delete' . $obj->category . ' -i ' . $interfaceName;
-
-                # Delete it
-                $self->session->pseudoCmd($string, $self->pseudoCmdMode);
+                # Cannot use ;deletetrigger for dependent interfaces, so we must remove it
+                #   directly
+                $self->session->removeInterface($obj);
             }
         }
 
@@ -2593,6 +2604,13 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->interfaceNotification', @_);
         }
 
+        # @grpStringList, if it is populated at all, contains the whole matching, followed by any
+        #   substrings. Remove the first element, the matching line, leaving us with the substrings
+        if (@grpStringList) {
+
+            shift @grpStringList;
+        }
+
         # Create a LA::Notification object to store the information about the fired interface
         $obj = Language::Axbasic::Notification->new(
             $self,
@@ -2608,7 +2626,7 @@
         } else {
 
             # Add this LA::Notification to the end of the script's list
-            $self->ivPush('notificationList', $self);
+            $self->ivPush('notificationList', $obj);
             # If the list was empty, make the first notification in the list, the current one
             if ($self->currentNotification == -1) {
 
@@ -2719,7 +2737,7 @@
         my ($self, $check) = @_;
 
         # Check for improper arguments
-        if (! defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->rmv_currentNotification',

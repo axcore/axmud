@@ -25020,13 +25020,13 @@
         }
 
         # Show the 'dialogue' window
-        my $dialogueWin = Gtk3::FontSelectionDialog->new($title);
+        my $dialogueWin = Gtk3::FontChooserDialog->new($title, $self->winWidget);
         $dialogueWin->set_position('center-always');
         $dialogueWin->set_icon_list($axmud::CLIENT->desktopObj->{dialogueWinIconList});
 
         if ($initialFont) {
 
-            $dialogueWin->set_font_name($initialFont);
+            $dialogueWin->set_font($initialFont);
         }
 
         # Get the response
@@ -25034,7 +25034,7 @@
         if ($response eq 'ok') {
 
             # Get the selected font
-            $newFont = $dialogueWin->get_font_name();
+            $newFont = $dialogueWin->get_font();
         }
 
         # Close the 'dialogue' window

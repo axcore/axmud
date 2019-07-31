@@ -211,7 +211,7 @@
             $self->ivPoke('stopTime', $axmud::CLIENT->getTime());
             $self->ivPoke(
                 'spinTime',
-                sprintf('%.3f', $self->stopTime() - $self->startTime),
+                Math::Round::nearest(0.001, ($self->stopTime() - $self->startTime)),
             );
 
             return 1;
@@ -264,7 +264,7 @@
         #   value to 3dp
         $self->ivPoke(
             'spinTime',
-            sprintf('%.3f', $axmud::CLIENT->getTime() - $self->startTime),
+            Math::Round::nearest(0.001, ($axmud::CLIENT->getTime() - $self->startTime)),
         );
 
         # Call the loop's owner

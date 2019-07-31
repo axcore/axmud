@@ -1,4 +1,4 @@
-# Axmud list of all worlds, created Sun Mar 31, 2019
+# Axmud list of all worlds, created Wed Jul 31, 2019
 
 Aabahran, The Forsaken Lands
 aabahran
@@ -1078,6 +1078,13 @@ cityofhope.genesismuds.com
 0
 English
 
+CKMud
+ckmud
+ckmud.com
+8500
+0
+English
+
 Cleft of Dimensions
 cleftod
 cod.mudmagic.com
@@ -1162,6 +1169,13 @@ galaxy.silvren.com
 0
 English
 
+Common Descent MUSH
+commondescent
+game.commondescentmush.com
+1859
+0
+English
+
 CoMUX
 comux
 portent.genesismuds.com
@@ -1239,6 +1253,13 @@ creationsedge.genesismuds.com
 0
 English
 
+Ruins of Crestil
+crestil
+ruinsofcrestil.com
+8000
+0
+English
+
 Crimson MUD II
 crimson2
 mud.crimson2.com
@@ -1279,6 +1300,13 @@ cyberassault
 cyberassault.org
 11111
 0
+English
+
+CyberRun
+cyberrun
+cyberrun.net
+443
+1
 English
 
 Cybersphere
@@ -1351,6 +1379,13 @@ live.darkemud.com
 0
 English
 
+The Darkening Sun
+darkeningsun
+darkeningsun.com
+5678
+0
+English
+
 Darker Realms
 darkerrealms
 darkerrealms.org
@@ -1411,6 +1446,13 @@ Darkness of Time
 darknesstime
 the3beers.com
 4000
+0
+English
+
+Dragon Ball, The Dark Prince Returns
+darkprince
+xylam.mudmagic.com
+2040
 0
 English
 
@@ -1551,6 +1593,13 @@ Dragonball: Uprising
 dbuprising
 amn.biyg.org
 3074
+0
+English
+
+Dragon Balls Transendent Warriors
+dbwarriors
+mud.morchronium.com
+6000
 0
 English
 
@@ -2289,6 +2338,13 @@ mush.fadingsuns.org
 0
 English
 
+Faerun: A Forgotten Realms MUD
+faerun
+faerun.d20mud.com
+4100
+0
+English
+
 Faibanx
 faibanx
 faibanx.lavadomefive.com
@@ -2447,6 +2503,13 @@ Marvel: The Flame of Darkness
 fodarkness
 kydance.net
 2008
+0
+English
+
+Fires of Heaven
+foheaven
+mud.fohmud.com
+7000
 0
 English
 
@@ -2713,6 +2776,13 @@ Galactic Trader
 gtrader
 gt.gamingmuseum.com
 23
+0
+English
+
+Gundam UC100
+gundam
+gundam.aresmush.com
+4201
 0
 English
 
@@ -3640,6 +3710,13 @@ medievia.com
 0
 English
 
+Medina
+medina
+medinamud.ml
+3232
+0
+Espanol
+
 Medieval Times MUD
 medtimes
 timesmud.com
@@ -4158,6 +4235,13 @@ nostalgiamud.l-w.ca
 0
 English
 
+Sometimes a Great Notion
+notionmu
+notionmu.com
+2120
+0
+English
+
 Nuclear War
 nuclearwar
 nuclearwarmudusa.com
@@ -4501,6 +4585,13 @@ ravenmud.com
 0
 English
 
+Rawdawgs: Unlimited
+rawdawgs
+rawdawgs.ddns.net
+5000
+0
+English
+
 Razor's Edge
 razorsedge
 razors.speakgeek.org
@@ -4767,6 +4858,13 @@ mud.temporasanguinis.it
 0
 Italiano
 
+Sanity's Edge
+sanitysedge
+mud.sanitysedge.com
+2020
+0
+English
+
 The Savage Soul
 savsould
 savsoul.com
@@ -4808,6 +4906,13 @@ game.second-contract.com
 6666
 0
 English
+
+Selva Virtual
+selvavirtual
+selva.grogue.org
+8888
+0
+Portugues
 
 SerenityMUSH
 serenity
@@ -6052,6 +6157,13 @@ Worlds of Carnage
 wocarnage
 wocmud.org
 4000
+0
+English
+
+World of Extant
+worldextant
+mush.worldofextant.com
+4201
 0
 English
 
