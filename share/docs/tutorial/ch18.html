@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch18</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch17.html">Previous</a> <a href="index.html">Index</a> <a href="ch19.html">Next</a></p>
+<hr>
+<h1>18 - Primitive BASIC</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#18.1">18.1 Line numbers</a></li>
+<li><a href="#18.2">18.2 GOTO</a></li>
+<li><a href="#18.3">18.3 GOSUB</a></li>
+<li><a href="#18.4">18.4 ON and STOP</a></li>
+</ul>
+<hr>
+<p>As explained much earlier in the tutorial, Axbasic is compatiable with BASIC programmes written as far back as the 1960s. BASIC programmes from that era were written with line numbers.</p>
+<pre><code>    10 REM My first programme
+    20 PRINT "Hello, world!"
+    30 END
+</code></pre>
+<p>This Section explains how Axbasic uses line numbers. If you don't want to run programmes from the 1960s, 70s and 80s, then you don't need to read this Section.</p>
+<h2><a name="18.1">18.1 Line numbers</a></h2>
+<p>When you run an Axbasic script with line numbers, several new keywords are available, and several existing keywords are not available.</p>
+<p>The keywords that are <em>not</em> available are:</p>
+<pre><code>    CALL CASE DO EXIT GLOBAL LOCAL LOOP
+    NUMERIC SELECT STRING SUB UNTIL WHILE
+</code></pre>
+<p>Keywords that are <em>only</em> available with line numbers are:</p>
+<pre><code>    GOTO GOSUB ON
+</code></pre>
+<p>Tradtionally, line numbers were used in the sequence 10, 20, 30 and so on. This was done so that new code could be added later, if required.</p>
+<pre><code>    10 REM My first programme
+    20 PRINT "Hello, world!"
+    21 REM Let's add some new stuff
+    22 PRINT "How are you today?"
+    30 END
+</code></pre>
+<p>Axbasic scripts are stored in a file. In that file, numbered lines can occur in any order. However, the lines are always executed in ascending numerical order (in this case, 10, 20, 30).</p>
+<pre><code>    30 END
+    20 PRINT "Hello, world!"
+    10 REM My first programme
+</code></pre>
+<p>When you use line numbers, all variables are global and none are local (that's why GLOBAL and LOCAL statements can't be used). In addition, you can miss out the LET in your LET statements, without first specifying using OPTION NOLET.</p>
+<h2><a name="18.2">18.2 GOTO</a></h2>
+<p>A GOTO statement jumps to a new line. A favourite children's pastime in the 1980s was to sneak into the computer shop and type this programme into every machine, diligently changing the text to something more <em>creative</em>:</p>
+<pre><code>    10 PRINT "Hello, world!"
+    20 GOTO 10
+    30 END
+</code></pre>
+<p>Axbasic executes the lines 10, 20, 10, 20, 10, 20... indefinitely, and never actually reaches line 30.</p>
+<p>You can use an expression, rather than a line number, in a GOTO statement. The expression must evaluate to a positive integer (or 0).</p>
+<pre><code>    10 PRINT "Hello, world!"
+    20 GOTO 20 / 2
+    30 END
+</code></pre>
+<h2><a name="18.3">18.3 GOSUB</a></h2>
+<p>Under normal circumstances, Axbasic scripts CALL subroutines which start with a SUB statement and end with an END SUB statement.</p>
+<p>None of these keywords are available in programmes with line numbers. Instead, we call a subroutine using a GOSUB statement.</p>
+<pre><code>    10 GOSUB 100
+</code></pre>
+<p>Execution skips to line 100, and continues from there until the first RETURN statement. After the RETURN, execution resumes from the first statement after the GOSUB.</p>
+<p>This example programme should make everything clear. The lines are executed in the order 10, 20, 30, 100, 110, 120, 40, 50, 60. The subroutine consists of the lines 100-120.</p>
+<pre><code>    10 PRINT "Hello world!"
+    20 PRINT "We will now jump to line 100"
+    30 GOSUB 100
+    40 PRINT "We have returned from the subroutine"
+    50 PRINT "Goodbye cruel world!"
+    60 END
+    100 PRINT "You called the subroutine"
+    110 PRINT "Now we will go back to line 40"
+    120 RETURN
+</code></pre>
+<p>Note that the subroutine has no return value. In an Axbasic script with line numbers, RETURN can't be followed by an expression.</p>
+<p>Once again, you can use an expression rather than a line number in a GOSUB statement.</p>
+<pre><code>    30 GOSUB 10 * 10
+</code></pre>
+<h2><a name="18.4">18.4 ON and STOP</a></h2>
+<p>ON is a convenient way to skip to a new line, depending on the value of some variable.</p>
+<p>A typical ON statement looks like this.</p>
+<pre><code>    10 ON num GOTO 100, 200, 300
+</code></pre>
+<p>The variable <strong>num</strong> must be a positive integer. In this case, the code assumes that <strong>num</strong> is 1, 2, or 3.</p>
+<p>Here's a complete script showing how ON works in practice.</p>
+<pre><code>    10 REM Generate a random number between 1 and 3
+    20 LET num = Int (Rnd (3) + 1)
+    30 ON num GOTO 100, 200, 300
+    100 PRINT "Number 1!"
+    110 STOP
+    200 PRINT "Number 2!"
+    210 STOP
+    300 PRINT "Number 3!"
+    310 STOP
+    400 END
+</code></pre>
+<p>The STOP statements halt execution of the script. As you know, every Axbasic script must have exactly one END statement, but it can have as many STOP statements as you like.</p>
+<p>ON can be used with GOSUB, if that's more convenient.</p>
+<pre><code>    10 REM Generate a random number between 1 and 3
+    20 LET num = int (rnd (3) + 1)
+    30 ON num GOSUB 100, 200, 300
+    40 END
+    100 PRINT "Number 1!"
+    110 RETURN
+    200 PRINT "Number 2!"
+    210 RETURN
+    300 PRINT "Number 3!"
+    310 RETURN
+</code></pre>
+<hr>
+<p><a href="ch17.html">Previous</a> <a href="index.html">Index</a> <a href="ch19.html">Next</a></p>
+
+</body>
+</html>

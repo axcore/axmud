@@ -1,0 +1,256 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch07</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch06.html">Previous</a> <a href="index.html">Index</a> <a href="ch08.html">Next</a></p>
+<hr>
+<h1>7 - Loops</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#7.1">7.1 Introducing loops</a></li>
+<li><a href="#7.2">7.2 DO loops</a></li>
+<li><a href="#7.3">7.3 Infinite loops</a></li>
+<li><a href="#7.4">7.4 WHILE loops</a></li>
+<li><a href="#7.5">7.5 Using expressions</a></li>
+<li><a href="#7.6">7.6 FOR loops</a></li>
+<li><a href="#7.7">7.7 Using STEP</a></li>
+<li><a href="#7.8">7.8 Nested loops</a></li>
+<li><a href="#7.9">7.9 FOR EACH loops</a></li>
+</ul>
+<hr>
+<h2><a name="7.1">7.1 Introducing loops</a></h2>
+<p>When we execute the same lines of code several times, that's called a <em>loop</em>. Many Axbasic scripts will use loops of one kind or another.</p>
+<p>In terms of pure BASIC, loops can be used to</p>
+<ul>
+<li>Add 1 + 2 + 3 + 4 + 5 + ...</li>
+<li>PRINT a list of values, one after the other</li>
+<li>Do something exactly 10 times</li>
+</ul>
+<p>In a MUD context, an Axbasic script might use loops to</p>
+<ul>
+<li>Check your health points every second</li>
+<li>Check every object in the room, one after the other, in case one of them is a dangerous orc</li>
+<li>Send the same message to each of your friends, one at a time</li>
+</ul>
+<p>For the sake of keeping things simple, we'll concentrate on abstract examples for now; we can go orc-hunting a little later.</p>
+<h2><a name="7.2">7.2 DO loops</a></h2>
+<p>The first kind of loop is a DO loop. We might use it to count to five. Here is a complete example.</p>
+<pre><code>    LET count = 0
+
+    DO
+       LET count = count + 1
+       PRINT count
+    UNTIL count = 5
+
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>DO marks the start of the loop and UNTIL marks the end of it.</p>
+<p>The loop itself contains two lines: a LET statement and a PRINT statement. Axbasic executes these two lines again and again until the <strong>count</strong> reaches 5. At that point, the loop stops. If you run the script, you'll see the following output:</p>
+<pre><code>    1
+    2
+    3
+    4
+    5
+    Finished!
+</code></pre>
+<p>Another example is this guessing game. The guessing game we used earlier gave up after one attempt, but <em>this</em> game pesters the user until they guess correctly. Try it for yourself.</p>
+<pre><code>    LET answer = 5
+
+    DO
+        PRINT "What number am I thinking of?"
+        INPUT number
+    UNTIL number = answer
+
+    PRINT "Correct!"
+    END
+</code></pre>
+<h2><a name="7.3">7.3 Infinite loops</a></h2>
+<p>When writing any kind of loop, you have to be make sure that the loop can actually end, otherwise it will keep going indefinitely and you'll be left scratching your head, wondering why your script has stopped working.</p>
+<p>In this script, the author has mistyped the UNTIL line, accidentally writing a 0 rather than a 10. <strong>count</strong> starts from 1 and continues increasing, so the loop never ends; the script keeps running until the computer breaks down or until human civilisation collapses (whichever happens first).</p>
+<pre><code>    ! Count from 1 to 10
+    LET count = 1
+
+    DO
+        count = count + 1
+    UNTIL count = 0
+
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>A typo like that is quite easy to spot. However, Axbasic scripts can manipulate data from the very simple to the fiendishly complicated, and it might not always be safe to wait for the result you were expecting. Depending on what you are hoping to achieve, you will usually need to add some way to stop a loop from running forever.</p>
+<p>A simple example is this modified guessing game. The loop stops if the user types the correct answer, but it also stops when the user gets bored and types <strong>stop</strong>.</p>
+<p>This is achieved with an EXIT DO statement, which stops the loop immediately. Axbasic then executes whichever line comes after the UNTIL statement.</p>
+<pre><code>    LET answer$ = "bilbo"
+    PRINT "Let's play a game!"
+    PRINT "If you get bored, type stop"
+
+    DO
+        PRINT "What is my name?"
+        INPUT guess$
+
+        IF guess$ = "stop" THEN
+            EXIT DO
+        ELSE IF guess$ = "stop" THEN
+            PRINT "Correct!"
+            EXIT DO
+        ELSE
+            PRINT "Wrong!"
+        END IF
+    UNTIL guess$ = answer$
+
+    PRINT "Ok, no more games"
+    END
+</code></pre>
+<h2><a name="7.4">7.4 WHILE loops</a></h2>
+<p>Another kind of loop is a WHILE loop. Here's another example that counts to five.</p>
+<pre><code>    LET count = 0
+
+    WHILE count &lt; 5
+       LET count = count + 1
+       PRINT count
+    LOOP
+
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>WHILE marks the start of the loop and LOOP marks the end of it.</p>
+<p>The loop again contains two lines: a LET statement and a PRINT statement. Axbasic executes these two lines again and again until the <strong>count</strong> reaches 5. At that point, the loop stops.</p>
+<p>There is an important difference in the way DO loops and WHILE loops behave. The lines inside a DO loop are executed at least once; the lines inside a WHILE loop might never be executed, as in the following example.</p>
+<pre><code>    LET count = 10
+
+    WHILE count &lt;= 5
+        LET count = count + 1
+        PRINT count
+    LOOP
+
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>When Axbasic reaches the WHILE statement for the first time, the count is already bigger than 5, so Axbasic immediately skips to the first line after the LOOP statement. The output simply looks like this:</p>
+<pre><code>    Finished!
+</code></pre>
+<p>By the way, you can use EXIT WHILE if you need to stop a WHILE loop prematurely, just you used EXIT DO to stop a DO loop prematurely.</p>
+<h2><a name="7.5">7.5 Using expressions</a></h2>
+<p>A useful trick is to use an expression, rather than a condition. Compare the following three lines.</p>
+<pre><code>    WHILE count &lt; 5
+    WHILE 1
+    WHILE 0
+</code></pre>
+<p>The first line contains a condition that might be true, or might be false. The remaining lines use an expression. WHILE 1 is <em>always</em> true and WHILE 0 is <em>always</em> false.</p>
+<p>Using this you can create a loop that runs forever:</p>
+<pre><code>    WHILE 1
+        PRINT "Hello, world!"
+    LOOP
+    END
+</code></pre>
+<p>...or a loop that never runs:</p>
+<pre><code>    WHILE 0
+        PRINT "Hello, world!"
+    LOOP
+    END
+</code></pre>
+<p>DO loops can also use an expression rather than a condition. Once again, UNTIL 1 is <em>always</em> true and UNTIL 0 is <em>always</em> false.</p>
+<p>This loop runs forever:</p>
+<pre><code>    DO
+        PRINT "Hello, world!"
+    UNTIL 0
+    END
+</code></pre>
+<p>...but this loop runs exactly once:</p>
+<pre><code>    DO
+        PRINT "Hello, world!"
+    UNTIL 1
+    END
+</code></pre>
+<p>You can use any numeric or string value in your WHILE and UNTIL statements. The value 0 is considered to be false, all other numeric values are considered true. An empty string is considered to be false, all other string values are considered true.</p>
+<h2><a name="7.6">7.6 FOR loops</a></h2>
+<p>The third and final kind of loop is a FOR loop. If you want to do something exactly ten times or exactly a hundred times, a FOR loop is what you need.</p>
+<p>Once again, let's count to 5.</p>
+<pre><code>    FOR a = 1 TO 5
+        PRINT a
+    NEXT a
+
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>FOR marks the start of the loop and NEXT marks the end of it. The loop itself contains a single PRINT statement.</p>
+<p>When the FOR statement is executed the first time, <strong>a</strong> is set to 1. When it's executed the second time, <strong>a</strong> is set to 2. The third time, it is set to 3.</p>
+<p>If you write a script like this, don't forget to write NEXT a rather than just NEXT. If you forget the variable, you'll see an error message.</p>
+<h2><a name="7.7">7.7 Using STEP</a></h2>
+<p>Suppose that you want to count in tens, instead of one number at a time. In that case, you can use a STEP statement.</p>
+<pre><code>    FOR a = 10 TO 50 STEP 10
+        PRINT a
+    NEXT a
+
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>If you wanted to count backwards from 5 to 1, you would use a negative number after STEP.</p>
+<pre><code>    FOR a = 5 TO 1 STEP -1
+        PRINT a
+    NEXT a
+
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>You could even count backwards in tens.</p>
+<pre><code>    FOR a = 50 TO 10 STEP -10
+        PRINT a
+    NEXT a
+
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>If you miss out STEP altogether, Axbasic counts upwards in ones. Both of the following lines behave exactly the same way:</p>
+<pre><code>    FOR a = 1 TO 5
+    FOR a = 1 TO 5 STEP 1
+</code></pre>
+<p>The NEXT statement has an important role: it adds a number to the variable <strong>a</strong>. This happens <em>even on the last loop</em>. Consider the following script:</p>
+<pre><code>    FOR a = 10 TO 50 STEP 10
+        PRINT a
+    NEXT a
+
+    PRINT "Finished! The variable is now:"
+    PRINT a
+    END
+</code></pre>
+<p>...which produces an unexpected result:</p>
+<pre><code>    10
+    20
+    30
+    40
+    50
+    Finished! The variable is now:
+    60
+</code></pre>
+<h2><a name="7.8">7.8 Nested loops</a></h2>
+<p>Loops can contain other loops. If you want to list the coordinates of all the squares in a grid, you could use two FOR loops, one inside the other.</p>
+<pre><code>    FOR x = 1 to 5
+        FOR y = 1 to 5
+            PRINT "X/Y"
+            PRINT X
+            PRINT Y
+        NEXT Y
+    NEXT X
+    END
+</code></pre>
+<p>A FOR loop can go inside a WHILE loop, and a DO loop can go inside a FOR loop. In fact, any such combination of loops is allowed. If you use your TAB key properly, you'll find it easier to keep track of which line belongs to which loop.</p>
+<h2><a name="7.9">7.9 FOR EACH loops</a></h2>
+<p>There is a second type of FOR loop which we'll discuss when we <a href="ch09.html">get to arrays</a>.</p>
+<hr>
+<p><a href="ch06.html">Previous</a> <a href="index.html">Index</a> <a href="ch08.html">Next</a></p>
+
+</body>
+</html>

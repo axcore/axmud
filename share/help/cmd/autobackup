@@ -1,0 +1,67 @@
+abu / autobackup              Configures settings for auto-backups
+ 
+   Format:
+      ;abu                    Displays current auto-backup settings
+      ;abu <switches>         Modifies auto-backup settings
+ 
+   Notes:
+      Axmud stores all of its data files in a single directory (folder).
+      The ';backupdata' command makes a backup copy of this directory. This
+         command automates that process, creating a backup file at regular
+         intervals.
+      To restore data files from a backup file, see the help for the
+         ';restoredata' command.
+
+      Auto-backups are turned off, by default. To turn them on using default
+         settings (one backup per week, done when Axmud is shutting down, and
+         the user is prompted to choose a directory each time), you can use this
+         command:
+
+            ;autobackup -p
+
+      For any other behaviour, you can specify <switches>, which are one or more
+         of the switch options below in any order. You must not specify more
+         than one switch option from each group:
+
+      Group 1:
+
+            -n          - Don't perform auto-backups (default)
+            -a          - Perform auto-backup whenever Axmud starts
+            -p          - Perform auto-backup whenever Axmud shuts down
+            -x          - Perform auto-backup at regular intervals, done when
+                            Axmud starts
+            -y          - Perform auto-backup at regular intervals, done when
+                            Axmud shuts down
+
+      Group 2:
+
+            -f <dir>    - Set the directory where the backup file is stored.
+                             <dir> should be the full directory path
+            -o          - Reset the directory, so the user is prompted to choose
+                             one for every auto-backup (default)
+                             
+      Group 3:
+            -i <days>   - Sets the interval, in days, between auto-backups. The
+                             interval is only used when performing auto-backups
+                             at regular intervals (i.e. if you've specified the
+                             -x or -y switch). <days> must be an integer in the
+                             range 0-365. 1 means 'backup every day', 8 means
+                             'backup every week', 366 means 'backup every year'.
+                             If you use 0, Axmud will temporarily stop
+                             performing auto-backups (but will remember when the
+                             last auto-backup was performed, so when you change
+                             the interval again, the interval is calculated from
+                             that date). The default interval is 8
+
+      Group 4:
+            -d          - Use the default file type for the backup file - .tgz
+                             for Linux, .zip for MS Windows (default)
+            -t          - Use .tar for the backup file
+            -z          - Use .zip for the backup file
+
+      Group 5:
+            -a          - Append a time (as well as a date) to the backup file
+            -e          - Only append the date to the backup file (default)
+
+   User commands:
+      abu / autobu / autobackup

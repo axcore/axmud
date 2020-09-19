@@ -1,0 +1,23 @@
+mcp / mcp                     Shows supported MCP packages
+ 
+   Format:
+      ;mcp                    Shows all MCP packages
+ 
+   Notes:
+      The world can use the MCP protocol to send extra information about the 
+         game state.
+      Axmud provides three MCP packages (mcp-negotiate, mcp-cord and
+            dns-org-mud-moo-simpleedit).
+      Additional MCP packages are created by plugins. Axmud comes with a plugin,
+         'zmptest.pm', which demonstrates how this is done. It needs to be
+         loaded before you connect to a world, so you should usually connect to
+         any world in 'offline' mode, and then type:
+
+            ;addinitialplugin -s
+            ;save
+
+      This command lists all the ZMP packages that Axmud supports, or that have
+         been added by a loaded plugin.
+
+   User commands:
+      mcp

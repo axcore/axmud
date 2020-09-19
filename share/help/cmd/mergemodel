@@ -1,0 +1,32 @@
+mmd / mergemodel              Imports and merges a world model file
+ 
+   Format:
+      ;mmd                    Merge a world model file
+
+   Notes:
+      This command can be used to combine multiple maps (world models) -
+         possibly the work of several different authors - into a single map
+         (world model).
+      The first step is to connect to a world (in online or offline mode), and
+         then to export a world model in the usual way:
+
+            ;exportfiles -m <world_name>
+
+      This will create a file that can be saved in a convenient location, or
+         which can be sent to your friends.
+      The same file can then be imported with this command. (Don't use
+         ';importfiles', as that will replace your existing world model with the
+         imported one.)
+         
+      The merge operation removes regions, rooms, exits and labels from the
+         imported model and adds them to this session's existing model. If you
+         import a region called 'town', it's renamed if there is already a
+         region called 'town'.
+      The operation also imports known characters, minion strings, light status
+         values, teleport destination rooms, map label styles and custom room
+         flags (but duplicates are not imported).
+      Other world model settings are not imported. When the operation is
+         complete, the imported world model is discarded.
+  
+   User commands:
+      mmd / mergemd / mergemodel

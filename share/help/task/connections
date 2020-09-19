@@ -1,0 +1,7 @@
+The Connections task displays a list of sessions. (A session handles a
+   connection to a single world, even in 'connect offline' mode).
+When the task is running, you can switch between sessions by pressing CTRL+1,
+   CTRL+2, etc. CTRL+1 switches to the first session that was opened, and is
+   still opened; CTRL+2 switches to the second, and so on.
+Regardless of whether the task is running, you can also switch between sessions
+   by pression CTRL+TAB (unless you've disabled that ability).

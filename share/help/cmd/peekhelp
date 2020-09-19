@@ -1,0 +1,18 @@
+pkh / peekhelp                Shows strings for ';peek' and ';poke' operations
+ 
+   Format:
+      ;pkh                    Shows peek/poke help
+
+   Notes:
+      The ';peek' command is used to view much of Axmud's internal data, and the
+         ';poke' command can be used to modify it. There are a number of Axbasic
+      This command shows a complete list of strings that can be used with both
+         commands, and also with a number of Axbasic statements such as PEEK and
+         POKE.
+      The list is quite long, so you might prefer to read it in the About
+         window, which you can open with
+
+            ;openaboutwindow -p
+         
+   User commands:
+      pkh / pokehelp / peekhelp

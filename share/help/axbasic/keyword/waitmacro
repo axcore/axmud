@@ -1,0 +1,25 @@
+WAITMACRO expression [ , expression ]
+
+   Synopsis:
+      Creates a temporary macro and pauses until the macro fires
+
+   Notes:
+      The first expression is the macro stimulus (a keycode). The Axbasic script
+         will pause until the macro fires, at which point the macro is destroyed
+         and execution of the Axbasic script resumes.
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting for the macro after that period. The macro is
+         destroyed and execution of the script resumes.
+
+      If Axmud can't create the macro, execution of the script continues as
+         normal (with no error message and no pause).
+      Also see the help for SETMACRO.
+
+   Requires:
+      If the script is not being run as a task, the WAITMACRO statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
+   Examples:
+      WAITMACRO "f1"
+      WAITMACRO "f1", 60

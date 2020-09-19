@@ -1,0 +1,27 @@
+zmp / zmp                     Shows supported ZMP packages/commands
+ 
+   Format:
+      ;zmp                    Shows all ZMP packages
+      ;zmp <name>             Shows the package called <name>
+ 
+   Notes:
+      The world can use the ZMP protocol to send extra information about the 
+         game state.
+      A few ZMP commands are 'core' commands, handled (invisibly) by Axmud
+         itself. Everything else is handled by a ZMP package.
+      ZMP packages are created by plugins. Axmud comes with a plugin,
+         'zmptest.pm', which demonstrates how this is done. It needs to be
+         loaded before you connect to a world, so you should usually connect to
+         any world in 'offline' mode, and then type:
+
+            ;addinitialplugin -s
+            ;save
+
+      The plugin creates a ZMP package, and specifies which ZMP commands are
+         supported.
+
+      This command lists all the ZMP packages that have been created by any
+         loaded plugin, and the commands they support.
+
+   User commands:
+      zmp

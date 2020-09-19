@@ -1,0 +1,26 @@
+rfc / retainfilecopy          Retains copy of old files in file-save operations
+ 
+   Format:
+      ;rfc on                 Turns copy retention on
+      ;rfc off                Turns copy retention off
+ 
+   Notes:
+      Whenever Axmud saves a config file or a data file, it first creates a 
+         temporary copy of the existing file (if there is one). If something
+         goes wrong with the save operation, the original file is restored from
+         the copy. 
+      When copy retention turned off, the old file is deleted as soon as the
+         save operation is complete. When it is turned on, the old file is
+         retained as a copy until the next save operation.
+      Copy retention is turned on by default. Because Axmud is still in the 
+         beta-testing phase, it is recommended that you leave it on. If your
+         saved data becomes corrupted and Axmud refuses to load a particular 
+         file, you may be able to manually restore the previous copy of the  
+         corrupted file. 
+      Relying on this functionality is not a good idea. You should still create 
+         your own backup copy of the whole Axmud data directory (folder) on a
+         regular basis by using client commands like ';backupdata' and/or
+         ';autobackup'.
+ 
+   User commands:
+      rfc / retaincopy / retainfilecopy

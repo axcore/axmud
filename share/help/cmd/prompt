@@ -1,0 +1,24 @@
+pro / prompt                  Replays the most recent prompt ignored by TTS
+ 
+   Format:
+      ;pro                    Reads aloud the most recent prompt
+      
+   Notes:
+      When it's time for the user to type a command, some worlds send a
+         command prompt full of statistics (often containing your character's
+         health points, for example).
+      These prompts take a long time to read aloud so, by default, Axmud doesn't
+         convert them to speech. If you want to hear them, you can type
+         ';speech prompt off'.
+      This command reads aloud the most recent prompt, regardless of whether it
+         was converted to speech, or not.
+      When running the version of Axmud that's optimised for visually-impaired 
+         users, the end key can be used as a shortcut to this command (but only
+         once Axmud is connected to a world, in online or offline mode.)
+
+      This command works best with pre-configured worlds, which already contain
+         a list of patterns matching the command prompts sent by the world. If
+         not, you will have to add your own list of matching patterns.
+
+   User commands:
+      pro / prompt

@@ -1,0 +1,335 @@
+[Previous](ch04.html) [Index](index.html) [Next](ch06.html)
+
+---
+
+#5 - Variables and Expressions
+
+####Table of Contents
+
+* [5.1 Introducing variables](#5.1)
+* [5.2 Using LET](#5.2)
+* [5.3 Variable names](#5.3)
+* [5.4 String variables](#5.4)
+* [5.5 Displaying variables](#5.5)
+* [5.6 String operators](#5.6)
+* [5.7 Numeric operators](#5.7)
+* [5.8 Expressions](#5.8)
+* [5.9 Operator precedence](#5.9)
+* [5.10 Using brackets](#5.10)
+* [5.11 Getting input](#5.11)
+* [5.12 Avoiding LET](#5.12)
+* [5.13 Illegal expressions](#5.13)
+
+---
+
+##<a name="5.1">5.1 Introducing variables</a>
+
+When we want to store something in memory - a number, a word, a sentence, perhaps an entire whole room description - we give it a symbolic name.
+
+For example, if you want to store your character's health points, you might use the name **health**.
+
+        health = 100
+
+To store your character's energy or movement points, you would use a different name.
+
+        energy = 250
+
+The name you choose doesn't matter; the important thing is to choose a name that can be easily understood. The following line is perfectly good Axbasic, but it's still a really bad idea:
+
+        fpwpxzkiu = 99
+
+In Axbasic, a *variable* is a value that's been stored in memory and given a symbolic name. It's called a variable because we can change the value any time we want.
+
+        health = 90
+        health = 80
+        health = 70
+        ...
+
+##<a name="5.2">5.2 Using LET</a>
+
+If you try running the following Axbasic script, you'll see an error message.
+
+        health = 100
+        END
+
+We've already mentioned a general rule in BASIC, namely that every statement must begin with a keyword. The first line starts with a variable, not a keyword, and that's not allowed.
+
+When we want to create or modify a variable, we use the keyword LET.
+
+        LET health = 100
+        END
+
+Every statement now starts with a keyword, so the script will now run. (There is a way to avoid LET altogether; we'll discuss it later in this Section.)
+
+##<a name="5.3">5.3 Variable names</a>
+
+There are some rules about variable names.
+
+* The first character must be a letter
+* Other characters can be letters, numbers or underline (underscore) characters
+* The name can be as long as you want
+* Case doesn't matter
+* You can't use an Axbasic keyword like PRINT or END
+
+All of the following variable names are allowed:
+
+        hp
+        health
+        health_points
+        the_health_points_for_my_character_are_stored_here
+
+But this line would cause an error:
+
+        LET print = 10
+
+Traditonally, keywords like PRINT and END are typed in capital letters but variable names like **health** and **energy** are typed in lower-case letters. Observing this tradition will make your scripts much easier to understand.
+
+If your variable name contains several words, you should use underline characters. Don't simply use a much longer word - it's difficult to read, *especially* for someone whose first language is not English
+
+        thisisaverybadchoiceforavariablename
+        do_this_instead
+        orDoThisIfYouPrefer
+
+Strictly speaking, it doesn't matter if you type in capitals, lower-case letters or a mixture of the two. Axbasic thinks that all of these are the same variable:
+
+        health
+        HEALTH
+        hEaLtH
+
+##<a name="5.4">5.4 String variables</a>
+
+A string is any value that's not a number - a letter, a word, a sentence, or something even longer.
+
+In Axbasic, strings are always written between double quotes. We've already seen a few examples.
+
+        PRINT "Hello world"
+        MOVE "north"
+        SEND "inventory"
+
+For strings, the variable name always ends with a dollar character.
+
+        LET name$ = "bilbo"
+        LET address$ = "the shire"
+        LET favourite_colour$ = "gold"
+
+If you forget to type either the dollar or the double quotes, you'll see an error message. For example, this script won't work because the variable **number** is expecting a numeric value, not a string.
+
+        LET number = "bilbo"
+
+However, the converse isn't true. If you use a string variable and a numeric value, Axbasic will convert the value into a string. Both of the following lines behave in exactly the same way:
+
+        LET value$ = "100"
+        LET value$ = 100
+
+String variables can have the same name as an Axbasic keyword - you can use variables called **print$** and **end$**, if you really want to. (We've already mentioned that numeric variables can't be called **print** or **end**.)
+
+##<a name="5.5">5.5 Displaying variables</a>
+
+The following script creates a variable, displays its value, then modifies the variable and displays the new value.
+
+        LET number = 1
+        PRINT number
+        LET number = 2
+        PRINT number
+        END
+
+Of course, if we wanted to store words rather than numbers, we'd have to use a string variable.
+
+        LET name$ = "bilbo"
+        PRINT name$
+        LET name$ = "gandalf"
+        PRINT name$
+        END
+
+##<a name="5.6">5.6 String operators</a>
+
+You can join two strings together by using the ampersand character.
+
+        LET name$ = "bilbo"
+        LET surname$ = "baggins"
+        PRINT name$ & surname$
+        END
+
+This script joins the two strings together, and PRINTs them as a single line. The output looks like this:
+
+        bilbobaggins
+
+That's not very pleasing on the eye, but we can join as many strings as we want.
+
+        LET name$ = "bilbo"
+        LET surname$ = "baggins"
+        PRINT name$ & " " & surname$
+        END
+
+The output now looks like this:
+
+        bilbo baggins
+
+##<a name="5.7">5.7 Numeric operators</a>
+
+We can use the plus character to add two numbers.
+
+        LET first = 10
+        LET second = 20
+        PRINT first + second
+        END
+
+Hopefully, this script will display a single number:
+
+        30
+
+You can also use the minus character for subtractions. Multiplication is done with the asterisk character and division is done with the forward slash character.
+
+        ! Let's do some sums
+        LET first = 10
+        LET second = 2
+        ! Add
+        PRINT first + second
+        ! Minus
+        PRINT first - second
+        ! Multiply
+        PRINT first * second
+        ! Divide
+        PRINT first / second
+        END
+
+The output looks like this:
+
+        12
+        8
+        20
+        5
+
+You can use the circumflex accent character to raise a number to a power.
+
+        ! Find the square of 2
+        PRINT 2 ^ 2
+        ! Find 2 to the power of 3
+        PRINT 2 ^ 3
+        ! Find 2 to the power of 10
+        PRINT 2 ^ 10
+        END
+
+The output looks like this:
+
+        4
+        8
+        1024
+
+##<a name="5.8">5.8 Expressions</a>
+
+The characters we've just used ( & + - * / and ^ ) are called *operators*.
+
+When we put a series of values and operators together, we get an *expression*. All of the following lines are expressions.
+
+        42
+        1 + 2
+        10 - 5 + 1
+        3 * 6 * 2
+        "bilbo" & "baggins"
+
+The important thing to remember about expressions is that they can be reduced to a single value. In other words, we can work out the "answer".
+
+        42
+        3
+        6
+        36
+        bilbobaggins
+
+Before using an expression, Axbasic always works out the answer. We call this *evaluating the expression*. In this example, Axbasic evaluates the expression first, *before* PRINTing anything. The script PRINTs the number 15; it doesn't PRINT the numbers 1 to 5.
+
+        PRINT 1 + 2 + 3 + 4 + 5
+        END
+
+##<a name="5.9">5.9 Operator precedence</a>
+
+Take a look at the following script, and try to work out which number it PRINTs.
+
+        PRINT 1 + 2 * 4
+        END
+
+If you think the value is 9, you're right. But you might have thought the script would display 12; after all, 1 plus 2 is 3, and 3 multiplied by 4 is 12.
+
+All programming languages - including Axbasic - have some notion of *operator precedence*, which is a fancy way of saying that multiplication should be done before addition.
+
+In other words, for the expression:
+
+        1 + 2 * 4
+
+We do the multiplication *first*, which gives us:
+
+        1 + 8
+
+*Then* we do the addition, giving us the final value of 9. Axbasic *always* gives this same value, no matter how many times you run the script.
+
+(For anyone who is wondering, operators have *left-to-right associativity*. Because there are comparitively few operators compared to more modern languages, associativity is irrelevant in the behaviour of Axbasic scripts.)
+
+##<a name="5.10">5.10 Using brackets</a>
+
+At this point, all programming tutorials will tell you that writing an expression like **1 + 2 * 4** is a *really bad idea*, even though it's perfectly legal Axbasic.
+
+A much better way is to use brackets. In an expression, everything inside a pair of brackets is worked out first.
+
+        (1 + 2) * 4
+
+In this example, 1 plus 2 is 3. We work that part out first because it's inside a pair of brackets. Then we work out that 3 multiplied by 4 is 12.
+
+It's possible to use brackets within brackets, if you need to.
+
+        ( (1 + 2) * 4 ) / 2
+
+In this example, we work out the innermost sum first. 1 plus 2 is 3, and 3 multipled by 4 is 12. Then we divide 12 by 2, to get the final answer of 6.
+
+You can use as many brackets as you want, but the expression must contain exactly the same number of open brackets and close brackets.
+
+##<a name="5.11">5.11 Getting input</a>
+
+One way to set a variable's value is to use LET. Another way is to ask the user to type the value themselves.
+
+An INPUT statement waits for the user to type something, and then stores it in a variable
+
+        PRINT "What is your name?"
+        INPUT name$
+        PRINT "Your name is"
+        PRINT name$
+        END
+
+Axbasic creates a dialogue (popup) window. After the user types their name and presses ENTER, the window disappears. The user's response is stored in the variable **name$**.
+
+##<a name="5.12">5.12 Avoiding LET</a>
+
+After a while, BASIC programmers grow weary of typing LET every time they want to set a variable, and begin wondering why they can't just type something like this:
+
+        number = 10
+
+Well, in fact it's possible to do tell Axbasic that you don't want to use LET at all. Just put this line somewhere in your script:
+
+        OPTION NOLET
+
+Now you don't need to use LET at all.
+
+        OPTION NOLET
+        first = 10
+        second = 5
+        third = 2
+        PRINT first * second * third
+        END
+
+By the way, before Axbasic starts executing a script, it checks every line, looking for OPTION statements. If it finds any, it applies them immediately.
+
+In other words, your OPTION NOLET can appear anywhere in the script. In practice, though, it's a very bad idea to put it anywhere but at the beginning. (Your computer doesn't mind checking every line in the script, but humans won't thank you for it.)
+
+##<a name="5.13">5.13 Illegal expressions</a>
+
+In Axbasic, as in all other programming languages, you can't divide any number by zero. This simply isn't allowed. (A mathematician would say the operation is *undefined*.)
+
+If you try running this script, you'll get a *Division by zero* error.
+
+        PRINT 10 / 0
+        END
+
+However, multiplying by zero or raising a number to the power of zero *is* allowed. (The results are always zero and one, respectively.)
+
+---
+
+[Previous](ch04.html) [Index](index.html) [Next](ch06.html)

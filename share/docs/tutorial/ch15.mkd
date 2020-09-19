@@ -1,0 +1,139 @@
+[Previous](ch14.html) [Index](index.html) [Next](ch16.html)
+
+---
+
+#15 - The main window
+
+####Table of Contents
+
+* [15.1 Displaying text](#15.1)
+* [15.2 Graphical gauges](#15.2)
+* [15.3 Customising gauges](#15.3)
+* [15.4 Setting gauge values](#15.4)
+* [15.5 Using constant gauges](#15.5)
+* [15.6 Status bars](#15.6)
+
+---
+
+An Axbasic script has total control of its own task window, but it has only limited control over what is displayed in Axmud's main window.
+
+##<a name="15.1">15.1 Displaying text</a>
+
+You can WRITE text to the main window, using the same colours as an ordinary system message:
+
+        WRITE "Hello world!"
+
+Everything displayed using a WRITE statement is marked as being the product of an Axbasic script:
+
+        AXBASIC: Hello, world!
+
+Error, debug and warning messages are sometimes written to separate logfiles, as well as being displayed in the main window. If you want to create your own system messages, you can do so using an ERROR, DEBUG or WARNING statement.
+
+        ERROR "Does not compute!"
+        WARNING "I am broken, but I will continue!"
+        DEBUG "This is line 50!"
+
+##<a name="15.2">15.2 Graphical gauges</a>
+
+If Axmud is running now, you can probably see some coloured bars near the bottom of the main window. These bars, called *gauges*, are controlled by the Status task and are typically used to display the character's current health points, energy points and so on.
+
+Axbasic scripts can create and modify their own gauges. These gauges always appear on a separate line, with each Axbasic script using its own line.
+
+To create a gauge, we use an ADDGAUGE statement. The simplest possible statement uses two arguments - a number and a label. The number identifies the gauge to your script. The label is displayed above the gauge itself.
+
+        ADDGAUGE 100, "health points"
+
+You can use any number you like, zero or above. However, if another Axbasic script has already created its own gauge with the same number, the existing gauge is replaced with the new one.
+
+The gauge is automatically removed when the script stops running. If you want to remove it early, you can use a DELGAUGE statement.
+
+        DELGAUGE 100
+
+##<a name="15.3">15.3 Customising gauges</a>
+
+ADDGAUGE statements are usually followed by three more colour tags, representing:
+
+* The colour to use for the "full" portion of the gauge
+* The colour to use for the "empty" portion of the gauge
+* The colour to use for the label
+
+A good idea is to use a bold colour for the "full" portion of the gauge and a normal colour for the "empty" portion. The label colour should be something completely different, for example:
+
+        ADDGAUGE 100, "health points", "GREEN", "green", "black"
+
+Any valid colour tag can be used (see the discussion in the previous Section). If you miss out one of the optional arguments, or if you use an empty string, a default colour is used.
+
+        ADDGAUGE 101, "energy points", "GREEN"
+        ADDGAUGE 102, "magic points", "", "", "black"
+
+##<a name="15.4">15.4 Setting gauge values</a>
+
+An ADDGAUGE statement is usually followed by a SETGAUGE statement.
+
+SETGAUGE uses three arguments: the gauge number, a current value and a maximum value.
+
+        ! Current health points 30
+        ! Maximum health points 50
+        ADDGAUGE 100, "health points", "GREEN", "green", "black"
+        SETGAUGE 100, 30, 50
+
+If the current and maximum values are the same, the gauge is drawn "full". If the current value is larger than the maximum, you won't see an error. The gauge will continue to be drawn as "full".
+
+It's up to your script to update the gauge using further SETGAUGE statements. The gauge will not magically update itself just because you call it something like "health points". (We'll discuss how to retrieve your character's health points in the next Section.)
+
+##<a name="15.5">15.5 Using constant gauges</a>
+
+Suppose you have ten pockets, in each of which you have carefully stored either a pen or a pencil. You can use an ADDCONGAUGE statement to display the relative number of pens and pencils.
+
+        ADDCONGAUGE 200, "ratio"
+
+The CON in ADDCONGAUGE is short for *constant*. We expect that the number of pockets won't change, at least in the short term. (In other words, you might replace a pen with a pencil at any moment, but you probably have no plans to sew on extra pockets.)
+
+Once the gauge exists, we can set its values using an ordinary SETGAUGE statement, or remove it using an ordinary DELGAUGE statement. (There are no SETCONGAUGE or DELCONGAUGE statements.)
+
+        LET pencils = 3
+        LET pens = 7
+        ADDCONGAUGE 200, "pockets"
+        SETGAUGE 200, pencils, pens
+
+
+
+That describes the *intended* usage of ADDCONGAUGE. In actual fact, you can use any pair of values in a SETGAUGE statement, any time you like. They don't need to add up to the same total each time and the actual length of the gauge that's drawn doesn't change.
+
+Both ADDGAUGE and ADDCONGAUGE have the same three optional arguments specifying the colours to use. If you don't specify the optional arguments, default colours are used.
+
+        ADDCONGAUGE 200, "pockets", "blue", "green", "white"
+
+##<a name="15.6">15.6 Status bars</a>
+
+Status bars are drawn in the same area of the main window as gauges but, unlike gauges, they use text rather than coloured bars.
+
+An ADDSTATUS statement is much like an ADDGAUGE statement. We must specify a status bar number and a label.
+
+        ADDSTATUS 300, "health points"
+
+Status bars don't use colour at all, so there are no optional arguments.
+
+To set the values displayed, use a SETSTATUS statement.
+
+        ! Current health points 30
+        ! Maximum health points 50
+        ADDSTATUS 300, "health points"
+        SETSTATUS 300, 30, 50
+
+To delete the status bar, use a DELSTATUS statement.
+
+        DELSTATUS 300
+
+Gauge numbers and status bar numbers are stored separately. In other words, you could create a gauge numbered 100, and also a status bar numbered 100, and both would be visible.
+
+If you want a status bar that shows some kind of ratio, you can use an ADDCONSTATUS statement.
+
+        LET pencils = 3
+        LET pens = 7
+        ADDCONSTATUS 400, "pockets"
+        SETSTATUS 400, pencils, pens
+
+---
+
+[Previous](ch14.html) [Index](index.html) [Next](ch16.html)

@@ -1,0 +1,28 @@
+smd / splitmodel              Sets hows Axmud stores large world models
+ 
+   Format:
+      ;smd                    Show current settings
+
+      ;smd on                 Enable multiple data files
+      ;smd off                Disable multiple data files
+
+      ;smd -d                 Use default data file size
+      ;smd <size>             Set data file size
+
+   Notes:
+      Traditionally, the world model (which handles all maps) stores its data in
+         a single data file. However, users who created large world models on
+         computers with limited memory often experienced an 'out of memory'
+         error.
+      To alleviate this problem, Axmud now stores the world model across
+         several files, which can be loaded into memory one at a time, greatly
+         reducing the risk of an 'out of memory error'.
+      You can disable this functionality with ';smd off', which forces Axmud to
+         store the world model in a single data file.
+      By default, Axmud now applies a limit of 5000 objects (regions, rooms,
+         weapons, creatures) per file. You can change this setting with the
+         -d or <size> options.
+      <size>, if used, must be an integer, 1000 or more.
+  
+   User commands:
+      smd / splitmodel

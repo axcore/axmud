@@ -1,0 +1,410 @@
+[Previous](ch11.html) [Index](index.html) [Next](ch13.html)
+
+---
+
+#12 - Interfaces
+
+####Table of Contents
+
+* [12.1 Introduction to interfaces](#12.1)
+* [12.2 WAITTRIG, WAITALIAS, WAITMACRO, WAITTIMER and WAITHOOK](#12.2)
+* [12.3 ADDTRIG](#12.3)
+* [12.4 ADDALIAS, ADDMACRO, ADDTIMER and ADDHOOK](#12.4)
+* [12.5 DELTRIG, DELALIAS, DELMACRO, DELTIMER and DELHOOK](#12.5)
+* [12.6 Interfaces for profiles](#12.6)
+* [12.7 Interfaces and main loops](#12.7)
+* [12.8 Interface notifications](#12.8)
+* [12.9 Retrieving notifications](#12.9)
+* [12.10 Advanced notifications](#12.10)
+* [12.11 Retrieving substrings](#12.11)
+* [12.12 Skipping notifications](#12.12)
+* [12.13 DELIFACE](#12.13)
+* [12.14 Starting a new script with SETTRIG](#12.14)
+* [12.15 SETALIAS, SETMACRO, SETTIMER and SETHOOK](#12.15)
+
+---
+
+##<a name="12.1">12.1 Introduction to interfaces</a>
+
+Axmud interacts with the world using *triggers*, *aliases*, *macros*, *timers* and *hooks*. These are collectively called *interfaces*.
+
+Interfaces have a *stimulus* and a *response*. In other words, when something happens (the stimulus), Axmud takes some form of action (the response).
+
+* A **trigger** waits for the world to send a line matching a particular pattern
+* An **alias** waits for you to type a world command that matches a particular pattern
+* A **macro** waits for you to press a key (or a combination of keys)
+* A **timer** waits for a certain period of time
+* A **hook** waits for some kind of event to happen
+
+The [Axmud Guide](../guide/index.html) discusses interfaces in detail. In this Section we'll discuss how scripts can interact with their own interfaces.
+
+##<a name="12.2">12.2 WAITTRIG, WAITALIAS, WAITMACRO, WAITTIMER and WAITHOOK</a>
+
+In [Section 4](ch04.html) we introduced the WAITTRIG statement, which creates a temporary trigger. The trigger waits for the world to send a line matching a certain pattern, in this case a line containing the word **opens**.
+
+        WAITTRIG "opens"
+
+When the trigger notices a matching line, it takes some kind of action. We say that the trigger *fires*. Until then, the Axbasic script is paused. (In the previous Section we discussed pauses and mentioned that Axbasic scripts with pauses must be run as a task.)
+
+When the temporary trigger created by WAITTRIG fires, it deletes itself and the script resumes execution. (When the script stops running, Axmud will automatically delete any triggers it created.)
+
+In [Section 4](ch04.html) we also discussed using a timeout. In this example, if the trigger doesn't fire within 60 seconds, the Axbasic script resumes running (and the trigger is deleted, never having fired).
+
+        WAITTRIG "opens", 60
+
+If you want to, you can use the WAITALIAS, WAITMACRO, WAITTIMER and WAITHOOK statements. They all behave in exactly the same way as WAITTRIG. 
+
+        WAITMACRO "f1"
+        WAITMACRO "f1", 60
+
+In practice, there are usually better ways of doing things. In the case of WAITTIMER, it would be a lot simpler to use a SLEEP statement.
+
+##<a name="12.3">12.3 ADDTRIG</a>
+
+ADDTRIG also creates a trigger, but the script doesn't wait around for a response; it just creates the trigger and then executes the next statement. As a result, the trigger doesn't interact with the script directly.
+
+ADDTRIG expects three arguments - a stimulus, a response and (optionally) a trigger name. If you don't specify a name, Axmud will choose a name for you.
+
+This example creates a trigger that waits for a line containing the word **treasure**, and then sends the world command **get treasure** in response.
+
+        ADDTRIG "treasure", "get treasure"
+
+An ADDTRIG statement behaves just like the client command **;addtrigger**, except for one important detail - when the Axbasic script stops running, the trigger is deleted automatically.
+
+Of course, if you *don't* want the trigger to be deleted automatically, you can create a permanent trigger. If you were typing a client command, you would type:
+
+        ;addtrigger -s treasure -p <get treasure>
+
+But in an Axbasic script, you would use a CLIENT statement:
+
+        CLIENT "addtrigger -s treasure -p <get treasure>"
+
+If you're not sure how to compose a client command in the correct format, you can consult the [Axmud Guide](../guide/index.html) or just type
+
+        ;help addtrigger
+
+(Note that **;addtrigger** is expecting a response that contains no spaces. Because our **get treasure** response contains spaces, we need to enclose it within diamond brackets.)
+
+##<a name="12.4">12.4 ADDALIAS, ADDMACRO, ADDTIMER and ADDHOOK</a>
+
+ADDALIAS, ADDMACRO and so on behave in the same was as ADDTRIG, and use the same three arguments - a stimulus, a response and an optional name.
+
+        ADDALIAS "^gt$", "get treasure"
+        ADDMACRO "f1", "kill orc"
+        ADDTIMER 60, "score"
+        ADDHOOK "lose_focus", "sleep"
+
+In each case, the interface is deleted automatically when the script stops running.
+
+Be very careful that you don't create an alias like this, with the same word in both the stimulus and response:
+
+        ADDALIAS "treasure", "get treasure"
+
+This alias fires when you type **treasure**, and sends a world command **get treasure**. Which makes the alias fire again, sending another world command **get treasure**, and before you know it you'll have an infinite loop.
+
+The safest way to use ADDALIAS is to add a ^ character at the beginning, and a $ character at the end, so that the alias only fires when you type that word (any nothing else):
+
+        ADDALIAS "^treasure$", "get treasure"
+
+(See the [Axmud Guide](../guide/index.html) for more information about special characters in patterns.)
+
+##<a name="12.5">12.5 DELTRIG, DELALIAS, DELMACRO, DELTIMER and DELHOOK</a>
+
+The opposite of ADDTRIG is DELTRIG.
+
+To delete a trigger, you need to know its name. If you don't know the name, then you need to modify your script to specify one.
+
+        ADDTRIG "treasure", "get treasure", "mytrigger"
+        SLEEP 60
+        DELTRIG "mytrigger"
+
+DELALIAS, DELMACRO, DELTIMER and DELHOOK behave in exactly the same way. In fact, these five statements are the equivalent of the client commands **;deletetrigger**, **;deletealias** and so on.
+
+All five statements can be used to delete an interface that was created by a different script, or which you have created yourself. This is behaviour is, in general, not a good idea.
+
+By the way, if you try to delete a trigger that doesn't exist, you'll see a system error message (but the Axbasic script will keep running).
+
+##<a name="12.6">12.6 Interfaces for profiles</a>
+
+Axmud interfaces are available, by default, whenever you connect to a particular world. That is to say, if you're connected to *Discworld* and you run the following script, the trigger it creates will not be available when you connect to *Cryosphere.*
+
+        ADDTRIG "treasure", "get treasure"
+        END
+
+However, it's possible to tie interfaces to a particular character, so that they're only available when you're playing that character. You could also tie your interfaces to a particular guild  or a particular race, so that they're only available when you're playing a character of that guild or race. (This is explained in detail in the [Axmud Guide](../guide/index.html).)
+
+By default, a trigger created with ADDTRIG is tied to the current world profile. It's available whenever you connect to that world, regardless of which character you're playing.
+
+If you want to create triggers tied to a particular character profile, you can use the PROFILE statement.
+
+        PROFILE "gandalf"
+
+After a PROFILE statement, ADDTRIG statements will create triggers tied to that profile. This behaviour continues until you use a different PROFILE statement.
+
+If you want to go back to creating triggers with the current world, just use PROFILE on its own.
+
+        ! This trigger is available to characters who
+        ! are members of the thief guild
+        PROFILE "thief"
+        ADDTRIG "orc", "backstab orc"
+
+        ! This trigger is available to all characters
+        PROFILE
+        ADDTRIG "troll", "escape"
+
+The PROFILE statement also affects DELTRIG. Ordinarily, DELTRIG deletes the trigger that's tied to the current world profile. If you have specified a different profile using a PROFILE statement, the trigger tied to that profile is deleted instead.
+
+ADDALIAS, ADDMACRO and so on, as well as DELALIAS, DELMACRO and so on, are all affected by a PROFILE statement in exactly the same way. (WAITTRIG isn't affected at all.)
+
+By the way, the **Showprofile$ ()** function returns the name of the profile currently used by the statements ADDTRIG, DELTRIG (and so on).
+
+        PRINT Showprofile$ ()
+
+##<a name="12.7">12.7 Interfaces and main loops</a>
+
+So far, the interfaces we've created don't really interact with scripts in any meaningful way.
+
+In some respects, BASIC is a poor choice of language for interacting with interfaces. In many scripting languages, a script does nothing until one of its subroutines or functions is actually called.
+
+That's not possible in Axbasic, at least not *directly*. If you need your scripts to interact with interfaces, you should design them with a *main loop*, as discussed in the previous Section.
+
+This is roughly how it works:
+
+* The Axbasic script must be run as a task
+* Several times a second, Axmud calls the task
+* On each call, the main loop runs once
+* The main loop code checks all the interfaces created by the script
+    * If an interface has fired, the code calls a subroutine or a function
+    * If no interface has fired recently, nothing happens
+
+Of course, dedicated scripting languages like Lua (or Perl, for that matter) handle this kind of thing much more efficiently. For most purposes, though, Axbasic is *good enough*.
+
+##<a name="12.8">12.8 Interface notifications</a>
+
+Let's create a complete script that creates a trigger and uses a main loop to check it continuously.
+
+The trigger is created with a SETTRIG statement.
+
+        SETTRIG "treasure"
+
+We use a SETTRIG statement rather than an ADDTRIG statement because, when the trigger fires, Axmud sends an *interface notification* to the script. The notification contains information about the fired trigger.
+
+When the script receives an interface notification, nothing happens immediately; the notification is just stored. If the same trigger fires ten times, then ten separate notifications are stored in the order they're received.
+
+When your script is ready, it can retrieve the first notification and take action. That notification can then be discarded. The script can continue retrieving and discarding notifications until there are none left.
+
+##<a name="12.9">12.9 Retrieving notifications</a>
+
+The **Ifacecount ()** function returns the number of interface notifications the script has received (and not yet discarded).
+
+        LET count = Ifacecount ()
+
+If more than one notification has been received, we deal with them one at a time. The **Ifacename$ ()** function gets the name of the trigger that generated the first notification.
+
+        LET name$ = Ifacename$ ()
+
+When you use SETTRIG, Axbasic chooses a suitable trigger name. You can't specify one for yourself.
+
+If your script uses only one SETTRIG statement, then you don't need to know the trigger name that was chosen. Any notification that's received must originate from that single trigger.
+
+However, if your script contains multiple SETTRIG statements, you'll need to keep track of them. The **Iface$ ()** function returns the name of the trigger created by the most recent SETTRIG statement.
+
+Ordinarily, every SETTRIG statement should be followed by an **Iface$ ()** function.
+
+        ! Create a trigger and store its name
+        SETTRIG "treasure"
+        LET treasure_trigger$ = Iface$ ()
+
+If you know which trigger fired, you can take whatever action is required, for example:
+
+        IF Ifacename$ () = treasure_trigger$ THEN CALL GetStuff
+
+Once that's done, we can discard the notification using a NEXTIFACE statement.
+
+Here is the complete script. Once per main loop, the earliest remaining notification (if any) is retrieved, a subroutine is called, and the notification is then discarded.
+
+        OPTION NEEDTASK
+
+        ! Create a trigger and store its name
+        SETTRIG "treasure"
+        LET treasure_trigger$ = Iface$ ()
+
+        ! Main loop
+        WHILE 1
+
+            ! Retrieve the first notification...
+            IF Ifacecount () > 0 THEN
+                IF Ifacename$ () = treasure_trigger$ THEN
+
+                    ! The trigger fired, so send some world commands
+                    CALL GetStuff
+                    ! Discard the notification, ready for the next main loop
+                    NEXTIFACE
+
+                END IF
+            END IF
+
+        LOOP
+
+        END
+
+        ! This subroutine is called if the treasure trigger fires
+        SUB GetStuff
+            SEND "get treasure"
+            SEND "put treasure in sack"
+        END SUB
+
+Actually, if no notifications have been received, **Ifacename$ ()** returns an empty string. Therefore we could simplify the main loop by removing the **Ifacecount ()** line entirely.
+
+        WHILE 1
+            IF Ifacename$ () = treasure_trigger$ THEN
+                CALL GetStuff
+                NEXTIFACE
+            END IF
+        LOOP
+
+##<a name="12.10">12.10 Advanced notifications</a>
+
+An interface notification tells us the name of the trigger that fired, but also a lot more besides. There are several functions for retrieving the additional information, if you need it.
+
+The **Ifacetext$ ()** function returns the line that caused the trigger to fire.
+
+        LET line$ = Ifacetext$ ()
+
+The **Ifacetime ()** function returns the time at which the trigger fired. The time is expressed as the number of seconds since the current session started.
+
+The **Timestamp ()** function also returns a time expressed in this way, so we can work out how long ago the trigger fired by subtracting one from the other.
+
+        LET interval = Timestamp () - Ifacetime ()
+
+Axmud gives each active trigger a unique number. This probably isn't very useful, but nevertheless you can retrieve the number using the **Ifacenum ()** function, if you want to.
+
+        LET number = Ifacenum ()
+
+The **Ifacetype ()** function returns the type of interface that fired, in other words the string **"trigger"**.
+
+##<a name="12.11">12.11 Retrieving substrings</a>
+
+Triggers test a pattern against a line of text. The **Ifacestrings ()** function returns the number of matching substrings. (See the regular expression tutorial in the [Axmud Guide](../guide/index.html) if you don't know what that means.)
+
+The contents of those substrings can be retrieved using the **Ifaceshift$ ()** and **Ifacepop$ ()** functions. Both of those functions *remove* the matching substring from the notification, so you can use them several times until there are no more substrings left. **Ifaceshift$ ()** removes the first matching substring, and **Ifacepop$ ()** removes the last matching substring.
+
+Another way to retrieve the substrings is with the **Ifaceselect$ ()**. Get the first substring with **Ifaceselect$ (1)**, the second with **Ifaceselect$ (2)** and so on. Unlike **Ifaceshift$ ()** and **Ifacepop$ ()**, nothing is removed. If the specified substring doesn't exist, the function returns an empty string. 
+
+A shortcut for retrieving the first substring is with **Ifacedata$ ()**, which behaves exactly in the same way as **Ifaceselect (1)**.
+
+A special case is when you use alternatives with substrings. For example, you might create a trigger than matches any of the following lines:
+
+        The warrior hits you with axe
+        The warrior hits you with handaxe
+        The warrior hits you with poleaxe
+
+...but not this line:
+
+        The warrior hits you with surtaxes
+
+In that case, you might use the following regular expression:
+
+        The warrior hits you with (hand|pole)?axe
+
+Additionally, you might want to capture the type of weapon used, and for that, you would add substrings:
+
+        The warrior hits you with ((hand)|(pole))?axe
+
+When the regular expression matches a line containing "handaxe" or "poleaxe", Perl produces a list of substrings containing two items, one of them an *undefined* value:
+
+        ( "hand", undefined )
+        ( undefined, "pole" )
+
+The **Ifaceselect ()** function returns an empty string in place of the *undefined* value, but it might also return an empty string if the line contained just **"axe"** and not **"handaxe"** or **"poleaxe"**.
+
+You can use the **Ifacedefined ()** function if you specifically want to test for undefined values. Test the first substring with **Ifacedefined (1)**, the second with **Ifacedefined (2)** and so on.
+
+The function returns 1 if the specified substring exists, and is defined. If the specified substring exists but is not defined, it returns -1. If the specified substring doesn't exist, it returns 0.
+
+##<a name="12.12">12.12 Skipping notifications</a>
+
+By default, these functions work on the *earliest* notification received. Usually, you'll retrieve the information you want, and then discard the notification, ready for the next one.
+
+However, if you want to retrieve information from a different notification, you can use a SKIPIFACE statement.
+
+Functions like **Ifacename$ ()** work on the *current* notification, which is usually the earliest remaining one. A SKIPIFACE statement changes the current notification to the next one in the list.
+
+        ! Get the name of the trigger that generated
+        ! the earliest notification
+        LET first$ = Ifacename$ ()
+
+        ! Get the name of the trigger that generated
+        ! the notification after that
+        SKIPIFACE
+        LET second$ = Ifacename$ ()
+
+If only one notification remains, then SKIPIFACE will have no effect. If there are ten remaining notifications and you've already used SKIPIFACE nine times, then the next SKIPIFACE statements moves back to the beginning of the list.
+
+The **Ifacepos ()** function returns the number of the current notification. By default, it returns 1, representing the earliest remaining notification. If you've used SKIPIFACE once, it would return 2, representing the second notification on the list. (If no notifications have been received, or if they have all been discarded, it returns 0.)
+
+##<a name="12.13">12.13 DELIFACE</a>
+
+An *active interface* is one that's currently available. We've discussed how triggers, aliases and so on can be tied to a particular character profile. Those interfaces are only active when you're playing the right character.
+
+A DELIFACE statement can be used to delete an active interface. As mentioned above, you shouldn't normally use Axbasic scripts to delete interfaces created by something else:
+
+          DELIFACE "status_task_trigger_11"
+
+You shouldn't use DELIFACE to delete triggers created with an ADDTRIG statement, either; use DELTRIG to do that. (The reason for this is a bit complicated, but we can summarise by saying that an active interface might not have the name you were expecting it to have.)
+
+However, DELIFACE *is* the recommended way to delete a trigger created with a SETTRIG or a WAITTRIG statement.
+
+If you want to be clever, you can delete the trigger that generated the current interface notification using a line like this:
+
+          DELIFACE Ifacename$ ()
+
+##<a name="12.14">12.14 Starting a new script with SETTRIG</a>
+
+SETTRIG creates a trigger. When the trigger fires, the Axbasic script receives a notification, which can be retrieved when the script is ready.
+
+However, SETTRIG has a second purpose: it can be used to run a different Axbasic script. If this is what you want, specify both the trigger stimulus and the name of the other Axbasic script:
+
+        SETTRIG "You are dead", "prayer_script"
+
+The new script is not run as a task. The original Axbasic script does not receive an interface notification.
+
+##<a name="12.15">12.15 SETALIAS, SETMACRO, SETTIMER and SETHOOK</a>
+
+We've described interface notifications in some detail, but only in relation to triggers.
+
+Interface notifications can also be generated by aliases, macros, timers and hooks. The way this works is very similar to the way that triggers work, but there are some important differences. This section describes those differences.
+
+SETALIAS, SETMACRO, SETTIMER and SETHOOK behave exactly like SETTRIG. You can use them to create an interface. When the interface fires, the Axbasic script receives a notification, which the script can retrieve when it's ready.
+
+SETALIAS requies a pattern which matches a world command. SETMACRO requires a keycode string. SETTIMER requires an interval (in seconds), or a clock time. SETHOOK requires a hook event. If you're not sure what any of these mean, consult the [Axmud Guide](../guide/index.html).
+
+        SETALIAS "^kill orc$"
+        SETMACRO "ctrl f1"
+        SETTIMER 180
+        SETHOOK "receive_text"
+
+The same statements can be used to launch another Axbasic script.
+
+        SETALIAS "^kill orc$", "check_equipment"
+        SETMACRO "ctrl f1", "cross_bridge"
+        SETTIMER 180, "drink_potion"
+        SETHOOK "receive_text", "play_alarm"
+
+**Ifacetype ()** will return one of the strings **"trigger"**, **"alias"**, **"macro"**, **"timer"** or **"hook"**, as appropriate.
+
+The return value of **Ifacetext ()** depends on the type of interface. For triggers, it returns the line of text received from the world (possibly after being modified by various rewriter triggers). For aliases, it returns the world command. For macros, it returns the keycode string. For timers, it returns the approximate time at which the timer fired (an epoch time, in seconds; actually the time recorded by the session). For hooks, it returns the hook event.
+
+Both SETTRIG and SETALIAS try to match a pattern against some text. If any substrings are generated, the functions described above can be used to retrieve those substrings.
+
+SETHOOK creates a hook that generates zero, one or two additional items of data, depending on which hook event occurs. This additional data can be retrieved in exactly the same way as trigger substrings are retrieved. For example, you could use **Ifacestrings ()** to see how many items of data were generated, or **Ifacedata$ ()** to retrieve the first one. 
+
+A macro doesn't generate any additional data, so after a SETMACRO statement, **Ifacestrings ()** always returns **0** and **Ifacedata$ ()** always returns an empty string.
+
+SETTIMER creates a timer that generates one additional of data. 
+
+Some timers have a clock time as a stimulus. This clock time can be in the form "HH:MM", which causes the timer to fire once a day. It can also be in the form "99:MM", which causes the timer to fire once an hour, at MM minutes past each hour. If the timer stimulus is a clock time, then **Ifacedata ()** returns it (as a string). Otherwise, it returns the time at which the timer was due to fire (which will be equal to, or slightly earlier than, the time at which the timer actually fired, which is the value returned by **Ifacetext ()** ).
+
+---
+
+[Previous](ch11.html) [Index](index.html) [Next](ch13.html)

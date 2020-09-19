@@ -1,0 +1,4 @@
+Floor (x)
+
+   Synopsis:
+      Returns the smallest integer value less than or equal to x

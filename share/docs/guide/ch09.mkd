@@ -1,0 +1,167 @@
+[Previous](ch08.html) [Index](index.html) [Next](ch10.html)
+
+---
+
+#9 Recordings and missions
+
+####Table of Contents
+
+* [9.1 Starting a recording](#9.1)
+* [9.2 Creating a mission](#9.2)
+* [9.3 Starting the mission](#9.3)
+* [9.4 Adding breaks](#9.4)
+* [9.5 Editing missions](#9.5)
+* [9.6 Locator breaks](#9.6)
+
+---
+
+A missions is an extremely simple script that requires no knowledge of programming at all. (See [Section 8](ch08.html) for a summary of the types of script available in Axmud.)
+
+Missions are created by *recording* them. That is to say, you tell Axmud to start recording, then send your character around the world, slaying enemies, looting treasures and so on, then you tell Axmud to stop recording.
+
+When you've finished, you can convert the recording into a mission. (There are other uses for recordings, too.)
+
+##<a name="9.1">9.1 Starting a recording</a>
+
+Recordings can be also be started/stopped/paused/resumed from the main window menu. In addition, you can use the following client command to start/stop a recording:
+
+        ;record
+        ;rcd
+
+You can use the following command to pause/resume a recording:
+
+        ;pauserecording
+        ;prc
+
+Starting a new recording erases the contents of any previous recording.
+
+During a recording, every world command is added to the recording. However, client commands and some other types of instruction, such as Perl commands, are *not* added.
+
+##<a name="9.2">9.2 Creating a mission</a>
+
+When you've finished recording you can create the new mission. The contents of the recording - even if it's not finished - will be added the mission automatically.
+
+If you want to first check the contents of the recording, you can do so:
+
+        ;listrecording
+        ;lrc
+
+Every mission needs a unique name, so choose one now. Some words are reserved, so if Axmud refuses to create the mission, try choosing a different name.
+
+        ;addmission myquest
+        ;amn myquest
+
+It's possible to create an empty mission, if you prefer, in which case you'll have to write the whole mission yourself (see [Section 9.5](ch09.html#9.5)).
+
+##<a name="9.3">9.3 Starting the mission</a>
+
+Starting a mission *plays back* the recording, re-sending all the world commands that were sent the first time.
+
+Missions can be done all at once or one step at a time. Use the following command to do the mission all at once:
+
+        ;startmission myquest
+        ;smn myquest
+
+Alternatively, use the following command to do the mission one step at a time:
+
+        ;startmission myquest -i
+        ;smn myquest -i
+
+Use this command to do the next step (by sending the next world command):
+
+        ;nudgemission
+        ;nmn
+
+##<a name="9.4">9.4 Adding breaks</a>
+
+Rather than using **;nudgemission** repeatedly, you'll often want to split the mission into sections. You can do this by adding breaks.
+
+During the recording, use this command at any time to add a break:
+
+        ;break
+        ;brk
+
+Once the recording has been saved as a mission, you can start the mission in the normal way:
+
+        ;startmission myquest
+        ;smn myquest
+
+Axmud will execute commands until it finds the first break. It will then wait until you ask it continue the mission, which you can do with the **;mission** command:
+
+        ;mission
+        ;mn
+
+The mission will then continue until the next break (or until the end of the mission). You could also use the **;nudgemission** command after a break, if you only want to advance by the next step.
+
+##<a name="9.5">9.5 Editing missions</a>
+
+Missions are stored in the current world profile.
+
+* Open the world's edit window with the **;editworld** command
+* Scroll through the tabs until the **Mission** tab is visible
+* Select the mission you created earlier by clicking it
+* Click the **Edit** button to open the mission's edit window
+
+Axmud missions consist of a series of commands which are executed from beginning to end. Each command has its own line.
+
+The first character in every line specifies which type of command this is. A normal world command begins with a greater than ( > ) character:
+
+        > kill orc
+
+Your missions will be much easier to read if you add some space between the > character and the command itself, but this is optional.
+
+Recordings don't record client commands, but in this window you can add a client command starting with a semicolon ( ; ) character. Because this is a mission, you can add space between the semicolon and the command itself.
+
+        ; playsoundeffect beep
+
+You can also add a speedwalk command:
+
+        . 3nw2s
+
+In this window you can also add a comment, starting with a hash ( # ) character. Comments are displayed in the main window in the same colour as an Axmud system message.
+
+        # Don't forget to phone the restaurant!
+
+Comments are normally used immediately before a break. During the break, the user can intervene to achieve some objective that's too complex for the mission - solving a puzzle, perhaps, or killing an unpredictable number of orcs.
+
+An ordinary break is a line with a single 'at' ( @ ) character on it:
+
+        # Kill the orc by yourself!
+        @
+
+There are three other kinds of break. A *trigger break* creates a temporary trigger, using the pattern specified on the same line:
+
+        t You kill the orc
+
+The mission waits until the trigger fires - that is to to say, until the world sends some text which matches the pattern **You kill the orc**. When that happens, the mission automatically resumes. (The temporary trigger is automatically destroyed.)
+
+A *pause break* waits for a certain period of time. For example, to wait for ten seconds, add the line:
+
+        p 10
+
+##<a name="9.6">9.6 Locator breaks</a>
+
+The Locator task is one of Axmud's built-in tasks, and is responsible for interpreting room descriptions received from the world. (Axmud users prefer the term *room statements*.)
+
+The interpreted data is then available for use by any other part of the Axmud code, including the automapper.
+
+One of task's features it its ability to monitor movement commands such as **north**, **s**, **up** and **enter**. The task is able to make an educated guess about how many room statements the world is about to send.
+
+If we add a Locator break to our mission, it will wait until the Locator task is not expecting any more room statements. When the Locator task reports that it isn't expecting any more room statements - in other words, that the character has arrived at their destination - the mission resumes automatically.
+
+Here's an example of a mission with a Locator break. The last-but-one line is the Locator break itself - a line with just the letter l (for Locator) on it.
+
+        > north
+        > north
+        > northeast
+        > east
+        > open door
+        > in
+        l
+        > kill orc
+
+Note that if slowwalking is turned on (see [Section 4.4.6](ch04.html#4.4.6)), the Locator break will last for at least as long as it takes to clear the command queue.
+
+---
+
+[Previous](ch08.html) [Index](index.html) [Next](ch10.html)

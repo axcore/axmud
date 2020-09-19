@@ -1,0 +1,370 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch04</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch03.html">Previous</a> <a href="index.html">Index</a> <a href="ch05.html">Next</a></p>
+<hr>
+<h1>4 Axmud basics</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#4.1">4.1 The main window</a></li>
+<li><a href="#4.2">4.2 Client commands and world commands</a></li>
+<li><a href="#4.3">4.3 Important client commands</a></li>
+<li><a href="#4.4">4.4 Other kinds of instruction</a><ul>
+<li><a href="#4.4.1">4.4.1 Echo commands</a></li>
+<li><a href="#4.4.2">4.4.2 Perl commands</a></li>
+<li><a href="#4.4.3">4.4.3 Script commands</a></li>
+<li><a href="#4.4.4">4.4.4 Multi commands</a></li>
+<li><a href="#4.4.5">4.4.5 Speedwalk commands</a></li>
+<li><a href="#4.4.6">4.4.6 Bypass commands</a></li>
+<li><a href="#4.4.7">4.4.7 Instruction equivalents</a></li>
+</ul>
+</li>
+<li><a href="#4.5">4.5 Main window  buttons</a></li>
+<li><a href="#4.6">4.6 The object viewer window</a></li>
+<li><a href="#4.7">4.7 Edit windows</a></li>
+<li><a href="#4.8">4.8 Preference windows</a></li>
+<li><a href="#4.9">4.9 The client preference window</a><ul>
+<li><a href="#4.9.1">4.9.1 Adding a favourite world</a></li>
+<li><a href="#4.9.2">4.9.2 Enabling/disabling logfiles</a></li>
+<li><a href="#4.9.3">4.9.3 Changing system message colours</a></li>
+</ul>
+</li>
+<li><a href="#4.10">4.10 The session preference window</a></li>
+<li><a href="#4.11">4.11 The quick preference window</a></li>
+<li><a href="#4.12">4.12 Storing data</a></li>
+</ul>
+<hr>
+<h2><a name="4.1">4.1 The main window</a></h2>
+<p><img alt="Main window" src="img/ch04/main_window.png"></p>
+<ul>
+<li>The window's title bar shows an asterisk if there is any unsaved data at all</li>
+<li>Below the buttons is a tab label, which displays the current world and the current character<ul>
+<li>The label will change colour after a disconnection</li>
+<li>The label's asterisk tells you that there is unsaved data <em>for that world</em></li>
+</ul>
+</li>
+<li>You can connect to several different worlds simultaneously<ul>
+<li>Click the telephone button to re-open the Connections window; from there you can connect to additional worlds</li>
+<li>Each connection has its own tab (called a <em>session</em>)<ul>
+<li>Axmud can optionally create separate main windows for each connection</li>
+</ul>
+</li>
+<li>The menus and buttons apply to the whichever session is the visible one</li>
+</ul>
+</li>
+</ul>
+<h2><a name="4.2">4.2 Client commands and world commands</a></h2>
+<p>Instructions can be entered in the command entry box at the bottom of the window. There are several kinds of instrcution, some of which are disabled by default.</p>
+<p><em>World commands</em> are those which are sent to the world:</p>
+<pre><code>    kill orcs
+    score
+    get torch
+    drop trousers
+</code></pre>
+<p><em>Client commands</em> begin with a semicolon character ( ; ) and are not sent to the world:</p>
+<pre><code>    ;about
+    ;sound on
+    ;openautomapper
+    ;addtrigger -s &lt;kills you&gt; -p &lt;viciously murders you&gt; -rw 1
+</code></pre>
+<p>There are over six hundred client commands. One of the most important one is <strong>;help</strong>, which shows a list of all available client commands:</p>
+<pre><code>    ;help
+</code></pre>
+<p>You can get more information about each client command and how to use it:</p>
+<pre><code>    ;help about
+    ;help sound
+    ;help openautomapper
+    ;help addtrigger
+</code></pre>
+<p>You can also get a list of client commands related to a particular topic. For example, to get a list of client commands used with triggers:</p>
+<pre><code>    ;searchhelp trigger
+</code></pre>
+<p>Almost all client commands can be abbreviated. Here are the possible abbreviations for the <strong>;openautomapper</strong> command:</p>
+<pre><code>    ;openautomapper
+    ;openmap
+    ;map
+    ;oam
+</code></pre>
+<p>Abbreviations can even be used with <strong>;help</strong>. There are several ways to get help for the <strong>;addtrigger</strong> command, including:</p>
+<pre><code>    ;help addtrigger
+    ;help addtrig
+    ;help atr
+    ;h addtrigger
+    ;h atr
+</code></pre>
+<p>Client commands in their abbreviated form are called <em>user commands</em>.</p>
+<p>User commands are customisable - you could replace <strong>;map</strong> with <strong>;wibble</strong>, if you really wanted to. For more information:</p>
+<pre><code>    ;help addusercommand
+</code></pre>
+<p>The semicolon character ( ; ) is also used to send multiple world commands. For example, to travel from one place to another, you might type</p>
+<pre><code>    n;n;ne;ne;n;ne;e;e;ne;n;enter gate;in
+</code></pre>
+<p>Axmud will split this line into individual world commands, and send them one at a time. (This default behaviour can be changed, if necessary.)</p>
+<p>There is one more type of world command. A <em>forced world command</em> one which begins with two commas ( ,, ):</p>
+<pre><code>    ,,kill orcs
+</code></pre>
+<p>Any command that starts with ,, is <em>always</em> treated as a world command - so, if you need to send something to the world that looks like a client command, just put ,, before it.</p>
+<pre><code>   ,,;help
+</code></pre>
+<p>Commands beginning with ,, are never split before being sent to the world. This is useful for sending commands containing smileys, that would otherwise get split into two commands:</p>
+<pre><code>   ,,say hello ;) how are you doing?
+</code></pre>
+<p>Besides world commands and client commands, Axmud offers commands called <em>echo</em>, <em>perl</em>, <em>script</em>, <em>multi</em>, <em>speedwalk</em> and <em>bypass</em> commands.</p>
+<p>These types of command start with a different special character; for example, speedwalk commands start with a full stop/period character ( . ) and script commands begin with an ampersand character
+( &amp; ).</p>
+<p>All commands except world and client commands are turned off by default (unless you turned them on when the setup wizard window was open). See <a href="#4.4">Section 4.4</a> for more information about them.</p>
+<h2><a name="4.3">4.3 Important client commands</a></h2>
+<p>There are a few important client commands which need to be explained, before we continue.</p>
+<pre><code>    ;login
+</code></pre>
+<p>This command can be used if the automated login process fails, or if it didn't start in the first place.</p>
+<p>Axmud provides a number of built-in tasks - useful scripts which often run in their own task window.  Most built-in tasks won't start until the character is marked as 'logged in'. Use this command to tell them it's safe to start.</p>
+<pre><code>    ;sound on
+    ;sound off
+</code></pre>
+<p>Some tasks are capable of playing sound effects. The <strong>;sound</strong> command turns Axmud's sound effects on and off in all sessions.</p>
+<pre><code>    ;playsoundeffect
+</code></pre>
+<p>If you don't want to wait for a task to play a sound effect, you can use this command to test it's working. The command plays a random sound effect.</p>
+<pre><code>    ;speech on
+    ;speech off
+</code></pre>
+<p>This command turns Axmud's text-to-speech capabilities on and off in all sessions. If you're using settings customised for visually-impaired users, it should already be turned on.</p>
+<pre><code>    ;speak Hello world
+</code></pre>
+<p>Use the <strong>;speak</strong> command to test that text-to-speech is working.</p>
+<pre><code>    ;quit
+</code></pre>
+<p>This command disconnects you from the world. All of the current world's data is saved; it is automatically loaded again the next time you connect to the world.</p>
+<p>Data is also saved when the connection closes naturally - for example, when you send the <strong>quit</strong> command to the world. (This default behaviour can be changed, if necessary.)</p>
+<pre><code>    ;qquit
+</code></pre>
+<p>This command (which starts with two letter Qs) terminates the session, but does <em>not</em> save its data.</p>
+<pre><code>    ;panic
+    ;boss
+</code></pre>
+<p>These commands terminate every session immediately and <em>do not save any data</em>.</p>
+<pre><code>    ;save
+</code></pre>
+<p>This command saves the world's data without terminating the session.</p>
+<pre><code>    ;save -a
+</code></pre>
+<p>This command saves data in <em>every</em> session, without terminating any of them.</p>
+<pre><code>    ;autosave on
+</code></pre>
+<p>It would be quite inconvenient to have to type <strong>;save</strong> every time Axmud's internal data is modified. The <strong>;autosave</strong> command turns on Axmud's auto-save feature, which saves files every five minutes by default.</p>
+<h2><a name="4.4">4.4 Other kinds of instruction</a></h2>
+<p>As mentioned above, client commands are always available, but other kinds of instruction (such as speedwalk commands) are turned off by default, unless you turned them on when the setup wizard window was open.</p>
+<h3><a name="4.4.1">4.4.1 Echo commands</a></h3>
+<p>Use this command to turn echo commands on or off:</p>
+<pre><code>    ;togglesigil -e
+</code></pre>
+<p>Echo commands begin with a double quote ( " ) character. Everything after this character is displayed in the main window, and in the same colour used for system messages (which is yellow by default). For example:</p>
+<pre><code>    "Hello world!
+</code></pre>
+<h3><a name="4.4.2">4.4.2 Perl commands</a></h3>
+<p>Use this command to turn Perl commands on or off:</p>
+<pre><code>    ;togglesigil -p
+</code></pre>
+<p>Perl commands begin with a forward slash ( / ) character.  Everything after this character is executed as a mini-Perl programme. The programme's return value is then executed as an instruction.</p>
+<p>Axmud users triggers whose behaviour can sometimes be unexpected. For this reason, and for your own security, Perl commands have limited functionality (for example, it's not possible for a wayward trigger to accidentally execute a Perl command that deletes everything on your hard drive).</p>
+<p>For those of you familiar with the Perl 5 language, here's an example of a trivial Perl command that sends an arbitrary world command to the current world.</p>
+<pre><code>    /my $string = "kill orcs"; return $string;
+</code></pre>
+<p>Echo commands and Perl commands aren't very useful when they are typed in the main window, but they are very useful when creating triggers (see <a href="ch07.html#7.1">Section 7.1</a>).</p>
+<p>If you want to run Perl scripts with full functionality, you can use plugins (see <a href="ch13.html">Section 13</a>).</p>
+<p>The forward slash character is used by some worlds for other purposes, so if you don't need Perl commands, you should probably leave them turned off.</p>
+<h3><a name="4.4.3">4.4.3 Script commands</a></h3>
+<p>Axmud comes with its own scripting language, Axbasic (see <a href="ch10.html">Section 10</a>). Script commands are a convenient of starting an Axbasic script.</p>
+<p>Use this command to turn script commands on or off:</p>
+<pre><code>    ;togglesigil -s
+</code></pre>
+<p>Script commands begin with an ampersand ( &amp; ) character. The character should be followed by the name of an Axbasic script. For example, these two instructions both run the <strong>hello.bas</strong> script:</p>
+<pre><code>    ;runscript hello
+    &amp;hello
+</code></pre>
+<h3><a name="4.4.4">4.4.4 Multi commands</a></h3>
+<p>Use this command to turn multi commands on or off:</p>
+<pre><code>    ;togglesigil -m
+</code></pre>
+<p>Multi commands begin with a colon ( : ) character. Everything after this character is executed as a forced world command in multiple sessions, for example:</p>
+<pre><code>    :shout I'm going for lunch
+</code></pre>
+<p>By default, multi commands are applied to all sessions, but they can optionally be applied only in sessions with the same world profile.</p>
+<h3><a name="4.4.5">4.4.5 Speedwalk commands</a></h3>
+<p>Use this command to turn speedwalk commands on or off:</p>
+<pre><code>    ;togglesigil -w
+</code></pre>
+<p>Speedwalk commands begin with a full stop/period ( . ) character. Everything after this character is interpreted as a set of movement commands to send to the world. For example, these two instructions have the same effect:</p>
+<pre><code>    north;north;north;west;south;south
+    .3nw2s
+</code></pre>
+<p>Axmud speedwalk commands are actually quite powerful. The syntax, which is a hybrid of those used by other major MUD clients, goes far beyond merely sending "north" and "south".</p>
+<p>For a full description of speedwalk syntax, see the help for the <strong>;speedwalk</strong> command.</p>
+<h3><a name="4.4.6">4.4.6 Bypass commands</a></h3>
+<p>Use this command to turn bypass commands on or off:</p>
+<pre><code>    ;togglesigil -b
+</code></pre>
+<p>Bypass commands begin with a greater than ( &gt; ) character. Everything after this character is sent to the world immediately.</p>
+<p>This can be useful if you've placed a limit on how many world commands Axmud can send at a time. This is called <em>slowwalking</em>.</p>
+<p>Slowwalking can be configured with the <strong>;slowwalk</strong> command. It applies a maximum number of instructions that can be executed at a time. Any excess instructions are stored temporarily until they can be sent; a bypass command literally bypasses that queue.</p>
+<h3><a name="4.4.7">4.4.7 Instruction equivalents</a></h3>
+<p>We've mentioned that speedwalk commands can be turned on or off, but actually it's only the initial character which is turned on or off. Speedwalking is always available using the equivalent client command, <strong>;speedwalk</strong>.</p>
+<pre><code>    .3nw2s
+    ;speedwalk 3nw2s
+</code></pre>
+<p>The two commands above are equivalent, but the first one will only work when speedwalk commands are turned on.</p>
+<p>This applies to other kinds of instruction, too. See the help for <strong>;echo</strong>, <strong>;perl</strong>, <strong>;multi</strong> and <strong>;bypass</strong>.</p>
+<h2><a name="4.5">4.5 Main window  buttons</a></h2>
+<p>The main window contains a number of buttons for common tasks. You can see what each button does by letting your mouse hover above it.</p>
+<p>Here's a summary of the most important buttons.</p>
+<p><img alt="Phone icon" src="img/ch04/icon_phone_vintage.png"> Opens another Connections window, from which you can connect to another world</p>
+<p><img alt="Compass icon" src="img/ch04/icon_compass.png"> Opens the automapper window</p>
+<p><img alt="Help icon" src="img/ch04/icon_help.png"> Opens a window which displays various help files</p>
+<p><img alt="Quit icon" src="img/ch04/icon_quit.png"> Terminates the current connection, or closes the client if there are no sessions open</p>
+<p><img alt="Broom icon" src="img/ch04/icon_broom.png"> Clears the command entry box. If commands are being sent to the world, one character at a time, clicking this button tells Axmud that you're about to start typing a new world command</p>
+<p><img alt="Add icon" src="img/ch04/icon_add.png"> Axmud provides three entry boxes. The main one, which is always visible, is where you type commands. The other two are optional; you can make one or both of them appear if you keep clicking this button.</p>
+<p>Anything you type in the other boxes is added to a world command before it's sent to the world. For example, if you want to have a long conversation, you can type <strong>say</strong> in the box on the left - then, you don't need to type <strong>say</strong> every time you type something in the main box.</p>
+<p>This only works with world commands. It doesn't work with other types of command, such as client commands, speedwalk commands or forced world commands beginning with <strong>,,</strong>.</p>
+<p><img alt="Exclamation mark icon" src="img/ch04/icon_console.png"> Opens the Session Console window. If Axmud is unable to display system messages in the main window (for whatever reason) they're displayed here instead</p>
+<p><img alt="Plus icon" src="img/ch04/icon_input.png"> Opens the Quick Input window, from which you can send multiple lines of text to the world at a time.</p>
+<p><img alt="Search icon" src="img/ch04/icon_search.png"> Opens a search box, which you can use to search text for terms like gold or big hairy orc. If you click the <strong>Use regex</strong> button, you can use a pattern/regular expression like <strong>\d+ gold coin</strong>).</p>
+<p><img alt="Lock icon" src="img/ch04/icon_lock.png"> Stops the window from scrolling when text is received from the world</p>
+<p><img alt="Window icon" src="img/ch04/icon_application.png"> Splits the window into two portions</p>
+<h2><a name="4.6">4.6 The object viewer window</a></h2>
+<p>Axmud organises its internal data into collections of data called 'objects'.</p>
+<p>We've already seen two kinds of object - the world profile, which stores data for a particular world, and the character profile, which stores data for a character in that world.</p>
+<p>There are many other kinds of object. Axmud lists many of them in its object viewer window.</p>
+<p><img alt="Object viewer icon" src="img/ch04/icon_watermark_table.png"> To open the object viewer window, either click on the button, or select 'Display &gt; Open object viewer' in the menu, or use the client command:</p>
+<pre><code>    ;openobjectviewer
+    ;oov
+</code></pre>
+<p><img alt="Object viewer window" src="img/ch04/object_viewer.png"></p>
+<p>The different types of object are listed on the left. There are far too many to fit inside the window, so they have been divided into groups.</p>
+<ul>
+<li>Double-click on <strong>Profiles</strong>, and then click on <strong>All profiles</strong></li>
+<li>There is already a world profile for every pre-configured world. The current world is marked with an X</li>
+<li>If you click on the <strong>Char</strong> tab, you can see this world's character profiles. The current character is marked with an X</li>
+</ul>
+<p>On the right is a strip of buttons; each one is the equivalent of a client command.</p>
+<ul>
+<li>For a slightly longer explanation for each button, let your mouse hover above the button</li>
+</ul>
+<p><img alt="Object viewer tooltip" src="img/ch04/viewer_tooltip.png"></p>
+<h2><a name="4.7">4.7 Edit windows</a></h2>
+<p>Each collection of data - each object - can be viewed and edited using an <em>edit window</em>.</p>
+<p>Edit windows can be opened from the object viewer window, or from the main window's menu and buttons, or by using a client command. For example, to edit the <strong>dslocal</strong> world profile:</p>
+<pre><code>    ;editworld dslocal
+    ;ewo dslocal
+</code></pre>
+<p>If you don't specify a world profile, the current world profile is edited:</p>
+<pre><code>    ;editworld
+</code></pre>
+<p>For world profiles, there are more tabs than can be arranged in the single window. Near the top-left and top-right corners of the window you'll see some kind of arrow; click the arrows to scroll through the additional tabs.</p>
+<p><img alt="Edit window tabs" src="img/ch04/edit_win_tabs.png"></p>
+<p>Changes you make in this window are not applied until you use one of the buttons at the bottom.</p>
+<p><img alt="Edit window buttons" src="img/ch04/edit_win_buttons.png"></p>
+<ul>
+<li>The <strong>OK</strong> button applies any changes you've made and closes the window</li>
+<li>The <strong>Save</strong> button applies any changes you've made without closing the window</li>
+<li>The <strong>Cancel</strong> button cancels any changes and closes the window</li>
+<li>The <strong>Reset</strong> button cancels any changes without closing the window</li>
+</ul>
+<p>For technical reasons, some changes have to be applied  immediately. Buttons marked with an asterisk - such as the <strong>New</strong> button pictured below - apply a change   immediately. Using the main <strong>Cancel</strong> or 'Reset' buttons   won't reverse these changes.</p>
+<p><img alt="Button with asterisk" src="img/ch04/dict_tab.png"></p>
+<h2><a name="4.8">4.8 Preference windows</a></h2>
+<p><em>Preference windows</em> are a special kind of edit window in which all changes are applied immediately. For that reason, the buttons don't use asterisks. Instead, there is a single <strong>OK</strong> button at the bottom of the window which closes it.</p>
+<p><img alt="Preference window buttons" src="img/ch04/pref_win_buttons.png"></p>
+<p>There are two preference windows you'll use often - one for settings that apply to all sessions, and another which applies to a single session.</p>
+<h2><a name="4.9">4.9 The client preference window</a></h2>
+<p>The client preference window can be opened from the main window menu (click <strong>Edit &gt; Axmud preferences...</strong>), or by using a client command:</p>
+<pre><code>    ;editclient
+    ;edc
+</code></pre>
+<h3><a name="4.9.1">4.9.1 Adding a favourite world</a></h3>
+<p>The Connections window lists all of the world profiles you've created, as well as any pre-configured worlds. You can choose which worlds should appear at the top of this list.</p>
+<ul>
+<li>In the client preference window, click on <strong>Settings &gt; Page 2</strong></li>
+<li>Add the name of a world profile, e.g. <strong>valhalla</strong></li>
+<li>Click the <strong>Set list</strong> button</li>
+<li>When you next open the Connections window, <em>Valhalla</em> will appear at the top of the list</li>
+</ul>
+<h3><a name="4.9.2">4.9.2 Enabling/disabling logfiles</a></h3>
+<p>Axmud can write a number of different logfiles simultaneously.</p>
+<p>Logging is turned off by default. You can use the client preference window to turn it on and to specify which kinds of logfile to write.</p>
+<ul>
+<li>In the client preference window, click on <strong>Logs &gt; Page 1</strong></li>
+<li>Click the first checkbutton (<strong>Enable logging in general</strong>)</li>
+<li>Now click on <strong>Page 3</strong></li>
+<li>Use the combo (pull-down) box to select a type of logfile, and then click the <strong>Toggle</strong> button to enable or disable it</li>
+</ul>
+<p>Axmud stores all of its data in a directory (folder) called <strong>axmud-data</strong>. This directory can be found somewhere in your usual home directory (on MS Windows, it's called something like 'Documents').</p>
+<p>These are not the only logfiles Axmud can write; each world profile specifies its own logfiles.</p>
+<ul>
+<li>Open the world profile's edit window using <strong>;editworld</strong></li>
+<li>Click on <strong>Settings &gt; Page 12</strong></li>
+<li>Use the combo box and the <strong>Toggle</strong> button to enable/disable logfiles</li>
+</ul>
+<h3><a name="4.9.3">4.9.3 Changing system message colours</a></h3>
+<p>Axmud displays its system messages in bright yellow by default. If you find this uncomfortable, the colour is easily changed.</p>
+<ul>
+<li>In the client preference window, click on <strong>Colours &gt; Page 4</strong></li>
+<li>Find the line labelled <strong>System message colour</strong></li>
+<li>Use the combo (drop-down) box to choose a new colour<ul>
+<li>Bold (bright) colours are in CAPITAL LETTERS</li>
+</ul>
+</li>
+</ul>
+<h2><a name="4.10">4.10 The session preference window</a></h2>
+<p>The session preference window can be opened from the main window menu (click <strong>Edit &gt; Session preferences...</strong>), or by using a client command:</p>
+<pre><code>    ;editsession
+    ;eds
+</code></pre>
+<p>In the next Section we'll use this window to create and modify triggers, aliases and so on.</p>
+<h2><a name="4.11">4.11 The quick preference window</a></h2>
+<p>A few of the most common configuration options have been grouped together in a single window.</p>
+<pre><code>    ;editquick
+    ;edq
+</code></pre>
+<h2><a name="4.12">4.12 Storing data</a></h2>
+<p>Axmud stores data files in a location that depends on your system, and also on how you installed Axmud on that system.</p>
+<p>If you want to stored data in a different location - on a USB stick, or an external hard drive, for example - you can use this command:</p>
+<pre><code>    ;setdatadirectory
+    ;sdd
+</code></pre>
+<p>If you use Axmud on multiple devices - a desktop and a laptop, for example - you can set the location to a network drive that both devices can access.</p>
+<p>Note that you shouldn't use both devices simultaneously - if you try, Axmud on one device will arbitrarily overwrite filed saved by Axmud on the other device.</p>
+<p>(If you don't have your own network drive, or don't know how to set one up, you might like to use a commerical service like <a href="https://www.dropbox.com">Dropbox</a>).</p>
+<p>If you want to make a backup copy of the data directory - a wise decision, in many cases - you can do that manually, or you can use a client command.</p>
+<p>This command will create a backup copy of the entire data directory:</p>
+<pre><code>    ;backupdata
+    ;bud
+</code></pre>
+<p>When you're ready to restore files from the backup, you can do it manually, or use the client command:</p>
+<pre><code>    ;restoredata
+    ;rsd
+</code></pre>
+<p>If you want to make periodic backups, you could use the <strong>;autobackup</strong> command, but it's probably easier to use the client preference window, for example:</p>
+<ul>
+<li>In the main window menu, click <strong>Edit &gt; Axmud preferences... &gt; Client &gt; Page 5</strong></li>
+<li>In the <strong>Perform auto-backup</strong> box, select <strong>At regular intervals, when Axmud shuts down</strong></li>
+<li>Click the <strong>Set method</strong> button</li>
+<li>Click <strong>OK</strong> to close the window</li>
+</ul>
+<hr>
+<p><a href="ch03.html">Previous</a> <a href="index.html">Index</a> <a href="ch05.html">Next</a></p>
+
+</body>
+</html>

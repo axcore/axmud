@@ -1,0 +1,175 @@
+[Previous](ch05.html) [Index](index.html) [Next](ch07.html)
+
+---
+
+#6 Patterns
+
+####Table of Contents
+
+* [6.1 Regular expressions](#6.1)
+    * [6.1.1 Metacharacters](#6.1.1)
+    * [6.1.2 Matching any text](#6.1.2)
+    * [6.1.3 Escape sequences ](#6.1.3)
+    * [6.1.4 Quantifiers](#6.1.4)
+    * [6.1.5 Substrings](#6.1.5)
+
+---
+
+A *regular expression* - or *regex* - is just another way of saying *pattern*. (Axmud uses these terms interchangeably.)
+
+Many of times a second, Axmud will look at a line of text and ask, 'Does it match this pattern?'
+
+Axmud uses regular expressions all the time,  so it's important to know something about them.
+
+There are a million and one tutorials on the internet, but here is another one anyway. It's as short as possible and all the example relate to what you might see in a MUD. (Skip to [Section 7](ch07.html) if you already understand regular expressions.)
+
+##<a name="6.1">6.1 Regular expressions</a>
+
+A pattern can be as simple as the word **troll**. The pattern **troll** matches all of these lines:
+
+        You see a troll, two dwarves and an elf
+        You kill the troll
+        There are five trolls here
+
+But it doesn't match any of these lines:
+
+        You see an orc, two dwarves and an elf
+        You kill the orc
+        You see the Troll
+
+Patterns are usually case-sensitive. The last line above doesn't match the pattern because it contains **Troll**, and we're looking for **troll**.
+
+Patterns can be longer than a single word. The pattern **kill the orc** matches the second line (but not the others).
+
+###<a name="6.1.1">6.1.1 Metacharacters</a>
+
+Sometimes we need to look for lines that *begin* with a certain pattern. The caret character ( ^ ) means that this pattern must appear at the *beginning* of the line.
+
+The pattern **^troll** matches both of these lines:
+
+        troll on the floor, bleeding to death
+        trolls on the floor, bleeding to death
+
+But it doesn't match either of these lines:
+
+        You see a troll
+        There are five trolls here
+
+At other times we need to look for lines which *end* with a certain pattern. The dollar character ( $ ) means that this pattern must appear at the *end* of the line.
+
+The pattern **troll$** matches both of these lines:
+
+        You see a troll
+        You kill the troll
+
+Sometimes we will use both special characters together. The pattern **^You kill the troll$** matches one line, and one line only:
+
+        You kill the troll
+
+Needless to say, the ^ and $ characters should appear only at the beginning/end of the pattern (and not somewhere in the middle).
+
+###<a name="6.1.2">6.1.2 Matching any text</a>
+
+Very often we'll need to match a line like this:
+
+        You are carrying 500 gold coins
+
+In a pattern, we can use the full stop (period) character to mean *any character*. For example, the pattern **d.g** will match all of the following lines:
+
+        dig
+        dog
+        dug
+        dagger
+        degree
+
+The character combination __.\*__ (a full stop/period followed by an asterisk) is very important. It means *any text at all*.
+
+So, the pattern **You are carrying .\* gold coins** matches all of the following lines:
+
+        You are carrying 100 gold coins
+        You are carrying 500 gold coins
+        You are carrying 100000000 gold coins
+        You are carrying no gold coins
+
+__.\*__ actually means *any text, including no text at all*. So the same pattern will *also* match this line:
+
+        You are carrying gold coins.
+
+###<a name="6.1.3">6.1.3 Escape sequences</a>
+
+We can use a full stop (period) to mean *any character*, but sometimes you will want to be more specific.
+
+The escape sequence **\w** - a forward slash followed by the lower-case letter w - means *any letter, number or underline (underscore)*. So, the pattern **b\wll** matches all of these lines:
+
+        I see a ball
+        I see a bell
+        I see a bill
+
+But it won't match this line:
+
+        I see a b@ll
+
+... because the @ character is not a letter, a number or an underline (underscore).
+
+The combination **\W** means the exact opposite - *any character *except* a letter, number or underline (underscore)*. So, the pattern **b\Wll** does match this line:
+
+        I see a b@ll
+
+... but it doesn't match these lines:
+
+        I see a ball
+        I see a bell
+        I see a bill
+
+One more important escape sequence is **\s**, which means *any space character, including tabs*. The opposite is **\S**, which means *any character *except* a space character or a tab*.
+
+###<a name="6.1.4">6.1.4 Quantifiers</a>
+
+Sometimes we'll need a pattern which can match any of these lines:
+
+        You kill the cat
+        You kill the caat
+        You kill the caaaaaaat
+
+The character combination **a+** means *1 or more letter "a" characters*. So, the pattern **ca+t** matches all of lines above, but it doesn't match:
+
+        You kill the kitten
+
+You can use the plus sign ( + ) after any character. For example, **\d** means *a single number character*, but **\d+** means *one or more number characters*.
+
+The pattern **You have \d+ gold coins** matches both of the following lines:
+
+        You have 50 gold coins
+        You have 1000000 gold coins
+
+...but it doesn't match this line:
+
+        You have no gold coins
+
+You can also use a question mark ( ? ) after any character. It means *zero or one of these characters (but not more)*. And you've already seen that the asterisk character ( \* ) means *zero, one or more of these characters*.
+
+###<a name="6.1.5">6.1.5 Substrings</a>
+
+The pre-configured worlds have been set up to look for lines like these:
+
+        You have 100 gold coins
+
+The patterns they use often look like this:
+
+        You have (.*) gold coins
+
+A pair of brackets (braces) means *save everything in the middle for later*. In this case, we don't just want to recognise a line matching this pattern - we want to store the number of gold coins for later use.
+
+The __(.\*)__ combination is one example of a *group*. The contents of the group - in this case, **100** - is called the *substring*.
+
+Sometimes we'll need to use several groups on the same line.
+
+        You have (.*) gold, (.*) silver and (.*) brass coins
+
+Because we have three groups, three different substrings are stored for later. These substrings are numbered 1, 2 and 3 (not 0, 1 and 2).
+
+That's the end of the regular expression tutorial. In the next Section we'll go ahead and create some interfaces.
+
+---
+
+[Previous](ch05.html) [Index](index.html) [Next](ch07.html)

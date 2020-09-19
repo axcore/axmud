@@ -1,0 +1,32 @@
+[Index](index.html) [Next](ch02.html)
+
+---
+
+#1 Introduction
+
+Axmud is a modern client for MUDs (Multi-User Dungeons), MUCKs, MOOs, MUSEs, MUSHes, MUXs and other multiplayer text-based games (collectively called *worlds*).
+
+Axmud’s features include:
+
+* Telnet, SSH and SSL connections
+* ANSI, xterm, OSC and RGB colours
+* Full support for all major MUD protocols, including MXP and GMCP (with partial Pueblo support)
+* VT100 emulation
+* Class-based triggers, aliases, macros, timers and hooks
+* A powerful graphical automapper
+* 100 pre-configured worlds
+* Multiple approaches to scripting
+* Fully customisable from top to bottom, using the command line or the extensive GUI interface
+* Native support for visually-impaired users
+
+Axmud is still in the beta-testing phase and, as such, it lacks a proper manual.  This guide introduces the most important features.  Many of Axmud’s features are fully documented; these help files can be read using the **;help** command.
+
+If you want only the bare essentials, you can [read the quick help document](../quick/quick.html).
+
+When you install Axmud, you’ll notice that there are two programmes, one of which uses settings that have been optimised for users with a visual impairment.
+
+Visually-impaired users should skip most of this Guide, and read [Section 16](ch16.html) instead.
+
+---
+
+[Index](index.html) [Next](ch02.html)

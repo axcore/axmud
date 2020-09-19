@@ -1,0 +1,26 @@
+scf / setcommifymode          Customises conversion of long numbers
+ 
+   Format:
+      ;scf                    Show current commify mode setting
+      ;scf -c                 Add commas
+      ;scf -e                 Add European-style full stops/periods
+      ;scf -b                 Add British-style spaces
+      ;scf -u                 Add underlines/underscores
+      ;scf -n                 Add nothing
+      
+   Notes:
+      Commify mode sets how certain parts of the Axmud code convert long numbers
+         like 1000000 into something more readable, like 1,000,000.
+      At the moment, only the Status task uses commify mode, but it's available
+         to any plugin or script that wants it.
+
+      Any of the following switches can be specified:
+
+         -c   - Add commas, e.g. 1,000,000
+         -e   - Add European-style full stops/periods, e.g. 1.000.000
+         -b   - Add British-style spaces, e.g. 1 000 000
+         -u   - Add underlines/underscores, e.g. 1_000_000
+         -n   - Don't add anything. e.g. 1000000
+
+   User commands:
+      scf / commify / setcommifymode

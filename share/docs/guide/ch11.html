@@ -1,0 +1,416 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch11</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch10.html">Previous</a> <a href="index.html">Index</a> <a href="ch12.html">Next</a></p>
+<hr>
+<h1>11 Tasks</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#11.1">11.1 Built-in tasks</a></li>
+<li><a href="#11.1">11.2 Task dependencies</a></li>
+<li><a href="#11.1">11.3 Task commands</a></li>
+<li><a href="#11.1">11.4 The Status task</a><ul>
+<li><a href="#11.1">11.4.1 Updating the Status task</a></li>
+<li><a href="#11.1">11.4.2 Status task background</a></li>
+<li><a href="#11.1">11.4.3 Working with the Attack task</a></li>
+<li><a href="#11.1">11.4.4 Status task counters</a></li>
+<li><a href="#11.1">11.4.5 Modifying Status task patterns</a></li>
+</ul>
+</li>
+<li><a href="#11.1">11.5 The Locator task</a><ul>
+<li><a href="#11.1">11.5.1 The Locator task window</a></li>
+<li><a href="#11.1">11.5.2 Resetting the task</a></li>
+<li><a href="#11.1">11.5.3 The current dictionary</a></li>
+</ul>
+</li>
+<li><a href="#11.1">11.6 The Channels and Divert tasks</a><ul>
+<li><a href="#11.1">11.6.1 Adding channel patterns</a></li>
+<li><a href="#11.1">11.6.2 The Channels task</a></li>
+<li><a href="#11.1">11.6.3 The Divert task</a></li>
+</ul>
+</li>
+<li><a href="#11.1">11.7 The Chat task</a><ul>
+<li><a href="#11.1">11.7.1 Chat task commands</a></li>
+<li><a href="#11.1">11.7.2 Chatting and emoting</a></li>
+<li><a href="#11.1">11.7.3 Chat contacts</a></li>
+<li><a href="#11.1">11.7.4 Firewalls</a></li>
+<li><a href="#11.1">11.7.5 Security considerations</a></li>
+</ul>
+</li>
+<li><a href="#11.1">11.8 The Compass task</a></li>
+</ul>
+<hr>
+<p><em>Tasks</em> are scripts written in Perl.</p>
+<p>Tasks are designed so that all the boring stuff - scheduling, handling of interfaces, maintaining task windows - is handled automatically, leaving you free to design ever more efficient ways of slaughtering your enemies.</p>
+<h2><a name="11.1">11.1 Built-in tasks</a></h2>
+<p>Axmud provides twenty or so <em>built-in tasks</em>, some of which are more useful than others. This is a brief summary of what they do.</p>
+<p><strong>Advance task</strong></p>
+<p>Automatically advances your character’s skills. This task might be useful at a few worlds, but will be completely useless at many others.</p>
+<p><strong>Attack task</strong></p>
+<p>Monitors attacks and, like the Status task, updates the data stored in the current character profile. (The task doesn’t initiate attacks - that's your job.)</p>
+<p><strong>Channels and Divert tasks</strong></p>
+<p>Diverts text from the main window to the task’s own window. The Channels task uses multiple tabs, one for each channel. The Divert task uses a single tab, and indicates the channel by changing the background colour</p>
+<p><strong>Chat task</strong></p>
+<p>An instant messenger service. Contains an almost complete implementation of the MudMaster and zChat protocols (only encryption has not yet been implemented).</p>
+<p><strong>Compass task</strong></p>
+<p>Hijacks your keyboard's keypad, allowing you to move around the world with a single keypress. This is a convenient way to set up macros and to enable/disable them at will.</p>
+<p><strong>Condition task</strong></p>
+<p>Works alongside the Inventory task. Tries to keep track of the condition of items in the your character’s inventory (e.g. is your armour in perfect condition, or is it falling to pieces?)</p>
+<p><strong>Connections task</strong></p>
+<p>Shows a list of sessions. A session handles a single connection to a world (even in 'connect offline' mode.)</p>
+<p>When the task is running, you can use CTRL+1, CTRL+2 and so on to switch between sessions. (CTRL+TAB can be used regardless of whether the task is running or not.)</p>
+<p><strong>Countdown task</strong></p>
+<p>Displays a window with a clock. You can use it to count down from some time until the clock reaches zero, or count up from zero until the clock reaches a specified time. If sound is turned on, you'll be warned when the clock is near its target, and again when the clock reaches its target.</p>
+<p><strong>Frame task</strong></p>
+<p>Used by the MXP and Pueblo protocols  to create new windows for various purposes.</p>
+<p><strong>Inventory task</strong></p>
+<p>Keeps track of your character’s inventory, displaying a summary in the task's own window.</p>
+<p><strong>Launch task</strong></p>
+<p>Displays a list of Axbasic scripts in a task window.  You can add, edit and delete scripts, as well as running them, by clicking on the window's buttons.</p>
+<p><strong>Locator task</strong></p>
+<p>Interprets room statements (descriptions) received from the world. The interpreted data is then available to other parts of the Axmud code, such as the automapper. The task window is optional. If open, it shows a summary of the current location.</p>
+<p><strong>MapCheck task</strong></p>
+<p>Another debugging task. Shows a summary of the automapper window's drawing activities (if it's open).</p>
+<p><strong>Notepad task</strong></p>
+<p>A notepad that allows you to keep notes that are preserved for future sessions.  There's a separate notepad for every current profile (one for the current world, one for the current character, and so on).  The notes are available to view whenever the profile is current.</p>
+<p><strong>RawText task</strong></p>
+<p>Another debugging task. Displays all text received from the world, including all escape sequences and special characters.</p>
+<p><strong>RawToken task</strong></p>
+<p>Yet another debugging task.  Displays all text received from the world split into tokens. Newline characters count as a single token, as do escape sequences.  Uninterrupted sequences of normal characters are interpreted as a single token.</p>
+<p><strong>Script task</strong></p>
+<p>Works alongside scripts written in Axmud’s own scripting language, Axbasic (see <a href="ch10.html">Section 10</a>)</p>
+<p><strong>Status task</strong></p>
+<p>Keeps track of your character’s XP, health points and so on. The intercepted data is then available to other parts of the Axmud code, such as the your own scripts and the gauges visible near the bottom of the main window. Data stored in the current character profile is automatically updated. The task window is optional. If open, it shows a summary of the intercepted data.</p>
+<p><strong>System task</strong></p>
+<p>Diverts (or copies) system messages (ordinary system text messages, as well as error, warning, debug and improper arguments messages) into a separate task window.</p>
+<p><strong>TaskList task</strong></p>
+<p>A debugging task that displays a list of all tasks running at the moment. The list is updated several times a second.</p>
+<p><strong>Watch task</strong></p>
+<p>Re-displays any text displayed in all Channels, Chat and Divert task windows, across every session. Useful for when you are connected to several worlds simultaneously.</p>
+<h2><a name="11.2">11.2 Task dependencies</a></h2>
+<p>Some Axmud tasks try to interpret text from the world, in some cases storing the interpreted data in a profile.</p>
+<p>Axmud does not have some kind of magical ability to recognise text from any world and in any language. Instead, it must be <em>taught</em> how to recognise certain patterns. (If you are using one of the pre-configured worlds, most of this work will already have been done.)</p>
+<p>Those patterns are typically stored in a profile, usually the world profile.</p>
+<p>Some tasks are particularly dependent on the patterns you've collected. The Locator task won't work at all unless Axmud has been taught how to interpret a room statement (description). The Status task won't work very well unless Axmud has been taught how to interpret text like <strong>You have 1000 gold coins</strong>. The Channels, Divert, Inventory, Condition, Advance and Attack tasks are also reliant on data stored in profiles. Some tasks, however, don't refer to data stored in any profile.</p>
+<p>Tasks that depend on one or more profiles automatically reset themselves if you set a current profile (for example, if you change the current character from Gandalf to Bilbo using a <strong>;setchar</strong> command).</p>
+<h2><a name="11.3">11.3 Task commands</a></h2>
+<p>There are several client commands which can be used with all tasks. In addition, many tasks have a set of client commands devoted to them.</p>
+<p>You can find out more about each kind of task, and the client commands they use, with the <strong>;taskhelp</strong> command:</p>
+<pre><code>    ;taskhelp status
+    ;th status
+</code></pre>
+<p>Commands like <strong>;</strong> are quite flexible about how the task is specified. All of the following commands will work:</p>
+<pre><code>    ;taskhelp loc
+    ;taskhelp locator
+    ;taskhelp locator_task
+    ;taskhelp locator_task_3
+</code></pre>
+<p>This is how to start and stop a task:</p>
+<pre><code>    ;starttask locator
+    ;st loc
+
+    ;halttask locator
+    ;ht loc
+</code></pre>
+<p>Most of the built-in tasks are <em>jealous</em>, meaning that you can't run two copies of them at the same time.</p>
+<p>You can also pause and resume tasks:</p>
+<pre><code>    ;pausetask locator
+    ;pt loc
+
+    ;resumetask locator
+    ;rt loc
+</code></pre>
+<p>In an emergency, you can use the <strong>;freezetask</strong> command, which freezes all currently-running tasks. Use the same command again to unfreeze them.</p>
+<p>You might also find the <strong>;listtask</strong> command useful. It displays a list of all the tasks that are currently running. (This list is called the <em>current tasklist</em>.)</p>
+<pre><code>    ;listtask
+    ;lt
+</code></pre>
+<p>All of these actions are also available in the object viewer window (see <a href="ch04.html#4.6">Section 4.6</a>).</p>
+<ul>
+<li>In the left-hand column, double-click on <strong>Tasks</strong> and then click on <strong>Available tasks</strong>.</li>
+<li>Select a task by clicking on it</li>
+<li>Then click the <strong>Start</strong>, <strong>Halt</strong>, <strong>Pause</strong>, <strong>Safe resume</strong> or <strong>Help</strong> buttons</li>
+</ul>
+<h2><a name="11.4">11.4 The Status task</a></h2>
+<p><img alt="Status task window" src="img/ch11/status_task.png"></p>
+<p>The Status task keeps track of your character’s XP, health points and so on. The intercepted data is then available to other parts of the Axmud code, such as the your own scripts and the gauges visible near the bottom of the main window. Data stored in the current character profile is automatically updated. The task window is optional. If open, it shows a summary of the intercepted data.</p>
+<p>The window's layout can be customised. The picture above shows the layout used with the Dead Souls pre-configured worlds; other pre-configured worlds will use a different layout.</p>
+<h3><a name="11.4.1">11.4.1 Updating the Status task</a></h3>
+<p>The task collects data passively: in other words, if you type the <strong>score</strong> command, the world will send back some text, the Status task will (hopefully) recognise that text, and the XP displayed in the task window will be updated. If you don’t type <strong>score</strong> for twenty minutes, the value will be twenty minutes out of date.</p>
+<p>If this is inconvenient, you can ask the task to send commands like <strong>score</strong> at regular intervals:</p>
+<pre><code>    ;addstatuscommand score 60
+    ;asc score 60
+</code></pre>
+<p>This will send the <strong>score</strong> command every 60 seconds. You can use any command and any time interval. If the command contains spaces, you should enclose it within diamond brackets:</p>
+<pre><code>    ;addstatuscommand &lt;look at watch&gt; 60
+    ;asc &lt;look at watch&gt; 60
+
+    ;activatestatustask
+    ;ast
+</code></pre>
+<p>The task won't send these commands right away; you must first put the task into <em>active</em> mode:</p>
+<pre><code>    ;activatestatustask
+    ;ast
+</code></pre>
+<p>To stop sending the commands, you can put the task into <em>disactivated</em> mode:</p>
+<pre><code>    ;disactivatestatustask
+    ;dst
+</code></pre>
+<p>However, this is only half the story. Several MUD protocols send data that's normally invisible to users, and this data typically includes information like the character's current XP.</p>
+<p>If you're connected to a world which sends this data, you'll notice the task window and/or main window gauges update themselves without any intervention from you.</p>
+<h3><a name="11.4.2">11.4.2 Status task background</a></h3>
+<p>The task window's background colour changes according to your character's current health. Green means the character is relatively healthy, red means the character is at death's door, and black means the character is actually dead.</p>
+<p>The colour can also change when the character dies, gets resurrected, falls asleep, wakes up, loses consciousness or comes around (but only if these events are implemented by the game).</p>
+<h3><a name="11.4.3">11.4.3 Working with the Attack task</a></h3>
+<p>The Attack task - if it is also running - monitors any fights involving your character. Typically it looks out for patterns like <strong>You kill (.*)</strong> and <strong>(.*) runs away!</strong></p>
+<p>It is also capable of monitoring other kinds of interaction - muggings for thief characters, healings for cleric characters, and so on.</p>
+<p>The task gathers information and passes it on to the Status task, so that the combined data can be displayed in one window. You'll notice that the Status task's fight counter (<strong>Fig</strong>), Kill counter (<strong>Kl</strong>) and so on are only updated when both the Status and Attack tasks are running.</p>
+<h3><a name="11.4.4">11.4.4 Status task counters</a></h3>
+<p>Sometimes you'll want to track the number of kills, or how much XP has been gained, in a certain zone of the world. The temporary counters (on the line that starts <strong>Temp</strong>) can do this.</p>
+<p>To start the temporary counters, or to reset them back to zero, use this command:</p>
+<pre><code>    ;resetcounter
+    ;rsc
+</code></pre>
+<h3><a name="11.4.5">11.4.5 Modifying Status task patterns</a></h3>
+<p>Once again, it must be stressed that Axmud cannot magically interpret text from all worlds. It must be taught how to recognise patterns. If you're using a pre-configured world, some of those patterns have already been added.</p>
+<p>Most of the patterns used by the Status and Attack tasks are stored in the current world profile. (See <a href="ch06.html">Section 6</a> for a brief tutorial about how to write your own patterns.)</p>
+<ul>
+<li>Open the world's edit window with the <strong>;editworld</strong> command</li>
+<li>Click on the <strong>Status</strong> tab to see patterns used by the Status task</li>
+<li>The task window's layout can be configured on <strong>Page 2</strong></li>
+<li>Click on the <strong>Attack</strong>, <strong>Fight</strong> and <strong>Interaction</strong> tabs to see patterns used by the Status task</li>
+</ul>
+<p>If you make any changes to these patterns, they won't be applied until you reset the Status and/or Attack tasks, for example:</p>
+<pre><code>    ;resettask status
+    ;rtt stat
+</code></pre>
+<p>By the way, some of the values collected by the Status task are stored in the current character profile.</p>
+<ul>
+<li>Open the character's edit window with the <strong>;editchar</strong> command</li>
+<li>Click on <strong>Settings &gt; Page 1</strong> to see the character's current XP</li>
+<li>Click on the <strong>Attacks</strong> tab to see information collected by the Attack task</li>
+</ul>
+<h2><a name="11.5">11.5 The Locator task</a></h2>
+<p>The Locator task interprets room statements (descriptions) received from the world.</p>
+<p>The information that can be collected varies from world to world, but it typically includes the room's title, verbose description, exit list and one or more lines describing the room's contents.</p>
+<p>Once collected, the interpreted data is available to other parts of the Axmud code, notably the automapper. The automapper relies on the Locator task; if the task is not running, the automapper cannot function.</p>
+<p>In fact, the Locator task is so important that Axmud provides a <em>Locator wizard</em>. The wizard teaches Axmud how to recognise room statements (with just a little help from you). See <a href="ch15.html#15.1">Section 15.1</a>.</p>
+<p>The Locator task can run with a task window or without one. When the window is open, it displays a summary of the interpreted data.</p>
+<h3><a name="11.5.1">11.5.1 The Locator task window</a></h3>
+<p>Here we can see a typical location in Dead Souls.</p>
+<p><img alt="Locator task window" src="img/ch11/locator_task.png"></p>
+<p>In Axmud terminology, a <em>room statement</em> is the complete description of the room received from the world, including the list of exits and the room's contents list. The Locator task tries to capture as much of this information as possible.</p>
+<p>The different parts of a room statement are called <em>components</em>. The red line at the top is the room's title. (Some worlds use a brief description, and this typically appears in red, instead.)</p>
+<p>Below that is the verbose description component. The whole description has been captured, but the task shortens it to fit the window.</p>
+<p>The room contains six objects. Tim and Wim are <em>non-player characters</em> (NPCs), so there is an asterisk ( * ) next to their names. If one of your scripts has marked them as killed, this will change to a hyphen ( - ).</p>
+<p>There are three identical wooden benches. You'll notice that the most important word - the noun - appears in a different colour. You'll also notice that the task saves space by listing multiple inanimate objects on the same line.</p>
+<h3><a name="11.5.2">11.5.2 Resetting the task</a></h3>
+<p>The Locator task keeps track of the world commands you send and tries to work out how many room statements to expect. If you send the following sequence of commands:</p>
+<pre><code>    n;n;n;n;n;n;n;n;n;n;n;n;n;n;n;n;n;n;n;n
+</code></pre>
+<p>...the task will be expecting twenty room statements. These statements will be counted off as they are received; you'll see a number in the window's title bar which will (hopefully) decrease until the task is expecting no more rooms.</p>
+<p>Occasionally the task will lose track. If you notice that the character has arrived at their destination but the task is still expecting five more rooms, then the task needs to be reset.</p>
+<pre><code>    ;resetlocatortask
+    ;rlc
+</code></pre>
+<p><img alt="Roadworks icon" src="img/ch11/icon_roadworks.png"> This main window button is a more convenient way of resetting the Locator task. You can also use the menu: click on <strong>Tasks &gt; Locator Task &gt; Reset task</strong>.</p>
+<h3><a name="11.5.3">11.5.3 The current dictionary</a></h3>
+<p>How does the Locator task know that Tim is a living, breathing NPC, but that the wooden bench is not?</p>
+<p>In a different context, Axmud could simply consult a standard English dictionary (or one in French, and so on). Unfortunately, most MUDs invent their own names for NPCs, and most player characters (PCs) at these worlds also have names that won't be found in any standard dictionary.</p>
+<p>Axmud uses its own dictionaries. Besides many other things, these dictionaries store lists of vocabulary.</p>
+<p>Since most worlds have their own unique names for everything, Axmud allocates each world profile its own dictionary that has the same name as the world. (This is not a fixed rule; worlds can share dictionaries, if required.)</p>
+<p>There are several ways to add new words to an Axmud dictionary. For example, to add Slartibartfast to the dictionary as an NPC, you can use the dictionary's edit window.</p>
+<ul>
+<li>Use the <strong>;editdictionary</strong> client command<ul>
+<li>If you don't specify a dictionary name, the current world's dictionary is used</li>
+</ul>
+</li>
+<li>Click on <strong>Nouns &gt; Page 1</strong><ul>
+<li>This page lists sentient beings. Non-sentient creatures are added in <strong>Page 2</strong></li>
+</ul>
+</li>
+<li>In the box labelled <strong>Word</strong>, add <strong>Slartibartfast</strong></li>
+<li>Click the <strong>Add</strong> button, then the <strong>OK</strong> button at the bottom of the window</li>
+</ul>
+<h2><a name="11.6">11.6 The Channels and Divert tasks</a></h2>
+<p>The Channels and Divert tasks intercept text that would normally be displayed in the main window, and redirect that text into the task's own windows.</p>
+<p>To use either task, you must tell Axmud what text you want to intercept.</p>
+<p>If you're using a pre-configured world, Axmud already knows how to intercept some common messages.  Axmud also knows how to separate those messages into channels - one channel for chat messages, another channel for tell messages, and so on.</p>
+<h3><a name="11.6.1">11.6.1 Adding channel patterns</a></h3>
+<p>Patterns can be added using a client command (see the help for <strong>;addchannelpattern</strong>) but in general it's easier to add patterns in the world's edit window.</p>
+<p>Suppose we want to intercept all shout messages like this:</p>
+<pre><code>   Bilbo shouts, 'I'm the greatest!'
+</code></pre>
+<p>...and to redirect the text into a channel called <strong>boasting</strong>. This is how to do it.</p>
+<ul>
+<li>Open the edit window with the <strong>;editworld</strong> command</li>
+<li>Click on <strong>Channels &gt; Page 1</strong> tab</li>
+<li>Enter a pattern like <strong>shouts</strong><ul>
+<li>A better pattern would be <strong>^\w+ shouts,</strong></li>
+</ul>
+</li>
+<li>Enter the channel name <strong>boasting</strong></li>
+<li>If you want the message to appear only in the task window, and not the main window too, check the box</li>
+<li>Click the <strong>Add</strong> button</li>
+<li>The change is applied to any Channels/Divert tasks as soon as you click the <strong>Save</strong> or <strong>OK</strong> buttons</li>
+</ul>
+<p>You might want to see messages like <strong>Gandalf tells you...</strong> and <strong>Bilbo tells you...</strong>, but not <strong>The shopkeeper tells you...</strong></p>
+<p>For this, you can specify <em>ignore patterns</em>. When some text is received from the world, if it matches a channel pattern AND an ignore pattern, it isn't redirected to the task window.</p>
+<ul>
+<li>Open the edit window with the <strong>;editworld</strong> command</li>
+<li>Click on the <strong>Channels &gt; Page 1</strong> tab</li>
+<li>Add the channel pattern <strong>tells you</strong>, as described above</li>
+<li>Now click on <strong>Page 2</strong></li>
+<li>Add the ignore pattern <strong>shopkeeper tells you</strong></li>
+<li>The changes are applied to any Channels/Divert tasks as soon as you click the <strong>Save</strong> or <strong>OK</strong> buttons</li>
+</ul>
+<h3><a name="11.6.2">11.6.2 The Channels task</a></h3>
+<p><img alt="Channels task window" src="img/ch11/channels_task.png"></p>
+<p>The Channels task is fairly self-explanatory.  When it first starts, tabs for three channels are created.  If you've specified any more channels, extra tabs are added as soon as they are needed.</p>
+<p>You can modify some aspects of the task's behaviour.</p>
+<ul>
+<li>Open the task's edit window with the <strong>;edittask channels</strong> command</li>
+<li>Click on the <strong>Parameters - Page 1</strong> tab</li>
+<li>In the <strong>Summary tab</strong> section, click the 'multi' button</li>
+<li>In the <strong>Display options</strong> section, click the button <strong>Tabs in the task window have a close button</strong></li>
+<li>Now click on <strong>Page 2</strong></li>
+<li>Modify the initial channel list</li>
+<li>When you're ready, click the <strong>Save</strong> or <strong>OK</strong> buttons</li>
+<li>Reset the task to apply your changes, using <strong>;resettask channels</strong></li>
+</ul>
+<p>That will modify the current task; in <a href="ch12.html">Section 12</a>, we'll discuss how to make those changes permanent.</p>
+<p><img alt="Channels task window" src="img/ch11/channels_task_2.png"></p>
+<h3><a name="11.6.3">11.6.3 The Divert task</a></h3>
+<p>The Divert task is the (much) older brother of the Channels task.</p>
+<p>Divert task windows doesn't have multiple tabs; instead, when some text is intercepted, the background colour changes temporarily.  In this case, it has turned yellow signifying that the text is in the <strong>tell</strong> channel.</p>
+<p><img alt="Divert task window" src="img/ch11/divert_task.png"></p>
+<p>Traditionally, the Divert task used just four channels - one for <strong>social</strong> messages, one for <strong>tell</strong> messages, a <strong>warning</strong> channel and a <strong>custom</strong> channel for everything else.</p>
+<p>The task can now use any channel.  The four channels above each have their own colour; any other channel you might create is displayed using a fifth colour (magenta by default).</p>
+<p>For your convenience, the window provides a command entry box. Any type of instruction, including client commands and speedwalk commands, can be typed in this box. This is useful if you're connected to a world, but busy doing something else; as long as the Divert window is visible on your desktop, you can reply to your friends when they talk to you.</p>
+<p>If you're connected to several worlds at the same time, you might also find the Watch task useful. Everything displayed in Channels, Chat and Divert task windows, in any session, is copied into any Watch task window that's open.</p>
+<h2><a name="11.7">11.7 The Chat task</a></h2>
+<p>The Chat task is an instant messenger service. It is an almost complete implementation of the MudMaster and zChat protocols (only encryption has not yet been implemented).</p>
+<p>Several popular MUD clients implement these protocols, so your friends don't need to be using Axmud; they only need to be using a compatible MUD client.</p>
+<p>There are some issues of security to consider, so we recommend you read the whole of this Section before using the task.</p>
+<p>You can get started by listening out for incoming calls.</p>
+<pre><code>    ;chatlisten
+    ;listen
+</code></pre>
+<p>When you receive an incoming call, you can either accept or decline it.</p>
+<p><img alt="Incoming chat popup" src="img/ch11/incoming_chat.png"></p>
+<p>For outgoing calls you'll need to know your friend's IP address and the port they're using for chat sessions.</p>
+<p>Calls can be made with either protocol. The zChat protocol is slightly more powerful, so let's use that.</p>
+<pre><code>    ;chatzcall 159.200.36.251 4050
+    ;zcall 159.200.36.251 4050
+</code></pre>
+<p>Most MUD clients use the port 4050, so it's normally safe to omit it.</p>
+<pre><code>    ;chatzcall 159.200.36.251
+    ;zcall 159.200.36.251
+</code></pre>
+<p>You can also call someone using the main window menu.</p>
+<ul>
+<li>To listen for incoming calls, click on <strong>Tasks &gt; Chat task &gt; Listen for incoming calls</strong></li>
+<li>To make an outgoing call, click on <strong>Tasks &gt; Chat task &gt; Chat using zChat...</strong></li>
+</ul>
+<h3><a name="11.7.1">11.7.1 Chat task commands</a></h3>
+<p>Once a connection is established, a task window will appear.</p>
+<p><img alt="Chat task window" src="img/ch11/chat_task.png"></p>
+<p>There are about thirty client commands used with the Chat task, all of which are typed in the main window. For a list of them, type:</p>
+<pre><code>    ;taskhelp chat
+    ;th chat
+</code></pre>
+<p>There is a <em>separate</em> list of commands used in the task's own window. All of these commands begin with the usual semicolon ( ; ) character. To see this list, type <strong>;help</strong> in the task window.</p>
+<h3><a name="11.7.2">11.7.2 Chatting and emoting</a></h3>
+<p>To chat with someone, just type into the window.</p>
+<p><img alt="Chat task window" src="img/ch11/chat_task_2.png"></p>
+<p>You can also send emotes. In the main window, you would type:</p>
+<pre><code>    ;emote grins
+</code></pre>
+<p>In the task window, any command that starts with a colon ( : ) is also treated as an emote:</p>
+<pre><code>    :grins
+</code></pre>
+<p>In either case, if Bob grinned at you, you would see something like this:</p>
+<p><img alt="Chat task window" src="img/ch11/chat_task_3.png"></p>
+<p>To hang up, just close the window. Alternatively, use the following command in the main window, which will hang up on everyone:</p>
+<pre><code>    ;chathangup
+    ;chu
+</code></pre>
+<h3><a name="11.7.3">11.7.3 Chat contacts</a></h3>
+<p>It would be rather inconvenient to type an IP address like <strong>159.200.36.251</strong> every time you wanted to chat with a friend.  Luckily, Axmud allows you to save your chat contacts so they're available at a click of a button.</p>
+<ul>
+<li>In the main window menu, click <strong>Edit &gt; Axmud preferences</strong></li>
+<li>When the preference window opens, click <strong>Chat &gt; Page 4</strong></li>
+<li>Add your friend's name, IP address and port, and click the <strong>Add</strong> button</li>
+</ul>
+<p>On <strong>Page 3</strong> of the same edit window you can choose the name, email address and icon which are sent to your friends, whenever you open a chat session with them.</p>
+<ul>
+<li>If you don't specify a name here, the current character's name is used</li>
+<li>Axmud provides several hundred icons to choose from.<ul>
+<li>Cycle through them with the <strong>&lt;&lt;</strong> and <strong>&gt;&gt;</strong> buttons</li>
+<li>If you're feeling lucky, try the <strong>Use random</strong> button</li>
+</ul>
+</li>
+<li>When you find an icon you like, click on <strong>Apply these changes now</strong><ul>
+<li>If you have any chat sessions open, your friends will be able to see the name/email/icon immediately</li>
+</ul>
+</li>
+</ul>
+<h3><a name="11.7.4">11.7.4 Firewalls</a></h3>
+<p>If you aren't able to establish a chat session with someone, it's probably because a firewall (yours or your friend's) is blocking the connection.</p>
+<p>Configuring a firewall is beyond the scope of this guide, but you can probably find the help that you need somewhere on the internet. Unblocking port 4050 will often solve the problem.</p>
+<h3><a name="11.7.5">11.7.5 Security considerations</a></h3>
+<p>The MudMaster and zChat protocols are by now rather ancient, so there are some risks associated with using Axmud's Chat task.</p>
+<p>Firstly, you should note that Axmud's authors are not experts in computer security. Using the Chat task <em>should</em> be safe, but there are no guarantees that a determined miscreant won't be able to find a way to abuse it.</p>
+<p>The Chat task is able to send and receive files (see the help for <strong>;chatsendfile</strong>), view what is happening in your friend's connections (see the help for <strong>;chatsnoop</strong>) and even to control those sessions remotely.</p>
+<p>None of those features are enabled by default; you must give explicit permission before receiving a file or allowing someone to snoop on your connection. Nevertheless, you should exercise caution before allowing someone you've never met to gain a foothold on your computer.</p>
+<h2><a name="11.8">11.8 The Compass task</a></h2>
+<p><img alt="Compass task window" src="img/ch11/compass_task.png"></p>
+<p>The Compass task hijacks your keyboard's keypad, allowing you to move around the world with a single keypress.</p>
+<ul>
+<li>On full-size keyboards, the keypad is usually on the right - the keys arranged to resemble a calculator</li>
+<li>On smaller keyboards - especially laptop keyboards - the keypad shares other keys which you need for typing commands<ul>
+<li>Users of small laptops won't find the Compass task very useful</li>
+</ul>
+</li>
+<li>The keypad is hijacked as soon as you start the task (by default)<ul>
+<li>To liberate the keypad, click the <strong>Disable</strong> button.</li>
+</ul>
+</li>
+<li>Use the keypad's 8 key to move north, the 2 key to move south, and so on</li>
+</ul>
+<p>Other keypad keys are also hijacked, for example:</p>
+<ul>
+<li>Use the plus ( + ) key to move up and the minus ( - ) key to move down</li>
+<li>Use the 5 key to send a <strong>look</strong> command to the world</li>
+<li>Use the divide key to send an <strong>inventory</strong> command to the world</li>
+</ul>
+<p>You can change the command sent when some keypad keys are pressed.</p>
+<ul>
+<li>In the combo (drop-down) box labelled <strong>Select keycode</strong>, select <strong>kp_divide</strong><ul>
+<li>It's short for for <em>keypad divide</em></li>
+</ul>
+</li>
+<li>In the box just below, type <strong>kill orc</strong> (and press RETURN)</li>
+<li>The new command is now sent every time you press the keypad divide ( / ) key</li>
+</ul>
+<p>In addition to using keypad keys, you can click the task window's buttons. These buttons work even when <strong>Disable</strong> is selected.</p>
+<ul>
+<li>Changing a key's command also changes the corresponding button</li>
+</ul>
+<hr>
+<p><a href="ch10.html">Previous</a> <a href="index.html">Index</a> <a href="ch12.html">Next</a></p>
+
+</body>
+</html>

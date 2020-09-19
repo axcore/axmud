@@ -1,0 +1,27 @@
+cmd / compressmodel           Reduces amount of memory used by the world model
+ 
+   Format:
+      ;cmd                    Performs the compression operation
+ 
+   Notes:
+      Axmud attemps to minimise the amount of memory used by the world model, so
+         that users who draw very large maps (many tens of thousands of rooms)
+         don't find that they've run out of memory. This also reduces the size
+         of the data file, which means that loading and saving large maps
+         happens much more quickly.
+         
+      This command checks every room and exit in the world model, and tries to
+         reduce the amount of memory used by each of them.
+      In practice, unless you have recently removed a lot of data from the
+         model, you probably won't notice any difference.
+      For example, verbose room descriptions are collected by default and stored
+         in the model, by default. If you remove them all, the amount of memory
+         used by the world model is reduced. If you then use this command, the
+         amount of memory is reduced again, because even an empty verbose
+         description takes up (a little) memory.
+         
+      (To remove verbose room descriptions, open the automapper window and,
+         from its menu, select 'Edit > Reset > Reset room data...')
+ 
+   User commands:
+      cmd / compmd / compressmodel

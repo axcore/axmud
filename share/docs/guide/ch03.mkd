@@ -1,0 +1,102 @@
+[Previous](ch02.html) [Index](index.html) [Next](ch04.html)
+
+---
+
+#3 Starting Axmud
+
+####Table of Contents
+
+* [3.1 Setup wizard](#3.1)
+* [3.2 Connections window](#3.2)
+    * [3.2.1 Pre-configured worlds](#3.2.1)
+    * [3.2.2 Other worlds](#3.2.2)
+    * [3.2.3 Connection Settings](#3.2.3)
+    * [3.2.4 Protocols](#3.2.4)
+    * [3.2.5 Optional settings](#3.2.5)
+    * [3.2.6 Connect](#3.2.6)
+
+---
+
+##<a name="3.1">3.1 Setup wizard</a>
+
+When you run Axmud for the first time you’ll see the setup wizard.
+
+![The Setup Wizard Window](img/ch03/setup_wizard.png)
+
+This window is self-explanatory. If you’re happy with standard settings, you can click the **Cancel** button at any time.
+
+##<a name="3.2">3.2 Connections window</a>
+
+The Connections window appears whenever you start Axmud.
+
+![The Connections Window](img/ch03/connect_window.png)
+
+###<a name="3.2.1">3.2.1 Pre-configured worlds</a>
+
+On the left you’ll see a list of pre-configured worlds.
+
+Pre-configured means that Axmud already knows a lot about the world, such as how to draw maps in the automapper and how to read the current character’s health points.
+
+If you’re very lucky, your favourite world will be one of those listed. Scroll through the list and click on the world to select it.
+
+Note that 'pre-configured' does not mean *this world requires no configuration at all*. The authors spent only a few hours, not hundreds of hours, at each world; there are invariably many features we didn't notice during that time.
+
+###<a name="3.2.2">3.2.2 Other worlds</a>
+
+![World icon](img/ch03/icon_other.png) Axmud also provides a much longer list of worlds – over six hundred of them, in the current  version – from which you can choose. Click on the world button to see this list.
+
+Axmud knows nothing about these worlds, besides how to connect to them. Features such as the automapper must be configured before they can be used.
+
+![Spanner icon](img/ch03/icon_config.png)   Click on the spanner (wrench) button to return to the pre-configured world list.
+
+![Sort icon](img/ch03/icon_sort_a.png) ![Sort icon](img/ch03/icon_sort_z.png) ![Sort icon](img/ch03/icon_sort_random.png) Click on these buttons to sort the list alphabetically or randomly.
+
+![Alert icon](img/ch03/icon_console_alert.png) If you see this orange button, Axmud has some system messages to display. Click the button to read them, if you want to.
+
+![18 icon](img/ch03/icon_adult.png) Some worlds, which contain explicit sexual themes, are marked as being suitable only for adults. The authors make no guarantees that this information is complete and correct.
+
+###<a name="3.2.3">3.2.3 Connection Settings</a>
+You can select a world from the list, or you can click ‘Create new world’ to create a new world profile.
+
+* The **world name** should begin with a letter, contain no spaces or punctuation, and be no longer than 16 characters
+    * Some reserved words such as 'automapper' and 'dictionary' can't be used
+    * You can create a temporary world profile by leaving the world name box empty. Temporary world profiles can't be saved, so they won't be available the next time you start Axmud
+* The **host address** should be a DNS address like *deathmud.com* or an IP address like *101.102.103.104*
+    * Both IPv4 and IPv6 addresses are recognised
+* The **port** is a number between 0-65535, usually something 5000 or 6666
+    * If you don’t specify a port number, Axmud will use the default value of 23
+
+A world’s connection details are usually displayed prominently on the its own website, if it has one. You can also make use of referrer websites like [mudstats.com](http://mudstats.com/), [The Mud Connector](https://www.mudconnect.com/index.html) or [mudlistings.com](https://mudlistings.com/).
+
+###<a name="3.2.4">3.2.4 Protocols</a>
+
+A *protocol* defines the ‘language’ that computers use to talk to each other.
+
+Axmud supports all three protocols currently in common use. The oldest protocol, **telnet**, offers no encryption at all.  **SSH** and **SSL** communications are encrypted.
+
+Unfortunately, most worlds accept only telnet connections. Some worlds accept SSL connections and a very small number of them accept SSH. If you’re using a pre-configured world, the **default protocol** is either SSH or SSL, if the world supports them, or telnet, if not.
+
+Switching between one protocol and the other usually means specifying a different port number. It’s not enough to simply click on the SSH or SSL buttons. Ask administrators at your favourite worlds if they support SSH/SSL and, if not, why not.
+
+###<a name="3.2.5">3.2.5 Optional settings</a>
+
+If you already have an account at the world, you can enter your username and password by clicking the **Add** button.
+
+If you’re using a pre-configured world, Axmud will automatically login if you add your username and password here.
+
+Even if you’re not using a pre-configured world, it’s still a good idea to enter these details now, because Axmud creates character profiles for each character you play.
+
+Some worlds have separate account and character names. If so, you should enter both.
+
+###<a name="3.2.6">3.2.6 Connect</a>
+
+When you’re ready, use one of the four buttons at the bottom of the window.
+
+* **Apply changes** stores any changes you’ve made without connecting to the world (both world and character profiles are updated)
+* **Reset world** resets any changes without connecting to the world
+* **Connect to world** stores any changes you've made and connects to the world
+* **Connect offline** stores any changes you've made, and opens a simulated connection to the world. This is useful for examining Axmud's stored data, browsing help files, admiring your maps and (in certain circumstances) testing scripts. In **Connect offline** mode, absolutely no data is sent to and from the world
+
+---
+
+[Previous](ch02.html) [Index](index.html) [Next](ch04.html)

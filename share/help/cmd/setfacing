@@ -1,0 +1,29 @@
+sfc / setfacing               Sets the direction the character is facing
+ 
+   Format:
+      ;sfc <dir>              Sets the direction
+      ;sfc                    Resets the direction
+ 
+   Notes:
+      A small number of worlds use relative directions like 'forward' and
+         'left'. At these worlds, exits in a room can change depending on the
+         way the character is facing (usually the direction in which the
+         character entered the current room).
+      If you specify <dir>, the automapper assumes the character is facing that
+         direction, and interprets the exits in a room accordingly. 
+      <dir> can be any of the following primary directions (standard or custom,
+         abbreviated or not):
+
+         north south east west northeast southeast northwest southwest
+
+      Whenever the character moves in one of those directions, the facing
+         direction is updated; it can also be updated with this command.
+      Using assisted moves also updates the facing direction; for example, if
+         you mov through an 'enter portal' exit that's been drawn on your map in
+         a northerly direction, the automapper will set the facing direction to
+         'north'.
+         
+      See also the help for ';resetlocatortask'.
+ 
+   User commands:
+      sfc / facing / setfacing

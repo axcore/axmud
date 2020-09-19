@@ -1,0 +1,196 @@
+[Previous](ch01.html) [Index](index.html) [Next](ch03.html)
+
+---
+
+#2 - Your first script
+
+####Table of Contents
+
+* [2.1 Hello, world!](#2.1)
+* [2.2 Running the script](#2.2)
+* [2.3 Other scripts](#2.3)
+* [2.4 Axmud's data directory](#2.4)
+* [2.5 The Launch task](#2.5)
+* [2.6 Running a script as a task](#2.6)
+* [2.7 Editing a script](#2.7)
+
+---
+
+##<a name="2.1">2.1 Hello, world!</a>
+
+Traditionally, programming tutorials begin with a script that displays a simple greeting.
+
+Here is your first Axbasic script. You don't need to type anything yet - just keep reading for now.
+
+        REM A trivial Axbasic script
+        PRINT "Hello, world!"
+        END
+
+The script contains three lines. Let's examine them one by one.
+
+        REM A trivial Axbasic script
+
+REM is short for *remark*. When running the script, Axmud ignores the whole line, so you can type anything you like after the REM.
+
+        PRINT "Hello, world!"
+
+In the early days of computing, computers did not have monitors. Output was actually printed on a roll of paper, not displayed on a screen.
+
+In Axbasic, PRINT is an instruction to display something in Axmud's main window. It doesn't send anything to your printer.
+
+The message must be enclosed within double quotes. If you miss out the quotes, when you try to run the script you'll see something other than what you were expecting.
+
+        END
+
+END is, unsurprisingly, an instruction to stop running the script.
+
+Every Axbasic script *must* contain exactly one END - no more, no less.
+
+If you were to add anything after the END - another PRINT, perhaps - it wouldn't be executed. You wouldn't even see an error message.
+
+##<a name="2.2">2.2 Running the script</a>
+
+Above we said that you didn't need to type anything. That's because Axmud comes with three Axbasic scripts, including the one we've just been discussing.
+
+Let's run the script now. The script is called **hello**, so type this client command:
+
+        ;runscript hello
+        ;rs hello
+
+The output will look like this:
+
+        AXBASIC: Executing 'hello'
+        Hello world!
+        AXBASIC: Execution of 'hello' complete
+
+In a moment we'll modify the script to display a different message.
+
+By the way, you can use a so-called *script command* to run an Axbasic script. Script commands, if they are enabled, start with an ampersand character followed by the name of the script:
+
+        &hello
+
+##<a name="2.3">2.3 Other scripts</a>
+
+The second script is called **test**.
+
+        REM Write your own Axbasic code here
+        END
+
+Try it for yourself:
+
+        ;runscript test
+        ;rs test
+
+The output will look like this:
+
+        AXBASIC: Executing 'test'
+        AXBASIC: Execution of 'test' complete
+
+As you can see, this script literally does nothing. Execution of the script starts and then stops.
+
+Why do you need a script that does nothing? Well, in a moment we're going to start editing the scripts ourselves.
+
+You can use the **test** script to try new ideas, or to test lines of code. When you're ready to execute them, you *could* type this long command:
+
+        ;runscript test
+        ;rs test
+
+But, instead, you can miss out the name of the script altogether. When you don't specify a name, Axmud executes the **test** script.
+
+        ;runscript
+        ;rs
+
+The third script is called **wumpus**. It's a copy of the 1972 classic *Hunt the Wumpus*, one of the first adventure games ever written.
+
+It’s not much fun to play, but it proves that Axmud really *can* run BASIC programmes written over the span of many decades.
+
+        ;runscript wumpus
+        ;rs wumpus
+
+If you decide, after several moments of play, that *Hunt the Wumpus* isn't quite as much fun as *Grand Theft Auto*, you can halt the script by clicking the **Cancel** button in one of the **INPUT** windows that appear.
+
+##<a name="2.4">2.4 Axmud's data directory</a>
+
+Axmud stores all of its data files in its own data *directory*. (MS Windows users prefer to call it a *folder*.)
+
+Inside the data directory there's another directory called **scripts**, and this is where you can store all your Axbasic scripts.
+
+That directory can be easy or difficult to find, depending on the system you're using. The foolproof way is to use the following client command:
+
+        ;listdirectory
+        ;ldr
+
+The files themselves must end with the extension **.bas** (short for BASIC, of course). We've already mentioned that Axmud comes with three scripts; the files are called:
+
+        hello.bas
+        test.bas
+        wumpus.bas
+
+Axmud won't interfere with any of the files in this directory, so you can add, edit and delete scripts as you please.
+
+When you run a script with this command:
+
+        ;runscript something
+
+Axmud will look in the directory for a file called **something.bas**. If the file doesn't exist, the script won't run. (Later we'll discuss how to you can store scripts in different directories, if you need to.)
+
+##<a name="2.5">2.5 The Launch task</a>
+
+Of course, you're free at any time to open a file browser, navigate through several directories, find the script you want to edit and then open it in a text editor. But there's a simpler way.
+
+Axmud comes with a task, called the Launch task, that makes things easy. Use this client command to open it:
+
+        ;starttask launch
+        ;st launch
+
+The task opens a window which lists all of your Axbasic scripts.
+
+You can run a script by clicking on **hello.bas**, then clicking the **Run script** button.
+
+##<a name="2.6">2.6 Running a script as a task</a>
+
+Axbasic scripts tend to fall into one of two types.
+
+The first type of script is one that runs very quickly. It starts, does something, and then stops.
+
+During this time, Axmud can't do anything else - it can't react to the commands you type, or communicate with the world - but that doesn't matter, because the script takes only a tiny fraction of a second to run.
+
+The **hello** script is one such script.
+
+The second type of script takes several minutes (or hours, or days) to run. It might even run continuously.
+
+Axmud tasks are designed to do exactly that - run continuously without interrupting everything else. If you click the **Run as task** button, Axmud will create a task especially for the script you want to run.
+
+The **wumpus** script is a game that takes several minutes to play, so it should definitely be run as a task. By the way, you can also run a script as a task using this client command:
+
+        ;runscripttask wumpus
+        ;rst wumpus
+
+##<a name="2.7">2.7 Editing a script</a>
+
+Let's modify the **hello** script to display a different message. (If you don't want to modify it, you can create a brand new script with the **New script** button, and modify that instead.)
+
+In the Launch task window, click on **hello.bas** and then click **Edit script**.
+
+Try editing the script to show a different message. For example, you might change it to:
+
+        "Hello, mother!"
+
+You can make the script display as many messages as you want. You can also add as many comments as you want.
+
+For example, your edited script might look something like this:
+
+        REM A trivial Axbasic script
+        PRINT "Hello, mother!"
+        PRINT "Where is my cat?"
+        REM I can add as many comments as I want
+        PRINT "Oh, never mind, I found him"
+        END
+
+When you've finished editing, don't forget to save the file. (CTRL + S works in most text editors.)
+
+As soon as you've saved the file, you can run the script. If you can get it to run without an error message, you're ready to move on to the next Section.
+
+---
+
+[Previous](ch01.html) [Index](index.html) [Next](ch03.html)

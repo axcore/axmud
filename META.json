@@ -1,0 +1,92 @@
+{
+   "abstract" : "unknown",
+   "author" : [
+      "A S Lewis <aslewis@cpan.org>"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "ExtUtils::MakeMaker version 7.34, CPAN::Meta::Converter version 2.150010",
+   "license" : [
+      "gpl_3"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "Games-Axmud",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "inc",
+         "share/plugins"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.52",
+            "File::ShareDir::Install" : "0",
+            "Path::Tiny" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Archive::Extract" : "0",
+            "Archive::Tar" : "0",
+            "Archive::Zip" : "0",
+            "Compress::Zlib" : "0",
+            "Encode" : "0",
+            "Fcntl" : "0",
+            "File::Basename" : "0",
+            "File::Copy" : "0",
+            "File::Copy::Recursive" : "0",
+            "File::Fetch" : "0",
+            "File::Find" : "0",
+            "File::HomeDir" : "0",
+            "File::Path" : "0",
+            "File::ShareDir" : "0",
+            "File::ShareDir::Install" : "0",
+            "Glib" : "0",
+            "GooCanvas2" : "0",
+            "Gtk3" : "0",
+            "HTTP::Tiny" : "0",
+            "IO::Socket::INET" : "0",
+            "IO::Socket::INET6" : "0",
+            "IPC::Run" : "0",
+            "JSON" : "0",
+            "Math::Round" : "0",
+            "Math::Trig" : "0",
+            "Module::Load" : "0",
+            "Net::OpenSSH" : "0",
+            "POSIX" : "0",
+            "Regexp::IPv6" : "0",
+            "Safe" : "0",
+            "Scalar::Util" : "0",
+            "Socket" : "0",
+            "Storable" : "0",
+            "Symbol" : "0",
+            "Time::HiRes" : "0",
+            "Time::Piece" : "0",
+            "perl" : "5.008"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/axcore/axmud/issues"
+      },
+      "homepage" : "https://axmud.sourceforge.io/",
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/axcore/axmud.git",
+         "web" : "https://github.com/axcore/axmud"
+      }
+   },
+   "version" : "v1.3.0",
+   "x_serialization_backend" : "JSON::PP version 4.02"
+}

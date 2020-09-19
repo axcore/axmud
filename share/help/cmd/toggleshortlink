@@ -1,0 +1,15 @@
+tsl / toggleshortlink         Toggles detection of short weblinks
+ 
+   Format:
+      ;tsl                    Toggles detection of short weblinks
+      
+   Notes:
+      Many parts of the Axmud code, particularly the code dealing with text
+         received from the world, auto-detects weblinks like
+         'http://deathmud.com' and makes them clickable.
+      Axmud can also detect short weblinks like 'deathmud.com'. Dection of
+         short links is turned on by default, can be turned off with this
+         command.
+      
+   User commands:
+      tsl / togglelink / toggleshortlink

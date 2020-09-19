@@ -1,0 +1,8 @@
+ELSEIF condition THEN
+
+   Synopsis:
+      Used in an IF statement or an IF..END IF code block
+
+   Notes:
+      See the help for IF for a full explanation.
+      ELSEIF behaves exactly like ELSE IF.

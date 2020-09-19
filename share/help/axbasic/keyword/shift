@@ -1,0 +1,31 @@
+SHIFT array-name [ , variable-name ]
+
+   Synopsis:
+      Removes the first value in an array
+
+   Notes:
+      This statement only works on one-dimensional arrays (stacks). If you use
+         it with a multi-dimensional array, you'll get an error.
+
+      Removes the first cell in the array, reducing (for example) an array of
+         ten values to an array of nine.
+      If the optional scalar variable name is specified, the value is assigned
+         to it. Otherwise, the value is discarded. Both the array and scalar
+         variables must be of the same type (both strings, or both numeric).         
+      If you try to SHIFT an empty array, the value assigned to the scalar
+         variable will be either an empty string, or 0.
+
+   Compatibility:
+      Since Axbasic v1.4
+      
+   Examples:
+      DATA "foo", "bar", "baz"
+      
+      DIM stuff$ (3)
+      FOR a = 1 TO 3
+         READ stuff$ (a)
+      NEXT a
+
+      ! Remove and display "foo"
+      SHIFT stuff$, name$
+      PRINT name$

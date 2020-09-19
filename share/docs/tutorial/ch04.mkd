@@ -1,0 +1,255 @@
+[Previous](ch03.html) [Index](index.html) [Next](ch05.html)
+
+---
+
+#4 - Interacting With The World
+
+####Table of Contents
+
+* [4.1 World commands](#4.1)
+* [4.2 Movement commands](#4.2)
+* [4.3 Client commands](#4.3)
+* [4.4 Taking a break](#4.4)
+* [4.5 Waiting for triggers](#4.5)
+* [4.6 Patterns](#4.6)
+* [4.7 A practical example](#4.7)
+* [4.8 Missions](#4.8)
+* [4.9 More waiting statements](#4.9)
+
+---
+
+##<a name="4.1">4.1 World commands</a>
+
+Axmud is a MUD client, so throughout this tutorial we're going to be focusing on scripts that can do something useful in a MUD. In this Section, we're going to write a script to solve a simple quest.
+
+In Axmud terminology, a command sent to the world is called a *world command*. In Axbasic, we send a world command using a SEND statement.
+
+The following script sends three world commands, one after the other (without a pause between them).
+
+        SEND "north"
+        SEND "east"
+        SEND "kill orc"
+        END
+
+You'll notice that a SEND statement looks just like a PRINT statement. After the keyword, we need a string, and a string is always enclosed by double quotes.
+
+Of course, you could SEND a number instead of a string, if you wanted to.
+
+        SEND 100
+
+##<a name="4.2">4.2 Movement commands</a>
+
+Axmud has an automapper, and that automapper tries to track your character as it moves around the world.
+
+Axmud is actually pretty good at distinguishing movement commands from other kinds of world command, but in case you run into any problems, you can use a MOVE statement.
+
+        MOVE "north"
+        MOVE "east"
+        SEND "kill orc"
+        END
+
+MOVE tells Axmud that the command is definitely some kind of movement command. SEND is ambiguous - Axmud will try to work out for itself whether the command is a movement command, or not.
+
+The opposite of MOVE is RELAY. A RELAY statement tells Axmud that the command is definitely *not* a movement command.
+
+Here's an obvious example. Certain MUDs which will ask you for clarification, for example which door you'd like to **unlock**. If the MUD is expecting a response like **north**, then you should use RELAY. A RELAY statement tells Axmud that your character hasn't actually moved northwards.
+
+        SEND "open door"
+        ! The world asks "which door?"
+        RELAY "north"
+
+##<a name="4.3">4.3 Client commands</a>
+
+Axbasic offers well over a hundred keywords, and they capable of doing all sorts of things, but they can't do everything.
+
+Client commands, on the other hand, really *can* do anything. In Axmud's main window, you might type a client command like this:
+
+        ;sound on
+
+In Axbasic you can use a CLIENT statement.
+
+        CLIENT "sound on"
+
+There are two things to note here:
+
+* You don't need to include the semicolon in the string
+    * If you use CLIENT ";sound on", you'll see an error
+* If the client command succeeds, you won't see a confirmation message in the main window
+    * But you will see a message if there's an error
+
+Client commands can be abbreviated. For example, having turned on sound, you can play a random sound effect using either of the following:
+
+        ;playsoundeffect
+        ;pse
+
+A CLIENT statement can use the full client command or an abbreviation. In general, it's better to use the full command, not just because your script will be easier to understand, but because it's possible to modify the abbreviations (and doing so would break your script).
+
+        ! This is not a good idea
+        CLIENT "pse"
+        ! Do this instead
+        CLIENT "playsoundeffect"
+
+##<a name="4.4">4.4 Taking a break</a>
+
+An Axbasic script is normally run from beginning to end without a break. However, if you run the script as a task it's possible to add some pauses.
+
+One way to add a pause is with a PAUSE statement. The keyword is followed by the time to wait, in seconds.
+
+        PRINT "Ready!"
+        PRINT "Steady!"
+        ! Wait for 3 seconds
+        PAUSE 3
+        PRINT "Go!"
+        END
+
+If you've forgotten, this is how to run the script as a task:
+
+        ;runscripttask
+
+If you *don't* run the script as a task, no pause will take place and no error message will be displayed. The words "ready", "steady" and "go" will appear in the main window almost simultaneously.
+
+By the way, the SLEEP statement is identical to PAUSE. Both of these line behave in exactly the same way.
+
+        PAUSE 3
+        SLEEP 3
+
+##<a name="4.5">4.5 Waiting for triggers</a>
+
+Often it's not possible to know, in advance, how long your script will need to PAUSE. In that case, a better approach is to use a *trigger*. A trigger waits for the world to send some text that matches a pattern. When some matching text is received, we say that the trigger *fires*.
+
+Without triggers, we would have to write a script like this:
+
+        SEND "knock door"
+        WAIT 3
+        SEND "kill orc"
+        END
+
+The script won't work if the orc is slow in opening the door. A better way is to wait for the world to send a message like this:
+
+        The door opens and an angry orc steps out from behind it!
+
+In Axbasic, the WAITTRIG statement (short for *wait for a trigger*) creates a temporary trigger and pauses execution of the script until the trigger fires. WAITTRIG is another example of a statement that won't work if the script isn't run as a task. Execution won't pause and no trigger will be created.
+
+The pattern we'll use is the word **opens**. The trigger fires when the world sends any text containing that word.
+
+        SEND "knock door"
+        WAITTRIG "opens"
+        SEND "kill orc"
+        END
+
+Of course, there's a small possibility that the orc won't open the door at all. Rather than allowing your script to wait indefinitely, you can specify a timeout in seconds.
+
+        WAITTRIG "opens", 60
+
+If sixty seconds pass and no-one has opened the door, execution of the script resumes. If the trigger fires before that time, execution of the script resumes immediately.
+
+The comma between "opens" and 60 is compulsory. If you forget it, you'll see an error message.
+
+##<a name="4.6">4.6 Patterns</a>
+
+By the way, when we talk about a pattern, we are actually talking about a *regular expression* (also called a *regex*). Regular expressions are an extremely powerful and flexible way of matching text.
+
+All Axbasic script writers need to know at the least the basics of regular expressions. You'll find a handy (and short) tutorial in the [Axmud Guide](../guide/index.html).
+
+##<a name="4.7">4.7 A practical example</a>
+
+Let's put it all together with a script that solves a simple quest.
+
+If you like, you can read the example below to see how it works, or you can try to the script yourself, comparing it against the example when you're ready.
+
+The solution to the quest is:
+
+* Go north, east, then north again
+* Attack the orc
+* Wait for the fight to finish
+* Play a suitable sound effect, and wait enough time for it to finish
+* Loot the corpse
+* Unlock the door using the looted key
+* Grab the treasure, and go back the way you came
+* Display a confirmation message
+
+And here is the finished script! Don't forget that it needs to be run as a task.
+
+        ! Solve the orc treasure quest
+        MOVE "north"
+        MOVE "east"
+        MOVE "north"
+        SEND "kill orc"
+        ! Wait for 'the orc is dead' message
+        ! Use a timeout, in case the orc runs away
+        WAITTRIG "dead", 60
+        ! Orc is either dead or not here any more
+        CLIENT "playsoundeffect cheer"
+        PAUSE 5
+        SEND "loot corpse"
+        SEND "unlock door with key"
+        MOVE "north"
+        SEND "get treasure"
+        ! Go back the way you came
+        MOVE "south"
+        MOVE "south"
+        MOVE "west"
+        MOVE "south"
+        PRINT "Finished!"
+        END
+
+##<a name="4.8">4.8 Missions</a>
+
+By the way, a script as simple as the one above can just as easily be written as a *mission*.
+
+Axmud missions are scripts that require absolutely no programming knowledge. See the [Axmud Guide](../guide/index.html) for more details about how to write them.
+
+##<a name="4.9">4.9 More waiting statements</a>
+
+WAITTRIG waits for a trigger to fire, but there are a number of statements that wait for something else. Many of them depend on a properly-configured Status task that's running right now.
+
+The Status task recognises four states of being for the current character: **"alive"**, **"sleep"**, **"pass_out"** and **"dead"**. Whenever the character is not asleep, passed out or dead, they're considered alive.
+
+WAITALIVE, WAITSLEEP, WAITPASSOUT and WAITDEAD pause the script until the character's status changes. (If the character is already alive, sleep, passed out or dead, the script resumes immediately).
+
+Each of those statements can be used with a timeout, measured in seconds.
+
+        ! Wait for the character to fall asleep
+        WAITSLEEP
+        ! Wait, but give up after 60 seconds
+        WAITSLEEP 60
+
+Most worlds keep track of the character's health points. You can wait for your character's health to recover to a certain minimum level before resuming execution.
+
+        ! Wait for HP to recover to at least 50% of maximum
+        WAITHP 50
+
+At worlds that implement them, you can wait for energy points, guild points, mana (magic) points and/or social points with WAITEP, WAITGP, WAITMP and WAITSP. You can wait for the character's experience points (XP) with the WAITXP, WAITNEXTXP and WAITTOTALXP statements.
+
+All of those statements can be used with a timeout, if you want.
+
+        ! Wait to recover, but don't wait
+        ! more than five minutes
+        WAITHP 50, 300
+
+When your character is moving around the world, you can wait for them to arrive using a WAITARRIVE statement. (This statement relies on the Locator task.)
+
+Here are two examples, the second of which uses a timeout.
+
+        MOVE "north"
+        WAITARRIVE
+
+        MOVE "squeeze through curtains"
+        WAITARRIVE 5
+
+WAITSCRIPT starts a new Axbasic script, and waits for it to finish running. The next script is run as a task.
+
+        WAITSCRIPT "otherscript"
+
+WAITTASK starts a new task, and waits for it to stop running.
+
+        WAITTASK "compass"
+
+Some tasks are designed to be *active* or *disactivated*. If you've written such a task, you can pause the Axbasic script until the task is active or disactivated.
+
+        WAITACTIVE "mytask"
+        WAITNOTACTIVE "mytask"
+
+---
+
+[Previous](ch03.html) [Index](index.html) [Next](ch05.html)

@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch13</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch12.html">Previous</a> <a href="index.html">Index</a> <a href="ch14.html">Next</a></p>
+<hr>
+<h1>13 Axmud plugins</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#13.1">13.1 The 'plugins' directory</a></li>
+<li><a href="#13.2">13.2 Loading plugins</a></li>
+<li><a href="#13.3">13.3 Plugin headers</a></li>
+<li><a href="#13.4">13.4 Disabling plugins</a></li>
+<li><a href="#13.5">13.5 Writing plugins</a><ul>
+<li><a href="#13.5.1">13.5.1 Adding client commands</a></li>
+<li><a href="#13.5.2">13.5.2 Adding tasks</a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>Axmud plugins are Perl scripts that can modify almost any aspect of Axmud's functionality. Besides writing new tasks, you can add new client commands, modify the main window menu, create new edit windows and much more besides.</p>
+<p>The Axmud manual (when it is written) will contain a full description of how to write plugins. This Section contains the briefest possible introduction for experienced Perl users who don't want to wait.</p>
+<h2><a name="13.1">13.1 The 'plugins' directory</a></h2>
+<p>Axmud's data directory (folder), which can be found in your home directory, contains a <strong>plugins</strong> sub-directory. Axmud will not interfere with this directory, so we suggest that you store your plugins there.</p>
+<p>The <strong>plugins</strong> sub-directory contains its own <strong>help</strong> directory. If you write new commands and new tasks, you should write help files, too. If Axmud can't find a help file in its own directories, it will try looking in <strong>../axmud-data/plugins/help</strong>.</p>
+<p>The Axmud package comes with some standard plugins; they are not loaded automatically, and can be found in the <strong>../axmud/share/plugins/</strong> directory.</p>
+<h2><a name="13.2">13.2 Loading plugins</a></h2>
+<p>Plugins can be loaded when Axmud starts, or on demand.</p>
+<p>This is how to add an initial plugin - one that is loaded whenever Axmud starts:</p>
+<ul>
+<li>Open the preferences window using <strong>;editclient</strong></li>
+<li>When the window is open, click on <strong>Plugins &gt; Page 2</strong></li>
+<li>There are two <strong>Add</strong> buttons for adding initial plugins<ul>
+<li><strong>Add standard</strong> opens the directory where Axmud's standard plugins are stored</li>
+<li><strong>Add custom</strong> opens the directory where your own plugins should be stored. If you haven't written any plugins, this directory will be empty</li>
+</ul>
+</li>
+<li>Select a plugin (ending with <strong>.pm</strong>), and click the <strong>OK</strong> button to add it</li>
+</ul>
+<p>If you want to load a plugin immediately, do this:</p>
+<ul>
+<li>In the same preference window, click on <strong>Plugins &gt; Page 1</strong></li>
+<li>Click the <strong>Add</strong> button to load a plugin that starts whenever Axmud starts</li>
+<li>Alternatively, click on <strong>Plugins &gt; Page 1</strong> to add a plugin on demand</li>
+<li>As before, there are two <strong>Load</strong> buttons for loading plugins</li>
+</ul>
+<h2><a name="13.3">13.3 Plugin headers</a></h2>
+<p>All Axmud plugins are Perl 5 modules (files ending <strong>.pm</strong>).</p>
+<p>Each plugin file must begin with a header in a fixed format. If the header doesn't exist or is in the wrong format, the plugin is not loaded.</p>
+<pre><code>    #!/usr/bin/perl
+    package NAME;
+    #: Version: VERSION
+    #: Description: ONE LINE DESCRIPTION
+    #: Author: AUTHOR'S NAME
+    #: Copyright: COPYRIGHT MESSAGE
+    #: Require: AXMUD VERSION
+    #: Init: STRING
+</code></pre>
+<p>Some parts of the header are compulsory, some are optional, and there is flexibility in the order of the lines.</p>
+<ul>
+<li>All headers must begin with the Perl shebang</li>
+<li>After the first line, there can be any number of empty lines, or lines containing ordinary comments</li>
+<li>The package line must appear before the <strong>Version</strong>, <strong>Description</strong>, <strong>Author</strong>, <strong>Copyright</strong>, <strong>Require</strong> and <strong>Init</strong> lines<ul>
+<li>The package <strong>NAME</strong> must not be the name of a plugin that's already been loaded, or the word <strong>axmud</strong> itself</li>
+</ul>
+</li>
+<li>Everything after the package line can appear in any order<ul>
+<li>Duplicate lines replace an earlier one, for example <strong>#: Author: Terry Pratchett</strong> replaces an earlier <strong>#: Author: JRR Tolkien</strong></li>
+</ul>
+</li>
+<li>The <strong>Version</strong> and <strong>Description</strong> lines are compulsory; the plugin won't load without them<ul>
+<li><strong>VERSION</strong> should be in the form <strong>v1.0.0</strong> / <strong>V1.0.0</strong> / <strong>1.0.0</strong>. If <strong>VERSION</strong> is not in this form, the plugin is not loaded</li>
+</ul>
+</li>
+<li>The <strong>Author</strong>, <strong>Copyright</strong>, <strong>Require</strong> and <strong>Init</strong> lines are optional<ul>
+<li><strong>Init</strong> lines specify if the plugin should start enabled or disabled when it is loaded</li>
+<li><strong>STRING</strong> should be one of the following words: <strong>enable</strong>, <strong>disable</strong>, <strong>enabled</strong> or <strong>disabled</strong></li>
+</ul>
+</li>
+</ul>
+<h2><a name="13.4">13.4 Disabling plugins</a></h2>
+<p>Once loaded, plugins cannot be un-loaded (but you can, of course, remove a plugin from the list of initial plugins that's loaded every time Axmud starts).</p>
+<p>However, plugins can be disabled (to a certain extent) using the <strong>Disable</strong> button in the client preference window's <strong>Plugins &gt; Page 1</strong> tab. When a plugin is disabled, any tasks it created are halted and any client commands it created will no longer work.</p>
+<p>A disabled plugin can be re-enabled at any time with the <strong>Enable</strong> button on the same page. Tasks that were halted when the plugin was disabled will not magically re-start themselves; but you can start them manually in the normal way.</p>
+<h2><a name="13.5">13.5 Writing plugins</a></h2>
+<p>(This Section assumes you are familiar with Perl object-orientated programming.)</p>
+<p>The main Axmud object is an instance of <strong>Games::Axmud::Client</strong>, stored in the global variable</p>
+<pre><code>    $axmud::CLIENT
+</code></pre>
+<p>Note that Axmud uses CAPITAL LETTERS for the small number of global variables, and camel-class nomenclature for everything else.</p>
+<p>Sessions are an instance of <strong>Games::Axmud::Session</strong>, and handle a connection to  a single world.</p>
+<p>If all sessions share a main window, retrieving the current session - the one that's currently visibly in that main window - is easy:</p>
+<pre><code>    $axmud::CLIENT-&gt;currentSession
+</code></pre>
+<p>If each session has its own main window, things are a little trickier. However, any task or client command you write already knows which session it belongs to.</p>
+<p>Tasks store their session in a standard instance variable (IV):</p>
+<pre><code>    $self-&gt;session
+</code></pre>
+<p>If you write a new client command, the bulk of the code will be in the <strong>-&gt;do</strong> function. The session is passed an argument whenever that function is called, so you can simply use:</p>
+<pre><code>    $session
+</code></pre>
+<p>In the Axmud code, all objects inherit a <em>generic object</em>, <strong>Games::Axmud</strong> (found in <strong>../lib/Games/Axmud.pm</strong>).</p>
+<p>This generic object provides a number of methods available to everything. These methods are mostly used for retrieving or modifying values stored as instance variables.</p>
+<p>For example, the following call will replace the value of a scalar, list or hash instance variable:</p>
+<pre><code>    $self-&gt;ivPoke(IV_NAME, VALUE, VALUE, VALUE...)
+</code></pre>
+<p>This call will examine a hash instance variable, and retrieve the value stored as a key-value pair:</p>
+<pre><code>    $value = $self-&gt;ivShow(IV_NAME, KEY)
+</code></pre>
+<p>Plugins are mostly used to add new client commands, tasks and so on. This is done using calls to methods in the <strong>Games::Axmud::Client</strong> object.</p>
+<h3><a name="13.5.1">13.5.1 Adding client commands</a></h3>
+<p>All client commands inherit from a generic command object, <strong>Games::Axmud::Generic::Cmd</strong> (found in <strong>../lib/Games/Axmud/Generic.pm</strong>). This object documents a command's IVs.</p>
+<p>The code for individual client commands are found in <strong>../lib/Games/Axmud/Cmd.pm</strong>.</p>
+<p>If you write new client commands, they should be in the form</p>
+<pre><code>    Games::Axmud::Cmd::Plugin::MyCommand
+</code></pre>
+<p>Once written, the plugin must inform Axmud of the new client command's existence:</p>
+<pre><code>    $axmud::CLIENT-&gt;addPluginCmds(
+        $pluginName,
+            'MyCommand',
+            'OtherCommand',
+            ...
+    );
+</code></pre>
+<p>In the example above, <strong>MyCommand</strong> must match the last part of the client command package name, <strong>Games::Axmud::Cmd::Plugin::MyCommand</strong>.</p>
+<h3><a name="13.5.2">13.5.2 Adding tasks</a></h3>
+<p>All tasks inherit from a generic task object, <strong>Games::Axmud::Generic::Task</strong> (found in <strong>../lib/Games/Axmud/Generic.pm</strong>). This object documents a task's IVs.</p>
+<p>The code for individual tasks are found in <strong>../lib/Games/Axmud/Task.pm</strong>.</p>
+<p>If you write new tasks, they should be in the form</p>
+<pre><code>    Games::Axmud::Task::MyTask
+</code></pre>
+<p>Note that there is no need to add the word <strong>Plugin</strong>, as there is for client commands.</p>
+<p>Once written, the plugin must inform Axmud of the new task's existence:</p>
+<pre><code>    $axmud::CLIENT-&gt;addPluginTasks(
+        $pluginName,
+            $taskPackage,
+                $taskFormalName,
+                $referenceToTaskLabelList,
+            $taskPackage2,
+                $taskFormalName2,
+                $referenceToTaskLabelList2,
+            # ...
+    );
+</code></pre>
+<hr>
+<p><a href="ch12.html">Previous</a> <a href="index.html">Index</a> <a href="ch14.html">Next</a></p>
+
+</body>
+</html>

@@ -1,0 +1,181 @@
+This is the Axmud data directory (folder).
+
+It would be wise to make backup copies of the whole directory from time to time.
+   You can either do this manually, or by using a client command:
+
+   ;backupdata
+   ;restoredata
+   ;autobackup
+
+Read this file before modifying the contents of the data directory. It goes
+   without saying that you SHOULD NOT edit any file WHILE AXMUD IS RUNNING.
+
+It's possible to manully edit the config file ('axmud.conf' or 'axmud.cfg'), but
+   in general, you shouldn't so unless you know what you are doing.
+   
+The data directory contains the following sub-directories:
+
+   ../buffers
+
+      Axmud uses buffers to store text received from the world, and the commands
+         that you type. The contents of these buffers can saved, and later
+         loaded back into memory and 'replayed'.
+      There are a number of client commands which handle Axmud buffers, for
+         example:
+         
+         ;savebuffer
+         ;loadbuffer
+         ;replaybuffer
+         ;haltreplay
+
+      It is SAFE to modify the files in this sub-directory.
+
+   ../custom
+
+      This sub-directory is exclusively for your personal use; Axmud won't
+         modify its contents.
+      You can use the sub-directory for anything you want; for example
+
+         - storing backup copies of your maps
+         - storing quest solutions that you've written
+         - storing photos that your friends have sent you
+
+      Plugins and Axbasic scripts should NOT modify this directory; they should
+         use ../store instead.
+      
+   ../data
+
+      Axmud stores its data files in this sub-directory. DO NOT MODIFY THE
+         CONTENTS OF THIS DIRECTORY.
+
+   ../data/temp
+
+      Axmud stores its own temporary files in this sub-directory. The sub-
+         directory is emptied every time Axmud starts. DO NOT MODIFY THE
+         CONTENTS OF THIS DIRECTORY.
+
+   ../logos
+
+      Stores the screenshots for all pre-configured worlds (which are used in
+         the Connections window).
+      If you create your own world profile, it's safe to add a screenshot to
+         this directory - for example, for a world profile called 'deathmud',
+         add a screenshot called 'deathmud.png'. The file should be a 300x200
+         .PNG file (other graphics formats won't be recognised).
+
+   ../logs
+   
+      Any logfile written by Axmud are stored here. It is SAFE to modify the
+         files in this sub-directory.
+
+      The way in which Axmud writes logfiles is highly customisable. See the
+         help for:
+         
+         ;log
+
+   ../msp
+
+      Stores sounds used by the MSP protocol, which are available at a few
+         worlds.
+      Sound files can be downloaded automatically, when they are needed, but
+         most worlds that support MSP offer sound packs containing many sound
+         files.
+      Axmud can download and install sound packs for you, if you want. See the
+         help for:
+
+         ;msp
+
+      Each world has its own directory, for example:
+
+         /axmud-data/msp/deathmud/
+
+      It is SAFE to modify the files in this sub-directory.
+         
+   ../mxp
+
+      Stores images downloaded automatically by the MXP protocol. 
+
+      Each world has its own directory, for example:
+
+         /axmud-data/mxp/deathmud/
+
+      It is SAFE to modify the files in this sub-directory.
+            
+   ../plugins
+
+      Any plugins you write can be stored here, so that it's easy for Axmud to
+         find them using the client command:
+
+         ;loadplugin
+
+      This sub-directory is exclusively for your personal use; Axmud won't
+         modify its contents. It is SAFE to modify its contents while Axmud is
+         running (a plugin can only be loaded once).
+
+   ../plugins/help/cmd
+
+      If your plugins create new client commands, you can write help files for
+         them, and store the help files here so that Axmud can find them.
+      The help file should have the same as the client command, for example:
+
+         ;mycommand   >>>   file called 'mycommand'
+
+   ../plugins/help/task
+
+      If your plugins create new tasks, you can write help files for them, and
+         store the help files here so that Axmud can find them.
+      The help file should have the same as the task, for example:
+       
+         'Wibble' task   >>>   file called 'wibble'
+        
+   ../screenshots
+
+      If you take a screenshot (using the client command ';screenshot', or using
+         the automapper window's screenshot function), the screenshot is stored
+         in this sub-directory.
+     
+      It is SAFE to modify the files in this sub-directory.
+         
+   ../scripts
+
+      Any Axbasic scripts you write can be stored here, so that it's easy for
+         Axmud to find them using client commands like:
+
+         ;runscript hello
+
+      This sub-directory is exclusively for your personal use; Axmud won't
+         modify its contents. It is SAFE to modify its contents while Axmud is
+         running (scripts are loaded into memory, before they are executed).
+   
+   ../sounds
+
+      Axmud stores its sound effects files in this sub-directory.
+
+      It is SAFE to modify the files in this sub-directory. If Axmud tries to
+         play a sound effect whose file has been deleted, nothing will happen
+         (and no error message is generated).
+      You can add (or replace) as many sound files as you like. To link a sound
+         file to a sound effect, use the client command:
+
+         ;addsoundeffect
+
+   ../store
+
+      This is a temporary sub-directory for the use of your plugins and scripts,
+         whenever need to write their own files.
+      The sub-directory is not emptied by Axmud, so your plugins and scripts can
+         store their own persistent data files. It would be a good idea for each
+         plugin and script to use a unique sub-directory, for example
+
+         ../store/myplugin/
+         ../store/myscript/
+   
+   ../tmp
+
+      This is a temporary sub-directory for the use of your plugins and scripts
+         (which SHOULD NOT use ../data/temp).
+      The sub-directory is emptied every time Axmud starts. 
+         
+      
+
+      

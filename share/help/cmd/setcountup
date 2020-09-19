@@ -1,0 +1,29 @@
+scu / setcountup              Sets a countdown, counting up from zero
+ 
+   Format:
+      ;scu                    Starts the Countdown task
+      ;scu <num>              Counts up <num> seconds
+      ;scu -s <num>           Counts up <num> seconds
+      ;scu -m <num>           Counts up <num> minutes
+      ;scu -h <num>           Counts up <num> hours
+      
+   Notes:
+      This commands starts the Countdown task, or uses an existing one (if one
+         is running, and is not already counting down or up).
+      The task counts up from zero until it reaches the time you specify. The
+         arguments can occur in any order, so all of these are acceptable:
+
+         ;scu 60
+         ;scu -s 60
+         ;scu 60 -s
+         
+      The maximum time allowed is 99, 59 minutes and 59 seconds. If you
+         specify a longer time, the maximum is used instead.
+      If you don't specify a time and no Countdown task is running, one is
+         started. You can use the task window to start the clock as soon as
+         you're ready.
+      See also the help for ';setcountdown', which counts down from a specified
+         time until zero is reached.
+
+   User commands:
+      scu / countup / setcountup

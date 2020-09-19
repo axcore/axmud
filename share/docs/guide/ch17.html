@@ -1,0 +1,1284 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch17</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch16.html">Previous</a> <a href="index.html">Index</a> <a href="ch18.html">Next</a></p>
+<hr>
+<h1>17 Peek/Poke Operations</h1>
+<p>Much of Axmud's internal data is available to you, and to any scripts and plugins you write.</p>
+<p>A peek operation allows you to see internal data.  A poke operation allows you to modify it. Most of Axmud's internal data can be seen via a peek operation, but in general, data can only be modified in a poke operation when it's safe to do so.</p>
+<p>This data can be accessed using the client commands <strong>;peek</strong> and <strong>;poke</strong>.  Axbasic scripts can access the data through a number of statements, for example PEEK and POKE. Plugins (written in perl) can access the data directly, or through a call to <strong>GA::Session-&gt;parsePeekPoke</strong>.</p>
+<p>Peek and poke operations take a string as an argument. The string is separated into a compulsory object part and an optional IV (instance variable) part.</p>
+<p>(In Perl terminology, an object is a collection of data, and an IV is a variable stored in that collection. The variable can be a scalar, list or hash.)</p>
+<p>An example of an object part is <strong>prof.deathmud</strong>, representing a world profile called <strong>deathmud</strong>, and an example of an IV part is <strong>port</strong>. Thus, you can access the world's port by peeking the string <strong>prof.deathmud.port</strong>.</p>
+<p>The object part is translated into the blessed reference of the object. (In Perl terminology, the blessed reference is a name given to each distinct object.)</p>
+<p>If an IV part is specified, the peek/poke operation returns the value of the IV. If no IV part is specified, the peek/poke operation returns the blessed reference of the object.</p>
+<p>This Section contains a complete list of strings that can be used in peek/poke operations.</p>
+<p>In some cases, the string corresponds to a particular IV in a particular object, e.g. <strong>world.current</strong> refers to the current world profile (the Perl class is <strong>GA::Session-&gt;currentWorld</strong>).</p>
+<p>In some cases, the string refers to a whole object, e.g. <strong>dict.current</strong> refers to the current dictionary (the Perl class is <strong>GA::Session-&gt;currentDict</strong>). In those cases, you can add any valid IV to the string, e.g. <strong>dict.current.weaponHash</strong>. The IV part is case-sensitive, so <strong>dict.current.weaponhash</strong> will not work.</p>
+<p>Axmud global variables like <strong>$axmud::SCRIPT</strong> are used here as if they were IVs in the GA::Client object (for convenience).</p>
+<p>The values returned by many strings depend on the session. For example, <strong>dict.current</strong> will return this session's current dictionary, not some other session's current dictionary.</p>
+<p>Although it's possible to directly modify an IV's value with a poke operation, doing so is STRONGLY DISCOURAGED.</p>
+<p>It is almost always better to use client commands and Axmud's edit, preference and wizard windows, which take care of all the complications that might not be obvious to you.</p>
+<p>If you do need to modify values directly (for testing purposes, perhaps), you should at least read the comments in the source code for the object you're modifying. (Most of what you need is in the <strong>-&gt;new</strong> function.)</p>
+<p>All Axmud objects have an IV called <strong>-&gt;_privFlag</strong>. If the value is TRUE, that object's IVs are <em>private</em> and cannot be modified in a poke operation at all. If the value is FALSE, that object's IVs are <em>public</em> and can be modified in a poke operation.</p>
+<p>Objects whose <strong>-&gt;_privFlag</strong> is FALSE are designed (for the most part) as simple stores of data, so it's usually safe to modify them directly (but still read the source code first).</p>
+<p>All IVs beginning with an underline (underscore), such as <strong>-&gt;_privFlag</strong> itself, are <em>standard</em> IVs that can't be modified in any circumstances.</p>
+<p>The strings specified below return the following kinds of value in a peek/poke operation:</p>
+<pre><code>    o - object whose -&gt;_privFlag is FALSE (IVs are public)
+    O - object whose -&gt;_privFlag is TRUE (IVs are private)
+    s - scalar
+    S - read-only scalar
+    f - scalar flag (always TRUE or FALSE)
+    F - read-only scalar flag (always TRUE or FALSE)
+    l - list
+    L - read-only list
+    h - hash
+    H - read-only hash
+    X - read-only scalar, list or hash (for JSON data structures)
+
+S aard102.status
+     Current AARD102 status notification (GA::Session-&gt;aard102Status)
+S aard102.tick
+     Time of last tick received via AARD102 (GA::Session-&gt;aard102TickTime)
+
+
+L atcp.list
+     List of (all) ATCP packages received (from GA::Session-&gt;atcpDataHash)
+L atcp.list.PACKAGE
+     List of ATCP packages received in the form
+        PACKAGE[.subpackage][.message] (from GA::Session-&gt;atcpDataHash)
+L atcp.list.PACKAGE.SUBPACKAGE
+     List of ATCP packages received in the form
+        PACKAGE[.SUBPACKAGE][.message] (from GA::Session-&gt;atcpDataHash)
+S atcp.data.PACKAGE[.SUBPACKAGE][.MESSAGE]
+     Value of undecoded data string in the ATCP package (from
+        GA::Session-&gt;atcpDataHash)
+X atcp.val.PACKAGE[.SUBPACKAGE][.MESSAGE][.json]
+     A value embedded within the JSON data. 'json' is made up of any number
+        of '.INDEX' and '.KEY' components, in any order. The returned value
+        is the scalar, list or hash value stored within the embedded list/
+        hash references; or 'undef' if '.json' doesn't match any embedded
+        scalar value (from GA::Session-&gt;atcpDataHash)
+
+
+s buffer.size.display
+     Custom maximum display buffer size (GA::Client-&gt;customDisplayBufferSize)
+s buffer.size.instruct
+     Custom maximum instruction buffer size
+        (GA::Client-&gt;customInstructBufferSize)
+s buffer.size.cmd
+     Custom maximum world command buffer size
+        (GA::Client-&gt;customCmdBufferSize)
+o buffer.client.instruct.NUMBER
+     Client's instruction buffer object NUMBER (from
+        GA::Client-&gt;instructBufferHash)
+S buffer.client.instruct.count
+     No. instructions processed altogether (GA::Client-&gt;instructBufferCount)
+S buffer.client.instruct.first
+     NUMBER of earliest surviving buffer object
+        (GA::Client-&gt;instructBufferFirst)
+S buffer.client.instruct.last
+     NUMBER of most recent buffer object (GA::Client-&gt;instructBufferLast)
+o buffer.client.cmd.NUMBER
+     Client's world command buffer object NUMBER (from
+        GA::Client-&gt;cmdBufferHash)
+S buffer.client.cmd.count
+     No. commands processed altogether (GA::Client-&gt;cmdBufferCount)
+S buffer.client.cmd.first
+     NUMBER of earliest surviving buffer object (GA::Client-&gt;cmdBufferFirst)
+S buffer.client.cmd.last
+     NUMBER of most recent buffer object (GA::Client-&gt;cmdBufferLast)
+o buffer.session.display.NUMBER
+     Session's display buffer object NUMBER (from
+        GA::Session-&gt;displayBufferHash)
+S buffer.session.display.count
+     No. lines processed altogether (GA::Session-&gt;displayBufferCount)
+S buffer.session.display.first
+     NUMBER of earliest surviving buffer object
+        (GA::Session-&gt;displayBufferFirst)
+S buffer.session.display.last
+     NUMBER of most recent buffer object (GA::Session-&gt;displayBufferLast)
+o buffer.session.instruct.NUMBER
+     Session's instruction buffer object NUMBER (from
+        GA::Session-&gt;instructBufferHash)
+S buffer.session.instruct.count
+     No. instructions processed altogether (GA::Session-&gt;instructBufferCount)
+S buffer.session.instruct.first
+     NUMBER of earliest surviving buffer object
+        (GA::Session-&gt;instructBufferFirst)
+S buffer.session.instruct.last
+     NUMBER of most recent buffer object (GA::Session-&gt;instructBufferLast)
+o buffer.session.cmd.NUMBER
+     Session's world command buffer object NUMBER (from
+        GA::Session-&gt;cmdBufferHash)
+S buffer.session.cmd.count
+     No. commands processed altogether (GA::Session-&gt;cmdBufferCount)
+S buffer.session.cmd.first
+     NUMBER of earliest surviving buffer object (GA::Session-&gt;cmdBufferFirst)
+S buffer.session.cmd.last
+     NUMBER of most recent buffer object (GA::Session-&gt;cmdBufferLast)
+
+
+o cage.current.TYPE.CATEGORY
+     Current cage of type 'TYPE' (e.g. 'trigger') associated with the
+        category 'CATEGORY' (from GA::Session-&gt;currentCageHash)
+o cage.name.NAME
+     Cage called 'NAME' (from GA::Session-&gt;cageHash)
+o cage.TYPE.PROF
+     Cage of type 'TYPE' (e.g. 'trigger') associated with the profile called
+        'PROF' (from GA::Session-&gt;cageHash)
+L cage.type.list
+     Customisable list of cage types (GA::Client-&gt;cageTypeList)
+
+
+o char.current
+     Current character profile (GA::Session-&gt;currentChar)
+o char.NAME
+     Character profile called 'NAME' (from GA::Session-&gt;profHash)
+
+
+o chat.contact.NAME
+     Chat contact object called 'NAME' (from GA::Client-&gt;chatContactHash)
+S chat.name
+     Chat task name to broadcast (GA::Client-&gt;chatName)
+S chat.email
+     Chat task email to broadcast (GA::Client-&gt;chatEmail)
+S chat.mode
+     Chat task accept mode (GA::Client-&gt;chatAcceptMode)
+S chat.icon
+     Chat task icon to broadcast (from GA::Client-&gt;chatIcon)
+
+
+S client.name
+     $SCRIPT (Axmud global variable)
+S client.name.short
+     $NAME_SHORT (Axmud global variable)
+S client.name.article
+     $NAME_ARTICLE (Axmud global variable)
+S client.version
+     $VERSION (Axmud global variable)
+S client.date
+     $DATE (Axmud global variable)
+S client.basic.name
+     $BASIC_NAME (Axmud global variable)
+S client.basic.article
+     $BASIC_ARTICLE (Axmud global variable)
+S client.basic.version
+     $BASIC_VERSION (Axmud global variable)
+S client.authors
+     $AUTHORS (Axmud global variable)
+S client.copyright
+     $COPYRIGHT (Axmud global variable)
+S client.url
+     $URL (Axmud global variable)
+S client.file.name
+     $NAME_FILE (Axmud global variable)
+L client.file.list
+     @COMPAT_FILE_LIST (Axmud global variable)
+S client.dir.base
+     $BASE_DIR (Axmud global variable)
+S client.dir.data
+     $DATA_DIR (Axmud global variable)
+L client.dir.list
+     @COMPAT_DIR_LIST (Axmud global variable)
+L client.ext.list
+     @COMPAT_EXT_LIST (Axmud global variable)
+F client.mode.blind
+     $BLIND_MODE_FLAG (Axmud global variable)
+F client.mode.safe
+     $SAFE_MODE_FLAG (Axmud global variable)
+F client.mode.test
+     $TEST_MODE_FLAG (Axmud global variable)
+L client.license
+     @LICENSE_LIST (Axmud global variable)
+L client.credit
+     @CREDIT_LIST (Axmud global variable)
+
+S client.start.time
+     Client start time (system time, in secs) (GA::Client-&gt;startTime)
+S client.start.clock
+     Time client started (GA::Client-&gt;startClock)
+S client.start.date
+     Date client started (GA::Client-&gt;startDate)
+S client.start.clockstring
+     Time client started, formatted string (GA::Client-&gt;startClockString)
+S client.start.datestring
+     Date client started, formatted string (GA::Client-&gt;startDateString)
+S client.delay.prompt
+     Time to wait before using a prompt (GA::Client-&gt;promptWaitTime)
+S client.delay.login
+     Time to wait before showing login warning (GA::Client-&gt;loginWarningTime)
+L client.iv
+     List of IVs required in all Perl objects (from GA::Client-&gt;constIVHash)
+L client.reserved
+     List of reserved names (from GA::Client-&gt;constReservedHash)
+
+
+o colour.scheme.NAME
+o color.scheme.NAME
+     Colour scheme object called 'NAME' (from GA::Client-&gt;colourSchemeHash)
+S colour.system.cmd
+S color.system.cmd
+     Colour for sent world commands (GA::Client-&gt;customInsertCmdColour)
+S colour.system.text
+S color.system.text
+     Colour for system messages (GA::Client-&gt;customShowSystemTextColour)
+S colour.system.error
+S color.system.error
+     Colour for system error messages (GA::Client-&gt;customShowErrorColour)
+S colour.system.warning
+S color.system.warning
+     Colour for system warning messages (GA::Client-&gt;customShowWarningColour)
+S colour.system.debug
+S color.system.debug
+     Colour for system debug messages (GA::Client-&gt;customShowDebugColour)
+S colour.system.improper
+S color.system.improper
+     Colour for system improper arguments messages
+        (GA::Client-&gt;customShowImproperColour)
+F colour.flag.invisible
+F color.flag.invisible
+     Convert text colour if background colour is the same
+        (GA::Client-&gt;convertInvisibleFlag)
+S colour.rgb.TAG
+S color.rgb.TAG
+     RGB (e.g. '#ABCDEF') for standard colour TAG (from
+        GA::Client-&gt;colourTagHash and -&gt;boldColourTagHash)
+S colour.misc.xterm
+S color.misc.xterm
+     xterm colour cube in use (GA::Client-&gt;currentColourCube)
+F colour.misc.osc
+F color.misc.osc
+     OSC colour paletters allowed (GA::Client-&gt;oscPaletteFlag)
+
+
+o custom.current.CATEGORY
+     Current custom profile of category 'CATEGORY' (from
+        GA::Session-&gt;currentProfHash)
+o custom.NAME
+     Custom profile called 'NAME' (from GA::Session-&gt;profHash)
+
+
+F debug.protocol.escape
+    Show invalid escape sequences (GA::Client-&gt;debugEscSequenceFlag)
+F debug.protocol.telnet
+     Show incoming option negotiation info (GA::Client-&gt;debugTelnetFlag)
+F debug.protocol.telnet.short
+     Show incoming option negotiation short info
+        (GA::Client-&gt;debugTelnetMiniFlag)
+F debug.protocol.log
+     Write log for incoming option negotiation, telopt.log
+        (GA::Client-&gt;debugTelnetLogFlag)
+F debug.protocol.msdp
+     Show MSDP data sent to Locator/Status tasks (GA::Client-&gt;debugMsdpFlag)
+F debug.protocol.mxp
+     Show MXP errors (GA::Client-&gt;debugMxpFlag)
+F debug.protocol.mxp.comment
+     Show MXP comments (GA::Client-&gt;debugMxpCommentFlag)
+F debug.protocol.pueblo
+     Show Pueblo errors (GA::Client-&gt;debugPuebloFlag)
+F debug.protocol.pueblo.comment
+     Show Pueblo comments (GA::Client-&gt;debugPuebloCommentFlag)
+f debug.protocol.zmp
+     Show ZMP errors (GA::Client-&gt;debugZmpFlag)
+f debug.protocol.atcp
+     Show ATCP data (GA::Client-&gt;debugAtcpFlag)
+f debug.protocol.gmcp
+     Show GMCP data (GA::Client-&gt;debugGmcpFlag)
+F debug.protocol.mcp
+     Show MCP errors (GA::Client-&gt;debugMcpFlag)
+F debug.line.numbers
+     Show explicit line numbers (GA::Client-&gt;debugLineNumsFlag)
+F debug.line.tags
+     Show explicit colour/style tags (GA::Client-&gt;debugLineTagsFlag)
+F debug.locator.some
+     Show some Locator debug messages (GA::Client-&gt;debugLocatorFlag)
+F debug.locator.all
+     Show all Locator debug messages (GA::Client-&gt;debugMaxLocatorFlag)
+F debug.locator.exit
+     Show illegal exit direction debug messages
+        (GA::Client-&gt;debugMaxLocatorFlag)
+F debug.locator.move
+     Show Locator's movement command list (GA::Client-&gt;debugMoveListFlag)
+F debug.obj.parse
+     Show debug messages when parsing objects (GA::Client-&gt;debugParseObjFlag)
+F debug.obj.compare
+     Show debug messages when comparing objects
+        (GA::Client-&gt;debugCompareObjFlag)
+F debug.error.plugin
+     Show explanatory messages if plugin can't be loaded
+        (GA::Client-&gt;debugExplainPluginFlag)
+F debug.error.iv
+     Show debug message for non-existent IVs (GA::Client-&gt;debugCheckIVFlag)
+F debug.error.table
+     Show debug message if table object can't be added/resized
+        (GA::Client-&gt;debugTableFitFlag)
+F debug.error.trap
+     Trap Perl errors/warnings in 'main' window
+        (GA::Client-&gt;debugTrapErrorFlag)
+
+
+S desktop.panel.left
+     Size of left panel (GA::Client-&gt;customPanelLeftSize)
+S desktop.panel.right
+     Size of right panel (GA::Client-&gt;customPanelRightSize)
+S desktop.panel.top
+     Size of top panel (GA::Client-&gt;customPanelTopSize)
+S desktop.panel.bottom
+     Size of bottom panel (GA::Client-&gt;customPanelBottomSize)
+S desktop.controls.left
+     Size of left-side window controls (GA::Client-&gt;customControlsLeftSize)
+S desktop.controls.right
+     Size of right-side window controls (GA::Client-&gt;customControlsRightSize)
+S desktop.controls.top
+     Size of top-side window controls (GA::Client-&gt;customControlsTopSize)
+S desktop.controls.bottom
+     Size of bottom-side window controls
+        (GA::Client-&gt;customControlsBottomSize)
+
+
+O dict.current
+     Current dictionary object (GA::Session-&gt;currentDict)
+O dict.NAME
+     Dictionary object called 'NAME' (from GA::Client-&gt;dictHash)
+
+
+o exit.number.NUMBER
+     Exit model object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;exitModelHash)
+o exit.newest
+     Most recently-created exit model object
+        (GA::Obj::WorldModel-&gt;mostRecentExitNum)
+S exit.count
+     No. exits in model (including deleted exits)
+        (GA::Obj::WorldModel-&gt;exitObjCount)
+S exit.actual
+     No. exits in model (not including deleted exits)
+        (GA::Obj::WorldModel-&gt;exitActualCount)
+
+
+S external.browser
+     Command to run a web browser (GA::Client-&gt;browserCmd)
+S external.email
+     Command to open email app (GA::Client-&gt;emailCmd)
+S external.audio
+     Command to open audio player (GA::Client-&gt;audioCmd)
+S external.editor
+     Command to open text editor (GA::Client-&gt;textEditCmd)
+
+
+F file.config.load
+     Load config file (GA::Client-&gt;loadConfigFlag)
+F file.config.save
+     Load config file (GA::Client-&gt;saveConfigFlag)
+F file.data.load
+     Load data files (GA::Client-&gt;loadDataFlag)
+F file.data.save
+     Save data files (GA::Client-&gt;saveDataFlag)
+F file.start.delete
+     Delete config/data files on startup (GA::Client-&gt;deleteFilesAtStartFlag)
+F file.load.fail
+     File operation failure (GA::Client-&gt;fileFailFlag)
+F file.save.backup
+     Backup files before saving (GA::Client-&gt;autoRetainFileFlag)
+F file.save.modify
+     Data saved in any file objects have been modified
+        (GA::Client-&gt;showModFlag)
+F file.autosave.flag
+     Auto-save turned on (GA::Client-&gt;autoSaveFlag)
+S file.autosave.time
+     Minutes between autosaves (GA::Client-&gt;autoSaveWaitTime)
+O file.client.NAME
+     Client file object called NAME (from GA::Client-&gt;fileObjHash)
+O file.session.NAME
+     Session file object called NAME (from GA::Session-&gt;sessionFileObjHash)
+
+
+L gmcp.list
+     List of (all) GMCP packages received (from GA::Session-&gt;gmcpDataHash)
+L gmcp.list.PACKAGE
+     List of GMCP packages received in the form
+        PACKAGE[.subpackage][.message] (from GA::Session-&gt;gmcpDataHash)
+L gmcp.list.PACKAGE.SUBPACKAGE
+     List of GMCP packages received in the form PACKAGE.SUBPACKAGE[.message]
+        (from GA::Session-&gt;gmcpDataHash)
+S gmcp.data.PACKAGE[.SUBPACKAGE][.MESSAGE]
+     Value of undecoded data string in the GMCP package (from
+        GA::Session-&gt;gmcpDataHash)
+X gmcp.val.PACKAGE[.SUBPACKAGE][.MESSAGE][.json]
+     A value embedded within the JSON data. 'json' is made up of any number
+        of '.INDEX' and '.KEY' components, in any order. The returned value
+        is the scalar, list or hash value stored within the embedded list/
+        hash references; or 'undef' if '.json' doesn't match any embedded
+        scalar value (from GA::Session-&gt;gmcpDataHash)
+
+
+o guild.current
+     Current guild profile (GA::Session-&gt;currentGuild)
+o guild.NAME
+     Guild profile called 'NAME' (from GA::Session-&gt;profHash)
+
+
+O iface.name.NAME
+     Active interface called 'NAME' (from GA::Session-&gt;interfaceHash)
+O iface.number.NUMBER
+     Active interface numbered 'NUMBER' (from GA::Session-&gt;interfaceNumHash)
+
+
+O imodel.TYPE
+     Interface model of the type 'TYPE', e.g. 'trigger' (from
+       GA::Client-&gt;interfaceModelHash)
+
+
+S instruct.sigil.client
+     Instruction sigil for client commands (GA::Client-&gt;constClientSigil)
+S instruct.sigil.forced
+     Instruction sigil for forced world commands
+        (GA::Client-&gt;constForcedSigil)
+S instruct.sigil.echo
+     Instruction sigil for echo commands (GA::Client-&gt;constEchoSigil)
+S instruct.sigil.perl
+     Instruction sigil for Perl commands (GA::Client-&gt;constPerlSigil)
+S instruct.sigil.script
+     Instruction sigil for script commands (GA::Client-&gt;constScriptSigil)
+S instruct.sigil.multi
+     Instruction sigil for multi commands (GA::Client-&gt;constMultiSigil)
+S instruct.sigil.speedwalk
+     Instruction sigil for speedwalk commands (GA::Client-&gt;constSpeedSigil)
+S instruct.sigil.bypass
+     Instruction sigil for bypass commands (GA::Client-&gt;constBypassSigil)
+F instruct.enable.echo
+     Echo command sigil enabled (GA::Client-&gt;echoSigilFlag)
+F instruct.enable.perl
+     Perl command sigil enabled (GA::Client-&gt;perlSigilFlag)
+F instruct.enable.script
+     Script command sigil enabled (GA::Client-&gt;scriptSigilFlag)
+F instruct.enable.multi
+     Multi command sigil enabled (GA::Client-&gt;multiSigilFlag)
+F instruct.enable.speed
+     Speed command sigil enabled (GA::Client-&gt;speedSigilFlag)
+F instruct.enable.bypass
+     Bypass command sigil enabled (GA::Client-&gt;bypassSigilFlag)
+S instruct.separator
+     World command separator (GA::Client-&gt;cmdSep)
+F instruct.world.confirm
+     Confirm world commands in session's default tab
+        (GA::Client-&gt;confirmWorldCmdFlag)
+F instruct.world.convert
+     Convert capitalised world commands (GA::Client-&gt;convertWorldCmdFlag)
+F instruct.world.preserve
+     Preserve world commands in entry box (GA::Client-&gt;preserveWorldCmdFlag)
+F instruct.other.preserve
+     Preserve other commands in entry box (GA::Client-&gt;preserveOtherCmdFlag)
+F instruct.multi.max
+     Send multi commands to all sessions (GA::Client-&gt;maxMultiCmdFlag)
+F instruct.complete.mode
+     Auto-complete mode (GA::Client-&gt;autoCompleteMode)
+F instruct.complete.type
+     Auto-complete navigation type (GA::Client-&gt;autoCompleteType)
+F instruct.complete.parent
+     Auto-complete registry location (GA::Client-&gt;autoCompleteParent)
+
+
+F log.allow
+     Logging is enabled (GA::CLIENT-&gt;allowLogsFlag)
+F log.client.FILE
+     Flag to show whether the client logfile called 'FILE' is being written
+        (from GA::Client-&gt;logPrefHash)
+F log.world.FILE
+     Flag to show whether the world logfile called 'FILE' is being written
+        (from GA::Profile::World-&gt;logPrefHash)
+F log.delete.standard
+     Delete client logfiles when client starts
+        (GA::Client-&gt;deleteStandardLogsFlag)
+F log.delete.world
+     Delete world logfiles when world becomes current
+        (GA::Client-&gt;deleteWorldLogsFlag)
+F log.start.day
+     Start new logfile every day (GA::Client-&gt;logDayFlag)
+F log.start.client
+     Start new logfile when client starts (GA::Client-&gt;logClientFlag)
+F log.prefix.date
+     Prefix every line with date (GA::Client-&gt;logPrefixDateFlag)
+F log.prefix.time
+     Prefix every line with time (GA::Client-&gt;logPrefixTimeFlag)
+F log.image
+     Record images in 'receive' logfile (GA::Client-&gt;logImageFlag)
+S log.event.before
+     Lines to write before Status task event
+        (GA::Client-&gt;statusEventBeforeCount)
+S log.event.after
+     Lines to write after Status task event
+        (GA::Client-&gt;statusEventAfterCount)
+
+
+S loop.client.time
+     Client loop time (GA::Client-&gt;clientTime)
+O loop.client.obj
+     Client loop object (GA::Client-&gt;clientLoopObj)
+F loop.client.spin
+     Client loop is spinning (GA::Client-&gt;clientLoopSpinFlag)
+S loop.client.delay
+     Client loop delay time (GA::Client-&gt;clientLoopDelay)
+S loop.session.time
+     Session loop time (GA::Session-&gt;sessionTime)
+S loop.session.obj
+     Session loop object (GA::Session-&gt;sessionLoopObj)
+F loop.session.spin
+     Session loop is spinning (GA::Session-&gt;sessionLoopSpinFlag)
+F loop.session.child
+     Session loop's child loop is spinning (GA::Session-&gt;childLoopSpinFlag)
+S loop.session.delay
+     Session loop delay time (GA::Session-&gt;sessionLoopDelay)
+
+
+L misc.months
+     Customisable list of short months (GA::Client-&gt;customMonthList)
+L misc.days
+     Customisable list of short days (GA::Client-&gt;customDayList)
+
+
+s model.author
+     World model author (GA::Obj::WorldModel-&gt;author)
+s model.date
+     World model date (GA::Obj::WorldModel-&gt;date)
+s model.version
+     World model version (GA::Obj::WorldModel-&gt;version)
+l model.descripList
+     World model description (GA::Obj::WorldModel-&gt;descripList)
+o model.number.NUMBER
+     World model object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;modelHash)
+o model.region.NUMBER
+     World model region object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;regionModelHash)
+o model.room.NUMBER
+     World model room object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;roomModelHash)
+o model.weapon.NUMBER
+     World model weapon object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;weaponModelHash)
+o model.armour.NUMBER
+     World model region object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;armourModelHash)
+o model.garment.NUMBER
+     World model garment object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;garmentModelHash)
+o model.char.NUMBER
+     World model char object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;charModelHash)
+o model.minion.NUMBER
+     World model minion object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;minionModelHash)
+o model.sentient.NUMBER
+     World model sentient object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;sentientModelHash)
+o model.creature.NUMBER
+     World model creature object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;creatureModelHash)
+o model.portable.NUMBER
+     World model portable object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;portableModelHash)
+o model.decoration.NUMBER
+     World decoration region object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;decorationModelHash)
+o model.custom.NUMBER
+     World model custom object with number 'NUMBER' (from
+        GA::Obj::WorldModel-&gt;customModelHash)
+O model.regionmap.NAME
+     World model regionmap called 'NAME' (from
+        GA::Obj::WorldModel-&gt;regionmapHash)
+o model.kchar.NAME
+     World model known character called 'NAME' (from
+        GA::Obj::WorldModel-&gt;knownCharHash)
+o model.mstring.STRING
+     World model minion string 'STRING' (from
+        GA::Obj::WorldModel-&gt;minionStringHash)
+o model.tag.TAG
+     World model room object with room tag 'TAG' (from
+        GA::Obj::WorldModel-&gt;roomTagHash)
+o model.newest
+     Most recently-created world model object
+        (GA::Obj::WorldModel-&gt;mostRecentNum)
+S model.count
+     No. objects in world model (including deleted objects)
+        (GA::Obj::WorldModel-&gt;modelObjCount)
+S model.actual
+     No. objects in world model (not including deleted objects)
+        (GA::Obj::WorldModel-&gt;modelActualCount)
+S model.lightStatus
+     Current light status (GA::Obj::WorldModel-&gt;...)
+S model.defaultGridWidthBlocks
+     Default grid width (in blocks) (GA::Obj::WorldModel-&gt;...)
+S model.defaultGridHeightBlocks
+     Default grid height (in blocks) (GA::Obj::WorldModel-&gt;...)
+S model.defaultBlockWidthPixels
+     Default block width (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.defaultBlockHeightPixels
+     Default block height (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.defaultRoomWidthPixels
+     Default room width (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.defaultRoomHeightPixels
+     Default room width (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.maxGridWidthBlocks
+     Max grid width (in blocks) (GA::Obj::WorldModel-&gt;...)
+S model.maxGridHeightBlocks
+     Max grid height (in blocks) (GA::Obj::WorldModel-&gt;...)
+S model.maxBlockWidthPixels
+     Max block width (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.maxBlockHeightPixels
+     Max block height (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.maxRoomWidthPixels
+     Max room width (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.maxRoomHeightPixels
+     Max room height (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.defaultMapWidthPixels
+     Default map width (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.defaultMapHeightPixels
+     Default map height (in pixels) (GA::Obj::WorldModel-&gt;...)
+S model.currentRoomMode
+     Room drawing mode (GA::Obj::WorldModel-&gt;...)
+S model.roomInteriorMode
+     Room interior mode (GA::Obj::WorldModel-&gt;...)
+S model.drawExitMode
+     Exit drawing mode (GA::Obj::WorldModel-&gt;...)
+F model.drawOrnamentsFlag
+     Draw exit ornaments (GA::Obj::WorldModel-&gt;...)
+S model.horizontalExitLengthBlocks
+     Length of horizontal exits (in blocks) (GA::Obj::WorldModel-&gt;...)
+S model.verticalExitLengthBlocks
+     Length of vertical exits (in blocks) (GA::Obj::WorldModel-&gt;...)
+F model.drawBentExitsFlag
+     Draw bent exits (GA::Obj::WorldModel-&gt;...)
+F model.matchTitleFlag
+     Match room titles (GA::Obj::WorldModel-&gt;...)
+F model.matchDescripFlag
+     Match room descriptions (GA::Obj::WorldModel-&gt;...)
+S model.matchDescripCharCount
+     No. characters to match in descriptions  (GA::Obj::WorldModel-&gt;...)
+F model.matchExitFlag
+     Match room exits (GA::Obj::WorldModel-&gt;...)
+F model.analyseDescripFlag
+     Analyse room descriptions (GA::Obj::WorldModel-&gt;...)
+F model.matchSourceFlag
+     Match room's source code file (GA::Obj::WorldModel-&gt;...)
+F model.matchVNumFlag
+     Match room's remove vnum (GA::Obj::WorldModel-&gt;...)
+F model.updateTitleFlag
+     Update room titles (in 'update' mode) (GA::Obj::WorldModel-&gt;...)
+F model.updateDescripFlag
+     Update room descriptions (GA::Obj::WorldModel-&gt;...)
+F model.updateExitFlag
+     Update room exits (GA::Obj::WorldModel-&gt;...)
+F model.updateSourceFlag
+     Update room's source code file (GA::Obj::WorldModel-&gt;...)
+F model.updateVNumFlag
+     Update room's remote vnum (GA::Obj::WorldModel-&gt;...)
+F model.updateRoomCmdFlag
+     Update room's room command list (GA::Obj::WorldModel-&gt;...)
+F model.updateOrnamentFlag
+     Update room's exit ornaments (GA::Obj::WorldModel-&gt;...)
+S model.autoCompareMode
+    Current auto-compare mode setting (GA::Obj::WorldModel-&gt;...)
+F model.autoCompareAllFlag
+    Compare rooms in whole model, not just region (GA::Obj::WorldModel-&gt;...)
+S model.autoCompareMax
+    Maximum number of room comparisons (GA::Obj::WorldModel-&gt;...)
+S model.autoSlideMode
+    Current auto-slide mode setting (GA::Obj::WorldModel-&gt;...)
+S model.autoSlideMax
+    Maximum auto-slide distance (GA::Obj::WorldModel-&gt;...)
+F model.autoRescueFlag
+    Auto-rescue mode is enabled (GA::Obj::WorldModel-&gt;...)
+F model.autoRescueFirstFlag
+    In auto-rescue mode, merge rooms at first opportunity (GA::Obj::WorldModel-&gt;...)
+F model.autoRescuePromptFlag
+    In auto-rescue mode, prompt before merging rooms at first opportunity (GA::Obj::WorldModel-&gt;...)
+F model.autoRescueNoMoveFlag
+    In auto-rescue mode, don't move non-matching rooms (GA::Obj::WorldModel-&gt;...)
+F model.autoRescueVisitsFlag
+    In auto-rescue mode, only update character visits in merged rooms (GA::Obj::WorldModel-&gt;...)
+F model.autoRescueForceFlag
+    In auto-rescue mode, temporarily switch to 'update' mode (GA::Obj::WorldModel-&gt;...)
+F model.assistedMovesFlag
+     Apply assisted moves (GA::Obj::WorldModel-&gt;...)
+F model.assistedBreakFlag
+     Break down doors (GA::Obj::WorldModel-&gt;...)
+F model.assistedPickFlag
+     Pick locks (GA::Obj::WorldModel-&gt;...)
+F model.assistedUnlockFlag
+     Unlock doors (GA::Obj::WorldModel-&gt;...)
+F model.assistedOpenFlag
+     Open doors (GA::Obj::WorldModel-&gt;...)
+F model.assistedCloseFlag
+     Close doors (GA::Obj::WorldModel-&gt;...)
+F model.assistedLockFlag
+     Lock doors (GA::Obj::WorldModel-&gt;...)
+F model.protectedMovesFlag
+     Protected moves (GA::Obj::WorldModel-&gt;...)
+F model.superProtectedMovesFlag
+     Super-protected moves (GA::Obj::WorldModel-&gt;...)
+F model.setTwinOrnamentFlag
+     Set twin exit's ornament (GA::Obj::WorldModel-&gt;...)
+F model.countVisitsFlag
+     Count character visits (GA::Obj::WorldModel-&gt;...)
+F model.allowModelScriptFlag
+     Allow model-wide scripts (GA::Obj::WorldModel-&gt;...)
+F model.allowRoomScriptFlag
+     Allow individual room scripts (GA::Obj::WorldModel-&gt;...)
+F model.intelligentExitsFlag
+     Use intelligent exits (GA::Obj::WorldModel-&gt;...)
+F model.followAnchorFlag
+     Create new exit object using follow anchor pattern
+        (GA::Obj::WorldModel-&gt;...)
+F model.capitalisedRoomTagFlag
+     Display room tags in capitals (GA::Obj::WorldModel-&gt;...)
+F model.showTooltipsFlag
+     Show tooltips (GA::Obj::WorldModel-&gt;...)
+F model.explainGetLostFlag
+     Explain when automapper gets lost (GA::Obj::WorldModel-&gt;...)
+F model.disableUpdateModeFlag
+     Disable automapper update mode (GA::Obj::WorldModel-&gt;...)
+F model.updateExitTagFlag
+     Update region exit tags (GA::Obj::WorldModel-&gt;...)
+F model.drawRoomEchoFlag
+     Draw room echos (GA::Obj::WorldModel-&gt;...)
+F model.trackPosnFlag
+     Track position and scroll window (GA::Obj::WorldModel-&gt;...)
+S model.trackingSensitivity
+     Tracking sensitivity (GA::Obj::WorldModel-&gt;...)
+F model.avoidHazardsFlag
+     Avoid hazards when pathfinding (GA::Obj::WorldModel-&gt;...)
+F model.postProcessingFlag
+     Produce smooth paths when pathfinding (GA::Obj::WorldModel-&gt;...)
+F model.quickPathFindFlag
+     Go to double-clicked room (GA::Obj::WorldModel-&gt;...)
+F model.autocompleteExitsFlag
+     Auto-complete uncertain exits (GA::Obj::WorldModel-&gt;...)
+S model.mudlibPath
+     Mudlib directory path (GA::Obj::WorldModel-&gt;...)
+S model.mudlibExtension
+     Mudlib file extension (GA::Obj::WorldModel-&gt;...)
+F model.paintAllRoomsFlag
+     Paint existing rooms (GA::Obj::WorldModel-&gt;...)
+F model.locateRandomInRegionFlag
+     Locate after random region exit (GA::Obj::WorldModel-&gt;...)
+F model.locateRandomAnywhereFlag
+     Locate after general region exit (GA::Obj::WorldModel-&gt;...)
+S model.pathFindStepLimit
+     Path-finding step limit (GA::Obj::WorldModel-&gt;...)
+
+
+L msdp.generic.list
+     List of generic MSDP variables (from GA::Session-&gt;msdpGenericValueHash)
+S msdp.generic.VAR
+     Value of generic MSDP variable 'VAR'; if 'VAR' contains space
+        characters, write them as underline characters, e.g. 'PAY_FOR_PERKS'
+        (from GA::Session-&gt;msdpGenericValueHash)
+L msdp.custom.list
+     List of custom MSDP variables (from GA::Session-&gt;msdpCustomValueHash)
+S msdp.custom.VAR
+     Value of custom MSDP variable 'VAR'; if 'VAR' contains space characters,
+        write them as underline characters (from
+        GA::Session-&gt;msdpCustomValueHash)
+
+
+L mssp.generic.list
+     List of generic MSSP variables 'VAR' (from
+        GA::Profile::World-&gt;msspGenericValueHash)
+S mssp.generic.VAR
+     Value of generic MSSP variable 'VAR'; if 'VAR' contains space
+        characters, write them as underline characters (from
+        GA::Profile::World-&gt;msspGenericValueHash)
+L mssp.custom.list
+     List of custom MSSP variables 'VAR' (from
+        GA::Profile::World-&gt;msspCustomValueHash)
+S mssp.custom.VAR
+     Value of custom MSSP variable 'VAR'; if 'VAR' contains space characters,
+        write them as underline characters (from
+        GA::Profile::World-&gt;msspCustomValueHash)
+
+
+L mxp.entity.list
+     List of MXP entities (custom entities only)
+S mxp.entity.VAR
+     Value of MXP entity 'VAR' (both custom and standard entities) (from
+        GA::Session-&gt;mxpEntityHash)
+
+
+L plugin.init
+     List of plugins to load at startup (GA::Client-&gt;initPluginList)
+L plugin.load
+     List of plugins loaded (from GA::Client-&gt;pluginHash)
+O plugin.NAME
+     Axmud plugin object called 'NAME' (from GA::Client-&gt;pluginHash)
+
+
+o prof.NAME
+     Profile called 'NAME' (from GA::Session-&gt;profHash, or else
+        GA::Client-&gt;worldProfHash)
+L prof.priority.list
+     Profile priority list in current session (GA::Session-&gt;profPriorityList)
+
+
+F protocol.echo
+     Use ECHO protocol (GA::Client-&gt;useEchoFlag)
+F protocol.sga
+     Use SGA protocol (GA::Client-&gt;useSgaFlag)
+F protocol.ttype
+     Use TTYPE protocol (GA::Client-&gt;useTTypeFlag)
+F protocol.eor
+     Use EOR protocol (GA::Client-&gt;useEorFlag)
+F protocol.naws
+     Use NAWS protocol (GA::Client-&gt;useNawsFlag)
+F protocol.newenviron
+     Use NEW-ENVIRON protocol (GA::Client-&gt;useNewEnvironFlag)
+F protocol.charset
+     Use CHARSET protocol (GA::Client-&gt;useCharSetFlag)
+S protocol.ttype.mode
+     Which termtypes to send during TTYPE/MTTS (GA::Client-&gt;termTypeMode)
+S protocol.ttype.name
+     Custom client name to send (GA::Client-&gt;customClientName)
+S protocol.ttype.version
+     Custom client version to send (GA::Client-&gt;customClientVersion)
+S protocol.ttype.sent
+     Termtype actually sent (GA::Session-&gt;specifiedTType)
+
+F protocol.msdp
+     Use MSDP MUD protocol (GA::Client-&gt;useMsdpFlag)
+F protocol.mssp
+     Use MSSP MUD protocol (GA::Client-&gt;useMsspFlag)
+F protocol.mccp
+     Use MCCP MUD protocol (GA::Client-&gt;useMccpFlag)
+F protocol.msp
+     Use MSP MUD protocol (GA::Client-&gt;useMspFlag)
+F protocol.mxp
+     Use MXP MUD protocol (GA::Client-&gt;useMxpFlag)
+F protocol.pueblo
+     Use Pueblo MUD protocol (GA::Client-&gt;usePuebloFlag)
+F protocol.zmp
+     Use ZMP MUD protocol (GA::Client-&gt;useZmpFlag)
+F protocol.aard102
+     Use AARDWOLF102 MUD protocol (GA::Client-&gt;useAard102Flag)
+F protocol.atcp
+     Use ATCP MUD protocol (GA::Client-&gt;useAtcpFlag)
+F protocol.gmcp
+     Use GMCP MUD protocol (GA::Client-&gt;useGmcpFlag)
+F protocol.mtts
+     Use MTTS MUD protocol (GA::Client-&gt;useMttsFlag)
+F protocol.mnes
+     Use MTTS MUD protocol (GA::Client-&gt;useMnesFlag)
+F protocol.mcp
+     Use MCP MUD protocol (GA::Client-&gt;useMcpFlag)
+
+F protocol.msp.multiple
+     Play simultaneous sound triggers (GA::Client-&gt;allowMspMultipleFlag)
+F protocol.msp.load
+     Download sound files (GA::Client-&gt;allowMspLoadSoundFlag)
+F protocol.msp.flexible
+     Recognise MSP tags in middle of line (GA::Client-&gt;allowMspFlexibleFlag)
+
+F protocol.mxp.font
+     Allow font change (GA::Client-&gt;allowMxpFontFlag)
+F protocol.mxp.image.allow
+     Allow image display (GA::Client-&gt;allowMxpImageFlag)
+F protocol.mxp.image.load
+     Allow loading images (GA::Client-&gt;allowMxpLoadImageFlag)
+F protocol.mxp.image.filter
+     Allow image filters (GA::Client-&gt;allowMxpFilterImageFlag)
+F protocol.mxp.sound.allow
+     Allow sound (GA::Client-&gt;allowMxpSoundFlag)
+F protocol.mxp.sound.load
+     Allow loading sound files (GA::Client-&gt;allowMxpLoadSoundFlag)
+F protocol.mxp.gauge
+     Allow gauges (GA::Client-&gt;allowMxpGaugeFlag)
+F protocol.mxp.frame
+     Allow frames (GA::Client-&gt;allowMxpFrameFlag)
+F protocol.mxp.interior
+     Allow interior frames (GA::Client-&gt;allowMxpInteriorFlag)
+F protocol.mxp.crosslink
+     Allow crosslink operations (GA::Client-&gt;allowMxpCrosslinkFlag)
+F protocol.mxp.room
+     Locator uses MXP room tags exclusively change
+        (GA::Client-&gt;allowMxpRoomFlag)
+F protocol.mxp.flexible
+     Allow (some) illegal MXP keywords (GA::Client-&gt;allowMxpFlexibleFlag)
+
+S protocol.mode.echo
+     Current session's ECHO mode (GA::Session-&gt;echoMode)
+S protocol.mode.sga
+     Current session's SGA mode (GA::Session-&gt;sgaMode)
+S protocol.mode.eor
+     Current session's EOR mode (GA::Session-&gt;eorMode)
+S protocol.mode.naws
+     Current session's NAWS mode (GA::Session-&gt;nawsMode)
+S protocol.mode.msdp
+     Current session's MSDP mode (GA::Session-&gt;msdpMode)
+S protocol.mode.mssp
+     Current session's MSSP mode (GA::Session-&gt;msspMode)
+S protocol.mode.mccp
+     Current session's MCCP mode (GA::Session-&gt;mccpMode)
+S protocol.mode.msp
+     Current session's MSP mode (GA::Session-&gt;mspMode)
+S protocol.mode.mxp
+     Current session's MXP mode (GA::Session-&gt;mxpMode)
+S protocol.mode.pueblo
+     Current session's Pueblo mode (GA::Session-&gt;puebloMode)
+S protocol.mode.zmp
+     Current session's ZMP mode (GA::Session-&gt;zmpMode)
+S protocol.mode.aard102
+     Current session's AARD102 mode (GA::Session-&gt;aard102Mode)
+S protocol.mode.atcp
+     Current session's ATCP mode (GA::Session-&gt;atcpMode)
+S protocol.mode.gmcp
+     Current session's GMCP mode (GA::Session-&gt;gmcpMode)
+S protocol.mode.mcp
+     Current session's MCP mode (GA::Session-&gt;mcpMode)
+
+
+o race.current
+     Current race profile (GA::Session-&gt;currentRace)
+o race.NAME
+     Race profile called 'NAME' (from GA::Session-&gt;profHash)
+
+
+F recording.active
+     Recording currently in progress (GA::Session-&gt;recordingFlag)
+F recording.paused
+     Recording currently paused (GA::Session-&gt;recordingPausedFlag)
+L recording.current
+     Current recording, a list of strings (GA::Session-&gt;recordingList)
+F recording.position
+     Current recording position (GA::Session-&gt;recordingPosn)
+
+
+S regex.url.long
+     Regex matching valid web links (GA::Client-&gt;constUrlRegex)
+S regex.url.short
+     Regex matching short web links (GA::Client-&gt;constShortUrlRegex)
+S regex.email
+     Regex matching valid email addresses (GA::Client-&gt;constEmailRegex)
+
+
+L script.init.list
+     List of scripts that start in every session
+        (GA::Client-&gt;initScriptOrderList)
+S script.init.NAME
+     Run mode for the initial script NAME (from GA::Client-&gt;initScriptHash)
+
+
+O session.obj.NUMBER
+     Session object NUMBER (from GA::Client-&gt;sessionHash)
+S session.max
+     Maximum sessions allowed (GA::Client-&gt;sessionMax)
+
+S session.number
+     Current session number (GA::Session-&gt;number)
+O session.mainwin
+     Current 'main' window object (GA::Session-&gt;mainWin)
+O session.tab.default
+    Current session's default tab object (GA::Session-&gt;defaultTabObj)
+S session.tab.default.width
+    Default tab width in chars (GA::Obj::TextView-&gt;textWidthChars)
+S session.tab.default.height
+    Default tab height in chars (GA::Session-&gt;textHeightChars)
+O session.tab.current
+    Current session's current tab object (GA::Session-&gt;currentTabObj)
+S session.tab.current.width
+    Current tab width in chars (GA::Obj::TextView-&gt;textWidthChars)
+S session.tab.current.height
+    Current tab height in chars (GA::Session-&gt;textHeightChars)
+O session.mapwin
+     Current session's automapper window (GA::Session-&gt;mapWin)
+O session.map
+     Current session's automapper object (GA::Session-&gt;mapObj)
+O session.model
+     Current session's world model (GA::Session-&gt;worldModelObj)
+O session.history
+     Current session's connection history object
+        (GA::Session-&gt;connectHistoryObj)
+S session.charset
+     Current session's character set (GA::Session-&gt;sessionCharSet)
+F session.login
+     Current session's login flag (GA::Session-&gt;loginFlag)
+O session.mission
+     Current session's current mission (GA::Session-&gt;currentMission)
+S session.queue
+     Number of queued (excess) world commands
+        (from GA::Session-&gt;excessCmdList)
+F session.quit
+     Flag set if delayed quit IVs set (from GA::Session-&gt;delayedQuitTime)
+F session.freeze
+     Flag set if task loop frozen (GA::Session-&gt;freezeTaskLoopFlag)
+S session.host
+     Host address actually used (GA::Session-&gt;host)
+S session.port
+     Port actually used (GA::Session-&gt;port)
+S session.protocol
+     Connection protocol used (GA::Session-&gt;protocol)
+S session.status
+     Session status (GA::Session-&gt;status)
+S session.packets
+     No. packets received from world during session
+        (GA::Session-&gt;packetCount)
+S session.time.display
+     Time text last received from world (GA::Session-&gt;lastDisplayTime)
+S session.time.instruct
+     Time last instruction processed (GA::Session-&gt;lastInstructTime)
+S session.time.cmd
+     Time last world command processed (GA::Session-&gt;lastCmdTime)
+S session.time.outbounds
+     Time last out-of-bounds communication processed
+        (GA::Session-&gt;lastOutBoundsTime)
+S session.redirect.mode
+     Redirect mode (GA::Session-&gt;redirectMode)
+S session.redirect.string
+     Redirect mode string (GA::Session-&gt;redirectString)
+
+
+L sound.format
+     List of supported audio file formats
+        (from GA::Client-&gt;constSoundFormatHash)
+F sound.allow
+     Allow sound effects (GA::Client-&gt;allowSoundFlag)
+F sound.ascii
+     Allow ASCII bells (GA::Client-&gt;allowAsciiBellFlag)
+L sound.effect.list
+     List of sound effects (from GA::Client-&gt;customSoundHash)
+L sound.effect.NAME
+     Full file path to sound effect file NAME
+        (from GA::Client-&gt;customSoundHash)
+
+
+O task.name.NAME
+     Current task with unique name 'NAME', e.g. 'status_task_5' (from
+        GA::Session-&gt;currentTaskHash)
+O task.recent.NAME
+     Most recently-created current task with formal name 'NAME', e.g.
+        'status_task' (from GA::Session-&gt;currentTaskNameHash)
+O task.init.NAME
+     Global initial tasklist task called 'NAME' (from
+        GA::Client-&gt;initTaskHash)
+O task.custom.NAME
+     Custom task called 'NAME' (from GA::Client-&gt;customTaskHash)
+S task.package.NAME
+     Customisable task package name 'NAME' (from GA::Client-&gt;taskPackageHash)
+S task.label.LABEL
+     Customisable task label 'LABEL' (from GA::Client-&gt;taskLabelHash)
+L task.runlist.first
+     Customisable task run-first runlist (GA::Client-&gt;taskRunFirstList)
+L task.runlist.last
+     Customisable task run-last runlist (GA::Client-&gt;taskRunLastList)
+O task.current.advance
+     Current Advance task (GA::Session-&gt;advanceTask)
+O task.current.attack
+     Current Attack task (GA::Session-&gt;attackTask)
+O task.current.channels
+     Current Channels task (GA::Session-&gt;channelsTask)
+O task.current.chat
+     Lead Chat task (GA::Session-&gt;chatTask)
+O task.current.compass
+     Current Compass task (GA::Session-&gt;compassTask)
+O task.current.condition
+     Current Condition task (GA::Session-&gt;conditionTask)
+O task.current.divert
+     Current Divert task (GA::Session-&gt;divertTask)
+O task.current.inventory
+     Current Inventory task (GA::Session-&gt;inventoryTask)
+O task.current.launch
+     Current Launch task (GA::Session-&gt;launchTask)
+O task.current.locator
+     Current Locator task (GA::Session-&gt;locatorTask)
+O task.current.notepad
+     Current Notepad task (GA::Session-&gt;notepadTask)
+O task.current.rawtext
+     Current RawText task (GA::Session-&gt;rawTextTask)
+O task.current.rawtoken
+     Current RawToken task (GA::Session-&gt;rawTokenTask)
+O task.current.status
+     Current Status task (GA::Session-&gt;statusTask)
+O task.current.system
+     Current System task (GA::Session-&gt;systemTask)
+O task.current.tasklist
+     Current TaskList task (GA::Session-&gt;taskListTask)
+O task.current.watch
+     Current Watch task (GA::Session-&gt;watchTask)
+
+
+o template.NAME
+     Profile template called 'NAME' (from GA::Session-&gt;templateHash)
+
+
+o toolbar.NAME
+     Toolbar button object called NAME (from GA::Client-&gt;toolbarHash)
+L toolbar.list
+     Ordered of toolbar button object names (GA::Client-&gt;toolbarList)
+
+
+F tts.flag.allow
+     Allow text-to-speech/TTS (GA::Client-&gt;customAllowTTSFlag)
+F tts.flag.smooth
+     Allow TTS smoothing (GA::Client-&gt;ttsSmoothFlag)
+L tts.engine.list
+     List of supported TTS engines (GA::Client-&gt;constTTSList)
+L tts.obj.list
+     List of TTS configuration objects (from GA::Client-&gt;ttsObjHash)
+o tts.obj.NAME
+     TTS configuration object called NAME (from GA::Client-&gt;ttsObjHash)
+F tts.enable.receive
+     Convert text received from world (GA::Client-&gt;ttsReceiveFlag)
+F tts.flag.login
+     Don't convert text received before login (GA::Client-&gt;ttsLoginFlag)
+F tts.enable.system
+     Convert system messages (GA::Client-&gt;ttsSystemFlag)
+F tts.enable.error
+     Convert system error messages (GA::Client-&gt;ttsSystemErrorFlag)
+F tts.enable.cmd
+     Convert world commands (GA::Client-&gt;ttsWorldCmdFlag)
+F tts.enable.dialogue
+     Convert 'dialogue' windows (GA::Client-&gt;ttsDialogueFlag)
+F tts.enable.task
+     Convert (some) task window text (GA::Client-&gt;ttsTaskFlag)
+
+
+F window.main.share
+     Share 'main' windows (GA::Client-&gt;shareMainWinFlag)
+S window.main.width
+     Default width for 'main' windows (GA::Client-&gt;customMainWinWidth)
+S window.main.height
+     Default height for 'main' windows (GA::Client-&gt;customMainWinHeight)
+S window.grid.width
+     Default width for other 'grid' windows (GA::Client-&gt;customGridWinWidth)
+S window.grid.height
+     Default height for other 'grid' windows
+        (GA::Client-&gt;customGridWinHeight)
+O window.grid.NUMBER
+     'grid' window NUMBER (from GA::Obj::Desktop-&gt;gridWinHash)
+O window.free.NUMBER
+     'free' window NUMBER (from GA::Obj::Desktop-&gt;freeWinHash)
+S window.text.size
+     Maximum lines is a textview (GA::Client-&gt;customTextBufferSize)
+S window.charset.current
+     Current character set (GA::Client-&gt;charSet)
+L window.charset.list
+     Ordered list of available character sets (GA::Client-&gt;charSetList)
+S window.mode.tab
+     Session tab mode (GA::Client-&gt;sessionTabMode)
+F window.mode.xterm
+     Use xterm titles in tabs (GA::Client-&gt;xTermTitleFlag)
+F window.mode.long
+     Use long world name in tabs (GA::Client-&gt;longTabLabelFlag)
+F window.mode.simple
+     Allow simple tabs (GA::Client-&gt;simpleTabFlag)
+F window.mode.toolbar
+     Show toolbar button labels in 'main' and automapper windows
+        (GA::Client-&gt;toolbarLabelFlag)
+F window.mode.irreversible
+     Show icon for irreversible actions in 'edit' windows
+        (GA::Client-&gt;irreversibleIconFlag)
+F window.mode.urgency
+     Show 'main' window urgency hints (GA::Client-&gt;mainWinUrgencyFlag)
+F window.mode.tooltip
+     Show tooltips in session's default tab (GA::Client-&gt;mainWinTooltipFlag)
+F window.confirm.close
+     Prompt user before click-close 'main' window
+        (GA::Client-&gt;confirmCloseMainWinFlag)
+F window.confirm.tab
+     Prompt user before click-close tab (GA::Client-&gt;confirmCloseTabFlag)
+F window.keys.scroll
+     Page up/down/home/end keys scrolls window pane
+        (GA::Client-&gt;useScrollKeysFlag)
+F window.keys.smooth
+     Smooth window pane scrolling (GA::Client-&gt;smoothScrollKeysFlag)
+F window.keys.split
+     Page up/down/home/end keys enage split screen mode
+        (GA::Client-&gt;autoSplitKeysFlag)
+F window.keys.complete
+     Tab/cursor up/down keys autocomplete instructions
+        (GA::Client-&gt;useCompleteKeysFlag)
+F window.keys.switch
+     CTRL+TAB switches window pane tabs (GA::Client-&gt;useSwitchKeysFlag)
+
+
+O winmap.NAME
+     Winmap object called 'NAME' (from GA::Client-&gt;winmapHash)
+S winmap.default.enabled
+     Default winmap name for 'main' windows when workspace grids enabled
+        (GA::Client-&gt;defaultEnabledWinmap)
+S winmap.default.disabled
+     Default winmap name for 'main' windows when workspace grids disabled
+        (GA::Client-&gt;defaultDisabledWinmap)
+S winmap.default.internal
+     Default winmap name for other 'grid' windows
+        (GA::Client-&gt;defaultInternalWinmap)
+
+
+S workspace.dir
+     Direction of workspace use (GA::Client-&gt;initWorkspaceDir)
+S workspace.init.count
+     Number of initial workspaces (from GA::Client-&gt;initWorkspaceHash)
+S workspace.init.NUMBER
+     Default zonemap name for initial workspace NUMBER (from
+        GA::Client-&gt;initWorkspaceHash)
+F workspace.grid.activate
+     Activate workspace grids (GA::Client-&gt;activateGridFlag)
+F workspace.grid.permit
+     Permit workspace grids (GA::Obj::Desktop-&gt;gridPermitFlag)
+S workspace.grid.block
+     Size of gridblocks, in pixels (from GA::Client-&gt;gridBlockSize)
+S workspace.grid.gap
+     Maximum size of grid gaps, in blocks (GA::Client-&gt;gridGapMaxSize)
+F workspace.grid.adjust
+     Grid adjustment flag (GA::Client-&gt;gridAdjustmentFlag)
+F workspace.grid.correct
+     Edge correction flag (GA::Client-&gt;gridEdgeCorrectionFlag)
+F workspace.grid.reshuffle
+     Grid reshuffle flag (GA::Client-&gt;gridReshuffleFlag)
+F workspace.grid.invisible
+     Grid invisible window flag (GA::Client-&gt;gridInvisWinFlag)
+O workspace.obj.NUMBER
+     Workspace object NUMBER (from GA::Obj::Desktop-&gt;workspaceHash)
+O workspace.grid.NUMBER
+     Workspace grid NUMBER (from GA::Obj::Desktop-&gt;gridHash)
+
+
+o world.current
+     Current world profile (GA::Session-&gt;currentWorld)
+o world.NAME
+     World profile called 'NAME' (from GA::Client-&gt;worldProfHash)
+L world.list.favourite
+L world.list.favorite
+     Favourite world list (GA::Client-&gt;favouriteWorldList)
+L world.list.basic
+     Basic world list (from GA::Client-&gt;constBasicWorldHash)
+F world.flag.history
+     Store connection history in world profile
+        (GA::Client-&gt;connectHistoryFlag)
+
+
+L zmp.list
+     List of (all) ZMP packages created by plugins
+L zmp.list.PACKAGE[.SUBPACKAGE]
+     Value of supported commands in the ZMP package
+
+
+O zonemap.NAME
+     Zonemap object called 'NAME' (from GA::Client-&gt;zonemapHash)
+</code></pre>
+<hr>
+<p><a href="ch16.html">Previous</a> <a href="index.html">Index</a> <a href="ch18.html">Next</a></p>
+
+</body>
+</html>

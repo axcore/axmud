@@ -1,0 +1,6 @@
+The Countdown task opens a window with a clock. The clock can count down from
+   a specifed time, or count up from zero until it reaches a specified time.
+
+Client commands used with the Countdown task are:
+   ;setcountdown              Sets a countdown
+   ;setcountup                Sets a countdown, counting up from zero

@@ -1,0 +1,26 @@
+Lead developer:
+A S Lewis <aslewis@cpan.org>
+
+Credits:
+Axbasic based on Language::Basic by Amir Karger
+Binomial heap code copied (unmodified) from Heap::Binomial by John Macdonald
+Chat task based on Kildclient plugin by Eduardo M Kalinowski
+Pathfinding algorithms based on AI::Pathfinding::AStar by Aaron Dalton
+Roman numeral conversion based on Text::Roman by Stanislaw Pusep
+Simple list code based on Gtk3::SimpleList by Thierry Vignaud
+Telnet code based on Net::Telnet by Jay Rogers
+Window manager control code based on X11::WMCtrl by Gavin Brown
+Images/icons by Dave Stokes, www.fatcow.com and A S Lewis. License information
+   and full attributions can be found in ../share/images/COPYING and
+   ../share/icons/COPYING
+Sound by KevanGC, AirMan, AngryFlash, battlestar10, Brandondorf, Cam Martinez,
+   Christopher, Conor, Daniel Simon, DrumM8, G-rant, Grant Evans, Grandpa,
+   J Blow, J Bravo, Kevan, KevanGC, Lisa Redfern, Maximilien, Mike Koenig,
+   Muska666, Pool Shot, PsychoBird, RA The Sun God, Ragdoll485, Samantha Enrico,
+   Simon Craggs, Snore Man, Sonidor, Sound Explorer, Stephan, Sweeper, tamskp,
+   Tim Fryer, Vladimir, Willem Hunt and Yannick Lemieux. License information and
+   full attributions can be found in ../share/items/sounds/COPYING
+Documentation and help files by A S Lewis. Licence information can be found in
+   ../share/docs/COPYING and ../share/help/COPYING
+
+

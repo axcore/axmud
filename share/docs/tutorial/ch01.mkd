@@ -1,0 +1,76 @@
+[Index](index.html) [Next](ch02.html)
+
+---
+
+#1 - Introduction
+
+####Table of Contents
+
+* [1.1 Axbasic](#1.1)
+* [1.2 Axbasic limitations](#1.2)
+* [1.3 How to use the tutorial](#1.3)
+* [1.4 Getting help within Axmud](#1.4)
+
+---
+
+##<a name="1.1">1.1 Axbasic</a>
+
+[Axmud](http://axmud.sourceforget.io) is a [MUD client](https://en.wikipedia.org/wiki/MUD_client) written in Perl 5 / Gtk3.
+
+Axbasic is the built-in scripting language used by Axmud. It's suitable for most scripting purposes, from the simple to the complex.
+
+Axbasic's syntax will be instantly familiar to many people. It is identical to the syntax used by the commercial [True BASIC](http://www.truebasic.com/) package, which is the successor to the original [Dartmouth BASIC](https://en.wikipedia.org/wiki/Dartmouth_BASIC) first released in the 1960s.
+
+In fact, Axmud will happily run most BASIC programmes written in those languages. Some features, such as pixel graphics and matrix operations, have not been implemented. (We don't think Axmud users will have any interest in them.)
+
+##<a name="1.2">1.2 Axbasic limitations</a>
+
+* Axbasic is not fast
+    * Scripts written in Axbasic won't run as fast as a script written in Perl, Python or Lua
+    * They are still *reasonably* fast, though
+* Axbasic is not object-orientated
+    * Object-orientated programming simply wasn't a concern in the 1960s. If you want to build complex representations of a game world, BASIC is not a good choice
+* Axbasic is not event-driven
+    * Many scripting languages - Perl, Python and Lua among them - can sit idle, waiting for some event to take place. Axbasic scripts have a completely different design - they run from beginning to end, and then they stop
+
+Axbasic does, in fact, provide these features to a limited degree.
+
+Event-driven programming can be implemented using Axmud interfaces (triggers, aliases, macros, timers and hooks). Axmud can create and store complex data structures that Axbasic scripts can use.
+
+If Axbasic isn't up to the job, you can write a Perl plugin instead. (This tutorial doesn't discuss Perl plugins.)
+
+##<a name="1.3">1.3 How to use the tutorial</a>
+
+This is a tutorial for beginners. It shows you how to write scripts in Axbasic, and how to run them within an Axmud session.
+
+The authors assume that you're only interested in writing scripts for your favourite MUD. If you're looking a formal education in correct programming technique, BASIC is not a suitable choice.
+
+We also assume that you have some very basic computer skills (such as how to open a text file in an editor, how to navigate folders on your computer's hard drive and how to install Axmud on your computer).
+
+##<a name="1.4">1.4 Getting help within Axmud</a>
+
+If you're already familiar with other scripting languages, or even with some flavour of BASIC, you might not need the tutorial at all.
+
+Axbasic scripts use *keywords* and *functions*. All of them are documented in help files, and those help files can be read from within an Axmud session.
+
+For example, you can see a (long) list of keywords and functions by typing the following command:
+
+    ;axbasichelp
+
+Axmud's client commands, as they're called, always begin with a semicolon. Almost all of them can be abbreviated, for example:
+
+    ;abh
+
+You can get help for a particular keyword, as well an example of its use, by typing either of the following:
+
+    ;axbasichelp move
+    ;abh move
+
+You can get help for various functions in the same way:
+
+    ;axbasichelp sin
+    ;abh sin
+
+---
+
+[Index](index.html) [Next](ch02.html)

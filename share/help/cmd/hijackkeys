@@ -1,0 +1,31 @@
+hjk / hijackkeys              Toggles cursor (etc) keys for replaying TTS
+ 
+   Format:
+      ;hjk                    Toggles cursor (etc) keys
+      
+   Notes:
+      When running the version of Axmud that's optimised for visually-impaired 
+         users, some keys are used for replaying text that has been converted
+         to speech.
+      This command can be used to enable or disable that functionality, when
+         running the normal of Axmud. (When running the optimised version, use
+         the ';freekeys' command instead).
+
+      They keys used (and their equivalent client commands) are:
+
+         home         ;split
+         end          ;prompt
+         left         ;unskip
+         right        ;skip
+         up           ;first
+         down         ;last
+         page up      ;unskip more
+         page down    ;skip more
+         tab          ;resume
+         escape       ;shutup
+
+      See also the help for ';split', ';skip', ';unskip', ';first', ';last',
+         ';resume' and ';shutup'.
+
+   User commands:
+      hjk / hijack / hijackkeys

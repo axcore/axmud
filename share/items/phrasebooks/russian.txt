@@ -1,0 +1,73 @@
+# Russian phrasebook
+# English name for language (lower-case)
+russian
+# Native name for language (capitalise)
+Русский
+# Noun position ('noun' - noun-adjective, 'adj' - adjective-noun)
+adj
+# Primary directions
+север
+northnortheast
+северо-восток
+eastnortheast
+восток
+eastsoutheast
+юго-восток
+southsoutheast
+юг
+southsouthwest
+юго-запад
+westsouthwest
+запад
+westnorthwest
+северо-запад
+northnorthwest
+до
+вниз
+# Primary abbreviated directions
+с
+nne
+св
+ene
+в
+ese
+юв
+sse
+ю
+ssw
+юз
+wsw
+з
+wnw
+сз
+nnw
+д
+вн
+# Number of definite articles
+0
+# Definite articles
+# Number of indefinite articles
+0
+# Indefinite articles
+# Number of 'and' words
+3
+# 'and' words
+и
+а
+но
+# Number of 'or' words
+2
+# 'or' words
+или
+либо
+# Number words
+один
+два
+три
+четыре
+пять
+шесть
+семь
+восемь
+девять
+десять

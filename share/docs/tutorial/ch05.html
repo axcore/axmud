@@ -1,0 +1,275 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch05</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch04.html">Previous</a> <a href="index.html">Index</a> <a href="ch06.html">Next</a></p>
+<hr>
+<h1>5 - Variables and Expressions</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#5.1">5.1 Introducing variables</a></li>
+<li><a href="#5.2">5.2 Using LET</a></li>
+<li><a href="#5.3">5.3 Variable names</a></li>
+<li><a href="#5.4">5.4 String variables</a></li>
+<li><a href="#5.5">5.5 Displaying variables</a></li>
+<li><a href="#5.6">5.6 String operators</a></li>
+<li><a href="#5.7">5.7 Numeric operators</a></li>
+<li><a href="#5.8">5.8 Expressions</a></li>
+<li><a href="#5.9">5.9 Operator precedence</a></li>
+<li><a href="#5.10">5.10 Using brackets</a></li>
+<li><a href="#5.11">5.11 Getting input</a></li>
+<li><a href="#5.12">5.12 Avoiding LET</a></li>
+<li><a href="#5.13">5.13 Illegal expressions</a></li>
+</ul>
+<hr>
+<h2><a name="5.1">5.1 Introducing variables</a></h2>
+<p>When we want to store something in memory - a number, a word, a sentence, perhaps an entire whole room description - we give it a symbolic name.</p>
+<p>For example, if you want to store your character's health points, you might use the name <strong>health</strong>.</p>
+<pre><code>    health = 100
+</code></pre>
+<p>To store your character's energy or movement points, you would use a different name.</p>
+<pre><code>    energy = 250
+</code></pre>
+<p>The name you choose doesn't matter; the important thing is to choose a name that can be easily understood. The following line is perfectly good Axbasic, but it's still a really bad idea:</p>
+<pre><code>    fpwpxzkiu = 99
+</code></pre>
+<p>In Axbasic, a <em>variable</em> is a value that's been stored in memory and given a symbolic name. It's called a variable because we can change the value any time we want.</p>
+<pre><code>    health = 90
+    health = 80
+    health = 70
+    ...
+</code></pre>
+<h2><a name="5.2">5.2 Using LET</a></h2>
+<p>If you try running the following Axbasic script, you'll see an error message.</p>
+<pre><code>    health = 100
+    END
+</code></pre>
+<p>We've already mentioned a general rule in BASIC, namely that every statement must begin with a keyword. The first line starts with a variable, not a keyword, and that's not allowed.</p>
+<p>When we want to create or modify a variable, we use the keyword LET.</p>
+<pre><code>    LET health = 100
+    END
+</code></pre>
+<p>Every statement now starts with a keyword, so the script will now run. (There is a way to avoid LET altogether; we'll discuss it later in this Section.)</p>
+<h2><a name="5.3">5.3 Variable names</a></h2>
+<p>There are some rules about variable names.</p>
+<ul>
+<li>The first character must be a letter</li>
+<li>Other characters can be letters, numbers or underline (underscore) characters</li>
+<li>The name can be as long as you want</li>
+<li>Case doesn't matter</li>
+<li>You can't use an Axbasic keyword like PRINT or END</li>
+</ul>
+<p>All of the following variable names are allowed:</p>
+<pre><code>    hp
+    health
+    health_points
+    the_health_points_for_my_character_are_stored_here
+</code></pre>
+<p>But this line would cause an error:</p>
+<pre><code>    LET print = 10
+</code></pre>
+<p>Traditonally, keywords like PRINT and END are typed in capital letters but variable names like <strong>health</strong> and <strong>energy</strong> are typed in lower-case letters. Observing this tradition will make your scripts much easier to understand.</p>
+<p>If your variable name contains several words, you should use underline characters. Don't simply use a much longer word - it's difficult to read, <em>especially</em> for someone whose first language is not English</p>
+<pre><code>    thisisaverybadchoiceforavariablename
+    do_this_instead
+    orDoThisIfYouPrefer
+</code></pre>
+<p>Strictly speaking, it doesn't matter if you type in capitals, lower-case letters or a mixture of the two. Axbasic thinks that all of these are the same variable:</p>
+<pre><code>    health
+    HEALTH
+    hEaLtH
+</code></pre>
+<h2><a name="5.4">5.4 String variables</a></h2>
+<p>A string is any value that's not a number - a letter, a word, a sentence, or something even longer.</p>
+<p>In Axbasic, strings are always written between double quotes. We've already seen a few examples.</p>
+<pre><code>    PRINT "Hello world"
+    MOVE "north"
+    SEND "inventory"
+</code></pre>
+<p>For strings, the variable name always ends with a dollar character.</p>
+<pre><code>    LET name$ = "bilbo"
+    LET address$ = "the shire"
+    LET favourite_colour$ = "gold"
+</code></pre>
+<p>If you forget to type either the dollar or the double quotes, you'll see an error message. For example, this script won't work because the variable <strong>number</strong> is expecting a numeric value, not a string.</p>
+<pre><code>    LET number = "bilbo"
+</code></pre>
+<p>However, the converse isn't true. If you use a string variable and a numeric value, Axbasic will convert the value into a string. Both of the following lines behave in exactly the same way:</p>
+<pre><code>    LET value$ = "100"
+    LET value$ = 100
+</code></pre>
+<p>String variables can have the same name as an Axbasic keyword - you can use variables called <strong>print$</strong> and <strong>end$</strong>, if you really want to. (We've already mentioned that numeric variables can't be called <strong>print</strong> or <strong>end</strong>.)</p>
+<h2><a name="5.5">5.5 Displaying variables</a></h2>
+<p>The following script creates a variable, displays its value, then modifies the variable and displays the new value.</p>
+<pre><code>    LET number = 1
+    PRINT number
+    LET number = 2
+    PRINT number
+    END
+</code></pre>
+<p>Of course, if we wanted to store words rather than numbers, we'd have to use a string variable.</p>
+<pre><code>    LET name$ = "bilbo"
+    PRINT name$
+    LET name$ = "gandalf"
+    PRINT name$
+    END
+</code></pre>
+<h2><a name="5.6">5.6 String operators</a></h2>
+<p>You can join two strings together by using the ampersand character.</p>
+<pre><code>    LET name$ = "bilbo"
+    LET surname$ = "baggins"
+    PRINT name$ &amp; surname$
+    END
+</code></pre>
+<p>This script joins the two strings together, and PRINTs them as a single line. The output looks like this:</p>
+<pre><code>    bilbobaggins
+</code></pre>
+<p>That's not very pleasing on the eye, but we can join as many strings as we want.</p>
+<pre><code>    LET name$ = "bilbo"
+    LET surname$ = "baggins"
+    PRINT name$ &amp; " " &amp; surname$
+    END
+</code></pre>
+<p>The output now looks like this:</p>
+<pre><code>    bilbo baggins
+</code></pre>
+<h2><a name="5.7">5.7 Numeric operators</a></h2>
+<p>We can use the plus character to add two numbers.</p>
+<pre><code>    LET first = 10
+    LET second = 20
+    PRINT first + second
+    END
+</code></pre>
+<p>Hopefully, this script will display a single number:</p>
+<pre><code>    30
+</code></pre>
+<p>You can also use the minus character for subtractions. Multiplication is done with the asterisk character and division is done with the forward slash character.</p>
+<pre><code>    ! Let's do some sums
+    LET first = 10
+    LET second = 2
+    ! Add
+    PRINT first + second
+    ! Minus
+    PRINT first - second
+    ! Multiply
+    PRINT first * second
+    ! Divide
+    PRINT first / second
+    END
+</code></pre>
+<p>The output looks like this:</p>
+<pre><code>    12
+    8
+    20
+    5
+</code></pre>
+<p>You can use the circumflex accent character to raise a number to a power.</p>
+<pre><code>    ! Find the square of 2
+    PRINT 2 ^ 2
+    ! Find 2 to the power of 3
+    PRINT 2 ^ 3
+    ! Find 2 to the power of 10
+    PRINT 2 ^ 10
+    END
+</code></pre>
+<p>The output looks like this:</p>
+<pre><code>    4
+    8
+    1024
+</code></pre>
+<h2><a name="5.8">5.8 Expressions</a></h2>
+<p>The characters we've just used ( &amp; + - * / and ^ ) are called <em>operators</em>.</p>
+<p>When we put a series of values and operators together, we get an <em>expression</em>. All of the following lines are expressions.</p>
+<pre><code>    42
+    1 + 2
+    10 - 5 + 1
+    3 * 6 * 2
+    "bilbo" &amp; "baggins"
+</code></pre>
+<p>The important thing to remember about expressions is that they can be reduced to a single value. In other words, we can work out the "answer".</p>
+<pre><code>    42
+    3
+    6
+    36
+    bilbobaggins
+</code></pre>
+<p>Before using an expression, Axbasic always works out the answer. We call this <em>evaluating the expression</em>. In this example, Axbasic evaluates the expression first, <em>before</em> PRINTing anything. The script PRINTs the number 15; it doesn't PRINT the numbers 1 to 5.</p>
+<pre><code>    PRINT 1 + 2 + 3 + 4 + 5
+    END
+</code></pre>
+<h2><a name="5.9">5.9 Operator precedence</a></h2>
+<p>Take a look at the following script, and try to work out which number it PRINTs.</p>
+<pre><code>    PRINT 1 + 2 * 4
+    END
+</code></pre>
+<p>If you think the value is 9, you're right. But you might have thought the script would display 12; after all, 1 plus 2 is 3, and 3 multiplied by 4 is 12.</p>
+<p>All programming languages - including Axbasic - have some notion of <em>operator precedence</em>, which is a fancy way of saying that multiplication should be done before addition.</p>
+<p>In other words, for the expression:</p>
+<pre><code>    1 + 2 * 4
+</code></pre>
+<p>We do the multiplication <em>first</em>, which gives us:</p>
+<pre><code>    1 + 8
+</code></pre>
+<p><em>Then</em> we do the addition, giving us the final value of 9. Axbasic <em>always</em> gives this same value, no matter how many times you run the script.</p>
+<p>(For anyone who is wondering, operators have <em>left-to-right associativity</em>. Because there are comparitively few operators compared to more modern languages, associativity is irrelevant in the behaviour of Axbasic scripts.)</p>
+<h2><a name="5.10">5.10 Using brackets</a></h2>
+<p>At this point, all programming tutorials will tell you that writing an expression like <strong>1 + 2 * 4</strong> is a <em>really bad idea</em>, even though it's perfectly legal Axbasic.</p>
+<p>A much better way is to use brackets. In an expression, everything inside a pair of brackets is worked out first.</p>
+<pre><code>    (1 + 2) * 4
+</code></pre>
+<p>In this example, 1 plus 2 is 3. We work that part out first because it's inside a pair of brackets. Then we work out that 3 multiplied by 4 is 12.</p>
+<p>It's possible to use brackets within brackets, if you need to.</p>
+<pre><code>    ( (1 + 2) * 4 ) / 2
+</code></pre>
+<p>In this example, we work out the innermost sum first. 1 plus 2 is 3, and 3 multipled by 4 is 12. Then we divide 12 by 2, to get the final answer of 6.</p>
+<p>You can use as many brackets as you want, but the expression must contain exactly the same number of open brackets and close brackets.</p>
+<h2><a name="5.11">5.11 Getting input</a></h2>
+<p>One way to set a variable's value is to use LET. Another way is to ask the user to type the value themselves.</p>
+<p>An INPUT statement waits for the user to type something, and then stores it in a variable</p>
+<pre><code>    PRINT "What is your name?"
+    INPUT name$
+    PRINT "Your name is"
+    PRINT name$
+    END
+</code></pre>
+<p>Axbasic creates a dialogue (popup) window. After the user types their name and presses ENTER, the window disappears. The user's response is stored in the variable <strong>name$</strong>.</p>
+<h2><a name="5.12">5.12 Avoiding LET</a></h2>
+<p>After a while, BASIC programmers grow weary of typing LET every time they want to set a variable, and begin wondering why they can't just type something like this:</p>
+<pre><code>    number = 10
+</code></pre>
+<p>Well, in fact it's possible to do tell Axbasic that you don't want to use LET at all. Just put this line somewhere in your script:</p>
+<pre><code>    OPTION NOLET
+</code></pre>
+<p>Now you don't need to use LET at all.</p>
+<pre><code>    OPTION NOLET
+    first = 10
+    second = 5
+    third = 2
+    PRINT first * second * third
+    END
+</code></pre>
+<p>By the way, before Axbasic starts executing a script, it checks every line, looking for OPTION statements. If it finds any, it applies them immediately.</p>
+<p>In other words, your OPTION NOLET can appear anywhere in the script. In practice, though, it's a very bad idea to put it anywhere but at the beginning. (Your computer doesn't mind checking every line in the script, but humans won't thank you for it.)</p>
+<h2><a name="5.13">5.13 Illegal expressions</a></h2>
+<p>In Axbasic, as in all other programming languages, you can't divide any number by zero. This simply isn't allowed. (A mathematician would say the operation is <em>undefined</em>.)</p>
+<p>If you try running this script, you'll get a <em>Division by zero</em> error.</p>
+<pre><code>    PRINT 10 / 0
+    END
+</code></pre>
+<p>However, multiplying by zero or raising a number to the power of zero <em>is</em> allowed. (The results are always zero and one, respectively.)</p>
+<hr>
+<p><a href="ch04.html">Previous</a> <a href="index.html">Index</a> <a href="ch06.html">Next</a></p>
+
+</body>
+</html>

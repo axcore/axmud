@@ -1,0 +1,127 @@
+[Previous](ch11.html) [Index](index.html) [Next](ch13.html)
+
+---
+
+#12 Initial and custom tasks
+
+####Table of Contents
+
+* [12.1 Initial tasks](#12.1)
+    * [12.1.1 Profile initial tasks](#12.1.1)
+* [12.2 Editing tasks](#12.2)
+    * [12.2.1 Editing current tasks](#12.2.1)
+    * [12.2.2 Editing initial tasks](#12.2.2)
+* [12.3 Custom tasks](#12.3)
+    * [12.3.1 Adding custom tasks](#12.3.1)
+    * [12.3.2 Editing custom tasks](#12.3.2)
+    * [12.3.3 Starting custom tasks](#12.3.3)
+
+---
+
+##<a name="12.1">12.1 Initial tasks</a>
+
+When you first run Axmud, the Setup wizard window asks you which tasks should be started automatically at the beginning of each session.
+
+There are several lists of *initial tasks*. The main one - the so-called *global initial tasklist* - can be viewed from the object viewer window.
+
+* Open the object viewer window using the **;openobjectviewer** command, or by clicking the button in the main window
+* When the window opens, click on **Tasks > Global initial tasklist**
+
+The object viewer window also lists the *types* of task that are available, including both built-in tasks and any tasks you have written yourself.
+
+* In the object viewer window , click on **Tasks > Available tasks**
+* Click the Divert task to select it
+* Then click on **Add initial**
+    * A few tasks, such as the Chat task, can only be started with a client command
+    * Therefore they can't be added to any initial tasklist
+
+Axmud has a number of task scheduling options. When you click the **Add initial** button, this window will appear:
+
+![Initial task window](img/ch12/initial_task.png)
+
+You'll probably never need any of these options, so you can click the **Add task** button right at the bottom of the window right away.
+
+###<a name="12.1.1">12.1.1 Profile initial tasks</a>
+
+Besides the global initial tasklist, each world profile also has its own initial tasklist. These tasks are started every time you connect to the world. (They are also started if you change the current world profile with a **;setworld** command.)
+
+Tasks can be added to a profile's initial tasklist using the profile's edit window.
+
+* Open the edit window using the **;editworld** command
+* When the window is open, click **Initial > Page 1**
+* In the combo (drop-down) box near the bottom-left corner, select **compass_task**
+* Click the **Add initial task** button
+
+Other types of profile have their own initial tasklists, too. The character profile's initial tasks are started whenever you connect to the world and log in with that character.
+
+* Many tasks (such as the Locator task) are *jealous*, which means only one copy of them can run at a time
+* If you add the Locator task to multiple initial tasklists, only one copy will start
+
+##<a name="12.2">12.2 Editing tasks</a>
+
+Some aspects of a task's behaviour can be modified.
+
+###<a name="12.2.1">12.2.1 Editing current tasks</a>
+
+For example, the Divert task's window changes its background colour whenever a **tell** message is received. If you find the bright yellow uncomfortable, you can change it.
+
+* If the Divert task isn't already running, start it with **;starttask divert**
+* From the main window menu, click **Tasks > Divert task > Edit current task...**
+* When the edit window opens, click on the **Parameters** tab
+* Find the combo (drop-down) box on the line marked **Tell colour**. It is currently set to YELLOW. (Bold colours are displayed in CAPITAL LETTERS)
+* Change the colour to MAGENTA
+* Click the **OK** button at the bottom of the window
+
+The current Divert task will reset itself automatically. The next **tell** message you receive will use the new colour.
+
+###<a name="12.2.2">12.2.2 Editing initial tasks</a>
+
+Any changes you make to the *current* divert task are lost at the end of the session (or when you halt the task).
+
+However, you can edit initial tasks, and any changes you make will be changes are retained between sessions.
+
+* Open the object viewer window using the **;openobjectviewer** command, or by clicking the button in the main window
+* When the window opens, click on **Tasks > Global initial tasklist**
+* Select the Divert task you created earlier by clicking on it
+* Click the **Edit** button
+* When the edit window opens, click the **Parameters** tab, modify the colours, and then click the **OK** button.
+
+In this example, any changes you make will be applied the next time you connect to any world. If you edit a world profiles's initial tasks, the changes will be applied the next time you connect to *that* world.
+
+##<a name="12.3">12.3 Custom tasks</a>
+
+'Custom' tasks can be modified in the same way as initial tasks. However, unlike initial tasks (which usually start when you connect to a world), custom tasks can be started whenever you need them.
+
+###<a name="12.3.1">12.3.1 Adding custom tasks</a>
+
+You can create a new custom task from the object viewer window.
+
+* Open the object viewer window using the **;openguiwindow** command, or by clicking the button in the main window
+* When the window opens, click on **Tasks > Available tasks**
+* Select the Watch task by clicking on it
+* Then click the **Add custom** button
+
+All custom tasks must have a unique name. When the task preferences window opens, you can enter this name in the box near the top. (Once again, you will probably never use the scheduling options in the rest of the window.)
+
+Enter a name like **mywatch** and then click the **Add task** button at the bottom of the window.
+
+###<a name="12.3.2">12.3.2 Editing custom tasks</a>
+
+Once the custom task has been created, you can modify its behaviour.
+
+* In the object viewer window, click on **Tasks > Custom tasklist**
+* Select the task by click on it
+* Then click the **Edit** button
+
+You can modify the task's colours in the same way as before. Click the edit window's **OK** button when you're finished.
+
+###<a name="12.3.3">12.3.3 Starting custom tasks</a>
+
+You can now start your custom Watch task at any time. All custom tasks are available when connected to any world.
+
+        ;startcustomtask mywatch
+        ;sct mywatch
+
+---
+
+[Previous](ch11.html) [Index](index.html) [Next](ch13.html)

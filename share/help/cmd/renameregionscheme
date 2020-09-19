@@ -1,0 +1,18 @@
+rrs / renameregionscheme      Renames a region colour scheme
+ 
+   Format:
+      ;rrs <old> <new>        Renames the scheme <old> as <new>
+      
+   Notes:
+      A region colour scheme defines a set of colours for one or more regions.
+         The automapper window uses these colours when it draws the region(s).   
+      <old> is the name of an existing region colour scheme (use
+         ';listregionscheme' to get a list of them).
+      <new> is the scheme's new name. <name> can be any text (maximum 16
+         characters).
+      If either <old> or <new> contain spaces, you should enclose the name in
+         diamond brackets <...>.
+      The default colour scheme cannot be renamed.
+        
+   User commands:
+      rrs / renamers / renameregionscheme

@@ -1,0 +1,32 @@
+tws / togglewindowstorage     Toggles storage of 'grid' window sizes/positions
+ 
+   Format:
+      ;tws                    Toggles storage on/off
+ 
+   Notes:
+      The workspace grid is an invisible grid, spanning the whole available
+         workspace, on which Axmud tries to arrange its windows so that they 
+         don't overlap (as far as possible).
+      Only 'grid' windows (including the 'main' window, task windows and the 
+         automapper window) are arranged on the workspace grid. Temporary 
+         windows, including the object viewer window and all edit, preference,
+         wizard and dialogue windows, are not affected.
+
+      Workspace grids are not available on all systems, and can be turned off on
+         all systems (using ';disactivategrid').
+      When workspace grids are turned off, new windows are created using a
+         default size and position. 
+      In that situation, you can use this command to store the size and position
+         of all 'grid' windows. The next time the same window is opened (either
+         in a new session, or when you restart Axmud), it's created using the
+         same size and position.
+      On MS WIndows, window storage is turned on by default. On other systems,
+         it's turned off by default.
+
+      For a list of stored sizes/positions, use the ';dumpwindowstorage' 
+         command. To store window sizes/positions just once, use
+         ';applywindowstorage'. To reset stored positions, see the help for the
+         ';clearwindowstorage' command.
+
+   User commands:
+      tws / togglewinstore / togglewindowstorage

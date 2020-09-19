@@ -1,0 +1,22 @@
+slu / setlookup               Sets the list of IP lookup servers
+ 
+   Format:
+      ;slu <list>             Sets the list
+      ;sfw                    Empties the list
+
+   Notes:
+      Some parts of the code need to know your IP address (for example, the Chat
+         task, and the MNES protocol). Axmud does this by contacting some IP
+         lookup servers.
+      This command sets the list of lookup servers. Every item in <list> should
+         be a valid URL.
+      If <list> is not specified, the list of servers is emptied. This is one
+         way to prevent Axmud from fetching your IP address, and potentially
+         sharing it with someone else.
+      Use ';resetlookup' to reset the list to its default state, or
+         ';listlookup' to show the list of servers.
+      Your IP is only fetched once. If you need to replace the stored value, for
+         some reason, you can use the ';forcelookup' command.
+ 
+   User commands:
+      slu / setlu / setlookup

@@ -1,0 +1,808 @@
+[Previous](ch06.html) [Index](index.html) [Next](ch08.html)
+
+---
+
+#7 Creating Interfaces
+
+####Table of Contents
+
+* [7.1 Triggers](#7.1)
+    * [7.1.1 Editing triggers ](#7.1.1)
+    * [7.1.2 Trigger attributes](#7.1.2)
+    * [7.1.3 Trigger styles](#7.1.3)
+    * [7.1.4 Rewriter triggers](#7.1.4)
+    * [7.1.5 Substrings in rewriter triggers](#7.1.5)
+    * [7.1.6 Substrings in other triggers](#7.1.6)
+    * [7.1.7 Splitter triggers](#7.1.7)
+    * [7.1.8 Simple splitter triggers](#7.1.8)
+    * [7.1.9 Advanced splitter triggers](#7.1.9)
+* [7.2 Aliases](#7.2)
+    * [7.2.1 Adding aliases](#7.2.1)
+    * [7.2.2 Safer aliases](#7.2.2)
+    * [7.2.3 Editing aliases](#7.2.3)
+    * [7.2.4 Alias attributes](#7.2.4)
+    * [7.2.5 Substrings in aliases](#7.2.5)
+* [7.3 Macros](#7.3)
+    * [7.3.1 Axmud keycodes](#7.3.1)
+    * [7.3.2 Adding macros](#7.3.2)
+    * [7.3.3 Editing macros](#7.3.3)
+    * [7.3.4 Macro attributes](#7.3.3)
+* [7.4 Timers](#7.4)
+    * [7.4.1 Adding timers](#7.4.1)
+    * [7.4.2 Editing timers](#7.4.2)
+    * [7.4.3 Timer attributes](#7.4.3)
+* [7.5 Hooks](#7.5)
+    * [7.5.1 Hook events](#7.5.1)
+    * [7.5.2 Hook data](#7.5.2)
+    * [7.5.3 Adding hooks](#7.5.3)
+    * [7.5.4 Editing hooks](#7.5.4)
+    * [7.5.5 Hook attributes](#7.5.5)
+    * [7.5.6 Using hook data](#7.5.6)
+    * [7.5.7 Redirect mode](#7.5.7)
+    * [7.5.8 Custom hook events](#7.5.8)
+* [7.6 Active and inactive interfaces](#7.6)
+
+---
+
+The quickest way to create a trigger, alias, macro, timer or hook is from the main window menu.
+
+##<a name="7.1">7.1 Triggers</a>
+
+We'll start with triggers. Click on **Edit > World triggers** and this window will appear.
+
+![Edit triggers window](img/ch07/edit_triggers.png)
+
+All interfaces have a *stimulus* and a *response*.
+
+A trigger uses a pattern as a stimulus. When Axmud receives a line of text that matches the pattern, we say that the trigger *fires*. After the trigger fires, it can send a world command in response.
+
+* In the **Trigger stimulus** box, enter the pattern **You kill the orc**
+* In the **Trigger response** box, enter the world command **get coins from corpse**
+* In the **Name** box, enter the name **mytrigger**
+    * A name will be created for you, if you don't enter one
+* Click the **Starts enabled** checkbutton to de-select it
+    * If the trigger starts disabled, we'll have a chance to finish editing it before Axmud starts checking it against received text
+* Make sure the **Splitter** and **Rewriter** checkbuttons are deselected, too
+* Click the **Add** button to create the trigger
+
+###<a name="7.1.1">7.1.1 Editing triggers</a>
+
+Triggers are highly customisable. Select **mytrigger** by clicking on it, and then click the **Edit** button.
+
+The new edit window contains three tabs. The **Name** tab allows you to change the trigger's stimulus and response, and also allows you to enable or disable the trigger.
+
+The **Attributes** tab allows you to customise the trigger - for example, to make matching lines disappear from view, or to disable the trigger automatically after the first match.
+
+When Axmud is testing triggers against a line of text, it checks the triggers in the same order each time. Sometimes the order is important, so the **Before / after** tab allows you to name the triggers that should be checked before or after this one.
+
+###<a name="7.1.2">7.1.2 Trigger attributes</a>
+
+Click on the **Attributes** tab.
+
+![Trigger attributes tab](img/ch07/trigger_attributes.png)
+
+We'll talk about rewriter triggers in [Section 7.1.4](#7.1.4) and splitter triggers in [Section 7.1.6](#7.1.6). First, let's examine the other attributes.
+
+**Igore the trigger response (e.g. just apply a style)**
+
+When this checkbutton is selected, nothing happens when the trigger fires (but any trigger style is still applied - see [Section 7.1.3](#7.1.3).
+
+**Ignore case**
+
+When the checkbutton is selected, this trigger doesn't care about capital letters. So, the pattern **You kill the orc** will match all of the following lines:
+
+        you kill the orc
+        You kill the orc
+        YOU KILL THE ORC
+
+From your reading of [Section 6](ch06.html) you'll remember that patterns are usually case-sensitive. De-select the button to make the pattern **You kill the orc** match only the first line above.
+
+**Keep checking triggers after a match**
+
+If the checkbutton is not selected, when this trigger's pattern matches a line, Axmud will not check any other triggers. If the checkbutton is selected, Axmud will continue checking the line against other triggers.
+
+**Only fire in session's default pane**
+
+A pane is an area of an Axmud window containing (multiple lines of) text. Most windows, including the main window, contain only one pane by default. Text received from the world is displayed in the main window's single pane by default.
+
+When the checkbutton is selected, the trigger only applies to text received from the world and displayed in that default pane. When it's not selected, the trigger applies to text received from the world and displayed in any pane (including in other windows).
+
+**Fire in named pane**
+
+One way to create multiple panes is to use scripts, including plugins, tasks and Axbasic scripts. Tasks, in particular, often create their own task window(s) which can contain one or more panes.
+
+Another way is to allow MUD protocols such as MXP and Pueblo to create multiple panes.
+
+In such cases, the pane is often (but not always) given a name. If so, the trigger can be applied only to text received from the world and displayed in that pane.
+
+**Require a prompt to fire**
+
+Most lines received from the world end with an (invisible) *newline* character. The character means *the next piece of text should be displayed on a new line*.
+
+A prompt is a line that doesn't end with a newline character. Typical prompts include:
+
+        What is your name?
+        Enter your password
+
+Axmud waits a short time (typically half a second) before deciding that a line of text is a definitely a prompt. After that, the trigger will fire if the checkbutton is selected and if the pattern matches the line.
+
+**Require a login to fire**
+
+When you first connect to a world, you will often see graphics and other unusual text, which can cause your triggers to behave in unexpected ways. To avoid this problem, you can select this checkbutton, after which the trigger won't fire until your character is marked as *logged in*.
+
+**Omit (gag) from output**
+
+When the checkbutton is selected, any line which matches the trigger's pattern is *not* displayed in the main window.
+
+**Omit (gag) from logfile**
+
+When the checkbutton is selected, any line which matches the trigger's pattern is *not* written to any logfiles.
+
+**Temporary trigger**
+
+If the checkbutton is selected, the trigger only fires once. After that, the active trigger becomes an inactive trigger - it will be available again, the next time you connect to the world, but it will not be available again during this session.
+
+**Cooldown (in seconds)**
+
+You can prevent a trigger from firing too often by setting a cooldown period. For example, if you set the cooldown to 10, after firing the trigger won't be able to fire again for another 10 seconds. The default value is 0, meaning no cooldown period is used.
+
+###<a name="7.1.3">7.1.3 Trigger styles</a>
+
+Now click on **Page 2** of the **Attributes** tab.
+
+![Trigger styles tab](img/ch07/trigger_styles.png)
+
+Triggers are able to change the way matching lines are displayed. This is really useful if you want to change the colour of **The orc drops its treasure**, so that it stands out against the surrounding text.
+
+Trigger styles are turned *off* by default. When you turn them on, you need to decide whether the new style should apply to the whole line, or just the portion of the line that matches the trigger's pattern.
+
+If the trigger's pattern contains groups (see [Section 6.1.5](ch06.html#6.1.5)), you can also apply a style just to that portion of text. For example, if you use the pattern **You have (.*) gold coins**, which matches the line:
+
+        You have 100 gold coins
+
+...you can draw attention to the **100** by clicking on **Mode n**, then selecting the number 1 (meaning, the substring matching the first group in the pattern) in the box just below.
+
+The trigger style can combine colours and other typographical features. **Foreground colour** is the colour of the text itself.  **Underlay colour** is the colour of the background immediately below the text. (Bold colours are shown in CAPITAL LETTERS). If you don't specify a colour, the line's normal colours are not changed.
+
+You can also apply italics, strikethrough, blinking text and underlines (underscores). If you apply the **link** style, the text will be a clickable link which Axmud will try to open in a web browser.
+
+Axmud triggers have a *stimulus* and a *response*. If you just want to apply the style and do nothing else, you can tell Axmud to ignore this trigger's response.
+
+* From the main window menu, click **Edit > World triggers**
+* In the **Trigger stimulus** box, enter **The orc drops its treasure**
+* In the **Trigger response** box, enter anything you like
+    * There must be a response, even though it's ignored
+* Click on **Page 1**
+* Select the **Ignore the trigger response (e.g. just apply a style)** button
+* Now click on **Page 2**
+* Click the **Mode -2 Apply style to matched text** button
+* In the drop-down box below **Text colour**, select a colour like **red**, and then click the **Set** button
+* Click the **OK** button to close the window
+
+###<a name="7.1.4">7.1.4 Rewriter triggers</a>
+
+All interfaces have a stimulus and a response. Most triggers have a pattern (stimulus) and an instruction (response), but there is a special class of trigger called a *rewriter trigger*.
+
+For rewriter triggers, the text matching the pattern is *substituted* for the text of the response.
+
+Rewriter triggers are often used to filter out coarse and injudicious language, so we'll use that as an example.
+
+* From the main window menu, click **Edit > World triggers**
+* In the **Trigger stimulus** box, enter a rude word as a pattern
+* In the **Trigger response** box, enter the text __\*\*\*\*__
+* In the **Name** box, enter the name **sweartrigger**
+* Click the **Rewriter** checkbutton to select it
+* Click the **Add** button to create the trigger
+
+Now, any received text which matches the pattern is modified, so that the scurrilous expletive is replaced by asterisks.
+
+        Gandalf says 'Oh, ****!'
+
+###<a name="7.1.5">7.1.5 Substrings in rewriter triggers</a>
+
+Rewriter triggers can use substrings.
+
+For example, suppose you want Axmud to convert a long string, containing lots of useless characters, into a shorter string containing only the important characters:
+
+        And the winner is ========== Gandalf ==========
+
+You could use a pattern like this:
+
+        And the winner is ========== (.*) ==========
+
+...which would match the line above, as long as it contained exactly the right number of = characters. However, let's assume that the number is variable, and use this pattern instead:
+
+        And the winner is =+ (.*) =+
+
+([Section 6.1.4](ch06.html#6.1.4) explains that + means *one or more of the previous characters*, in this case, one or more =  characters.)
+
+When the trigger fires, any part of the line matching the group **(.*)** is stored as a substring. In this case, the first substring contains the winner, **Gandalf**.
+
+We can use the first substring in the substituted text by specifying the variable **$1**.
+
+        And the winner is $1
+
+(If there is more than one substring, you can also use **$2**, **$3** and so on.)
+
+So now we're ready to create our trigger:
+
+* In the **Trigger stimulus** box, enter the pattern **And the winner is =+ (.*) =+**
+* In the **Trigger response** box, enter the text **And the winner is $1**
+* In the **Name** box, enter the name **mytrigger**
+* Click the **Rewriter** checkbutton to select it
+* Click the **Add** button to create the trigger
+
+When the trigger fires, the text at the top of this Section will be converted to:
+
+        And the winner is Gandalf
+
+There are a few things left to mention:
+
+* NB Before v1.1.270, the substituted text had to be enclosed in double-quotes
+    * e.g. **"And the winner is $1"**
+    * This is no longer necessary (but your old triggers will continue to work)
+* If you *actually* want the substituted text to begin and end with double quotes, you must duplicate them
+    * e.g. **""And the winner is $1""**
+* If you want the substituted text to contain a literal **$1**, precede it with a backslash
+    * e.g. **You have \\$1 gold coins in your $1**
+* If you *actually* want a backslash *anywhere* in the substituted text, use must use two of them
+    * e.g. **apples and\\\\or oranges**
+
+###<a name="7.1.6">7.1.6 Substrings in other triggers</a>
+
+Substrings can be used in non-rewriter triggers, too.
+
+In this example, we'll create a trigger that joins in any fight started by Gandalf. If he attacks an orc, the trigger fires and Axmud sends the world command **kill orc**.
+
+* In the **Trigger stimulus** box, enter the pattern **Gandalf attacks (.*)**
+* In the **Trigger response** box, enter the world command **kill $1**
+* In the **Name** box, enter the name **attacktrigger**
+* Click the **Rewriter** checkbutton to select it
+* Click the **Add** button to create the trigger
+
+The rules about literal double quotes, literal dollars and literal backwards slashes, mentioned just above, still apply.
+
+###<a name="7.1.7">7.1.7 Splitter triggers</a>
+
+At *Imperian: Sundered Heavens*, a room's verbose description and its exit list are usually on two separate lines, but occasionally they appear on the same line. This is confusing for the Locator task, on which the automapper relies, and can cause the automapper to lose its place.
+
+The solution to the problem is to use a splitter trigger to split the line into two, when necessary.
+
+(You don't need to read this Section if you want to play *Imperian*, because the pre-configured world profile already includes a suitable trigger. However, you should read this Section if you want to learn how to create your own splitter triggers.)
+
+In Axmud terminology, the whole room description - including the title, verbose description, list of exits and the contents of the room - is called a *room statement*. A typical room statement at *Imperian* looks like this:
+
+        A quiet alcove.
+        This small alcove is a sanctuary of quiet reflection.
+        You see a single exit leading north.
+
+The room statement consists of three lines - a title, a verbose description and an exit list. The verbose description is actually received as a single line - even when it's very long - but, depending on the size of the main window, it might be displayed as several lines.
+
+Alas, some rooms at *Imperian* have a room statement that looks like this:
+
+        A neat storage room.
+        This small storage room is neatly stacked. You see a single exit leading south.
+
+Here, the verbose description and exit list appear on the same line. Because the Locator task is expecting the exit list on a separate line, we need to split the second line into two, with one sentence on each line.
+
+###<a name="7.1.8">7.1.8 Simple splitter triggers</a>
+
+All triggers have a *stimulus* and a *response*. For splitter triggers, both of these are patterns. The simplest splitter triggers use the same pattern for both.
+
+* From the main window menu, click **Edit > World triggers**
+* In the **Trigger stimulus** box, enter **You see a single exit leading**
+* In the **Trigger response** box, enter the same pattern again
+* In the **Name** box, enter the name **exittrigger**
+* Click the **Splitter** checkbutton to select it
+* Click the **Add** button to create the trigger
+
+Now, the next time you type **look** at *Imperian*, you would see this:
+
+        A neat storage room.
+        This small storage room is neatly stacked.
+        You see a single exit leading south.
+
+Splitter triggers usually split the line just before the portion that matches the *stimulus* pattern. Sometimes it's more convenient to split a line just *after* a matching portion of text. Here's an example using the same room statement.
+
+* From the same edit window, click on **exittrigger** to select it, and then click the **Edit...** button
+* A new edit window appears, with the **Name** tab already visible
+* In the **Stimulus** box, type **This small storage room\s**
+    * The **\s** sequence means *any space character*
+    * Adding the sequences means that the line will be split just before the beginning of the next word
+* In the **Response** box, enter the same pattern
+* Now click on **Attributes > Page 1**
+* Find the checkbutton **Split after matching pattern, not before** and click on it to select it
+* Click the **OK** button to close the window
+
+The next time you **look** at the room, you would expect to see this:
+
+        A neat storage room.
+        This small storage room
+        is neatly stacked. You see a single exit leading south.
+
+###<a name="7.1.9">7.1.9 Advanced splitter triggers</a>
+
+The examples in the previous Section use identical patterns for both the stimulus and response. Sometimes it's useful to use two different patterns. Here's an example using the same room statement, in which the verbose description and exit list are initially on the same line.
+
+        A neat storage room.
+        This small storage room is neatly stacked. You see a single exit leading south.
+
+When Axmud tests a splitter trigger against a line of text, it uses the following process:
+
+* First, it checks the stimulus pattern *once*. If the stimulus pattern matches the line of text, Axmud moves onto the next step
+    * For example, the pattern **single exit** matches the second line
+* Next, Axmud checks the response pattern *multiple times*
+    * If the response pattern matches the line once, Axmud splits the line into two portions
+    * If the pattern matches the line *twice*, Axmud would split the line into three portions
+    * Axmud will split the line into as many matching portions as necessary
+
+We can use this to our advantage: the stimulus pattern tells Axmud *if* the line should be split, the response pattern tells us *exactly where* it should be split.
+
+Let's modify the existing trigger so that it splits a line containing **You see a single exit leading**, but *only* if it follows another sentence on the same line.
+
+* From the same edit window, click on **exittrigger** to select it, and then click the **Edit...** button
+* A new edit window appears, with the **Name** tab already visible
+* In the **Stimulus** box, type **\.\sThis small storage room  **
+    * The pattern needs to start with a full stop (period), and that should be followed by a space character. This is how we ensure that **You see a single exit leading** follows another sentence on the same line
+    * Don't forget that a full stop (period) must be preceded by a \ character in patterns (see [Section 6](ch06.html) if you don't know why)
+* In the **Response** box, enter the pattern **You see a single exit leading**
+* Now click on **Attributes > Page 1**
+* Find the checkbutton **Split after matching pattern, not before** and make sure it is *not* selected
+* Click the **OK** button to close the window
+
+The next time you **look** at the room, you would expect to see this:
+
+        A neat storage room.
+        This small storage room is neatly stacked.
+        You see a single exit leading south.
+
+This has been a trivial example; in fact, this more complex splitter trigger has exactly the same effect as the first one we created.
+
+However, you can use more complex splitter triggers to split a line in situations that wouldn't be possible using a simpler version.
+
+##<a name="7.2">7.2 Aliases</a>
+
+Aliases act on world commands such as **kill orc** or **inventory**. They don't act on client commands (see [Section 4.2](ch04.html#4.2)) or other kinds of instructions such as speedwalk commands ([Section 4.4](ch04.html#4.4)).
+
+Aliases are generally used to make commands shorter. For example, if you frequently have to type a command like this:
+
+        get coins from corpses
+
+...you can use an alias to reduce it to a command like this:
+
+        gcc
+
+You can also reduce *part of* a command. If you frequently have to type a command like this:
+
+        put amazing red crown on head
+
+...you can use an alias to reduce it to a command like this:
+
+        put arc on head
+
+###<a name="7.2.1">7.2.1 Adding aliases</a>
+
+Like all interfaces, Axmud aliases have a *stimulus* and a *response*.  The stimulus is a pattern. When you type a world command that matches the pattern, we say that the alias *fires*.
+
+The response is some text. When the alias fires, the response is *substituted* for part of the original command (or replaces all of it).
+
+* From the main window menu, click **Edit > World aliases**
+* In the **Alias stimulus** box, enter the pattern **arc**
+* In the **Alias response** box, enter the text **amazing red crown**
+* In the **Name** box, enter the name **myalias**
+    * A name will be created for you, if you don't enter one
+* Click the **Add** button to create the alias
+
+You can now type the world command **put arc on head**; it should appear in the main window as
+
+        put amazing red crown on head
+
+##<a name="7.2.2">7.2.2 Safer aliases</a>
+
+Aliases like these come with hidden dangers: the pattern **arc** also matches this command:
+
+        enter archway
+
+If you type **enter archway**, the alias will fire, and the *actual* command sent to the world will be:
+
+        enter amazing red crownhway
+
+...which is probably not what you intended!
+
+For this reason, most of your aliases will use patterns which begin and end with the metacharacters ^ and $ (see [Section 6.1.1](ch06.html#6.1.1) if you don't understand why).
+
+Now, let's create a second alias.
+
+* In the **Alias stimulus** box, enter the pattern **gcc**
+* Click the button **Recommended: add ^...$**
+* In the **Alias response** box, enter the text **get coins from corpses**
+* In the **Name** box, enter the name **myalias2**
+* Click the **Add** button to create the alias
+
+This alias will only fire when you type the exact command **gcc** - it won't fire for any longer command which *contains* the string **gcc**.
+
+###<a name="7.2.3">7.2.3 Editing aliases</a>
+
+Like triggers, aliases are also customisable. Select **myalias** by clicking on it, and then click the **Edit** button.
+
+The new edit window contains three tabs. The **Name** tab allows you to change the stimulus and response, and also allows you to enable or disable the alias.
+
+The **Attributes** tab allows you to customise the alias - for example, to disable the alias automatically after the first match.
+
+When Axmud is testing aliases against a world command, it checks the aliases in the same order every time. Sometimes the order is important, so the **Before / after** tab allows you to name the aliases that should be checked before or after this one.
+
+###<a name="7.2.4">7.2.4 Alias attributes</a>
+
+Click on the **Attributes** tab. There are four attributes which can be customised.
+
+**Ignore case**
+
+When the checkbutton is selected, this alias doesn't care about capital letters. In the examples above, **amazing red crown** will be substituted for all of the following world commands:
+
+        arc
+        Arc
+        ARC
+
+From your reading of [Section 6](ch06.html) you'll remember that patterns are usually case-sensitive. De-select the button to make the pattern **arc** match only the first command above.
+
+(Although it's unlikely that you would want to distinguish between upper-case and lower-case world commands, the capability is available, if you should ever need it.)
+
+**Keep checking aliases after a match**
+
+If the checkbutton is not selected, when this alias's pattern matches a world command, Axmud will not check any other aliases. If the checkbutton is selected, Axmud will continue checking the command against other aliases.
+
+**Temporary alias**
+
+If the checkbutton is selected, the alias only fires once. After that, the active alias becomes an inactive alias - it will be available again, the next time you connect to the world, but it will not be available again during this session.
+
+**Cooldown (in seconds)**
+
+You can prevent an alias from firing too often by setting a cooldown period. For example, if you set the cooldown to 10, after firing the alias won't be able to fire again for another 10 seconds. The default value is 0, meaning no cooldown period is used.
+
+###<a name="7.2.5">7.2.5 Substrings in aliases</a>
+
+Aliases, like triggers, can contain substrings.
+
+For example, suppose you want Axmud to convert a world command like **give 50 gc to orc** to **give 50 gold coins to orc**. This is how to do it, so that the alias will work with any number of coins being given to any creature:
+
+* In the **Alias stimulus** box, enter the pattern **^give (.\*) gc to (.\*)$**
+* In the **Alias response** box, enter the text **give $1 gold coins to $2**
+* In the **Name** box, enter the name **myalias3**
+* Click the **Add** button to create the alias
+
+You can now test the alias by typing the world command **give 50 gc to orc**.
+
+There are a few things left to mention:
+
+* NB Before v1.1.270, the instruction had to be enclosed in double-quotes
+    * e.g. **"give $1 gold coins to $2"**
+    * This is no longer necessary (but your old aliases will continue to work)
+* If you *actually* want the intruction to begin and end with double quotes, you must use two of them
+    * e.g. **""give $1 gold coins to $2""**
+* If you want the instruction to contain a literal **$1**, precede it with a backslash
+    * e.g. **give \$1 to $1**
+        * This instruction would look something like **give $1 to Gandalf**
+* If you *actually* want a backslash *anywhere* in the instruction, use must use two of them
+    * e.g. **apples and\\\\or oranges**
+
+##<a name="7.3">7.3 Macros</a>
+
+Macros wait for you to press a key like F1, and then do something in response.
+
+Like all interfaces, Axmud macros have a *stimulus* and a *response*.  The stimulus is a *keycode* that represents one of the keys on your keyboard. When you press the key, we say that the macro *fires*.
+
+The response can be any kind of instruction. It's usually a world command like **get coins from corpse**, but it could be a client command like **;openautomapper** or any other kind of instruction (see [Section 4.4](ch04.html#4.4)).
+
+###<a name="7.3.1">7.3.1 Axmud keycodes</a>
+A key part of Axmud's design is *platform independence*. If you install Axmud on one computer with Linux and on another computer with MS Windows, the data you save on one can be transferred to the without problems.
+
+For this reason, Axmud uses a set of standard keycodes - short strings corresponding to every key on the keyboard. The keycode for each key is the same, regardless of which operating system you're using.
+
+Axmud's keycodes - always in lower-case - are:
+
+        shift alt alt_gr ctrl num_lock
+        escape pause break insert delete return backspace space tab
+        home page_up page_down end
+        up down left right
+        f1 f2 f3 f4 f5 f6 f7 f8 f9 f10 f11 f12
+        grave tilde exclam at number_sign dollar percent
+        ascii_circum ampersand asterisk paren_left parent_right
+        plus minus equal underline
+        bracket_left bracket_right brace_left brace_right colon
+        semicolon apostrophe quote slash backslash pipe comma
+        full_stop less_than greater_than question_mark
+
+There are also a set of keycodes for the keypad (the keys, normally on the right side of the keyboard, which are laid out like a calculator):
+
+        kp_0 kp_1 kp_2 kp_3 kp_4 kp_5 kp_6 kp_7 kp_8 kp_9
+        kp_add kp_subtract kp_multiply kp_divide kp_enter kp_full_stop
+
+The keycodes 'full_stop' and 'kp_full_stop' represent the full stop/period keys. Axmud supports a number of alternatives to the standard keycodes, including 'period'. (Type **;listkeycodealternative** for a list of alternative keycodes.)
+
+Keycodes can be combined when two or more keys are pressed together. For example, CTRL + F1 corresponds to the keycode string "ctrl f1" (a string containing two words separated by a single space character).
+
+Note that, for technical reasons, Axmud cannot use SHIFT or ALT-GR in macros (although ALT + SHIFT + some other key is acceptable). Therefore, if you try to add a macro that fires when you press SHIFT + F1, it won't work.
+
+###<a name="7.3.2">7.3.2 Adding macros</a>
+
+* From the main window menu, click **Edit > World macros**
+* In the **Macro stimulus** box, enter the keycode **f1**
+    * Axmud standard keycodes are always in lower-case characters
+* In the **Macro response** box, enter the command **get coins from corpses**
+* In the **Name** box, enter the name **mymacro**
+* Click the **Add** button to create the macro
+
+###<a name="7.3.3">7.3.3 Editing macros</a>
+
+Like triggers and aliases, macros are customisable. Select **mymacro** by clicking on it, and then click the **Edit** button.
+
+The new edit window contains three tabs. The **Name** tab allows you to change the stimulus and response, and also allows you to enable or disable the macro.
+
+The **Attributes** tab allows you to customise the macro - for example, to disable the macro automatically after the first matching keypress.
+
+When Axmud is testing macros against a keypress, it checks the macros in the same order every time. Sometimes the order is important, so the **Before / after** tab allows you to name the macros that should be checked before or after this one.
+
+###<a name="7.3.4">7.3.4 Macro attributes</a>
+
+Click on the **Attributes** tab. There are two attributes which can be customised.
+
+**Temporary macro**
+
+If the checkbutton is selected, the macro only fires once. After that, the active macro becomes an inactive macro - it will be available again, the next time you connect to the world, but it will not be available again during this session.
+
+**Cooldown (in seconds)**
+
+You can prevent a macro from firing too often by setting a cooldown period. For example, if you set the cooldown to 10, after firing the macro won't be able to fire again for another 10 seconds. The default value is 0, meaning no cooldown period is used.
+
+##<a name="7.4">7.4 Timers</a>
+
+Timers allow you to execute an instruction repeatedly at regular intervals. They can also be used to execute an instruction once, after a certain period of time. They can even be used to execute an instruction once a day, at the same time each day (or once an hour, at the same number of minutes past the hour).
+
+Like all interfaces, Axmud timers have a *stimulus* and a *response*.  The stimulus is usually a time interval, expressed in seconds. The minimum value is 0.1 seconds. When this interval has passed, we say that the timer *fires*.
+
+The stimulus can also a 24-hour clock time in the form HH:MM (for example, 00:00 for midnight, 12:00 for midday, 13:30 for half past one in the afternoon). If you use a clock time, the timer fires at the time, once a day.
+
+Axmud recognises special clock times in the form 99:MM. For example, a timer whose stimulus is 99:00 will fire once an hour, on the hour. A timer whose stimulus is 99:15 will fire once an hour, at a quarter past the hour.
+
+The response can be any kind of instruction. It's usually a world command like **score**, but it could be a client command like **;playsoundeffect beep** or any other kind of instruction (see [Section 4.4](ch04.html#4.4)).
+
+###<a name="7.4.1">7.4.1 Adding timers</a>
+
+Let's create a timer which will *fire* every 60 seconds, and which sends the world command **score** each time it fires.
+
+* From the main window menu, click **Edit > World timers**
+* In the **Timer stimulus** box, enter the time interval **60**
+* In the **Timer response** box, enter the command **score**
+* In the **Name** box, enter the name **mytimer**
+* Click the **Add** button to create the timer
+
+###<a name="7.4.2">7.4.2 Editing timers</a>
+
+Like triggers, aliases and macros, timers are customisable. Select **mymacro** by clicking on it, and then click the **Edit** button.
+
+The new edit window contains three tabs. The **Name** tab allows you to change the stimulus and response, and also allows you to enable or disable the timer.
+
+The **Attributes** tab allows you to customise the timer - for example, to disable the timer automatically after it fires for the first time.
+
+When Axmud is testing whether it's time to fire a timer, or not, it checks the timers in the same order every time. Sometimes the order is important, so the **Before / after** tab allows you to name the timers that should be checked before or after this one.
+
+###<a name="7.4.3">7.4.3 Timer attributes</a>
+
+Click on the **Attributes** tab. There are several attributes which can be customised.
+
+**Repeat count**
+
+Some timers should continue firing indefinitely; others should only fire a certain number of times.
+
+The repeat count sets how many times the timer fires, before disabling itself. You can use any positive integer value; alternatively, use the value -1 to make the timer repeat indefinitely.
+
+**Initial delay**
+
+Some timers should fire immediately, but usually you'll want the timer to fire for the first time after a delay.
+
+If you use an initial delay of 0, an enabled timer fires as soon as it becomes active. Otherwise, it waits for the specified number of seconds before firing for the first time.
+
+You will often set the repeat count and the initial delay to the same value, so that the timer fires (for example) 10 seconds after becoming active, then every 10 seconds after that.
+
+**Random delays**
+
+The timer's stimulus is an interval in seconds. If the stimulus is 10, the timer will fire every 10 seconds.
+
+However, it's possible to introduce an element of surprise. When the checkbutton is selected, the delay is a random interval between 0 and the stimulus (10 seconds, in this case). Every time the timer fires, a new random interval is chosen - so the timer might fire after approximately 2 seconds, then 5, then 1, then 9.
+
+(There is a minimum system delay, set to a 0.05 seconds by default. No timer can ever fire more frequently than that.)
+
+**Minimum random delay**
+
+Sometimes you will want to specify a random delay that's between 5 and 10 seconds, rather than being between (almost) 0 and 10 seconds.
+
+When the **random delay** checkbutton is selected, this value sets the minimum random delay. Specify the value 0 to use the system's shortest possible delay.
+
+**Start after login**
+
+Select this checkbutton to prevent the timer firing before the character is marked is logged in. If you don't select the button, the automatic login process might be disrupted.
+
+**Temporary timer**
+
+If the checkbutton is selected, the timer only fires once. After that, the active timer becomes an inactive timer - it will be available again, the next time you connect to the world, but it will not be available again during this session.
+
+##<a name="7.5">7.5 Hooks</a>
+
+Hooks respond to certain events.
+
+An example of a hook event is the one called **login**. Every time Axmud completes an automated login - or every time the user performs a manual login with the **;login** command - the hook event is deemed to have happened (and we say that the hook *fires*).
+
+The response can be any kind of instruction. It's usually a world command like **inventory**, but it could be a client command like **;playsoundeffect beep** or any other kind of instruction (see [Section 4.4](ch04.html#4.4)).
+
+###<a name="7.5.1">7.5.1 Hook events</a>
+
+This is a complete list of Axmud's hook events.
+
+* **connect** - happens when the first data is received from the world (which might not be visible to the user)
+* **disconnect** - happens when we disconnect from the world or get disconnected from the world
+* **login** - happens when the character is marked as *logged in*, either after an automatic login or after using the  **;login** command
+* **prompt** - happens when Axmud receives a prompt from the world
+* **receive_text** - happens when Axmud receives a packet of text from the world (which may comprise one line or several)
+* **sending_cmd** - happens when a world command is about to be sent, but *before* it has been checked against aliases
+* **send_cmd** - happens when a world command is about to be sent, *after* it has been checked against aliases, and possibly modified by them
+* **system_text** - happens when a system message is due to be displayed (although it might be diverted to a console or task window, rather than being displayed in the main window)
+* **system_error** - happens when a system error message is due to be displayed
+* **system_warning** - happens when a system warning message is due to be displayed
+* **system_debug** - happens when a system debug message is due to be displayed
+* **system_improper** - happens when a system improper arguments message is due to be displayed (due to an Axmud internal error)
+* **system_all** - happens when any system message is due to be displayed
+* **system_all_error** - happens when any system error, debug, warning or improper arguments message is due to be displayed
+* **msdp** - happens when some data is received using the MSDP protocol. This data is normally not visible to the user, but is available to your scripts
+* **mssp** - happens when some data is received using the MSSP protocol
+* **zmp** - happens when some data is received using the ZMP protocol
+* **aard102** - happens when some data is received over the Aardwolf 102 channel
+* **atcp** - happens when some data is received using the ATCP protocol
+* **gmcp** - happens when some data is received using the GMCP protocol
+* **mcp** - happens when some data is received using the MCP protocol
+* **current_session** - happens when this session becomes the visible session in the main window that has the system focus
+* **not_current** - happens when some other session becomes the visible session in the main window that has the system focus
+* **change_current** - happens in every session when the visible session changes in the main window that has the system focus
+* **visible_session** - happens when this session becomes the visible session in its own main window
+* **not_visible** - happens in every session when any main window's visible session changes
+* **change_visible** - happens when a different session becomes the visible one in this session's own main window
+* **textview_resize** - happens when a textview object is resized, including when its scrollbars are made visible or invisible
+* **user_idle** - happens when no world commands have been sent for 60 seconds
+* **world_idle** - happens when no text has been received from the world for 60 seconds
+* **get_focus**, **lose_focus** - happen when this session's main window becomes the active (focused) window, or when some other window becomes the active window
+* **close_disconnect** - happens just before Axmud stops running
+* **map_room** - happens when the automapper's current room is set
+* **map_no_room** - happens when the automapper's current room is reset (for example, when the automapper gets lost; does fire when the Locator task is reset)
+* **map_lost** - happens when the automapper's current room is reset (doesn't fire when the Locator task is reset)
+* **map_rescue_on** - happens when auto-rescue mode activates, and the automapper switches to a temporary region rather than marking the character as lost
+* **map_rescue_merge** - happens during auto-rescue mode when rooms are merged back into the previous region
+* **map_rescue_off** - happens when auto-rescue mode disactivates
+
+###<a name="7.5.2">7.5.2 Hook data</a>
+
+Some hook events provide more information about whatever it was that caused the event to happen. This information, which is called *hook data*, is available to any code that needs it.
+
+For the **prompt** and **receive_text** events, the hook data is the received text, with all the escape sequences (colour codes) removed.
+
+For the **sending_cmd** event, the hook data is the world command that's about to be checked against aliases. For the **send_cmd** event, the hook data is the world command that's about to be sent to the world.
+
+Other hook events don't use hook data at all.
+
+In a moment we'll discuss how to create hooks that use hook data, but first we'll discuss how to create simple hooks that respond with an ordinary world command.
+
+###<a name="7.5.3">7.5.3 Adding hooks</a>
+
+Let's create a hook which fires every time a world command is sent, and which plays a sound effect in response. Don't forget that sound effects won't work at all until you turn them on:
+
+        ;sound on
+        ;snd on
+
+Now you can create the hook.
+
+* From the main window menu, click **Edit > World hooks**
+* In the **Hook stimulus** combo (drop-down) box, select **send_cmd**
+    * Don't select **sending_cmd** by mistake!
+* In the **Hook response** box, enter the client command **;playsoundeffect beep**
+* In the **Name** box, enter the name **myhook**
+* Click the **Add** button to create the hook
+
+###<a name="7.5.4">7.5.4 Editing hooks</a>
+
+Like triggers, aliases, macros and timers, hooks are customisable. Select **myhook** by clicking on it, and then click the **Edit** button.
+
+The new edit window contains three tabs. The **Name** tab allows you to change the stimulus and response, and also allows you to enable or disable the hook.
+
+The **Attributes** tab allows you to customise the hook - for example, to disable the hook automatically after its hook event happens for the first time.
+
+When Axmud is responding to hook events, it checks hooks in the same order every time. Sometimes the order is important, so the **Before / after** tab allows you to name the hooks that should be checked before or after this one.
+
+###<a name="7.5.5">7.5.5 Hook attributes</a>
+
+Click on the **Attributes** tab. There are two attributes which can be customised.
+
+**Temporary hook**
+
+If the checkbutton is selected, the hook only fires once. After that, the active hook becomes an inactive hook - it will be available again, the next time you connect to the world, but it will not be available again during this session.
+
+**Cooldown (in seconds)**
+
+You can prevent a hook from firing too often by setting a cooldown period. For example, if you set the cooldown to 10, after firing the hook won't be able to fire again for another 10 seconds. The default value is 0, meaning no cooldown period is used.
+
+###<a name="7.5.6">7.5.6 Using hook data</a>
+
+A hook's response can be an ordinary world command, a client command (like the one we created earlier, which uses **';playsoundeffect'**) or any other kind of instruction.
+
+Those instructions include Perl commands. As explained in [Section 4.4](ch04.html#4.4), a Perl command is a mini-Perl programme, all on one line. The programme's return value is processed as a normal instruction such as a world command.
+
+Let's create one of these hooks now. This hook will add the word **sail** before every world command. It will convert **north** into **sail north** or **south** into **sail south**. We'll be using the hook event **sending_cmd**. This hook event happens whenever you type a world command, but before the command is checked against aliases.
+
+If you're familiar with the Perl language, it will be obvious how the mini-programme works. If not, it will be obvious how to modify the mini-programme - and you can use the same mini-programme with many other hooks.
+
+Don't forget that Perl commands are disabled by default. This hook won't work until you enable them again.
+
+The mini-programme - including the initial forward slash character which starts all Perl commands - looks like this:
+
+        /my $string = 'sail '; return $string . $hookData;
+
+The mini-programme's job is to convert the hook data - a string of text - into a modified string of text. The modified string is the programme's 'return value'. The return value is sent as a world command.
+
+Now you're ready to create the hook.
+
+* From the main window menu, click **Edit > World hooks**
+* In the **Hook stimulus** combo (drop-down) box, select **sending_cmd**
+    * Don't select **send_cmd** by mistake!
+* In the **Hook response** box, copy-and-paste the mini-programme from above (including the initial forward slash character and the final semicolon)
+* In the **Name** box, enter the name **myhook2**
+* Click the **Add** button to create the hook
+
+This particular mini-programme adds the word **sail** to every command, but you can change **sail** to any word you like.
+
+If you'd prefer to add a word after the original command, instead of before it, you could use this mini-programme instead:
+
+        /my $string = ' axe'; return $hookData . $string;
+
+This mini-programme could convert the command **get** into **get axe**, the command **drop** into **drop axe** or the command **sell** into **sell axe**.
+
+###<a name="7.5.7">7.5.7 Redirect mode</a>
+
+Astute readers might now be asking themselves why there isn't an easier way to convert **north** into **sail north** automatically.
+
+In fact, there are several possible methods, including the clever use of aliases. But a much easier way is to use Axmud's *redirect mode*.
+
+        ;help redirectmode
+
+###<a name="7.5.8">7.5.8 Custom hook events</a>
+
+Some users might want to create their own hook events. This is possible, though of limited use, since the only way to 'fire' the hook is with the **;simulatehook** command. A custom hook event has no hook data.
+
+Custom hook events must begin with an underline character, followed by an alphanumeric character, for example **_myevent**.
+
+To create a custom hook event, you can just create a hook responding to that event, for example
+
+        ;addhook -s _myevent -p ;about
+
+##<a name="7.6">7.6 Active and inactive interfaces</a>
+
+As explained in detail in [Section 5](ch05.html), Axmud interfaces (trigger, aliases, macros, timers and hooks) are either *active* or *inactive*.
+
+You can create several triggers called **mytrigger**, each belonging to a different profile, but only one of them is active (actually in use). The others are inactive.
+
+Actually, when an interface becomes active, Axmud makes a copy of it. The copy, not the original, is the *active* interface.
+
+You can see a current list of active interfaces from the main window menu (click on **Edit > Active interfaces**). If the Status task is running, the list will look like this:
+
+![Status task interfaces](img/ch07/status_interfaces.png)
+
+There is one more important thing to explain.
+
+If you modify the original (inactive interface), the corresponding copy (active interface) is automatically updated.
+
+* From the main window menu, click on **Edit > World triggers**
+* Enable (or disable) one of the triggers you created earlier
+* Now, from the main window menu, click on **Edit > Active interfaces**
+* Find the corresponding trigger in the list. It will also be enabled (or disabled)
+
+However, if you modify the copy (the active interface), *no changes are made to the original* (the inactive interface). Any changes are therefore *temporary* and will disappear at the end of the session.
+
+---
+
+[Previous](ch06.html) [Index](index.html) [Next](ch08.html)

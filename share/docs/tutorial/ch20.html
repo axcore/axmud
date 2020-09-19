@@ -1,0 +1,228 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch20</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch19.html">Previous</a> <a href="index.html">Index</a> <a href="ch21.html">Next</a></p>
+<hr>
+<h1>20 - Miscellaneous features (2)</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#x.1">20.1 Movement commands</a></li>
+<li><a href="#x.2">20.2 Interpolated commands</a></li>
+<li><a href="#x.3">20.3 Multi, speed, bypass and perl commands</a></li>
+<li><a href="#x.4">20.4 Sound</a></li>
+<li><a href="#x.5">20.5 Displaying help</a></li>
+<li><a href="#x.6">20.6 Automatic logins</a></li>
+<li><a href="#x.7">20.7 Client, script and task functions</a></li>
+<li><a href="#x.8">20.8 Mathematical functions</a></li>
+<li><a href="#x.9">20.9 That's all, folks!</a></li>
+</ul>
+<hr>
+<p>We're almost finished. Don't give up now!</p>
+<h2><a name="20.1">20.1 Movement commands</a></h2>
+<p>Commands can be typed in Axmud's main window. A <em>world command</em> like <strong>north</strong> is sent directly to the world.</p>
+<pre><code>    SEND "north"
+</code></pre>
+<p>For each world command, Axmud tries to work out whether it's a movement command or something else. This helps to keep the automapper up to date.</p>
+<p>You can clarify that something is a movement command using a MOVE statement.</p>
+<pre><code>    MOVE "enter portal"
+</code></pre>
+<p>The opposite of MOVE is RELAY, which clarifies that the command definitely isn't a movement command.</p>
+<pre><code>    RELAY "open curtains"
+</code></pre>
+<p>RELAY has an optional second argument.</p>
+<pre><code>    ! Send a non-movement command, but obscure part of it
+    LET string$ = "My PIN code is 1234"
+    LET substring$ = "1234"
+    RELAY command$, substring$
+</code></pre>
+<p>The <em>substring</em> should be any part of the main string which you want obscured when it's displayed in the main window.</p>
+<h2><a name="20.2">20.2 Interpolated commands</a></h2>
+<p>It would be useful if you could write an Axbasic script that works at several different worlds.</p>
+<p>For example, if one world expects you to <strong>kill orc</strong> but the other expects you to <strong>attack orc</strong>, we <em>could</em> write some code like this:</p>
+<pre><code>    PEEK world$ = "world.current.name"
+    IF world$ = "deathmud" THEN
+        SEND "kill orc"
+    ELSE IF world$ = "nicemud" THEN
+        SEND "attack orc"
+    ENDIF
+</code></pre>
+<p>But that's a lot of work, and it would be much quicker to tell Axmud how to initiate combat at many different worlds, so that your scripts don't have to worry about it.</p>
+<p>This can be done using Axmud's <em>standard commands</em>. A complete explanation of how they work is beyond the scope of this tutorial, but you can get a good idea of what's going on by opening certain edit windows.</p>
+<p>For example, if you're connected to <em>Discworld</em>, type this:</p>
+<pre><code>    ;editcage cmd_world_discworld
+</code></pre>
+<p>On the left you'll see a list of <em>standard commands</em>, one of which will be <strong>kill</strong>.</p>
+<p>On the right you'll see a list of <em>replacement commands</em>, which tell Axmud how to actually kill something. For Discworld, the replacement command is:</p>
+<pre><code>    kill victim
+</code></pre>
+<p>...but at other worlds, it might be <strong>attack victim</strong> or something like that.</p>
+<p>Our Axbasic script can now specify a standard command - <strong>kill</strong> - and also say who the <strong>victim</strong> is.</p>
+<pre><code>    SEND "kill", "victim", "orc"
+</code></pre>
+<p>In the replacement command, <strong>victim</strong> is switched for <strong>orc</strong>, and the world receives <strong>kill orc</strong>.</p>
+<p>You can use as many replacement pairs as you like. For example, the standard command for talking to people is <strong>say_to</strong>, and at <em>Discworld</em>, the replacement command is</p>
+<pre><code>    say to victim text
+</code></pre>
+<p>To greet a character, your Axbasic script would therefore use a line like this:</p>
+<pre><code>    SEND "say_to", "victim", "gandalf", "text", "hello"
+</code></pre>
+<p>...and the world receives <strong>say to gandalf hello</strong>. At another world, the replacement command might be</p>
+<pre><code>    say text to victim
+</code></pre>
+<p>...in which case, the world would receive <strong>say hello to gandalf</strong> instead.</p>
+<h2><a name="20.3">20.3 Multi, speed, bypass and perl commands</a></h2>
+<p>A <em>multi comand</em> is executed in every session. For example, you might type:</p>
+<pre><code>    :shout I'm going for lunch
+</code></pre>
+<p>The Axbasic equivalent is:</p>
+<pre><code>    MULTI "shout I'm going for lunch"
+</code></pre>
+<p>A <em>speedwalk command</em> is a quick way of typing several movement commands in one go, for example:</p>
+<pre><code>    .3nw2s
+</code></pre>
+<p>...which is the equivalent of:</p>
+<pre><code>    north;north;north;west;south;south
+</code></pre>
+<p>The Axbasic equivalent is:</p>
+<pre><code>    SPEED "3nw2s"
+</code></pre>
+<p>Note that a speedwalk command starting with two full stops (periods) is executed in reverse order:</p>
+<pre><code>    ..3nw2s
+</code></pre>
+<p>The Axbasic equivalent starts with a <em>single</em> full stop:</p>
+<pre><code>    SPEED ".3nw2s"
+</code></pre>
+<p>If the world places a limit on the number of world commands, Axmud is capable of adding commands to a queue until they can be sent to the world. A bypass command circumvents that queue, sending a world command immediately:</p>
+<pre><code>    &gt;drink water
+</code></pre>
+<p>The Axbasic equivalent is:</p>
+<pre><code>    BYPASS "drink water"
+</code></pre>
+<p>A Perl command executes a mini Perl programme. The programme's return value is executed as an Axmud instruction. Usually the instruction is a world command of some kind.</p>
+<pre><code>    /$a = 5; $b = 2; $a * $b;
+</code></pre>
+<p>The Axbasic equivalent is:</p>
+<pre><code>    PERL " /$a = 5; $b = 2; $a * $b; "
+</code></pre>
+<h2><a name="20.4">20.4 Sound</a></h2>
+<p>Assuming that Axmud sound is turned on, you can play a sound effect.</p>
+<pre><code>    PLAY "alarm"
+</code></pre>
+<p>PLAY is followed by an expression. The expression must be one of Axmud's recognised sound effects. If not, you'll see an error.</p>
+<p>If you want a beeping sound, you can use a BEEP statement. The following two lines are identical:</p>
+<pre><code>    BEEP
+    PLAY "beep"
+</code></pre>
+<p>Text-to-speech is performed with a SPEAK statement.</p>
+<pre><code>    SPEAK "Hello, world!"
+</code></pre>
+<p>SPEAK takes an optional second argument, which is the text-to-speech configuration to use.</p>
+<pre><code>    SPEAK "Hello, world!", "flite"
+</code></pre>
+<p>If you don't specify a configuration, Axbasic uses its own configuration, called <strong>script</strong>.</p>
+<h2><a name="20.5">20.5 Displaying help</a></h2>
+<p>All of Axbasic's keywords and functions are fully documented. You can display the help files in the main window by using a HELP statement.</p>
+<p>The following two lines are identical:</p>
+<pre><code>    HELP "print"
+    CLIENT "axbasichelp print"
+</code></pre>
+<p>HELP can be followed by an expression.</p>
+<pre><code>    LET keyword$ = "print"
+    HELP keyword$
+
+    LET function$ = "chr$"
+    HELP function$
+</code></pre>
+<p>It's not necessary to include the $ character, so both of the following lines will work.</p>
+<pre><code>    HELP "chr$"
+    HELP "chr"
+</code></pre>
+<h2><a name="20.6">20.6 Automatic logins</a></h2>
+<p>Logging in to a MUD is sometimes as simple as typing a username and password, but sometimes it's a lot more complicated.</p>
+<p>Axmud can handle simple logins for itself, but otherwise you'll have to write some kind of script to handle everything - a Perl plugin, a mission, or an Axbasic script.</p>
+<p>Here's an example of a trivial login script. It must always contain a LOGIN statement, which tells Axmud that the login process is complete.</p>
+<pre><code>    ! Perform an automatic login
+    LET name$ = "gandalf"
+    LET password$ = "123456"
+    ! Send an ordinary non-movement command
+    RELAY name$
+    ! Send an obscured password
+    ! The arguments are identical, so the whole
+    ! password is obscured in the main window
+    RELAY password$, password$
+    ! Login is now complete
+    LOGIN
+    END
+</code></pre>
+<p>Once you've composed your script, you should edit the current world profile and tell it to use that script. (Type <strong>;editworld</strong> and use the <strong>Settings</strong> tab.)</p>
+<h2><a name="20.7">20.7 Client, script and task functions</a></h2>
+<p><strong>Clientname$ ()</strong>, <strong>Clientversion$ ()</strong> and <strong>Clientdate$ ()</strong> return information about the current installation of Axmud. Their return values look something like this:</p>
+<pre><code>    Axmud
+    1.1.405
+    24 Dec 2018
+</code></pre>
+<p><strong>Ip$ ()</strong> returns your current IP address.</p>
+<p><strong>Scriptname$ ()</strong> returns the name of the Axbasic script that's running. If you're running the file <strong>wumpus.bas</strong>, the return value is <strong>"wumpus"</strong>.</p>
+<p><strong>Istask ()</strong> tests whether the current script is being run as a task (returns 1), or not (returns 0).</p>
+<pre><code>    PRINT Istask ()
+</code></pre>
+<p><strong>Isscript ()</strong> tests whether a specified script is being run as task.</p>
+<pre><code>    ! Display 1 if Hunt the Wumpus! is being run
+    ! by any Script task. Display 0 otherwise
+    PRINT Isscript ("wumpus.bas")
+</code></pre>
+<p><strong>Iswin ()</strong> returns 1 if the script has opened a task window (and if that window is still open). Otherwise, it returns 0.</p>
+<p>The next two functions can be used with any task.</p>
+<p>Tasks that are running right now have unique names, for example <strong>"status_task_17"</strong>. The <strong>Findtask$ ()</strong> function finds the unique name for any task, for example:</p>
+<pre><code>    LET name$ = Findtask ("status")
+</code></pre>
+<p>The argument can be a task label (e.g. <strong>"status"</strong> or <strong>"stat"</strong>) or the name used internally by Axmud (e.g. <strong>"status_task"</strong>). Most tasks, including the Status task, can only have one copy running at a time. If there <em>are</em> multiple copies running, the unique name of the task that was created first is returned.</p>
+<p><strong>Counttask ()</strong> takes the same kind of arguments as <strong>Findtask$ ()</strong> - a task label or a task's internal name. It returns the number of copies of the task that are running right now. (The number might be 0.)</p>
+<h2><a name="20.8">20.8 Mathematical functions</a></h2>
+<p>Axbasic provides a number of functions for trigonometry. (We can't think of any reason why you would need them, but nevertheless, they're available.)</p>
+<p>For example, to get the cosine of an angle, you can use the <strong>Cos ()</strong> function.</p>
+<pre><code>    PRINT Cos (1)
+</code></pre>
+<p>The argument is an angle measured in <em>radians</em>. To use angles measured in <em>degrees</em>, you should include the following OPTION statement somewhere in your script:</p>
+<pre><code>    OPTION ANGLE DEGREES
+    PRINT Cos (60)
+</code></pre>
+<p>The other trigonometric functions that Axbasic provides are <strong>Sin ()</strong> and <strong>Tan ()</strong>, as well as <strong>Acos ()</strong>, <strong>Asin ()</strong>, <strong>Atn ()</strong>, <strong>Cosh ()</strong>, <strong>Cot ()</strong>, <strong>Csc ()</strong>, <strong>Csec ()</strong>, <strong>Sec ()</strong>, <strong>Sinh ()</strong> and <strong>Tanh ()</strong>. (If you don't already know what these mean, then you definitely don't need them.)</p>
+<p>You can use the <strong>Deg ()</strong> function to convert radians into degrees, and the <strong>Rad ()</strong> function to convert degrees into radians.</p>
+<p>The <strong>Angle ()</strong> function returns the angle between the positive x-axis and a line from the origin to the point (x, y).</p>
+<pre><code>    OPTION ANGLE DEGREES
+    PRINT Angle (50, 100)
+</code></pre>
+<p>The <strong>Pi ()</strong> function returns a value of pi (correct to about 16 significant figures, or perhaps more on some systems).</p>
+<pre><code>    PRINT Pi
+</code></pre>
+<p>The logarithmic functions are <strong>Log ()</strong>, <strong>Log10 ()</strong>, <strong>Log2 ()</strong> and <strong>Exp ()</strong>. The square root of a number can be obtained with <strong>Sqr ()</strong>.</p>
+<pre><code>    PRINT Sqr (16)
+</code></pre>
+<p>The <strong>Min ()</strong> function compares two numbers, and returns the smaller one. The <strong>Max ()</strong> function returns the larger one.</p>
+<pre><code>    PRINT Min (1, 10)
+    PRINT Max (10, 100)
+</code></pre>
+<p>In this particular case, the order of the arguments doesn't matter. Both of these statements display the value 1.</p>
+<pre><code>    PRINT Min (1, 10)
+    PRINT Min (10, 1)
+</code></pre>
+<h2><a name="20.9">20.9 That's all, folks!</a></h2>
+<p>That's the end of the tutorial! Don't forget that you can get help at the <a href="https://axmud.sourceforge.io/forum/index.php">Axmud forum</a>, if you need it!</p>
+<hr>
+<p><a href="ch19.html">Previous</a> <a href="index.html">Index</a> <a href="ch21.html">Next</a></p>
+
+</body>
+</html>

@@ -1,0 +1,41 @@
+ads / addsecondary            Adds a secondary direction
+ 
+   Format:
+      ;ads <custom>
+      ;ads <custom> <abbrev>  Adds the direction
+
+   Notes:
+      Axmud provides eighteen 'standard' primary directions - the sixteen
+         compass directions (including 'north', 'northeast' and
+         'northnortheast') as well as 'up' and 'down'. This standard set never
+         changes.
+      Axmud dictionaries store a custom set of primary directions, one for each
+         standard direction. Dictionaries also store a set of secondary
+         directions such as 'out' and 'in', this set can contain as many or as
+         few directions as you want.
+      For a list of primary and secondary directions stored in the current
+         dictionary, use the 'listdirection' command.         
+
+      This command adds a new secondary direction.
+      <custom> must not already exist in the current dictionary as a custom
+         primary or secondary direction.
+      <abbrev> is an abbreviated form of the secondary direction. If you don't
+         specify <abbrev>, no abbreviation is stored. (Most worlds don't use
+         abbreviated forms of directions like 'out', 'in' and so on.)
+
+      Here's an example:
+
+         ;ads leave l
+
+      If you add a pair of secondary directions, you can specify that the should
+         be treated as opposites using the ';modifysecondary' command.
+
+      Continuing the example:
+
+         ;ads leave l
+         ;ads enter en
+         ;mds leave enter
+         ;mds enter leave
+ 
+   User commands:
+      ads / addsecond / addsecondary

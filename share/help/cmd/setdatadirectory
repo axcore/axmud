@@ -1,0 +1,39 @@
+sdd / setdatadirectory        Sets the location of the Axmud data directory
+ 
+   Format:
+      ;sdd                    Chooses a location
+      ;sdd <path>             Sets the location to <path>
+      ;sdd -r                 Resets the location
+ 
+   Notes:
+      Axmud stores all of its data files in a single directory (folder). The
+         location of this directory varies from system to system, and also
+         depends on how Axmud was installed.
+      To show the location of Axmud's data directory, use ';listdatadirectory'.
+
+      If you want use a different location for your data directory - for
+         example, if you want Axmud to save files on an external hard drive, or
+         if you want Axmud to save files on a network drive so that multiple
+         devices can use it - then you can use this command.
+      An important note - the data directory should not be used by multiple
+         devices simultaneously. Axmud is simply not designed for that. If you
+         want to use Axmud on your desktop, then later use Axmud on your laptop,
+         then it's safe to run this command on both devices, setting the
+         location of the data directory to a network drive that both devices
+         can access.
+
+      Any changes you make using this command won't take effect until you
+         restart Axmud.
+      If you specify a <path> to a directory, that directory must already exist.
+         Otherwise, you can this command without specifying <path>; the
+         'dialogue' window will allow you to choose a directory or create a new
+         one.
+      If you use the -r switch, the location is reset; in other words, when
+         Axmud restarts, it will look for its data directory in the default
+         location for your system.
+      If you change the location using this command and if Axmud, on restarting,
+         is unable to find it (for example, if a network drive is not mounted),
+         Axmud will use the default location instead.
+
+   User commands:
+      sdd / setdatadir / setdatafolder / setdatadirectory

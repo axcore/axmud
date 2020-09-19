@@ -1,0 +1,35 @@
+[Previous](ch07.html) [Index](index.html) [Next](ch09.html)
+
+---
+
+#8 Axmud scripting
+
+####Table of Contents
+
+* [8.1 Types of script](#8.1)
+
+---
+
+All modern MUD clients allow their users to write scripts to help automate various aspects of the game.
+
+Axmud offers several different approaches. The approach you choose will depend on your coding skills (from 'complete newbie' to 'it was me that invented the Internet') and on how much time you want to spend (ranging from 'I only have 30 seconds' to 'I'm going to re-invent the Internet!')
+
+##<a name="8.1">8.1 Types of script</a>
+
+Axmud **interfaces** - triggers, aliases, macros, timers and hooks - have already been discussed extensively (in [Section 5](ch05.html) and [Section 7](ch07.html)).  They require a basic knowledge of regular expressions for which you'll find a tutorial in [Section 6](ch06.html).
+
+**Missions** are extremely simple scripts which require no programming knowledge at all. Just write a sequence of commands like **north**, **open door** and **disembowel dwarf**, add a few pauses at the right moments, and you're finished! Missions are discussed in [Section 9](ch09.html).
+
+**Axbasic** is Axmud's own scripting language, fully compatible with other flavours of BASIC.
+
+Although Axbasic is fairly primitive by today's standards, it's more than adequate for nearly everything you might want to do in a MUD. Axbasic is discussed in [Section 10](ch10.html).
+
+**Tasks** are scripts written in Perl. Tasks are designed so that all of the boring stuff - scheduling, handling of interfaces, maintaining task windows - is handled automatically, leaving you free to design ever more efficient ways of slaughtering your enemies.
+
+Axmud provides twenty or so **built-in tasks**, some of which are more useful than others. They are discussed in [Section 11](ch11.html).
+
+Finally, it's possible to write your own **Perl plugins**. Plugins provide a way of modifying almost any aspect of Axmud's functionality. Besides writing new tasks, you can add new client commands, modify the main window menu, create new edit windows and much more besides. Plugins are described very briefly in [Section 12](ch12.html), but you'll have to wait for the Axmud manual before you can seriously consider writing your own.
+
+---
+
+[Previous](ch07.html) [Index](index.html) [Next](ch09.html)

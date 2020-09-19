@@ -1,0 +1,15 @@
+lbw / listbasicworld          Displays the basic mudlist
+ 
+   Format:
+      ;lbw                    Displays the list
+
+   Notes:
+      Axmud comes with a set of pre-configured worlds. It also comes with a much
+         larger list of worlds which must be configured by the user. This basic
+         mudlist is visible in the Connections window and by using the command.
+      The basic mudlist can't be modified (other than by editing the original
+         file), so it may include worlds for which you have since created a 
+         world profile. (Those worlds are marked with a + sign.)
+ 
+   User commands:
+      lbw / listbasic / listbasicworld

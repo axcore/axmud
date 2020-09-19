@@ -1,0 +1,209 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch13</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch12.html">Previous</a> <a href="index.html">Index</a> <a href="ch14.html">Next</a></p>
+<hr>
+<h1>13 - The automapper</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#13.1">13.1 Opening the automapper window</a></li>
+<li><a href="#13.2">13.2 Adding and deleting regions</a></li>
+<li><a href="#13.3">13.3 Adding rooms and labels</a></li>
+<li><a href="#13.4">13.4 Exits</a></li>
+<li><a href="#13.5">13.5 Retrieving room data</a></li>
+<li><a href="#13.6">13.6 Room contents</a></li>
+<li><a href="#13.7">13.7 Other automapper functions</a></li>
+</ul>
+<hr>
+<p>Axbasic provides a large set of functions for use with the automapper.</p>
+<p>For the most part, we use functions, rather than statements, so we can test whether an action was successful or not. Don't forget that you can use <strong>;axbasichelp</strong> to see precisely which values each function returns.</p>
+<p>This Section assumes that the Locator task is running and that it knows something about the character's current location.</p>
+<h2><a name="13.1">13.1 Opening the automapper window</a></h2>
+<p>The <strong>Openmap ()</strong> function opens the automapper window, and the <strong>Closemap ()</strong> function closes it. Only one automapper window can be open at a time, so both functions return the value 1 if the window was successfully opened/closed, or if the window was already open/closed.</p>
+<p>If you script needs to know whether the window is open or not, you can use the <strong>Ismap ()</strong> function. It returns 1 if the window is already open.</p>
+<p>The <a href="../guide/index.html">Axmud Guide</a> demonstrates how the automapper window can be in one of three modes - <strong>wait</strong>, <strong>follow</strong> or <strong>update</strong>. You can change the mode using the <strong>Setmapmode ()</strong> function.</p>
+<pre><code>    LET result = Setmapmode ("wait")
+    LET result = Setmapmode ("follow")
+    LET result = Setmapmode ("update")
+</code></pre>
+<p>In this case it's especially important to test the <strong>result</strong>, because the mode you want might not be available, in which case the function returns 0.</p>
+<p>The <strong>Getmapmode$ ()</strong> function returns the current mode: one of the strings <strong>"wait"</strong>, <strong>"follow"</strong> and <strong>"update"</strong> (or an empty string, if the automapper window isn't open.)</p>
+<h2><a name="13.2">13.2 Adding and deleting regions</a></h2>
+<p>You can automate the process of drawing a map using an Axbasic script, if you want to.</p>
+<p>The <strong>Addregion ()</strong> function creates a new region named <strong>Mordor</strong>. The return value is the region's model <strong>number</strong>, or 0 if the region couldn't be created.</p>
+<pre><code>    LET number = Addregion ("Mordor")
+</code></pre>
+<p>Using the <strong>Addtempregion ()</strong> function, you can create a temporary region which is automatically deleted when the automapper window closes. If you don't specify a region name, one is chosen for you.</p>
+<pre><code>    LET number = Addtempregion ("Mordor")
+    LET number = Addtempregion ()
+</code></pre>
+<p>Regions can be deleted with the <strong>Delregion ()</strong> function. The function returns 1 on success, 0 on failure.</p>
+<pre><code>    LET result = Delregion ("Mordor")
+</code></pre>
+<p>The <strong>Deltempregions ()</strong> deletes all temporary regions. It returns 0 only if there are no temporary regions to delete.</p>
+<pre><code>    LET result = Deltempregions ()
+</code></pre>
+<p>By the way, you can set the visible region using the <strong>Setregion ()</strong> or <strong>Setregionnum ()</strong> functions.</p>
+<pre><code>    LET result = Setregion ("Mordor")
+    LET result = Setregionnum (number)
+</code></pre>
+<p>If you want to know which region is the visible one, you can retrieve those same values using the <strong>Getregion$ ()</strong> and <strong>Getregionnum ()</strong> functions.</p>
+<h2><a name="13.3">13.3 Adding rooms and labels</a></h2>
+<p>Once your map has some regions, you can start adding rooms. The <strong>Addfirstroom ()</strong> draws a room in the middle of the map.</p>
+<pre><code>    LET number = Addfirstroom ()
+</code></pre>
+<p>The next step is to mark that room as the current room.</p>
+<pre><code>    LET result = Setroomnum (number)
+</code></pre>
+<p>By the way, if you leave out the room <strong>number</strong>, the current room is reset, meaning that there is <em>no</em> current room.</p>
+<pre><code>    LET result = Setroomnum ()
+</code></pre>
+<p>Having done that, you can add new rooms by specifying coordinates <em>relative to</em> the current room. These coordinates must be in the form (x, y, z).</p>
+<p>For example, to create rooms immediately to the west and east of the current room:</p>
+<pre><code>    ! Room to the west of the current room
+    LET result = Addroom (-1, 0, 0)
+    ! Room to the east of the current room
+    LET result = Addroom (1, 0, 0)
+</code></pre>
+<p>To create rooms to the north and south of the current room, but with a small gap between them:</p>
+<pre><code>    ! Room to the north of the current room
+    LET result = Addroom (0, -2, 0)
+    ! Room to the south of the current room
+    LET result = Addroom (0, 2, 0)
+</code></pre>
+<p>To create rooms in the levels immediately above and below the current room:</p>
+<pre><code>    ! Room below the current room
+    LET result = Addroom (0, 0, -1)
+    ! Room above the current room
+    LET result = Addroom (0, 0, 1)
+</code></pre>
+<p>Labels are also drawn relative to the current room. As well as specifying the relative coordinates you must specify the label text. For example, to create a label to the southeast of the current room:</p>
+<pre><code>    ! Add a label northeast of the current room
+    LET result = Addlabel ("This is a label", 2, 2, 0)
+</code></pre>
+<p>There are no Axbasic functions for deleting rooms and labels. You'll have to do that manually.</p>
+<h2><a name="13.4">13.4 Exits</a></h2>
+<p>By default, exits are automatically added to the map as your character moves around the world (if the current room is set, and if the automapper is in <strong>update mode</strong>).</p>
+<p>There is no Axbasic function which adds exits to a room, but there are plenty of functions for fetching information about the exits that have already been drawn.</p>
+<p>The first step is to fetch the number of exits in the current room:</p>
+<pre><code>    LET count = Getroomexits ()
+</code></pre>
+<p>Once you have that number - and assuming that it isn't, meaning that the room has no exits - you can get the exits' directions. For example, if you know there are three exits in the current room, you can display their directions thus:</p>
+<pre><code>    PRINT Getexit$ (1)
+    PRINT Getexit$ (2)
+    PRINT Getexit$ (3)
+</code></pre>
+<p>Exits are stored in a list in a fixed order, which means that as long as you don't add or remove any exits from the room, <strong>Getexit$ (2)</strong> will always return the same direction.</p>
+<p>Before you retrieve any further information about an exit, you'll need to know its model number. All exits in the map have a number that's unique across all regions, so the following function might return a value like <strong>999</strong>:</p>
+<pre><code>    LET exit_num = Getexitnum (1)
+</code></pre>
+<p>The argument represents the first exit in the current room's list of exits. In a room with three exits, you would use <strong>2</strong> or <strong>3</strong> as arguments, instead.</p>
+<p>Once we have the exit's model number, we can find the model number of the destination room.</p>
+<pre><code>    LET room_num = Getexitdest (exit_num)
+</code></pre>
+<p>Often you can move between two adjacent rooms by going <strong>north</strong> and then <strong>south</strong> again. This pair of exits are called <em>twin exits</em>. We can find an exit's twin like this:</p>
+<pre><code>    LET twin_exit_num = Getexittwin (exit_num)
+</code></pre>
+<p>The <a href="../guide/index.html">Axmud Guide</a> describes various exit <em>types</em>, such as <em>incomplete</em>, <em>unallocated</em> and <em>impassable</em>. The following function returns a string describing the exit type.</p>
+<pre><code>    LET exit_type$ = Getexittype$ (exit_num)
+</code></pre>
+<p>You might also find the <strong>Getexitstatus$ ()</strong> function useful for working out which exits are connected to rooms in different regions.</p>
+<p>An exit in the direction <strong>portal</strong> might actually be drawn on the map as a <strong>north</strong> exit. An actual <strong>north</strong> exit is <em>definitely</em> drawn on the map as a <strong>north</strong> exit. To get the  direction in which an exit is actually drawn:</p>
+<pre><code>    LET dir$ = Getexitdrawn$ (exit_num)
+</code></pre>
+<h2><a name="13.5">13.5 Retrieving room data</a></h2>
+<p>The following functions apply to the automapper's current room. To get the room's model number:</p>
+<pre><code>    LET number = Getroomnum ()
+</code></pre>
+<p>To get the room's title (brief description):</p>
+<pre><code>    LET title$ = Getroomtitle$ ()
+</code></pre>
+<p>To get the room's verbose description, stored as a single string (even if it was received as multiple lines of text):</p>
+<pre><code>    LET descrip$ = Getroomdescrip$ ()
+</code></pre>
+<p>To get the room tag or the room guild (or an empty string, if the current room has no room tag or room guild):</p>
+<pre><code>    LET tag$ = Getroomtag$ ()
+    LET guild$ = Getroomguild$ ()
+</code></pre>
+<h2><a name="13.6">13.6 Room contents</a></h2>
+<p>The Locator task is capable of extracting a room's current contents. This doesn't work at most worlds, because few MUDs display the contents list in an unambiguous way. However, if the information is available to the Locator task, it's available to your Axbasic scripts.</p>
+<p>The <strong>Getroomobjects ()</strong> returns the number of objects in the current room.</p>
+<pre><code>    LET count = Getroomobjects ()
+</code></pre>
+<p>If you want to, you can restrict that list to the number of sentient beings, or the number of weapons, and so on.</p>
+<pre><code>    LET count = Getroomobjects ("sentient")
+    LET count = Getroomobjects ("weapon")
+</code></pre>
+<p><strong>Getroomobjects () </strong> only accepts a limited selection of strings: <strong>"weapon"</strong>, <strong>"armour"</strong>, <strong>"garment"</strong>, <strong>"char"</strong> (for characters), <strong>"minion"</strong>, <strong>"sentient"</strong>, <strong>"creature"</strong>, <strong>"portable"</strong>, <strong>"decoration"</strong> and <strong>"custom"</strong>.</p>
+<p>In a room containing three objects, those objects are numbered 1 to 3. We can retrieve the strings <strong>"big axe"</strong>, <strong>"smelly orc"</strong> and <strong>"pile of treasure"</strong> using the following lines:</p>
+<pre><code>    PRINT Getobject$ (1)
+    PRINT Getobject$ (2)
+    PRINT Getobject$ (3)
+</code></pre>
+<p>We can also retrieve each object's type, in this case the strings <strong>"weapon"</strong>, <strong>"sentient" and "portable"</strong>:</p>
+<pre><code>    PRINT Getobjecttype$ (1)
+    ...
+</code></pre>
+<p>We can furthermore retrieve the main noun, in this case the strings <strong>"axe"</strong>, <strong>"orc"</strong> and <strong>"treasure"</strong>:</p>
+<pre><code>    PRINT Getobjectnoun$ (1)
+    ...
+</code></pre>
+<p>This function will tell us whether Axmud believes the object is alive, or not. The function returns 1 for living beings and 0 for everything else, possibly including any nasty monsters you've recently dispatched to the afterlife:</p>
+<pre><code>    PRINT Getobjectalive (1)
+    ...
+</code></pre>
+<p>Axmud might store <strong>10 gold coins</strong> as a single object, or as ten separate ones, depending on the current world profile's settings. In this case, the functions <strong>Getroomobjects ()</strong> and <strong>Getobjectcount ()</strong> return different results:</p>
+<pre><code>    ! Display 1, because Axmud has stored the gold coins
+    ! as a single object
+    PRINT Getroomobjects (1)
+    ! Display the actual number of objects in the game,
+    ! which is 10
+    PRINT Getobjectcount (1)
+</code></pre>
+<h2><a name="13.7">13.7 Other automapper functions</a></h2>
+<p>There are few more functions to cover.</p>
+<p>A direction like <strong>"north"</strong> can be abbreviated to <strong>"n"</strong> using the <strong>Abbrevdir$ ()</strong> function, and restored using the <strong>Unabbrevdir$ ()</strong> function.</p>
+<pre><code>    LET dir$ = "north"
+
+    LET abbrev$ = Abbrevdir (dir$)
+    PRINT abbrev$
+
+    LET old$ = Unabbrevdir (abbrev$)
+    PRINT old$
+</code></pre>
+<p>REVPATH (a statement, not a function) takes an array of movement commands, and reverses them, transforming <strong>north northwest up east</strong> into <strong>west down southeast south</strong>. Here's an example.</p>
+<pre><code>    DATA "north", "northwest", "up", "east"
+    DIM stuff$ (4)
+    FOR a = 1 TO 4
+        READ stuff$ (a)
+    NEXT a
+
+    REVPATH stuff$
+    FOR a = 1 TO 4
+        PRINT stuff$ (a)
+    NEXT a
+</code></pre>
+<p>If a room's description is different during daylight and at night, Axmud can store both descriptions. You can use the <strong>Setlight ()</strong> function to set Axmud's current <em>light status</em>, and you can use the <strong>Getlight$ ()</strong> function to retrieve it.</p>
+<p>(The default values for Axmud's light status are <strong>"day"</strong>, <strong>"night"</strong> and <strong>"dark"</strong>. The light status is <strong>"day"</strong> unless it has been changed to another value.)</p>
+<p>If you have administrative privileges at your MUD, your map may contain the path to each room's source code file. This path can be retrieved with the <strong>Getroomsource$ ()</strong> function.</p>
+<p>If you've added a lot of room tags to the rooms in your map, you can set the current room using a room tag rather than with a model number.</p>
+<pre><code>LET result = Setroomtagged ("bank")
+</code></pre>
+<p>Finally, when the automapper gets lost, if remembers the room that used to be the current room. The model number of that room can be retrieved with the <strong>Getlostroom ()</strong> function.</p>
+<hr>
+<p><a href="ch12.html">Previous</a> <a href="index.html">Index</a> <a href="ch14.html">Next</a></p>
+
+</body>
+</html>

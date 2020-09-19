@@ -1,0 +1,360 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch10</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch09.html">Previous</a> <a href="index.html">Index</a> <a href="ch11.html">Next</a></p>
+<hr>
+<h1>10 - Miscellaneous features (1)</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#10.1">10.1 Special features of PRINT</a></li>
+<li><a href="#10.2">10.2 Special features of INPUT</a></li>
+<li><a href="#10.3">10.3 Extracting partial strings</a></li>
+<li><a href="#10.4">10.4 Finding strings in strings</a></li>
+<li><a href="#10.5">10.5 Regular expressions</a></li>
+<li><a href="#10.6">10.6 Identifying characters</a></li>
+<li><a href="#10.7">10.7 Miscellaneous string functions</a></li>
+<li><a href="#10.8">10.8 Integers and decimals</a></li>
+<li><a href="#10.9">10.9 Rounding numbers</a></li>
+<li><a href="#10.10">10.10 Remainders</a></li>
+<li><a href="#10.11">10.11 Random numbers</a></li>
+<li><a href="#10.12">10.12 Getting the date and time</a></li>
+<li><a href="#10.13">10.13 Converting numbers and strings</a></li>
+<li><a href="#10.14">10.14 Testing patterns</a></li>
+</ul>
+<hr>
+<p>In the next Section we'll be talking about how to write scripts for your favourite MUD. But, before we get to that, we need to tie up a few loose ends. You can skip over any parts that you don't find interesting.</p>
+<h2><a name="10.1">10.1 Special features of PRINT</a></h2>
+<p>Each PRINT statement displays text on a brand new line. If you want successive PRINT statements to display text on the same line, add a semicolon character after the string.</p>
+<pre><code>    PRINT "This is a very long sentence";
+    PRINT " that is displayed on a single";
+    PRINT " line."
+</code></pre>
+<p>The third statement doesn't end with a semicolon, so the next PRINT statement - whenever it occurs - will use a new line.</p>
+<p>In a PRINT statement, you can use semicolons to join strings together.</p>
+<pre><code>    LET word1$ = "Hello"
+    LET word2$ = "world"
+    PRINT word1$ ; word2$
+</code></pre>
+<p>That will produce the following output:</p>
+<pre><code>    Helloworld!
+</code></pre>
+<p>...because you forgot to add a space character between the words:</p>
+<pre><code>    PRINT word1$ ; " " ; word2$
+</code></pre>
+<p>When you are PRINTing numbers, you don't need to add any space characters. </p>
+<pre><code>    LET first = 10
+    LET second = 15
+    PRINT 10 ; 15
+</code></pre>
+<p>This time you will see the output:</p>
+<pre><code>    10  15
+</code></pre>
+<p>In a PRINT statement, Axbasic adds a space character before and after every numeric value. For negative numbers, however, a space is not added before the minus sign.</p>
+<p>Closely related to the semicolon is the comma ( , ) character which works a bit like your TAB key. You can use it to display data in columns of 14 characters.</p>
+<pre><code>    LET val1 = 10
+    LET val2 = 20
+    LET val3 = -30
+    PRINT "Column 1" , "Column 2" , "Column 3"
+    PRINT val1 , val2 , val3
+    END
+</code></pre>
+<p>If you want a more direct way of displaying columns, you can use the pseudo-function TAB (). (We call it a pseudo-function because it doesn't return a value, and it can only be used in PRINT statements).</p>
+<p>TAB () moves an imaginary cursor to the column you specify. The first column is number 1. In the example above, you could replace the PRINT statement with this one, without changing the output.</p>
+<pre><code>    PRINT val1 ; TAB (15) ; val2 ; TAB (29) ; val3
+</code></pre>
+<p>If you specify a value to the left of the imaginary cursor, everything after the TAB () will be printed on a new line.</p>
+<h2><a name="10.2">10.2 Special features of INPUT</a></h2>
+<p>In <a href="ch05.html#5.11">Section 5.11</a> you saw some code like this:</p>
+<pre><code>    PRINT "What is your name?"
+    INPUT name$
+</code></pre>
+<p>You can combine those lines into a single statement:</p>
+<pre><code>    INPUT "What is your name?"; name$
+</code></pre>
+<p>If required, you can ask the user to INPUT several values, one after the other.</p>
+<pre><code>    INPUT "Name, address, date of birth"; name$, address$, date$
+</code></pre>
+<p>You can add as many variables as you like in this situation. Note the use of semicolons and commas: there is exactly one semicolon, followed by any number of commas (or no commas at all, if you only want a single value.)</p>
+<h2><a name="10.3">10.3 Extracting partial strings</a></h2>
+<p>Three built-in functions - <strong>Left$ ()</strong>, <strong>Right$ ()</strong> and <strong>Mid$ ()</strong> - allow you to extract a short string from within a longer string.</p>
+<p>If you want to extract the first four characters from a long string, you can use <strong>Left$ ()</strong>.</p>
+<pre><code>    LET long$ = "Read my lips"
+    LET short$ = Left$ (long$, 4)
+</code></pre>
+<p>In this case, <strong>short$</strong> is set to <strong>"Read"</strong>.</p>
+<p><strong>Left$ ()</strong> is a function that expects two arguments. The first is the long string, and the second is a number.</p>
+<p>If the number is 0, you'll get an empty string. If it's bigger than the length of the long string, then you'll get the unmodified long string. If the number isn't an integer (or if it's a negative number), you'll get an error.</p>
+<p>If you want to extract the <em>last</em> four characters from the same string, you can use <strong>Right$ ()</strong>.</p>
+<pre><code>    LET long$ = "Read my lips"
+    LET short$ = Right$ (long$, 4)
+</code></pre>
+<p>In this case, <strong>short$</strong> is set to <strong>"lips"</strong>.</p>
+<p>A more useful tool is <strong>Mid$ ()</strong>, which allows you to extract a short string from anywhere in the longer string - from the beginning, or the end, or somewhere in the middle.</p>
+<pre><code>    LET long$ = "Read my lips"
+    LET short$ = Mid$ (long$, 6)
+</code></pre>
+<p>This example extracts everything from the 6th character to the end of the string - namely, <strong>"my lips"</strong>.</p>
+<p>You can add an extra argument to specify a length.</p>
+<pre><code>    LET long$ = "Read my lips"
+    LET short$ = Mid$ (long$, 6, 2)
+</code></pre>
+<p>This time, the extracted string starts at the 6th character, and continues for 2 characters in total, producing the string <strong>"my"</strong>. Of course, if you wanted to extract a single character, then you'd use a length of 1.</p>
+<h2><a name="10.4">10.4 Finding strings in strings</a></h2>
+<p>Axmud has several functions for finding a string inside another string - the word <strong>"jumps"</strong> in the string <strong>"The quick brown fox jumpts over the lazy dog"</strong>, for example.</p>
+<pre><code>    LET long$ = "The quick brown fox jumps over the lazy dog"
+    LET short$ = "jumps"
+    PRINT Pos (long$, short$)
+    END
+</code></pre>
+<p>This examples PRINTs the number 21, as the word <strong>"jumps"</strong> starts at the 21st character.</p>
+<p>The first character is numbered 1, as you can see by running the following script:</p>
+<pre><code>    LET long$ = "The quick brown fox jumps over the lazy dog"
+    LET short$ = "The"
+    PRINT Pos (long$, short$)
+    END
+</code></pre>
+<p>The search is case-sensitive. In other words, if you search for <strong>"the"</strong> rather than <strong>"The"</strong>, you'll get the position of the second <strong>"the"</strong> in this sentence - the one beginning at the 32nd character.</p>
+<p>If you use a sub-string that doesn't even appear in the main string, <strong>Pos ()</strong> will return 0.</p>
+<pre><code>    LET long$ = "The quick brown fox jumps over the lazy dog"
+    LET short$ = "wibble"
+    PRINT Pos (long$, short$)
+    END
+</code></pre>
+<p>If you like, you can ask <strong>Pos ()</strong> to ignore the first few characters. For example, if you wanted to start searching at the 10th character, you'd use this:</p>
+<pre><code>    PRINT Pos (long$, short$, 10)
+</code></pre>
+<p>Another option is <strong>Posr ()</strong>, which looks for the <em>last</em> occurence of the sub-string in the main string, rather than the first.</p>
+<pre><code>    LET long$ = "I have a big big big surprise for you!"
+    LET short$ = "big"
+    PRINT Posr (long$, short$)
+    END
+</code></pre>
+<p><em>That</em> script produces the number 18, the position of the third occurence of the word <strong>big</strong>. If you had used <strong>Pos ()</strong> instead of <strong>Posr ()</strong>, it would have produced the number 10.</p>
+<p>Just as you can ask <strong>Pos ()</strong> to ignore the first 10 characters, you can ask <strong>Posr ()</strong> to ignore the last 10 characters.</p>
+<pre><code>    PRINT Posr (long$, short$, 10)
+</code></pre>
+<p>In that example, the search starts at the 10th character from the end, and then proceeds leftwards (checking the 11th character from the end, then the 12th, then the 13th...)</p>
+<p>There are four built-in functions that look for <em>any character in the substring</em>. For example, the script below looks for the first number in the string <strong>long$</strong>:</p>
+<pre><code>    LET long$ = "My phone number is +44 5014 9928"
+    LET short$ = "1234567890"
+    PRINT Cpos (long$, short$)
+    END
+</code></pre>
+<p>If you need to perform this kind of operation, then you should consult the help for the functions <strong>Cposr ()</strong>, <strong>Ncpos ()</strong> and <strong>Ncposr ()</strong>.</p>
+<h2><a name="10.5">10.5 Regular expressions</a></h2>
+<p>A <em>Regular expression</em> (also known as a <em>regex</em>) is a type of pattern used by Axmud all the time. If you don't know how regular expressions work, now would be a good time to find out. The <a href="../guide/index.html">Axmud Guide</a> has a useful (and short) tutorial for beginners.</p>
+<p>When a line of text is received from the world, Axmud tests it against various patterns (regular expressions). If the line matches any of those patterns, Axmud does something in response.</p>
+<p>For example, in the pattern <strong>b.g</strong>, the full stop (period) means <strong>any single character</strong>, so it matches all of these lines:</p>
+<pre><code>    What's in the bag?
+    I don't want to beg!
+    That's a big dog.
+    I'm trapped in the bog.
+    Squish that bug!
+</code></pre>
+<p>...but it doesn't match this line:</p>
+<pre><code>    Hello world!
+</code></pre>
+<p>In Axbasic scripts, we can use the <strong>Match ()</strong> function to test any string against a pattern. <strong>Match ()</strong> returns 1 if the string matches the pattern or 0 if it doesn't match the pattern.</p>
+<pre><code>    LET string$ = "What's in the bag?"
+    LET pattern$ = "b.g"
+
+    IF Match (string$, pattern$) = 1 THEN
+        PRINT "Match!"
+    ELSE
+        PRINT "No match!"
+    END IF
+
+    END
+</code></pre>
+<p>Regular expressions are case-sensitive. In the script above, for example, <strong>b.g</strong> will match <strong>string$</strong>, but <strong>B.G</strong> won't.</p>
+<p>The function <strong>Matchi ()</strong> ignores case when checking for a matching pattern. (The <em>i</em> stands for <em>case insensitive</em>.)</p>
+<h2><a name="10.6">10.6 Identifying characters</a></h2>
+<p>Since the early days of computing, characters (including letters, numbers and punctuation marks) have each been assigned a number using a system called ASCII (American Standard Code for Information Interchange).</p>
+<p>These days, ASCII has largely been superseded, but it's still used by most MUDs (most <em>English-language</em> MUDs, at any rate).</p>
+<p>You can find the ASCII number for any character using the built-in function <strong>Asc ()</strong>.</p>
+<pre><code>    LET number = Asc ( "f" )
+</code></pre>
+<p>This line produces the number 102, which is the ASCII value for the letter "f".</p>
+<p>If you use an upper-case letter F, you'll get the number 70. (In ASCII, upper-case letters are numbered 65-90, and lower-case letters are numbered 97-122).</p>
+<p>The opposite function is <strong>Chr$ ()</strong>, which converts an ASCII number into the equivalent character.</p>
+<pre><code>    LET char$ = Chr$ ( 102 )
+</code></pre>
+<p><strong>Chr$</strong> accepts any number in the range 0-127.</p>
+<h2><a name="10.7">10.7 Miscellaneous string functions</a></h2>
+<p>It's quite easy to convert a string to all upper-case (or all lower-case) letters, if you want, using the <strong>Ucase$ ()</strong> and <strong>Lcase$ ()</strong> functions.</p>
+<pre><code>    LET string$ = "Mary Poppins"
+    PRINT Ucase$ (string$)
+    PRINT Lcase$ (string$)
+</code></pre>
+<p>You can get the length of a string using <strong>Len ()</strong>.</p>
+<pre><code>    LET name$ = "Alice"
+    PRINT Len (name$)
+</code></pre>
+<p>If you wanted to generate a string containing 10 <strong>"x"</strong> characters in a row, you can use the <strong>Repeat$ ()</strong> function.</p>
+<pre><code>    PRINT Repeat$ ("x", 10)
+</code></pre>
+<p>The first argument can be any string (not just a single character), and the second argument can be any positive integer (or zero, which generates an empty string).</p>
+<p>If you're handling lines received from the world (more about this later), the lines might contain one more space characters at the beginning or end that you don't want. You can use the <strong>Ltrim$ ()</strong> function to get rid of space characters at the beginning, and <strong>Rtrim$ ()</strong> to get rid of space characters at the end.</p>
+<pre><code>    LET string = "   Hello world!   "
+
+    PRINT Ltrim$ (string$)
+    PRINT Rtrim$ (string$)
+</code></pre>
+<p>If you want to get rid of space at the beginning and end of a line, then you <em>could</em> use both functions together:</p>
+<pre><code>    PRINT Ltrim$ ( Rtrim$ (string$) )
+</code></pre>
+<p>...but it's a lot easier just to use <strong>Trim$ ()</strong>.</p>
+<pre><code>    PRINT Trim$ (string$)
+</code></pre>
+<h2><a name="10.8">10.8 Integers and decimals</a></h2>
+<p>There are several built-in functions for handling decimal numbers.</p>
+<p>If you have a number like 3.1415926356, and you want to get rid of everything after the decimal point, you can use <strong>Int ()</strong>.</p>
+<pre><code>    LET long = 3.1415926536
+    LET short = Int (long)
+</code></pre>
+<p>If you use <strong>Int ()</strong> with a negative number, you'll get a surprising result.</p>
+<pre><code>    LET long = -3.1415926536
+    LET short = Int (long)
+</code></pre>
+<p>The variable <strong>short</strong> is now set to -4, not -3 as you might have been expecting. If you actually want -3, then you can use the <strong>Ip ()</strong> function (which is short for <em>Integer Part</em>).</p>
+<pre><code>    LET long = -3.1415926536
+    LET short = Ip (long)
+</code></pre>
+<p>In this case, <strong>short</strong> is set to -3. If <strong>long</strong> had been a positive number, it would have been set to 3.</p>
+<p>The opposite of <strong>Ip ()</strong> is <strong>Fp ()</strong>, short for <em>Floating Part</em>. (A floating point number is any number that's not an integer. A mathematician would insist on a definition like <em>any rational number that's not an integer</em>.)</p>
+<pre><code>    LET long = 3.1415926536
+    LET decimal = Fp (long)
+</code></pre>
+<p>The variable <strong>long</strong> is now set to 0.1415926536.</p>
+<p>You can always get the original number by adding the output of the <strong>Ip ()</strong> and <strong>Fp ()</strong> functions. Try this script and see for yourself.</p>
+<pre><code>    LET long = 3.1415926536
+    LET integer = Ip (long)
+    LET float = Fp (long)
+
+    PRINT long
+    PRINT integer + float
+
+    END
+</code></pre>
+<p>By the way, there is a practical limit to the size of an integer or floating point number. It's the same limit used by Perl (the language in which Axbasic is written), and depends on several factors. Since Axbasic is designed for use with MUDs, and not for controlling satellites, we won't bore you with the details.</p>
+<p>It's generally safe to use up to 16 signficant figures (the total number of digits before and after the decimal point). Beyond that, you'll start to see numbers expressed in scientific notation.</p>
+<h2><a name="10.9">10.9 Rounding numbers</a></h2>
+<p>There are three functions for rounding numbers.</p>
+<p><strong>Ceil ()</strong> (which is short for <em>ceiling</em>) rounds a number <em>up</em> to the nearest integer. In this example, the number is rounded up to 4.</p>
+<pre><code>    LET long = 3.1415926536
+    LET rounded = Ceil (long)
+</code></pre>
+<p>The opposite of <strong>Ceil ()</strong> is, of course, <strong>Floor ()</strong>. <strong>Floor ()</strong> rounds number <em>down</em> to the nearest integer. In this example, it's rounded down to 3.</p>
+<pre><code>    LET long = 3.1415926536
+    LET rounded = Floor (long)
+</code></pre>
+<p>A negative number like -3.5 would be rounded <em>up</em> to -3, but rounded <em>down</em> to -4.</p>
+<p>If you're thinking that <strong>Floor ()</strong> is a lot like <strong>Int ()</strong>, then you're right - in fact, their behaviour is identical (for all numbers, positive and negative).</p>
+<p>Finally, we have the <strong>Round ()</strong> function. <strong>Round ()</strong> rounds a number up or down - it rounds 6.2 down to 6, and it rounds 6.7 up to 7. A number that's exactly in the middle - 6.5, in this case - is rounded <em>up</em>.</p>
+<pre><code>    LET long = 3.1415926536
+    LET rounded = Round (long)
+</code></pre>
+<p><strong>Round ()</strong> isn't restricted to integers. For example, you might use it to round to three decimal places:</p>
+<pre><code>    LET rounded = Round (long, 3)
+</code></pre>
+<p>In that case, 6.1232 would be rounded <em>down</em> to 6.123, and 6.1239 would be rounded <em>up</em> to 6.124.</p>
+<p>You can shorten (or <em>truncate</em>) a long number using the <strong>Trunc ()</strong> function. For example, to truncate a number to three decimal places:</p>
+<pre><code>    LET long = 3.1415926536
+    LET short = Trunc (long, 3)
+</code></pre>
+<p>If you don't specify any decmial places, everything after the decimal point is removed.</p>
+<pre><code>    LET long = 3.1415926536
+    LET short = Trunc (long)
+</code></pre>
+<p>The <strong>Abs ()</strong> function returns the absolute value of a number, which is another way of saying that it removes any minus sign. Both of these statements display the same value.</p>
+<pre><code>    PRINT Abs (3.14)
+    PRINT Abs (-3.14)
+</code></pre>
+<p>The <strong>Sgn ()</strong> function can be used to test whether a number is positive or negative.</p>
+<pre><code>    ! Display 1 for positive
+    PRINT Sgn (3.14)
+    ! Display -1 for negative
+    PRINT Sgn (-3.14)
+    ! Display 0 for the number zero
+    PRINT Sgn (0)
+</code></pre>
+<h2><a name="10.10">10.10 Remainders</a></h2>
+<p>When you divide 100 by 10, you'll get a nice neat integer. But if you divide 100 by 7, you'll get an arkward 14.2857142857143.</p>
+<p>If you're only interested in the integer part of the number - in this case, the 14 - then of course you can use <strong>Int ()</strong>.</p>
+<pre><code>    PRINT Int (100 / 7)
+</code></pre>
+<p>If you're interested in the fractional part, you could use the <strong>Fp ()</strong> function introduced earlier, or you can use <strong>Remainder ()</strong>.</p>
+<pre><code>    PRINT Remainder (100, 7)
+</code></pre>
+<p><strong>Remainder ()</strong> returns the remainder when the first number is divided by the second one, i.e. when 100 is divided by 7.</p>
+<p>The <strong>Mod ()</strong> function (short for <em>modulus</em>) behaves exactly the same way as the <strong>Remainder ()</strong> function.</p>
+<h2><a name="10.11">10.11 Random numbers</a></h2>
+<p>To get a random number that's different every time, use the <strong>Rnd ()</strong> function.</p>
+<pre><code>    PRINT Rnd (10)
+</code></pre>
+<p>This will PRINT a number like 7.79433435135619. In fact, it produces a number that's anywhere between 0 and 9.999...</p>
+<p>Much of the time, you'll want an <em>integer</em> number, so you should get into the habit of using <strong>Int ()</strong> and <strong>Rnd ()</strong> together.</p>
+<pre><code>    PRINT Int ( Rnd (10) )
+</code></pre>
+<p>That line will PRINT a number in the range 0-9. Each value is equally likely to occur (more or less).</p>
+<p>If you actually want a number in the range 1-10, just add 1.</p>
+<pre><code>    PRINT Int ( Rnd (10) ) + 1
+</code></pre>
+<p>In the early days of computing, random numbers weren't terribly random. In fact, on some systems, a BASIC programme produced the same sequence of random numbers every time.</p>
+<p>To get around this, some flavours of BASIC provided a RANDOMIZE statement, which would have been used only once per programme.</p>
+<pre><code>    RANDOMIZE
+    PRINT Int ( Rnd (10) )
+</code></pre>
+<p>RANDOMIZE will have no absolutely no effect on your Axbasic scripts; it's available merely to prevent older programmes generating an error when you run them.</p>
+<h2><a name="10.12">10.12 Getting the date and time</a></h2>
+<p>The functions in this Section have no arguments. You can use brackets after them, or not. Both of the following lines are correct.</p>
+<pre><code>    PRINT Date$ ()
+    PRINT Date$
+</code></pre>
+<p>The <strong>Date$ ()</strong> function returns a date in the form <strong>"YYYYMMDD"</strong>. Even though all the characters are numbers, the return value is a string.</p>
+<pre><code>    ! Display the string "20181225"
+    PRINT Date$ ()
+</code></pre>
+<p>The <strong>Date ()</strong> function returns a number, not a string. The number is in the form <strong>YYDDD</strong>, where <strong>YY</strong> is the last two digits of the year (in the range 00-99) and <strong>DDD</strong> is the number of the day in the year (in the range 1-365).</p>
+<pre><code>    ! Display the number 18359
+    PRINT Date ()
+</code></pre>
+<p>There are four functions for getting the current time.</p>
+<p><strong>Time$ ()</strong> returns a 24-hour-clock time in the form <strong>"HH:MM:SS"</strong>. <strong>Time ()</strong> returns the number of seconds since midnight.</p>
+<p><strong>Timestamp ()</strong> returns the number of seconds since the current session began. (In Axmud, a session is a connection to a world; real or simulated. Every session has its own tab in the main window.)</p>
+<p><strong>Epoch ()</strong> returns the number of seconds since 00:00 GMT on January 1, 1970. (A small handful of systems, such as MacOS Classic, use a different epoch time.)</p>
+<p>If you want to work out how much has elapsed between two events, then  you should obviously use <strong>Timestamp ()</strong> or <strong>Epoch ()</strong>.</p>
+<h2><a name="10.13">10.13 Converting numbers and strings</a></h2>
+<p>If you ever need to convert a string value into a numeric value, you can use the function <strong>Val ()</strong>.</p>
+<pre><code>    LET string$ = "100"
+    LET number = Val (string$)
+</code></pre>
+<p>If <strong>string$</strong> had contained any characters that can't be converted to a number, then you'd have seen an error.</p>
+<p>The opposite of <strong>Val ()</strong> is <strong>Str$ ()</strong>, which converts a numeric value into a string.</p>
+<pre><code>    LET number = 100
+    LET string$ = Str$ (number)
+</code></pre>
+<h2><a name="10.14">10.14 Testing patterns</a></h2>
+<p>The syntax for patterns (regular expressions) is somewhat complicated, and if you make a mistake you'll see a system error.</p>
+<p>It's always a good idea to test a pattern before using it, and this can be done with the <strong>Testpat$ ()</strong> function</p>
+<pre><code>    LET result$ = Testpat$ ("Hello \w+")
+</code></pre>
+<p>The example above is a valid pattern (regular expression). Because it's valid, <strong>result$</strong> is set to empty string. If it were an invalid pattern, <strong>result$</strong> would be set to the error message generated.</p>
+<p>The related <strong>Testpat ()</strong> function returns a numerical value, if that's more convenient: 1 for a valid pattern, 0 for an invalid pattern.</p>
+<hr>
+<p><a href="ch09.html">Previous</a> <a href="index.html">Index</a> <a href="ch11.html">Next</a></p>
+
+</body>
+</html>

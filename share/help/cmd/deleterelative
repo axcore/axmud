@@ -1,0 +1,22 @@
+drl / deleterelative          Deletes a relative direction
+ 
+   Format:
+      ;drl <dir>              Deletes the relative direction <dir>
+      ;drl <type>             Deletes the direction in the slot <type>
+      ;drl <primary>          Deletes the direction in the slot <primary>
+
+   Notes:
+      Relative directions are used by a handful of worlds in which a room's
+         exits change depending on the direction in which the character is
+         facing (which usually means the direction from which the character
+         arrived). See the help for ';addrelative' for a full explanation,
+         including what is meant here by a slot.
+      This command deletes the relative direction <dir>, and its corresponding
+         abbreviate direction (if any).
+      You can also specify <type>, which is the relative direction's slot
+         expressed as a number in the range 0-7, or <primary>, which is the
+         equivalent primary direction (standard or custom) assuming that the
+         character arrived from the south.
+         
+   User commands:
+      drl / delrel / deleterelative

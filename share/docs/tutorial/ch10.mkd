@@ -1,0 +1,472 @@
+[Previous](ch09.html) [Index](index.html) [Next](ch11.html)
+
+---
+
+#10 - Miscellaneous features (1)
+
+####Table of Contents
+
+* [10.1 Special features of PRINT](#10.1)
+* [10.2 Special features of INPUT](#10.2)
+* [10.3 Extracting partial strings](#10.3)
+* [10.4 Finding strings in strings](#10.4)
+* [10.5 Regular expressions](#10.5)
+* [10.6 Identifying characters](#10.6)
+* [10.7 Miscellaneous string functions](#10.7)
+* [10.8 Integers and decimals](#10.8)
+* [10.9 Rounding numbers](#10.9)
+* [10.10 Remainders](#10.10)
+* [10.11 Random numbers](#10.11)
+* [10.12 Getting the date and time](#10.12)
+* [10.13 Converting numbers and strings](#10.13)
+* [10.14 Testing patterns](#10.14)
+
+---
+
+In the next Section we'll be talking about how to write scripts for your favourite MUD. But, before we get to that, we need to tie up a few loose ends. You can skip over any parts that you don't find interesting.
+
+##<a name="10.1">10.1 Special features of PRINT</a>
+
+Each PRINT statement displays text on a brand new line. If you want successive PRINT statements to display text on the same line, add a semicolon character after the string.
+
+        PRINT "This is a very long sentence";
+        PRINT " that is displayed on a single";
+        PRINT " line."
+
+The third statement doesn't end with a semicolon, so the next PRINT statement - whenever it occurs - will use a new line.
+
+In a PRINT statement, you can use semicolons to join strings together.
+
+        LET word1$ = "Hello"
+        LET word2$ = "world"
+        PRINT word1$ ; word2$
+
+That will produce the following output:
+
+        Helloworld!
+
+...because you forgot to add a space character between the words:
+
+        PRINT word1$ ; " " ; word2$
+
+When you are PRINTing numbers, you don't need to add any space characters. 
+        
+        LET first = 10
+        LET second = 15
+        PRINT 10 ; 15
+
+This time you will see the output:
+
+        10  15
+
+In a PRINT statement, Axbasic adds a space character before and after every numeric value. For negative numbers, however, a space is not added before the minus sign.
+
+Closely related to the semicolon is the comma ( , ) character which works a bit like your TAB key. You can use it to display data in columns of 14 characters.
+
+        LET val1 = 10
+        LET val2 = 20
+        LET val3 = -30
+        PRINT "Column 1" , "Column 2" , "Column 3"
+        PRINT val1 , val2 , val3
+        END
+
+If you want a more direct way of displaying columns, you can use the pseudo-function TAB (). (We call it a pseudo-function because it doesn't return a value, and it can only be used in PRINT statements).
+
+TAB () moves an imaginary cursor to the column you specify. The first column is number 1. In the example above, you could replace the PRINT statement with this one, without changing the output.
+
+        PRINT val1 ; TAB (15) ; val2 ; TAB (29) ; val3
+
+If you specify a value to the left of the imaginary cursor, everything after the TAB () will be printed on a new line.
+
+##<a name="10.2">10.2 Special features of INPUT</a>
+
+In [Section 5.11](ch05.html#5.11) you saw some code like this:
+
+        PRINT "What is your name?"
+        INPUT name$
+
+You can combine those lines into a single statement:
+
+        INPUT "What is your name?"; name$
+
+If required, you can ask the user to INPUT several values, one after the other.
+
+        INPUT "Name, address, date of birth"; name$, address$, date$
+
+You can add as many variables as you like in this situation. Note the use of semicolons and commas: there is exactly one semicolon, followed by any number of commas (or no commas at all, if you only want a single value.)
+
+##<a name="10.3">10.3 Extracting partial strings</a>
+
+Three built-in functions - **Left$ ()**, **Right$ ()** and **Mid$ ()** - allow you to extract a short string from within a longer string.
+
+If you want to extract the first four characters from a long string, you can use **Left$ ()**.
+
+        LET long$ = "Read my lips"
+        LET short$ = Left$ (long$, 4)
+
+In this case, **short$** is set to **"Read"**.
+
+**Left$ ()** is a function that expects two arguments. The first is the long string, and the second is a number.
+
+If the number is 0, you'll get an empty string. If it's bigger than the length of the long string, then you'll get the unmodified long string. If the number isn't an integer (or if it's a negative number), you'll get an error.
+
+If you want to extract the *last* four characters from the same string, you can use **Right$ ()**.
+
+        LET long$ = "Read my lips"
+        LET short$ = Right$ (long$, 4)
+
+In this case, **short$** is set to **"lips"**.
+
+A more useful tool is **Mid$ ()**, which allows you to extract a short string from anywhere in the longer string - from the beginning, or the end, or somewhere in the middle.
+
+        LET long$ = "Read my lips"
+        LET short$ = Mid$ (long$, 6)
+
+This example extracts everything from the 6th character to the end of the string - namely, **"my lips"**.
+
+You can add an extra argument to specify a length.
+
+        LET long$ = "Read my lips"
+        LET short$ = Mid$ (long$, 6, 2)
+
+This time, the extracted string starts at the 6th character, and continues for 2 characters in total, producing the string **"my"**. Of course, if you wanted to extract a single character, then you'd use a length of 1.
+
+##<a name="10.4">10.4 Finding strings in strings</a>
+
+Axmud has several functions for finding a string inside another string - the word **"jumps"** in the string **"The quick brown fox jumpts over the lazy dog"**, for example.
+
+        LET long$ = "The quick brown fox jumps over the lazy dog"
+        LET short$ = "jumps"
+        PRINT Pos (long$, short$)
+        END
+
+This examples PRINTs the number 21, as the word **"jumps"** starts at the 21st character.
+
+The first character is numbered 1, as you can see by running the following script:
+
+        LET long$ = "The quick brown fox jumps over the lazy dog"
+        LET short$ = "The"
+        PRINT Pos (long$, short$)
+        END
+
+The search is case-sensitive. In other words, if you search for **"the"** rather than **"The"**, you'll get the position of the second **"the"** in this sentence - the one beginning at the 32nd character.
+
+If you use a sub-string that doesn't even appear in the main string, **Pos ()** will return 0.
+
+        LET long$ = "The quick brown fox jumps over the lazy dog"
+        LET short$ = "wibble"
+        PRINT Pos (long$, short$)
+        END
+
+If you like, you can ask **Pos ()** to ignore the first few characters. For example, if you wanted to start searching at the 10th character, you'd use this:
+
+        PRINT Pos (long$, short$, 10)
+
+Another option is **Posr ()**, which looks for the *last* occurence of the sub-string in the main string, rather than the first.
+
+        LET long$ = "I have a big big big surprise for you!"
+        LET short$ = "big"
+        PRINT Posr (long$, short$)
+        END
+
+*That* script produces the number 18, the position of the third occurence of the word **big**. If you had used **Pos ()** instead of **Posr ()**, it would have produced the number 10.
+
+Just as you can ask **Pos ()** to ignore the first 10 characters, you can ask **Posr ()** to ignore the last 10 characters.
+
+        PRINT Posr (long$, short$, 10)
+
+In that example, the search starts at the 10th character from the end, and then proceeds leftwards (checking the 11th character from the end, then the 12th, then the 13th...)
+
+There are four built-in functions that look for *any character in the substring*. For example, the script below looks for the first number in the string **long$**:
+
+        LET long$ = "My phone number is +44 5014 9928"
+        LET short$ = "1234567890"
+        PRINT Cpos (long$, short$)
+        END
+
+If you need to perform this kind of operation, then you should consult the help for the functions **Cposr ()**, **Ncpos ()** and **Ncposr ()**.
+
+##<a name="10.5">10.5 Regular expressions</a>
+
+A *Regular expression* (also known as a *regex*) is a type of pattern used by Axmud all the time. If you don't know how regular expressions work, now would be a good time to find out. The [Axmud Guide](../guide/index.html) has a useful (and short) tutorial for beginners.
+
+When a line of text is received from the world, Axmud tests it against various patterns (regular expressions). If the line matches any of those patterns, Axmud does something in response.
+
+For example, in the pattern **b.g**, the full stop (period) means **any single character**, so it matches all of these lines:
+
+        What's in the bag?
+        I don't want to beg!
+        That's a big dog.
+        I'm trapped in the bog.
+        Squish that bug!
+
+...but it doesn't match this line:
+
+        Hello world!
+
+In Axbasic scripts, we can use the **Match ()** function to test any string against a pattern. **Match ()** returns 1 if the string matches the pattern or 0 if it doesn't match the pattern.
+
+        LET string$ = "What's in the bag?"
+        LET pattern$ = "b.g"
+
+        IF Match (string$, pattern$) = 1 THEN
+            PRINT "Match!"
+        ELSE
+            PRINT "No match!"
+        END IF
+
+        END
+
+Regular expressions are case-sensitive. In the script above, for example, **b.g** will match **string$**, but **B.G** won't.
+
+The function **Matchi ()** ignores case when checking for a matching pattern. (The *i* stands for *case insensitive*.)
+
+##<a name="10.6">10.6 Identifying characters</a>
+
+Since the early days of computing, characters (including letters, numbers and punctuation marks) have each been assigned a number using a system called ASCII (American Standard Code for Information Interchange).
+
+These days, ASCII has largely been superseded, but it's still used by most MUDs (most *English-language* MUDs, at any rate).
+
+You can find the ASCII number for any character using the built-in function **Asc ()**.
+
+        LET number = Asc ( "f" )
+
+This line produces the number 102, which is the ASCII value for the letter "f".
+
+If you use an upper-case letter F, you'll get the number 70. (In ASCII, upper-case letters are numbered 65-90, and lower-case letters are numbered 97-122).
+
+The opposite function is **Chr$ ()**, which converts an ASCII number into the equivalent character.
+
+        LET char$ = Chr$ ( 102 )
+
+**Chr$** accepts any number in the range 0-127.
+
+##<a name="10.7">10.7 Miscellaneous string functions</a>
+
+It's quite easy to convert a string to all upper-case (or all lower-case) letters, if you want, using the **Ucase$ ()** and **Lcase$ ()** functions.
+
+        LET string$ = "Mary Poppins"
+        PRINT Ucase$ (string$)
+        PRINT Lcase$ (string$)
+
+You can get the length of a string using **Len ()**.
+
+        LET name$ = "Alice"
+        PRINT Len (name$)
+
+If you wanted to generate a string containing 10 **"x"** characters in a row, you can use the **Repeat$ ()** function.
+
+        PRINT Repeat$ ("x", 10)
+
+The first argument can be any string (not just a single character), and the second argument can be any positive integer (or zero, which generates an empty string).
+
+If you're handling lines received from the world (more about this later), the lines might contain one more space characters at the beginning or end that you don't want. You can use the **Ltrim$ ()** function to get rid of space characters at the beginning, and **Rtrim$ ()** to get rid of space characters at the end.
+
+        LET string = "   Hello world!   "
+
+        PRINT Ltrim$ (string$)
+        PRINT Rtrim$ (string$)
+
+If you want to get rid of space at the beginning and end of a line, then you *could* use both functions together:
+
+        PRINT Ltrim$ ( Rtrim$ (string$) )
+
+...but it's a lot easier just to use **Trim$ ()**.
+
+        PRINT Trim$ (string$)
+
+##<a name="10.8">10.8 Integers and decimals</a>
+
+There are several built-in functions for handling decimal numbers.
+
+If you have a number like 3.1415926356, and you want to get rid of everything after the decimal point, you can use **Int ()**.
+
+        LET long = 3.1415926536
+        LET short = Int (long)
+
+If you use **Int ()** with a negative number, you'll get a surprising result.
+
+        LET long = -3.1415926536
+        LET short = Int (long)
+
+The variable **short** is now set to -4, not -3 as you might have been expecting. If you actually want -3, then you can use the **Ip ()** function (which is short for *Integer Part*).
+
+        LET long = -3.1415926536
+        LET short = Ip (long)
+
+In this case, **short** is set to -3. If **long** had been a positive number, it would have been set to 3.
+
+The opposite of **Ip ()** is **Fp ()**, short for *Floating Part*. (A floating point number is any number that's not an integer. A mathematician would insist on a definition like *any rational number that's not an integer*.)
+
+        LET long = 3.1415926536
+        LET decimal = Fp (long)
+
+The variable **long** is now set to 0.1415926536.
+
+You can always get the original number by adding the output of the **Ip ()** and **Fp ()** functions. Try this script and see for yourself.
+
+        LET long = 3.1415926536
+        LET integer = Ip (long)
+        LET float = Fp (long)
+
+        PRINT long
+        PRINT integer + float
+
+        END
+
+By the way, there is a practical limit to the size of an integer or floating point number. It's the same limit used by Perl (the language in which Axbasic is written), and depends on several factors. Since Axbasic is designed for use with MUDs, and not for controlling satellites, we won't bore you with the details.
+
+It's generally safe to use up to 16 signficant figures (the total number of digits before and after the decimal point). Beyond that, you'll start to see numbers expressed in scientific notation.
+
+##<a name="10.9">10.9 Rounding numbers</a>
+
+There are three functions for rounding numbers.
+
+**Ceil ()** (which is short for *ceiling*) rounds a number *up* to the nearest integer. In this example, the number is rounded up to 4.
+
+        LET long = 3.1415926536
+        LET rounded = Ceil (long)
+
+The opposite of **Ceil ()** is, of course, **Floor ()**. **Floor ()** rounds number *down* to the nearest integer. In this example, it's rounded down to 3.
+
+        LET long = 3.1415926536
+        LET rounded = Floor (long)
+
+A negative number like -3.5 would be rounded *up* to -3, but rounded *down* to -4.
+
+If you're thinking that **Floor ()** is a lot like **Int ()**, then you're right - in fact, their behaviour is identical (for all numbers, positive and negative).
+
+Finally, we have the **Round ()** function. **Round ()** rounds a number up or down - it rounds 6.2 down to 6, and it rounds 6.7 up to 7. A number that's exactly in the middle - 6.5, in this case - is rounded *up*.
+
+        LET long = 3.1415926536
+        LET rounded = Round (long)
+
+**Round ()** isn't restricted to integers. For example, you might use it to round to three decimal places:
+
+        LET rounded = Round (long, 3)
+
+In that case, 6.1232 would be rounded *down* to 6.123, and 6.1239 would be rounded *up* to 6.124.
+
+You can shorten (or *truncate*) a long number using the **Trunc ()** function. For example, to truncate a number to three decimal places:
+
+        LET long = 3.1415926536
+        LET short = Trunc (long, 3)
+
+If you don't specify any decmial places, everything after the decimal point is removed.
+
+        LET long = 3.1415926536
+        LET short = Trunc (long)
+
+The **Abs ()** function returns the absolute value of a number, which is another way of saying that it removes any minus sign. Both of these statements display the same value.
+
+        PRINT Abs (3.14)
+        PRINT Abs (-3.14)
+
+The **Sgn ()** function can be used to test whether a number is positive or negative.
+
+        ! Display 1 for positive
+        PRINT Sgn (3.14)
+        ! Display -1 for negative
+        PRINT Sgn (-3.14)
+        ! Display 0 for the number zero
+        PRINT Sgn (0)
+
+##<a name="10.10">10.10 Remainders</a>
+
+When you divide 100 by 10, you'll get a nice neat integer. But if you divide 100 by 7, you'll get an arkward 14.2857142857143.
+
+If you're only interested in the integer part of the number - in this case, the 14 - then of course you can use **Int ()**.
+
+        PRINT Int (100 / 7)
+
+If you're interested in the fractional part, you could use the **Fp ()** function introduced earlier, or you can use **Remainder ()**.
+
+        PRINT Remainder (100, 7)
+
+**Remainder ()** returns the remainder when the first number is divided by the second one, i.e. when 100 is divided by 7.
+
+The **Mod ()** function (short for *modulus*) behaves exactly the same way as the **Remainder ()** function.
+
+##<a name="10.11">10.11 Random numbers</a>
+
+To get a random number that's different every time, use the **Rnd ()** function.
+
+        PRINT Rnd (10)
+
+This will PRINT a number like 7.79433435135619. In fact, it produces a number that's anywhere between 0 and 9.999...
+
+Much of the time, you'll want an *integer* number, so you should get into the habit of using **Int ()** and **Rnd ()** together.
+
+        PRINT Int ( Rnd (10) )
+
+That line will PRINT a number in the range 0-9. Each value is equally likely to occur (more or less).
+
+If you actually want a number in the range 1-10, just add 1.
+
+        PRINT Int ( Rnd (10) ) + 1
+
+In the early days of computing, random numbers weren't terribly random. In fact, on some systems, a BASIC programme produced the same sequence of random numbers every time.
+
+To get around this, some flavours of BASIC provided a RANDOMIZE statement, which would have been used only once per programme.
+
+        RANDOMIZE
+        PRINT Int ( Rnd (10) )
+
+RANDOMIZE will have no absolutely no effect on your Axbasic scripts; it's available merely to prevent older programmes generating an error when you run them.
+
+##<a name="10.12">10.12 Getting the date and time</a>
+
+The functions in this Section have no arguments. You can use brackets after them, or not. Both of the following lines are correct.
+
+        PRINT Date$ ()
+        PRINT Date$
+
+The **Date$ ()** function returns a date in the form **"YYYYMMDD"**. Even though all the characters are numbers, the return value is a string.
+
+        ! Display the string "20181225"
+        PRINT Date$ ()
+
+The **Date ()** function returns a number, not a string. The number is in the form **YYDDD**, where **YY** is the last two digits of the year (in the range 00-99) and **DDD** is the number of the day in the year (in the range 1-365).
+
+        ! Display the number 18359
+        PRINT Date ()
+
+There are four functions for getting the current time.
+
+**Time$ ()** returns a 24-hour-clock time in the form **"HH:MM:SS"**. **Time ()** returns the number of seconds since midnight.
+
+**Timestamp ()** returns the number of seconds since the current session began. (In Axmud, a session is a connection to a world; real or simulated. Every session has its own tab in the main window.)
+
+**Epoch ()** returns the number of seconds since 00:00 GMT on January 1, 1970. (A small handful of systems, such as MacOS Classic, use a different epoch time.)
+
+If you want to work out how much has elapsed between two events, then  you should obviously use **Timestamp ()** or **Epoch ()**.
+
+##<a name="10.13">10.13 Converting numbers and strings</a>
+
+If you ever need to convert a string value into a numeric value, you can use the function **Val ()**.
+
+        LET string$ = "100"
+        LET number = Val (string$)
+
+If **string$** had contained any characters that can't be converted to a number, then you'd have seen an error.
+
+The opposite of **Val ()** is **Str$ ()**, which converts a numeric value into a string.
+
+        LET number = 100
+        LET string$ = Str$ (number)
+
+##<a name="10.14">10.14 Testing patterns</a>
+
+The syntax for patterns (regular expressions) is somewhat complicated, and if you make a mistake you'll see a system error.
+
+It's always a good idea to test a pattern before using it, and this can be done with the **Testpat$ ()** function
+
+        LET result$ = Testpat$ ("Hello \w+")
+
+The example above is a valid pattern (regular expression). Because it's valid, **result$** is set to empty string. If it were an invalid pattern, **result$** would be set to the error message generated.
+
+The related **Testpat ()** function returns a numerical value, if that's more convenient: 1 for a valid pattern, 0 for an invalid pattern.
+
+---
+
+[Previous](ch09.html) [Index](index.html) [Next](ch11.html)

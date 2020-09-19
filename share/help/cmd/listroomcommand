@@ -1,0 +1,16 @@
+lro / listroomcommand         Displays room command settings
+
+   Format:
+      ;lro                    Displays settings
+      
+   Notes:
+      A few worlds (for example EmpireMUD) offer a series of commands in each
+         room, which are specific to that room.
+      Those commands can be put to use with the client commands ';roomcommand',
+         ';ignoreroomcommand' and ';noticeroomcommand'.
+      This command displays current room command settings - which room
+         commands are available at the current location and which have been
+         marked as ignorable.
+ 
+   User commands:
+      lro / listroom / listroomcmd / listroomcommand

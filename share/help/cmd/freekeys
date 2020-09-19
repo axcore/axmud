@@ -1,0 +1,32 @@
+frk / freekeys                Toggles cursor (etc) keys for replaying TTS
+ 
+   Format:
+      ;frk                    Toggles cursor (etc) keys
+      
+   Notes:
+      When running the version of Axmud that's optimised for visually-impaired 
+         users, some keys are used for replaying text that has been converted
+         to speech.
+      This command can be used to disable or re-enable that functionality, in 
+         case the user needs those keys for something else.
+
+      They keys used (and their equivalent client commands) are:
+
+         home         ;split
+         end          ;prompt
+         left         ;unskip
+         right        ;skip
+         up           ;first
+         down         ;last
+         page up      ;unskip more
+         page down    ;skip more
+         tab          ;resume
+         escape       ;shutup
+
+      This command only works with the optimised version. When running the
+         normal version, use the ';hijackkeys' command instead.      
+      See also the help for ';split', ';skip', ';unskip', ';first', ';last',
+         ';resume' and ';shutup'.
+
+   User commands:
+      frk / free / freekeys

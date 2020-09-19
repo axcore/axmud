@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch12</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch11.html">Previous</a> <a href="index.html">Index</a> <a href="ch13.html">Next</a></p>
+<hr>
+<h1>12 Initial and custom tasks</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#12.1">12.1 Initial tasks</a><ul>
+<li><a href="#12.1.1">12.1.1 Profile initial tasks</a></li>
+</ul>
+</li>
+<li><a href="#12.2">12.2 Editing tasks</a><ul>
+<li><a href="#12.2.1">12.2.1 Editing current tasks</a></li>
+<li><a href="#12.2.2">12.2.2 Editing initial tasks</a></li>
+</ul>
+</li>
+<li><a href="#12.3">12.3 Custom tasks</a><ul>
+<li><a href="#12.3.1">12.3.1 Adding custom tasks</a></li>
+<li><a href="#12.3.2">12.3.2 Editing custom tasks</a></li>
+<li><a href="#12.3.3">12.3.3 Starting custom tasks</a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2><a name="12.1">12.1 Initial tasks</a></h2>
+<p>When you first run Axmud, the Setup wizard window asks you which tasks should be started automatically at the beginning of each session.</p>
+<p>There are several lists of <em>initial tasks</em>. The main one - the so-called <em>global initial tasklist</em> - can be viewed from the object viewer window.</p>
+<ul>
+<li>Open the object viewer window using the <strong>;openobjectviewer</strong> command, or by clicking the button in the main window</li>
+<li>When the window opens, click on <strong>Tasks &gt; Global initial tasklist</strong></li>
+</ul>
+<p>The object viewer window also lists the <em>types</em> of task that are available, including both built-in tasks and any tasks you have written yourself.</p>
+<ul>
+<li>In the object viewer window , click on <strong>Tasks &gt; Available tasks</strong></li>
+<li>Click the Divert task to select it</li>
+<li>Then click on <strong>Add initial</strong><ul>
+<li>A few tasks, such as the Chat task, can only be started with a client command</li>
+<li>Therefore they can't be added to any initial tasklist</li>
+</ul>
+</li>
+</ul>
+<p>Axmud has a number of task scheduling options. When you click the <strong>Add initial</strong> button, this window will appear:</p>
+<p><img alt="Initial task window" src="img/ch12/initial_task.png"></p>
+<p>You'll probably never need any of these options, so you can click the <strong>Add task</strong> button right at the bottom of the window right away.</p>
+<h3><a name="12.1.1">12.1.1 Profile initial tasks</a></h3>
+<p>Besides the global initial tasklist, each world profile also has its own initial tasklist. These tasks are started every time you connect to the world. (They are also started if you change the current world profile with a <strong>;setworld</strong> command.)</p>
+<p>Tasks can be added to a profile's initial tasklist using the profile's edit window.</p>
+<ul>
+<li>Open the edit window using the <strong>;editworld</strong> command</li>
+<li>When the window is open, click <strong>Initial &gt; Page 1</strong></li>
+<li>In the combo (drop-down) box near the bottom-left corner, select <strong>compass_task</strong></li>
+<li>Click the <strong>Add initial task</strong> button</li>
+</ul>
+<p>Other types of profile have their own initial tasklists, too. The character profile's initial tasks are started whenever you connect to the world and log in with that character.</p>
+<ul>
+<li>Many tasks (such as the Locator task) are <em>jealous</em>, which means only one copy of them can run at a time</li>
+<li>If you add the Locator task to multiple initial tasklists, only one copy will start</li>
+</ul>
+<h2><a name="12.2">12.2 Editing tasks</a></h2>
+<p>Some aspects of a task's behaviour can be modified.</p>
+<h3><a name="12.2.1">12.2.1 Editing current tasks</a></h3>
+<p>For example, the Divert task's window changes its background colour whenever a <strong>tell</strong> message is received. If you find the bright yellow uncomfortable, you can change it.</p>
+<ul>
+<li>If the Divert task isn't already running, start it with <strong>;starttask divert</strong></li>
+<li>From the main window menu, click <strong>Tasks &gt; Divert task &gt; Edit current task...</strong></li>
+<li>When the edit window opens, click on the <strong>Parameters</strong> tab</li>
+<li>Find the combo (drop-down) box on the line marked <strong>Tell colour</strong>. It is currently set to YELLOW. (Bold colours are displayed in CAPITAL LETTERS)</li>
+<li>Change the colour to MAGENTA</li>
+<li>Click the <strong>OK</strong> button at the bottom of the window</li>
+</ul>
+<p>The current Divert task will reset itself automatically. The next <strong>tell</strong> message you receive will use the new colour.</p>
+<h3><a name="12.2.2">12.2.2 Editing initial tasks</a></h3>
+<p>Any changes you make to the <em>current</em> divert task are lost at the end of the session (or when you halt the task).</p>
+<p>However, you can edit initial tasks, and any changes you make will be changes are retained between sessions.</p>
+<ul>
+<li>Open the object viewer window using the <strong>;openobjectviewer</strong> command, or by clicking the button in the main window</li>
+<li>When the window opens, click on <strong>Tasks &gt; Global initial tasklist</strong></li>
+<li>Select the Divert task you created earlier by clicking on it</li>
+<li>Click the <strong>Edit</strong> button</li>
+<li>When the edit window opens, click the <strong>Parameters</strong> tab, modify the colours, and then click the <strong>OK</strong> button.</li>
+</ul>
+<p>In this example, any changes you make will be applied the next time you connect to any world. If you edit a world profiles's initial tasks, the changes will be applied the next time you connect to <em>that</em> world.</p>
+<h2><a name="12.3">12.3 Custom tasks</a></h2>
+<p>'Custom' tasks can be modified in the same way as initial tasks. However, unlike initial tasks (which usually start when you connect to a world), custom tasks can be started whenever you need them.</p>
+<h3><a name="12.3.1">12.3.1 Adding custom tasks</a></h3>
+<p>You can create a new custom task from the object viewer window.</p>
+<ul>
+<li>Open the object viewer window using the <strong>;openguiwindow</strong> command, or by clicking the button in the main window</li>
+<li>When the window opens, click on <strong>Tasks &gt; Available tasks</strong></li>
+<li>Select the Watch task by clicking on it</li>
+<li>Then click the <strong>Add custom</strong> button</li>
+</ul>
+<p>All custom tasks must have a unique name. When the task preferences window opens, you can enter this name in the box near the top. (Once again, you will probably never use the scheduling options in the rest of the window.)</p>
+<p>Enter a name like <strong>mywatch</strong> and then click the <strong>Add task</strong> button at the bottom of the window.</p>
+<h3><a name="12.3.2">12.3.2 Editing custom tasks</a></h3>
+<p>Once the custom task has been created, you can modify its behaviour.</p>
+<ul>
+<li>In the object viewer window, click on <strong>Tasks &gt; Custom tasklist</strong></li>
+<li>Select the task by click on it</li>
+<li>Then click the <strong>Edit</strong> button</li>
+</ul>
+<p>You can modify the task's colours in the same way as before. Click the edit window's <strong>OK</strong> button when you're finished.</p>
+<h3><a name="12.3.3">12.3.3 Starting custom tasks</a></h3>
+<p>You can now start your custom Watch task at any time. All custom tasks are available when connected to any world.</p>
+<pre><code>    ;startcustomtask mywatch
+    ;sct mywatch
+</code></pre>
+<hr>
+<p><a href="ch11.html">Previous</a> <a href="index.html">Index</a> <a href="ch13.html">Next</a></p>
+
+</body>
+</html>

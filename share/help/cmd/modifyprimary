@@ -1,0 +1,38 @@
+mpr / modifyprimary           Modifies a primary direction
+ 
+   Format:
+      ;mpr <standard> <custom>
+      ;mpr <standard> <custom> <abbrev>
+                              Modifies the direction
+
+   Notes:
+      Axmud provides eighteen 'standard' primary directions - the sixteen
+         compass directions (including 'north', 'northeast' and
+         'northnortheast') as well as 'up' and 'down'. This standard set never
+         changes.
+      Axmud dictionaries store a custom set of primary directions, one for each
+         standard direction. Dictionaries also store a set of secondary
+         directions such as 'out' and 'in', this set can contain as many or as
+         few directions as you want.
+      For a list of primary and secondary directions stored in the current
+         dictionary, use the 'listdirection' command.               
+
+      If you want to modify the current dictionary's custom primary directions
+         (often because you're playing a world whose language is not English),
+         you can use this command.
+      <standard> is one of the standard primary directions described above.
+      <custom> is a customised primary direction.
+      <abbrev> is an abbreviated form of the customised direction. If you don't
+         specify <abbrev>, no abbreviation is stored.
+
+      As an example, you could start modifying the current direction to use
+         directions in French like this:
+
+            ;mpr north nord n
+            ;mpr west ouest o
+
+      However, for some languages (French among them), all directions can be
+         updated at once using the button in the dictionary's edit window.
+ 
+   User commands:
+      mpr / modprimary / modifyprimary

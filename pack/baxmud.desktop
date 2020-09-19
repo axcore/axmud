@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Axmud (visually-impaired users)
+Version=1.0
+Exec=baxmud.pl
+Icon=axmud
+Type=Application
+Categories=Game
+Encoding=UTF-8
+X-AppInstall-Package=axmud
+GenericName=MUD Client
+Comment=Play online text-based games (MUDs)
+Terminal=false

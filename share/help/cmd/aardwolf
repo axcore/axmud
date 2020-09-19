@@ -1,0 +1,74 @@
+aard / aardwolf               Handles AARD102 (Aardwolf 102 channel) data
+
+   Format:
+      ;aard                   Show current AARD102 status
+
+      ;aard <option>          Turn tags on
+      ;aard <option> <flag>   Turn tags on/off, depending on <flag>
+
+   Notes:
+      The world can use the AARD102 protocol to send extra information about the
+         game state. Very few worlds use it, indeed it has been officially
+         described as 'deprecated'; nevertheless Axmud supports it.
+
+      When using AARD102, the world frequently sends status messages to the
+         client. Use this command without <option> or <flag> to see the most
+         recent status message received, and the time at which the MUD last
+         'ticked'.
+      The status is received as a number. Axmud converts into a string:
+
+         1 'at_login_screen'   - At login screen, no player yet
+         2 'at_motd'           - Player at MOTD or other login sequence
+         3 'player_active'     - Player fully active and able to receive MUD
+                                    commands
+         4 'player_afk'        - Player AFK
+         5 'note_mode'         - Player in note mode
+         6 'edit_mode'         - Player in Building/Edit mode
+         7 'page_prompt'       - Player at paged output prompt
+         8 'player_rest'       - (proposed - possibly never implemented)
+         9 'code_nine'         - (used by Aardwolf, but the meaning is unknown)
+
+         n 'unknown_n', where n is any other value (range 1-254)
+                               - any other value not described by AARD102's
+                                    authors
+
+      In addition, the user can use this command to turn on various kinds of
+         tags. For example, you can ask the MUD to surround the whole inventory
+         list within the tags
+
+         {inventory}...{/inventory}
+
+      Because AARD102 is deprecated, Axmud has not implemented any kind of
+         handling for these tags. If you really want to make use of them, you
+         would have to create some triggers to intercept lines containing those
+         tags, and to redirect the lines to your own plugin code.
+
+      If specified, <option> is a number in the range 1-254. The AARD102 authors
+         have documented the following values:
+
+         1   Statmon
+         2   Bigmap + Coordinates tags
+         3   Help tags
+         4   Map tags
+         5   Channel tags
+         6   Tell tags (see ‘help telltags’ in game)
+         7   Spellup tags (see ‘help spelltags’ in game)
+         8   Skillgains tags
+         9   Say tags
+         11  Score tags
+         12  Room names in mapper
+         14  Exits in mapper
+         15  Editor tags
+         16  Equip tags
+         17  Inventory tags
+
+         50  Quiet all tags (tags quiet on/off)
+         51  Turn autotick on/off
+         52  Turn prompts on/off
+         53  Turn output paging on/off (remembers pagesize)
+
+      <flag> can be 1, 0 or any word beginning with either 't' (for 'true') or
+         'f' (for 'false'). <flag> can also be the words 'on' or 'off'.
+
+   User commands:
+      aard / aard102 / aardwolf

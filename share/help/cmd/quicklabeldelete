@@ -1,0 +1,13 @@
+qld / quicklabeldelete        Opens a window to quickly delete map labels
+ 
+   Format:
+      ;qld                    Opens the window
+ 
+   Notes:
+      If you're planning to share your maps, removing all the map labels that
+         you'd prefers others not to see can be laborious.
+      This command opens a window in which lists all labels, and lets you
+         quickly select the ones you want to delete.
+         
+   User commands:
+      qld / quicklabel / quicklabeldelete

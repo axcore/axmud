@@ -1,0 +1,350 @@
+[Previous](ch05.html) [Index](index.html) [Next](ch07.html)
+
+---
+
+#6 - Conditions
+
+####Table of Contents
+
+* [6.1 Introducing conditions](#6.1)
+* [6.2 IF statements](#6.2)
+* [6.3 Compound statements after THEN](#6.3)
+* [6.4 IF..THEN..ELSE statements](#6.4)
+* [6.5 IF across multiple lines](#6.5)
+* [6.6 Guessing games](#6.6)
+* [6.7 Line formatting](#6.7)
+* [6.8 Nested IFs](#6.8)
+* [6.9 Using AND and OR](#6.9)
+* [6.10 Using NOT](#6.10)
+* [6.11 More or Less](#6.11)
+* [6.12 SELECT CASE](#6.12)
+
+---
+
+##<a name="6.1">6.1 Introducing conditions</a>
+
+A *condition* is something that is *either* true *or* false.
+
+        number = 5
+
+If we've set the variable **number** to 5, then clearly this condition is true, but if we set **number** to 6, then it must be false.
+
+Here's another example.
+
+        name$ = "bilbo"
+
+This condition would be false if we had set the variable **name$** to **"gandalf"**.
+
+##<a name="6.2">6.2 IF statements</a>
+
+In the real world, Axbasic scripts spend most of their time testing conditions to see whether they're true or false.
+
+In order to test a condition, we use an IF statement.
+
+        IF number = 5 ...
+        IF name$ = "bilbo" ...
+
+Having decided whether the condition is true, or not, we need to decide what to do next. For that, we add the keyword THEN.
+
+        IF number = 5 THEN ...
+        IF name$ = "bilbo" THEN ...
+
+THEN can be followed by any statement you like. You could add a PRINT statement, for example.
+
+        IF number = 5 THEN PRINT "True!"
+        IF number = 6 THEN PRINT "False!"
+
+Instead of PRINTing something, you could set the value of a variable. The variable is only set when the condition is true.
+
+        IF number = 5 THEN LET result$ = "True!"
+        PRINT result$
+
+##<a name="6.3">6.3 Compound statements after THEN</a>
+
+Earlier we say that statements can be joined together with a colon character.
+
+        PRINT "Ready" : PRINT "Steady" : PRINT "Go"
+
+After THEN, we can add a single statement, or more than one, if that's more convenient.
+
+        IF number = 10 THEN PRINT "Ready" : PRINT "Steady" : PRINT "Go"
+
+The three PRINT statements are *only* executed if **number** really is set to 10.
+
+##<a name="6.4">6.4 IF..THEN..ELSE statements</a>
+
+A really useful feature of Axbasic is the keyword ELSE.
+
+        IF number = 5 THEN do something ELSE do something
+
+This time you can add *two* statements. One is executed if the condition is true, and the other is executed if the condition is false.
+
+        IF number = 5 THEN PRINT "True!" ELSE PRINT "False!"
+
+Often you'll set a variable to one of two values, depending on whether the condition is true, or not.
+
+        IF number = 5 THEN LET result$ = "True!" ELSE LET result$ = "False!"
+        PRINT result$
+
+##<a name="6.5">6.5 IF across multiple lines</a>
+
+IF statements can quickly become very long, so it's useful to split them across several lines. Let's take a simple example.
+
+        IF number = 5 THEN
+            PRINT "True!"
+        END IF
+
+If the condition is true, every line between THEN and END IF is executed. You can add as many lines as you like.
+
+        IF number = 5 THEN
+            PRINT "True!"
+            PRINT "It's not false!"
+            PRINT "I'm sure about this!"
+        END IF
+
+If the condition is false, *none* of the lines between THEN and END IF are executed.
+
+ELSE can also be used in this situation.
+
+        IF number = 5 THEN
+            PRINT "True!"
+        ELSE
+            PRINT "False!"
+        END IF
+
+Once again, you can add as many lines as you like.
+
+        IF number = 5 THEN
+            PRINT "True!"
+            PRINT "It's not false!"
+        ELSE
+            PRINT "False!"
+            PRINT "It's not true!"
+        END IF
+
+##<a name="6.6">6.6 Guessing games</a>
+
+At this point, it's traditional for a programming tutorial to introduce a simple guessing game, so let's go ahead and do that.
+
+        PRINT "Guess my name!"
+        INPUT name$
+
+        IF name$ = "bilbo" THEN
+            PRINT "Yes, my name is Bilbo!"
+        ELSE
+            PRINT "No, my name is Bilbo!"
+        END IF
+
+        END
+
+That works very well for a simple yes/no game, but what about something (slightly) more challenging?
+
+In that situation, we can use ELSE IF.
+
+        PRINT "Guess my name!"
+        INPUT name$
+
+        IF name$ = "bilbo" THEN
+            PRINT "Yes, my name is Bilbo!"
+        ELSE IF name$ = "gandalf" THEN
+            PRINT "Don't be silly, Gandalf is YOUR name."
+        ELSE
+            PRINT "Wrong!"
+        END IF
+
+        END
+
+After the first line, there are three PRINT statements; only one of them is executed. You can add as many ELSE IFs as you want, but it's always a good idea to use an ELSE at the end, in case the user types something you didn't expect.
+
+In other words, if the user types "Frodo", the script below won't PRINT anything at all (which is probably not what the author intended).
+
+        PRINT "Guess my name!"
+        INPUT name$
+
+        IF name$ = "bilbo" THEN
+            PRINT "Yes, my name is Bilbo!"
+        ELSE IF name$ = "gandalf" THEN
+            PRINT "Don't be silly, Gandalf is your name."
+        ELSE IF "name$ = "sauron" THEN
+            PRINT "I don't believe you."
+        END IF
+
+        END
+
+By the way, ELSE IF can also be typed as ELSEIF. Both spellings work in exactly the same way.
+
+##<a name="6.7">6.7 Line formatting</a>
+
+In Axbasic scripts, you can add as much empty space as you like at the beginning of the line, and you can use as many empty lines as you like, too.
+
+These lines are perfectly legal Axbasic:
+
+        IF name$ = "bilbo" THEN
+        PRINT "Yes, my name is Bilbo!"
+        PRINT "How did you know?"
+        END IF
+
+But if your script isn't behaving the way you expected, it's a lot easier to find the source of the problem if you've used your TAB key to move everything inside the IF...END IF a little to the right:
+
+        IF name$ = "bilbo" THEN
+            PRINT "Yes, my name is Bilbo!"
+            PRINT "How did you know?"
+        END IF
+
+##<a name="6.8">6.8 Nested IFs</a>
+
+We can put anything we like between an IF and an END IF. We can even put another IF there!
+
+        IF surname$ = "baggins" THEN
+            IF name$ = "bilbo" THEN
+                PRINT "Hello, Bilbo Baggins!"
+            ELSE
+                PRINt "Are you related to Bilbo?"
+            END IF
+        END IF
+
+In fact, the author of this script has forgotten to include an ELSE. Something happens regardless of the **name$**, but if the **surname$** isn't the one that was expected, nothing happens at all.
+
+Once we start using a lot of IFs and ELSEs and ELSE IFs and END IF, it becomes even more important to use proper spacing.
+
+        IF surname$ = "baggins" THEN
+            IF name$ = "bilbo" THEN
+                PRINT "Hello, Bilbo Baggins!"
+            ELSE
+                PRINt "Are you related to Bilbo?"
+            END IF
+        ELSE
+            PRINT "You aren't related to Bilbo!"
+        END IF
+
+##<a name="6.9">6.9 Using AND and OR</a>
+
+We can test two conditions *at the same time* by using AND.
+
+        IF name$ = "bilbo" AND surname$ = "baggins" THEN
+            PRINT "Hello, Bilbo Baggins!"
+        END IF
+
+Axbasic checks the first condition. If it's true, Axbasic checks the second condition. If that is also true, then somethins if PRINTed.
+
+The opposite of AND is, of course, OR.
+
+        IF name$ = "bilbo" OR name$ = "gandalf" THEN
+           PRINT "I know you!"
+        END IF
+
+This time, if either (or both) of the conditions are true, something is PRINTed. If they are both false, nothing is PRINTed.
+
+##<a name="6.10">6.10 Using NOT</a>
+
+Suppose you wanted to greet anyone *except* **Bilbo**. In that case, you would use NOT.
+
+        IF NOT name$ = "bilbo" THEN
+            PRINT "You are not Bilbo!"
+        END IF
+
+The keyword NOT goes at the beginning of the condition. If you try to put it somewhere else, as in these examples, you'll get an error.
+
+        IF name$ NOT = "bilbo" THEN
+        IF name$ = NOT "bilbo" THEN
+
+AND, OR and NOT are operators, just like the characters &, +, -, * and /. This means that you can use brackets, if you want to.
+
+        IF surname$ = "baggins" AND (name$ = "bilbo" OR name$ = "frodo") THEN
+            PRINT "Hello!"
+        END IF
+
+Axbasic checks everything inside the brackets first, so it first checks that **name$** is either **bilbo** or **frodo**. If so, it then checks that surname$ is **baggins**.
+
+This is simpler than the equivalent code using IF, ELSE, ELSE IF and END IF.
+
+        IF surname$ = "baggins" THEN
+            IF name$ = "bilbo" THEN
+                PRINT "Hello!"
+            ELSE IF name$ = "frodo" THEN
+                PRINT "Hello!"
+            END IF
+        END IF
+
+##<a name="6.11">6.11 More or Less</a>
+
+If you want to check that a number is less than 5, you *could* use a bunch of ORs.
+
+        IF number == 1 OR number == 2 OR number == 3 OR number == 4 THEN
+            PRINT "Less than 5"
+        END IF
+
+But a simpler way is to use the *less than* character **<**.
+
+        IF number < 5 THEN
+            PRINT "Less than 5"
+        END IF
+
+The opposite is the *more than* character, **>**.
+
+        IF number > 5 THEN
+            PRINT "More than 5"
+        END IF
+
+Often you'll need to check that a number is between 1 and 5. You can do that using AND.
+
+        IF number > 0 AND number < 6 THEN
+            PRINT "Between 1 and 5"
+        END IF
+
+Of course, it would be a lot simpler to use the numbers 1 and 5 directly.
+
+For this, you can use the **<=** operator, which means *less than or equal to*, or the **>=** operator, which means *more than or equal to*.
+
+        IF number >= 1 AND number <= 5 THEN
+            PRINT "Between 1 and 5"
+        END IF
+
+Finally, we have the **<>** operator, which means *not equal to*.
+
+        IF number <> 10 THEN
+            PRINT "Not equal to 10"
+        END IF
+
+The more than/less than operators can be used on strings, too. If you ask whether **word$** is "less than" **other_word$**, you're actually asking which word appears first in the dictionary.
+
+        IF "apple" < "banana" THEN
+            PRINT "In the dictionary, apple comes before banana"
+        END IF
+
+There is a hidden danger here. Axbasic, in common with most programming languages, considers that capital letters are *less than* lower-case letters; in other words, the letter **Z** is *less than* the letter **a**. This can lead to unexpected results, such as in the following script (which you should try for yourself).
+
+        IF "apple" < "BANANA" THEN
+            PRINT "In the dictionary, apple comes before banana"
+        ELSE
+            PRINT "In the dictionary, banana comes before apple"
+        END IF
+        END
+
+The usual solution is to convert both strings to lower-case before comparing them. We'll cover that in a later Section.
+
+##<a name="6.12">6.12 SELECT CASE</a>
+
+One alternative to endless IF...ELSE IF... statements is SELECT CASE. Let's start with an example.
+
+        SELECT CASE dice
+            CASE 1
+                PRINT "The lowest number!"
+            CASE 3, 4
+                PRINT "Somewhere in the middle!"
+            CASE 6
+                PRINT "The highest number!"
+            CASE ELSE
+                PRINT "Some other number!"
+                IF dice = 5 THEN PRINT "It's a five!" ELSE PRINT "It's a two!"
+        END SELECT
+
+Depending on the value of **dice**, one or more lines of code are executed. Then, execution skips to the first line after the END SELECT statement.
+
+SELECT CASE was originally intended to improve speed on slow computers. In this modern era, there is little or no speed increase (but the code still looks simpler).
+
+Each CASE statement must contain a literal value - a number or a string. You can't use an expression or a variable.
+
+---
+
+[Previous](ch05.html) [Index](index.html) [Next](ch07.html)

@@ -1,0 +1,14 @@
+lls / listlabelstyle          Lists map label styles
+ 
+   Format:
+      ;lls <name>             Lists styles
+ 
+   Notes:
+      Map labels are drawn in the automapper window. It's possible to customise
+         labels individually, but most labels are drawn using a map label style
+         (so that when the style is changed, all labels using that style are
+         redrawn automatically).
+      This command displays a list of map label styles and their attributes.
+ 
+   User commands:
+      lls / liststyle / listlabelstyle

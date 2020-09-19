@@ -1,0 +1,189 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch14</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch13.html">Previous</a> <a href="index.html">Index</a> <a href="ch15.html">Next</a></p>
+<hr>
+<h1>14 - Task and dialogue windows</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#14.1">14.1 Simple windows</a></li>
+<li><a href="#14.2">14.2 Windows with command entry boxes</a></li>
+<li><a href="#14.3">14.3 Basic text colours</a></li>
+<li><a href="#14.4">14.4 RGB colours</a></li>
+<li><a href="#14.5">14.5 xterm colours</a></li>
+<li><a href="#14.6">14.6 Style tags</a></li>
+<li><a href="#14.7">14.7 Formatting lines</a></li>
+<li><a href="#14.8">14.8 Emptying the window</a></li>
+<li><a href="#14.9">14.9 Changing the background colour</a></li>
+<li><a href="#14.10">14.10 Flashing windows</a></li>
+<li><a href="#14.11">14.11 Changing the window's title</a></li>
+<li><a href="#14.12">14.12 Dialogue windows</a></li>
+</ul>
+<hr>
+<p>Any Axbasic script that's running as a task can create its own task window.</p>
+<h2><a name="14.1">14.1 Simple windows</a></h2>
+<p>An Axbasic script can open two kinds of window - one with a command entry box, and one without.</p>
+<p>The simpler kind of window is opened with an OPENWIN statement. We can use a WRITEWIN statement to display some text in the new window.</p>
+<pre><code>    OPENWIN
+    WRITEWIN "Hello world!"
+    PAUSE 5
+    END
+</code></pre>
+<p>If the script isn't run as a task, no window is opened. The OPENWIN and WRITEWIN statements are just ignored.</p>
+<p>When the script stops running, so does its task. When the task stops running, the task window is automatically closed. If you want to close a window early for some reason, you can use a CLOSEWIN statement.</p>
+<pre><code>    OPENWIN
+    WRITEWIN "Hello world!"
+    PAUSE 3
+    CLOSEWIN
+    PAUSE 3
+    END
+</code></pre>
+<h2><a name="14.2">14.2 Windows with command entry boxes</a></h2>
+<p>A task window with a command entry box can be created with an OPENENTRY statement.</p>
+<p>Such a window is closed with a CLOSEWIN statement, as before. (There is no CLOSEENTRY statement.)</p>
+<pre><code>    OPENENTRY
+    WRITEWIN "Hello world!"
+    PAUSE 5
+    END
+</code></pre>
+<p>You're already familiar with using INPUT statements. Normally, an INPUT statement opens a small dialogue window. However, if a task window with an entry box exists, INPUT will expect the user to type there, instead.</p>
+<h2><a name="14.3">14.3 Basic text colours</a></h2>
+<p>The default window isn't very interesting, but we can easily spice it up with various colours and styles. For example, the following line displays some red text, rather than plain old white.</p>
+<pre><code>  WRITEWIN "Hello world!", "red"
+</code></pre>
+<p>Axmud uses a basic set of colours roughly corresponding to those used in the early days of home computing. Those colours are <strong>black</strong>, <strong>red</strong>, <strong>green</strong>, <strong>yellow</strong>, <strong>blue</strong>, <strong>magenta</strong>, <strong>cyan</strong> and <strong>white</strong>.</p>
+<p>The red text from the example above isn't particularly easy to see. You can switch to a bold colour by typing it in capital letters.</p>
+<pre><code>  WRITEWIN "Hello world!", "RED"
+</code></pre>
+<p>Furthermore, you can set the underlay colour - the background immediately beneath the text - using this line.</p>
+<pre><code>  WRITEWIN "Hello world!", "RED", "ul_white"
+</code></pre>
+<p>All eight basic colours can be used as an underlay, which gives us <strong>ul_black</strong>, <strong>ul_red</strong>, <strong>ul_green</strong>, <strong>ul_yellow</strong>, <strong>ul_blue</strong>, <strong>ul_magenta</strong>, <strong>ul_cyan</strong> and <strong>ul_white</strong>.</p>
+<p>If the underlay colours are typed in capital letters, they too appear as bold colours.</p>
+<pre><code>  WRITEWIN "Hello world!", "RED", "UL_WHITE"
+</code></pre>
+<p>The arguments can appear in any order (but the actual text always comes first.)</p>
+<pre><code>  WRITEWIN "Hello world!", "UL_WHITE", "RED"
+</code></pre>
+<p>WRITEWIN only uses the first text colour and the first underlay colour. Any other colours you specify are ignored. This line displays text in red, not white or blue.</p>
+<pre><code>  WRITEWIN "Hello world!", "red", "white", "blue"
+</code></pre>
+<h2><a name="14.4">14.4 RGB colours</a></h2>
+<p>Axmud is capable of displaying 16.7 million different colours. A <em>colour tag</em> is a way of representing those colours. <strong>"red"</strong>, <strong>"green"</strong>, <strong>"ul_white"</strong> and <strong>"UL_BLUE"</strong> are all valid colour tags.</p>
+<p>So-called <em>RGB colours</em> are displaying using a colour tag in the following format.</p>
+<pre><code>    ! Display red text
+    WRITEWIN "Hello world!", "#FF0000"
+    ! Display green text
+    WRITEWIN "Hello world!", "#00FF00"
+    ! Display blue text
+    WRITEWIN "Hello world!", "#0000FF"
+    ! Display white text
+    WRITEWIN "Hello world!", "#FFFFFF"
+    ! Display black text
+    WRITEWIN "Hello world!", "#000000"
+</code></pre>
+<p>The tag starts with a <strong>#</strong> character, followed by exactly six <em>hexadecimal</em> characters in the range <strong>0-9, A-F</strong>.</p>
+<pre><code>    ! Display a surprise colour
+    WRITEWIN "Hello world!", "#D45F92"
+</code></pre>
+<p>Case doesn't matter - you can use <strong>A-F</strong> characters, or <strong>a-f</strong> characters, or a mixture of the two.</p>
+<p>To use an RGB colour as an underly colour, just add the letter <strong>U</strong> to the beginning of the tag.</p>
+<pre><code>    ! Display red text on a white underlay
+    WRITEWIN "Hello world!", "#FF0000", "U#FFFFFF"
+</code></pre>
+<h2><a name="14.5">14.5 xterm colours</a></h2>
+<p>So-called <em>xterm colours</em> are rarely used, but they're available if you want them.</p>
+<p>An xterm colour tag starts with an X character, followed by a number in the range 0-255.</p>
+<pre><code>    ! Display red text
+    WRITEWIN "Hello world!", "X196"
+</code></pre>
+<p>To use an underlay colour tag, just add the letter U to the beginning of the tag.</p>
+<pre><code>    ! Display red text on a white underlay
+    WRITEWIN "Hello world!", "X196", "UX15"
+</code></pre>
+<p>Once again, the X and U characters can be typed in lower case if you prefer.</p>
+<h2><a name="14.6">14.6 Style tags</a></h2>
+<p>Style tags are used to change the way text is displayed, without changing its colour. For example, we can display some text in italics.</p>
+<pre><code>    WRITEWIN "Hello world!", "italics"
+</code></pre>
+<p>We can also display text with an underline (underscore) or a strike-through effect.</p>
+<pre><code>    WRITEWIN "Hello", "underline"
+    WRITEWIN "world!", "strike"
+</code></pre>
+<p>Colour and style tags can be combined in a single WRITEWIN statement. However, the effect only applies to the specified text. The next WRITEWIN statement will use the default colour and style.</p>
+<pre><code>    ! Display red text on a white underlay, using italics
+    WRITEWIN "Hello world!", "#FF0000", "U#FFFFFF", "italics"
+</code></pre>
+<p>Blinking text is popular at some older MUDs. There are two blinking speeds - fast and slow.</p>
+<pre><code>    WRITEWIN "Hello", "blink_fast"
+    WRITEWIN "world!", "blink_slow"
+</code></pre>
+<h2><a name="14.7">14.7 Formatting lines</a></h2>
+<p>Each WRITEWIN writes text on a new line, by default. You can change this behaviour, temporarily, by adding an <strong>"echo"</strong> tag. The tag adds text to the beginning of the previous line, rather than starting a new one.</p>
+<pre><code>    WRITEWIN "Hello "
+    WRITEWIN "world!", "echo"
+</code></pre>
+<p>It's possible (though rather unlikely) that the window's default behaviour might be something different, in which case you can force a newline by adding the <strong>"nl"</strong> tag.</p>
+<pre><code>    WRITEWIN "Hello "
+    WRITEWIN "world!", "nl"
+</code></pre>
+<h2><a name="14.8">14.8 Emptying the window</a></h2>
+<p>There are two ways to empty the window. The first is to use the EMPTYWIN statement.</p>
+<pre><code>    WRITEWIN "Hello"
+    PAUSE 3
+    EMPTYWIN
+    WRITEWIN "world!"
+</code></pre>
+<p>Many dialects of BASIC use a CLS statement to do the same thing. You can use either EMPTYWIN or CLS; their behaviour is identical.</p>
+<p>The second, and perhaps more conveient, way is to add an <strong>"empty"</strong> tag. The tag empties the window before displaying the text.</p>
+<pre><code>    WRITEWIN "Hello world!", "empty"
+</code></pre>
+<h2><a name="14.9">14.9 Changing the background colour</a></h2>
+<p>Some tasks (such as the Status task and the Divert task) change the window's background colour to communicate something to the user. These windows only use two colours - a single background colour and a single text colour. When you change the background colour, Axmud chooses a suitable text colour automatically.</p>
+<p>If this is the way you want your window to behave, you can use a PAINTWIN statement.</p>
+<pre><code>    PAINTWIN "red"
+</code></pre>
+<p>You can use bold colour tags like <strong>"RED"</strong>, but in this case you can't use RGB or xterm colour tags.</p>
+<p>If you don't specify a colour at all, the window reverts back to the default background colour.</p>
+<pre><code>    PAINTWIN
+</code></pre>
+<h2><a name="14.10">14.10 Flashing windows</a></h2>
+<p>Another way to grab the user's attention is to set the window's so-called <em>urgency hint</em>. The way this is implemented varies from system to system, but often it causes something to flash in the taskbar at the bottom of the screen.</p>
+<pre><code>    FLASHWIN
+</code></pre>
+<p>The flashing usually stops after a few seconds, but you can use an UNFLASHWIN statement at any time.</p>
+<h2><a name="14.11">14.11 Changing the window's title</a></h2>
+<p>You can change the window's title using a TITLEWIN statement.</p>
+<pre><code>    TITLEWIN "I'm in control now!"
+</code></pre>
+<p>To restore the window's original title - which will be something like <strong>Script (test)</strong> - just use an empty string.</p>
+<pre><code>    TITLEWIN ""
+</code></pre>
+<h2><a name="14.12">14.12 Dialogue windows</a></h2>
+<p>Besides task windows, Axbasic scripts can create their own dialogue (popup) windows using the <strong>Popup$ ()</strong> function. The window asks the user to make a choice, and the function returns that choice.</p>
+<pre><code>    ! Ask a question
+    LET choice$ = POPUP$ ("question", "Are you ready?", "yes-no")
+    ! Display "yes" or "no"
+    PRINT choice$
+    END
+</code></pre>
+<p>The <strong>Popup$</strong> always takes three arguments. For a full list of the arguments that can be used, see the function's help file.</p>
+<pre><code>    ;axbasichelp popup
+</code></pre>
+<hr>
+<p><a href="ch13.html">Previous</a> <a href="index.html">Index</a> <a href="ch15.html">Next</a></p>
+
+</body>
+</html>

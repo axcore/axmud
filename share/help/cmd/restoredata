@@ -1,0 +1,26 @@
+rsd / restoredata             Restores Axmud data directory from backup
+ 
+   Format:
+      ;rsd                    Restores data files
+      ;rsd <path>             Restores data files from backup file <path>
+ 
+   Notes:
+      Axmud stores all of its data files in a single directory (folder).
+      This command restores data files from a backup file you made using the
+         ';backupdata' or ';autobackup' commands, replacing all existing data
+         files.
+
+      If you specify the <path> to a backup file, that file is used. Otherwise
+         you'll be prompted to choose a backup file.
+
+      Actually, it's not true to say that existing data files are replaced.
+         Axmud simply renames your existing data directory from something like
+         'axmud-data' to something like 'axmud-data_OLD_2' (so if something
+         goes wrong with the backup/restore process, you won't lose everything).
+         A new data directory called 'axmud-data' is then created, and the
+         backup file is used to restore data there.
+
+      See also the help for ';setdatadirectory'.
+
+   User commands:
+      rsd / restore / restoredata

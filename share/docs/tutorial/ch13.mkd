@@ -1,0 +1,260 @@
+[Previous](ch12.html) [Index](index.html) [Next](ch14.html)
+
+---
+
+#13 - The automapper
+
+####Table of Contents
+
+* [13.1 Opening the automapper window](#13.1)
+* [13.2 Adding and deleting regions](#13.2)
+* [13.3 Adding rooms and labels](#13.3)
+* [13.4 Exits](#13.4)
+* [13.5 Retrieving room data](#13.5)
+* [13.6 Room contents](#13.6)
+* [13.7 Other automapper functions](#13.7)
+
+---
+
+Axbasic provides a large set of functions for use with the automapper.
+
+For the most part, we use functions, rather than statements, so we can test whether an action was successful or not. Don't forget that you can use **;axbasichelp** to see precisely which values each function returns.
+
+This Section assumes that the Locator task is running and that it knows something about the character's current location.
+
+##<a name="13.1">13.1 Opening the automapper window</a>
+
+The **Openmap ()** function opens the automapper window, and the **Closemap ()** function closes it. Only one automapper window can be open at a time, so both functions return the value 1 if the window was successfully opened/closed, or if the window was already open/closed.
+
+If you script needs to know whether the window is open or not, you can use the **Ismap ()** function. It returns 1 if the window is already open.
+
+The [Axmud Guide](../guide/index.html) demonstrates how the automapper window can be in one of three modes - **wait**, **follow** or **update**. You can change the mode using the **Setmapmode ()** function.
+
+        LET result = Setmapmode ("wait")
+        LET result = Setmapmode ("follow")
+        LET result = Setmapmode ("update")
+
+In this case it's especially important to test the **result**, because the mode you want might not be available, in which case the function returns 0.
+
+The **Getmapmode$ ()** function returns the current mode: one of the strings **"wait"**, **"follow"** and **"update"** (or an empty string, if the automapper window isn't open.)
+
+##<a name="13.2">13.2 Adding and deleting regions</a>
+
+You can automate the process of drawing a map using an Axbasic script, if you want to.
+
+The **Addregion ()** function creates a new region named **Mordor**. The return value is the region's model **number**, or 0 if the region couldn't be created.
+
+        LET number = Addregion ("Mordor")
+
+Using the **Addtempregion ()** function, you can create a temporary region which is automatically deleted when the automapper window closes. If you don't specify a region name, one is chosen for you.
+
+        LET number = Addtempregion ("Mordor")
+        LET number = Addtempregion ()
+
+Regions can be deleted with the **Delregion ()** function. The function returns 1 on success, 0 on failure.
+
+        LET result = Delregion ("Mordor")
+
+The **Deltempregions ()** deletes all temporary regions. It returns 0 only if there are no temporary regions to delete.
+
+        LET result = Deltempregions ()
+
+By the way, you can set the visible region using the **Setregion ()** or **Setregionnum ()** functions.
+
+        LET result = Setregion ("Mordor")
+        LET result = Setregionnum (number)
+
+If you want to know which region is the visible one, you can retrieve those same values using the **Getregion$ ()** and **Getregionnum ()** functions.
+
+##<a name="13.3">13.3 Adding rooms and labels</a>
+
+Once your map has some regions, you can start adding rooms. The **Addfirstroom ()** draws a room in the middle of the map.
+
+        LET number = Addfirstroom ()
+
+The next step is to mark that room as the current room.
+
+        LET result = Setroomnum (number)
+
+By the way, if you leave out the room **number**, the current room is reset, meaning that there is *no* current room.
+
+        LET result = Setroomnum ()
+
+Having done that, you can add new rooms by specifying coordinates *relative to* the current room. These coordinates must be in the form (x, y, z).
+
+For example, to create rooms immediately to the west and east of the current room:
+
+        ! Room to the west of the current room
+        LET result = Addroom (-1, 0, 0)
+        ! Room to the east of the current room
+        LET result = Addroom (1, 0, 0)
+
+To create rooms to the north and south of the current room, but with a small gap between them:
+
+        ! Room to the north of the current room
+        LET result = Addroom (0, -2, 0)
+        ! Room to the south of the current room
+        LET result = Addroom (0, 2, 0)
+
+To create rooms in the levels immediately above and below the current room:
+
+        ! Room below the current room
+        LET result = Addroom (0, 0, -1)
+        ! Room above the current room
+        LET result = Addroom (0, 0, 1)
+
+Labels are also drawn relative to the current room. As well as specifying the relative coordinates you must specify the label text. For example, to create a label to the southeast of the current room:
+
+        ! Add a label northeast of the current room
+        LET result = Addlabel ("This is a label", 2, 2, 0)
+
+There are no Axbasic functions for deleting rooms and labels. You'll have to do that manually.
+
+##<a name="13.4">13.4 Exits</a>
+
+By default, exits are automatically added to the map as your character moves around the world (if the current room is set, and if the automapper is in **update mode**).
+
+There is no Axbasic function which adds exits to a room, but there are plenty of functions for fetching information about the exits that have already been drawn.
+
+The first step is to fetch the number of exits in the current room:
+
+        LET count = Getroomexits ()
+
+Once you have that number - and assuming that it isn't, meaning that the room has no exits - you can get the exits' directions. For example, if you know there are three exits in the current room, you can display their directions thus:
+
+        PRINT Getexit$ (1)
+        PRINT Getexit$ (2)
+        PRINT Getexit$ (3)
+
+Exits are stored in a list in a fixed order, which means that as long as you don't add or remove any exits from the room, **Getexit$ (2)** will always return the same direction.
+
+Before you retrieve any further information about an exit, you'll need to know its model number. All exits in the map have a number that's unique across all regions, so the following function might return a value like **999**:
+
+        LET exit_num = Getexitnum (1)
+
+The argument represents the first exit in the current room's list of exits. In a room with three exits, you would use **2** or **3** as arguments, instead.
+
+Once we have the exit's model number, we can find the model number of the destination room.
+
+        LET room_num = Getexitdest (exit_num)
+
+Often you can move between two adjacent rooms by going **north** and then **south** again. This pair of exits are called *twin exits*. We can find an exit's twin like this:
+
+        LET twin_exit_num = Getexittwin (exit_num)
+
+The [Axmud Guide](../guide/index.html) describes various exit *types*, such as *incomplete*, *unallocated* and *impassable*. The following function returns a string describing the exit type.
+
+        LET exit_type$ = Getexittype$ (exit_num)
+
+You might also find the **Getexitstatus$ ()** function useful for working out which exits are connected to rooms in different regions.
+
+An exit in the direction **portal** might actually be drawn on the map as a **north** exit. An actual **north** exit is *definitely* drawn on the map as a **north** exit. To get the  direction in which an exit is actually drawn:
+
+        LET dir$ = Getexitdrawn$ (exit_num)
+
+##<a name="13.5">13.5 Retrieving room data</a>
+
+The following functions apply to the automapper's current room. To get the room's model number:
+
+        LET number = Getroomnum ()
+
+To get the room's title (brief description):
+
+        LET title$ = Getroomtitle$ ()
+
+To get the room's verbose description, stored as a single string (even if it was received as multiple lines of text):
+
+        LET descrip$ = Getroomdescrip$ ()
+
+To get the room tag or the room guild (or an empty string, if the current room has no room tag or room guild):
+
+        LET tag$ = Getroomtag$ ()
+        LET guild$ = Getroomguild$ ()
+
+##<a name="13.6">13.6 Room contents</a>
+
+The Locator task is capable of extracting a room's current contents. This doesn't work at most worlds, because few MUDs display the contents list in an unambiguous way. However, if the information is available to the Locator task, it's available to your Axbasic scripts.
+
+The **Getroomobjects ()** returns the number of objects in the current room.
+
+        LET count = Getroomobjects ()
+
+If you want to, you can restrict that list to the number of sentient beings, or the number of weapons, and so on.
+
+        LET count = Getroomobjects ("sentient")
+        LET count = Getroomobjects ("weapon")
+
+**Getroomobjects () ** only accepts a limited selection of strings: **"weapon"**, **"armour"**, **"garment"**, **"char"** (for characters), **"minion"**, **"sentient"**, **"creature"**, **"portable"**, **"decoration"** and **"custom"**.
+
+In a room containing three objects, those objects are numbered 1 to 3. We can retrieve the strings **"big axe"**, **"smelly orc"** and **"pile of treasure"** using the following lines:
+
+        PRINT Getobject$ (1)
+        PRINT Getobject$ (2)
+        PRINT Getobject$ (3)
+
+We can also retrieve each object's type, in this case the strings **"weapon"**, **"sentient" and "portable"**:
+
+        PRINT Getobjecttype$ (1)
+        ...
+
+We can furthermore retrieve the main noun, in this case the strings **"axe"**, **"orc"** and **"treasure"**:
+
+        PRINT Getobjectnoun$ (1)
+        ...
+
+This function will tell us whether Axmud believes the object is alive, or not. The function returns 1 for living beings and 0 for everything else, possibly including any nasty monsters you've recently dispatched to the afterlife:
+
+        PRINT Getobjectalive (1)
+        ...
+
+Axmud might store **10 gold coins** as a single object, or as ten separate ones, depending on the current world profile's settings. In this case, the functions **Getroomobjects ()** and **Getobjectcount ()** return different results:
+
+        ! Display 1, because Axmud has stored the gold coins
+        ! as a single object
+        PRINT Getroomobjects (1)
+        ! Display the actual number of objects in the game,
+        ! which is 10
+        PRINT Getobjectcount (1)
+
+##<a name="13.7">13.7 Other automapper functions</a>
+
+There are few more functions to cover.
+
+A direction like **"north"** can be abbreviated to **"n"** using the **Abbrevdir$ ()** function, and restored using the **Unabbrevdir$ ()** function.
+
+        LET dir$ = "north"
+
+        LET abbrev$ = Abbrevdir (dir$)
+        PRINT abbrev$
+
+        LET old$ = Unabbrevdir (abbrev$)
+        PRINT old$
+
+REVPATH (a statement, not a function) takes an array of movement commands, and reverses them, transforming **north northwest up east** into **west down southeast south**. Here's an example.
+
+        DATA "north", "northwest", "up", "east"
+        DIM stuff$ (4)
+        FOR a = 1 TO 4
+            READ stuff$ (a)
+        NEXT a
+
+        REVPATH stuff$
+        FOR a = 1 TO 4
+            PRINT stuff$ (a)
+        NEXT a
+
+If a room's description is different during daylight and at night, Axmud can store both descriptions. You can use the **Setlight ()** function to set Axmud's current *light status*, and you can use the **Getlight$ ()** function to retrieve it.
+
+(The default values for Axmud's light status are **"day"**, **"night"** and **"dark"**. The light status is **"day"** unless it has been changed to another value.)
+
+If you have administrative privileges at your MUD, your map may contain the path to each room's source code file. This path can be retrieved with the **Getroomsource$ ()** function.
+
+If you've added a lot of room tags to the rooms in your map, you can set the current room using a room tag rather than with a model number.
+
+    LET result = Setroomtagged ("bank")
+
+Finally, when the automapper gets lost, if remembers the room that used to be the current room. The model number of that room can be retrieved with the **Getlostroom ()** function.
+
+---
+
+[Previous](ch12.html) [Index](index.html) [Next](ch14.html)

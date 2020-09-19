@@ -1,0 +1,13 @@
+gip / getip                   Displays your IP address
+ 
+   Format:
+      ;gip                    Displays your IP address
+ 
+   Notes:
+      This command is intended for use with the Chat task. In order to open a
+         chat session with someone, you'll need to know their IP address; this
+         command displays your own IP address, so that your chat buddies can
+         contact you.
+ 
+   User commands:
+      gip / getip

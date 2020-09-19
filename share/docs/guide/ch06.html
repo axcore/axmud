@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch06</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch05.html">Previous</a> <a href="index.html">Index</a> <a href="ch07.html">Next</a></p>
+<hr>
+<h1>6 Patterns</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#6.1">6.1 Regular expressions</a><ul>
+<li><a href="#6.1.1">6.1.1 Metacharacters</a></li>
+<li><a href="#6.1.2">6.1.2 Matching any text</a></li>
+<li><a href="#6.1.3">6.1.3 Escape sequences </a></li>
+<li><a href="#6.1.4">6.1.4 Quantifiers</a></li>
+<li><a href="#6.1.5">6.1.5 Substrings</a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>A <em>regular expression</em> - or <em>regex</em> - is just another way of saying <em>pattern</em>. (Axmud uses these terms interchangeably.)</p>
+<p>Many of times a second, Axmud will look at a line of text and ask, 'Does it match this pattern?'</p>
+<p>Axmud uses regular expressions all the time,  so it's important to know something about them.</p>
+<p>There are a million and one tutorials on the internet, but here is another one anyway. It's as short as possible and all the example relate to what you might see in a MUD. (Skip to <a href="ch07.html">Section 7</a> if you already understand regular expressions.)</p>
+<h2><a name="6.1">6.1 Regular expressions</a></h2>
+<p>A pattern can be as simple as the word <strong>troll</strong>. The pattern <strong>troll</strong> matches all of these lines:</p>
+<pre><code>    You see a troll, two dwarves and an elf
+    You kill the troll
+    There are five trolls here
+</code></pre>
+<p>But it doesn't match any of these lines:</p>
+<pre><code>    You see an orc, two dwarves and an elf
+    You kill the orc
+    You see the Troll
+</code></pre>
+<p>Patterns are usually case-sensitive. The last line above doesn't match the pattern because it contains <strong>Troll</strong>, and we're looking for <strong>troll</strong>.</p>
+<p>Patterns can be longer than a single word. The pattern <strong>kill the orc</strong> matches the second line (but not the others).</p>
+<h3><a name="6.1.1">6.1.1 Metacharacters</a></h3>
+<p>Sometimes we need to look for lines that <em>begin</em> with a certain pattern. The caret character ( ^ ) means that this pattern must appear at the <em>beginning</em> of the line.</p>
+<p>The pattern <strong>^troll</strong> matches both of these lines:</p>
+<pre><code>    troll on the floor, bleeding to death
+    trolls on the floor, bleeding to death
+</code></pre>
+<p>But it doesn't match either of these lines:</p>
+<pre><code>    You see a troll
+    There are five trolls here
+</code></pre>
+<p>At other times we need to look for lines which <em>end</em> with a certain pattern. The dollar character ( $ ) means that this pattern must appear at the <em>end</em> of the line.</p>
+<p>The pattern <strong>troll$</strong> matches both of these lines:</p>
+<pre><code>    You see a troll
+    You kill the troll
+</code></pre>
+<p>Sometimes we will use both special characters together. The pattern <strong>^You kill the troll$</strong> matches one line, and one line only:</p>
+<pre><code>    You kill the troll
+</code></pre>
+<p>Needless to say, the ^ and $ characters should appear only at the beginning/end of the pattern (and not somewhere in the middle).</p>
+<h3><a name="6.1.2">6.1.2 Matching any text</a></h3>
+<p>Very often we'll need to match a line like this:</p>
+<pre><code>    You are carrying 500 gold coins
+</code></pre>
+<p>In a pattern, we can use the full stop (period) character to mean <em>any character</em>. For example, the pattern <strong>d.g</strong> will match all of the following lines:</p>
+<pre><code>    dig
+    dog
+    dug
+    dagger
+    degree
+</code></pre>
+<p>The character combination <strong>.*</strong> (a full stop/period followed by an asterisk) is very important. It means <em>any text at all</em>.</p>
+<p>So, the pattern <strong>You are carrying .* gold coins</strong> matches all of the following lines:</p>
+<pre><code>    You are carrying 100 gold coins
+    You are carrying 500 gold coins
+    You are carrying 100000000 gold coins
+    You are carrying no gold coins
+</code></pre>
+<p><strong>.*</strong> actually means <em>any text, including no text at all</em>. So the same pattern will <em>also</em> match this line:</p>
+<pre><code>    You are carrying gold coins.
+</code></pre>
+<h3><a name="6.1.3">6.1.3 Escape sequences</a></h3>
+<p>We can use a full stop (period) to mean <em>any character</em>, but sometimes you will want to be more specific.</p>
+<p>The escape sequence <strong>\w</strong> - a forward slash followed by the lower-case letter w - means <em>any letter, number or underline (underscore)</em>. So, the pattern <strong>b\wll</strong> matches all of these lines:</p>
+<pre><code>    I see a ball
+    I see a bell
+    I see a bill
+</code></pre>
+<p>But it won't match this line:</p>
+<pre><code>    I see a b@ll
+</code></pre>
+<p>... because the @ character is not a letter, a number or an underline (underscore).</p>
+<p>The combination <strong>\W</strong> means the exact opposite - <em>any character </em>except<em> a letter, number or underline (underscore)</em>. So, the pattern <strong>b\Wll</strong> does match this line:</p>
+<pre><code>    I see a b@ll
+</code></pre>
+<p>... but it doesn't match these lines:</p>
+<pre><code>    I see a ball
+    I see a bell
+    I see a bill
+</code></pre>
+<p>One more important escape sequence is <strong>\s</strong>, which means <em>any space character, including tabs</em>. The opposite is <strong>\S</strong>, which means <em>any character </em>except<em> a space character or a tab</em>.</p>
+<h3><a name="6.1.4">6.1.4 Quantifiers</a></h3>
+<p>Sometimes we'll need a pattern which can match any of these lines:</p>
+<pre><code>    You kill the cat
+    You kill the caat
+    You kill the caaaaaaat
+</code></pre>
+<p>The character combination <strong>a+</strong> means <em>1 or more letter "a" characters</em>. So, the pattern <strong>ca+t</strong> matches all of lines above, but it doesn't match:</p>
+<pre><code>    You kill the kitten
+</code></pre>
+<p>You can use the plus sign ( + ) after any character. For example, <strong>\d</strong> means <em>a single number character</em>, but <strong>\d+</strong> means <em>one or more number characters</em>.</p>
+<p>The pattern <strong>You have \d+ gold coins</strong> matches both of the following lines:</p>
+<pre><code>    You have 50 gold coins
+    You have 1000000 gold coins
+</code></pre>
+<p>...but it doesn't match this line:</p>
+<pre><code>    You have no gold coins
+</code></pre>
+<p>You can also use a question mark ( ? ) after any character. It means <em>zero or one of these characters (but not more)</em>. And you've already seen that the asterisk character ( * ) means <em>zero, one or more of these characters</em>.</p>
+<h3><a name="6.1.5">6.1.5 Substrings</a></h3>
+<p>The pre-configured worlds have been set up to look for lines like these:</p>
+<pre><code>    You have 100 gold coins
+</code></pre>
+<p>The patterns they use often look like this:</p>
+<pre><code>    You have (.*) gold coins
+</code></pre>
+<p>A pair of brackets (braces) means <em>save everything in the middle for later</em>. In this case, we don't just want to recognise a line matching this pattern - we want to store the number of gold coins for later use.</p>
+<p>The <strong>(.*)</strong> combination is one example of a <em>group</em>. The contents of the group - in this case, <strong>100</strong> - is called the <em>substring</em>.</p>
+<p>Sometimes we'll need to use several groups on the same line.</p>
+<pre><code>    You have (.*) gold, (.*) silver and (.*) brass coins
+</code></pre>
+<p>Because we have three groups, three different substrings are stored for later. These substrings are numbered 1, 2 and 3 (not 0, 1 and 2).</p>
+<p>That's the end of the regular expression tutorial. In the next Section we'll go ahead and create some interfaces.</p>
+<hr>
+<p><a href="ch05.html">Previous</a> <a href="index.html">Index</a> <a href="ch07.html">Next</a></p>
+
+</body>
+</html>

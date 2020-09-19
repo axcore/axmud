@@ -1,0 +1,26 @@
+als / addlabelstyle           Adds a map label style
+ 
+   Format:
+      ;als <name>
+      ;als <name> <text>
+      ;als <name> <text> <underlay>
+               Adds a style called <name>
+ 
+   Notes:
+      Map labels are drawn in the automapper window. It's possible to customise
+         labels individually, but most labels are drawn using a map label style
+         (so that when the style is changed, all labels using that style are
+         redrawn automatically).
+      <name> can contain any text (maximum 16 characters). If it contains
+         spaces, you should enclose the name in diamond brackets <...>.
+      <text>, if specified, is the text colour. You can specify any Axmud colour
+         tag (including xterm and RGB colour tags). If <text> is not specified,
+         a default colour is used.
+      <underlay>, if specified, is the underlay (background) colour for the
+         label. You can specify any Axmud colour tag (including xterm and RGB
+         colour tags). It's not necessary to specify an underlay tag; both
+         'RED' and 'UL_RED' are acceptable. If <underlay> is not specified, the
+         label is drawn without an underlay.
+ 
+   User commands:
+      als / addstyle / addlabelstyle

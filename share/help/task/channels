@@ -1,0 +1,14 @@
+The world profile stores a list of patterns. When text received from the world
+   matches one of these patterns, it is redirected to the Channels task window
+   (when the task is running).
+Each pattern is also assigned a channel, each of which has its own tab in the
+   task window.
+The Divert task performs a similar function, but uses a single tab, with
+   changes in the window's background colour indicating the channel. You can't
+   run both tasks at the same time.
+ 
+Client commands used with this task are:
+   ;addchannelpattern         Adds a Channels/Divert task pattern
+   ;deletechannelpattern      Deletes Channels/Divert task patterns
+   ;listchannelpattern        Lists Channels/Divert task patterns
+   ;emptychannelswindow       Empties the Channels task window

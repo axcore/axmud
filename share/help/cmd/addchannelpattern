@@ -1,0 +1,52 @@
+achp / addchannelpattern      Adds a Channels/Divert task pattern
+
+   Format:
+      ;achp <channel> <pattern>
+      ;achp -g <channel> <pattern>
+               Adds a pattern gagged in the 'main' window
+
+      ;achp -m <channel> <pattern>
+               Adds a pattern not gagged in the 'main' window
+
+      ;achp -e <pattern>
+               Adds an exception pattern
+ 
+   Notes:
+      The Channels and Divert tasks intercept text received from the world and
+         divert that text into their own task window. Sometimes the text is
+         gagged, meaning that it's displayed in the 'main' window too. You can't
+         run both tasks at the same time.
+      The world profile stores a list of patterns. When a line of text which
+         matches one of those patterns is received, it is diverted to the task
+         window.
+         
+      Each pattern is also assigned a channel.      
+      In the Channels task window, each channel has its own tab. You might have
+         a 'tell' channel for tell messages like 'Gandalf tells you...' and a
+         'social' channel for lines like 'Bilbo shouts, I'm leaving now!'.
+      You can use the task's 'edit' window to set which, if any, tabs should be
+         opened automatically when the task starts.
+         
+      In the Divert task window there is a single tab. The window's background
+         colour briefly changes when text is diverted, indicating which channel
+         the pattern is assigned to.
+      You can specify as many patterns as you like, and as many channels as you
+         like. The Divert task traditionally uses channels called 'tell',
+         'social', 'custom' and 'warning', and each of those channels has an
+         identifiable background colour. There's a separate background colour
+         shared by all other channels.
+
+      The world profile stores a separate list of exception patterns. When a
+         line of text is received that matches both a normal pattern and an
+         exception pattern, it is not diverted.
+      For example, if you want to see 'Gandalf tells you' and 'Bilbo tells you',
+         but not 'The shopkeeper tells you', you could add the pattern
+         'tells you' and the exception pattern 'shopkeeper tells you'.
+
+      <channel> can contain any characters, but must be 1-16 characters in
+         length. <pattern> is a Perl regular expression.
+      If either <channel> or <pattern> contain spaces, they should be enclosed
+         within diamond brackets <...>
+ 
+   User commands:
+      achp / addchan / addchannel / addchannelpattern

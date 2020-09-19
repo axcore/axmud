@@ -1,0 +1,35 @@
+WAITTIMER expression [ , expression ]
+
+   Synopsis:
+      Creates a temporary timer and pauses until the timer fires
+
+   Notes:
+      The first expression is the timer pattern (an interval in seconds or a
+         clock time in the form "HH:MM" or "99:MM"). The Axbasic script will
+         pause until the timer fires, at which point the timer is destroyed and
+         execution of the Axbasic script resumes.
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting for the timer after that period. The timer is
+         destroyed and execution of the script resumes.
+
+      If Axmud can't create the timer, execution of the script continues as
+         normal (with no error message and no pause).
+
+      WAITTIMER is provided to complete the set (that also contains WAITTRIG,
+         WAITALIAS, WAITMACRO and WAITHOOK). In almost all cases it would be
+         better to use SLEEP instead.
+      Also see the help for SETTIMER.
+
+   Requires:
+      If the script is not being run as a task, the WAITTIMER statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
+   Examples:
+      WAITTIMER 60
+      WAITTIMER 60, 60
+
+      REM Wait until lunch break
+      WAITTIMER "13:00"
+      REM Wait until the big hands points to six
+      WAITTIMER "99:30"

@@ -1,0 +1,11 @@
+wempire / wildempire          (wilderness plugin) Sets EmpireMUD wilderness mode
+ 
+   Format:
+      ;wempire                Modifies/reverts the EmpireMUD world profile
+ 
+   Notes:
+      This command uses the 'wilderness.pm' plugin. Read the plugin file itself
+         for extensive notes about how to use it.
+
+   User commands:
+      wempire / wildempire

@@ -1,0 +1,31 @@
+UNSHIFT array-name , expression
+
+   Synopsis:
+      Adds a value to the beginning of an array
+      
+   Notes:
+      This statement only works on one-dimensional arrays (stacks). If you use
+         it with a multi-dimensional array, you'll get an error.
+
+      Adds a new cell to the beinning of the array, containing the value of the
+         expression. Doing so increases (for example) an array of ten values to
+         an array of eleven.
+      All Axbasic arrays have a maximum number of cells of 1,000,000. If the
+         UNSHIFT statement exceeds this maximum, you will get an error.
+
+   Compatibility:
+      Since Axbasic v1.4
+      
+   Examples:
+      DATA "foo", "bar", "baz"
+      
+      DIM stuff$ (3)
+      FOR a = 1 TO 3
+         READ stuff$ (a)
+      NEXT a
+
+      ! Add a new value
+      UNSHIFT stuff$, "plugh"
+      ! Display the new size of the array
+      LET number = SIZE stuff$
+      PRINT number

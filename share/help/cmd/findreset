@@ -1,0 +1,18 @@
+frt / findreset               Resets the last find operation
+ 
+   Format:
+      ;frt                    Resets find operations in the default textview
+      ;frt <number>           Resets find operations in textview <number>
+                              
+   Notes:
+      The ';findtext' searches a textview. If any matching text is found, Axmud
+         remembers the position, so you can use the command again and again
+         until you find the right line.
+      This command forgets the position, so that the next search begins from the
+         bottom of the textview.
+      By default, the current session's default textview (where text received
+         from the world is displayed) is searched, but you can specify any
+         textview used by any session.
+ 
+   User commands:
+      frt / findreset

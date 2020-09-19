@@ -1,0 +1,56 @@
+arl / addrelative             Adds a relative direction
+ 
+   Format:
+      ;arl <type> <dir>
+      ;arl <type> <dir> <abbrev>
+                              Adds a relative direction
+
+   Notes:
+      Relative directions are used by a handful of worlds in which a room's
+         exits change depending on the direction in which the character is
+         facing (which usually means the direction from which the character
+         arrived).
+      Axmud stores relative directions in a circle which assumes that the
+         character is facing north.
+         
+                       0 - north
+         7 - northwest           1 - northeast
+      6 - west                      2 - east
+         5 - southwest           3 - southeast
+                       4 - south
+
+      As an example, Discworld MUD uses the following set of relative
+         directions:
+
+                       0 - forward
+         7 - forward-left        1 - forward-right
+      6 - left                      2 - right
+         5 - backward-left       3 - backward-right
+                       4 - backward
+         
+      Axmud translates a room's relative directions into primary directions,
+         rotating the circle as required. For example, if the character is known
+         to have arrived from the east, and is therefore facing west:
+
+                       right (N)
+         forward-right (NW)      backward-right (NE)
+      foward (W)                    backward (E)
+         forward-left (SW)       backward-left (SE)
+                       left (S)
+
+      Relative directions are stored in eight slots (numbered 0 to 7) which
+         represent the rotating circle.
+      This command adds a new relative direction and (optionally) its
+         abbreviated form.
+      <type> is one of the slots. It can an integer in the range 0-7, or the
+         equivalent primary directions from the first circle above ('north',
+         'southwest', etc). Both standard and custom primary directions are
+         recognised. If the slot is already occupied, using this command again
+         replaces the slot's relative direction.
+      <dir> is a relative direction like 'forward'. If the world uses
+         abbreviated relative directions, you can specify <abbrev>.
+      If either <dir> or <abbrev> contain spaces, they must be enclosed within
+         diamond brackets.
+ 
+   User commands:
+      arl / addrel / addrelative

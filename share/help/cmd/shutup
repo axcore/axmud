@@ -1,0 +1,20 @@
+sup / shutup                  Skips all text waiting to be read out
+ 
+   Format:
+      ;shutup                 Stops reading aloud
+      
+   Notes:
+      When Axmud is performing text-to-speech, this command skips any text 
+         that's waiting to be converted to speech (including the current piece 
+         of text, if any). When new text is sent to be processed, it is 
+         converted to speech as usual.
+      When running the version of Axmud that's optimised for visually-impaired 
+         users, the escape key can be used as a shortcut to this command (but 
+         only once Axmud is connected to a world, in online or offline mode.)
+      Axmud remembers the last 1000 pieces of text that have been read aloud, so
+         you can replay them at any time.
+      See also the help for ';split', ';skip', ';unskip', ';first', ';last',
+         ';resume' and ';freekeys'.
+     
+   User commands:
+      sup / stfu / shutup

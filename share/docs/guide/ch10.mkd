@@ -1,0 +1,169 @@
+[Previous](ch09.html) [Index](index.html) [Next](ch11.html)
+
+---
+
+#10 Axbasic
+
+####Table of Contents
+
+* [10.1 Axbasic script example: Hello world!](#10.1)
+* [10.2 Axbasic script example: Test script](#10.2)
+* [10.3 Axbasic script example: Hunt The Wumpus!](#10.3)
+* [10.4 Testing scripts](#10.4)
+* [10.5 Running scripts as a task](#10.5)
+* [10.6 Axbasic help](#10.6)
+* [10.7 Retrieving Axmud data](#10.7)
+
+---
+
+Axbasic is Axmud's own scripting language, based on the BASIC language first released in the 1960s and which was commonly used on home computers in the 1970s and 80s.
+
+BASIC is considered old-fashioned, but it has a distinct advantage in that most people already know how to use it and, even if not, it's simple enough to be learned in just a few hours.
+
+The [Axbasic Tutorial](../tutorial/index.html) is a complete guide to the features of Axbasic. This Section describes only the basics.
+
+##<a name="10.1">10.1 Axbasic script example: Hello world!</a>
+
+Axmud's data directory (folder) can be found in your home directory. It contains a sub-directory called **scripts** which contains three example scripts.
+
+**hello.bas** is the traditional *Hello world!* script:
+
+        REM A trivial Axbasic script
+        PRINT "Hellow world!"
+        END
+
+If the temptation is too great, you can run the script to see what it does:
+
+        ;runscript hello
+        ;rs hello
+
+The **;runscript** command assumes that there is a script called **hello.bas** in this directory. If it finds one, the script is executed. (This behaviour can be modified so that other directories are checked too, if desired.)
+
+##<a name="10.2">10.2 Axbasic script example: Test script</a>
+
+The **test.bas** example script does nothing, at first. You can use it for testing Axbasic code.
+
+Its main advantage is that it can be run with any of the following commands:
+
+        ;runscript test
+        ;rs test
+
+        ;runscript
+        ;rs
+
+##<a name="10.3">10.3 Axbasic script example: Hunt The Wumpus!</a>
+
+The third example script, **wumpus.bas**, is a copy of the 1972 classic *Hunt the Wumpus*.
+
+It’s not much fun to play, but nevertheless, Axbasic is compatible with BASIC programmes from this era and will run Hunt the Wumpus without complaints:
+
+        ;runscript wumpus
+        ;rs wumpus
+
+##<a name="10.4">10.4 Testing scripts</a>
+
+Axbasic scripts can be tested without being run. Use the following command:
+
+        ;checkscript wumpus
+        ;cs wumpus
+
+Hopefully, the test will report that there are no errors. (It would be surprising if you could find one, 45 years after the game was written!)
+
+You can use the same command to check the **test.bas** script, simply by omitting the script name:
+
+        ;checkscript
+        ;cs
+
+There is also a useful little command which opens a script in a text editor:
+
+        ;editscript wumpus
+        ;es wumpus
+
+As always, if you leave out the script name, Axmud uses the 'test.bas' script:
+
+        ;editscript
+        ;es
+
+##<a name="10.5">10.5 Running scripts as a task</a>
+
+You can use the **;runscript** command for simple scripts. It runs the script from beginning to end, without pausing.
+
+This is fine for simple scripts, but often you'll want something more flexible. You will want the script to pause at certain times, or to wait for something to happen, or to display text in its own window. In these situations, you can use the Script task - one of Axmud's built-in tasks - to run the script on your behalf.
+
+To run a script from inside the Script task, use the **;runscriptask** command:
+
+        ;runscripttask wumpus
+        ;rst wumpus
+
+As always, if you don't specify a script name, the **test.bas** script is run:
+
+        ;runscripttask
+        ;rst
+
+Some Axbasic keywords such as WAITARRIVE and WAITTRIG won't work unless the script is run from within a task. Here's an example of what scripts like these can do. (All lines beginning with an exclamation mark ( ! ) are comments, which are ignored.)
+
+
+        ! Kill an orc and return home
+
+        ! Move to the killing zone
+        MOVE "north"
+        MOVE "northwest"
+        MOVE "north"
+        SEND "open door"
+        MOVE "in"
+
+        ! Wait for your character to arrive
+        WAITARRIVE
+
+        ! Kill the orc
+        SEND "kill orc"
+
+        ! Create a trigger to wait for the orc's death
+        WAITTRIG "You kill the orc"
+
+        ! THe orc is now dead; go back home
+        SEND "open door"
+        MOVE "out"
+        MOVE "south"
+        MOVE "southeast"
+        MOVE "south"
+
+        ! All Axbasic scripts must contain an END statement
+        END
+
+##<a name="10.6">10.6 Axbasic help</a>
+
+Axmud provides extensive documentation on Axbasic's keywords and functions. A summary can be seen using this command:
+
+        ;axbasichelp
+        ;abh
+
+The same command can be used to show help on a particular topic:
+
+        ;axbasichelp send
+        ;axbasichelp waittrig
+
+##<a name="10.7">10.7 Retrieving Axmud data</a>
+
+Axbasic scripts enjoy full access to Axmud's internal data. Here's a brief example of how to exploit that capability.
+
+        REM What am I?
+        PEEK guild$ = "guild.current.name"
+
+        IF guild$ = "thief" THEN
+            PRINT "I am a thief!"
+        ELSE
+            PRINT "I am not a thief!"
+        END IF
+
+        END
+
+Most of Axmud's internal data can be accessed using strings like **guild.current.name**, and some of it can be modified using a POKE statement.
+
+A complete list of strings that can be used in this way can be found in [Section 17](ch17.html).
+
+(Note that, if you haven't set your current character's guild, then of course this script would not work as intended.)
+
+---
+
+[Previous](ch09.html) [Index](index.html) [Next](ch11.html)

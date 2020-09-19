@@ -1,0 +1,29 @@
+spl / split                   Split lines, sentences or words in TTS
+ 
+   Format:
+      ;spl line               TTS splits text by line
+      ;spl sentence           TTS splits text by sentence
+      ;spl word               TTS splits text by word
+      ;spl                    Switch between lines, sentences and words
+      
+   Notes:
+      When Axmud is performing text-to-speech, you can use the ';skip',
+         ';unskip', ';first' and ';last' comamnds to replay text that has been
+         read aloud.         
+      By default, a whole line of text is replayed. (If it's a very long line,
+         it may appear as several lines in Axmud's window).
+      You can use this command to replay a single sentence at a time, or a
+         single word at a time, if that's what you prefer.
+      When you're replaying a single sentence or word at a time, the ';first'
+         and ';last' commands will replay the first sentence or word in that
+         line. When you're replaying whole lines at a time, the ';first' and
+         ';last' commands replay the oldest and most recent lines received,
+         respectively.
+
+      When running the version of Axmud that's optimised for visually-impaired 
+         users, the home key can be used as a shortcut to this command (but only
+         once Axmud is connected to a world, in online or offline  mode.)         
+      See also the help for ';resume', ';shutup' and ';freekeys'.
+
+   User commands:
+      spl / split

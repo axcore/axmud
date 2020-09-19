@@ -1,0 +1,189 @@
+[Previous](ch13.html) [Index](index.html) [Next](ch15.html)
+
+---
+
+#14 The desktop
+
+####Table of Contents
+
+* [14.1 Zonemaps](#14.1)
+* [14.2 Workspaces](#14.2)
+* [14.3 Zones](#14.3)
+* [14.4 Standard zonemaps](#14.4)
+* [14.5 Setting zonemaps](#14.5)
+    * [14.5.1 Setting the workspace direction](#14.5.1)
+    * [14.5.2 Setting initial workspaces](#14.5.2)
+    * [14.5.3 Modifying current workspaces](#14.5.3)
+    * [14.5.4 Editing zonemaps](#14.5.4)
+* [14.6 Layers](#14.6)
+* [14.7 External windows](#14.7)
+
+---
+
+At any time during a typical Axmud session there may be several windows open. Axmud tries to arrange these windows so that they don't overlap (as far as possible). This is generally called *window tiling*.
+
+Note that *window tiling has not yet been implemented on MS Windows. Instead, you can create your own arrangment by dragging windows around the desktop. Axmud will remember where you put each type of window.*
+
+*MS Windows users should skip Section 14 entirely, as none of it applies to their system*.
+
+Note also that if you're using settings optimised for visually-impaired users, window tiling is also turned off, so none of Section 14 applies to you unless you're planning to turn it back on.
+
+If window tiling is turned off in general and you want to turn it on (or vice-versa), you can use the following commands:
+
+        ;activategrid
+        ;agr
+
+        ;disactivategrid
+        ;dgr
+
+By default, multiple connections can share a single main window, or they can each have their own main window. To switch between the two, use the following command:
+
+        ;toggleshare
+        ;tsh
+
+For technical reasons, the change won't be applied until you restart Axmud.
+
+##<a name="14.1">14.1 Zonemaps</a>
+
+The blueprint for arranging windows is called a *zonemap*.
+
+You're free to design your own zonemaps (from the main window, click **Edit > Axmud Preferences > Workspaces > Page 7**), but most of the time you'll be using one of Axmud's standard zonemaps.
+
+##<a name="14.2">14.2 Workspaces</a>
+
+Axmud supports multiple workspaces, both real and virtual.
+
+By *real* workspaces, we mean multiple physical monitors. Many modern systems, especially Linux systems, implement *virtual* workspaces. meaning that the user has a single monitor which can switch between one of several virtual workspaces. Axmud supports both setups.
+
+Only one workspace - the one in which Axmud opens - is used by default, but it's easy to set up Axmud to use multiple workspaces. If you use multiple workspaces, you can either use the same zonemap in every workspace, or apply a specific zonemap to each separate workspace.
+
+##<a name="14.3">14.3 Zones</a>
+
+A zonemap consists of one or more *zones*. A zone can contain one or more windows. If the zone is full of windows, it can either refuse to accept more windows or it can stack windows on top of each other.
+
+Some zones are only allowed to contain one type of window. For example, there is normally a zone which contains *only* the main window. Some zones might contain only one type of task window. Other zones can contain any kind of window.
+
+##<a name="14.4">14.4 Standard zonemaps</a>
+
+Axmud provides a number of standard zonemaps.
+
+Some of them are designed for use on modern widescreen (1920x1080) monitors and others are designed for use on smaller monitors.
+
+In addition, some are designed for use when sessions share a single main window and others are designed for use when sessions have their own main window.
+
+When Axmud first ran, you probably selected the most suitable zonemap for your system, but if not, it's easy to change to a different one.
+
+These zonemaps are designed for shared main windows:
+
+* **single** - The entire workspace is covered by a single zone. Windows (even main windows) use their default sizes. Windows cannot be stacked on top of each other
+
+* **single2** - A modified version of **single**, in which windows can be stacked on top of each other
+
+* **basic** - Designed for use with small monitors. There are two zones, one large one for the main windows, and a small one for everything else
+
+* **extended** - Designed for use with all monitors. The main window and Status/Locator task windows go on the left, everything else goes on the right
+
+* **widescreen** - Designed for use with widescreen monitors. The same as **extended**, but there is room for more windows on the right (since the main window doesn't need to be so large)
+
+These zonemaps are designed for separate main windows:
+
+* **horizontal** - The workspace is divided into two halves, left and right, with each half controlled by a single session. Windows cannot be stacked on top of each other
+* **horizontal2** - A modified version of **horizontal**, in which windows can be stacked on top of each other
+* **vertical** - The workspace is divided into two halves, top and bottom, with each half controlled by a single session. Windows cannot be stacked on top of each other
+* **vertical2** - A modified version of **vertical**, in which windows can be stacked on top of each other
+
+##<a name="14.5">14.5 Setting zonemaps</a>
+
+When you change zonemaps, you can change the zonemap for all workspaces, or just a single workspace.
+
+In addition, you can specify how Axmud should behave whenever it starts: how many workspaces to use, and which zonemap to use on each workspace.
+
+The easiest way to accomplish all of these tasks is to use the client preference window, so open that window before continuing (from the main window menu, select **Edit > Axmud Preferences > Workspaces'**).
+
+###<a name="14.5.1">14.5.1 Setting the workspace direction</a>
+
+Axmud's default workspace is the one in which it opens. If you need additional workspaces, those workspaces are added in a consistent direction.
+
+To set this direction, click **Page 1**, choose an option from the combo (drop-down) box, and click the **Set** button next to it.
+
+###<a name="14.5.2">14.5.2 Setting initial workspaces</a>
+
+Now click on **Page 4**. This page lists the workspaces Axmud uses when it starts. This list always contains at least one workspace - the one in which Axmud opens.
+
+You can add additional workspaces.
+
+* Select a zonemap in the combo (drop-down) box
+* Click **Add workspace** to add a workspace using that zonemap as its default
+
+You can also modify the default zonemap used by a workspace that's already in the list
+
+* Select a workspace from the list by clicking on it
+* Select a zonemap in the combo (drop-down) box
+* Click **Modify workspace**
+
+###<a name="14.5.3">14.5.3 Modifying current workspaces</a>
+
+You can apply the same kinds of changes to workspaces that Axmud is using right now. These changes won't be retained when Axmud next starts.
+
+Click on **Page 3**. To add an additional workspace:
+
+* Select a zonemap from the combo (drop-down) box
+* Click the **Use** button
+
+###<a name="14.5.4">14.5.4 Editing zonemaps</a>
+
+You can add new zonemaps and modify existing ones on **Page 7**.
+
+* Enter a zonemap name in the box on the left side, next to the **Name** label
+* Click the **Add** button
+* Select the new zonemap in the list
+* Click the **Edit** button
+* Click the **Zone models** tab
+* You can create zones on the grid by clicking the top-left and bottom-right corner of the area you want, and then by clicking the **Add zone model** button
+* If you want to modify a zone's properties, for example by putting a limit on the windows it can contain, select the zone by clicking it and then click the **Edit** button
+
+Standard zonemaps can't be modified by the user, but you *can* create a clone of a standard zonemap, and edit the clone instead.
+
+* Select an existing zonemap from the list by clicking it
+* Enter a name for the clone in the box on the right side, next to the **Clone** button
+* Click the **Clone** button
+* Select the cloned zonemap in the list
+* Click the **Edit** button to modify it
+
+##<a name="14.6">14.6 Layers</a>
+
+Sometimes there isn't enough room on the desktop to arrange all of Axmud's windows without them overlapping each other.
+
+Axmud solves this problem by arranging windows in layers. This isn't obvious at first, because the default layer is the one at the bottom. When that layer is full, new windows are placed in a higher layer.
+
+Windows in higher layers aren't visible. Windows in lower layers might be visible, but will be obscured by windows in the current layer, which are always visible.
+
+To move up and down a layer, use the *pointing hand* buttons near the top of the main window. Alternatively you can use the following client commands:
+
+        ;layerup
+        ;lup
+
+        ;layerdown
+        ;ldn
+
+If a zone is allowed to contain only one window, then that window will always be visible. (Many of the standard zonemaps reserve a zone for the exclusive use of the main window).
+
+Edit, preference and wizard windows are considered temporary; it's assumed that you are going to modify some value and close them shortly afterwards. Axmud does not attempt to fit them inside a zone.
+
+##<a name="14.7">14.7 External windows</a>
+
+It's possible to grab an external window - one that is nothing to do with Axmud - and to arrange it on the desktop using the first available space. This is quite useful if you want to watch a video while slaughtering your enemies.
+
+        ;grabwindow vlc
+        ;gw vlc
+
+This commands 'grabs' the first window it finds whose name matches the pattern **vlc**. The pattern (regular expression) is case-sensitive, so you should use **vlc**, not **VLC**.
+
+To release all external windows and return them to their previous sizes and positions:
+
+        ;banishwindow
+        ;bw
+
+---
+
+[Previous](ch13.html) [Index](index.html) [Next](ch15.html)

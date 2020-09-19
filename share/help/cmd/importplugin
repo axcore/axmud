@@ -1,0 +1,20 @@
+ipl / importplugin            Imports an Axmud plugin
+ 
+   Format:
+      ;ipl                    Imports a plugin 
+      ;ipl <path>             Imports the plugin whose file path is <path>
+ 
+   Notes:
+      Axmud plugins are Perl modules which allow you to extend Axmud's core 
+         functionality with new tasks, client commands, cages, 'edit' windows 
+         and menu items, all of them integrating seemlessly with the existing 
+         Axmud code.
+      Because of an unresolved Perl issue, plugins can only be loaded from
+         Axmud's data directory. If you've downloaded a plugin (for example,
+         from the Axmud website), you should use this command before trying to
+         load the plugin with 'loadplugin'.
+      This command copies the plugin to the correct location in Axmud's data
+         directory.
+
+   User commands:
+      ipl / importplugin

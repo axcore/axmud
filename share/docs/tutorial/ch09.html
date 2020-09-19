@@ -1,0 +1,427 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch09</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch08.html">Previous</a> <a href="index.html">Index</a> <a href="ch10.html">Next</a></p>
+<hr>
+<h1>9 - Arrays</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#9.1">9.1 Introducing arrays</a></li>
+<li><a href="#9.2">9.2 DATA statements</a></li>
+<li><a href="#9.3">9.3 Multi-dimensional arrays</a></li>
+<li><a href="#9.4">9.4 Upper and lower bounds</a></li>
+<li><a href="#9.5">9.5 FOR EACH loops</a></li>
+<li><a href="#9.6">9.6 Advanced FOR EACH loops</a></li>
+<li><a href="#9.7">9.7 Global and local arrays</a></li>
+<li><a href="#9.8">9.8 Resizing arrays</a></li>
+<li><a href="#9.9">9.9 Stacks</a></li>
+<li><a href="#9.10">9.10 Sorting arrays</a></li>
+<li><a href="#9.11">9.11 Arrays and line numbers</a></li>
+</ul>
+<hr>
+<h2><a name="9.1">9.1 Introducing arrays</a></h2>
+<p>An array is a group of values. Example of arrays include</p>
+<ul>
+<li>A list of numbers between 1 and 10</li>
+<li>A list of people that you've invited to your birthday party</li>
+<li>A list of exits in the current room</li>
+</ul>
+<p>In Axbasic, you create an array using a DIM statement (which is short for <em>dimension</em> - we'll see why in a moment.)</p>
+<p>In this example, we'll create an array called <em>numbers</em>.</p>
+<pre><code>    ! Create an array with enough room for five numbers
+    DIM numbers (5)
+</code></pre>
+<p>Arrays, like variables, can contain <em>either</em> numbers <em>or</em> strings. If it contains strings, the array's name should end with a $ character, as usual.</p>
+<pre><code>    ! Create an array with enough room for five strings
+    DIM strings$ (5)
+</code></pre>
+<p>When the array is first created, it is not quite empty. The <strong>numbers</strong> array contains five zeroes, and the <strong>strings$</strong> array contains five empty strings.</p>
+<p>The next task, then, is to fill the array with values we can actually use. In Axbasic, the first item in the array is usually item number 1. This is often different from many other programming languages, which usually start counting from 0.</p>
+<pre><code>    LET strings$ (1) = "Alice"
+    PRINT "My best friend is"
+    PRINT strings$ (1)
+</code></pre>
+<p>Let's add the remaining names.</p>
+<pre><code>    LET strings$ (2) = "Bob"
+    LET strings$ (3) = "Charlie"
+    LET strings$ (4) = "David"
+    LET strings$ (5) = "Emily"
+</code></pre>
+<p>This particular array only contains five items, so if you try to use <strong>strings$ (0)</strong> or <strong>strings$ (6)</strong>, you'll see a <em>Subscript out of bounds</em> error.</p>
+<h2><a name="9.2">9.2 DATA statements</a></h2>
+<p>You can add values to an array, one at a time, but what if the array contains dozens or hundreds of values?</p>
+<p>For large arrays, Axbasic offers DATA statements. Each DATA statement contains one or more values - numbers, strings, or even both.</p>
+<pre><code>    DATA 18, 21, 25, 42, 99
+    DATA "Alice", "Bob", "Charlie", "David", "Emily"
+</code></pre>
+<p>Once you've specified your values, you can tell Axmud to read those values into memory. You do that with a READ statement.</p>
+<pre><code>    DATA "Alice", "Bob", "Charlie", "David", "Emily"
+
+    DIM strings$ (5)
+
+    READ strings$ (1)
+    READ strings$ (2)
+    READ strings$ (3)
+    READ strings$ (4)
+    READ strings$ (5)
+</code></pre>
+<p>That's the long way of doing it. The short way is to use some kind of loop, for example a FOR loop.</p>
+<pre><code>    DATA "Alice", "Bob", "Charlie", "David", "Emily"
+
+    DIM strings$ (5)
+
+    FOR a = 1 to 5
+        READ strings$ (a)
+        PRINT strings$ (a)
+    NEXT a
+    END
+</code></pre>
+<p>When you execute READ statements, they get all of the values in all of your script's DATA statements, one at a time, from beginning to end. For that reason, it doesn't matter how many DATA statements you use, or where you put them. This following script will perform just as well as the one above.</p>
+<pre><code>    DATA "Alice", "Bob"
+
+    DIM strings$ (5)
+
+    DATA "Charlie"
+
+    FOR a = 1 to 5
+        READ strings$ (a)
+        PRINT strings$ (a)
+    NEXT a
+
+    DATA "David", "Emily"
+
+    END
+</code></pre>
+<p>If you don't have enough values to READ, you'll see an error message.</p>
+<pre><code>    ! We forgot Emily
+    DATA "Alice", "Bob", "Charlie", "David"
+
+    DIM strings$ (5)
+
+    FOR a = 1 to 5
+        READ strings$ (a)
+        PRINT strings$ (a)
+    NEXT a
+    END
+</code></pre>
+<p>If you specify too many values in your DATA statements, you <em>won't</em> see an error message. In this example, <strong>Frank</strong> is not read; but if some later part of the script begins READing DATA again, <strong>Frank</strong> is the first value read.</p>
+<pre><code>    DATA "Alice", "Bob", "Charlie", "David", "Emily"
+    DATA "Frank", "Gerald", "Holly", "Ingrid", "Juliet"
+
+    DIM strings$ (5)
+
+    FOR a = 1 to 5
+        READ strings$ (a)
+        PRINT strings$ (a)
+    NEXT a
+    END
+</code></pre>
+<p>If, for any reason, you want to start READing values from the beginning again, use a RESTORE statement.</p>
+<pre><code>    DATA "Alice", "Bob", "Charlie", "David", "Emily"
+
+    DIM strings$ (5)
+
+    FOR a = 1 to 5
+        READ strings$ (a)
+        PRINT strings$ (a)
+    NEXT a
+
+    RESTORE
+    READ first$
+    PRINT "The first name is "
+    PRINT first$
+
+    END
+</code></pre>
+<h2><a name="9.3">9.3 Multi-dimensional arrays</a></h2>
+<p>Suppose you wanted to store a list of people and their addresses. Here is one way to do it.</p>
+<pre><code>    DATA "Alice", "27 High Street"
+    DATA "Bob", "14 Mountain Road"
+    DATA "Charlie", "88 Avocado Boulevard"
+
+    DIM stuff$ (6)
+
+    FOR a = 1 to 6
+        READ stuff$ (a)
+    NEXT a
+
+    END
+</code></pre>
+<p>The script above produces an array of six items, which is not very convenient if you want to extract just the names, or just the addresses.</p>
+<p>A much better way is to organise the data as a 3 x 2 table.</p>
+<pre><code>    Alice           27 High Street
+    Bob             14 Mountain Road
+    Charlie         88 Avocado Boulevard
+</code></pre>
+<p>In Axbasic, you can create a two-dimensional array to store a table.</p>
+<pre><code>    DIM stuff$ (3, 2)
+</code></pre>
+<p>In that statement, the first number represents rows, and the second represents columns. We can use such an array to organise our name and address data.</p>
+<pre><code>    Alice           27 High Street
+    stuff$ (1, 1)   stuff$ (1, 2)
+
+    Bob             14 Mountain Road
+    stuff$ (2, 1)   stuff$ (2, 2)
+
+    Charlie         88 Avocado Boulevard
+    stuff$ (3, 1)   stuff$ (3, 2)
+</code></pre>
+<p>Now we can amend the script to display a list of names and a list of addresses.</p>
+<pre><code>    DATA "Alice", "27 High Street"
+    DATA "Bob", "14 Mountain Road"
+    DATA "Charlie", "88 Avocado Boulevard"
+
+    DIM stuff$ (3, 2)
+
+    FOR a = 1 to 3
+        READ stuff$ (a, 1)
+        READ stuff$ (a, 2)
+    NEXT a
+
+    PRINT "I know the names:"
+    FOR a = 1 to 3
+        PRINT stuff$ (a, 1)
+    NEXT a
+
+    PRINT "I know the addresses:"
+    FOR a = 1 to 3
+        PRINT stuff$ (a, 2)
+    NEXT a
+
+    END
+</code></pre>
+<p>Axbasic doesn't put a limit on the number of dimensions you can use, but there is a limit on the size of the array - it mustn't contain more than a million values. In other words, both of the following are acceptable:</p>
+<pre><code>    ! This array contains 81 values
+    DIM stuff$ (3, 3, 3, 3)
+
+    ! This array contains 1,000,000 values
+    DIM stuff$ (1000, 1000)
+</code></pre>
+<p>But this is not:</p>
+<pre><code>    ! This array is too big
+    DIM stuff$ (1000001)
+</code></pre>
+<h2><a name="9.4">9.4 Upper and lower bounds</a></h2>
+<p>The following statement produces an array of ten items.</p>
+<pre><code>    DIM stuff$ (10)
+</code></pre>
+<p>We say that the array has an <em>upper bound</em> of 10, and a <em>lower bound</em> of 1. </p>
+<p>As mentioned before, most programming languages use a lower bound of 0. In Axbasic, you have the luxury of specifying any lower bound you like. For example, the following statement produces and array of 10 items, the first of which is number #20.</p>
+<pre><code>    DIM stuff$ (20 TO 29)
+
+    PRINT stuff$ (20)
+    PRINT stuff$ (21)
+    ...
+    PRINT stuff$ (29)
+</code></pre>
+<p>Because there is now no item numbered 1, you'll get an error if you try to PRINT it.</p>
+<pre><code>    PRINT stuff$ (1)
+</code></pre>
+<p>Multi-dimensional arrays can have different lower and upper bounds in each dimension. If you don't specify the lower bound, Axbasic assumes that it is 1.</p>
+<p>For example, consider an array containing the names of all the children at a school, sorted by the year of their birth. (Let's assume there are no more than 100 children born every year).</p>
+<pre><code>   DIM children$ (1985 to 1990, 100)
+</code></pre>
+<h2><a name="9.5">9.5 FOR EACH loops</a></h2>
+<p>There are two types of FOR loop, one of which we used above. The second form is ideal for handling arrays, because you don't need to specify the size of the array. </p>
+<p>Let's create a simple array of names.</p>
+<pre><code>    DATA "Alice", "Bob", Charlie"
+
+    DIM stuff$ (3)
+    FOR a = 1 to 3
+        READ stuff$ (a)
+    NEXT a
+</code></pre>
+<p>Now, to display all of these names, we could do this:</p>
+<pre><code>    FOR a = 1 to 3
+       PRINT stuff$ (a)
+    NEXT a
+</code></pre>
+<p>Or, we could do this:</p>
+<pre><code>    FOR EACH item$ IN stuff$
+       PRINT item$
+    NEXT item$
+</code></pre>
+<p>There are some important differences. The first example always uses a <em>numeric</em> variable, <strong>a</strong>. If we try to <strong>PRINT a</strong>, we'll get a number between 1 and 3.</p>
+<p>The second example uses a <em>string</em> variable, <strong>item$</strong>. This variable is a copy of the original, so we can use the copy, instead of having to look up a particular part of the array.</p>
+<p>Of course, if we had been PRINTing the contents of a telephone directory, then we would have used a numeric variable intead.</p>
+<pre><code>    FOR EACH number IN stuff
+       PRINT number
+    NEXT number
+</code></pre>
+<p>Unlike some programming languages, changing the copy doesn't change the original. The array is unmodified (unless you modify it directly).</p>
+<pre><code>    FOR EACH number IN stuff
+       PRINT number
+       ! This does not change the contents of 'data'
+       number = number + 1
+    NEXT number
+</code></pre>
+<p>Be aware, that it you use FOR EACH to walk an empty array, you'll get an error. (A FOR statement does not necessarily have a unique NEXT statement, so skipping over the whole section of code is not possible.)</p>
+<h2><a name="9.6">9.6 Advanced FOR EACH loops</a></h2>
+<p>FOR EACH becomes really useful with multi-dimensional arrays. To demonstrate, let's create a two-dimensional grid.</p>
+<pre><code>    DATA "top left", "top middle", "top right"
+    DATA "centre left", "centre middle", "centre right"
+    DATA "bottom left", "bottom middle", "bottom right"
+
+    DIM stuff$ (3, 3)
+
+    FOR a$ = 1 to 3
+       FOR b$ = 1 to 3
+          READ stuff$ (a$, b$)
+       NEXT b$
+    NEXT a$
+</code></pre>
+<p>Data in this multi-dimensional array is used from top left to bottom right. If we wanted to PRINT every value individually, we could do this:</p>
+<pre><code>    FOR EACH item$ IN stuff$
+       PRINT item$
+    NEXT item$
+</code></pre>
+<p>...which would be exactly the same as doing this:</p>
+<pre><code>    PRINT stuff$ (1, 1)
+    PRINT stuff$ (1, 2)
+    PRINT stuff$ (1, 3)
+    PRINT stuff$ (2, 1)
+    PRINT stuff$ (2, 2)
+    PRINT stuff$ (2, 3)
+    PRINT stuff$ (3, 1)
+    PRINT stuff$ (3, 2)
+    PRINT stuff$ (3, 3)
+</code></pre>
+<p>In a 3x3x3 array, the sequence would go like this:</p>
+<pre><code>    PRINT stuff$ (1, 1, 1)
+    PRINT stuff$ (1, 1, 2)
+    PRINT stuff$ (1, 1, 3)
+    PRINT stuff$ (1, 2, 1)
+    ...
+</code></pre>
+<h2><a name="9.7">9.7 Global and local arrays</a></h2>
+<p>Arrays, just like variables, are global by default. In other words, when you create an array with a DIM statement, that array is available inside all of your functions and subroutines.</p>
+<p>If you want a local array - one that's only available inside a particular subroutine - you can use a DIM LOCAL statement.</p>
+<pre><code>    DIM LOCAL stuff$ (10)
+</code></pre>
+<p>If you want to emphasises that an array as global, then of course you can use a DIM GLOBAL statement. DIM GLOBAL is optional, so both of the following lines have the same effect.</p>
+<pre><code>    DIM GLOBAL stuff$ (10)
+    DIM stuff$ (10)
+</code></pre>
+<h2><a name="9.8">9.8 Resizing arrays</a></h2>
+<p>If you need to resize an array, you can use a REDIM statement</p>
+<pre><code>    ! Create an array
+    DIM stuff$ (10)
+    ! Double its size
+    DIM stuff$ (20)
+</code></pre>
+<p>When you REDIM an array, all the values inside are lost, and replaced by default values. In this case, the <strong>data$</strong> array now contains twenty empty strings. If it were a numeric array, it would now contain twenty zeroes.</p>
+<h2><a name="9.9">9.9 Stacks</a></h2>
+<p>One-dimensional arrays are often called <em>stacks</em>. It's very common for programmes to add or remove things from the beginning or end of the array (the top or the bottom of the stack).</p>
+<p>Let's start by creating an empty array. To create an empty array, don't specify its size.</p>
+<pre><code>    DIM stuff$ ()
+</code></pre>
+<p>To add a new value to the end of an array, use a PUSH statement. To add a new value to the beginning of an array, use an UNSHIFT statement.</p>
+<pre><code>    PUSH stuff$, "first"
+    UNSHIFT stuff$ "last"
+</code></pre>
+<p>You can also <em>remove</em> values from the array. To remove a value from the end of the array, use a POP statement. To remove a value from the beginning of an array, use a SHIFT statement.</p>
+<pre><code>    POP stuff$
+    SHIFT stuff$
+</code></pre>
+<p>Unfortunately, the value is lost when it is removed. If you need to use that value, you can add a (scalar) variable to the end of the statement.</p>
+<pre><code>    ! Store the last value in last$
+    POP stuff$, last$
+    ! Store the first value in first$
+    SHIFT stuff$, first$
+</code></pre>
+<p>The two variables must be of the same type: you can't POP or SHIFT a value from a string array into a numeric variable (or vice-versa).</p>
+<pre><code>    ! This produces an error
+    POP stuff$, number
+</code></pre>
+<p>If you try to POP or SHIFT values from an empty array, you will get an empty string (from string arrays), or <strong>0</strong> (from numeric arrays).</p>
+<p>After adding and removing values, you might want to know how big the array now is. You might also want to know the lower and upper bounds of the stack. This is how to do it.</p>
+<pre><code>    LET number = SIZE stuff$
+    LET first = LOWER stuff$
+    LET last = UPPER stuff$
+</code></pre>
+<p>POP, PUSH, SHIFT, UNSHIFT, as well as SIZE, LOWER and UPPER, only work with one-dimensional arrays. If you use them with multi-dimensional arrays, you'll get an error.</p>
+<pre><code>    ! This produces an error
+    DIM stuff$ (10, 10)
+    POP stuff$
+</code></pre>
+<p>If you want to be absolutely sure of avoiding an error, then perhaps you would like to check how many dimensions an array has first. You can do that with the DIMENSIONS keyword.</p>
+<pre><code>    DIM stuff$ (10)
+
+    LET number = DIMENSIONS stuff$
+    IF number = 1 THEN 
+        PRINT "Only one dimension!"
+        LET cells = SIZE stuff$
+        PRINT cells
+    ELSE 
+        PRINT number &amp; " dimensions!"
+    END IF
+</code></pre>
+<p>Axbasic arrays have a maximum size of 1,000,000 values. If a PUSH or an UNSHIFT statement exceeds this maximum, the excess value is not added to the array (and no error message is generated). </p>
+<h2><a name="9.10">9.10 Sorting arrays</a></h2>
+<p>Often you'll need to sort the contents of an array. You can do that using a SORT statement. The script below takes a jumbled list of names, and sorts them alphabetically.</p>
+<pre><code>    DATA "Alice", "Emily", "Bob", "Charlie", "David"
+
+    DIM strings$ (5)
+
+    FOR a = 1 to 5
+        READ strings$ (a)
+    NEXT a
+
+    SORT strings$
+
+    FOR a = 1 to 5
+        PRINT strings$ (a)
+    NEXT a
+
+    END
+</code></pre>
+<p>SORT can only be used on a one-dimensional array. If it's a string array, the items are sorted alphabetically. If it's a numeric array, the items are sorted in ascending order.</p>
+<p>If you want to sort a string array in reverse alphabetical order, or if you want to sort a numeric array in descending order, you can use a SORTR statement.</p>
+<pre><code>    SORTR strings$
+</code></pre>
+<p>Now, consider the following list of names, noting that the first one isn't capitalised.</p>
+<pre><code>    DATA "alice", "Emily", "Bob, "Charlie", "David"
+</code></pre>
+<p>When sorting strings, upper-case letters come before lower-case letters. If we READ those names into an array, and then SORT them in ascending order, the output will look like this:</p>
+<pre><code>    Bob
+    Charlie
+    David
+    Emily
+    alice
+</code></pre>
+<p>Alice is moved to the end of the array, <em>after</em> any names that <em>do</em> start with a capital letter. If this isn't the behaviour you want, you can use a SORTCASE statement instead. SORTCASE doesn't care about capital letters, so in this situation the names would be displayed in the correct order.</p>
+<pre><code>    SORTCASE name$
+</code></pre>
+<p>There's also a SORTCASER statement, in case you want to sort in reverse order while ignoring case.</p>
+<pre><code>    SORTCASER name$
+</code></pre>
+<p>It isn't an error to use numeric arrays with SORTCASE and SORTCASER. With numeric arrays, SORT and SORTCASE produce exactly the same output. (The same applies to SORTR and SORTCASER).</p>
+<h2><a name="9.11">9.11 Arrays and line numbers</a></h2>
+<p>In a script with line numbers, arrays are handled a little differently. This is because the earliest versions of BASIC were not very sophisticated, so arrays were kept as simple as possible.</p>
+<p>Firstly, you can't choose the lower bound of an array; the lower bound is <em>always</em> <strong>0</strong>. That means that the following statement will create an array of 11 items, numbered 0 to 10.</p>
+<pre><code>    10 DIM stuff$ (10)
+</code></pre>
+<p>Secondly, you don't actually need to use a DIM statement. An array is created as soon as you use one of its variables.
+The following script creates an 11x11 array. All but one of its 121 values remain as empty strings. </p>
+<pre><code>    10 LET stuff$ (10, 10) = "Alice"
+    20 PRINT stuff$ (10, 10)
+    30 END
+</code></pre>
+<p>Finally, in scripts with line numbers, there are no global or local variables, and this applies to arrays as well.</p>
+<hr>
+<p><a href="ch08.html">Previous</a> <a href="index.html">Index</a> <a href="ch10.html">Next</a></p>
+
+</body>
+</html>

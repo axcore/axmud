@@ -1,0 +1,41 @@
+ctl / configureterminal       Configures terminal settings
+
+   Format:
+      ;ctl                    Shows global terminal settings
+      ;ctl -s                 Enables/disables control sequences
+      ;ctl -c                 Enables/disables visible cursor
+      ;ctl -f                 Enables/disables a rapidly-blinking cursor
+      ;ctl -d                 Enables/disables direct keyboard input
+
+   Notes:
+      Axmud supports visible cursors in the 'main' window and provides partial
+         emulation of VT100 terminals. This command affects global settings;
+         individual world profiles might use their own settings.
+
+      Worlds which support VT100 send invisible 'control sequences' to the
+         client which enable special effects, like displaying text anywhere in
+         the main window, rather than adding to the bottom (as is usual).
+      Axmud implements many VT100 control sequences, which are enabled by
+        default. If they are disabled using the '-s' switch, the control
+        sequences are simply ignored.
+      (Note that control sequences controlling the text's colour and style are
+         not affected by this setting).
+
+      By default, a visible cursor is not displayed in the 'main' window, but
+         you can enable it using the '-c' switch. This is really only useful
+         when emulating VT100 terminals, in which the cursor might be
+         anywhere on the screen. When enabled, you can use the '-f' switch to
+         make the cursor blink faster.
+
+      When direct keyboard input is enabled, certain keys (such as the cursor
+         and keypad keys) are sent directly to the world, so if this setting is
+         enabled, you won't be able to use those keys in your macros.
+      Some worlds expect something to be sent to them, every time you press a
+         key on your keyboard. If that's so, and if direct keyboard input is
+         enabled, you'll notice an icon appear in the 'main' window's command
+         entry box. This icon tells whether you're typing a world command
+         (that's being sent to the world, one character at a time) or some
+         other type of command (such as a client command) executed by Axmud.
+         
+   User commands:
+      ctl / configterm / configureterminal

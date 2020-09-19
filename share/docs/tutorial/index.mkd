@@ -1,0 +1,33 @@
+#Axbasic Tutorial
+
+![Axmud logo](img/index/axmud_logo.png)
+
+##Version 1.004, 19 Sep 2020
+
+####Copyright © 2018-20 A S Lewis. Permission is granted to copy, distribute an/or modify this document under the terms of the GNU Free Documentation License, Version 1.3 or any later version published by the Free Software Foundation; with no Invariant Sections, no Front-Cover Texts, and no Back-Cover-Texts.
+
+---
+
+####Table of Contents
+
+1. [Introduction](ch01.html)
+2. [Your first script](ch02.html)
+3. [Fundamental Concepts](ch03.html)
+4. [Interacting With The World](ch04.html)
+5. [Variables and Expressions](ch05.html)
+6. [Conditions](ch06.html)
+7. [Loops](ch07.html)
+8. [Subroutines and functions](ch08.html)
+9. [Arrays](ch09.html)
+10. [Miscellaneous features (1)](ch10.html)
+11. [The Script task](ch11.html)
+12. [Interfaces](ch12.html)
+13. [The automapper](ch13.html)
+14. [Task and dialogue windows](ch14.html)
+15. [The main window](ch15.html)
+16. [Using Axmud data](ch16.html)
+17. [File input/output](ch17.html)
+18. [Primitive BASIC](ch18.html)
+19. [Execution options](ch19.html)
+20. [Miscellaneous features (2)](ch20.html)
+21. [GNU Free Documentation License](ch21.html)

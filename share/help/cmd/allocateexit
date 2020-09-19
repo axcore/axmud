@@ -1,0 +1,52 @@
+alx / allocateexit            Allocates an unallocated exit
+ 
+   Format:
+      ;alx <new> <old>        Allocates the exit
+
+   Notes:
+      Primary directions include the sixteen cardinal directions, plus 'north'
+         and 'south'.
+      When the automapper window tries to add an exit in a different direction,
+         that exit is drawn as an 'unallocated' exit (an X on the map).
+      It is up to you, the user, to decide how the exit should be drawn, and to
+         allocate a primary direction to the exit.
+      One method is to right-click the exit each exit in turn, but this can
+         quickly become tedious at some worlds. (For example, a MUSH will often
+         use exits called 'kitchen', 'bathroom' and 'cellar', and will hardly
+         use exits called 'north', 'south' and 'down' at all.)
+         
+      In such cases, you might prefer to use this command.
+      <new> is the primary direction you'd like to use, for example 'north',
+         'northeast', 'eastnortheast', 'up'. You can use any standard or
+         custom primary direction, abbreviated or not.
+      <old> is a part of (or all of) the unallocated exit's direction. For
+         example, for an exit called 'enter pub', <old> can be any of these:
+
+            pub
+            enter
+            enter pub
+
+      <old> is a simple string, not a regular expression (regex).
+      For an exit containing multiple words, diamond brackets <...> are not
+         required. Multiple space characters are removed, so this is also
+         acceptable:
+
+            enter    pub
+         
+      In fact, you can miss out the 'allocateexit' part altogether. The
+         following pairs of commands are identical:
+
+         ;allocateexit north kitchen
+         ;north kitchen
+
+         ;allocateexit se bathroom
+         ;se bathroom
+
+         ;alx w enter pub
+         ;w enter pub
+
+      If you do miss out the command, Axmud will update your map and then send a
+         world command in that direction, moving you to the new room.
+   
+   User commands:
+      alx / allocexit / allocateexit

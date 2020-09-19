@@ -1,0 +1,22 @@
+dds / deletesecondary         Deletes a secondary direction
+ 
+   Format:
+      ;dds <custom>           Deletes the direction
+
+   Notes:
+      Axmud provides eighteen 'standard' primary directions - the sixteen
+         compass directions (including 'north', 'northeast' and
+         'northnortheast') as well as 'up' and 'down'. This standard set never
+         changes.
+      Axmud dictionaries store a custom set of primary directions, one for each
+         standard direction. Dictionaries also store a set of secondary
+         directions such as 'out' and 'in', this set can contain as many or as
+         few directions as you want.
+      For a list of primary and secondary directions stored in the current
+         dictionary, use the 'listdirection' command.
+         
+      This command deletes the secondary direction <custom>. You can replace it
+         with the ';addsecondary' commmand, if you want. 
+ 
+   User commands:
+      dds / delsecond / deletesecondary

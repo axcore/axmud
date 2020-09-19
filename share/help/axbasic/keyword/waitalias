@@ -1,0 +1,25 @@
+WAITALIAS expression [ , expression ]
+
+   Synopsis:
+      Creates a temporary alias and pauses until the alias fires
+
+   Notes:
+      The first expression is the alias stimulus (a pattern). The Axbasic script
+         will pause until the alias fires, at which point the alias is destroyed
+         and execution of the Axbasic script resumes.
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting for the alias after that period. The alias is
+         destroyed and execution of the script resumes.
+
+      If Axmud can't create the alias, execution of the script continues as
+         normal (with no error message and no pause).
+      Also see the help for SETALIAS.
+
+   Requires:
+      If the script is not being run as a task, the WAITALIAS statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
+   Examples:
+      WAITALIAS "^continue$"
+      WAITTRIG "^continue$", 60

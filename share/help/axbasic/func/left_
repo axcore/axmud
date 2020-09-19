@@ -1,0 +1,13 @@
+Left$ (string, length)
+
+   Synopsis:
+      Returns a string within a string, starting from the beginning
+
+   Notes:
+      If length is 0, an empty string is returned. If length is greater than the
+         length of string, the whole string is returned. If length is a negative
+         number, an error is generated.
+         
+   Examples:
+      ! Return the first 4 characters in the string
+      Left$ ("Read my lips", 5)

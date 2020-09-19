@@ -1,0 +1,25 @@
+lchp / listchannelpattern     Lists Channels/Divert task patterns
+
+   Format:
+      ;lchp                   Lists all patterns
+      ;lchp <channel>         Lists patterns assigned to <channel>
+      ;lchp -e                Lists exception patterns
+ 
+   Notes:
+      The Channels and Divert tasks intercept text received from the world and
+         divert that text into their own task window. Sometimes the text is
+         gagged, meaning that it's displayed in the 'main' window too. You can't
+         run both tasks at the same time.
+      The world profile stores a list of patterns. When a line of text which
+         matches one of those patterns is received, it is diverted to the task
+         window.
+      Each pattern is also assigned a channel. (See the help for
+         ';addchannelpattern' for a longer explanation.)
+
+      This command lists the channel patterns stored in the current world
+         profile. You'll notice that the list is a numbered list; you'll need to
+         know a pattern's number before you can use ';deletechannelpattern' to
+         delete it.
+ 
+   User commands:
+      lchp / listchan / listchannel / listchannelpattern

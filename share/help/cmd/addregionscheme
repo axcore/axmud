@@ -1,0 +1,16 @@
+ars / addregionscheme         Adds a region colour scheme
+ 
+   Format:
+      ;ars <name>             Adds a scheme called <name>
+ 
+   Notes:
+      A region colour scheme defines a set of colours for one or more regions.
+         The automapper window uses these colours when it draws the region(s).
+      There is always one region colour scheme, called 'default', which is used
+         to draw any regions that hasn't been allocated a custom region colour
+         scheme. The default region colour scheme can't be deleted.
+       <name> can contain any text (maximum 16 characters). If it contains
+         spaces, you should enclose the name in diamond brackets <...>.
+
+   User commands:
+      ars / addrs / addregionscheme

@@ -1,0 +1,9 @@
+Epoch ()
+
+   Synopsis:
+      Returns the number of seconds since the system's epoch time
+
+   Notes:
+      On most systems, the epoch time is 00:00:00 UTC, January 1, 1970. One
+         notable exception is MacOS Classic, which uses the epoch time
+         00:00:00, January 1, 1904 in the current local time zone for its epoch.

@@ -1,0 +1,52 @@
+saw / setautoworld            Sets the list of auto-connecting worlds
+ 
+   Format:
+      ;saw                    Resets the list
+      ;saw <world>            Adds a world to the list
+      ;saw <world> <chars>    Adds a world to the list with characters
+ 
+   Notes:
+      Axmud can be set to auto-connect to one or more worlds when it starts.
+      One way to do this is from the command line. Depending on your operating
+         system, you might type one of these:
+         
+         perl axmud.pl
+         ./axmud.pl
+
+      Visually-impaired users would type one of these:
+
+         perl baxmud.pl
+         ./baxmud.pl
+
+      You can add arguments to any of these commands. These arguments can be in
+         one of these forms:
+
+         <host> <port>
+         <host>
+         <world profile name>
+
+      Alternatively, you can use this command. Axmud stores a list of worlds to
+         which it should auto-connect. This list is only used when none of the
+         command-line arguments described just above are usd.
+      Axmud's list is emptied if you don't specify <world>. Otherwise, a new
+         entry is added to the list.
+      Each entry consists of a world profile name, and optionally one or more
+         character profile names.
+      Axmud won't connect to a world with the same character more than once, and
+         it will ignore any world or character profiles that don't exist.
+         
+      Here is an example list, created with multiple uses of ';setautoworld':
+
+         deathmud bilbo
+         deathmud gandalf
+         deathmud frodo sauron gandalf
+         boringmud
+         boringmud
+
+      If 'boringmud' exists, Axmud creates six connections. If it doesn't exist,
+         it creates only four. (Note that the duplicate 'gandalf' character is
+         not used.)
+      To see the current list, use the ';listautoworld' command.
+         
+   User commands:
+      saw / setautoworld

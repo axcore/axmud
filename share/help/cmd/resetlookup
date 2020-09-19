@@ -1,0 +1,15 @@
+rlu / resetlookup             Resets the list of IP lookup servers
+ 
+   Format:
+      ;rlu                    Resets the list
+      
+   Notes:
+      Some parts of the code need to know your IP address (for example, the Chat
+         task, and the MNES protocol). Axmud does this by contacting some IP
+         lookup servers.
+      This command resets the customised list of lookup servers to the default
+         list.
+      See also the help for ';listlookup' and ';forcelookup'.
+ 
+   User commands:
+      rlu / resetlu / resetlookup

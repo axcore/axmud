@@ -1,0 +1,18 @@
+flu / forcelookup             Re-fetches the user's IP address
+ 
+   Format:
+      ;flu                    Fetches your IP
+      
+   Notes:
+      Some parts of the code need to know your IP address (for example, the Chat
+         task, and the MNES protocol). Axmud does this by contacting some IP
+         lookup servers.
+      In case there is a delay in contacting the servers, this usually only
+         happens once, and even then only when the IP address is actually
+         needed.
+      If you change your IP address while Axmud is running, you can use this
+         command to force Axmud to fetch the new one.
+      See also the help for ';setuplookup', ';resetlookup' and ';listlookup'.
+ 
+   User commands:
+      flu / forcelu / forcelookup

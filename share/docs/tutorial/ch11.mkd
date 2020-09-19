@@ -1,0 +1,233 @@
+[Previous](ch10.html) [Index](index.html) [Next](ch12.html)
+
+---
+
+#11 - The Script task
+
+####Table of Contents
+
+* [11.1 Types of Axbasic script](#11.1)
+* [11.2 Scripts that require a task](#11.2)
+* [11.3 Using a main loop](#11.3)
+* [11.4 Main loops without flags](#11.4)
+* [11.5 Main loop examples](#11.5)
+
+---
+
+##<a name="11.1">11.1 Types of Axbasic script</a>
+
+[Section 2.6](ch02.html#2.6) describes how to run an Axbasic script using the Script task. In case you've forgotten, to run *Hunt the Wumpus!* you might type the client command
+
+        ;runscript wumpus
+
+But to run that script as a task, you would type
+
+        ;runscripttask wumpus
+
+As you start writing your own Axbasic scripts, you'll soon discover that there are basically three types of script:
+
+1. A short script designed to be run once, from beginning to end
+    * This includes most of the scripts we've examined so far
+2. A longer script designed to be one run once, from beginning to end
+    * We saw a good example in [Section 4.7](ch04.html#4.7)
+    * Because it was a longer script, it was broken up into stages, with a pause between the stages
+    * You can put the pauses (almost) anywhere you like
+3. A script which is designed to run indefinitely
+    * We haven't examined a script like this, yet
+    * Because the script runs for a long time, we need *a lot* of pauses and they need to occur *regularly*
+    * Without pauses, the rest of the Axmud code won't be able to do anything
+
+##<a name="11.2">11.2 Scripts that require a task</a>
+
+Axbasic provides a number of ways to pause a script. You've already seen PAUSE, of course.
+
+        SEND "turn on radio"
+        PAUSE 30
+        SEND "turn off radio"
+
+You've also seen WAITTRIG, which creates a temporary trigger and waits for it to fire, before resuming execution of the script.
+
+        ! Wait for the door to open, before moving
+        SEND "press button"
+        WAITTRIG "open"
+        MOVE "east"
+
+Any Axbasic script that includes any kind of pause *must be run as a task*.
+
+If you forget, the PAUSE and WAITTRIG statements are ignored. Axmud won't wait 30 seconds until turning off the radio, nor will it create a temporary trigger.
+
+If your script uses any kind of pause, you can avoid nasty surprises by including an OPTION NEEDTASK statement anywhere in the script.
+
+        OPTION NEEDTASK
+
+        SEND "turn on radio"
+        PAUSE 30
+        SEND "turn off radio"
+
+        END
+
+If you try to run that script without a task, you'll see an error message like this:
+
+        AXBASIC: ERROR: Script cannot run without parent task, line 1
+
+##<a name="11.3">11.3 Using a main loop</a>
+
+You can create a script that runs indefinitely by using DO...LOOP.
+
+        ! This script runs indefinitely
+
+        LET exit_flag = 0
+
+        DO
+            PRINT "Hello world!"
+        UNTIL exit_flag = 1
+
+        END
+
+A *flag* is a variable that is on or off, true or false, up or down, light or dark. How you implement a flag is, of course, entirely up to you, but a very common practice is to use the number 1 for *true* or *on*, and the number 0 for *false* or *off*.
+
+In the example above, the script runs indefinitely because **exit_flag** is always set to 0. When we're ready to terminate the script, we can just change the flag's value to 1.
+
+        ! This script terminates an hour after the session started
+
+        LET exit_flag = 0
+
+        DO
+
+            PRINT Timestamp ()
+            IF Timestamp () > 3600 THEN
+                LET exit_flag = 1
+            END IF
+
+        UNTIL exit_flag = 1
+
+        END
+
+Now, any script that runs indefinitely needs some pauses. The most convenient place to put one is near the end of the loop.
+
+        ! This script terminates an hour after the session started
+        ! The time limit is only checked once per second
+
+        OPTION NEEDTASK
+
+        LET exit_flag = 0
+
+        DO
+
+            PRINT Timestamp ()
+            IF Timestamp () > 3600 THEN
+                LET exit_flag = 1
+            END IF
+
+            PAUSE 1
+
+        UNTIL exit_flag = 1
+
+        END
+
+That's convenient in a lot of situations, but in other situations you'll want a shorter pause, perhaps the shortest possible pause. (If your script doesn't include any pauses at all, eventually the Script task will pause anyway. It's better if the script decides for itself when the pause should occur.)
+
+The shortest possible pause is currently 0.1 seconds. Axmud aims to call the Script task ten times a second, but if some serious computation is taking place, the delay might be longer.
+
+If you want your loop to take place as often as possible - up to 10 times a second, in other words - you can use a BREAK statement.
+
+        ! This script terminates an hour after the session started
+        ! The time limit is checked after the shortest possible pause
+
+        LET exit_flag = 0
+
+        DO
+
+            PRINT Timestamp ()
+            IF Timestamp () > 3600 THEN
+                LET exit_flag = 1
+            END IF
+
+            BREAK
+
+        UNTIL exit_flag = 1
+
+        END
+
+What we have now is called a *main loop*. After setting up variables, the loop runs once, then execution pauses briefly, then the loop runs again, pauses again, and so on and so on.
+
+Sometimes, your main loop will decide that it's necessary to take some kind of action. If so, it will call an Axbasic function or a subroutine. Most of the time, however, no action will be necessary and the main loop won't call anything.
+
+##<a name="11.4">11.4 Main loops without flags</a>
+
+An alternative to using **exit_flag** is, of course, to use EXIT DO. You'll remember from [Section 7](ch07.html) that a DO...UNTIL 0 loop runs indefinitely.
+
+        ! This script terminates an hour after the session started
+        ! The time limit is checked after the shortest possible pause
+
+        DO
+
+            PRINT Timestamp ()
+            IF Timestamp () > 3600 THEN
+                EXIT DO
+            END IF
+
+            BREAK
+
+        UNTIL 0
+
+        END
+
+This script terminates *in the middle of a loop*. If that's not what you want, it would be better to use an **exit_flag** rather than EXIT DO.
+
+In long scripts, a human reader is much more likely to see the first line of a loop than the last one. In most cases, it's better to write a main loop using WHILE 1...LOOP than by using DO...UNTIL 0.
+
+##<a name="11.5">11.5 Main loop examples</a>
+
+Here's a practical example of a main loop.
+
+The PEEK statement is used to retrieve some value stored in Axmud's memory. We'll be talking a lot more about PEEK in later Sections, but for now, all you need to know is that the following line retrieves your character's health points and stores them in the variable **hp**.
+
+(This script won't work if there is no current character profile, or if the Status task hasn't able to store your character's health points in that profile. Note, also, that the capital P in Points must not be typed as a lower-case p.)
+
+        PEEK hp = char.current.healthPoints
+
+Now we can write an Axbasic script that keeps an eye on your character's health. If it falls too low, the character is made to go to sleep, and later made to wake up again.
+
+        ! Automatic sleep machine
+
+        ! First set up the variables
+        LET exit_flag = 0
+        ! Let's assume the character is awake right now
+        ! Use 1 for awake, 0 for asleep
+        LET awake_flag = 1
+
+        ! Now start the main loop
+        DO
+
+            ! Check current health points
+            PEEK hp = char.current.healthPoints
+
+            ! If awake and health points are low, go to sleep
+            ! If asleep and health points are high, wake up
+            ! Otherwise, do nothing until the next main loop
+            IF hp < 20 AND awake_flag = 1 THEN
+                SEND "sleep"
+                LET awake_flag = 0
+            ELSE IF hp > 80 AND awake_flag = 0 THEN
+                SEND "wake up"
+                LET awake_flag = 1
+            END IF
+
+            BREAK
+
+        UNTIL exit_flag = 1
+
+        END
+
+This simple script assumes your character's maximum health points are 100. That's not going to work at many MUDs, but happily Axmud is abloe to detect the maximum health points, too.
+
+    PEEK maxhp = char.current.maxHealthPoints
+
+If you know the current and maximum values, then it would be quite simple to convert them into a percentage, with 100 meaning "perfectly healthy" and 0 meaning "dead".
+
+    LET percent = Int ( (hp / maxhp) * 100 )
+
+---
+
+[Previous](ch10.html) [Index](index.html) [Next](ch12.html)

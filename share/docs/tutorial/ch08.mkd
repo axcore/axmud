@@ -1,0 +1,410 @@
+[Previous](ch07.html) [Index](index.html) [Next](ch09.html)
+
+---
+
+#8 - Subroutines and functions
+
+####Table of Contents
+
+* [8.1 Coping with long scripts](#8.1)
+* [8.2 Subroutines](#8.2)
+* [8.3 Calling subroutines](#8.3)
+* [8.4 Subroutine arguments](#8.4)
+* [8.5 Local and global variables](#8.5)
+* [8.6 Global variables](#8.6)
+* [8.7 Functions](#8.7)
+* [8.8 Defining new functions](#8.8)
+* [8.9 Advanced subroutines](#8.9)
+* [8.10 Using EXIT SUB](#8.10)
+
+---
+
+##<a name="8.1">8.1 Coping with long scripts</a>
+
+In all programming languages, very long scripts are usually broken up into manageable pieces. In Axbasic, this is done using subroutines and functions.
+
+##<a name="8.2">8.2 Subroutines</a>
+
+A *subroutine* is a group of statements that you can execute any time your want.
+
+Subroutines start with a SUB statement and end with an END SUB statement.
+
+        SUB Hello
+            PRINT "Hello, world!"
+        END SUB
+
+A script can have as many subroutines as you want, so each subroutine must have a unique name. In the example above, the subroutine's name is **Hello**.
+
+The rules for subroutine names are the same as those for variable names.
+
+* The first character must be a letter
+* Other characters can be letters, numbers or underline (underscore) characters
+* The name can be as long as you want
+* Case doesn't matter
+* You can't use an Axbasic keyword like PRINT or END
+
+Traditionally, subroutine names are typed **Hello** rather than **hello** or **HELLO**. This makes it easier for humans to distinguish between keywords like PRINT, variables like **number** and subroutine names like **Hello**. As usual, Axbasic has no such problems - all of the following lines are valid.
+
+        SUB Hello
+        SUB hello
+        SUB HELLO
+        sub hello
+
+##<a name="8.3">8.3 Calling subroutines</a>
+
+When you want to use a subroutine, we say that you *call* it.  Unsurprisingly, this is done using a CALL statement.
+
+        CALL Hello
+
+You can call the same subroutine as often as you want.
+
+        FOR a = 1 TO 10
+            CALL Hello
+        NEXT a
+
+It doesn't really matter *where* you place your subroutines. Some programmers prefer to put all of their subroutines at the end of the script; others, at the beginning. Our advice is that you choose one or the other, and stick with it.
+
+Here's a complete script. If you like, you can experiment with moving the subroutine to another position.
+
+        ! Display a greeting ten times
+
+        FOR a = 1 TO 10
+            CALL Hello
+        NEXT a
+
+        END
+
+        SUB Hello
+            PRINT "Hello, world!"
+        END SUB
+
+Of course, that script isn't very efficient; it would be much shorter if you just used a quick FOR loop, instead. However, there are many times when using a subroutine will make your life much simpler.
+
+If you're writing a long script, it's usually better to focus on one problem at a time. In this situation, you can just write a CALL statement, and leave the actual subroutine code until later.
+
+        ! Calculate pi to a trillion decimal places
+        ! ...ten times!
+
+        FOR a = 1 to 10
+            CALL CalculatePi
+        NEXT a
+
+        END
+
+        SUB CalculatePi
+            ! I'll finish this part later
+        END SUB
+
+##<a name="8.4">8.4 Subroutine arguments</a>
+
+Often you'll need to supply a subroutine with some data.
+
+        LET number = 10
+        CALL Double_number (number)
+
+The variable inside the brackets is called an *argument*. You can specify as many arguments as you want.
+
+        LET a = 2
+        LET b = 5
+        LET c = 9
+        CALL CalculateTotal (a, b, c)
+
+The subroutine should be told to expect the same number of values. We call these *parameters*.
+
+        SUB CalculateTotal (val1, val2, val3)
+
+If you don't specify exactly the same number of arguments and parameters, you'll see an error.
+
+##<a name="8.5">8.5 Local and global variables</a>
+
+Let's put those ideas into a single complete script.
+
+        ! Add up some numbers
+
+        LET a = 2
+        LET b = 5
+        LET c = 9
+        CALL AddNumbers (a, b, c)
+
+        END
+
+        SUB AddNumbers (val1, val2, val3)
+            LOCAL total
+            LET total = val1 + val2 + val3
+            PRINT total
+        END SUB
+
+There are some things to note here.
+
+**val1** is a variable. When the subroutine is called, that variables is given a value (in this case, 2). The same happens to the variables **val2** and **val3**, which are set to 5 and 9 respectively.
+
+These variables are also *local variables*, which means that they are only available inside the subroutine. If you use this line anywhere else in the script, you'll get an error. (Try it and see for yourself.)
+
+        PRINT val1
+
+You can create, or *declare*, a new local variable with a LOCAL statement.
+
+        LOCAL total
+
+The variable **total** is available inside the subroutine, in every line after the LOCAL statement itself. But it's not available anywhere else.
+
+If you want to declare lots of local variables, just separate them with commas.
+
+        LOCAL name$, address$, phone_number
+
+##<a name="8.6">8.6 Global variables</a>
+
+The opposite of a *local variable* is a so-called *global variable*.
+
+You can use global variables anywhere in the script, including inside the subroutine itself, but that's usually not the way to go. Ideally:
+
+* All variables declared in a subroutine should be local variables
+* All variables declared outside a subroutine (in other words, all variables declared in the main script) should be global variables
+
+Break those guidelines only if you have a really good reason to do so, in which case you can declare a global variable with a GLOBAL statement.
+
+        GLOBAL name$, address$, phone_number
+
+In many languages, programmers are forced to declare all of their variables as either global or local. This is optional in Axbasic, but it's still recommended if you're writing a long script - it's handy to have a complete list of global variables that you consult whenever you need to.
+
+        ! Add up some numbers
+
+        GLOBAL a, b, c
+
+        LET a = 2
+        LET b = 5
+        LET c = 9
+        CALL Add_Numbers (a, b, c)
+
+        END
+
+        SUB Add_Numbers (val1, val2, val3)
+            LOCAL total
+            LET total = val1 + val2 + val3
+            PRINT total
+        END SUB
+
+In Axbasic, variables are global unless you make them local, so in the script above the GLOBAL statement doesn't actually change the script's behaviour.
+
+Global variables and local variables can share the same names. When you use a variable, Axbasic checks if there's a local variable with that name. If so, Axbasic uses it. Otherwise, Axbasic uses the global variable instead. You can test it for yourself by running this script.
+
+        ! Demonstrate global and local variables
+
+        GLOBAL number
+        LET number = 10
+        PRINT "Before the subroutine, the variable is global"
+        PRINT number
+
+        CALL Print_Something
+
+        PRINT "After the subroutine, the variable is global"
+        PRINT number
+
+        END
+
+        SUB Print_Something
+            LOCAL number
+            LET number = 5
+            PRINT "During the subroutine, the variable is local"
+            PRINT number
+        END SUB
+
+##<a name="8.7">8.7 Functions</a>
+
+As well as subroutines, Axbasic has *functions*. A function is traditionally explained using a black box.
+
+* The black box has a name describing what it does
+    * For example **FindHighestNumber**
+* Some data goes into the box
+* A single value comes out of the box
+    * This is called the *return value*
+* We don't know (or care) what happens inside the box
+
+Axmud has a large number of built-in functions. Many of them are purely mathematical but others are really useful for the kinds of scripts you'll want to write.
+
+For example, to convert a decimal number into an integer, you can use the **Int ()** function.
+
+        LET number = 3.1415926356
+        LET result = Int (number)
+        PRINT result
+
+You can cut out the middle man and PRINT the function's output directly.
+
+        LET number = 3.1415926356
+        PRINT Int (number)
+
+If you want to know the current room's exits, you could use the **Getexit$ ()** function.
+
+        PRINT Getexit$ (1)
+        PRINT Getexit$ (2)
+        PRINT Getexit$ (3)
+
+Those statements might return values like these:
+
+        north
+        east
+        southeast
+
+A string variable like **name$** ends with a dollar character. The **Getexit$ ()** function returns a string value, so it too ends with a dollar character. (This is a general rule. Functions always return a single value, which is either numeric or a string. If it's a string, the function's name ends with a dollar character.)
+
+Function names are traditionally typed in the same way as subroutine names. All of the following lines are valid, but only the first one is recommended.
+
+        PRINT Int (number)
+        PRINT INT (number)
+        PRINT int (number)
+
+A variable cannot have the same name as a built-in function. This applies to both string and numeric variables. Both of the following statements will generate an error:
+
+        LET Getexit$ = "north"
+        LET Int = 5
+
+We'll be discussing Axbasic's built-in functions throughout the rest of this tutorial.
+
+##<a name="8.8">8.8 Defining new functions</a>
+
+Axbasic's built-in functions are useful, but you can create as many of your own functions as you like.
+
+To define a function, you use a DEF statement.
+
+        DEF Multiply (x) = x * 10
+
+We can split this line into two parts.
+
+        DEF Multiply (x)
+
+The name of the function is **Multiply**, and it has a single parameter, **x**.
+
+        x * 10
+
+The function accepts a value, storing it temporarily in the local variable **x**. Then the function multiplies the value by 10 and returns the result.
+
+Unlike a subroutine, a function *must* be defined before it can be used. You should probably define all of your functions near the beginning of your script.
+
+To call the function, we just use its name.
+
+        ! Multiply 5 by 10
+
+        DEF Multiply (x) = x * 10
+
+        LET number = 5
+        PRINT Multiply (number)
+
+        END
+
+Functions can have more than one parameter, if necessary. For example, a function that multiplies three numbers might look like this:
+
+        DEF Multiply (x, y, z) = x * y * z
+
+Your own functions can't have the same name as a keyword like PRINT or WHILE. Some keywords like ANGLE can only be used after another keyword, and it's ok to use those words as function names. There is, in fact, a built-in function called **Angle ()**.
+
+Your own functions *can* have the same name as a variable. However, once the function is defined, the variable's value will no longer be accessible. You can avoid a lot of problems by using distinct names for your variables and functions.
+
+##<a name="8.9">8.9 Advanced subroutines</a>
+
+If you have a background in other programming languages, you might be asking yourself why subroutines don't have a return value too. The answer is that Axbasic subroutines always have a return value; it's just that we've been ignoring that value until now.
+
+The default return value is 0. Consider, for example, the following subroutine.
+
+        SUB Hello
+            PRINT "Hello, world!"
+        END SUB
+
+This subroutine returns the value 0 almost invisibly. If you want to return a different value - the number 5, perhaps - you can use a RETURN statement.
+
+        SUB Hello
+            PRINT "Hello, world!"
+            RETURN 5
+        END SUB
+
+After CALLing a subroutine, the return value is discarded unless you store it somewhere.
+
+        LET result = CALL hello
+        PRINT result
+
+Note that you can't combine these two lines, as you would do for a function. Compare the following script, which is correct:
+
+        LET result = CALL Hello
+        PRINT result
+
+        END
+
+        SUB Hello
+            PRINT "Hello, world!"
+            RETURN 5
+        END SUB
+
+...with this script, which is *not* correct:
+
+        PRINT Hello
+
+        END
+
+        SUB Hello
+            PRINT "Hello, world!"
+            RETURN 5
+        END SUB
+
+In the first line of the broken script, Axbasic assumes that **Hello** is a variable, not a subroutine. A numeric variable which hasn't been assigned a value has the value 0, and that's the value that is PRINTed. The subroutine is never actually called.
+
+If you want to return a string, rather than a number, you must use a SUB STRING statement.
+
+        LET result$ = CALL Hello
+        PRINT result$
+
+        END
+
+        SUB STRING Hello
+            RETURN "Hello, world!"
+        END SUB
+
+When you write long scripts, it might be useful to clarify (to human readers) which of your subroutines are returning strings, and which are returning numbers, in which case you can use both SUB STRING and SUB NUMERIC statements.
+
+This is optional; if you don't use SUB STRING, Axbasic will just assume the return value is numeric. Both of the following lines have the same effect.
+
+        SUB Hello
+        SUB NUMERIC Hello
+
+##<a name="8.10">8.10 Using EXIT SUB</a>
+
+Inside a subroutine, you can use a RETURN statement at any time to return the result.
+
+        ! Yet another guessing game
+
+        PRINT "Guess my name!"
+        LET result$ = CALL Check_Name
+        PRINT result$
+
+        END
+
+        SUB STRING Check_Name
+            INPUT string$
+            IF string$ = "bilbo" THEN
+                RETURN "correct"
+            ELSE
+                RETURN "not correct"
+            END IF
+        END SUB
+
+Subroutines and functions can't share the same names. If you try, you'll see an error.
+
+If you forget to add a RETURN statement to your subroutine, the subroutine will return a default value: the number 0 for a NUMERIC subroutine, or an empty string for a STRING subroutine.
+
+If you want to return the default value *before* the end of the subroutine, you can use EXIT SUB. This example subroutine returns -1 for a negative number, +1 for a positive number, or the default value (0) if the argument is also 0.
+
+        SUB Classify (number)
+
+            IF number > 0 THEN
+                RETURN 1
+            ELSE IF number < 0 THEN
+                RETURN -1
+            ELSE
+                EXIT SUB
+            END IF
+
+        END SUB
+
+The subroutine can contain any number of EXIT SUBs, but only ever one END SUB.
+
+---
+
+[Previous](ch07.html) [Index](index.html) [Next](ch09.html)

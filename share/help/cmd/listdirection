@@ -1,0 +1,23 @@
+ldi / listdirection           Lists primary/secondary directions
+ 
+   Format:
+      ;ldi                    Lists directions
+                              
+   Notes:
+      Axmud provides eighteen 'standard' primary directions - the sixteen
+         compass directions (including 'north', 'northeast' and
+         'northnortheast') as well as 'up' and 'down'. This standard set never
+         changes.
+      Axmud dictionaries store a custom set of primary directions, one for each
+         standard direction. Dictionaries also store a set of secondary
+         directions such as 'out' and 'in', this set can contain as many or as
+         few directions as you want.
+      A few worlds use a set of relative directions which depend on the
+         direction of movement (see the help for ';addrelative').
+      This command lists all primary, secondary and relative directions stored
+         in the current dictionary.
+
+      See also the help for ';listautosecondary'.
+         
+   User commands:
+      ldi / listdirection

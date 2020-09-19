@@ -1,0 +1,20 @@
+room / roomcommand            Executes a room command
+
+   Format:
+      ;room                   Executes the next room command
+ 
+   Notes:
+      A few worlds (for example EmpireMUD) offer a series of commands in each
+         room, which are specific to that room.
+      This command executes those room commands in a continuous cycle, one at a
+         time, but ignoring any room commands which have been marked as
+         ignorable.
+      The list of room commands is updated whenever the Locator task updates its
+         location (after a movement command, or a 'look', or when the task is
+         reset).
+
+      See also the help for ';ignoreroomcommand', ';noticeroomcommand' and
+         ';listroomcommand'.
+ 
+   User commands:
+      room / roomcmd / roomcommand

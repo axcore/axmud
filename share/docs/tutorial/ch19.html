@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch19</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch18.html">Previous</a> <a href="index.html">Index</a> <a href="ch20.html">Next</a></p>
+<hr>
+<h1>19 - Execution options</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#19.1">19.1 OPTION SILENT</a></li>
+<li><a href="#19.2">19.2 OPTION NOLET</a></li>
+<li><a href="#19.3">19.3 OPTION NEEDTASK</a></li>
+<li><a href="#19.4">19.4 OPTION REQUIRE</a></li>
+<li><a href="#19.5">19.5 OPTION TYPO</a></li>
+<li><a href="#19.6">19.6 OPTION PSEUDO</a></li>
+<li><a href="#19.7">19.7 OPTION REDIRECT</a></li>
+<li><a href="#19.8">19.8 OPTION PERSIST</a></li>
+<li><a href="#19.9">19.9 OPTION ANGLE</a></li>
+<li><a href="#19.10">19.10 Advanced client commands</a></li>
+</ul>
+<hr>
+<p>An OPTION statement changes the way Axbasic executes a script. OPTION can be followed by several different keywords, a few of which you've seen already. We'll list all of them here.</p>
+<p>Before executing a script, Axbasic checks for any OPTION statements. An OPTION statement applies to the whole script, even if it actually occurs right at the end of the script. However, there is no good reason not to put all your OPTIONs right at the top, because that is where human readers are expecting to find them.</p>
+<h2><a name="19.1">19.1 OPTION SILENT</a></h2>
+<p>You'll see these messages when Axbasic starts and finishes executing a script:</p>
+<pre><code>    AXBASIC: Executing 'test'
+    AXBASIC: Execution of 'test' complete
+</code></pre>
+<p>You can hide these messages by using OPTION SILENT. </p>
+<p>Any error or debug messages will still be displayed. The only way to turn them off is to fix your script.</p>
+<h2><a name="19.2">19.2 OPTION NOLET</a></h2>
+<p>Every statement must start with a keyword, so if you want to set a variable's value, you must do it using a LET statement.</p>
+<pre><code>    LET a$ = "hello"
+</code></pre>
+<p>Typing LET is rather a lot of work, though, and in any case most programmers are used to writing a simple <strong>a$ = "hello"</strong>. When you specify OPTION NOLET, Axbasic will let you miss out LETs altogether.</p>
+<pre><code>    OPTION NOLET
+    a$ = "hello"
+</code></pre>
+<p>LET is always optional in Axbasic scripts with line numbers (see <a href="ch18.html">Section 18</a>).</p>
+<h2><a name="19.3">19.3 OPTION NEEDTASK</a></h2>
+<p>As you know, keywords like PAUSE won't work unless the script is run as a task. You can avoid any unexpected surprises by telling Axbasic that the script must <em>only</em> be run as a task.</p>
+<pre><code>    OPTION NEEDTASK
+    PRINT "Hello..."
+    PAUSE 3
+    PRINT "...world!"
+    END
+</code></pre>
+<h2><a name="19.4">19.4 OPTION REQUIRE</a></h2>
+<p>From time to time, Axbasic undergoes small changes and improvements. If you're making use of some exciting new feature, you can tell Axbasic not to run the script on an older version of Axmud.</p>
+<p>The current version of Axbasic, at the time of writing, is 1.002:</p>
+<pre><code>    ! Don't run on older versions of Axmud
+    OPTION REQUIRE 1.002
+</code></pre>
+<p>The earliest version of Axbasic was 1.0, so using this line is the same as omitting OPTION REQUIRE altogether:</p>
+<pre><code>    ! Run on all versions of Axmud
+    OPTION REQUIRE 1.0
+</code></pre>
+<p>By the way, the <strong>Version ()</strong> function returns the current Axbasic version.</p>
+<pre><code>    PRINT Version ()
+</code></pre>
+<h2><a name="19.5">19.5 OPTION TYPO</a></h2>
+<p>It's just too easy to mis-type a variable like <strong>string$</strong>, in which case your script won't work as intended. Mistakes of this kind are notoriously difficult to diagnose.</p>
+<p>The solution is to use OPTION TYPO, which tells Axbasic that all variables will be <em>declared</em> (in a GLOBAL or LOCAL statement) before they are used.</p>
+<pre><code>    OPTION TYPO
+    GLOBAL name$, address$, phone_number
+</code></pre>
+<p>Now, if you type the following line (in which <strong>address$</strong> has been misspelled), you'll get an error with a line number. Because you know exactly where the problem is, it won't take long to spot the typo.</p>
+<pre><code>    PRINT adress$
+</code></pre>
+<p>OPTION TYPO is strongly recommended for all of your Axbasic scripts.</p>
+<h2><a name="19.6">19.6 OPTION PSEUDO</a></h2>
+<p>Client commands are normally typed in Axmud's main window, but any part of the code can execute a client command. (Internally, this is known as a <em>pseudo command</em>.)</p>
+<p>In Axbasic, we use a CLIENT statement.</p>
+<pre><code>    CLIENT "starttask compass"
+</code></pre>
+<p>Nearly every client command displays a confirmation (success) message in the main window. If there's a problem, an error message is displayed there instead. We can change what happens as a result of the CLIENT statement in any of the following ways.</p>
+<pre><code>    OPTION PSEUDO "show_all"
+</code></pre>
+<p>This shows all system messages generated by the client command, as if the user had typed it themselves.</p>
+<pre><code>    OPTION PSEUDO "hide_complete"
+</code></pre>
+<p>This shows any error messages in the main window, but not the confirmation message. (This is the default behaviour if no OPTION PSEUDO statement is used.)</p>
+<pre><code>    OPTION PSEUDO "hide_system"
+</code></pre>
+<p>This hides any error messages, as well as any confirmation message.</p>
+<pre><code>    OPTION PSEUDO "win_error"
+</code></pre>
+<p>This displays a confirmation message in the main window, but any error messages appear in a dialogue (popup) window.</p>
+<pre><code>    OPTION PSEUDO "win_only"
+</code></pre>
+<p>This displays both confirmation and error messages in a dialogue (popup) window.</p>
+<h2><a name="19.7">19.7 OPTION REDIRECT</a></h2>
+<pre><code>    OPTION REDIRECT
+</code></pre>
+<p>Axbasic scripts can create their own task window. A WRITEWIN statement display text in that task window. However, if the task window isn't open, nothing is displayed.</p>
+<p>OPTION REDIRECT redirects text into the main window, if the task window has been closed for some reason.</p>
+<h2><a name="19.8">19.8 OPTION PERSIST</a></h2>
+<pre><code>    OPTION PERSIST
+</code></pre>
+<p>Interfaces can be created with an ADDTRIG, ADDALIAS, ADDMACRO, ADDTIMER or ADDHOOK statement. Normally, those interfaces are destroyed as soon as the script stops running, but OPTION PERSIST prevents that destruction.</p>
+<h2><a name="19.9">19.9 OPTION ANGLE</a></h2>
+<pre><code>    OPTION ANGLE DEGREES
+</code></pre>
+<p>Axbasic's trignometric functions like <strong>Sin ()</strong> and <strong>Cos ()</strong> expect angles measured in radians. If you'd prefer them to expect angles measured in degrees, you can use OPTION ANGLE DEGREES.</p>
+<pre><code>    OPTION ANGLE RADIANS
+</code></pre>
+<p>This statement is useful for clarifying to any humans reading your code that you'll be using radians, not degrees.</p>
+<h2><a name="19.10">19.10 Advanced client commands</a></h2>
+<p>An Axbasic script can be run using a client command. <strong>;runscript</strong> runs the <strong>test.bas</strong> script, and <strong>;runscript wumpus</strong> runs the <strong>wumpus.bas</strong> script.</p>
+<p>When you try to run a script, Axbasic looks for a file in the default directory (folder), as we described in <a href="ch02.html">Section 2</a>.</p>
+<p>You can find the location of this directory using the <strong>;listdirectory</strong> command. On a Linux system, the output will look something like this:</p>
+<pre><code>    List of Axbasic directories
+       0    /home/myname/axmud-data/data/scripts
+    Client ';listdirectory' : Directory list displayed (found 1 directory)
+</code></pre>
+<p>You can add more directories to that list, if you want to. If the right file isn't found in the first directory, Axbasic will look in the second, then in the third (and so on).</p>
+<p>To add a directory to the list, use the <strong>;adddirectory</strong> command.</p>
+<pre><code>    ;addirectory
+</code></pre>
+<p>If you already know the full directory path, you can specify it. (We enclose the path inside diamond brackets, just in case it contains space characters.)</p>
+<pre><code>    ;addirectory &lt;home/myname/mydir&gt;
+</code></pre>
+<p>The <strong>;listdirectory</strong> command gives each directory a number; you'll need that number if you want to remove a directory from the list.</p>
+<pre><code>    ;deletedirectory 2
+</code></pre>
+<p>An alternative approach is to specify the full file path every time you run the script.</p>
+<pre><code>    ;runscript -p &lt;home/myname/mydir/myscript.bas&gt;
+</code></pre>
+<p>When you run a script as a task, the <strong>;runscripttask</strong> command provides a number of options, two of which might be useful to you.</p>
+<p>Firstly, an Axbasic script runs from beginning to end. A script that runs on a continuous loop would run indefinitely, meaning that Axmud itself would appear to freeze.</p>
+<p>In previous Sections you learned to use PAUSE statements. When the script pauses, control is returned to Axmud for a short time. In this way, both Axmud and Axbasic can run code (almost) simultaneously.</p>
+<p>In fact, the Script task pauses automatically every 100 steps (which is roughly equivalent to 100 Axbasic statements). This prevents Axmud from freezing up if you've forgotten to add PAUSE statements to your script. You can change this setting, if you like.</p>
+<pre><code>    ! Execute 1000 statements before each pause
+    ;runscripttask wumpus -m 1000
+</code></pre>
+<p>If you use the number 0, the Script task will only pause when it executes a PAUSE (or SLEEP) statement.</p>
+<pre><code>    ! Execute infinite statements before each pause
+    ;runscripttask wumpus -m 0
+</code></pre>
+<p>Secondly, Axbasic can display output in either the main window or in a task window. A task window can be opened with the OPENWIN statement, but that's not much help if you're trying to run a BASIC programme written in the 1960s.</p>
+<p>This is how to force the Script task to open a window and to display all of its output there:</p>
+<pre><code>    ;runscripttask wumpus -w
+</code></pre>
+<p>The switches can be combined and used in any order (but the script name must come first):</p>
+<pre><code>    ;runscripttask wumpus -m 200 -w
+    ;runscripttask wumpus -w -m 200
+</code></pre>
+<p>There are two more client commands to mention. <strong>;editscript</strong> opens the script in a text editor, and <strong>;checkscript</strong> checks the script for syntax errors, but doesn't actually run it.</p>
+<pre><code>    ;editscript wumpus
+    ;checkscript wumpus
+</code></pre>
+<p>In both cases, if you don't specify a script, the <strong>test.bas</strong> script it used.</p>
+<hr>
+<p><a href="ch18.html">Previous</a> <a href="index.html">Index</a> <a href="ch20.html">Next</a></p>
+
+</body>
+</html>

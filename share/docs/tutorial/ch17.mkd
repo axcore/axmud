@@ -1,0 +1,212 @@
+[Previous](ch16.html) [Index](index.html) [Next](ch18.html)
+
+---
+
+#17 - File input/output
+
+####Table of Contents
+
+* [17.1 Opening a file channel](#17.1)
+* [17.2 Closing a file channel](#17.2)
+* [17.3 Reading from a file](#17.3)
+* [17.4 Writing to a file](#17.4)
+* [17.5 Readable/writable files](#17.5)
+* [17.6 Non-text files](#17.6)
+* [17.7 Using OPEN with expressions](#17.7)
+* [17.8 File pointers](#17.8)
+
+---
+
+Axmud stores its data in a variety of data files. Your Axbasic scripts can create their own files, completely separate from the ones used by Axmud.
+
+You can use these files to store data. Later on, you can read the contents of the files back into memory.
+
+You can also create simple text files. You might want to create some kind of logfile, for example.
+
+Axbasic creates files in the same directory (folder) as the Axbasic script itself. By default, that's the **scripts** sub-directory inside the main Axmud data directory.
+
+##<a name="17.1">17.1 Opening a file channel</a>
+
+When we want to read from or write to a file, we create a *file channel*.
+
+A channel is just a way for Axbasic to communicate with the operating system. The complexities of these communications are handled invisibly on your behalf.
+
+You can create a new channel with a single OPEN statement.
+
+        OPEN #1: NAME "myfile.txt"
+
+This statement contains four parts:
+
+* The keyword OPEN
+* A channel number
+* The keyword NAME
+* The name of the file to open
+
+Every channel has a number, so if you want to manipulate multiple files simultaneously, you can open as many channels as you need (up to a maximum of 25). Each individual channel handles a single file. You can't open multiple channels to the same file.
+
+##<a name="17.2">17.2 Closing a file channel</a>
+
+When the Axbasic script stops running, any file channels are automatically closed. Still, it's good practice to close the channel yourself as soon as you're finished with it.
+
+        CLOSE #1
+
+##<a name="17.3">17.3 Reading from a file</a>
+
+Once the channel is open, you can read data from a file, one line at a time. This is done with an ordinary INPUT statement, but one that uses a new format.
+
+        INPUT #1: value$
+
+Because we always specify the channel number, we could easily read a single line from each of three files.
+
+        DIM numbers (3)
+
+        OPEN #1: NAME "myfile1.txt"
+        OPEN #2: NAME "myfile2.txt"
+        OPEN #3: NAME "myfile3.txt"
+
+        INPUT #1: numbers (1)
+        INPUT #2: numbers (2)
+        INPUT #3: numbers (3)
+
+Unless you're *absolutely certain* that the file contains only numeric values, you should use string variables, not numeric variables. Reading a string into a numeric variable will cause an error. (You can convert string variables into numeric variables later, if need be.)
+
+You can read several values at a time. This example reads three lines from the file, one after the other.
+
+        INPUT #1: name$, address$, postcode$
+
+Here's a complete example of a script that reads the contents of a file that we know contains 10 values.
+
+        ! Read ten values
+        DIM numbers (10)
+        OPEN #1: NAME "myfile.txt"
+        FOR a = 1 TO 10
+            INPUT #1: numbers (a)
+            PRINT numbers (a)
+        NEXT a
+        CLOSE #1
+        END
+
+If you run this script now, Axmud will complain that the file doesn't exist, so let's talk about saving data.
+
+##<a name="17.4">17.4 Writing to a file</a>
+
+When Axbasic writes to a file, it makes some assumptions. For example, it assumes that the file already exists. It also assumes that new lines should be added to the end of the file, *after* any lines that already exist there.
+
+The first step, then, is to tell Axbasic to create a file, if one doesn't already exist. We do that with CREATE NEWOLD.
+
+        OPEN #1: NAME "myfile.txt", CREATE NEWOLD
+
+You could also have used CREATE NEW. If the file already exists, you'll see an error; otherwise a new file is created.
+
+The third option is CREATE OLD. If the file doesn't already exist, you'll see an error; otherwise the existing file is opened. (This is the default behaviour, so using CREATE OLD is the same as not using CREATE at all.)
+
+Once the channel is open, you can write data to the file, one line at a time. This is done using an ordinary PRINT statement, using the same new format.
+
+        PRINT #1: value$
+
+This script creates a data file that the previous Section's script can read.
+
+        ! Write ten values
+        OPEN #1: NAME "myfile.txt", CREATE NEWOLD
+        FOR a = 1 TO 10
+            PRINT #1: a
+        NEXT a
+        CLOSE #1
+        END
+
+If you run the script several times, it will keep adding more text to the existing file. The solution is to ERASE the file before PRINTing anything to it.
+
+        ! Write ten values
+        OPEN #1: NAME "myfile.txt", CREATE NEWOLD
+        ERASE #1
+        FOR a = 1 TO 10
+            PRINT #1: a
+        NEXT a
+        CLOSE #1
+        END
+
+If you want to write a partial line of text, you can use PRINT statements with commas and semicolons, just as if you were PRINTing something to the main window. The following script writes a single line of text.
+
+        ! Write a single line of text
+        OPEN #1: NAME "myfile.txt", CREATE NEWOLD
+        ERASE #1
+        PRINT #1: "Going ";
+        PRINT #1: "going ";
+        PRINT #1: "gone!"
+        CLOSE #1
+        END
+
+##<a name="17.5">17.5 Readable/writable files</a>
+
+When you open a file channel, Axbasic is able to both read and write to that file; in other words, you can use a combination of PRINT and INPUT statements, one after the other.
+
+This probably isn't the behaviour you want, so it's a good idea to specify whether you want the file to be readable or writable.
+
+To make a file readable, use ACCESS INPUT. You'll be able to INPUT data from that file, but not PRINT to it.
+
+        OPEN #1: NAME "myfile.txt", CREATE NEWOLD, ACCESS OUTPUT
+
+To make a file writable, use ACCESS OUTPUT. You'll be able to PRINT data to that file, but not INPUT anything from it.
+
+        OPEN #1: NAME "myfile.txt", CREATE NEWOLD, ACCESS INPUT
+
+To do both at the same tiume, use ACCESS OUTIN. (This is the default behaviour, so using ACCESS OUTIN is the same as not using ACCESS at all.)
+
+        OPEN #1: NAME "myfile.txt", CREATE NEWOLD, ACCESS OUTIN
+
+##<a name="17.6">17.6 Non-text files</a>
+
+Axbasic can only write text files. True BASIC can write other kinds of files. A True BASIC script might include the following line, which specifies that a text file should be opened:
+
+        OPEN #1: NAME "myfile.txt", ORGANIZATION TEXT
+
+Axbasic ignores ORGANIZATION TEXT and its abbreviation, ORG TEXT, if the script includes them.
+
+##<a name="17.7">17.7 Using OPEN with expressions</a>
+
+The NEWOLD in CREATE NEWOLD can be replaced by an expression. (Replacing a keyword with an expression is usually not allowed, but on this occasion it is permitted.)
+
+        LET option$ = "NEWOLD"
+        OPEN #1: NAME "myfile.txt", CREATE option$
+
+The same applies to ACCESS, ORGANIZATION and ORG, all of which can be followed either by a keyword or an expression. The expression should evaluate to a value that's the same as the expected keyword. This might be useful if you've written a subroutine to handle all of your file input/output.
+
+        ! A subroutine that opens a channel
+        ! using expressions, not keywords
+        SUB OpenFile(file$, cr$, acc$)
+            OPEN #1: NAME file$, CREATE cr$, ACCESS acc$
+        END SUB
+
+In an OPEN statement, CREATE, ACCESS, ORGANIZATION and ORG can appear in any order (but NAME must come first).
+
+##<a name="17.8">17.8 File pointers</a>
+
+The pointer is the position in a file at which Axbasic reads or writes data.
+
+When a file is opened for reading (only), the pointer is initially at the beginning of the file. The first item of data read is the first line of the file.
+
+When a file is opened for writing, or for both reading and writing, the pointer is initially at the end of the file. The first item of data written is added to the end of the file.
+
+You can use a RESET statement to move the pointer to the beginning or the end of the file.
+
+        RESET #1: BEGIN
+        RESET #1: END
+
+Here's a practical example.
+
+        ! Open a file for writing
+        OPEN #1: NAME "output.txt", CREATE NEWOLD, ACCESS OUTPUT
+        PRINT #1: "This is added to the end of the file"
+        ! Move the pointer
+        RESET #1: BEGIN
+        PRINT #1: "This is added to the beginning of the file"
+        CLOSE #1
+        END
+
+While reading a file, you can use the **Eof ()** function - short for *end of file* - to test whether the pointer has reached the end of the file, or not.
+
+**Eof ()** returns 1 if the file channel is still open, and if the pointer is at the end of the file; otherwise it returns 0.
+
+---
+
+[Previous](ch16.html) [Index](index.html) [Next](ch18.html)

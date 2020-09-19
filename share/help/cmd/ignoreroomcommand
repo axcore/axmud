@@ -1,0 +1,16 @@
+iro / ignoreroomcommand       Marks a room command as ignorable
+
+   Format:
+      ;iro <cmd>              Ignores the room <cmd>
+ 
+   Notes:
+      A few worlds (for example EmpireMUD) offer a series of commands in each
+         room, which are specific to that room. The client command
+         ';roomcommand' executes them in a continuous cycle, one at a time.
+      This command marks a room command as ignorable, so that it's not
+         executed by ';roomcommand'. It's not necessary for <cmd> to exist in
+         the current room, or even in the world.
+      To start using the <cmd> again, see the help for ';noticeroomcommand'.
+ 
+   User commands:
+      iro / ignoreroom / ignoreroomcmd / ignoreroomcommand

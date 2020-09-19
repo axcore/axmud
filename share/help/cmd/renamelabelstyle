@@ -1,0 +1,22 @@
+rls / renamelabelstyle        Renames a map label style
+ 
+   Format:
+      ;rls <old> <new>        Renames the style <old> as <new>
+      
+   Notes:
+      Map labels are drawn in the automapper window. It's possible to customise
+         labels individually, but most labels are drawn using a map label style
+         (so that when the style is changed, all labels using that style are
+         redrawn automatically).
+      The default label styles are called 'Style 1', 'Style 2' and so on, You
+         can use this command if you'd prefer to call them something like 'Map
+         titles', 'Street names' and so on.
+      <old> is the name of an existing map label style (use ';listlabelstyle' to
+         get a list of them).
+      <new> is the style's new name. <name> can be any text (maximum 16
+         characters).
+      If either <old> or <new> contain spaces, you should enclose the name in
+         diamond brackets <...>.
+          
+   User commands:
+      rls / renamestyle / renamelabelstyle

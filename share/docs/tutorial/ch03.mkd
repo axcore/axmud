@@ -1,0 +1,125 @@
+[Previous](ch02.html) [Index](index.html) [Next](ch04.html)
+
+---
+
+#3 - Fundamental Concepts
+
+####Table of Contents
+
+* [3.1 Statements](#3.1)
+* [3.2 Comments](#3.2)
+* [3.3 Keywords](#3.3)
+* [3.4 Compound statements](#3.4)
+* [3.5 Line numbering](#3.5)
+* [3.6 Data types](#3.6)
+
+---
+
+##<a name="3.1">3.1 Statements</a>
+
+Before we can start writing scripts that actually do something useful, there are few fundamental concepts to explain.
+
+The first one is the concept of a *statement*. In Axbasic, a statement is a single instruction - display a message, add two numbers, play a sound, send a command to the world, and so on.
+
+The **hello** script contains exactly three statements, one on each line.
+
+        REM A trivial Axbasic script
+        PRINT "Hello, world!"
+        END
+
+Empty lines are ignored. You can add as many empty lines as you like - at the beginning, in the middle or at the end. In fact, using empty lines is strongly encouraged. A long script whose sections are separated by empty lines is often much easier for a human to understand.
+
+        REM A longer Axbasic script
+        PRINT "Ready!"
+        PRINT "Steady!"
+
+        REM Get on with it, already!
+        PRINT "Go!"
+
+        END
+
+You can't write a statement across two or more lines, as you might in other languages. If you split the PRINT line like this, you'll see an error message:
+
+        PRINT
+        "Hello, world!"
+
+However, space *within* a line is flexible. You can put as much space as you like between the PRINT and the "Hello, world!". You can also add space the beginning of the line, if you like. You can even use *no space at all*. All of the following lines are correct Axbasic.
+
+        PRINT       "Hello, world!"
+        PRINT "Hello, world!"
+        PRINT"Hello, world!"
+
+##<a name="3.2">3.2 Comments</a>
+
+In Axbasic, a REM statement is ignored. But sometimes you'll want to type a long comment, split across several lines, and it's not convenient to type REM on every line.
+
+In such situations, you can use an exclamation mark instead.
+
+        ! This is a comment
+        ! spread across
+        ! several lines
+        PRINT "Hello, world!"
+        END
+
+##<a name="3.3">3.3 Keywords</a>
+
+A statement is a single instruction. In Axbasic, every single statement begins with a word like REM, PRINT or END. (There are one or two ways to shorten a line, for example by swapping REM for an exclamation mark, but the principle still holds.)
+
+Words that begin a statement are called *keywords*. Axbasic contains well over a hundred keywords.
+
+Traditionally, keywords are typed in CAPITAL LETTERS. This is especially true in tutorials like this one, as it tends to make the code easier to read. But in fact keywords can be typed in upper case letters, lower case letters or a combination of the two. All of the following lines are correct Axbasic.
+
+        PRINT "Hello, world!"
+        print "Hello, world!"
+        PrInT "Hello, world!"
+
+##<a name="3.4">3.4 Compound statements</a>
+
+In the early days of home computing, memory was extremely restricted. In those days it was common to put two or more statements on the same line.
+
+Statements can be joined together with a colon character.
+
+        PRINT "Ready" : PRINT "Steady" : PRINT "Go"
+
+Using compound statements now is probably is a bad idea. Your scripts will be much easier to understand if you stick to one statement per line.
+
+##<a name="3.5">3.5 Line numbering</a>
+
+Another practice in earlier years was to put a number at the beginning of each line. A BASIC programme from the 1960s might look something like this:
+
+        10 REM My first programme
+        20 PRINT "Hello, world!"
+        30 END
+
+Using line numbers now is <u>definitely a bad idea</u>. Axbasic only supports line numbers to maintain compatibility with old programmes (like the **wumpus** script we mentioned earlier).
+
+See [Section 18](ch18.html) for more information about line numbering.
+
+##<a name="3.6">3.6 Data types</a>
+
+Axbasic uses two kinds of value - *strings* and *numbers*.
+
+A string is a series of one or more characters. The characters can be letters, numbers, spaces, punctuation marks or a combination of all of them.
+
+Strings are always enclosed within double quotes. If you miss out the quotes, you'll get an error message.
+
+        PRINT "Hello, world!"
+
+Numbers are not enclosed by double quotes. Here's a script that uses both strings and numbers.
+
+        PRINT 1
+        PRINT 2
+        PRINT 3
+        PRINT 4
+        PRINT 5
+        PRINT "Finished!"
+        END
+
+In certain circumstances, you might want to use a string that contains *only* number characters. Later we'll talk about why you might want to do that, but for now it's enough to know that both of these statements produce the same result:
+
+        PRINT 9
+        PRINT "9"
+
+---
+
+[Previous](ch02.html) [Index](index.html) [Next](ch04.html)

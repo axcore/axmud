@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch01</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="index.html">Index</a> <a href="ch02.html">Next</a></p>
+<hr>
+<h1>1 - Introduction</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#1.1">1.1 Axbasic</a></li>
+<li><a href="#1.2">1.2 Axbasic limitations</a></li>
+<li><a href="#1.3">1.3 How to use the tutorial</a></li>
+<li><a href="#1.4">1.4 Getting help within Axmud</a></li>
+</ul>
+<hr>
+<h2><a name="1.1">1.1 Axbasic</a></h2>
+<p><a href="http://axmud.sourceforget.io">Axmud</a> is a <a href="https://en.wikipedia.org/wiki/MUD_client">MUD client</a> written in Perl 5 / Gtk3.</p>
+<p>Axbasic is the built-in scripting language used by Axmud. It's suitable for most scripting purposes, from the simple to the complex.</p>
+<p>Axbasic's syntax will be instantly familiar to many people. It is identical to the syntax used by the commercial <a href="http://www.truebasic.com/">True BASIC</a> package, which is the successor to the original <a href="https://en.wikipedia.org/wiki/Dartmouth_BASIC">Dartmouth BASIC</a> first released in the 1960s.</p>
+<p>In fact, Axmud will happily run most BASIC programmes written in those languages. Some features, such as pixel graphics and matrix operations, have not been implemented. (We don't think Axmud users will have any interest in them.)</p>
+<h2><a name="1.2">1.2 Axbasic limitations</a></h2>
+<ul>
+<li>Axbasic is not fast<ul>
+<li>Scripts written in Axbasic won't run as fast as a script written in Perl, Python or Lua</li>
+<li>They are still <em>reasonably</em> fast, though</li>
+</ul>
+</li>
+<li>Axbasic is not object-orientated<ul>
+<li>Object-orientated programming simply wasn't a concern in the 1960s. If you want to build complex representations of a game world, BASIC is not a good choice</li>
+</ul>
+</li>
+<li>Axbasic is not event-driven<ul>
+<li>Many scripting languages - Perl, Python and Lua among them - can sit idle, waiting for some event to take place. Axbasic scripts have a completely different design - they run from beginning to end, and then they stop</li>
+</ul>
+</li>
+</ul>
+<p>Axbasic does, in fact, provide these features to a limited degree.</p>
+<p>Event-driven programming can be implemented using Axmud interfaces (triggers, aliases, macros, timers and hooks). Axmud can create and store complex data structures that Axbasic scripts can use.</p>
+<p>If Axbasic isn't up to the job, you can write a Perl plugin instead. (This tutorial doesn't discuss Perl plugins.)</p>
+<h2><a name="1.3">1.3 How to use the tutorial</a></h2>
+<p>This is a tutorial for beginners. It shows you how to write scripts in Axbasic, and how to run them within an Axmud session.</p>
+<p>The authors assume that you're only interested in writing scripts for your favourite MUD. If you're looking a formal education in correct programming technique, BASIC is not a suitable choice.</p>
+<p>We also assume that you have some very basic computer skills (such as how to open a text file in an editor, how to navigate folders on your computer's hard drive and how to install Axmud on your computer).</p>
+<h2><a name="1.4">1.4 Getting help within Axmud</a></h2>
+<p>If you're already familiar with other scripting languages, or even with some flavour of BASIC, you might not need the tutorial at all.</p>
+<p>Axbasic scripts use <em>keywords</em> and <em>functions</em>. All of them are documented in help files, and those help files can be read from within an Axmud session.</p>
+<p>For example, you can see a (long) list of keywords and functions by typing the following command:</p>
+<pre><code>;axbasichelp
+</code></pre>
+<p>Axmud's client commands, as they're called, always begin with a semicolon. Almost all of them can be abbreviated, for example:</p>
+<pre><code>;abh
+</code></pre>
+<p>You can get help for a particular keyword, as well an example of its use, by typing either of the following:</p>
+<pre><code>;axbasichelp move
+;abh move
+</code></pre>
+<p>You can get help for various functions in the same way:</p>
+<pre><code>;axbasichelp sin
+;abh sin
+</code></pre>
+<hr>
+<p><a href="index.html">Index</a> <a href="ch02.html">Next</a></p>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+scw / setcustomweek           Sets customised days of the week
+ 
+   Format:
+      ;scw                    Shows current list of customised days
+      ;scw <days>             Sets a new list
+      ;scw -r                 Resets the list
+      
+   Notes:  
+      Axmud doesn't offer a generalised locale setting (converting everything 
+         into your preferred language), but you can at least change the days of
+         of week used in logfiles with this command.
+      If you specify <days>, you must specify exactly seven words containing
+         A-Z, a-z, 0-9 or underlines (first character must be a letter; maximum
+         16 characters for each word). Non-Latin alphabets are acceptable.
+      Also see the help for ';setcustommonth'.
+       
+   User commands:
+      scw / setday / setweek / setcustomweek

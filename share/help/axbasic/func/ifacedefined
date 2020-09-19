@@ -1,0 +1,72 @@
+Ifacedefined (number)
+
+   Synopsis:
+      Tests whether the interface provided additional data, or not
+      
+   Notes:
+      The interface notification list contains all the notifications received,
+         and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
+         SETMACRO, SETTIMER or SETHOOK statement.
+      This function operates on the current notification (usually the first one;
+         see the help for SKIPIFACE).
+
+      The Ifacetext$ () function returns whatever caused the interface to fire.
+         Some interfaces provide additional data when they fire, but some do
+         not. This function tests whether additional data exists (in other
+         words, whether it is defined).
+
+      In the case of triggers and aliases, a pattern (regular expression) is
+         tested against some text. The pattern may contain groups and, if so,
+         the matching portions of the text are available to your scripts as
+         additional data.         
+      You might want a trigger to match any of the following lines:
+
+         The warrior hits you with axe
+         The warrior hits you with handaxe
+         The warrior hits you with poleaxe
+
+      ...but not this line:
+
+         The warrior hits you with surtaxes
+
+      In that case, you might use the following pattern, containing a single
+         group (inside brackets):
+      
+         The warrior hits you with (hand|pole)?axe
+
+      Additionally, you might want to capture the type of weapon used, and
+         for that, you would add more groups:
+
+            The warrior hits you with ((hand)|(pole))?axe
+
+      When the pattern matches a line containing "handaxe" or "poleaxe", the
+         additional data consists of two substrings, one of them an undefined
+         value:
+         
+            ( "hand", undefined )
+            ( undefined, "pole" )
+
+      In the case of an alias, instead of matching a line of text received from
+         the world, the alias matches the text of a world command.
+
+      For macros, there is never any additional data.
+      For timers, there is always exactly one item of additional data. If the
+         timer's stimulus is a clock time (in the form "HH:MM" or "99:MM") the
+         additional data is that clock time. Otherwise, it is the session time
+         at which the timer was due to fire.
+      For hooks, there may be zero, one or sometimes two pieces of additional
+         data, depending on which hook event occured.
+
+      In the example above, the Ifaceselect () function returns an empty string
+         in place of an undefined value, but it might also return an empty
+         string if the line contained just "axe" and not "handaxe" or "poleaxe".
+      You can use this function if you specifically want to test for undefined
+         values. The specified item of additional data is tested. The first item
+         is numbered 1, the second is numbered 2, and so on.
+      This function returns 1 if the specified item exists, and is defined.
+         If the specified item exists but is not defined, returns -1.
+      If the specified item doesn't exist, or if the notification list is empty,
+         returns 0.
+
+   Compatibility:
+      Since Axbasic v1.003

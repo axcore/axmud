@@ -1,0 +1,12 @@
+Ip$ ()
+
+   Synopsis:
+      Returns your IP (IPv4) address
+
+   Notes:
+      Returns a string in the form "101.102.103.104". If the IP address can't be
+         determined for some reason, returns the string "127.0.0.1".
+      Note that the Ip () function is not related to Ip$ ().
+
+   Compatibility:
+      Since Axbasic v1.001

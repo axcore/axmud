@@ -1,0 +1,14 @@
+Description: Axmud, a modern Multi-User Dungeon (MUD) client
+ Axmud is written in Perl 5 / Gtk3. Its features include:
+ .
+ - Telnet, SSH and SSL connections
+ - ANSI/xterm/OSC/RGB colour
+ - Full support for all major MUD protocols, including MXP and GMCP (with partial Pueblo support)
+ - Class-based triggers, aliases, macros, timers and hooks
+ - Graphical automapper
+ - 100 pre-configured worlds
+ - Multiple approaches to scripting
+ - Fully customisable from top to bottom, using the command line or the extensive GUI interface
+ - Native support for visually-impaired users
+
+

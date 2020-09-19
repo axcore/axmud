@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch03</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch02.html">Previous</a> <a href="index.html">Index</a> <a href="ch04.html">Next</a></p>
+<hr>
+<h1>3 - Fundamental Concepts</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#3.1">3.1 Statements</a></li>
+<li><a href="#3.2">3.2 Comments</a></li>
+<li><a href="#3.3">3.3 Keywords</a></li>
+<li><a href="#3.4">3.4 Compound statements</a></li>
+<li><a href="#3.5">3.5 Line numbering</a></li>
+<li><a href="#3.6">3.6 Data types</a></li>
+</ul>
+<hr>
+<h2><a name="3.1">3.1 Statements</a></h2>
+<p>Before we can start writing scripts that actually do something useful, there are few fundamental concepts to explain.</p>
+<p>The first one is the concept of a <em>statement</em>. In Axbasic, a statement is a single instruction - display a message, add two numbers, play a sound, send a command to the world, and so on.</p>
+<p>The <strong>hello</strong> script contains exactly three statements, one on each line.</p>
+<pre><code>    REM A trivial Axbasic script
+    PRINT "Hello, world!"
+    END
+</code></pre>
+<p>Empty lines are ignored. You can add as many empty lines as you like - at the beginning, in the middle or at the end. In fact, using empty lines is strongly encouraged. A long script whose sections are separated by empty lines is often much easier for a human to understand.</p>
+<pre><code>    REM A longer Axbasic script
+    PRINT "Ready!"
+    PRINT "Steady!"
+
+    REM Get on with it, already!
+    PRINT "Go!"
+
+    END
+</code></pre>
+<p>You can't write a statement across two or more lines, as you might in other languages. If you split the PRINT line like this, you'll see an error message:</p>
+<pre><code>    PRINT
+    "Hello, world!"
+</code></pre>
+<p>However, space <em>within</em> a line is flexible. You can put as much space as you like between the PRINT and the "Hello, world!". You can also add space the beginning of the line, if you like. You can even use <em>no space at all</em>. All of the following lines are correct Axbasic.</p>
+<pre><code>    PRINT       "Hello, world!"
+    PRINT "Hello, world!"
+    PRINT"Hello, world!"
+</code></pre>
+<h2><a name="3.2">3.2 Comments</a></h2>
+<p>In Axbasic, a REM statement is ignored. But sometimes you'll want to type a long comment, split across several lines, and it's not convenient to type REM on every line.</p>
+<p>In such situations, you can use an exclamation mark instead.</p>
+<pre><code>    ! This is a comment
+    ! spread across
+    ! several lines
+    PRINT "Hello, world!"
+    END
+</code></pre>
+<h2><a name="3.3">3.3 Keywords</a></h2>
+<p>A statement is a single instruction. In Axbasic, every single statement begins with a word like REM, PRINT or END. (There are one or two ways to shorten a line, for example by swapping REM for an exclamation mark, but the principle still holds.)</p>
+<p>Words that begin a statement are called <em>keywords</em>. Axbasic contains well over a hundred keywords.</p>
+<p>Traditionally, keywords are typed in CAPITAL LETTERS. This is especially true in tutorials like this one, as it tends to make the code easier to read. But in fact keywords can be typed in upper case letters, lower case letters or a combination of the two. All of the following lines are correct Axbasic.</p>
+<pre><code>    PRINT "Hello, world!"
+    print "Hello, world!"
+    PrInT "Hello, world!"
+</code></pre>
+<h2><a name="3.4">3.4 Compound statements</a></h2>
+<p>In the early days of home computing, memory was extremely restricted. In those days it was common to put two or more statements on the same line.</p>
+<p>Statements can be joined together with a colon character.</p>
+<pre><code>    PRINT "Ready" : PRINT "Steady" : PRINT "Go"
+</code></pre>
+<p>Using compound statements now is probably is a bad idea. Your scripts will be much easier to understand if you stick to one statement per line.</p>
+<h2><a name="3.5">3.5 Line numbering</a></h2>
+<p>Another practice in earlier years was to put a number at the beginning of each line. A BASIC programme from the 1960s might look something like this:</p>
+<pre><code>    10 REM My first programme
+    20 PRINT "Hello, world!"
+    30 END
+</code></pre>
+<p>Using line numbers now is <u>definitely a bad idea</u>. Axbasic only supports line numbers to maintain compatibility with old programmes (like the <strong>wumpus</strong> script we mentioned earlier).</p>
+<p>See <a href="ch18.html">Section 18</a> for more information about line numbering.</p>
+<h2><a name="3.6">3.6 Data types</a></h2>
+<p>Axbasic uses two kinds of value - <em>strings</em> and <em>numbers</em>.</p>
+<p>A string is a series of one or more characters. The characters can be letters, numbers, spaces, punctuation marks or a combination of all of them.</p>
+<p>Strings are always enclosed within double quotes. If you miss out the quotes, you'll get an error message.</p>
+<pre><code>    PRINT "Hello, world!"
+</code></pre>
+<p>Numbers are not enclosed by double quotes. Here's a script that uses both strings and numbers.</p>
+<pre><code>    PRINT 1
+    PRINT 2
+    PRINT 3
+    PRINT 4
+    PRINT 5
+    PRINT "Finished!"
+    END
+</code></pre>
+<p>In certain circumstances, you might want to use a string that contains <em>only</em> number characters. Later we'll talk about why you might want to do that, but for now it's enough to know that both of these statements produce the same result:</p>
+<pre><code>    PRINT 9
+    PRINT "9"
+</code></pre>
+<hr>
+<p><a href="ch02.html">Previous</a> <a href="index.html">Index</a> <a href="ch04.html">Next</a></p>
+
+</body>
+</html>

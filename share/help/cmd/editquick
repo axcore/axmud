@@ -1,0 +1,14 @@
+edq / editquick               Opens the quick preference window
+ 
+   Format:
+      ;edq                    Edits quick preferences
+
+   Notes:
+      Axmud offers a multitude of configuration options across dozens of edit
+         and preference windows, each containing several tabs.
+      Sometimes it can be difficult to find what you need. The quick preference
+         window contains some of the most popular configuration options, grouped
+         together in one window.
+  
+   User commands:
+      edq / editquick

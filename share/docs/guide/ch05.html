@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch05</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch04.html">Previous</a> <a href="index.html">Index</a> <a href="ch06.html">Next</a></p>
+<hr>
+<h1>5 Interfaces and Profiles</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#5.1">5.1 Profiles</a><ul>
+<li><a href="#5.1.1">5.1.1 Adding profiles</a></li>
+<li><a href="#5.1.2">5.1.2 Setting current profiles</a></li>
+<li><a href="#5.1.3">5.1.3 Deleting profiles</a></li>
+</ul>
+</li>
+<li><a href="#5.2">5.2 Guild and race profiles</a></li>
+<li><a href="#5.3">5.3 Custom profiles</a></li>
+<li><a href="#5.4">5.4 The profile priority list</a></li>
+<li><a href="#5.5">5.5 Interfaces in practice</a></li>
+<li><a href="#5.6">5.6 Changing priorities</a></li>
+</ul>
+<hr>
+<p>Axmud offers powerful <em>triggers</em>, <em>aliases</em>, <em>macros</em>, <em>timers</em> and <em>hooks</em> to enhance your playing experience. Collectively, they are called <em>interfaces</em>.</p>
+<p><strong>Triggers</strong> respond to text received from the world.</p>
+<ul>
+<li>For example, you can create a trigger to look out for lines beginning <strong>You kill</strong></li>
+<li>When lines matching this pattern are received, we say the trigger <em>fires</em></li>
+<li>When the trigger fires, it can send a world command in response</li>
+<li>A good world command to send would be <strong>get coins from corpse</strong></li>
+</ul>
+<p><strong>Rewriter triggers</strong> are a special kind of trigger that modify the received text before it is displayed. (They don't send a world command, as normal triggers do.)</p>
+<ul>
+<li>For example, you can create a trigger to look out for lines containing the word <strong>damn</strong></li>
+<li>The trigger can modify the line to replace the word with <strong>****</strong></li>
+</ul>
+<p><strong>Splitter triggers</strong> are a special kind of trigger that split a line into two or more separate lines. Like rewriter triggers, splitter triggers don't send a world command.</p>
+<ul>
+<li>For example, <em>Imperian: Sundered Heavens</em> usually puts a room's verbose description and its exit list on two separate lines, but occasionally they appear on the same line</li>
+<li>The pre-configured world profile for <em>Imperian</em> moves the exit list onto a separate line, so that the Automapper doesn't get confused</li>
+</ul>
+<p><strong>Aliases</strong> respond to world commands, before they are sent to the world.</p>
+<ul>
+<li>You can create an alias to look out for the world command <strong>gcc</strong></li>
+<li>This alias replaces the command with <strong>get coins from corpse</strong>, just before it is sent to the world</li>
+</ul>
+<p><strong>Macros</strong> respond when you press a certain key (or a combination of keys).</p>
+<ul>
+<li>For example, you can create a macro that responds when you press the F1 key</li>
+<li>When you press the key, we say the macro <em>fires</em></li>
+<li>When the macro fires, it can send a world command in response</li>
+<li>You might create a macro to send <strong>get coins from corpse</strong> every time you press F1</li>
+</ul>
+<p><strong>Timers</strong> do something repeatedly, or wait for a period of time before doing something.</p>
+<ul>
+<li>For example, you can create a timer that fires every 60 seconds</li>
+<li>When the timer fires, it might send the world command <strong>inventory</strong></li>
+<li>You could also create a timer which waits ten minutes, fires once, and then disables itself</li>
+</ul>
+<p><strong>Hooks</strong> respond to certain hook events.</p>
+<ul>
+<li>An example of a hook event is the one called <strong>login</strong></li>
+<li>Every time an automated login is completed, we say the hook <em>fires</em></li>
+<li>When the hook fires, it might send a world command in response, e.g. <strong>inventory</strong></li>
+</ul>
+<p>In the next Section we'll talk about how to create new interfaces. Because Axmud interfaces are so powerful, we first need to discuss the way they are stored, and then we need to discuss how Axmud uses special patterns called <em>regular expressions</em> (the term <em>regular expression</em> is often abbreviated to <em>regex</em>).</p>
+<h2><a name="5.1">5.1 Profiles</a></h2>
+<p>Axmud interfaces (triggers, aliases, macros, timers and hooks) often 'belong' to a particular profile.</p>
+<p>Most of the time, interfaces belong to a world profile, which means that the interfaces are available every time you connect to that world (and are <em>not</em> available when you connect to <em>any</em> other world.)</p>
+<p>It's also possible for interfaces to belong to a character profile, which means that the interfaces are only available when you connect using that character.</p>
+<p>The key points to understand are these:</p>
+<ol>
+<li>If the current world and the current character both have a trigger called <strong>mytrigger</strong>, only one of these triggers can be <em>active</em></li>
+<li>The other one is classed as <em>inactive</em>, which means it is ignored</li>
+<li>All of this happens auto-magically. Your only concern is to make sure you have set the correct current character</li>
+</ol>
+<h3><a name="5.1.1">5.1.1 Adding profiles</a></h3>
+<p>An easy way to add a new character profile is by using the <strong>;addchar</strong> command. (We've already discussed several other ways.)</p>
+<pre><code>    ;addchar bilbo
+    ;ach bilbo
+</code></pre>
+<p>If you don't want to type the password every time you use this character, you should specify it now:</p>
+<pre><code>    ;addchar bilbo mypassword
+</code></pre>
+<p>You can use the following command to list all character profiles for the current world. (For obvious reasons, it doesn't display passwords.)</p>
+<pre><code>    ;listchar
+    ;lch
+</code></pre>
+<h3><a name="5.1.2">5.1.2 Setting current profiles</a></h3>
+<p>Now, to make this character profile the current one, use the <strong>;setchar</strong> command:</p>
+<pre><code>    ;setchar bilbo
+    ;sch bilbo
+</code></pre>
+<p>If a profile for the Bilbo character doesn't already exist, it is created. You can also use this command to set (or change) the character's password:</p>
+<pre><code>    ;setchar bilbo newpass
+</code></pre>
+<h3><a name="5.1.3">5.1.3 Deleting profiles</a></h3>
+<p>The command to delete a character profile is, unsurprisingly, <strong>;deletechar</strong>.</p>
+<pre><code>    ;deletechar bilbo
+    ;dch bilbo
+</code></pre>
+<p>If Bilbo is the current character, there will no longer be a current character. You'll have to set a new current character with <strong>;setchar</strong>.</p>
+<p>Similar commands can be used with world profiles:</p>
+<pre><code>    ;addworld deathmud
+    ;awo deathmud
+
+    ;setworld deathmud
+    ;swo deathmud
+
+    ;deleteworld deathmud
+    ;dwo deathmud
+</code></pre>
+<p>There is one important restriction. Axmud insists that there is always a current world. You can't use <strong>;deleteworld</strong> to delete the current world profile.</p>
+<h2><a name="5.2">5.2 Guild and race profiles</a></h2>
+<p>Besides world and character profiles, Axmud provides <em>guild</em> and <em>race</em> profiles as standard.</p>
+<p><em>Guild profiles</em> divide characters into clubs: one guild for warriors, another for wizards, another for thieves, and so on. It doesn't matter if the world calls these divisions classes, or clans, or anything else - Axmud refers to them as <em>guilds</em>.</p>
+<p>At most worlds, the word <em>race</em> is used in the Tolkienesque sense of a species. <em>Race profiles</em> commonly exist for humans, dwarves, trolls, elves and so on.</p>
+<p>If you're using a pre-configured world, you probably already have a selection of guild and race profiles to choose from:</p>
+<pre><code>    ;listguild
+    ;lg
+
+    ;listrace
+    ;lr
+</code></pre>
+<p>Otherwise, you'll have to use commands like <em>;setguild</em> and <em>;setrace</em>. You only need to set the current guild and race once - after that, every time you log in as Bilbo, the correct guild and race profiles will be set automatically.</p>
+<h2><a name="5.3">5.3 Custom profiles</a></h2>
+<p>We've discussed world, guild, race and character profiles, but for some worlds it might be convenient to create other categories of profile. For example, at a MUD which divides players into factions, a character might belong to a guild, a race and a faction.</p>
+<p>Axmud is able to create new kinds of profile. The blueprint for a new kind of profile is called a <em>profile template</em>, and profiles based on it are called <em>custom profiles</em>. If you're interested to find out more, read the help for these client commands:</p>
+<pre><code>    ;help addtemplate
+    ;help addscalarproperty
+    ;help addlistproperty
+    ;help addhashproperty
+    ;help addcustomprofile
+</code></pre>
+<h2><a name="5.4">5.4 The profile priority list</a></h2>
+<p>Assuming you haven't created any custom profiles, your current profiles might now look something like this:</p>
+<pre><code>    WORLD:      deathmud
+    CHARACTER:  bilbo
+    GUILD:      thief
+    RACE:       halfling
+</code></pre>
+<p>When we create interfaces (triggers, aliases, macros, timers and hooks), they usually 'belong' to a profile. Most of your interfaces will belong to the world profile.</p>
+<p>Now, imagine that we have four different triggers, each with the same name (<strong>mytrigger</strong>) and each belonging to one of these profiles. As we mentioned above, only one of them can be the <em>active</em> trigger. The others are all treated as <em>inactive</em> triggers.</p>
+<p>How does Axmud choose which trigger is the active one? The answer is simple: it's the one which belongs to the character. Axmud specifies that the character profile <em>takes priority</em> over other categories of profile.</p>
+<p>The profile priority list looks like this:</p>
+<pre><code>    HIGHEST PRIORITY    character &gt; race &gt; guild &gt; world    LOWEST PRIORITY
+</code></pre>
+<p>When Axmud is deciding which <strong>mytrigger</strong> is the active one, it first looks at the current character profile. If it has a trigger called <strong>mytrigger</strong>, that's the active trigger.</p>
+<p>If not, it looks at the current race profile. If that profile has a trigger called <strong>mytrigger</strong>, that's the active trigger. Otherwise it checks the current guild profile, and then the current world profile.</p>
+<p>Now we get to the clever bit:</p>
+<p><em>You can create hundreds of different profiles. You can change the current guild as often as you want or change the current character as often as you want (even in the middle of a session). Each of these many profiles can have their own trigger called <strong>mytrigger</strong>.</em></p>
+<p><em>And even though there are hundreds of triggers with the same name, only one of them is ever active.</em></p>
+<p><em>Whenever you add, delete or modify a trigger, whenever you add, delete or modify a profile, whenever you set a new current profile, Axmud automatically marks just one trigger called <strong>mytrigger</strong> as the active one.</em></p>
+<p><em>No effort is required by you. It all happens auto-magically.</em></p>
+<h2><a name="5.5">5.5 Interfaces in practice</a></h2>
+<p>In practice, you'll usually have only one trigger called <strong>mytrigger</strong>, and it will belong to the current world.</p>
+<p>Suppose this trigger fires when Axmud receives a line containing the text <strong>You kill</strong>. The trigger's response might be</p>
+<pre><code>    get coins from corpse
+</code></pre>
+<p>This might be fine for most guilds, races and characters. We can think of this trigger as the default trigger. But, occasionally, we might want to add an exception to the general rule. For example, you might want the trigger to apply to all guilds <em>except</em> clerics. In that case, we create a second trigger with the same name, whose response is</p>
+<pre><code>    bury corpse
+</code></pre>
+<p>When the current character is a cleric, the second trigger will be the active one, because guild profiles take priority over world profiles. For everyone else, there will be only one <strong>mytrigger</strong> available - the one belonging to the world - and that will be the active one.</p>
+<h2><a name="5.6">5.6 Changing priorities</a></h2>
+<p>If, for some reason, you'd prefer guilds to take priority over races, it's possible to change the priority order - but you shouldn't do it unless you really need to. See the help for the following client command:</p>
+<pre><code>    ;help setprofilepriority
+    ;h spp
+
+    ;help listprofilepriority
+    ;h lpp
+</code></pre>
+<hr>
+<p><a href="ch04.html">Previous</a> <a href="index.html">Index</a> <a href="ch06.html">Next</a></p>
+
+</body>
+</html>

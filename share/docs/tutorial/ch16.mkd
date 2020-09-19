@@ -1,0 +1,411 @@
+[Previous](ch15.html) [Index](index.html) [Next](ch17.html)
+
+---
+
+#16 - Using Axmud data
+
+####Table of Contents
+
+* [16.1 Peeking and poking](#16.1)
+* [16.2 Don't use POKE](#16.2)
+* [16.3 Perl data](#16.3)
+* [16.4 Objects](#16.4)
+* [16.5 Peek operations - general](#16.5)
+* [16.6 Undefined values](#16.6)
+* [16.7 Peek operations - scalars](#16.7)
+* [16.8 Peek operations - lists](#16.8)
+* [16.9 Peek operations - hashes](#16.9)
+* [16.10 Poke operations - general](#16.10)
+* [16.11 Poke operations - scalars](#16.11)
+* [16.12 Poke operations - lists](#16.12)
+* [16.13 Poke operations - hashes](#16.13)
+* [16.14 Persistent data](#16.14)
+
+---
+
+Axmud stores an enormous quantity of data in memory, most of which is available to your Axbasic scripts.
+
+However, there are some complications. Axmud (which is written in Perl) doesn't store data in the same way that BASIC does. If you want your Axbasic scripts to retrieve Axmud data, you'll need some understanding of the differences.
+
+This Section covers everything you need to know. You should at least read [Section 16.1](ch16.html#16.1) which gives some simple examples without delving into the technicalities.
+
+##<a name="16.1">16.1 Peeking and poking</a>
+
+In the early years of computing, BASIC programmes were able to access the computer's memory directly. This was done using a PEEK or a POKE statement. A PEEK statement *retrieved* a single value stored in memory; a POKE statement *modified* that value.
+
+Axbasic provides a selection of *peek* and *poke* operations for retrieving and modifying the values that Axmud has stored in its memory.
+
+For example, we could use the following script to retrieve the current world's name.
+
+        PEEK name$ = "world.current.name"
+        PRINT name$
+        END
+
+The string **"world.current.name"** describes a single value stored in Axmud's memory. It must be typed *precisely* - if you use spaces or upper case letters, or if you misspell one of the words, you'll get an error.
+
+You can get the current character's name in the same way.
+
+        PEEK name$ = "char.current.name"
+        PRINT name$
+        END
+
+The string **"character.current.name"** would not be recognised - in this case, only **"char.current.name"** will do.
+
+You could also retrieve your character's current health points. This value will only be correct if the Status task is running and if it knows how to detect health points.
+
+        PEEK number = "char.current.healthPoints"
+        PRINT number
+        END
+
+Note that the string **"char.current.healthPoints"** is typed with a capital **P**. Axmud stores data internally using a name like **healthPoints**, not **healthpoints** or **health_points**. If you mistype the name, you'll get an error.
+
+Now we can try modifying that value. Try running this script while the Status task is running.
+
+        POKE "char.current.healthPoints", 100
+        PEEK number = "char.current.healthPoints"
+        PRINT number
+        END
+
+You can modify the character's health points, but if you try to POKE a new value for the character's name you'll see an error. Axmud has very clear ideas about which values can be modified, and which cannot. Health points can be updated at any time, but changing the name of a character profile is definitely not permitted.
+
+The [Axmud Guide](../guide/index.html) describes the strings that can be used in a PEEK or POKE statement. The same list is also available in the About window (use the client command **;openaboutwindow** or click the blue question mark button near the top of the main window).
+
+You can test any of these strings using the client commands **;peek** and **;poke**.
+
+##<a name="16.2">16.2 Don't use POKE</a>
+
+In general, modifying values out of curiousity is a **<u>really bad idea</u>** and can have unpredictable results.
+
+Don't modify Axmud's internal values unless you thorougly understand how those values are used. Usually, this means reading the Axmud source code for yourself.
+
+The example scripts in this Section are safe to run under all circumstances.
+
+##<a name="16.3">16.3 Perl data</a>
+
+Perl stores three types of data - *scalars*, *lists* and *hashes*.
+
+A *scalar* is a single value - a number, a single character, a word, a sentence, a paragraph, or perhaps even an entire novel (written as a single line of text).
+
+A *list* is a collection of scalar values, much like an Axbasic array. Note that Perl lists and Axbasic arrays are numbered differently. In a Perl list, ten items are numbered from 0 to 9, whereas in Axbasic they're numbered from 1 to 10.
+
+A *hash* is the same kind of structure that other languages call an *associative array*, a *dictionary* or a *map*. In a hash, data is stored in pairs. Each pair consists of a *key* and a *value*.
+
+        KEY         VALUE
+        KEY         VALUE
+        KEY         VALUE
+        ...         ...
+
+We might use a hash to store telephone numbers. We'll store the number as a key, and the owner's name as the corresponding value.
+
+        5224098     Alice
+        5107912     Bob
+        5040477     Charlie
+
+The important thing to remember about hashes is that *each key must be unique*. In this case, a telephone number can't appear twice:
+
+        5224098     Alice
+        5224098     David
+
+If you try to add a duplicate telephone number, the old key-value pair is removed from the hash, leaving us with this:
+
+        5224098     David
+        5107912     Bob
+        5040477     Charlie
+
+Keys are unique, but values don't have to be. If Bob owns two phones, his name could appear twice in the hash.
+
+        5224098     David
+        5107912     Bob
+        7245100     Bob
+        5040477     Charlie
+
+There is nothing like a hash in Axbasic.
+
+##<a name="16.4">16.4 Objects</a>
+
+Axmud stores data in so-called *objects*.
+
+An object is just a collection of data. The world profile for *Discworld* is an object, as is the character profile for Gandalf. The Locator task is an object, and so is the main window.
+
+Objects have *properties*. For example, a world profile includes these properties:
+
+* name
+    * The world's name, in this case set to **Discworld**
+* address
+    * The world's address, set to **discworld.starturtle.net**
+* port
+    * The world's port, set to **23**
+* worldURL
+    * The world's website, set to **http://discworld.starturtle.net/lpc/**
+
+These properties are all *scalar properties*, but Axmud also uses *list properties* and *hash properties*, for example:
+
+* doorPatternList
+    * A list of patterns (regular expressions) which the Locator task uses to recognise closed doors
+* currencyHash
+    * A hash of currency units and their relative values
+
+We can PEEK any scalar properties in the same way as before.
+
+        PEEK name$ = "world.current.name"
+        PEEK address$ = "world.current.address"
+        PEEK website$ = "world.current.worldURL"
+
+By now, you should be able to recognise the structure of PEEK/POKE strings. The first part, **world.current**, refers to an object. The last part, **name** or **address** or **worldURL**, refers to a property of that object.
+
+By the way, all properties used by Axmud can be identified by their name. All list properties actually end with **List**, for example **doorPatternList**. All hash properties actually end with **Hash**, for example **currencyHash**. Anything else is (almost certainly) a scalar property.
+
+(This is an Axmud rule, not a Perl rule. Users who want to create their own Perl plugins can name their properties any way they like.)
+
+##<a name="16.5">16.5 Peek operations - general</a>
+
+If you want to PEEK a list property, you must use a PEEK ARRAY statement.
+
+        PEEK ARRAY patterns$ = "world.current.doorPatternList"
+
+**patterns$** is now an array, not a single variable. Of course, if you PEEK a scalar propery, you'll get an array containing a single value.
+
+        PEEK ARRAY items$ = "world.current.name"
+
+If you PEEK a hash property, you'll still get an array. The array will be in the form **key**, **value**, **key**, **value**...
+
+        PEEK ARRAY items$ = "world.current.currencyHash"
+
+PEEK cannot be used to import the object itself, or to import a list/hash property into an Axbasic variable. The same rule applies to all the PEEK operations described below.
+
+Axbasic arrays have a maximum size of 1,000,000 values. If a *peek* operation exceeds this maximum, the excess values are not added to the array (and no error message is generated). 
+
+##<a name="16.6">16.6 Undefined values</a>
+
+Perl uses a special *undefined* value. If you try to retrieve such a value using, for example, a PEEK statement, it's retrieved as the string **"<<undef\>\>"**.
+
+If you retrieve the undefined value into a numeric variable, it's retrieved as the value **0**.
+
+##<a name="16.7">16.7 Peek operations - scalars</a>
+
+As we saw above, PEEK can be used on a scalar, list or hash property.
+
+A PEEKGET statement can only be used on a scalar property. If you use it on a list or hash property, you'll get an error.
+
+        PEEKGET name$ = "world.current.name"
+
+##<a name="16.8">16.8 Peek operations - lists</a>
+
+PEEKNUMBER gives you the size of the list (the number of scalar values it contains, which might be 0).
+
+        PEEKNUMBER size = "world.current.doorPatternList"
+
+PEEKFIRST gives you the first item in the list. If the list happens to be empty, you'll get an empty string or 0 instead.
+
+        PEEKFIRST pattern$ = "world.current.doorPatternList"
+
+PEEKLAST doesn't give you the last item in the list. It gives you the size of the list, minus 1. (You'll remember that Perl stores a list of ten items using the indexes 0-9, so the tenth item uses index 9, which is the number PEEKLAST gives you.)
+
+If the list is empty, PEEKLAST gives you the value -1.
+
+        PEEKLAST size = "world.current.doorPatternList"
+
+PEEKINDEX gives you one of the items in the list. If you want the third item, use index 2.
+
+        PEEKINDEX pattern$ = "world.current.doorPatternList", 2
+
+If you use an index that's equal to or greater than the size of the list, you'll get an empty string (or 0). Often you'll use PEEKNUMBER or PEEKLAST immediately before every PEEKINDEX to check that the index actually exists.
+
+PEEKFIND does the opposite. It searches the list for an item and returns the first index at which that item is found.
+
+For example, if the list contains the string **"You bump into"** at index 2, and also at index 5, then PEEKFIND gives you the value 2.
+
+        PEEKFIND index = "world.current.doorPatternList", "You bump into"
+
+PEEKMATCH does something similar, but in this case the second argument is treated as a regular expression. PEEKMATCH returns the index of the first item which matches the regular expression (pattern).
+
+        PEEKMATCH index = "world.current.doorPatternList", "^You bump"
+
+PEEKEQUALS also does something similar, but this time the list is assumed to contain only numbers. This example returns the index of the first item whose value is 10.
+
+        PEEKEQUALS index = "world.current.doorPatternList", 10
+
+If the list contains non-numeric values, you'll get an error.
+
+PEEKFIND, PEEKMATCH and PEEKEQUALS all return -1 if the list doesn't contain the value you're seeking.
+
+##<a name="16.9">16.9 Peek operations - hashes</a>
+
+PEEKEXISTS tests whether a hash contains a key, or not. In this example, **result$** is set to **"true"** if the hash contains the key **gold**, or **"false"** if it doesn't.
+
+        PEEKEXISTS result$ = "world.current.currencyHash", "gold"
+
+PEEKEXISTS can give you a numeric value if that's more convenient - 1 if the key exists in the hash, or 0 if it doesn't. Use a numeric variable, rather than a string variable, if that's what you want.
+
+        PEEKEXISTS result = "world.current.currencyHash", "gold"
+
+If we know the key, we can get the corresponding value using PEEKSHOW.
+
+        PEEKSHOW value = "world.current.currencyHash", "gold"
+
+In the example above, if the hash doesn't contain the key **gold**, then the variable **value** is set to 0. (A string variable would have been set to an empty string.)
+
+You can get an array containing all the keys in the hash using PEEKKEYS. You can get an array containing all the values in the hash using PEEKVALUES. Unless you're certain that all of the items are numeric, it's best to use a string array.
+
+        PEEKKEYS keys$ = "world.current.currencyHash"
+        PEEKVALUES values$ = "world.current.currencyHash"
+
+Perl doesn't store its keys in any particular order, so don't expect the lists to be sorted numerically or alphabetically (or even to be in the same order from one moment to the next).
+
+PEEKPAIRS gives you the number of key-value pairs in the hash, which might be zero. If the hash contains a single pair, PEEKPAIRS gives you the value 1 (not 2).
+
+        PEEKPAIRS size = "world.current.currencyHash"
+
+##<a name="16.10">16.10 Poke operations - general</a>
+
+Once again, we recommend that you don't try to POKE anything unless you have a clear understanding of what you are doing. If you want to test the following examples, it would be a good idea to create a temporary world profile that can be discarded when you've finished POKEing at it.
+
+We've already seen how to set the value of a scalar property.
+
+        POKE "char.current.healthPoints", 100
+
+You could have used a variable or an expression instead.
+
+        POKE "char.current.healthPoints", number
+        POKE "char.current.healthPoints", (max / 2)
+
+Now, if you want to set the value of a list property, you must use a POKE ARRAY statement.
+
+Furthermore, you *must* specify an array variable, which means that you must use DIM before using POKE ARRAY. This example isn't the most efficient way to create an array, but it should be clear what's happening:
+
+        DIM strings$ (3)
+        LET strings$ (1) = "You bump into a door"
+        LET strings$ (2) = "The door slams shut"
+        LET strings$ (3) = "The door is closed"
+        POKE ARRAY "world.current.doorPatternList", strings$
+
+The same applies to hash properties. You must use POKE ARRAY and you must specify an array variable. The items in the array must be in the form **key**, **value**, **key**, **value**...
+
+        DIM strings$ (4)
+        LET strings$ (1) = "pound"      ! Key
+        LET strings$ (2) = "1"          ! Value
+        LET strings$ (3) = "pence"      ! Key
+        LET strings$ (4) = "0.01"       ! Value
+        POKE ARRAY "world.current.currencyHash", strings$
+
+A POKEEMPTY statement can act on a scalar, list or hash property. Lists and hashes are emptied. Scalar properties are set to the Perl *undefined* value, explained in [Section 16.6](ch16.html#16.6).
+
+        POKEEMPTY "char.current.longName"
+        POKEEMPTY "world.current.doorPatternList"
+        POKEEMPTY "world.current.currencyHash"
+
+##<a name="16.11">16.11 Poke operations - scalars</a>
+
+As we saw above, POKE can be used on a scalar, list or hash property.
+
+A POKESET statement can only be used on a scalar property. If you use it on a list or hash property, you'll get an error.
+
+        POKESET "char.current.longName", "My favourite MUD"
+
+POKEUNDEF sets the property's value to Perl's special *undefined* value.
+
+        POKEUNDEF "char.current.longName"
+
+Some Axmud properties are designed to have one of two values, representing *true* or *false*. The names of these properties usually end in **Flag**.
+
+You can change a flag's value using a POKETRUE or a POKEFALSE statement.
+
+        POKETRUE "world.current.collectUnknownWordFlag"
+        POKEFALSE "world.current.collectUnknownWordFlag"
+
+By the way, in Perl the *true* value is implemented as 1, and the *false* value is implemented as an empty string. You could test this by PEEKing the properties above and PRINTing the output.
+
+For properties that store a numeric value, we can do simple addition, subtraction, multiplication and division. For example, to add 2, subtract 2, multiply by 2 or divide by 2:
+
+        POKEPLUS "char.current.healthPoints", 2
+        POKEMINUS "char.current.healthPoints", 2
+        POKEMULTIPLY "char.current.healthPoints", 2
+        POKEDIVIDE "char.current.healthPoints", 2
+
+POKEINC is a quick way to add 1 to a numeric value, and POKEDEC is a quick way subtract 1 from it. (INC stands for *increment* and DEC stands for *decrement*.)
+
+        POKEINC "char.current.healthPoints"
+        POKEDEC "char.current.healthPoints"
+
+POKEINT can be used to convert a fractional number like 3.141592635 into an integer like 3.
+
+        ! This number is too precise
+        POKE "char.current.healthPoints", 3.141592635
+        ! So let's get rid of the fractional part
+        POKEINT "char.current.healthPoints"
+
+##<a name="16.12">16.12 Poke operations - lists</a>
+
+POKESHIFT removes an item from the beginning of the list, and POKEPOP removes an item from the end of the list.
+
+        POKESHIFT pattern$ = "world.current.doorPatternList"
+        POKEPOP pattern$ = "world.current.doorPatternList"
+
+If the list was empty, **pattern$** would be set to the string **"<<undef\>\>"**. (A numeric variable would be set to **0**.)
+
+POKEUNSHIFT adds a new value to the beginning of the list. POKEPUSH adds a new value to the end of the list.
+
+        POKEUNSHIFT "world.current.doorPatternList", "The door is closed"
+        POKEPUSH "world.current.doorPatternList", "The door is closed"
+
+POKEREPLACE can be used to modify a single value in a list. For example, to replace the third pattern in a list, specify index 2:
+
+        POKEREPLACE "world.current.doorPatternList", 2, "The door is closed"
+
+If you don't specify a new value at all, the Perl *undefined* value replaces a value at that index. (In most cases, that is a bad idea.)
+
+##<a name="16.13">16.13 Poke operations - hashes</a>
+
+POKEADD adds a new key-value pair to a hash property. In this case, the key is **bronze**, and its corresponding value is **0.1**.
+
+        POKEADD "world.current.currencyHash", "bronze", 0.1
+
+POKEDELETE removes a single key-value pair from a hash property. You only need to specify the key to remove; the corresponding value is removed automatically.
+
+        POKEDELETE "world.current.currencyHash", "bronze"
+
+POKEINCHASH and POKEDECHASH are intended for hashes whose values are numeric. Given a key, POKEINCHASH increases the corresponding value by 1, and POKEDECHASH decreases it by 1.
+
+        POKEINCHASH "world.current.currencyHash", "gold"
+        POKEDECHASH "world.current.currencyHash", "gold"
+
+##<a name="16.14">16.14 Persistent data</a>
+
+When an Axbasic script terminates, the values stored in its variables are lost forever.
+
+There are two ways of storing values so that they can be retrieved some time in the future. One way is to save the values to a file, and later to load that file back into memory. We'll cover that in [Section 17](ch17.html).
+
+Another way is store data in a profile. Every profile has a hash property, called **privateHash**, which is available for the private use of your scripts.
+
+Let's add some values to the current world profile.
+
+        POKEADD "world.current.privateHash", "name", "Bilbo"
+        POKEADD "world.current.privateHash", "address", "The Shire"
+        POKEADD "world.current.privateHash", "postcode", "SH1"
+
+Those values are now stored safely, and will still be available the next time you start Axmud. Let's retrieve one of the values now.
+
+        PEEK name$ = "world.current.privateHash", "name"
+        PRINT name$
+
+Ordinarily you'll store values in the current world profile, but you can store values in any guild, race and character profile too.
+
+        POKEADD "char.current.privateHash", "colour", "purple"
+
+The profile you choose doesn't have to be a current profile.
+
+        POKEADD "char.gandalf.privateHash", "colour", "green"
+
+Note that **privateHash** is shared betweeen all of your scripts - that includes Axbasic scripts and Perl plugins. For this reason, you should be careful about the names you give to your values. Names like **name**, **address**, **postcode** and **colour** are so generic, that it's quite possible another script will try to use the same name.
+
+You can reduce the danger by using names that include the name of the script itself. Since your scripts should all have different names, there will be no danger of one script overwriting another's values.
+
+        POKEADD "world.current.privateHash", "myscript_name", "Bilbo"
+        POKEADD "world.current.privateHash", "myscript_address", "The Shire"
+        POKEADD "world.current.privateHash", "myscript_postcode", "SH1"
+
+If necessary, you can change the contents of **privateHash** manually (open the profile's edit window, and click on the **Private** tab).
+
+---
+
+[Previous](ch15.html) [Index](index.html) [Next](ch17.html)

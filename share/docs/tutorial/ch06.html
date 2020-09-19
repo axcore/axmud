@@ -1,0 +1,296 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>ch06</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="ch05.html">Previous</a> <a href="index.html">Index</a> <a href="ch07.html">Next</a></p>
+<hr>
+<h1>6 - Conditions</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#6.1">6.1 Introducing conditions</a></li>
+<li><a href="#6.2">6.2 IF statements</a></li>
+<li><a href="#6.3">6.3 Compound statements after THEN</a></li>
+<li><a href="#6.4">6.4 IF..THEN..ELSE statements</a></li>
+<li><a href="#6.5">6.5 IF across multiple lines</a></li>
+<li><a href="#6.6">6.6 Guessing games</a></li>
+<li><a href="#6.7">6.7 Line formatting</a></li>
+<li><a href="#6.8">6.8 Nested IFs</a></li>
+<li><a href="#6.9">6.9 Using AND and OR</a></li>
+<li><a href="#6.10">6.10 Using NOT</a></li>
+<li><a href="#6.11">6.11 More or Less</a></li>
+<li><a href="#6.12">6.12 SELECT CASE</a></li>
+</ul>
+<hr>
+<h2><a name="6.1">6.1 Introducing conditions</a></h2>
+<p>A <em>condition</em> is something that is <em>either</em> true <em>or</em> false.</p>
+<pre><code>    number = 5
+</code></pre>
+<p>If we've set the variable <strong>number</strong> to 5, then clearly this condition is true, but if we set <strong>number</strong> to 6, then it must be false.</p>
+<p>Here's another example.</p>
+<pre><code>    name$ = "bilbo"
+</code></pre>
+<p>This condition would be false if we had set the variable <strong>name$</strong> to <strong>"gandalf"</strong>.</p>
+<h2><a name="6.2">6.2 IF statements</a></h2>
+<p>In the real world, Axbasic scripts spend most of their time testing conditions to see whether they're true or false.</p>
+<p>In order to test a condition, we use an IF statement.</p>
+<pre><code>    IF number = 5 ...
+    IF name$ = "bilbo" ...
+</code></pre>
+<p>Having decided whether the condition is true, or not, we need to decide what to do next. For that, we add the keyword THEN.</p>
+<pre><code>    IF number = 5 THEN ...
+    IF name$ = "bilbo" THEN ...
+</code></pre>
+<p>THEN can be followed by any statement you like. You could add a PRINT statement, for example.</p>
+<pre><code>    IF number = 5 THEN PRINT "True!"
+    IF number = 6 THEN PRINT "False!"
+</code></pre>
+<p>Instead of PRINTing something, you could set the value of a variable. The variable is only set when the condition is true.</p>
+<pre><code>    IF number = 5 THEN LET result$ = "True!"
+    PRINT result$
+</code></pre>
+<h2><a name="6.3">6.3 Compound statements after THEN</a></h2>
+<p>Earlier we say that statements can be joined together with a colon character.</p>
+<pre><code>    PRINT "Ready" : PRINT "Steady" : PRINT "Go"
+</code></pre>
+<p>After THEN, we can add a single statement, or more than one, if that's more convenient.</p>
+<pre><code>    IF number = 10 THEN PRINT "Ready" : PRINT "Steady" : PRINT "Go"
+</code></pre>
+<p>The three PRINT statements are <em>only</em> executed if <strong>number</strong> really is set to 10.</p>
+<h2><a name="6.4">6.4 IF..THEN..ELSE statements</a></h2>
+<p>A really useful feature of Axbasic is the keyword ELSE.</p>
+<pre><code>    IF number = 5 THEN do something ELSE do something
+</code></pre>
+<p>This time you can add <em>two</em> statements. One is executed if the condition is true, and the other is executed if the condition is false.</p>
+<pre><code>    IF number = 5 THEN PRINT "True!" ELSE PRINT "False!"
+</code></pre>
+<p>Often you'll set a variable to one of two values, depending on whether the condition is true, or not.</p>
+<pre><code>    IF number = 5 THEN LET result$ = "True!" ELSE LET result$ = "False!"
+    PRINT result$
+</code></pre>
+<h2><a name="6.5">6.5 IF across multiple lines</a></h2>
+<p>IF statements can quickly become very long, so it's useful to split them across several lines. Let's take a simple example.</p>
+<pre><code>    IF number = 5 THEN
+        PRINT "True!"
+    END IF
+</code></pre>
+<p>If the condition is true, every line between THEN and END IF is executed. You can add as many lines as you like.</p>
+<pre><code>    IF number = 5 THEN
+        PRINT "True!"
+        PRINT "It's not false!"
+        PRINT "I'm sure about this!"
+    END IF
+</code></pre>
+<p>If the condition is false, <em>none</em> of the lines between THEN and END IF are executed.</p>
+<p>ELSE can also be used in this situation.</p>
+<pre><code>    IF number = 5 THEN
+        PRINT "True!"
+    ELSE
+        PRINT "False!"
+    END IF
+</code></pre>
+<p>Once again, you can add as many lines as you like.</p>
+<pre><code>    IF number = 5 THEN
+        PRINT "True!"
+        PRINT "It's not false!"
+    ELSE
+        PRINT "False!"
+        PRINT "It's not true!"
+    END IF
+</code></pre>
+<h2><a name="6.6">6.6 Guessing games</a></h2>
+<p>At this point, it's traditional for a programming tutorial to introduce a simple guessing game, so let's go ahead and do that.</p>
+<pre><code>    PRINT "Guess my name!"
+    INPUT name$
+
+    IF name$ = "bilbo" THEN
+        PRINT "Yes, my name is Bilbo!"
+    ELSE
+        PRINT "No, my name is Bilbo!"
+    END IF
+
+    END
+</code></pre>
+<p>That works very well for a simple yes/no game, but what about something (slightly) more challenging?</p>
+<p>In that situation, we can use ELSE IF.</p>
+<pre><code>    PRINT "Guess my name!"
+    INPUT name$
+
+    IF name$ = "bilbo" THEN
+        PRINT "Yes, my name is Bilbo!"
+    ELSE IF name$ = "gandalf" THEN
+        PRINT "Don't be silly, Gandalf is YOUR name."
+    ELSE
+        PRINT "Wrong!"
+    END IF
+
+    END
+</code></pre>
+<p>After the first line, there are three PRINT statements; only one of them is executed. You can add as many ELSE IFs as you want, but it's always a good idea to use an ELSE at the end, in case the user types something you didn't expect.</p>
+<p>In other words, if the user types "Frodo", the script below won't PRINT anything at all (which is probably not what the author intended).</p>
+<pre><code>    PRINT "Guess my name!"
+    INPUT name$
+
+    IF name$ = "bilbo" THEN
+        PRINT "Yes, my name is Bilbo!"
+    ELSE IF name$ = "gandalf" THEN
+        PRINT "Don't be silly, Gandalf is your name."
+    ELSE IF "name$ = "sauron" THEN
+        PRINT "I don't believe you."
+    END IF
+
+    END
+</code></pre>
+<p>By the way, ELSE IF can also be typed as ELSEIF. Both spellings work in exactly the same way.</p>
+<h2><a name="6.7">6.7 Line formatting</a></h2>
+<p>In Axbasic scripts, you can add as much empty space as you like at the beginning of the line, and you can use as many empty lines as you like, too.</p>
+<p>These lines are perfectly legal Axbasic:</p>
+<pre><code>    IF name$ = "bilbo" THEN
+    PRINT "Yes, my name is Bilbo!"
+    PRINT "How did you know?"
+    END IF
+</code></pre>
+<p>But if your script isn't behaving the way you expected, it's a lot easier to find the source of the problem if you've used your TAB key to move everything inside the IF...END IF a little to the right:</p>
+<pre><code>    IF name$ = "bilbo" THEN
+        PRINT "Yes, my name is Bilbo!"
+        PRINT "How did you know?"
+    END IF
+</code></pre>
+<h2><a name="6.8">6.8 Nested IFs</a></h2>
+<p>We can put anything we like between an IF and an END IF. We can even put another IF there!</p>
+<pre><code>    IF surname$ = "baggins" THEN
+        IF name$ = "bilbo" THEN
+            PRINT "Hello, Bilbo Baggins!"
+        ELSE
+            PRINt "Are you related to Bilbo?"
+        END IF
+    END IF
+</code></pre>
+<p>In fact, the author of this script has forgotten to include an ELSE. Something happens regardless of the <strong>name$</strong>, but if the <strong>surname$</strong> isn't the one that was expected, nothing happens at all.</p>
+<p>Once we start using a lot of IFs and ELSEs and ELSE IFs and END IF, it becomes even more important to use proper spacing.</p>
+<pre><code>    IF surname$ = "baggins" THEN
+        IF name$ = "bilbo" THEN
+            PRINT "Hello, Bilbo Baggins!"
+        ELSE
+            PRINt "Are you related to Bilbo?"
+        END IF
+    ELSE
+        PRINT "You aren't related to Bilbo!"
+    END IF
+</code></pre>
+<h2><a name="6.9">6.9 Using AND and OR</a></h2>
+<p>We can test two conditions <em>at the same time</em> by using AND.</p>
+<pre><code>    IF name$ = "bilbo" AND surname$ = "baggins" THEN
+        PRINT "Hello, Bilbo Baggins!"
+    END IF
+</code></pre>
+<p>Axbasic checks the first condition. If it's true, Axbasic checks the second condition. If that is also true, then somethins if PRINTed.</p>
+<p>The opposite of AND is, of course, OR.</p>
+<pre><code>    IF name$ = "bilbo" OR name$ = "gandalf" THEN
+       PRINT "I know you!"
+    END IF
+</code></pre>
+<p>This time, if either (or both) of the conditions are true, something is PRINTed. If they are both false, nothing is PRINTed.</p>
+<h2><a name="6.10">6.10 Using NOT</a></h2>
+<p>Suppose you wanted to greet anyone <em>except</em> <strong>Bilbo</strong>. In that case, you would use NOT.</p>
+<pre><code>    IF NOT name$ = "bilbo" THEN
+        PRINT "You are not Bilbo!"
+    END IF
+</code></pre>
+<p>The keyword NOT goes at the beginning of the condition. If you try to put it somewhere else, as in these examples, you'll get an error.</p>
+<pre><code>    IF name$ NOT = "bilbo" THEN
+    IF name$ = NOT "bilbo" THEN
+</code></pre>
+<p>AND, OR and NOT are operators, just like the characters &amp;, +, -, * and /. This means that you can use brackets, if you want to.</p>
+<pre><code>    IF surname$ = "baggins" AND (name$ = "bilbo" OR name$ = "frodo") THEN
+        PRINT "Hello!"
+    END IF
+</code></pre>
+<p>Axbasic checks everything inside the brackets first, so it first checks that <strong>name$</strong> is either <strong>bilbo</strong> or <strong>frodo</strong>. If so, it then checks that surname$ is <strong>baggins</strong>.</p>
+<p>This is simpler than the equivalent code using IF, ELSE, ELSE IF and END IF.</p>
+<pre><code>    IF surname$ = "baggins" THEN
+        IF name$ = "bilbo" THEN
+            PRINT "Hello!"
+        ELSE IF name$ = "frodo" THEN
+            PRINT "Hello!"
+        END IF
+    END IF
+</code></pre>
+<h2><a name="6.11">6.11 More or Less</a></h2>
+<p>If you want to check that a number is less than 5, you <em>could</em> use a bunch of ORs.</p>
+<pre><code>    IF number == 1 OR number == 2 OR number == 3 OR number == 4 THEN
+        PRINT "Less than 5"
+    END IF
+</code></pre>
+<p>But a simpler way is to use the <em>less than</em> character <strong>&lt;</strong>.</p>
+<pre><code>    IF number &lt; 5 THEN
+        PRINT "Less than 5"
+    END IF
+</code></pre>
+<p>The opposite is the <em>more than</em> character, <strong>&gt;</strong>.</p>
+<pre><code>    IF number &gt; 5 THEN
+        PRINT "More than 5"
+    END IF
+</code></pre>
+<p>Often you'll need to check that a number is between 1 and 5. You can do that using AND.</p>
+<pre><code>    IF number &gt; 0 AND number &lt; 6 THEN
+        PRINT "Between 1 and 5"
+    END IF
+</code></pre>
+<p>Of course, it would be a lot simpler to use the numbers 1 and 5 directly.</p>
+<p>For this, you can use the <strong>&lt;=</strong> operator, which means <em>less than or equal to</em>, or the <strong>&gt;=</strong> operator, which means <em>more than or equal to</em>.</p>
+<pre><code>    IF number &gt;= 1 AND number &lt;= 5 THEN
+        PRINT "Between 1 and 5"
+    END IF
+</code></pre>
+<p>Finally, we have the <strong>&lt;&gt;</strong> operator, which means <em>not equal to</em>.</p>
+<pre><code>    IF number &lt;&gt; 10 THEN
+        PRINT "Not equal to 10"
+    END IF
+</code></pre>
+<p>The more than/less than operators can be used on strings, too. If you ask whether <strong>word$</strong> is "less than" <strong>other_word$</strong>, you're actually asking which word appears first in the dictionary.</p>
+<pre><code>    IF "apple" &lt; "banana" THEN
+        PRINT "In the dictionary, apple comes before banana"
+    END IF
+</code></pre>
+<p>There is a hidden danger here. Axbasic, in common with most programming languages, considers that capital letters are <em>less than</em> lower-case letters; in other words, the letter <strong>Z</strong> is <em>less than</em> the letter <strong>a</strong>. This can lead to unexpected results, such as in the following script (which you should try for yourself).</p>
+<pre><code>    IF "apple" &lt; "BANANA" THEN
+        PRINT "In the dictionary, apple comes before banana"
+    ELSE
+        PRINT "In the dictionary, banana comes before apple"
+    END IF
+    END
+</code></pre>
+<p>The usual solution is to convert both strings to lower-case before comparing them. We'll cover that in a later Section.</p>
+<h2><a name="6.12">6.12 SELECT CASE</a></h2>
+<p>One alternative to endless IF...ELSE IF... statements is SELECT CASE. Let's start with an example.</p>
+<pre><code>    SELECT CASE dice
+        CASE 1
+            PRINT "The lowest number!"
+        CASE 3, 4
+            PRINT "Somewhere in the middle!"
+        CASE 6
+            PRINT "The highest number!"
+        CASE ELSE
+            PRINT "Some other number!"
+            IF dice = 5 THEN PRINT "It's a five!" ELSE PRINT "It's a two!"
+    END SELECT
+</code></pre>
+<p>Depending on the value of <strong>dice</strong>, one or more lines of code are executed. Then, execution skips to the first line after the END SELECT statement.</p>
+<p>SELECT CASE was originally intended to improve speed on slow computers. In this modern era, there is little or no speed increase (but the code still looks simpler).</p>
+<p>Each CASE statement must contain a literal value - a number or a string. You can't use an expression or a variable.</p>
+<hr>
+<p><a href="ch05.html">Previous</a> <a href="index.html">Index</a> <a href="ch07.html">Next</a></p>
+
+</body>
+</html>

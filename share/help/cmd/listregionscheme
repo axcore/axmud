@@ -1,0 +1,13 @@
+lrs / listregionscheme        Lists region colour schemes
+ 
+   Format:
+      ;lrs <name>             Lists schemes
+ 
+   Notes:
+      A region colour scheme defines a set of colours for one or more regions.
+         The automapper window uses these colours when it draws the region(s).     
+      This command displays a list of region colour schemes, plus a list of
+         any regions that use them.
+         
+   User commands:
+      lrs / listrs / listregionscheme

@@ -1,0 +1,16 @@
+drs / deleteregionscheme      Deletes a region colour scheme
+ 
+   Format:
+      ;drs <name>             Deletes the scheme
+ 
+   Notes:
+      A region colour scheme defines a set of colours for one or more regions.
+         The automapper window uses these colours when it draws the region(s).
+      There is always one region colour scheme, called 'default', which is used
+         to draw any regions that hasn't been allocated a custom region colour
+         scheme. The default region colour scheme can't be deleted.
+      <name> is the name of the scheme to delete. If it contains spaces, you
+         should enclose the name in diamond brackets <...>.
+ 
+   User commands:
+      drs / delrs / deleters / deleteregionscheme

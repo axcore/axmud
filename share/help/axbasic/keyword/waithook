@@ -1,0 +1,25 @@
+WAITHOOK expression [ , expression ]
+
+   Synopsis:
+      Creates a temporary hook and pauses until the hook fires
+
+   Notes:
+      The first expression is the hook stimulus (a hook event). The Axbasic 
+         script will pause until the hook fires, at which point the hook is
+         destroyed and execution of the Axbasic script resumes.
+      The second expression is a timeout measured in seconds. If specified, the
+         script gives up waiting for the hook after that period. The hook is
+         destroyed and execution of the script resumes.
+
+      If Axmud can't create the hook, execution of the script continues as
+         normal (with no error message and no pause).
+      Also see the help for SETHOOK.
+
+   Requires:
+      If the script is not being run as a task, the WAITHOOK statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
+   Examples:
+      WAITHOOK "receive_text"
+      WAITHOOK "receive_text", 60

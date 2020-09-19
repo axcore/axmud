@@ -1,0 +1,44 @@
+ife / insertfailedexit        Automatically adds a failed exit message
+ 
+   Format:
+      ;ife                    Add message to current room's list
+      ;ife -r                 Add message to the current room's list
+      ;ife -w                 Add message to world profile's list
+      ;ife -u                 Don't add the message, just update the Locator
+      
+   Notes:
+      The Locator task keeps track of the number of look, glance and movement
+         commands sent to the world, so it knows how many room statements to
+         expect.
+      If, after a movement command like 'north', a failed exit message like
+         'Alas, you cannot go that way' is received, you might need to reset the
+         Locator task, so that it's no longer expecting a room statement, and
+         then reset the automapper's current room.
+      A simpler way is to use this command. It can be used whenever the Locator
+         task is expecting a single room statement after a movement command. It
+         cannot be used if the taks is expecting mutliple room statements (for
+         example, if you type 'north;north', and the failed exit message is
+         received before moving to the first room).
+         
+      The first line of text received after a movement command is used as the
+         failed exit message (unless it is a recognisable command prompt, in
+         which case the first non-matching line after that is used).
+      If no switch is specified, or if the -r switch is specified, that message
+         is added to the current room's list of failed exit messages. From then
+         on, the automapper can automatically process that message whenever your
+         character is in the same room.
+      If the -w switch is specified, the failed exit message is added to the
+         world profile's list. From then on, the automapper will automatically
+         process that message, regardless of your character's location in the
+         world.
+      If the -u switch is specified, the failed exit message isn't added to any
+         list.
+
+      Regardless of the switch specified, the Locator task's list of expected
+         room statements is reduced to zero. There is no need to reset the task
+         or to set the character's current room again.
+
+      See also the help for ';insertlook'.
+ 
+   User commands:
+      ife / ifail / insertfail / insertfailexit / insertfailedexit

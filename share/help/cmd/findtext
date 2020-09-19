@@ -1,0 +1,28 @@
+find / findtext               Finds matching text in a textview
+ 
+   Format:
+      ;find <switches> <pattern>
+      ;find <pattern> <switches>
+                              Finds matching text
+                              
+   Notes:
+      This command finds text matching the pattern/regular expression <pattern>.
+         By default, the current session's default textview (where text received
+         from the world is displayed) is searched, but you can specify any
+         textview used by any session.
+      <switches>, if specified, can be one or more of the following switch
+         patterns, in any order:
+
+            -t <number> - Finds text in textview object <number>
+            -p          - Finds the previous match (the default behaviour)
+            -n          - Finds the next match (can't be combined with '-p')
+            -c          - Performs a case-sensitive search
+            -s          - Splits the textview into two on a successful match
+
+      Axmud remembers the position of the last successful match, so you can
+         use this command again and again until you find the right line.
+      To make Axmud forget this position - so that the next search will start
+         from the bottom of the textview - use the ';findreset' command.
+ 
+   User commands:
+      find / findtext

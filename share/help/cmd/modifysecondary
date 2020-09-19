@@ -1,0 +1,36 @@
+mds / modifysecondary         Sets a secondary direction's opposite direction
+ 
+   Format:
+      ;mds <custom> <opp>     Sets the opposite direction
+      ;mds <custom>           Resets the opposite direction
+
+   Notes:
+      Axmud provides eighteen 'standard' primary directions - the sixteen
+         compass directions (including 'north', 'northeast' and
+         'northnortheast') as well as 'up' and 'down'. This standard set never
+         changes.
+      Axmud dictionaries store a custom set of primary directions, one for each
+         standard direction. Dictionaries also store a set of secondary
+         directions such as 'out' and 'in', this set can contain as many or as
+         few directions as you want.
+      For a list of primary and secondary directions stored in the current
+         dictionary, use the 'listdirection' command.               
+
+      If you have added a pair of secondary directions using the ';addsecondary'
+         command, you can use this command to specify that they should be
+         treated as opposites.
+      <custom> must already exist in the current dictionary as a custom
+         secondary direction.
+      If you specify <abbrev>, it must also exist. If you don't specify
+         <abbrev>, then the <custom> secondary direction has no opposite.
+         <abbrev> must not be the same as <custom>.
+
+      Here's an example:
+
+         ;ads leave 
+         ;ads enter
+         ;mds leave enter
+         ;mds enter leave
+ 
+   User commands:
+      mds / modsecond / modifysecondary
